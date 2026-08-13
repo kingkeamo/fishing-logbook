@@ -1,0 +1,17 @@
+# Copy this file to backend.hcl (gitignored) and fill in your Cloudflare R2 details,
+# then initialise:
+#   terraform init -backend-config=backend.hcl
+#
+# The R2 access key id/secret are supplied as AWS-style credentials via environment
+# variables before running Terraform (PowerShell):
+#   $env:AWS_ACCESS_KEY_ID     = "<r2-access-key-id>"
+#   $env:AWS_SECRET_ACCESS_KEY = "<r2-secret-access-key>"
+#
+# Production state MUST use a separate bucket (and ideally a separate Cloudflare account)
+# from dev. Create it once, manually, before the first init; it must be private.
+
+bucket = "fishing-logbook-tfstate-prod"
+
+endpoints = {
+  s3 = "https://<cloudflare-account-id>.r2.cloudflarestorage.com"
+}

@@ -1,7 +1,3 @@
-terraform {
-  required_version = ">= 1.6.0"
-}
-
 module "cognito" {
   source        = "../../modules/cognito"
   environment   = var.environment

@@ -1,8 +1,9 @@
 ---
 paths:
-  - "database/migrations/**/*.sql"
+  - "src/FishingLogBook.Db.Migrations/**/*.sql"
+  - "src/FishingLogBook.Db.Migrations/**/*.cs"
+  - "src/FishingLogBook.Db.Migrations.App/**/*.cs"
   - "src/FishingLogBook.Infrastructure/Persistence/**/*.cs"
-  - "src/FishingLogBook.Infrastructure/Migrations/**/*.cs"
   - "src/FishingLogBook.Application/Contracts/**/*.cs"
 ---
 
@@ -23,29 +24,49 @@ paths:
 - Identifiers are created and queried **quoted** with PascalCase (e.g. `"SystemTest"`,
   `"CreatedOn"`) so PostgreSQL preserves the casing. Be consistent between DDL and queries.
 
-## DbUp migrations (`database/migrations/`)
+## DbUp migrations — two dedicated projects
 
-- SQL scripts live under `database/migrations/` at the repository root.
-- Naming: numeric prefix + description, e.g. `001_CreateSystemTest.sql`,
-  `002_SeedSystemTest.sql`. DbUp runs scripts in ascending name order, once each.
-- Scripts are embedded into `FishingLogBook.Infrastructure` via the csproj link so DbUp
-  works reliably inside the container:
+Migrations are **separate from the API and Infrastructure**, in two projects:
 
-```xml
-<ItemGroup>
-  <EmbeddedResource Include="..\..\database\migrations\*.sql" LinkBase="Migrations" />
-</ItemGroup>
+- **`FishingLogBook.Db.Migrations`** — holds the SQL scripts (embedded) plus the DbUp
+  wiring (`MigrationService`, `FilenameOnlyScriptComparer`, `PostgresDatabaseHelper`).
+- **`FishingLogBook.Db.Migrations.App`** — a console **runner** used to apply migrations
+  locally, in a pipeline, or ad hoc. The API never runs migrations on startup.
+
+### Script folders and naming (mandatory)
+
+Scripts live under numbered folders inside `FishingLogBook.Db.Migrations`:
+
+```text
+01_Tables/     02_SeedData/     03_Routines/     04_Scripts/
 ```
 
-  This yields resource names like `FishingLogBook.Infrastructure.Migrations.001_CreateSystemTest.sql`.
-  A new `.sql` file placed in `database/migrations/` is picked up automatically by the
-  glob — no per-file csproj entry required. If a migration does not run, confirm the file
-  is in that folder and the build embedded it (see `MigrationScriptEmbeddingTests`).
-- Migration execution is explicit and logged (`DbUpDatabaseMigrator` logs via `ILogger`
-  through `LoggerUpgradeLog`). Prefer idempotent seed scripts (`WHERE NOT EXISTS`, etc.).
-- The API may run migrations on startup in `Development`
-  (`Database:RunMigrationsOnStartup`). Production keeps this configurable so migration
-  execution can later be separated from application startup.
+- Filename convention: **`YYYYMMDDHHMM_Description.sql`** (timestamp prefix), e.g.
+  `202608131200_CreateSystemTest.sql`.
+- **Ordering is by filename only, not folder** — `FilenameOnlyScriptComparer`
+  (`WithScriptNameComparer`) strips the assembly/folder prefix and sorts on the timestamp
+  filename, so a script authored earlier always runs before a later one regardless of which
+  numbered folder it sits in. The folder is only a tie-breaker when timestamps are equal.
+- All `*.sql` under the four folders are embedded automatically by the csproj globs — no
+  per-file entry needed. DbUp records applied scripts in its `SchemaVersions` journal and
+  runs each once, `WithTransactionPerScript`.
+- Prefer idempotent seed scripts (`WHERE NOT EXISTS`, etc.). Migration progress is logged
+  via `ILogger` (`MigrationService.DbUpLogger`).
+
+### Running migrations
+
+The runner reads `Db:ConnectionString` (from `appsettings.json`, user secrets, or the
+`Db__ConnectionString` env var):
+
+```bash
+# Interactive (local): preview scripts, then choose to run
+dotnet run --project src/FishingLogBook.Db.Migrations.App
+
+# Non-interactive (CI/pipeline): apply immediately, exit code 0 = success
+dotnet run --project src/FishingLogBook.Db.Migrations.App -- --run
+```
+
+It auto-runs non-interactively when `--run`/`--yes`/`-y` is passed or stdin is redirected.
 
 **SQL style:** PostgreSQL syntax; one logical change per script; parameterised at the
 Dapper layer (seed/DDL scripts are static SQL).
@@ -72,6 +93,7 @@ Dapper layer (seed/DDL scripts are static SQL).
 
 ## Before writing
 
-- **New migration:** read the existing scripts in `database/migrations/` for naming and
-  style; confirm the embedding glob covers your file.
+- **New migration:** add a `YYYYMMDDHHMM_Description.sql` file under the appropriate
+  numbered folder in `FishingLogBook.Db.Migrations` (read the existing scripts for style);
+  the embedding globs pick it up automatically.
 - **New repository:** read `SystemRepository` and `ISystemRepository` before implementing.

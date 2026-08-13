@@ -10,5 +10,5 @@
 # API URLs must be supplied as environment-specific configuration, never hard-coded.
 
 locals {
-  project_name = "fishing-logbook-${var.environment}"
+  resource_prefix = "fishing-logbook-${var.environment}"
 }

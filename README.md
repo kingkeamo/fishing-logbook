@@ -18,14 +18,20 @@ src/
   FishingLogBook.Domain          # Entities, no project dependencies
   FishingLogBook.Shared          # API contracts shared with the Web client
   FishingLogBook.Application     # Application services + contracts (-> Domain, Shared)
-  FishingLogBook.Infrastructure  # Dapper repositories, DbUp migrator (-> Application, Domain)
-  FishingLogBook.Api             # ASP.NET Core minimal API (-> Application, Infrastructure, Shared)
+  FishingLogBook.Infrastructure  # Dapper repositories (-> Application, Domain)
+  FishingLogBook.DependencyInjection # Composition root wiring every layer (-> Application, Infrastructure)
+  FishingLogBook.Db.Migrations       # DbUp SQL scripts (embedded) + migration engine
+  FishingLogBook.Db.Migrations.App   # Console migration runner (local + pipeline)
+  FishingLogBook.Api             # ASP.NET Core minimal API (-> Application, DependencyInjection, Shared)
   FishingLogBook.Web             # Blazor WebAssembly PWA + MudBlazor (-> Shared only)
-tests/
-  FishingLogBook.UnitTests
-  FishingLogBook.IntegrationTests
-  FishingLogBook.WebTests        # bUnit component tests
-database/migrations/             # DbUp SQL scripts (no underscores in table names)
+tests/                           # One test project per production project (+ shared helpers)
+  FishingLogBook.Tests.Common        # Shared builders/fixtures (no tests)
+  FishingLogBook.Shared.Tests
+  FishingLogBook.Application.Tests
+  FishingLogBook.Infrastructure.Tests
+  FishingLogBook.Db.Migrations.Tests
+  FishingLogBook.Api.Tests
+  FishingLogBook.Web.Tests           # bUnit component tests
 infrastructure/terraform/        # Terraform skeleton (manual apply only — see infrastructure/README.md)
 .github/workflows/               # CI: build, test, Terraform validation
 ```
@@ -40,13 +46,17 @@ communicates with the API over HTTP and depends only on `Shared`.
 | Target framework   | .NET 10                                 |
 | API                | ASP.NET Core minimal APIs               |
 | Data access        | Dapper + Npgsql (PostgreSQL)            |
-| Migrations         | DbUp (embedded SQL scripts)             |
+| Migrations         | DbUp (embedded SQL scripts) + console runner |
 | Web                | Blazor WebAssembly PWA + MudBlazor      |
-| Tests              | xUnit, NSubstitute, FluentAssertions, bUnit |
+| Tests              | xUnit, NSubstitute, AwesomeAssertions, bUnit |
 | Infrastructure     | Terraform (manual apply only)           |
 
 Entity Framework is intentionally **not** used. Database table names must not contain
 underscores.
+
+NuGet package versions are managed centrally in [`Directory.Packages.props`](Directory.Packages.props)
+(Central Package Management). Reference packages in `.csproj` files without a `Version`
+attribute, and add or bump versions in that single file.
 
 ## Prerequisites
 
@@ -64,13 +74,38 @@ cd src/FishingLogBook.Api
 dotnet user-secrets set "ConnectionStrings:Postgres" "Host=localhost;Port=5432;Database=fishinglogbook;Username=<user>;Password=<password>"
 ```
 
-In `Development`, the API runs DbUp migrations on startup (`Database:RunMigrationsOnStartup`
-is `true`). In other environments this defaults to `false` so migration execution can be
-separated from application startup later.
+Database migrations are **not** run by the API. They live in `FishingLogBook.Db.Migrations`
+and are applied by the `FishingLogBook.Db.Migrations.App` console runner (see
+[Database migrations](#database-migrations) below).
 
 The Web client reads the API base URL from `wwwroot/appsettings.json`
 (`Api:BaseUrl`). The `Development` override targets the local API at
 `https://localhost:7256`. API URLs are configuration, never hard-coded in source.
+
+## Database migrations
+
+SQL scripts and the DbUp engine live in `FishingLogBook.Db.Migrations`; they are applied by
+the `FishingLogBook.Db.Migrations.App` console runner (the API never migrates on startup).
+
+Scripts live under numbered folders (`01_Tables`, `02_SeedData`, `03_Routines`,
+`04_Scripts`) and are named `YYYYMMDDHHMM_Description.sql`. They are **ordered by filename
+only** (via `FilenameOnlyScriptComparer`), so the timestamp prefix determines run order
+across all folders — a script authored earlier always runs first. DbUp records applied
+scripts in its `SchemaVersions` table and runs each once.
+
+The runner reads `Db:ConnectionString` (user secrets, `Db__ConnectionString` env var, or a
+local `appsettings.Development.json`):
+
+```bash
+cd src/FishingLogBook.Db.Migrations.App
+dotnet user-secrets set "Db:ConnectionString" "Host=localhost;Port=5432;Database=fishinglogbook;Username=<user>;Password=<password>"
+
+# Interactive: preview the pending scripts, then choose to run
+dotnet run
+
+# Non-interactive (CI/pipeline): apply immediately (exit code 0 on success)
+dotnet run -- --run
+```
 
 ## Local vertical slice
 

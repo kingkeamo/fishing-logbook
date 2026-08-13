@@ -10,5 +10,5 @@
 # the PWA. Dev and Prod buckets must be separate.
 
 locals {
-  bucket_name = "fishing-logbook-${var.environment}"
+  resource_prefix = "fishing-logbook-${var.environment}"
 }

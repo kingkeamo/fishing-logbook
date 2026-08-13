@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FishingLogBook.Application\FishingLogBook.Application.csproj" />
-    <ProjectReference Include="..\FishingLogBook.Infrastructure\FishingLogBook.Infrastructure.csproj" />
+    <ProjectReference Include="..\FishingLogBook.DependencyInjection\FishingLogBook.DependencyInjection.csproj" />
     <ProjectReference Include="..\FishingLogBook.Shared\FishingLogBook.Shared.csproj" />
   </ItemGroup>
 
