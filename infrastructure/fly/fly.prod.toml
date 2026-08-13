@@ -1,0 +1,26 @@
+# Prod API on Fly.io. Do not use this file until the prod app has been created manually.
+# Create the app once with flyctl; CI must never create or destroy it.
+#
+#   fly deploy . --config infrastructure/fly/fly.prod.toml
+app = "fishing-logbook-prod-api"
+primary_region = "iad"
+
+[build]
+  # Path is relative to this toml, not the deploy context.
+  dockerfile = "../../Dockerfile"
+
+[env]
+  ASPNETCORE_ENVIRONMENT = "Production"
+  ASPNETCORE_HTTP_PORTS = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

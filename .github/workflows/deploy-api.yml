@@ -1,0 +1,68 @@
+name: deploy-api
+
+# Deploy the API to the already-created Fly app after a merge to main.
+# Never create, destroy, or scale Fly infrastructure from CI.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-api-dev
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore FishingLogBook.sln
+
+      - name: Build
+        run: dotnet build FishingLogBook.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test FishingLogBook.sln --configuration Release --no-build --verbosity normal
+
+  deploy:
+    name: Deploy API to Fly (dev)
+    needs: test
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+        with:
+          version: 0.4.82
+
+      - name: Deploy
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy . --config infrastructure/fly/fly.dev.toml --app fishing-logbook-dev-api --remote-only
+
+      - name: Smoke checks
+        run: |
+          set -euo pipefail
+          for url in \
+            https://fishing-logbook-dev-api.fly.dev/health \
+            https://fishing-logbook-dev-api.fly.dev/api/system/database
+          do
+            echo "Checking ${url}"
+            body="$(curl -fsS --retry 8 --retry-all-errors --retry-delay 5 "${url}")"
+            echo "${body}"
+            echo "${body}" | grep -q '"status":"Healthy"'
+          done

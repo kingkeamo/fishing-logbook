@@ -40,9 +40,9 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/openapi/v1.json", "FishingLogBook API");
     });
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 app.UseCors(webClientCorsPolicy);
 
 app.MapSystemEndpoints();
