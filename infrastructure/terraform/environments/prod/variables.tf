@@ -16,6 +16,12 @@ variable "cloudflare_account_id" {
   default     = ""
 }
 
+variable "r2_location" {
+  type        = string
+  description = "R2 location hint (enam = Eastern North America). Honoured only on first create."
+  default     = "enam"
+}
+
 variable "cognito_callback_urls" {
   type        = list(string)
   description = "Allowed OAuth callback URLs for the PWA app client."

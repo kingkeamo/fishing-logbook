@@ -24,10 +24,13 @@ module "fly" {
 module "r2" {
   source      = "../../modules/r2"
   environment = var.environment
+  account_id  = var.cloudflare_account_id
+  location    = var.r2_location
 }
 
 module "cloudflare_pages" {
   source            = "../../modules/cloudflare-pages"
   environment       = var.environment
+  account_id        = var.cloudflare_account_id
   production_branch = var.pages_production_branch
 }

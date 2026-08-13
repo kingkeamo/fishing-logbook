@@ -1,14 +1,29 @@
-# Cloudflare Pages module (skeleton).
+# Cloudflare Pages project for the Blazor WASM PWA (one per environment).
 #
-# This module will describe the FishingLogBook PWA hosting project on Cloudflare Pages
-# for a single environment. It intentionally declares NO resources yet.
+# Direct upload: omit `source` so GitHub Actions (later) can publish pre-built static
+# files with wrangler. Cloudflare does not build the .NET app. Creating this resource
+# does not deploy the PWA; the project will exist empty until the first upload.
 #
-# Planned resources (added only when explicitly approved):
-#   - cloudflare_pages_project
-#
-# Prefer distinct Cloudflare Pages projects (or clearly isolated targets) per environment.
-# API URLs must be supplied as environment-specific configuration, never hard-coded.
+# API URLs are baked into wwwroot/appsettings at publish time, not Cloudflare env vars.
+
+terraform {
+  required_providers {
+    cloudflare = {
+      source = "cloudflare/cloudflare"
+    }
+  }
+}
 
 locals {
   resource_prefix = "fishing-logbook-${var.environment}"
+}
+
+resource "cloudflare_pages_project" "web" {
+  account_id        = var.account_id
+  name              = local.resource_prefix
+  production_branch = var.production_branch
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }

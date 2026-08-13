@@ -7,6 +7,9 @@
 
 environment = "dev"
 
+# cloudflare_account_id = "<from dash.cloudflare.com → account ID>"
+# r2_location           = "enam"
+
 # cognito_callback_urls = ["https://<your-dev-web-domain>/authentication/login-callback"]
 # cognito_logout_urls   = ["https://<your-dev-web-domain>/"]
 

@@ -1,9 +1,9 @@
 # Adding Resources to Terraform
 
-All Terraform lives under `infrastructure/terraform/`. Most modules are still
-**skeletons** (naming locals, no cloud resources). Neon defines `neon_project`. Add
-further resources deliberately, one at a time, and only when explicitly approved. Read
-`.claude/rules/terraform.md` first.
+All Terraform lives under `infrastructure/terraform/`. Cognito and Fly are still
+**skeletons**. Neon (`neon_project`), R2 (`cloudflare_r2_bucket` photos), and Pages
+(`cloudflare_pages_project`) are defined. Add further resources deliberately, one at a
+time, and only when explicitly approved. Read `.claude/rules/terraform.md` first.
 
 ## Step 1 — Pick the module
 

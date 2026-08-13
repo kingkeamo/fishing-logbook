@@ -40,11 +40,16 @@ output "fly_app_name" {
 }
 
 output "r2_bucket_name" {
-  description = "Planned R2 bucket name."
+  description = "R2 bucket name for catch photographs."
   value       = module.r2.bucket_name
 }
 
 output "cloudflare_pages_project_name" {
-  description = "Planned Cloudflare Pages project name."
+  description = "Cloudflare Pages project name."
   value       = module.cloudflare_pages.project_name
+}
+
+output "cloudflare_pages_subdomain" {
+  description = "Cloudflare Pages subdomain."
+  value       = module.cloudflare_pages.subdomain
 }

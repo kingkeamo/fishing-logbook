@@ -1,9 +1,9 @@
 # FishingLogBook Infrastructure
 
 Infrastructure for FishingLogBook is defined with **Terraform** and is applied
-**manually only**. Most modules are still skeletons (naming only). Neon currently
-defines `neon_project`. Further resources are added deliberately, one at a time, only
-when explicitly approved.
+**manually only**. Neon (`neon_project`), R2 photos (`cloudflare_r2_bucket`), and
+Pages (`cloudflare_pages_project`) are defined. Cognito and Fly remain skeletons.
+Further resources are added deliberately, one at a time, only when explicitly approved.
 
 ## ⚠️ Cost and safety warning
 
@@ -46,7 +46,7 @@ infrastructure/
 │   └── fly.prod.toml
 └── terraform/
     ├── adding-resources-to-terraform.md
-    ├── modules/                       # neon (neon_project); cognito/fly/r2/pages naming only
+    ├── modules/                       # neon, r2 (photos), pages; cognito/fly naming only
     └── environments/
         ├── dev/
         └── prod/
@@ -130,6 +130,34 @@ Terraform outputs into git or CI logs.
 
 Do not apply `environments/prod` until you are ready to create a **separate** Neon
 project. Prod must never point at the Dev database.
+
+## Cloudflare R2 (photos) and Pages
+
+These are **not** the Terraform state bucket. Photo storage is `fishing-logbook-dev`
+(private). State stays in a separate, manually created bucket (`backend.hcl`).
+
+**R2** is S3-compatible object storage for catch photos. The bucket is private; the PWA
+must never get R2 keys. Uploads will use short-lived API-issued URLs later.
+
+**Pages** hosts the Blazor WASM PWA as static files. Terraform creates a **direct-upload**
+project (no Git build). The site stays empty until a later `wrangler pages deploy` /
+`deploy-web.yml`. API URLs are baked into `wwwroot/appsettings` at publish time.
+
+1. Create an API token (My Profile → API Tokens) with **Workers R2 Storage:Edit** and
+   **Cloudflare Pages:Edit**. Set `CLOUDFLARE_API_TOKEN`.
+2. Copy the account ID from the Cloudflare dashboard sidebar into `terraform.tfvars`
+   as `cloudflare_account_id` (never commit that file).
+3. Plan in `environments/dev`. Expect **2 to add** (bucket + Pages project). Neon should
+   show no change. Abort if anything shows destroy or replace.
+
+```powershell
+$env:CLOUDFLARE_API_TOKEN = "<token>"
+cd C:\git\fishing-logbook\infrastructure\terraform\environments\dev
+terraform plan -out dev.tfplan
+terraform apply dev.tfplan
+```
+
+Do not apply prod until you want a separate bucket and Pages project.
 
 ## Manual deployment process
 
