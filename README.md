@@ -127,12 +127,19 @@ API:      Online
 Database: Online   (once PostgreSQL is configured and migrated)
 ```
 
+Use the translate icon in the app bar to switch between English and French. The choice is
+stored in the browser. The database seed name is not translated (it comes from PostgreSQL).
+
 The API exposes:
 
 - `GET /health` — liveness, returns `{ "status": "Healthy" }`
 - `GET /api/system/database` — performs a real query against the `SystemTest` table and
   returns the seeded record. Returns HTTP 503 if the database cannot be reached (no faked
   health).
+
+In Development, starting the API over HTTPS also opens Swagger UI at
+`https://localhost:7256/swagger` (OpenAPI document at `/openapi/v1.json`). Swagger UI is
+not enabled outside Development.
 
 ## Build and test
 

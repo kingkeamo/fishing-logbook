@@ -1,8 +1,10 @@
 using FishingLogBook.Web;
 using FishingLogBook.Web.Configuration;
+using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MudBlazor;
 using MudBlazor.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -18,6 +20,11 @@ var apiBaseAddress = string.IsNullOrWhiteSpace(apiConfig.BaseUrl)
 builder.Services.AddSingleton(apiConfig);
 builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseAddress) });
 builder.Services.AddScoped<ISystemStatusClient, SystemStatusClient>();
+builder.Services.AddLocalization();
+builder.Services.AddScoped<ICultureService, CultureService>();
 builder.Services.AddMudServices();
+builder.Services.AddTransient<MudLocalizer, FishingLogBookMudLocalizer>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+await host.Services.GetRequiredService<ICultureService>().InitializeAsync();
+await host.RunAsync();

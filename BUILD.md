@@ -346,8 +346,11 @@ The initial PWA must include:
 - Dark theme
 - Mobile-first layout
 - Responsive desktop layout
+- Localisation (`IStringLocalizer` + `.resx`) for English (`en-GB`) and French (`fr`)
 
 Do not build the full FishingLogBook user interface yet.
+
+UI copy must go through resource keys. Do not hard-code user-visible English in `.razor` files.
 
 ---
 
@@ -360,6 +363,7 @@ Pages/
 Components/
 Layouts/
 Services/
+Localization/
 Offline/
 Models/
 wwwroot/

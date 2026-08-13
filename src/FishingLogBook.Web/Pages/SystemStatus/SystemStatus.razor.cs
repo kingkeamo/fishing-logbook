@@ -1,6 +1,8 @@
+using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Models;
 using FishingLogBook.Web.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Pages.SystemStatus;
 
@@ -19,6 +21,9 @@ public partial class SystemStatus : ComponentBase, IDisposable
 
     [Inject]
     private ISystemStatusClient SystemStatusClient { get; set; } = default!;
+
+    [Inject]
+    private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {

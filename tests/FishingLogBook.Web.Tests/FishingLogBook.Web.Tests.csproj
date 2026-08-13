@@ -11,6 +11,7 @@
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="bunit" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="xunit" />

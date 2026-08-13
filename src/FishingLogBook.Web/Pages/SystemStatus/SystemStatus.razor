@@ -1,22 +1,22 @@
 @page "/"
 
-<PageTitle>FishingLogBook - System Status</PageTitle>
+<PageTitle>@Loc["SystemStatus_PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="status-container pa-4">
     <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
         <MudStack Spacing="1" AlignItems="AlignItems.Center">
             <MudIcon Icon="@Icons.Material.Filled.Phishing" Size="Size.Large" Color="Color.Primary" />
-            <MudText Typo="Typo.h4" Align="Align.Center">FishingLogBook</MudText>
-            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">System status</MudText>
+            <MudText Typo="Typo.h4" Align="Align.Center">@Loc["App_Name"]</MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">@Loc["SystemStatus_Subtitle"]</MudText>
         </MudStack>
 
         <MudPaper Class="pa-4" Elevation="2">
             <MudStack Spacing="2">
-                <StatusRow Label="Web" State="_webStatus" />
+                <StatusRow Id="web" Label="@Loc["Status_Web"]" State="_webStatus" />
                 <MudDivider />
-                <StatusRow Label="API" State="_apiStatus" />
+                <StatusRow Id="api" Label="@Loc["Status_Api"]" State="_apiStatus" />
                 <MudDivider />
-                <StatusRow Label="Database" State="_databaseStatus" DetailText="@_databaseName" />
+                <StatusRow Id="database" Label="@Loc["Status_Database"]" State="_databaseStatus" DetailText="@_databaseName" />
             </MudStack>
         </MudPaper>
 
@@ -27,7 +27,7 @@
                    Disabled="_isChecking"
                    OnClick="RefreshAsync"
                    id="refresh-status-button">
-            Refresh
+            @Loc["Action_Refresh"]
         </MudButton>
     </MudStack>
 </MudContainer>

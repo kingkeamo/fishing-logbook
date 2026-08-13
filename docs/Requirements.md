@@ -73,6 +73,23 @@ Closing or restarting the application must not cause an offline catch to be lost
 
 ---
 
+## 2.3 Localisation
+
+FishingLogBook UI copy must be localisable from the first screens, not retrofitted later.
+
+The PWA is the source of UI language. Translations are bundled with the application so catch recording still works offline.
+
+- Default culture: British English (`en-GB`)
+- First additional language: French (`fr`)
+- Missing translations fall back to English
+- User-generated content (notes, fishery names, reviews) is not translated
+- The API stays language-neutral (codes, ISO timestamps, metric storage). The client formats for display
+- Units (kg vs lb) are a separate user preference and must not be mixed into language resources
+
+Users can choose a language in the application. The choice is remembered on the device. Browser language is used on first visit when it matches a supported language.
+
+---
+
 # 3. User Accounts
 
 Every person using FishingLogBook has a standard User account.
@@ -832,6 +849,7 @@ The MVP includes:
 - Mobile-first experience
 - Installable PWA
 - Offline-first behaviour
+- Localisation infrastructure with English and French UI
 - Synchronisation
 - Role/capability model
 - Basic administration
@@ -853,6 +871,7 @@ The following should be considered during architecture but are not required befo
 - Advanced push notifications
 - Native Android application
 - Native iOS application
+- Complete translation of every future screen into additional languages beyond English and French
 
 These features should not delay delivery of the core FishingLogBook.
 

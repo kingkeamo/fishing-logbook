@@ -34,6 +34,7 @@ Pages/         → routable pages (each significant page in its own folder)
 Components/    → reusable child components
 Layouts/       → layouts (MainLayout)
 Services/      → typed HTTP clients that call the API (I*Client implementations)
+Localization/  → UiStrings.resx, culture service, MudLocalizer
 Offline/       → offline / IndexedDB support (added in the offline milestone)
 Models/        → UI-only models and enums
 Configuration/ → strongly-typed config (e.g. ApiConfig)
@@ -83,6 +84,10 @@ Pages and components call **typed client services**, not `HttpClient` directly.
 - Use MudBlazor components (`MudContainer`, `MudStack`, `MudPaper`, `MudText`, `MudChip`,
   `MudButton`, `MudProgressCircular`, etc.). Follow neighbouring pages.
 - Design mobile-first; verify light and dark mode.
+- **Localisation (mandatory):** user-visible copy uses `IStringLocalizer<UiStrings>`
+  (`@Loc["Key"]`). Add the key to `Localization/UiStrings.resx` (en-GB) and
+  `Localization/UiStrings.fr.resx`. Do not hard-code English in `.razor` files. Keep
+  test selectors on stable `id` values, never on translated text.
 - **Testability:** add stable `id="..."` on primary panels, rows, and buttons
   (e.g. `id="refresh-status-button"`, `id="status-row-database"`).
 - Avoid inline `style="..."` on HTML elements; prefer scoped `.razor.css` or `app.css`.

@@ -1,0 +1,20 @@
+<MudMenu AnchorOrigin="Origin.BottomRight"
+         TransformOrigin="Origin.TopRight">
+    <ActivatorContent>
+        <MudIconButton Icon="@Icons.Material.Filled.Translate"
+                       Color="Color.Inherit"
+                       aria-label="@Loc["Language_Label"]"
+                       id="language-menu-button"
+                       OnClick="@context.ToggleAsync" />
+    </ActivatorContent>
+    <ChildContent>
+        <MudMenuItem OnClick="@(() => SetCultureAsync(CultureNames.English))"
+                     id="language-option-en">
+            @Loc["Language_English"]
+        </MudMenuItem>
+        <MudMenuItem OnClick="@(() => SetCultureAsync(CultureNames.French))"
+                     id="language-option-fr">
+            @Loc["Language_French"]
+        </MudMenuItem>
+    </ChildContent>
+</MudMenu>

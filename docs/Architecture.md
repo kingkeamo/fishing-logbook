@@ -264,6 +264,22 @@ Actual provider pricing must be reviewed periodically rather than copied permane
 
 ---
 
+## Localisation
+
+UI language is a PWA concern.
+
+- `IStringLocalizer<UiStrings>` with `.resx` resources in `FishingLogBook.Web`
+- Default / fallback: `en-GB` (`UiStrings.resx`)
+- French: `UiStrings.fr.resx`
+- Culture is resolved from local storage, then the browser language, then `en-GB`
+- Changing language reloads the PWA so satellite resources load
+- MudBlazor uses a `MudLocalizer` that forwards to the same `IStringLocalizer`
+- New screens must not hard-code user-visible English; add keys to both resource files
+- API error payloads should prefer `errorCode` values that the client localises. Do not localise PostgreSQL data or Swagger
+- ICU data is fully loaded (`BlazorWebAssemblyLoadAllGlobalizationData`) so the PWA can set `en-GB` or `fr` at startup. Blazor WASM does not allow a dynamic culture change with the default reduced ICU dataset.
+
+---
+
 ## Cost Alerts
 
 Where supported, configure billing alerts for:

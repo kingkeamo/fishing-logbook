@@ -7,12 +7,14 @@
 
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudText Typo="Typo.h6">FishingLogBook</MudText>
+        <MudText Typo="Typo.h6">@Loc["App_Name"]</MudText>
         <MudSpacer />
+        <LanguageSwitcher />
         <MudIconButton Icon="@ThemeToggleIcon"
                        Color="Color.Inherit"
                        Edge="Edge.End"
                        OnClick="ToggleDarkMode"
+                       aria-label="@ThemeToggleLabel"
                        id="theme-toggle-button" />
     </MudAppBar>
     <MudMainContent>
