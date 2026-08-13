@@ -18,13 +18,22 @@
     <meta name="theme-color" content="#00695c" />
     <script type="importmap"></script>
     <script>
+        if (location.href.endsWith('?')) {
+            location.replace(location.pathname || '/');
+        }
         window.fishingLogBookCulture = {
-            get: () => localStorage.getItem('fishinglogbook-culture'),
+            get: () => {
+                try { return localStorage.getItem('fishinglogbook-culture'); }
+                catch { return null; }
+            },
             set: (value) => {
-                localStorage.setItem('fishinglogbook-culture', value);
+                try { localStorage.setItem('fishinglogbook-culture', value); } catch { /* ignore */ }
                 document.documentElement.lang = value;
             },
-            browser: () => navigator.language || 'en-GB'
+            browser: () => navigator.language || 'en-GB',
+            reload: () => {
+                location.replace(`${location.origin}${location.pathname || '/'}`);
+            }
         };
         const storedCulture = window.fishingLogBookCulture.get();
         if (storedCulture) {
@@ -49,7 +58,21 @@
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+    <script>
+        (async () => {
+            const epoch = '20260813-loc-reload';
+            try {
+                if (localStorage.getItem('flb-sw-epoch') !== epoch) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(registration => registration.unregister()));
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(key => caches.delete(key)));
+                    localStorage.setItem('flb-sw-epoch', epoch);
+                }
+            } catch { /* ignore */ }
+            navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });
+        })();
+    </script>
 </body>
 
 </html>

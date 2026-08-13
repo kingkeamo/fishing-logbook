@@ -1,0 +1,69 @@
+name: deploy-web
+
+# Deploy the PWA to the already-created Cloudflare Pages project after a merge to main.
+# Never create or delete the Pages project from CI (Terraform owns that).
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-web-dev
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore FishingLogBook.sln
+
+      - name: Build
+        run: dotnet build FishingLogBook.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test FishingLogBook.sln --configuration Release --no-build --verbosity normal
+
+  deploy:
+    name: Deploy PWA to Cloudflare Pages (dev)
+    needs: test
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish Web
+        run: dotnet publish src/FishingLogBook.Web --configuration Release -o artifacts/web
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.86.0'
+          command: pages deploy artifacts/web/wwwroot --project-name fishing-logbook-dev --branch develop
+
+      - name: Smoke check
+        run: |
+          set -euo pipefail
+          url="https://fishing-logbook-dev.pages.dev/"
+          echo "Checking ${url}"
+          body="$(curl -fsS --retry 8 --retry-all-errors --retry-delay 5 "${url}")"
+          echo "${body}" | grep -q "FishingLogBook"

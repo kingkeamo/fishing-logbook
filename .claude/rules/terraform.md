@@ -17,8 +17,9 @@ paths:
 - **Never invent** credentials, account IDs, connection strings, or real resource
   identifiers. Account-specific values are supplied locally; report what is missing
   rather than guessing.
-- Add resources **deliberately, one at a time, only when explicitly approved.** The
-  current modules are skeletons that declare naming locals but no resources yet.
+- Add resources **deliberately, one at a time, only when explicitly approved.** Neon
+  currently defines `neon_project`; R2 defines `cloudflare_r2_bucket` (photos); Pages
+  defines `cloudflare_pages_project`. Cognito and Fly remain skeletons.
 
 ## Stack (who does what)
 

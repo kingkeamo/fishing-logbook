@@ -1,9 +1,9 @@
 # Adding Resources to Terraform
 
-All Terraform lives under `infrastructure/terraform/`. Today the modules are **skeletons**:
-they compute a `resource_prefix` local but declare no cloud resources. Add resources
-deliberately, one at a time, and only when explicitly approved. Read
-`.claude/rules/terraform.md` first.
+All Terraform lives under `infrastructure/terraform/`. Cognito and Fly are still
+**skeletons**. Neon (`neon_project`), R2 (`cloudflare_r2_bucket` photos), and Pages
+(`cloudflare_pages_project`) are defined. Add further resources deliberately, one at a
+time, and only when explicitly approved. Read `.claude/rules/terraform.md` first.
 
 ## Step 1 — Pick the module
 
@@ -23,6 +23,9 @@ If nothing fits, create `modules/<name>/{main,variables,outputs}.tf`.
 ## Step 2 — Add the resource to the module
 
 - Define every input in `variables.tf`; group related resources in one `.tf` file.
+- If the provider is not `hashicorp/*`, the module must declare `required_providers`
+  with that `source` (otherwise Terraform looks for `hashicorp/<name>`). Version
+  pins stay in each environment's `versions.tf`.
 - Derive names from the existing local:
 
 ```hcl

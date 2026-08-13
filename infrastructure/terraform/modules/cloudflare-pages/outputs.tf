@@ -1,4 +1,14 @@
 output "project_name" {
-  description = "Planned Cloudflare Pages project name for this environment."
-  value       = local.resource_prefix
+  description = "Cloudflare Pages project name."
+  value       = cloudflare_pages_project.web.name
+}
+
+output "subdomain" {
+  description = "Cloudflare Pages subdomain (typically <name>.pages.dev)."
+  value       = cloudflare_pages_project.web.subdomain
+}
+
+output "domains" {
+  description = "Custom domains attached to the Pages project."
+  value       = cloudflare_pages_project.web.domains
 }

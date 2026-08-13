@@ -28,10 +28,14 @@ secrets.json
 .env
 .env.*
 
-# Terraform
+# Terraform — never commit state, secrets, plans, or local overrides.
+# .terraform.lock.hcl IS committed (provider version lock).
 **/.terraform/
 *.tfstate
 *.tfstate.*
+.terraform.tfstate.lock.info
+*.tflock
+errored.tfstate
 crash.log
 crash.*.log
 *.tfvars
@@ -41,12 +45,12 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 *.tfplan
+dev.tfplan
+prod.tfplan
 
 # Account-specific backend config (R2 bucket + endpoint); never commit.
 **/backend.hcl
 !**/backend.hcl.example
-
-# NOTE: .terraform.lock.hcl is intentionally committed (provider version lock).
 
 # Node (in case tooling is added later)
 node_modules/

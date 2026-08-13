@@ -1,14 +1,31 @@
-# Cloudflare R2 module (skeleton).
+# Private R2 bucket for catch photographs (one per environment).
 #
-# This module will describe the FishingLogBook R2 bucket used for catch photographs for
-# a single environment. It intentionally declares NO resources yet.
+# This is NOT the Terraform state bucket. State lives in a separate, manually created
+# bucket (see infrastructure/README.md). Destroying this resource deletes stored photos.
 #
-# Planned resources (added only when explicitly approved):
-#   - cloudflare_r2_bucket
-#
-# Buckets must NOT be publicly writable. R2 secret credentials must never be placed in
-# the PWA. Dev and Prod buckets must be separate.
+# The bucket is private: no public access/domain is configured. The PWA must never
+# receive R2 credentials; uploads will use short-lived presigned URLs from the API.
+
+terraform {
+  required_providers {
+    cloudflare = {
+      source = "cloudflare/cloudflare"
+    }
+  }
+}
 
 locals {
   resource_prefix = "fishing-logbook-${var.environment}"
+}
+
+resource "cloudflare_r2_bucket" "photos" {
+  account_id    = var.account_id
+  name          = local.resource_prefix
+  location      = var.location == "" ? null : var.location
+  jurisdiction  = "default"
+  storage_class = "Standard"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }

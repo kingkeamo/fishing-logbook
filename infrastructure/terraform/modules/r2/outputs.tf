@@ -1,4 +1,9 @@
 output "bucket_name" {
-  description = "Planned R2 bucket name for this environment."
-  value       = local.resource_prefix
+  description = "R2 bucket name for catch photographs."
+  value       = cloudflare_r2_bucket.photos.name
+}
+
+output "location" {
+  description = "R2 location hint used when the bucket was created."
+  value       = cloudflare_r2_bucket.photos.location
 }
