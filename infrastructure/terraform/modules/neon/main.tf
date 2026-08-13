@@ -12,5 +12,5 @@
 # Dev and Prod must use separate databases. Never point Development at Production.
 
 locals {
-  project_name = "fishing-logbook-${var.environment}"
+  resource_prefix = "fishing-logbook-${var.environment}"
 }

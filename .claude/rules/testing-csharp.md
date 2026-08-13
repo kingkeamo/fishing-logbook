@@ -1,19 +1,35 @@
 ---
 paths:
-  - "tests/FishingLogBook.UnitTests/**/*.cs"
-  - "tests/FishingLogBook.IntegrationTests/**/*.cs"
+  - "tests/FishingLogBook.Tests.Common/**/*.cs"
+  - "tests/FishingLogBook.Shared.Tests/**/*.cs"
+  - "tests/FishingLogBook.Application.Tests/**/*.cs"
+  - "tests/FishingLogBook.Infrastructure.Tests/**/*.cs"
+  - "tests/FishingLogBook.Db.Migrations.Tests/**/*.cs"
+  - "tests/FishingLogBook.Api.Tests/**/*.cs"
 ---
 
 # C# Testing Conventions (Unit & Integration)
 
 Blazor / bUnit tests are in **`testing-blazor.md`**.
 
-## Test projects
+## Test projects (one per production project)
+
+Each production project has its **own** `FishingLogBook.<Project>.Tests` project; shared
+builders/fixtures live in `FishingLogBook.Tests.Common`. Do **not** add tests to a
+different project's test project.
 
 | Project | Scope | References |
 |---------|-------|------------|
-| `FishingLogBook.UnitTests` | Application services, Domain logic, Shared serialisation, Infrastructure logic that needs no live DB | Domain, Shared, Application, Infrastructure |
-| `FishingLogBook.IntegrationTests` | API endpoints via `WebApplicationFactory<Program>` (repositories mocked — no live DB in CI) | Api, Shared, Application |
+| `FishingLogBook.Tests.Common` | Shared test builders/fixtures — **no tests** (plain class library) | Domain, Shared |
+| `FishingLogBook.Shared.Tests` | DTO / contract serialisation | Shared, Tests.Common |
+| `FishingLogBook.Application.Tests` | Application services | Application, Tests.Common |
+| `FishingLogBook.Infrastructure.Tests` | Infrastructure logic that needs no live DB | Infrastructure, Tests.Common |
+| `FishingLogBook.Db.Migrations.Tests` | Migration ordering (`FilenameOnlyScriptComparer`) and engine helpers | Db.Migrations, Tests.Common |
+| `FishingLogBook.Api.Tests` | API endpoints via `WebApplicationFactory<Program>` (repositories mocked — no live DB in CI) | Api, Shared, Application, Tests.Common |
+
+`Domain`, `DependencyInjection`, and `Db.Migrations.App` have no dedicated test project yet
+(POCOs / wiring / console host). Add one as `FishingLogBook.<Project>.Tests` when they gain
+testable logic.
 
 ## Production code — ask before changing (mandatory)
 
@@ -47,19 +63,41 @@ must fail. If it would not, add assertions.
 
 ## Stack
 
-xUnit + NSubstitute + FluentAssertions (pinned to the last Apache-2.0 release, 7.x) +
-coverlet.collector. Integration tests use `Microsoft.AspNetCore.Mvc.Testing`.
+xUnit + NSubstitute + AwesomeAssertions (the Apache-2.0 fork of FluentAssertions; use
+`using AwesomeAssertions;`) + coverlet.collector. Integration tests use
+`Microsoft.AspNetCore.Mvc.Testing`.
 
 - `Fact` is available via the project's global `Using Include="Xunit"`.
 - Never hand-roll fakes/stubs — use NSubstitute (`Substitute.For<T>()`, `Returns`,
   `Arg.Any<T>()`, `Arg.Is<T>(...)`, `Received()`, `DidNotReceive()`).
 
-## Naming & structure
+## Naming & structure — `WhenTesting` convention (mandatory)
 
-- One test class per type/behaviour under test: `{TypeUnderTest}Tests`.
-- Test methods: `{Method}_Should{ExpectedBehaviour}_When{Condition}`.
-- Mirror the production folder structure under the test project.
-- NSubstitute substitutes are fields on the class (no `[SetUp]`; use the constructor).
+Follow the RefAssured-style `WhenTesting` layout:
+
+- **One folder per system-under-test:** `{Sut}Tests/` (e.g. `SystemStatusServiceTests/`).
+- **Base class** `Base{Sut}Test` in that folder holds the SUT and its NSubstitute
+  dependencies as `protected` fields, constructed in the constructor (no `[SetUp]`):
+
+```csharp
+public class BaseSystemStatusServiceTest
+{
+    protected readonly ISystemRepository SystemRepository = Substitute.For<ISystemRepository>();
+    protected readonly SystemStatusService Sut;
+
+    protected BaseSystemStatusServiceTest()
+    {
+        Sut = new SystemStatusService(SystemRepository);
+    }
+}
+```
+
+- **One class per method/behaviour under test:** `WhenTesting{MethodOrBehaviour}`, inheriting
+  the base (e.g. `WhenTestingGetDatabaseStatusAsync : BaseSystemStatusServiceTest`).
+- **Test methods:** `ItShould{ExpectedOutcome}` — append `_When{Condition}` when one
+  `WhenTesting` class covers several conditions
+  (e.g. `ItShouldReturnDegradedWithNoName_WhenNoRecordExists`).
+- Mirror the production namespace/type under the test project via these folders.
 
 ## Arrange / Act / Assert
 
@@ -71,17 +109,17 @@ Every test method uses exactly these section comments — no other comments:
 // Assert
 ```
 
-## Application service tests (UnitTests)
+## Application service tests (Application.Tests)
 
-- Instantiate the service directly with `Substitute.For<I*Repository>()`.
+- The base test constructs the service with `Substitute.For<I*Repository>()` dependencies.
 - Assert the returned contract/DTO **and** verify the repository was called with the
   expected arguments (`Received(1)` + `Arg.Is<>`), or `DidNotReceive()` for early exits.
+- Build domain inputs with the shared builders from `FishingLogBook.Tests.Common`.
 
-## API integration tests (IntegrationTests)
+## API integration tests (Api.Tests)
 
 - Use a `WebApplicationFactory<Program>` subclass. Override `ConfigureWebHost` to:
-  - set an environment and in-memory config that disables startup migrations
-    (`Database:RunMigrationsOnStartup=false`) and supplies an empty connection string,
+  - set an environment and in-memory config that supplies an empty connection string,
   - replace real repositories (`RemoveAll<ISystemRepository>()` + add a NSubstitute mock)
     so tests never touch a real database.
 - Assert `response.StatusCode` **and** the deserialised body. Cover success and failure

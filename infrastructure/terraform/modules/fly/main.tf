@@ -11,5 +11,5 @@
 # CI must never create, resize or destroy Fly infrastructure.
 
 locals {
-  app_name = "fishing-logbook-api-${var.environment}"
+  resource_prefix = "fishing-logbook-${var.environment}"
 }

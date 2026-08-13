@@ -4,6 +4,18 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "aws_region" {
+  type        = string
+  description = "AWS region for Cognito resources."
+  default     = "us-east-1"
+}
+
+variable "cloudflare_account_id" {
+  type        = string
+  description = "Cloudflare account ID that owns the Pages project and R2 bucket. Account-specific; supply locally, never commit."
+  default     = ""
+}
+
 variable "cognito_callback_urls" {
   type        = list(string)
   description = "Allowed OAuth callback URLs for the PWA app client."

@@ -150,18 +150,22 @@ fishing-logbook/
 ├── src/
 │   ├── FishingLogBook.Api/
 │   ├── FishingLogBook.Application/
+│   ├── FishingLogBook.Db.Migrations/          # DbUp SQL scripts (embedded) + migration engine
+│   ├── FishingLogBook.Db.Migrations.App/      # Console migration runner (local + pipeline)
+│   ├── FishingLogBook.DependencyInjection/    # Composition root (AddFishingLogBook)
 │   ├── FishingLogBook.Domain/
 │   ├── FishingLogBook.Infrastructure/
 │   ├── FishingLogBook.Shared/
 │   └── FishingLogBook.Web/
 │
-├── tests/
-│   ├── FishingLogBook.UnitTests/
-│   ├── FishingLogBook.IntegrationTests/
-│   └── FishingLogBook.WebTests/
-│
-├── database/
-│   └── migrations/
+├── tests/                                     # One test project per production project
+│   ├── FishingLogBook.Tests.Common/           # Shared builders/fixtures (no tests)
+│   ├── FishingLogBook.Shared.Tests/
+│   ├── FishingLogBook.Application.Tests/
+│   ├── FishingLogBook.Infrastructure.Tests/
+│   ├── FishingLogBook.Db.Migrations.Tests/
+│   ├── FishingLogBook.Api.Tests/
+│   └── FishingLogBook.Web.Tests/
 │
 ├── infrastructure/
 │   └── terraform/
@@ -179,9 +183,14 @@ fishing-logbook/
 │
 ├── BUILD.md
 ├── README.md
+├── Directory.Packages.props                   # Central Package Management (versions)
+├── Dockerfile
 ├── .gitignore
 └── FishingLogBook.sln
 ```
+
+> SQL migration scripts live **inside** `FishingLogBook.Db.Migrations` (under numbered
+> folders), not in a top-level `database/` folder.
 
 ---
 
@@ -202,18 +211,25 @@ Create:
 ```text
 FishingLogBook.Api
 FishingLogBook.Application
+FishingLogBook.Db.Migrations
+FishingLogBook.Db.Migrations.App
+FishingLogBook.DependencyInjection
 FishingLogBook.Domain
 FishingLogBook.Infrastructure
 FishingLogBook.Shared
 FishingLogBook.Web
 ```
 
-Create test projects:
+Create test projects (one per production project, plus a shared helper library):
 
 ```text
-FishingLogBook.UnitTests
-FishingLogBook.IntegrationTests
-FishingLogBook.WebTests
+FishingLogBook.Tests.Common
+FishingLogBook.Shared.Tests
+FishingLogBook.Application.Tests
+FishingLogBook.Infrastructure.Tests
+FishingLogBook.Db.Migrations.Tests
+FishingLogBook.Api.Tests
+FishingLogBook.Web.Tests
 ```
 
 Add all projects to:
@@ -221,6 +237,13 @@ Add all projects to:
 ```text
 FishingLogBook.sln
 ```
+
+NuGet package versions are managed centrally via `Directory.Packages.props` (Central
+Package Management) — `.csproj` files reference packages without a `Version` attribute.
+
+Tests use xUnit + NSubstitute + **AwesomeAssertions** (the Apache-2.0 fork of
+FluentAssertions) + bUnit, and follow the `WhenTesting` naming convention documented in
+`.claude/rules/testing-csharp.md`.
 
 ---
 
@@ -240,14 +263,29 @@ FishingLogBook.Infrastructure
     -> FishingLogBook.Application
     -> FishingLogBook.Domain
 
-FishingLogBook.Api
+FishingLogBook.DependencyInjection   (composition root)
     -> FishingLogBook.Application
     -> FishingLogBook.Infrastructure
+
+FishingLogBook.Db.Migrations         (standalone; embeds SQL scripts)
+    no project dependencies
+
+FishingLogBook.Db.Migrations.App     (console migration runner)
+    -> FishingLogBook.Db.Migrations
+
+FishingLogBook.Api
+    -> FishingLogBook.Application
+    -> FishingLogBook.DependencyInjection
     -> FishingLogBook.Shared
 
 FishingLogBook.Web
     -> FishingLogBook.Shared only
 ```
+
+The API composes its services through the `FishingLogBook.DependencyInjection` composition
+root (`AddFishingLogBook`) rather than referencing `Infrastructure` directly. Migrations are
+a standalone concern (`FishingLogBook.Db.Migrations` + runner) and are not referenced by the
+API.
 
 The Blazor WebAssembly project must NOT reference:
 
@@ -430,28 +468,47 @@ Name: FishingLogBook database online
 
 # 15. DbUp
 
-Use DbUp for migrations.
+Use DbUp for migrations, in **two dedicated projects** (separate from the API and
+Infrastructure):
 
-Migration scripts live under:
+- `FishingLogBook.Db.Migrations` — holds the SQL scripts (embedded) and the DbUp engine
+  (`MigrationService`, `FilenameOnlyScriptComparer`, `PostgresDatabaseHelper`).
+- `FishingLogBook.Db.Migrations.App` — a console runner used to apply migrations locally,
+  in a pipeline, or ad hoc.
+
+Scripts live under numbered folders inside `FishingLogBook.Db.Migrations`:
 
 ```text
-database/migrations/
+01_Tables/     02_SeedData/     03_Routines/     04_Scripts/
 ```
 
-Initial scripts should resemble:
+Filename convention: `YYYYMMDDHHMM_Description.sql`. Initial scripts:
 
 ```text
-001_CreateSystemTest.sql
-002_SeedSystemTest.sql
+01_Tables/202608131200_CreateSystemTest.sql
+02_SeedData/202608131201_SeedSystemTest.sql
 ```
+
+Scripts are **ordered by filename only** (via `FilenameOnlyScriptComparer` /
+`WithScriptNameComparer`), so the timestamp prefix determines run order across all folders —
+a script authored earlier always runs first, regardless of folder. DbUp records applied
+scripts in its `SchemaVersions` journal and runs each once.
 
 Do not use EF Core migrations.
 
-Migration execution must be explicit and logged.
+Migration execution must be explicit and logged. The **API does not run migrations on
+startup** — migrations are applied by the runner:
 
-The API may run migrations on startup in Dev initially if this remains simple and safe.
+```text
+# Interactive (local)
+dotnet run --project src/FishingLogBook.Db.Migrations.App
 
-Production migration behaviour must remain configurable so we can later separate migration execution from application startup if necessary.
+# Non-interactive (CI/pipeline)
+dotnet run --project src/FishingLogBook.Db.Migrations.App -- --run
+```
+
+The runner reads `Db:ConnectionString` (user secrets, `Db__ConnectionString` env var, or a
+local `appsettings.Development.json`).
 
 ---
 
@@ -1056,11 +1113,13 @@ The first substantial implementation commit should contain:
 
 - Solution structure
 - Projects
+- Central Package Management (`Directory.Packages.props`)
+- Dependency injection composition root (`FishingLogBook.DependencyInjection`)
 - Buildable Web PWA
 - Buildable API
 - Shared project
-- Initial test projects
-- DbUp setup
+- Per-project test projects + shared `Tests.Common` helpers
+- DbUp migration projects (library + console runner)
 - Initial SQL migrations
 - Dockerfile
 - Terraform structure

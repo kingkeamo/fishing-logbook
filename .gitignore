@@ -42,6 +42,12 @@ override.tf.json
 *_override.tf.json
 *.tfplan
 
+# Account-specific backend config (R2 bucket + endpoint); never commit.
+**/backend.hcl
+!**/backend.hcl.example
+
+# NOTE: .terraform.lock.hcl is intentionally committed (provider version lock).
+
 # Node (in case tooling is added later)
 node_modules/
 

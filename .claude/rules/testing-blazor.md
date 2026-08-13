@@ -1,6 +1,6 @@
 ---
 paths:
-  - "tests/FishingLogBook.WebTests/**/*.cs"
+  - "tests/FishingLogBook.Web.Tests/**/*.cs"
   - "src/FishingLogBook.Web/**/*.razor"
   - "src/FishingLogBook.Web/**/*.razor.cs"
 ---
@@ -14,7 +14,7 @@ Production Blazor patterns are in **`blazor.md`**. Server-side C# test rules are
 
 When you add or change production code under `src/FishingLogBook.Web/` (`.razor`,
 `.razor.cs`, `Services/`, `Models/`, `Configuration/`), you must **in the same task** add
-or update tests in `tests/FishingLogBook.WebTests/`. Application/Api tests do not replace
+or update tests in `tests/FishingLogBook.Web.Tests/`. Application/Api tests do not replace
 Web tests for code in `FishingLogBook.Web`.
 
 ## Production code — ask before changing (mandatory)
@@ -34,8 +34,8 @@ that would break if the UI logic changed:
 
 ## Stack
 
-- **bUnit 2.x** (`BunitContext`) + **xUnit** + **NSubstitute** + **FluentAssertions**.
-- Test project `FishingLogBook.WebTests` references `FishingLogBook.Web` and
+- **bUnit 2.x** (`BunitContext`) + **xUnit** + **NSubstitute** + **AwesomeAssertions**.
+- Test project `FishingLogBook.Web.Tests` references `FishingLogBook.Web` and
   `FishingLogBook.Shared`.
 
 ## MudBlazor + bUnit disposal (important)
@@ -44,33 +44,42 @@ MudBlazor registers services that are **`IAsyncDisposable`-only** (e.g.
 `KeyInterceptorService`). bUnit's synchronous context disposal throws on these. Therefore:
 
 - Do **not** inherit `BunitContext` on the test class (xUnit disposes it synchronously).
-- Instead, create the context **inside each `async Task` test** with `await using`, so it
-  is disposed asynchronously:
+- Instead, put a `CreateContext` factory on the `Base{Component}Test` class and create the
+  context **inside each `async Task` test** with `await using`, so it is disposed
+  asynchronously:
 
 ```csharp
-private static BunitContext CreateContext(ISystemStatusClient client)
+// SystemStatusTests/BaseSystemStatusTest.cs
+public class BaseSystemStatusTest
 {
-    var context = new BunitContext();
-    context.JSInterop.Mode = JSRuntimeMode.Loose;
-    context.Services.AddMudServices();
-    context.Services.AddSingleton(client);
-    return context;
+    protected static BunitContext CreateContext(ISystemStatusClient client)
+    {
+        var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+        context.Services.AddMudServices();
+        context.Services.AddSingleton(client);
+        return context;
+    }
 }
 
-[Fact]
-public async Task ShouldShowOnline_WhenApiAndDatabaseAreHealthy()
+// SystemStatusTests/WhenTestingRender.cs
+public class WhenTestingRender : BaseSystemStatusTest
 {
-    // Arrange
-    var client = Substitute.For<ISystemStatusClient>();
-    client.GetApiHealthAsync(Arg.Any<CancellationToken>()).Returns(new HealthResponse("Healthy"));
-    await using var context = CreateContext(client);
+    [Fact]
+    public async Task ItShouldShowOnline_WhenApiAndDatabaseAreHealthy()
+    {
+        // Arrange
+        var client = Substitute.For<ISystemStatusClient>();
+        client.GetApiHealthAsync(Arg.Any<CancellationToken>()).Returns(new HealthResponse("Healthy"));
+        await using var context = CreateContext(client);
 
-    // Act
-    var cut = context.Render<SystemStatus>();
+        // Act
+        var cut = context.Render<SystemStatus>();
 
-    // Assert
-    cut.WaitForAssertion(() => cut.Find("#status-row-api").TextContent.Should().Contain("Online"));
-    await client.Received(1).GetApiHealthAsync(Arg.Any<CancellationToken>());
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#status-row-api").TextContent.Should().Contain("Online"));
+        await client.Received(1).GetApiHealthAsync(Arg.Any<CancellationToken>());
+    }
 }
 ```
 
@@ -82,10 +91,13 @@ public async Task ShouldShowOnline_WhenApiAndDatabaseAreHealthy()
 - Render with `context.Render<TComponent>(...)`; query with stable `id` selectors; use
   `WaitForAssertion` for async initialisation.
 
-## Naming & AAA
+## Naming & AAA (WhenTesting convention)
 
-- Class `{Component}Tests`; methods `Should{Behaviour}_When{Condition}`.
+- Folder `{Component}Tests/` with a `Base{Component}Test` (holds `CreateContext`) and one
+  `WhenTesting{Behaviour}` class per behaviour, inheriting the base.
+- Test methods: `ItShould{Behaviour}_When{Condition}`.
 - Every test uses exactly the `// Arrange` / `// Act` / `// Assert` section comments.
+- See **`testing-csharp.md`** for the full `WhenTesting` convention.
 
 ## Dependency assertions (every test)
 
