@@ -1,0 +1,18 @@
+<MudStack Row="true"
+          AlignItems="AlignItems.Center"
+          Justify="Justify.SpaceBetween"
+          Class="status-row"
+          id="@RowId">
+    <MudText Typo="Typo.body1">@Label</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        @if (!string.IsNullOrWhiteSpace(DetailText))
+        {
+            <MudText Typo="Typo.caption" Class="status-row-detail">@DetailText</MudText>
+        }
+        @if (State == StatusState.Checking)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Default" />
+        }
+        <MudChip T="string" Color="StatusColor" Variant="Variant.Filled" Size="Size.Small">@StatusText</MudChip>
+    </MudStack>
+</MudStack>

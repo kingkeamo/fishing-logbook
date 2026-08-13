@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>fishinglogbook-api</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FishingLogBook.Application\FishingLogBook.Application.csproj" />
+    <ProjectReference Include="..\FishingLogBook.Infrastructure\FishingLogBook.Infrastructure.csproj" />
+    <ProjectReference Include="..\FishingLogBook.Shared\FishingLogBook.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

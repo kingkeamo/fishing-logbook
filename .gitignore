@@ -1,0 +1,50 @@
+# .NET build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test results / coverage
+[Tt]est[Rr]esults/
+TestResults/
+coveragereport/
+*.trx
+*.coverage
+*.cobertura.xml
+
+# Rider / Visual Studio / VS Code
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+
+# User secrets and local environment
+secrets.json
+*.env
+.env
+.env.*
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+*.tfplan
+
+# Node (in case tooling is added later)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

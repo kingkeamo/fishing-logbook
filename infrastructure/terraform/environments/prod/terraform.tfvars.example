@@ -1,0 +1,21 @@
+# Copy this file to terraform.tfvars and adjust the values for your Prod environment.
+# Do NOT commit terraform.tfvars (it is gitignored).
+#
+# Provider credentials (AWS, Neon, Fly.io, Cloudflare) must be supplied through
+# environment variables or your local provider configuration. NEVER commit credentials
+# or real resource identifiers to this repository.
+#
+# Production infrastructure must only ever be created/modified deliberately and manually
+# after reviewing the complete `terraform plan`. Never from CI.
+
+environment = "prod"
+
+# cognito_callback_urls = ["https://<your-prod-web-domain>/authentication/login-callback"]
+# cognito_logout_urls   = ["https://<your-prod-web-domain>/"]
+
+# neon_region = "<neon-region>"
+
+# fly_region  = "<fly-region>"
+# fly_vm_size = "shared-cpu-1x"
+
+# pages_production_branch = "main"
