@@ -133,7 +133,7 @@ Terraform, manually applied only.
 The expected local repository will be:
 
 ```text
-C:\git\evolve\fishing-logbook
+C:\git\fishing-logbook
 ```
 
 Do not make code depend on this absolute path.
@@ -168,6 +168,7 @@ fishing-logbook/
 │   └── FishingLogBook.Web.Tests/
 │
 ├── infrastructure/
+│   ├── fly/                                   # flyctl app config (not Terraform)
 │   └── terraform/
 │       ├── modules/
 │       └── environments/

@@ -33,7 +33,8 @@ tests/                           # One test project per production project (+ sh
   FishingLogBook.Api.Tests
   FishingLogBook.Web.Tests           # bUnit component tests
 infrastructure/terraform/        # Terraform skeleton (manual apply only — see infrastructure/README.md)
-.github/workflows/               # CI: build, test, Terraform validation
+infrastructure/fly/              # Fly.io API config (flyctl, not Terraform)
+.github/workflows/               # CI: build, test, Terraform validation, API deploy on main
 ```
 
 The Blazor WebAssembly client must never reference `Application` or `Infrastructure`; it
