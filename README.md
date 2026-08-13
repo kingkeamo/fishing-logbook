@@ -33,7 +33,8 @@ tests/                           # One test project per production project (+ sh
   FishingLogBook.Api.Tests
   FishingLogBook.Web.Tests           # bUnit component tests
 infrastructure/terraform/        # Terraform skeleton (manual apply only — see infrastructure/README.md)
-.github/workflows/               # CI: build, test, Terraform validation
+infrastructure/fly/              # Fly.io API config (flyctl, not Terraform)
+.github/workflows/               # CI: build, test, Terraform validation, API deploy on main
 ```
 
 The Blazor WebAssembly client must never reference `Application` or `Infrastructure`; it
@@ -127,12 +128,19 @@ API:      Online
 Database: Online   (once PostgreSQL is configured and migrated)
 ```
 
+Use the translate icon in the app bar to switch between English and French. The choice is
+stored in the browser. The database seed name is not translated (it comes from PostgreSQL).
+
 The API exposes:
 
 - `GET /health` — liveness, returns `{ "status": "Healthy" }`
 - `GET /api/system/database` — performs a real query against the `SystemTest` table and
   returns the seeded record. Returns HTTP 503 if the database cannot be reached (no faked
   health).
+
+In Development, starting the API over HTTPS also opens Swagger UI at
+`https://localhost:7256/swagger` (OpenAPI document at `/openapi/v1.json`). Swagger UI is
+not enabled outside Development.
 
 ## Build and test
 
@@ -146,6 +154,39 @@ dotnet test FishingLogBook.sln
 The API has a provider-neutral multi-stage [`Dockerfile`](Dockerfile) that listens on
 port `8080`, runs as a non-root user, and takes all configuration from environment
 variables. No secrets are embedded in the image.
+
+## Fly.io (Dev API)
+
+Fly apps are created and deployed with **flyctl**, not Terraform. Config lives in
+[`infrastructure/fly/`](infrastructure/fly/) next to Terraform. Use a **new** app
+(`fishing-logbook-dev-api`); do not reuse `tournament-app-dev`.
+
+```powershell
+fly auth login
+# or: $env:FLY_API_TOKEN = "<token from tournament-app secrets.tfvars>"
+
+fly apps create fishing-logbook-dev-api --org personal
+
+fly secrets set ConnectionStrings__Postgres="<neon npgsql string>" --app fishing-logbook-dev-api
+
+# Always from the repository root (Docker context must include src/)
+fly deploy . --config infrastructure/fly/fly.dev.toml --app fishing-logbook-dev-api
+```
+
+Merges to `main` run `.github/workflows/deploy-api.yml`: tests first, then the same
+`fly deploy` against the **already-created** app. CI must never create, resize, or
+destroy Fly apps. Set `FLY_API_TOKEN` on the GitHub `dev` environment (see
+[`infrastructure/fly/README.md`](infrastructure/fly/README.md)).
+
+Then check:
+
+```text
+https://fishing-logbook-dev-api.fly.dev/health
+https://fishing-logbook-dev-api.fly.dev/api/system/database
+```
+
+The database endpoint only works after migrations have been applied to Neon. Swagger is
+not served on Fly (Production). Machines auto-stop when idle (`min_machines_running = 0`).
 
 ## Infrastructure
 

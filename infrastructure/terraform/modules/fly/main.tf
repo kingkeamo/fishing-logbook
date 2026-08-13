@@ -1,11 +1,7 @@
-# Fly.io module (skeleton).
+# Fly.io module (naming skeleton only).
 #
-# This module will describe the FishingLogBook API application on Fly.io for a single
-# environment. It intentionally declares NO resources yet.
-#
-# Planned resources (added only when explicitly approved):
-#   - fly_app
-#   - fly_machine (start with the smallest practical VM; no autoscaling initially)
+# Actual Fly config lives in infrastructure/fly/ (fly.dev.toml / fly.prod.toml) and is
+# applied with flyctl, not this Terraform module. See infrastructure/fly/README.md.
 #
 # GitHub Actions may deploy new versions to an ALREADY-EXISTING Fly app via flyctl.
 # CI must never create, resize or destroy Fly infrastructure.

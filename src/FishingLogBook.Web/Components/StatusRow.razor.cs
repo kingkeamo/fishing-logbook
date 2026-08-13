@@ -1,11 +1,17 @@
+using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 
 namespace FishingLogBook.Web.Components;
 
 public partial class StatusRow : ComponentBase
 {
+    [Parameter]
+    [EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
     [Parameter]
     [EditorRequired]
     public string Label { get; set; } = string.Empty;
@@ -16,13 +22,10 @@ public partial class StatusRow : ComponentBase
     [Parameter]
     public string? DetailText { get; set; }
 
-    private string RowId
-    {
-        get
-        {
-            return $"status-row-{Label.ToLowerInvariant()}";
-        }
-    }
+    [Inject]
+    private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    private string RowId => $"status-row-{Id}";
 
     private Color StatusColor
     {
@@ -44,10 +47,10 @@ public partial class StatusRow : ComponentBase
         {
             return State switch
             {
-                StatusState.Online => "Online",
-                StatusState.Degraded => "Degraded",
-                StatusState.Offline => "Offline",
-                _ => "Checking..."
+                StatusState.Online => Loc["Status_Online"],
+                StatusState.Degraded => Loc["Status_Degraded"],
+                StatusState.Offline => Loc["Status_Offline"],
+                _ => Loc["Status_Checking"]
             };
         }
     }

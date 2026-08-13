@@ -1,7 +1,9 @@
 using Bunit;
+using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
+using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.SystemStatusTests;
 
@@ -14,7 +16,10 @@ public class BaseSystemStatusTest
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
+        context.Services.AddLocalization();
         context.Services.AddSingleton(statusClient);
+        context.Services.AddSingleton(Substitute.For<ICultureService>());
+        context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
 
         return context;
     }

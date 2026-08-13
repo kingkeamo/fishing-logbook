@@ -38,24 +38,18 @@ No CI/CD workflow may create, resize, modify or destroy cloud infrastructure.
 ## Layout
 
 ```text
-infrastructure/terraform/
-├── adding-resources-to-terraform.md   # how to add resources safely
-├── modules/
-│   ├── cognito/            # Amazon Cognito user pool + app client (PKCE, no secret)
-│   ├── neon/               # Neon PostgreSQL project/branch/database
-│   ├── fly/                # Fly.io API app (naming only; deployed via flyctl, not TF)
-│   ├── r2/                 # Cloudflare R2 bucket for catch photographs
-│   └── cloudflare-pages/   # Cloudflare Pages project for the PWA
-└── environments/
-    ├── dev/
-    │   ├── main.tf              # module calls
-    │   ├── versions.tf         # required_version + pinned providers + provider blocks
-    │   ├── backend.tf          # Cloudflare R2 (S3-compatible) remote state
-    │   ├── variables.tf
-    │   ├── outputs.tf
-    │   ├── backend.hcl.example       # copy to backend.hcl (gitignored)
-    │   └── terraform.tfvars.example  # copy to terraform.tfvars (gitignored)
-    └── prod/                    # same layout as dev
+infrastructure/
+├── README.md
+├── fly/                               # Fly.io API apps (flyctl, not Terraform)
+│   ├── README.md
+│   ├── fly.dev.toml
+│   └── fly.prod.toml
+└── terraform/
+    ├── adding-resources-to-terraform.md
+    ├── modules/                       # cognito, neon, fly (naming only), r2, cloudflare-pages
+    └── environments/
+        ├── dev/
+        └── prod/
 ```
 
 Development and Production are separate environment directories with separate state.

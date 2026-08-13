@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App_Name" xml:space="preserve">
+    <value>FishingLogBook</value>
+  </data>
+  <data name="SystemStatus_PageTitle" xml:space="preserve">
+    <value>FishingLogBook - État du système</value>
+  </data>
+  <data name="SystemStatus_Subtitle" xml:space="preserve">
+    <value>État du système</value>
+  </data>
+  <data name="Status_Web" xml:space="preserve">
+    <value>Web</value>
+  </data>
+  <data name="Status_Api" xml:space="preserve">
+    <value>API</value>
+  </data>
+  <data name="Status_Database" xml:space="preserve">
+    <value>Base de données</value>
+  </data>
+  <data name="Status_Online" xml:space="preserve">
+    <value>En ligne</value>
+  </data>
+  <data name="Status_Offline" xml:space="preserve">
+    <value>Hors ligne</value>
+  </data>
+  <data name="Status_Degraded" xml:space="preserve">
+    <value>Dégradé</value>
+  </data>
+  <data name="Status_Checking" xml:space="preserve">
+    <value>Vérification...</value>
+  </data>
+  <data name="Action_Refresh" xml:space="preserve">
+    <value>Actualiser</value>
+  </data>
+  <data name="NotFound_PageTitle" xml:space="preserve">
+    <value>FishingLogBook - Page introuvable</value>
+  </data>
+  <data name="NotFound_Title" xml:space="preserve">
+    <value>Page introuvable</value>
+  </data>
+  <data name="NotFound_Message" xml:space="preserve">
+    <value>Le contenu que vous recherchez n'existe pas.</value>
+  </data>
+  <data name="Action_GoHome" xml:space="preserve">
+    <value>Retour à l'accueil</value>
+  </data>
+  <data name="Theme_ToggleLight" xml:space="preserve">
+    <value>Passer au thème clair</value>
+  </data>
+  <data name="Theme_ToggleDark" xml:space="preserve">
+    <value>Passer au thème sombre</value>
+  </data>
+  <data name="Language_Label" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Language_French" xml:space="preserve">
+    <value>Français</value>
+  </data>
+</root>

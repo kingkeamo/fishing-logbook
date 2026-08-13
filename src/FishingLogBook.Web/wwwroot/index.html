@@ -17,6 +17,20 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
     <meta name="theme-color" content="#00695c" />
     <script type="importmap"></script>
+    <script>
+        window.fishingLogBookCulture = {
+            get: () => localStorage.getItem('fishinglogbook-culture'),
+            set: (value) => {
+                localStorage.setItem('fishinglogbook-culture', value);
+                document.documentElement.lang = value;
+            },
+            browser: () => navigator.language || 'en-GB'
+        };
+        const storedCulture = window.fishingLogBookCulture.get();
+        if (storedCulture) {
+            document.documentElement.lang = storedCulture;
+        }
+    </script>
 </head>
 
 <body>
