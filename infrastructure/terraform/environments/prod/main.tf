@@ -6,9 +6,12 @@ module "cognito" {
 }
 
 module "neon" {
-  source      = "../../modules/neon"
-  environment = var.environment
-  region      = var.neon_region
+  source                    = "../../modules/neon"
+  environment               = var.environment
+  region                    = var.neon_region
+  org_id                    = var.neon_org_id
+  pg_version                = var.neon_pg_version
+  history_retention_seconds = var.neon_history_retention_seconds
 }
 
 module "fly" {

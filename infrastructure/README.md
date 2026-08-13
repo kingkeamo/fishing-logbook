@@ -1,9 +1,9 @@
 # FishingLogBook Infrastructure
 
 Infrastructure for FishingLogBook is defined with **Terraform** and is applied
-**manually only**. This directory currently contains a **skeleton**: module and
-environment structure with variables and outputs, but **no cloud resources are defined
-yet**. Resources are added deliberately, one at a time, only when explicitly approved.
+**manually only**. Most modules are still skeletons (naming only). Neon currently
+defines `neon_project`. Further resources are added deliberately, one at a time, only
+when explicitly approved.
 
 ## ⚠️ Cost and safety warning
 
@@ -46,7 +46,7 @@ infrastructure/
 │   └── fly.prod.toml
 └── terraform/
     ├── adding-resources-to-terraform.md
-    ├── modules/                       # cognito, neon, fly (naming only), r2, cloudflare-pages
+    ├── modules/                       # neon (neon_project); cognito/fly/r2/pages naming only
     └── environments/
         ├── dev/
         └── prod/
@@ -96,6 +96,40 @@ identifiers.** Each environment provides a `terraform.tfvars.example`; copy it t
 Some providers require manual account setup before Terraform can manage resources (an AWS
 account/region, a Neon account, a Fly.io organisation, and a Cloudflare account with R2
 enabled). Document such manual prerequisites here as resources are added.
+
+## Neon (Dev)
+
+The Dev API already uses a Console-created Neon project (`neondb`). Terraform must
+**import** that project. Do not `apply` a create — that would provision a second
+database.
+
+1. Create a Neon API key (Account Settings → API Keys) and set `NEON_API_KEY`.
+2. Copy `environments/dev/terraform.tfvars.example` to `terraform.tfvars` and fill in
+   values that **match the existing project** (organisation ID, region, Postgres
+   version). Find them in the Neon Console; do not guess. Organisation ID is under
+   Account Settings → Organization.
+3. `terraform init` (R2 backend if `backend.hcl` is ready; otherwise `-backend=false`
+   is acceptable only for validate — import/apply need state).
+4. Import, then plan. **Abort if the plan shows destroy or replace.**
+
+```powershell
+cd infrastructure/terraform/environments/dev
+# Project ID is on the Neon project dashboard (not committed).
+terraform import module.neon.neon_project.this "<neon-project-id>"
+terraform plan -out=dev.tfplan
+```
+
+A clean plan may rename the project in-place to `fishing-logbook-dev`. That is expected.
+Do not apply if region or Postgres version would force a new project. Free-plan projects
+must use `history_retention_seconds = 21600` (6 hours); the paid default of 86400 is
+rejected by the API.
+
+`lifecycle.prevent_destroy` blocks deletion, but still never apply a replace. The
+database password stays in Fly secrets (`ConnectionStrings__Postgres`); do not copy
+Terraform outputs into git or CI logs.
+
+Do not apply `environments/prod` until you are ready to create a **separate** Neon
+project. Prod must never point at the Dev database.
 
 ## Manual deployment process
 

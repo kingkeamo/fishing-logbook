@@ -1,8 +1,8 @@
 # Adding Resources to Terraform
 
-All Terraform lives under `infrastructure/terraform/`. Today the modules are **skeletons**:
-they compute a `resource_prefix` local but declare no cloud resources. Add resources
-deliberately, one at a time, and only when explicitly approved. Read
+All Terraform lives under `infrastructure/terraform/`. Most modules are still
+**skeletons** (naming locals, no cloud resources). Neon defines `neon_project`. Add
+further resources deliberately, one at a time, and only when explicitly approved. Read
 `.claude/rules/terraform.md` first.
 
 ## Step 1 — Pick the module
@@ -23,6 +23,9 @@ If nothing fits, create `modules/<name>/{main,variables,outputs}.tf`.
 ## Step 2 — Add the resource to the module
 
 - Define every input in `variables.tf`; group related resources in one `.tf` file.
+- If the provider is not `hashicorp/*`, the module must declare `required_providers`
+  with that `source` (otherwise Terraform looks for `hashicorp/<name>`). Version
+  pins stay in each environment's `versions.tf`.
 - Derive names from the existing local:
 
 ```hcl

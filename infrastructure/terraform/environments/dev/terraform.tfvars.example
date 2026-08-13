@@ -10,7 +10,10 @@ environment = "dev"
 # cognito_callback_urls = ["https://<your-dev-web-domain>/authentication/login-callback"]
 # cognito_logout_urls   = ["https://<your-dev-web-domain>/"]
 
-# neon_region = "<neon-region>"
+# neon_org_id     = "<neon-organisation-id>"
+# neon_region     = "aws-us-east-1"
+# neon_pg_version = 17
+# neon_history_retention_seconds = 21600
 
 # fly_region  = "<fly-region>"
 # fly_vm_size = "shared-cpu-1x"
