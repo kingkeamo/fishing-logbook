@@ -140,8 +140,10 @@ These are **not** the Terraform state bucket. Photo storage is `fishing-logbook-
 must never get R2 keys. Uploads will use short-lived API-issued URLs later.
 
 **Pages** hosts the Blazor WASM PWA as static files. Terraform creates a **direct-upload**
-project (no Git build). The site stays empty until a later `wrangler pages deploy` /
-`deploy-web.yml`. API URLs are baked into `wwwroot/appsettings` at publish time.
+project (no Git build). GitHub Actions (`.github/workflows/deploy-web.yml`) publishes and
+uploads on merge to `main`. Set `CLOUDFLARE_API_TOKEN` (Pages:Edit) and
+`CLOUDFLARE_ACCOUNT_ID` on the GitHub `dev` environment. API URLs are baked into
+`wwwroot/appsettings` at publish time.
 
 1. Create an API token (My Profile → API Tokens) with **Workers R2 Storage:Edit** and
    **Cloudflare Pages:Edit**. Set `CLOUDFLARE_API_TOKEN`.

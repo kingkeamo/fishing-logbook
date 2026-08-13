@@ -80,8 +80,9 @@ and are applied by the `FishingLogBook.Db.Migrations.App` console runner (see
 [Database migrations](#database-migrations) below).
 
 The Web client reads the API base URL from `wwwroot/appsettings.json`
-(`Api:BaseUrl`). The `Development` override targets the local API at
-`https://localhost:7256`. API URLs are configuration, never hard-coded in source.
+(`Api:BaseUrl`). Local Development uses `https://localhost:7256`. A Release publish
+uses `wwwroot/appsettings.Production.json` and calls the Fly Dev API. API URLs are
+configuration, never hard-coded in C#.
 
 ## Database migrations
 
@@ -173,10 +174,10 @@ fly secrets set ConnectionStrings__Postgres="<neon npgsql string>" --app fishing
 fly deploy . --config infrastructure/fly/fly.dev.toml --app fishing-logbook-dev-api
 ```
 
-Merges to `main` run `.github/workflows/deploy-api.yml`: tests first, then the same
-`fly deploy` against the **already-created** app. CI must never create, resize, or
-destroy Fly apps. Set `FLY_API_TOKEN` on the GitHub `dev` environment (see
-[`infrastructure/fly/README.md`](infrastructure/fly/README.md)).
+Merges to `main` run `.github/workflows/deploy-api.yml` and `.github/workflows/deploy-web.yml`:
+tests first, then Fly (API) and Cloudflare Pages (PWA). CI must never create, resize, or
+destroy Fly apps or Pages projects. On the GitHub `dev` environment set `FLY_API_TOKEN`,
+`CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`.
 
 Then check:
 
@@ -187,6 +188,30 @@ https://fishing-logbook-dev-api.fly.dev/api/system/database
 
 The database endpoint only works after migrations have been applied to Neon. Swagger is
 not served on Fly (Production). Machines auto-stop when idle (`min_machines_running = 0`).
+
+## Cloudflare Pages (Dev PWA)
+
+The Pages project `fishing-logbook-dev` is created by Terraform (direct upload). Merges
+to `main` publish the Blazor WASM app and upload it with wrangler
+(`.github/workflows/deploy-web.yml`). Local upload is the same command:
+
+```powershell
+$env:CLOUDFLARE_API_TOKEN = "<token with Pages:Edit>"
+$env:CLOUDFLARE_ACCOUNT_ID = "<from the Cloudflare dashboard sidebar>"
+
+dotnet publish src/FishingLogBook.Web -c Release -o artifacts/web
+
+npx wrangler pages deploy artifacts/web/wwwroot --project-name fishing-logbook-dev --branch develop
+```
+
+Then open:
+
+```text
+https://fishing-logbook-dev.pages.dev
+```
+
+The PWA talks to `https://fishing-logbook-dev-api.fly.dev`. Local `dotnet run` still uses
+the Development appsettings (localhost).
 
 ## Infrastructure
 

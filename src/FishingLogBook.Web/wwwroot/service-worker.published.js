@@ -11,26 +11,21 @@ const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
 const offlineAssetsInclude = [ /\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.blat$/, /\.dat$/, /\.webmanifest$/ ];
 const offlineAssetsExclude = [ /^service-worker\.js$/ ];
 
-// Replace with your base path if you are hosting on a subfolder. Ensure there is a trailing '/'.
-const base = "/";
-const baseUrl = new URL(base, self.origin);
-const manifestUrlList = self.assetsManifest.assets.map(asset => new URL(asset.url, baseUrl).href);
-
 async function onInstall(event) {
     console.info('Service worker: Install');
+    self.skipWaiting();
 
-    // Fetch and cache all matching items from the assets manifest
     const assetsRequests = self.assetsManifest.assets
         .filter(asset => offlineAssetsInclude.some(pattern => pattern.test(asset.url)))
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
-        .map(asset => new Request(asset.url, { integrity: asset.hash, cache: 'no-cache' }));
+        .map(asset => new Request(asset.url, { cache: 'no-cache' }));
     await caches.open(cacheName).then(cache => cache.addAll(assetsRequests));
 }
 
 async function onActivate(event) {
     console.info('Service worker: Activate');
+    await self.clients.claim();
 
-    // Delete unused caches
     const cacheKeys = await caches.keys();
     await Promise.all(cacheKeys
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
@@ -38,18 +33,22 @@ async function onActivate(event) {
 }
 
 async function onFetch(event) {
-    let cachedResponse = null;
-    if (event.request.method === 'GET') {
-        // For all navigation requests, try to serve index.html from cache,
-        // unless that request is for an offline resource.
-        // If you need some URLs to be server-rendered, edit the following check to exclude those URLs
-        const shouldServeIndexHtml = event.request.mode === 'navigate'
-            && !manifestUrlList.some(url => url === event.request.url);
-
-        const request = shouldServeIndexHtml ? 'index.html' : event.request;
-        const cache = await caches.open(cacheName);
-        cachedResponse = await cache.match(request);
+    if (event.request.method !== 'GET') {
+        return fetch(event.request);
     }
 
+    // Navigations always hit the network so a language switch / new deploy is not
+    // stuck behind a stale cached index.html (local dotnet run has no published SW).
+    if (event.request.mode === 'navigate') {
+        try {
+            return await fetch(event.request);
+        } catch {
+            const cache = await caches.open(cacheName);
+            return await cache.match('index.html') || Response.error();
+        }
+    }
+
+    const cache = await caches.open(cacheName);
+    const cachedResponse = await cache.match(event.request);
     return cachedResponse || fetch(event.request);
 }
