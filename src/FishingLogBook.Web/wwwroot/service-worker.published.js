@@ -13,7 +13,6 @@ const offlineAssetsExclude = [ /^service-worker\.js$/ ];
 
 async function onInstall(event) {
     console.info('Service worker: Install');
-    self.skipWaiting();
 
     const cache = await caches.open(cacheName);
     const assetsRequests = self.assetsManifest.assets
@@ -22,10 +21,8 @@ async function onInstall(event) {
         .map(asset => new Request(asset.url, { cache: 'no-cache' }));
 
     await Promise.all(assetsRequests.map(request => cache.add(request).catch(() => undefined)));
-
-    if (!await matchIndexHtml(cache)) {
-        throw new Error('Service worker: index.html was not cached');
-    }
+    await cacheNavigationShell(cache);
+    await self.skipWaiting();
 }
 
 async function onActivate(event) {
@@ -43,19 +40,46 @@ async function onFetch(event) {
         return fetch(event.request);
     }
 
+    const url = new URL(event.request.url);
+    if (url.pathname.endsWith('/service-worker.js') || url.pathname.endsWith('/service-worker-assets.js')) {
+        return fetch(event.request);
+    }
+
     const cache = await caches.open(cacheName);
 
     if (event.request.mode === 'navigate') {
-        const cachedIndex = await matchIndexHtml(cache);
+        try {
+            const networkResponse = await fetch(event.request);
+            if (networkResponse.ok) {
+                return networkResponse;
+            }
+        } catch {
+            // Offline or unreachable: use the cached shell below.
+        }
+
+        const cachedIndex = await asNavigationResponse(await matchIndexHtml(cache));
         if (cachedIndex) {
             return cachedIndex;
         }
 
-        return fetch(event.request);
+        return Response.error();
     }
 
     const cachedResponse = await cache.match(event.request, { ignoreSearch: true });
-    return cachedResponse || fetch(event.request);
+    if (cachedResponse && cachedResponse.ok && !cachedResponse.redirected) {
+        return cachedResponse;
+    }
+
+    return fetch(event.request);
+}
+
+async function cacheNavigationShell(cache) {
+    const response = await fetch(new Request('index.html', { cache: 'no-cache' }));
+    if (!response.ok) {
+        return;
+    }
+
+    await cache.put('index.html', await asNavigationResponse(response));
 }
 
 async function matchIndexHtml(cache) {
@@ -74,4 +98,16 @@ async function matchIndexHtml(cache) {
     });
 
     return indexKey ? cache.match(indexKey) : undefined;
+}
+
+async function asNavigationResponse(response) {
+    if (!response || !response.ok) {
+        return undefined;
+    }
+
+    return new Response(await response.blob(), {
+        status: 200,
+        statusText: 'OK',
+        headers: response.headers
+    });
 }

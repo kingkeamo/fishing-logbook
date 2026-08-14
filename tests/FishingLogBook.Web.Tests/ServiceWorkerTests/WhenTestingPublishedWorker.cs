@@ -16,9 +16,11 @@ public class WhenTestingPublishedWorker : BaseServiceWorkerTest
 
         // Assert
         navigateIndex.Should().BeGreaterThanOrEqualTo(0);
+        navigateHandler.Should().Contain("fetch(event.request)");
+        navigateHandler.Should().Contain("asNavigationResponse");
         navigateHandler.Should().Contain("matchIndexHtml");
-        navigateHandler.IndexOf("cachedIndex", StringComparison.Ordinal)
-            .Should().BeLessThan(navigateHandler.IndexOf("return fetch(event.request)", StringComparison.Ordinal));
+        navigateHandler.IndexOf("fetch(event.request)", StringComparison.Ordinal)
+            .Should().BeLessThan(navigateHandler.IndexOf("asNavigationResponse", StringComparison.Ordinal));
     }
 
     [Fact]
