@@ -72,4 +72,43 @@
   <data name="Language_French" xml:space="preserve">
     <value>Français</value>
   </data>
+  <data name="TestCatch_Nav" xml:space="preserve">
+    <value>Prise de test</value>
+  </data>
+  <data name="TestCatch_PageTitle" xml:space="preserve">
+    <value>FishingLogBook - Prise de test</value>
+  </data>
+  <data name="TestCatch_Title" xml:space="preserve">
+    <value>Prise de test</value>
+  </data>
+  <data name="TestCatch_Subtitle" xml:space="preserve">
+    <value>Enregistrée sur cet appareil jusqu'à la synchronisation</value>
+  </data>
+  <data name="TestCatch_Species" xml:space="preserve">
+    <value>Espèce</value>
+  </data>
+  <data name="TestCatch_Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="TestCatch_Save" xml:space="preserve">
+    <value>Enregistrer la prise</value>
+  </data>
+  <data name="TestCatch_Empty" xml:space="preserve">
+    <value>Aucune prise enregistrée</value>
+  </data>
+  <data name="SyncStatus_SavedLocally" xml:space="preserve">
+    <value>Enregistrée localement — pas encore synchronisée</value>
+  </data>
+  <data name="SyncStatus_WaitingToSynchronise" xml:space="preserve">
+    <value>En attente de synchronisation</value>
+  </data>
+  <data name="SyncStatus_Synchronising" xml:space="preserve">
+    <value>Synchronisation en cours</value>
+  </data>
+  <data name="SyncStatus_Synchronised" xml:space="preserve">
+    <value>Synchronisée</value>
+  </data>
+  <data name="SyncStatus_FailedToSynchronise" xml:space="preserve">
+    <value>Échec de la synchronisation</value>
+  </data>
 </root>
