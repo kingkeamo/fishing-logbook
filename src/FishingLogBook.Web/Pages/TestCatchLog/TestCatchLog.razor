@@ -1,0 +1,61 @@
+@page "/test-catch"
+
+<PageTitle>@Loc["TestCatch_PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="test-catch-container pa-4">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4" Align="Align.Center">@Loc["TestCatch_Title"]</MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">@Loc["TestCatch_Subtitle"]</MudText>
+        </MudStack>
+
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_speciesName"
+                              Label="@Loc["TestCatch_Species"]"
+                              Variant="Variant.Outlined"
+                              Immediate="true"
+                              id="test-catch-species" />
+                <MudTextField @bind-Value="_notes"
+                              Label="@Loc["TestCatch_Notes"]"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              id="test-catch-notes" />
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Disabled="@(!CanSave)"
+                           OnClick="SaveAsync"
+                           id="save-test-catch-button">
+                    @Loc["TestCatch_Save"]
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Elevation="2" id="test-catch-list">
+            @if (_catches.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary" Align="Align.Center" id="test-catch-empty">
+                    @Loc["TestCatch_Empty"]
+                </MudText>
+            }
+            else
+            {
+                <MudStack Spacing="2">
+                    @foreach (var testCatch in _catches)
+                    {
+                        <MudPaper Class="pa-3" Outlined="true" id="@($"test-catch-item-{testCatch.Id}")">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.subtitle1" id="@($"test-catch-species-{testCatch.Id}")">@testCatch.SpeciesName</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary" id="@($"test-catch-caught-on-{testCatch.Id}")">@testCatch.CaughtOn.ToLocalTime().ToString("g")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Warning" id="@($"test-catch-sync-status-{testCatch.Id}")">
+                                    @Loc[SyncStatusKey(testCatch.SyncStatus)]
+                                </MudText>
+                            </MudStack>
+                        </MudPaper>
+                    }
+                </MudStack>
+            }
+        </MudPaper>
+    </MudStack>
+</MudContainer>

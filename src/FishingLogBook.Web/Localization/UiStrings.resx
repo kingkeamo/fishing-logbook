@@ -72,4 +72,43 @@
   <data name="Language_French" xml:space="preserve">
     <value>Français</value>
   </data>
+  <data name="TestCatch_Nav" xml:space="preserve">
+    <value>Test catch</value>
+  </data>
+  <data name="TestCatch_PageTitle" xml:space="preserve">
+    <value>FishingLogBook - Test catch</value>
+  </data>
+  <data name="TestCatch_Title" xml:space="preserve">
+    <value>Test catch</value>
+  </data>
+  <data name="TestCatch_Subtitle" xml:space="preserve">
+    <value>Saved on this device until synchronisation</value>
+  </data>
+  <data name="TestCatch_Species" xml:space="preserve">
+    <value>Species</value>
+  </data>
+  <data name="TestCatch_Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="TestCatch_Save" xml:space="preserve">
+    <value>Save catch</value>
+  </data>
+  <data name="TestCatch_Empty" xml:space="preserve">
+    <value>No catches saved yet</value>
+  </data>
+  <data name="SyncStatus_SavedLocally" xml:space="preserve">
+    <value>Saved locally — not synchronised</value>
+  </data>
+  <data name="SyncStatus_WaitingToSynchronise" xml:space="preserve">
+    <value>Waiting to synchronise</value>
+  </data>
+  <data name="SyncStatus_Synchronising" xml:space="preserve">
+    <value>Synchronising</value>
+  </data>
+  <data name="SyncStatus_Synchronised" xml:space="preserve">
+    <value>Synchronised</value>
+  </data>
+  <data name="SyncStatus_FailedToSynchronise" xml:space="preserve">
+    <value>Failed to synchronise</value>
+  </data>
 </root>

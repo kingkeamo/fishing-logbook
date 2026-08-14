@@ -1,5 +1,6 @@
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Localization;
+using FishingLogBook.Web.Offline;
 using FishingLogBook.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
@@ -17,6 +18,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(apiConfig);
         services.AddScoped(_ => new HttpClient { BaseAddress = apiBaseAddress });
         services.AddScoped<ISystemStatusClient, SystemStatusClient>();
+        services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();
+        services.AddScoped<ITestCatchStore, TestCatchStore>();
         services.AddLocalization();
         services.AddScoped<ICultureService, CultureService>();
         services.AddMudServices();
