@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.SystemStatus;
+using FishingLogBook.Application.TestCatches;
 using FishingLogBook.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddFishingLogBookApplication(this IServiceCollection services)
     {
         services.AddScoped<SystemStatusService>();
+        services.AddScoped<TestCatchService>();
 
         return services;
     }
@@ -34,6 +36,7 @@ public static class ServiceCollectionExtensions
             return new NpgsqlConnectionFactory(connectionString);
         });
         services.AddScoped<ISystemRepository, SystemRepository>();
+        services.AddScoped<ITestCatchRepository, TestCatchRepository>();
 
         return services;
     }

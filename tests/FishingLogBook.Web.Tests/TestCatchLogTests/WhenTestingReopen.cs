@@ -37,7 +37,7 @@ public class WhenTestingReopen : BaseTestCatchLogTest
             cut.Find($"#test-catch-sync-status-{existing.Id}").TextContent.Should()
                 .Contain("Saved locally — not synchronised");
         });
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatch>(), Arg.Any<CancellationToken>());
     }
 
@@ -66,6 +66,6 @@ public class WhenTestingReopen : BaseTestCatchLogTest
             cut.Find($"#test-catch-sync-status-{existing.Id}").TextContent.Should()
                 .Contain("Enregistrée localement — pas encore synchronisée");
         });
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
     }
 }

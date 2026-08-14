@@ -18,8 +18,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(apiConfig);
         services.AddScoped(_ => new HttpClient { BaseAddress = apiBaseAddress });
         services.AddScoped<ISystemStatusClient, SystemStatusClient>();
+        services.AddScoped<ITestCatchClient, TestCatchClient>();
+        services.AddScoped<INetworkStatus, BrowserNetworkStatus>();
         services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();
         services.AddScoped<ITestCatchStore, TestCatchStore>();
+        services.AddScoped<ITestCatchSynchroniser, TestCatchSynchroniser>();
         services.AddLocalization();
         services.AddScoped<ICultureService, CultureService>();
         services.AddMudServices();

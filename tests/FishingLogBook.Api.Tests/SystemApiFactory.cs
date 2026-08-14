@@ -13,6 +13,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
 {
     public ISystemRepository SystemRepository { get; } = Substitute.For<ISystemRepository>();
 
+    public ITestCatchRepository TestCatchRepository { get; } = Substitute.For<ITestCatchRepository>();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Production");
@@ -29,6 +31,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<ISystemRepository>();
             services.AddScoped(_ => SystemRepository);
+            services.RemoveAll<ITestCatchRepository>();
+            services.AddScoped(_ => TestCatchRepository);
         });
     }
 }

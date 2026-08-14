@@ -34,6 +34,14 @@
                 location.replace(`${location.origin}${location.pathname || '/'}`);
             }
         };
+        window.fishingLogBookNetwork = {
+            isOnline: () => navigator.onLine,
+            onOnline: (helper) => {
+                window.addEventListener('online', () => {
+                    helper.invokeMethodAsync('OnBrowserOnline');
+                });
+            }
+        };
         const storedCulture = window.fishingLogBookCulture.get();
         if (storedCulture) {
             document.documentElement.lang = storedCulture;
