@@ -22,6 +22,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INetworkStatus, BrowserNetworkStatus>();
         services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();
         services.AddScoped<ITestCatchStore, TestCatchStore>();
+        services.AddScoped<ITestCatchPhotoStore, IndexedDbTestCatchPhotoStore>();
         services.AddScoped<ITestCatchSynchroniser, TestCatchSynchroniser>();
         services.AddLocalization();
         services.AddScoped<ICultureService, CultureService>();

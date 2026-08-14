@@ -18,7 +18,7 @@ public class WhenTestingSynchronise
         var store = CreateStore([testCatch]);
         var client = Substitute.For<ITestCatchClient>();
         client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([]);
-        var sut = new TestCatchSynchroniser(store, client, Online());
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, Online());
 
         // Act
         await sut.SynchronisePendingAsync(CancellationToken.None);
@@ -42,7 +42,7 @@ public class WhenTestingSynchronise
         client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([]);
         client.UpsertAsync(Arg.Any<TestCatchDto>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException("network"));
-        var sut = new TestCatchSynchroniser(store, client, Online());
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, Online());
 
         // Act
         await sut.SynchronisePendingAsync(CancellationToken.None);
@@ -63,7 +63,7 @@ public class WhenTestingSynchronise
         var client = Substitute.For<ITestCatchClient>();
         var network = Substitute.For<INetworkStatus>();
         network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(false);
-        var sut = new TestCatchSynchroniser(store, client, network);
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, network);
 
         // Act
         await sut.SynchronisePendingAsync(CancellationToken.None);
@@ -83,7 +83,7 @@ public class WhenTestingSynchronise
         var store = CreateStore([testCatch]);
         var client = Substitute.For<ITestCatchClient>();
         client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([]);
-        var sut = new TestCatchSynchroniser(store, client, Online());
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, Online());
 
         // Act
         await sut.SynchronisePendingAsync(CancellationToken.None);
@@ -111,7 +111,7 @@ public class WhenTestingSynchronise
             null);
         var client = Substitute.For<ITestCatchClient>();
         client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([remote]);
-        var sut = new TestCatchSynchroniser(store, client, Online());
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, Online());
 
         // Act
         await sut.SynchronisePendingAsync(CancellationToken.None);
@@ -123,6 +123,108 @@ public class WhenTestingSynchronise
         saved[0].SpeciesName.Should().Be("Bream");
         saved[0].SyncStatus.Should().Be(SyncStatus.Synchronised);
         await client.DidNotReceive().UpsertAsync(Arg.Any<TestCatchDto>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepCatchSynchronised_WhenPhotographUploadFails()
+    {
+        // Arrange
+        var photograph = new TestCatchPhotograph(
+            Guid.Parse("aa11bb22-cc33-dd44-ee55-ff6677889900"),
+            "image/jpeg",
+            SyncStatus.SavedLocally);
+        var testCatch = CreateCatch(SyncStatus.SavedLocally) with { Photograph = photograph };
+        var store = CreateStore([testCatch]);
+        var photos = CreatePhotoStore(testCatch.Id, [1, 2, 3], "image/jpeg");
+        var client = Substitute.For<ITestCatchClient>();
+        client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([]);
+        client.CreatePhotographUploadAsync(Arg.Any<Guid>(), Arg.Any<PhotographUploadRequestDto>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("storage unavailable"));
+        var sut = new TestCatchSynchroniser(store, photos, client, Online());
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAllAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().ContainSingle();
+        saved[0].Id.Should().Be(testCatch.Id);
+        saved[0].SyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved[0].Photograph!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        await client.Received(1).UpsertAsync(
+            Arg.Is<TestCatchDto>(dto => dto.Id == testCatch.Id),
+            Arg.Any<CancellationToken>());
+        await client.DidNotReceive().RecordPhotographAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<RecordPhotographDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRetryTheSamePhotograph_WhenUploadIsRetried()
+    {
+        // Arrange
+        var photograph = new TestCatchPhotograph(
+            Guid.Parse("aa11bb22-cc33-dd44-ee55-ff6677889900"),
+            "image/jpeg",
+            SyncStatus.FailedToSynchronise);
+        var testCatch = CreateCatch(SyncStatus.Synchronised) with { Photograph = photograph };
+        var store = CreateStore([testCatch]);
+        var photos = CreatePhotoStore(testCatch.Id, [1, 2, 3], "image/jpeg");
+        var client = Substitute.For<ITestCatchClient>();
+        client.CreatePhotographUploadAsync(Arg.Any<Guid>(), Arg.Any<PhotographUploadRequestDto>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("storage unavailable"));
+        var sut = new TestCatchSynchroniser(store, photos, client, Online());
+
+        // Act
+        await sut.RetryPhotographAsync(testCatch.Id, CancellationToken.None);
+        await sut.RetryPhotographAsync(testCatch.Id, CancellationToken.None);
+        var saved = await store.GetAllAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().ContainSingle();
+        saved[0].SyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved[0].Photograph!.Id.Should().Be(photograph.Id);
+        saved[0].Photograph!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        await client.DidNotReceive().UpsertAsync(Arg.Any<TestCatchDto>(), Arg.Any<CancellationToken>());
+        await client.Received(2).CreatePhotographUploadAsync(
+            testCatch.Id,
+            Arg.Is<PhotographUploadRequestDto>(request => request.PhotographId == photograph.Id),
+            Arg.Any<CancellationToken>());
+        await client.DidNotReceive().RecordPhotographAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<RecordPhotographDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowRemotePhotograph_WhenMergedFromApi()
+    {
+        // Arrange
+        var store = CreateStore([]);
+        var photographId = Guid.Parse("c0ffee00-1111-2222-3333-444455556666");
+        var remote = new TestCatchDto(
+            Guid.Parse("6f4c8a12-3e90-4b7d-a1c5-9d2e8f0b6a33"),
+            "Bream",
+            DateTimeOffset.Parse("2026-08-14T16:00:00Z"),
+            null,
+            photographId,
+            "image/jpeg",
+            "https://storage.test/download/photo");
+        var client = Substitute.For<ITestCatchClient>();
+        client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([remote]);
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, Online());
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAllAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().ContainSingle();
+        saved[0].Photograph.Should().NotBeNull();
+        saved[0].Photograph!.Id.Should().Be(photographId);
+        saved[0].Photograph!.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved[0].Photograph!.RemoteUrl.Should().Be("https://storage.test/download/photo");
     }
 
     private static INetworkStatus Online()
@@ -140,6 +242,22 @@ public class WhenTestingSynchronise
             DateTimeOffset.Parse("2026-08-14T12:00:00Z"),
             "First attempt",
             status);
+    }
+
+    private static ITestCatchPhotoStore EmptyPhotos()
+    {
+        var photos = Substitute.For<ITestCatchPhotoStore>();
+        photos.GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<TestCatchPhotoBytes?>(null));
+        return photos;
+    }
+
+    private static ITestCatchPhotoStore CreatePhotoStore(Guid testCatchId, byte[] bytes, string contentType)
+    {
+        var photos = Substitute.For<ITestCatchPhotoStore>();
+        photos.GetAsync(testCatchId, Arg.Any<CancellationToken>())
+            .Returns(new TestCatchPhotoBytes(bytes, contentType));
+        return photos;
     }
 
     private static ITestCatchStore CreateStore(IReadOnlyList<TestCatch> seed)

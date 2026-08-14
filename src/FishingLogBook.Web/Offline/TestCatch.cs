@@ -7,4 +7,5 @@ public sealed record TestCatch(
     string SpeciesName,
     DateTimeOffset CaughtOn,
     string? Notes,
-    SyncStatus SyncStatus);
+    SyncStatus SyncStatus,
+    TestCatchPhotograph? Photograph = null);

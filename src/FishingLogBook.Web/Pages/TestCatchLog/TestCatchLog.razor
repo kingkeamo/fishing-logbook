@@ -1,4 +1,5 @@
 @page "/test-catch"
+@using Microsoft.AspNetCore.Components.Forms
 
 <PageTitle>@Loc["TestCatch_PageTitle"]</PageTitle>
 
@@ -21,6 +22,17 @@
                               Variant="Variant.Outlined"
                               Lines="3"
                               id="test-catch-notes" />
+                <InputFile OnChange="OnPhotographSelected"
+                           accept="image/*"
+                           capture="environment"
+                           id="test-catch-photo" />
+                @if (_pendingPhotographUrl is not null)
+                {
+                    <img src="@_pendingPhotographUrl"
+                         alt="@Loc["TestCatch_PhotographAlt"]"
+                         class="test-catch-photo-preview"
+                         id="test-catch-photo-preview" />
+                }
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            FullWidth="true"
@@ -51,6 +63,19 @@
                                 <MudText Typo="Typo.caption" Color="@SyncStatusColor(testCatch.SyncStatus)" id="@($"test-catch-sync-status-{testCatch.Id}")">
                                     @Loc[SyncStatusKey(testCatch.SyncStatus)]
                                 </MudText>
+                                @if (_photographUrls.TryGetValue(testCatch.Id, out var photographUrl))
+                                {
+                                    <img src="@photographUrl"
+                                         alt="@Loc["TestCatch_PhotographAlt"]"
+                                         class="test-catch-photo-preview"
+                                         id="@($"test-catch-photo-{testCatch.Id}")" />
+                                }
+                                @if (testCatch.Photograph is not null)
+                                {
+                                    <MudText Typo="Typo.caption" Color="@SyncStatusColor(testCatch.Photograph.SyncStatus)" id="@($"test-catch-photo-status-{testCatch.Id}")">
+                                        @Loc[PhotoStatusKey(testCatch.Photograph.SyncStatus)]
+                                    </MudText>
+                                }
                                 @if (testCatch.SyncStatus == SyncStatus.FailedToSynchronise)
                                 {
                                     <MudButton Variant="Variant.Text"
@@ -59,6 +84,16 @@
                                                OnClick="@(() => RetryAsync(testCatch.Id))"
                                                id="@($"retry-test-catch-{testCatch.Id}")">
                                         @Loc["TestCatch_Retry"]
+                                    </MudButton>
+                                }
+                                @if (testCatch.Photograph?.SyncStatus == SyncStatus.FailedToSynchronise)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               OnClick="@(() => RetryPhotographAsync(testCatch.Id))"
+                                               id="@($"retry-test-catch-photo-{testCatch.Id}")">
+                                        @Loc["TestCatch_RetryPhotograph"]
                                     </MudButton>
                                 }
                             </MudStack>

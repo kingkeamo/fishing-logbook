@@ -11,10 +11,18 @@ public class BaseTestCatchLogTest
 {
     protected static BunitContext CreateContext(ITestCatchStore store)
     {
-        return CreateContext(store, Substitute.For<ITestCatchSynchroniser>());
+        return CreateContext(store, Substitute.For<ITestCatchSynchroniser>(), Substitute.For<ITestCatchPhotoStore>());
     }
 
     protected static BunitContext CreateContext(ITestCatchStore store, ITestCatchSynchroniser synchroniser)
+    {
+        return CreateContext(store, synchroniser, Substitute.For<ITestCatchPhotoStore>());
+    }
+
+    protected static BunitContext CreateContext(
+        ITestCatchStore store,
+        ITestCatchSynchroniser synchroniser,
+        ITestCatchPhotoStore photoStore)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -22,6 +30,7 @@ public class BaseTestCatchLogTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(synchroniser);
+        context.Services.AddSingleton(photoStore);
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
 

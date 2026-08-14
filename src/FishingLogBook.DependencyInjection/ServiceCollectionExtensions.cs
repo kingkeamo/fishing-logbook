@@ -1,7 +1,9 @@
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.SystemStatus;
 using FishingLogBook.Application.TestCatches;
+using FishingLogBook.Domain.Config;
 using FishingLogBook.Infrastructure.Persistence;
+using FishingLogBook.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,6 +39,8 @@ public static class ServiceCollectionExtensions
         });
         services.AddScoped<ISystemRepository, SystemRepository>();
         services.AddScoped<ITestCatchRepository, TestCatchRepository>();
+        services.Configure<ObjectStorageConfig>(configuration.GetSection(ObjectStorageConfig.SectionName));
+        services.AddSingleton<IObjectStorage, S3CompatibleObjectStorage>();
 
         return services;
     }

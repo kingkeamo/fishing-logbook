@@ -114,4 +114,25 @@
   <data name="TestCatch_Retry" xml:space="preserve">
     <value>Réessayer la synchronisation</value>
   </data>
+  <data name="TestCatch_RetryPhotograph" xml:space="preserve">
+    <value>Réessayer le téléversement de la photo</value>
+  </data>
+  <data name="TestCatch_PhotographAlt" xml:space="preserve">
+    <value>Photo de la prise</value>
+  </data>
+  <data name="TestCatch_PhotoSavedLocally" xml:space="preserve">
+    <value>Photo enregistrée localement — pas encore téléversée</value>
+  </data>
+  <data name="TestCatch_PhotoWaiting" xml:space="preserve">
+    <value>Photo en attente de téléversement</value>
+  </data>
+  <data name="TestCatch_PhotoUploading" xml:space="preserve">
+    <value>Téléversement de la photo</value>
+  </data>
+  <data name="TestCatch_PhotoUploaded" xml:space="preserve">
+    <value>Photo téléversée</value>
+  </data>
+  <data name="TestCatch_PhotoFailed" xml:space="preserve">
+    <value>Échec du téléversement de la photo</value>
+  </data>
 </root>

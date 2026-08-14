@@ -137,7 +137,10 @@ These are **not** the Terraform state bucket. Photo storage is `fishing-logbook-
 (private). State stays in a separate, manually created bucket (`backend.hcl`).
 
 **R2** is S3-compatible object storage for catch photos. The bucket is private; the PWA
-must never get R2 keys. Uploads will use short-lived API-issued URLs later.
+must never get R2 keys. Uploads use short-lived API-issued URLs. Browser PUT requires
+CORS on the bucket for `https://fishing-logbook-dev.pages.dev` and local HTTPS
+(`https://localhost:7005`). Set CORS in the Cloudflare dashboard; do not run
+`terraform apply` from application work.
 
 **Pages** hosts the Blazor WASM PWA as static files. Terraform creates a **direct-upload**
 project (no Git build). GitHub Actions (`.github/workflows/deploy-web.yml`) publishes and

@@ -9,4 +9,10 @@ public sealed class TestCatchRecord
     public DateTimeOffset CaughtOn { get; init; }
 
     public string? Notes { get; init; }
+
+    public Guid? PhotographId { get; init; }
+
+    public string? PhotographObjectKey { get; init; }
+
+    public string? PhotographContentType { get; init; }
 }
