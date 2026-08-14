@@ -20,6 +20,7 @@ root** so the Docker context includes `src/`.
 fly auth login
 fly apps create fishing-logbook-dev-api --org personal
 fly secrets set ConnectionStrings__Postgres="<neon npgsql string>" --app fishing-logbook-dev-api
+fly secrets set ObjectStorage__ServiceUrl="https://<account-id>.r2.cloudflarestorage.com" ObjectStorage__BucketName="fishing-logbook-dev" ObjectStorage__AccessKeyId="<r2-access-key>" ObjectStorage__SecretAccessKey="<r2-secret>" --app fishing-logbook-dev-api
 ```
 
 ## Deploy

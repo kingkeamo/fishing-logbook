@@ -114,4 +114,25 @@
   <data name="TestCatch_Retry" xml:space="preserve">
     <value>Retry synchronisation</value>
   </data>
+  <data name="TestCatch_RetryPhotograph" xml:space="preserve">
+    <value>Retry photograph upload</value>
+  </data>
+  <data name="TestCatch_PhotographAlt" xml:space="preserve">
+    <value>Catch photograph</value>
+  </data>
+  <data name="TestCatch_PhotoSavedLocally" xml:space="preserve">
+    <value>Photograph saved locally — not uploaded</value>
+  </data>
+  <data name="TestCatch_PhotoWaiting" xml:space="preserve">
+    <value>Photograph waiting to upload</value>
+  </data>
+  <data name="TestCatch_PhotoUploading" xml:space="preserve">
+    <value>Uploading photograph</value>
+  </data>
+  <data name="TestCatch_PhotoUploaded" xml:space="preserve">
+    <value>Photograph uploaded</value>
+  </data>
+  <data name="TestCatch_PhotoFailed" xml:space="preserve">
+    <value>Photograph upload failed</value>
+  </data>
 </root>

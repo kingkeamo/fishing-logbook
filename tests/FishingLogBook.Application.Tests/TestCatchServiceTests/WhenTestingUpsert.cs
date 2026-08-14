@@ -11,7 +11,7 @@ public class WhenTestingUpsert
     {
         // Arrange
         var repository = new MemoryTestCatchRepository();
-        var sut = new TestCatchService(repository);
+        var sut = new TestCatchService(repository, new MemoryObjectStorage());
         var testCatch = new TestCatchDto(
             Guid.Parse("4e2a1c90-8b33-4f6d-9a17-5c0e8d2b1a44"),
             "Pike",
@@ -34,7 +34,7 @@ public class WhenTestingUpsert
     public async Task ItShouldReturnTheCatch_WhenUpserted()
     {
         // Arrange
-        var sut = new TestCatchService(new MemoryTestCatchRepository());
+        var sut = new TestCatchService(new MemoryTestCatchRepository(), new MemoryObjectStorage());
         var testCatch = new TestCatchDto(
             Guid.NewGuid(),
             "Perch",

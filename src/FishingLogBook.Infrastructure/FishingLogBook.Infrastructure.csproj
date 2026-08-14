@@ -6,7 +6,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 
