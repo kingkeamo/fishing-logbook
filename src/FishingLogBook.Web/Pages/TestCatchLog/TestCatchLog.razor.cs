@@ -3,12 +3,15 @@ using FishingLogBook.Web.Models;
 using FishingLogBook.Web.Offline;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
+using MudBlazor;
 
 namespace FishingLogBook.Web.Pages.TestCatchLog;
 
 public partial class TestCatchLog : ComponentBase, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private DotNetObjectReference<TestCatchLog>? _dotNetReference;
 
     private string _speciesName = string.Empty;
     private string _notes = string.Empty;
@@ -19,6 +22,12 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     private ITestCatchStore TestCatchStore { get; set; } = default!;
 
     [Inject]
+    private ITestCatchSynchroniser TestCatchSynchroniser { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private bool CanSave => !_isSaving && !string.IsNullOrWhiteSpace(_speciesName);
@@ -26,6 +35,27 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
+        await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _dotNetReference = DotNetObjectReference.Create(this);
+        await JsRuntime.InvokeVoidAsync("fishingLogBookNetwork.onOnline", _dotNetReference);
+    }
+
+    [JSInvokable]
+    public async Task OnBrowserOnline()
+    {
+        await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        await LoadAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SaveAsync()
@@ -47,8 +77,15 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         await TestCatchStore.SaveAsync(testCatch, _cancellationTokenSource.Token);
         _speciesName = string.Empty;
         _notes = string.Empty;
+        await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
         await LoadAsync();
         _isSaving = false;
+    }
+
+    private async Task RetryAsync(Guid id)
+    {
+        await TestCatchSynchroniser.RetryAsync(id, _cancellationTokenSource.Token);
+        await LoadAsync();
     }
 
     private async Task LoadAsync()
@@ -69,9 +106,21 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         };
     }
 
+    private static Color SyncStatusColor(SyncStatus syncStatus)
+    {
+        return syncStatus switch
+        {
+            SyncStatus.Synchronised => Color.Success,
+            SyncStatus.FailedToSynchronise => Color.Error,
+            SyncStatus.WaitingToSynchronise or SyncStatus.Synchronising => Color.Info,
+            _ => Color.Warning
+        };
+    }
+
     public void Dispose()
     {
         _cancellationTokenSource.Cancel();
+        _dotNetReference?.Dispose();
         _cancellationTokenSource.Dispose();
     }
 }

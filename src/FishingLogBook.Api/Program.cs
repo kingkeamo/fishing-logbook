@@ -46,6 +46,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors(webClientCorsPolicy);
 
 app.MapSystemEndpoints();
+app.MapTestCatchEndpoints();
 
 app.Run();
 

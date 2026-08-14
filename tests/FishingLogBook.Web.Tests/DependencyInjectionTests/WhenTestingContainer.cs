@@ -43,6 +43,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         // Assert
         injectedTypes.Should().Contain(typeof(ISystemStatusClient));
         injectedTypes.Should().Contain(typeof(ITestCatchStore));
+        injectedTypes.Should().Contain(typeof(ITestCatchSynchroniser));
         injectedTypes.Should().Contain(typeof(ICultureService));
         injectedTypes.Should().Contain(typeof(IStringLocalizer<UiStrings>));
         resolve.Should().NotThrow();

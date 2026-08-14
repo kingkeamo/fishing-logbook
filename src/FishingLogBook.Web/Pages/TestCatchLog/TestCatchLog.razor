@@ -48,9 +48,19 @@
                             <MudStack Spacing="1">
                                 <MudText Typo="Typo.subtitle1" id="@($"test-catch-species-{testCatch.Id}")">@testCatch.SpeciesName</MudText>
                                 <MudText Typo="Typo.caption" Class="mud-text-secondary" id="@($"test-catch-caught-on-{testCatch.Id}")">@testCatch.CaughtOn.ToLocalTime().ToString("g")</MudText>
-                                <MudText Typo="Typo.caption" Color="Color.Warning" id="@($"test-catch-sync-status-{testCatch.Id}")">
+                                <MudText Typo="Typo.caption" Color="@SyncStatusColor(testCatch.SyncStatus)" id="@($"test-catch-sync-status-{testCatch.Id}")">
                                     @Loc[SyncStatusKey(testCatch.SyncStatus)]
                                 </MudText>
+                                @if (testCatch.SyncStatus == SyncStatus.FailedToSynchronise)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               OnClick="@(() => RetryAsync(testCatch.Id))"
+                                               id="@($"retry-test-catch-{testCatch.Id}")">
+                                        @Loc["TestCatch_Retry"]
+                                    </MudButton>
+                                }
                             </MudStack>
                         </MudPaper>
                     }
