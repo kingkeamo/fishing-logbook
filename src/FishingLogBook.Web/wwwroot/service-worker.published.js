@@ -1,5 +1,8 @@
 // Caution! Be sure you understand the caveats before publishing an application with
 // offline support. See https://aka.ms/blazor-offline-considerations
+//
+// Cloudflare Pages 308s /index.html to /. Chrome rejects redirected responses for
+// navigations. Cache-first, then rebuild redirected responses (dotnet/aspnetcore#33872).
 
 self.importScripts('./service-worker-assets.js');
 self.addEventListener('install', event => event.waitUntil(onInstall(event)));
@@ -9,7 +12,11 @@ self.addEventListener('fetch', event => event.respondWith(onFetch(event)));
 const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
 const offlineAssetsInclude = [ /\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.woff2$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.svg$/, /\.blat$/, /\.dat$/, /\.webmanifest$/ ];
-const offlineAssetsExclude = [ /^service-worker\.js$/ ];
+const offlineAssetsExclude = [ /^service-worker\.js$/, /\/_redirects$/, /\/_headers$/ ];
+
+const base = '/';
+const baseUrl = new URL(base, self.origin);
+const manifestUrlList = self.assetsManifest.assets.map(asset => new URL(asset.url, baseUrl).href);
 
 async function onInstall(event) {
     console.info('Service worker: Install');
@@ -20,8 +27,8 @@ async function onInstall(event) {
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
         .map(asset => new Request(asset.url, { cache: 'no-cache' }));
 
-    await Promise.all(assetsRequests.map(request => cache.add(request).catch(() => undefined)));
-    await cacheNavigationShell(cache);
+    await Promise.all(assetsRequests.map(request => cacheUnredirected(cache, request).catch(() => undefined)));
+    await cacheAppShell(cache);
     await self.skipWaiting();
 }
 
@@ -45,45 +52,52 @@ async function onFetch(event) {
         return fetch(event.request);
     }
 
+    const shouldServeIndexHtml = event.request.mode === 'navigate'
+        && !manifestUrlList.some(manifestUrl => manifestUrl === event.request.url);
+
+    const request = shouldServeIndexHtml ? 'index.html' : event.request;
     const cache = await caches.open(cacheName);
+    let cachedResponse = await cache.match(request, { ignoreSearch: true });
 
-    if (event.request.mode === 'navigate') {
-        try {
-            const networkResponse = await fetch(event.request);
-            if (networkResponse.ok) {
-                return networkResponse;
-            }
-        } catch {
-            // Offline or unreachable: use the cached shell below.
-        }
-
-        const cachedIndex = await asNavigationResponse(await matchIndexHtml(cache));
-        if (cachedIndex) {
-            return cachedIndex;
-        }
-
-        return Response.error();
+    if (!cachedResponse && shouldServeIndexHtml) {
+        cachedResponse = await matchIndexHtml(cache);
     }
 
-    const cachedResponse = await cache.match(event.request, { ignoreSearch: true });
-    if (cachedResponse && cachedResponse.ok && !cachedResponse.redirected) {
-        return cachedResponse;
+    if (cachedResponse) {
+        cachedResponse = await withoutRedirect(cachedResponse);
     }
 
-    return fetch(event.request);
+    return cachedResponse || fetch(event.request);
 }
 
-async function cacheNavigationShell(cache) {
-    const response = await fetch(new Request('index.html', { cache: 'no-cache' }));
+async function cacheAppShell(cache) {
+    const response = await fetch(new Request('./', { cache: 'no-cache' }));
     if (!response.ok) {
         return;
     }
 
-    await cache.put('index.html', await asNavigationResponse(response));
+    const shell = await withoutRedirect(response);
+    if (!shell) {
+        return;
+    }
+
+    await cache.put('index.html', shell);
+}
+
+async function cacheUnredirected(cache, request) {
+    const response = await fetch(request);
+    if (!response.ok) {
+        return;
+    }
+
+    const stored = await withoutRedirect(response);
+    if (stored) {
+        await cache.put(request, stored);
+    }
 }
 
 async function matchIndexHtml(cache) {
-    const candidates = ['index.html', './index.html', '/index.html'];
+    const candidates = ['index.html', './index.html', '/index.html', './', '/'];
     for (const candidate of candidates) {
         const matched = await cache.match(candidate, { ignoreSearch: true });
         if (matched) {
@@ -100,14 +114,19 @@ async function matchIndexHtml(cache) {
     return indexKey ? cache.match(indexKey) : undefined;
 }
 
-async function asNavigationResponse(response) {
-    if (!response || !response.ok) {
+async function withoutRedirect(response) {
+    if (!response) {
         return undefined;
     }
 
-    return new Response(await response.blob(), {
-        status: 200,
-        statusText: 'OK',
-        headers: response.headers
+    if (!response.redirected) {
+        return response;
+    }
+
+    const clonedResponse = response.clone();
+    return new Response(clonedResponse.body, {
+        headers: clonedResponse.headers,
+        status: clonedResponse.status,
+        statusText: clonedResponse.statusText
     });
 }
