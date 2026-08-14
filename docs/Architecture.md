@@ -1,12 +1,336 @@
-# FishingLogBook Architecture - Final Adjustments
+# FishingLogBook Architecture
 
-Apply the following changes to the previously generated `docs/Architecture.md`.
+**Document Status:** Architecture aligned with current Requirements  
+**Must be read with:** `docs/Requirements.md` and `BUILD.md`
 
-## Web Hosting
+This document defines how FishingLogBook is hosted and how Catch, location, photographs, synchronisation, FishingVenue and Club must be designed. It does not implement those product features in code, schema or infrastructure.
 
-Replace references to GitHub Pages as the preferred application host with:
+Technology and hosting decisions belong here rather than in the product requirements.
 
-### Web Application Hosting
+---
+
+## Architecture Rule
+
+The architecture should optimise for:
+
+```text
+Reliable first
+Cheap second
+Simple third
+Scalable when required
+```
+
+Do not design infrastructure for hypothetical scale before real usage demonstrates a need.
+
+---
+
+## Application Architecture
+
+FishingLogBook is a Blazor WebAssembly PWA talking to an ASP.NET Core API. The API uses Dapper against PostgreSQL. Catch recording is offline-first: the PWA must be able to photograph and save a catch with no network.
+
+### Layers
+
+```text
+FishingLogBook.Web          Blazor WASM PWA (MudBlazor). References Shared only.
+        |
+        v
+FishingLogBook.Shared       DTOs and contracts used by Web and API.
+        |
+        v
+FishingLogBook.Api          Minimal APIs. Composes services via DependencyInjection.
+        |
+        v
+FishingLogBook.Application  Use cases. No infrastructure types.
+        |
+        +--> FishingLogBook.Domain          Entities and domain rules. No project dependencies.
+        |
+        v
+FishingLogBook.Infrastructure   PostgreSQL (Dapper), object-storage abstractions.
+
+FishingLogBook.DependencyInjection   Composition root (`AddFishingLogBook`).
+FishingLogBook.Db.Migrations         DbUp scripts and engine. Not referenced by the API.
+```
+
+The Blazor client must not reference Application or Infrastructure. Server implementation assemblies must not ship to the browser.
+
+Internal user identity is a FishingLogBook `UserId`. Cognito subject identifiers are mapped to that user. They are not the primary domain key.
+
+### Offline client storage
+
+Unsynchronised catches, photographs and any captured location live in the PWA (IndexedDB). Local data is authoritative until synchronisation succeeds. Closing or restarting the application must not lose an offline catch within reasonable browser limitations.
+
+---
+
+## Catch
+
+Catch logging is the primary product feature (`docs/Requirements.md` # 5). Architecture must treat Catch as an offline-first aggregate, not as an online-only API record.
+
+A Catch conceptually supports:
+
+- One or more photographs
+- Species, weight, length, date, time
+- Optional captured location (see **Location and Privacy**)
+- FishingVenue association, independent of captured location
+- Fishing method, bait or lure, notes
+- Angler (the person who caught the fish)
+- Person who recorded the catch
+- Guide trip, competition and club association where applicable
+
+Not every field is mandatory. **Location is never mandatory.** A catch must be saveable when location is missing, denied, inaccurate or unavailable.
+
+Each offline-created Catch must have a unique identifier generated on the device. That identifier is the idempotency key for synchronisation.
+
+The model must distinguish permanently:
+
+- the person who caught the fish
+- the person who recorded the catch
+
+For a guided trip these may differ. Provenance is retained after synchronisation.
+
+Do not prescribe database column names in this document. Domain and API names may differ from storage names.
+
+---
+
+## Location and Privacy
+
+Location is part of the initial MVP Catch model (`docs/Requirements.md` # 33). Capture is optional. Failure to obtain location must **never** prevent a catch from being saved.
+
+Exact fishing spots are sensitive. Enabling device location, joining a club, or associating a catch with a FishingVenue must not by itself make coordinates visible to other users.
+
+### Capture and sharing are separate
+
+There is an explicit distinction between:
+
+1. Permission to **capture and store** location.
+2. Permission to **share or expose** that location.
+
+A user may allow FishingLogBook to record precise coordinates for their private fishing history without allowing those coordinates to be visible to other users.
+
+Precise coordinates are **private by default**.
+
+Potential visibility levels include:
+
+- Private
+- Approximate area
+- Fishing venue only
+- Public
+
+The model must be able to evolve without forcing exact coordinates to be exposed. Granting location permission must not imply that the location is public.
+
+### What to retain with a captured location
+
+When location is captured, retain conceptually equivalent information to:
+
+- Latitude and longitude
+- Location accuracy in metres, where the device supplies it
+- Date/time the location was captured
+- Location source
+- Location visibility
+- Location consent version (or equivalent)
+
+Do not treat this list as prescribed database column names.
+
+`LocationSource` must distinguish origin, including:
+
+- Device GPS / location services
+- Manual user selection
+- Fishing venue
+- Other future location sources
+
+A FishingVenue association must **not** be treated as equivalent to an accurate device GPS coordinate.
+
+The system must not treat all coordinates as equally accurate. Future mapping and analytics must be able to account for accuracy. Mapping providers, personal catch maps, heat maps and aggregated location analytics are **not** part of the first or second architecture milestone and are not required for MVP UI.
+
+### FishingVenue and GPS are independent
+
+A Catch must be capable of independently having:
+
+- a FishingVenue association
+- a precise or approximate captured location
+
+Either may exist without the other.
+
+Examples:
+
+```text
+FishingVenue = Lough Corrib, GPS = none     (venue selected, GPS refused)
+FishingVenue = none, GPS = available        (unregistered water, GPS allowed)
+FishingVenue = Lough Corrib, GPS = available
+```
+
+Club association, FishingVenue association and precise GPS location remain separate concepts.
+
+### Device permission and offline capture
+
+The PWA requests location permission explicitly where the platform requires it. Explain the benefit before requesting permission. Handle granted, denied and unavailable outcomes without blocking save.
+
+If the user denies permission:
+
+- Continue catch logging normally.
+- Do not repeatedly interrupt or nag.
+- Allow permission to be enabled later.
+- Allow location to be associated manually later where appropriate.
+
+When a catch is created offline:
+
+1. Attempt to obtain location if permission exists.
+2. Store any captured location with the local catch.
+3. Preserve it while the catch remains in IndexedDB.
+4. Synchronise location metadata with the catch when connectivity returns.
+
+Location capture must work independently of API availability where the device or browser can provide it. Failure to obtain location while offline must not affect catch creation.
+
+Full manual add/correct/remove location UX is not required for the initial MVP UI. The Catch/location model must not prevent it. Manual selection must remain distinguishable from device GPS.
+
+### Authorisation for coordinates
+
+Public catch views, club views, guide views and FishingVenue views must respect the catch owner's location visibility settings.
+
+Being any of the following must **not** automatically grant access to an angler's private precise coordinates:
+
+- ClubAdmin
+- ClubOfficer
+- ClubCompetitionOrganiser
+- Guide
+- FishingVenue manager
+- CompetitionOrganiser
+
+Where a competition genuinely requires location verification, coordinates may be made available specifically for verification according to the competition rules and user consent, without automatically making them public.
+
+API authorisation must enforce these rules. Privileged roles are not a back door to private coordinates.
+
+A catch associated with a club-managed FishingVenue may later contribute to permitted aggregate club statistics. That must **not** mean club administrators receive precise coordinates, private notes, unrelated catches, or personal data not required for the club use case.
+
+---
+
+## Photographs
+
+Users must be able to take a photograph, select an existing photograph, attach multiple photographs to a catch, and review them before saving (`docs/Requirements.md` # 6).
+
+Photographs captured offline must remain available until successfully uploaded. Closing the PWA must not lose unsynchronised photographs within reasonable browser limitations.
+
+Photographs must **not** be stored directly in PostgreSQL. PostgreSQL holds photograph metadata after a successful upload. Image bytes go to object storage.
+
+The preferred upload path is:
+
+```text
+PWA stores the photograph locally
+    ->
+API requests a short-lived upload URL
+    ->
+API generates a presigned R2 URL
+    ->
+PWA uploads directly to R2
+    ->
+PWA/API records photograph metadata
+```
+
+Do not proxy all full-size photo bytes through the API unless there is a specific reason.
+
+Photograph uploads must be able to retry independently of catch metadata. Location metadata captured with an offline catch must synchronise with that catch and must not be dropped if photograph upload is retried separately.
+
+The application must access object storage through abstractions that do not expose Cloudflare-specific concepts to the domain or application layers.
+
+Preserve sufficient image quality for future fish identification while balancing storage and upload size. Individual fish AI recognition and automatic species recognition are not MVP.
+
+---
+
+## Synchronisation
+
+The system must treat local data as authoritative until successfully synchronised (`docs/Requirements.md` # 34).
+
+Rules:
+
+- Each offline-created record has a unique device-generated identifier.
+- Retrying the same Catch must not create a duplicate server record.
+- The user must be able to see whether a catch is saved locally, waiting to synchronise, synchronising, successfully synchronised, or failed to synchronise.
+- A manual retry/synchronise option must be provided.
+- Network failure during synchronisation must not result in data loss.
+- Catch metadata, location metadata and photographs may complete at different times. Location must travel with the catch even if a photograph is still uploading.
+- Once synchronised, a catch should be available on the user's other devices.
+- The MVP does not need sophisticated simultaneous offline-edit conflict resolution. Conflicts must never silently cause a catch to disappear.
+
+---
+
+## FishingVenue
+
+The underlying venue domain is **FishingVenue** (`docs/Requirements.md` # 11). A FishingVenue may represent a fishery, lake, river, river section, canal, reservoir, commercial fishery, other managed water, or coastal/sea-fishing location where appropriate.
+
+The domain is not restricted to commercial fisheries. The UI may use context-appropriate language such as Fishery, Water, Lake, River or Venue. Do not force a single user-facing label where a more natural term applies.
+
+A venue does not need to have joined FishingLogBook before appearing in the directory. Users can record catches against a venue. Owners or authorised managers may later claim an existing venue profile.
+
+A venue must be able to exist independently of a club. Do not duplicate venue records for club use. A venue may be associated with more than one organisation where business rules permit.
+
+Season, opening, closure, rules, facilities, catch and competition functionality operate against the venue. Club-level rules and venue-level rules must remain distinguishable.
+
+FishingVenue is **not** GPS. Associating a catch with a venue does not create or replace device coordinates.
+
+---
+
+## Club
+
+A fishing club is an **organisation**, not a user account (`docs/Requirements.md` # 3 and # 22).
+
+Clubs integrate into the existing model for anglers, fishing venues, guides and competitions. They are not a disconnected club-administration subsystem. FishingLogBook must not become a general-purpose club admin product.
+
+### Membership and roles
+
+A normal user may belong to one or more clubs and may hold club-specific roles on those clubs.
+
+A club membership conceptually supports:
+
+- User
+- Club
+- Membership number/reference
+- Membership type
+- Membership start and end dates
+- Membership status
+- Joined date
+
+Membership statuses should support at least Pending, Active, Expired, Suspended and Cancelled.
+
+Membership types should be extensible (for example Adult, Junior, Senior, Family, Student, Guest). Do not hard-code these as permanent product-wide enums if clubs may later configure their own types.
+
+Club-scoped role examples:
+
+- ClubMember
+- ClubAdmin
+- ClubOfficer
+- ClubCompetitionOrganiser
+
+These permissions are scoped to an **individual club**. Being an administrator of Club A must not grant administrative permissions over Club B.
+
+Club-scoped capabilities sit alongside platform-level capabilities (Angler, Guide, FishingVenue manager, Competition Organiser, Administrator) and must not be mutually exclusive with them. Do not create a separate account type for club officers.
+
+### Waters, rules and competitions
+
+A club may own, lease, manage or have fishing rights over one or more FishingVenues. Display those waters on the club profile without duplicating venue records.
+
+Club-level rules and venue-level rules must be distinguishable. Where they conflict, users must be able to see which rule applies to the specific venue or event.
+
+Clubs use the existing competition model. A club may create competitions, including member-only or open events, associated with one or more FishingVenues. Do not introduce a separate club-only competition type. Club championship points, seasonal leagues and multi-event standings are future capabilities, not MVP.
+
+### Privacy
+
+Club membership does **not** grant a club unrestricted ownership of a user's fishing history. A user's personal logbook remains their own data.
+
+A club must not automatically gain access to:
+
+- private notes
+- private exact coordinates
+- unrelated catches
+- personal data not required for the club use case
+
+Catches on club-managed waters may later contribute to privacy-preserving aggregate statistics. Advanced club statistics are not required for the initial MVP UI. The Catch and club-venue model must not prevent them.
+
+Payment processing for membership fees, competition entry, venue bookings or day tickets is not part of the MVP. Design for later compatibility only. Do not introduce a payment provider because clubs exist.
+
+Accounting, AGM management, committee minutes, elections, general document management, full CRM and advanced club financial reporting are outside the Club MVP.
+
+---
+
+## Web Application Hosting
 
 The FishingLogBook Blazor WebAssembly PWA will initially be hosted using **Cloudflare Pages**.
 
@@ -71,6 +395,8 @@ FishingLogBook PWA
            Amazon Cognito
             Authentication
 ```
+
+IndexedDB holds unsynchronised Catch records, photographs and any captured location. Neon holds synchronised catch metadata, including location metadata. R2 holds photograph bytes.
 
 ---
 
@@ -160,6 +486,8 @@ The project must avoid automatic provisioning of:
 unless explicitly approved.
 
 A deployment problem must be diagnosed before increasing infrastructure size or adding resources.
+
+Do not provision mapping providers, analytics pipelines, payment providers or additional databases to satisfy Catch, location or club architecture. Those product concepts are designed in this document; they are not a reason to create cloud resources.
 
 ---
 
@@ -276,7 +604,9 @@ UI language is a PWA concern.
 - MudBlazor uses a `MudLocalizer` that forwards to the same `IStringLocalizer`
 - New screens must not hard-code user-visible English; add keys to both resource files
 - API error payloads should prefer `errorCode` values that the client localises. Do not localise PostgreSQL data or Swagger
-- ICU data is fully loaded (`BlazorWebAssemblyLoadAllGlobalizationData`) so the PWA can set `en-GB` or `fr` at startup. Blazor WASM does not allow a dynamic culture change with the default reduced ICU dataset.
+- ICU data is fully loaded (`BlazorWebAssemblyLoadAllGlobalizationData`) so the PWA can set `en-GB` or `fr` at startup. Blazor WASM does not allow a dynamic culture change with the default reduced ICU dataset
+
+Catch recording must still work offline, so translations are bundled with the PWA. User-generated content is not translated. Units (kg vs lb) are a separate user preference and must not be mixed into language resources.
 
 ---
 
@@ -331,35 +661,36 @@ Offline PWA
 IndexedDB
     |
     v
-Offline Catch + Photograph
+Offline Catch + Photograph + optional location
     |
 connectivity returns
     |
     v
 Synchronisation
     |
-    +----> Fly.io API
+    +----> Fly.io API (catch metadata + location metadata)
     |
     +----> R2 photograph upload
     |
     +----> Neon metadata
 ```
 
-This must be tested on real Android and iPhone devices before substantial feature development proceeds.
+This must be tested on real Android and iPhone devices before substantial feature development proceeds (`docs/Requirements.md` # 33 and # 45; `BUILD.md` # 48 and # 49).
 
-Location metadata is part of that offline Catch path (see `docs/Requirements.md` §32 and §44). Architecture should later specify how optional coordinates, accuracy, source, visibility and consent travel with the catch through IndexedDB and synchronisation, without blocking save when location is unavailable. Mapping providers, heat maps and aggregated location analytics are not part of the first or second architecture milestone.
+Location metadata is part of that offline Catch path. Architecture specifies that optional coordinates, accuracy, source, visibility and consent travel with the catch through IndexedDB and synchronisation, without blocking save when location is unavailable.
+
+Mapping providers, heat maps, aggregated location analytics, payment providers and league scoring are not part of the first or second architecture milestone.
 
 ---
 
-## Architecture Rule
+## Out of Scope for This Architecture Increment
 
-The architecture should optimise for:
+This document describes Catch, location, photographs, synchronisation, FishingVenue and Club so later issues can implement them consistently.
 
-```text
-Reliable first
-Cheap second
-Simple third
-Scalable when required
-```
+It does **not** authorise, as part of issue #6:
 
-Do not design infrastructure for hypothetical scale before real usage demonstrates a need.
+- Application code, database migrations, or Terraform apply
+- Mapping providers, public catch maps, or heat maps
+- Payment processing
+- Club championship / league scoring
+- Creating additional cloud resources
