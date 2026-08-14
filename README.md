@@ -16,8 +16,8 @@ intentionally **not** implemented yet.
 ```text
 src/
   FishingLogBook.Domain          # Entities, no project dependencies
-  FishingLogBook.Shared          # API contracts shared with the Web client
-  FishingLogBook.Application     # Application services + contracts (-> Domain, Shared)
+  FishingLogBook.Shared          # Shared *Dto / *Enum / *Constants (-> nothing)
+  FishingLogBook.Application     # CQRS (MediatR + FluentValidation) (-> Domain, Shared)
   FishingLogBook.Infrastructure  # Dapper repositories (-> Application, Domain)
   FishingLogBook.DependencyInjection # Composition root wiring every layer (-> Application, Infrastructure)
   FishingLogBook.Db.Migrations       # DbUp SQL scripts (embedded) + migration engine
@@ -46,6 +46,7 @@ communicates with the API over HTTP and depends only on `Shared`.
 |--------------------|-----------------------------------------|
 | Target framework   | .NET 10                                 |
 | API                | ASP.NET Core minimal APIs               |
+| Application        | CQRS via MediatR + FluentValidation     |
 | Data access        | Dapper + Npgsql (PostgreSQL)            |
 | Migrations         | DbUp (embedded SQL scripts) + console runner |
 | Web                | Blazor WebAssembly PWA + MudBlazor      |
@@ -90,10 +91,12 @@ SQL scripts and the DbUp engine live in `FishingLogBook.Db.Migrations`; they are
 the `FishingLogBook.Db.Migrations.App` console runner (the API never migrates on startup).
 
 Scripts live under numbered folders (`01_Tables`, `02_SeedData`, `03_Routines`,
-`04_Scripts`) and are named `YYYYMMDDHHMM_Description.sql`. They are **ordered by filename
+`04_Scripts`) and are named `YYYYMMDDHHMM_{GitHubIssue}_{Description}.sql` (e.g.
+`202608141200_3_AddCatchTable.sql` for issue `#3`). They are **ordered by filename
 only** (via `FilenameOnlyScriptComparer`), so the timestamp prefix determines run order
-across all folders — a script authored earlier always runs first. DbUp records applied
-scripts in its `SchemaVersions` table and runs each once.
+across all folders — a script authored earlier always runs first. Do not rename a script
+that DbUp has already journaled. DbUp records applied scripts in its `SchemaVersions`
+table and runs each once.
 
 The runner reads `Db:ConnectionString` (user secrets, `Db__ConnectionString` env var, or a
 local `appsettings.Development.json`):

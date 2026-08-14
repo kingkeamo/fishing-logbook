@@ -1,6 +1,13 @@
 @FishingLogBook.Api_HostAddress = http://localhost:5110
 
-GET {{FishingLogBook.Api_HostAddress}}/weatherforecast/
+### System
+
+GET {{FishingLogBook.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{FishingLogBook.Api_HostAddress}}/api/system/database
 Accept: application/json
 
 ###

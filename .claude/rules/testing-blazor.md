@@ -32,6 +32,14 @@ that would break if the UI logic changed:
 - mocked client services: `Received()` / `DidNotReceive()` with `Arg.Is<>` when the
   component passes specific values.
 
+## DI container tests
+
+Keep a `DependencyInjectionTests/` suite that builds `AddFishingLogBookWeb` with
+`ValidateOnBuild` / `ValidateScopes`, stubs framework services (`IJSRuntime`,
+`NavigationManager`), then `GetRequiredService`s every `[Inject]` property on
+`IComponent` types in `FishingLogBook.Web`. Register new Web services in
+`AddFishingLogBookWeb`, not only in `Program.cs`, or this test will miss them.
+
 ## Stack
 
 - **bUnit 2.x** (`BunitContext`) + **xUnit** + **NSubstitute** + **AwesomeAssertions**.
@@ -70,7 +78,7 @@ public class WhenTestingRender : BaseSystemStatusTest
     {
         // Arrange
         var client = Substitute.For<ISystemStatusClient>();
-        client.GetApiHealthAsync(Arg.Any<CancellationToken>()).Returns(new HealthResponse("Healthy"));
+        client.GetApiHealthAsync(Arg.Any<CancellationToken>()).Returns(new HealthDto("Healthy"));
         await using var context = CreateContext(client);
 
         // Act
@@ -106,4 +114,5 @@ Verify the mocked client services, not only markup. Both success and failure pat
 
 ## Before writing new tests
 
-Read the existing Web tests before adding new ones and match the pattern.
+Read at least **5 existing tests** of the same type (page, component, service) in
+`FishingLogBook.Web.Tests` before adding new ones.

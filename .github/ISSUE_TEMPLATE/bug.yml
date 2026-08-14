@@ -1,0 +1,89 @@
+name: Bug
+description: Report a defect in existing FishingLogBook behaviour
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A bug fix should include an automated regression test where technically practical.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Summarise the defect and its impact.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Numbered steps that reliably reproduce the problem.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behaviour
+    attributes:
+      label: Expected Behaviour
+      description: What should happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behaviour
+    attributes:
+      label: Actual Behaviour
+      description: What happens instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Where the bug was observed.
+      placeholder: |
+        - Local / Dev / Prod
+        - Browser or device
+        - Online / offline
+        - Location permission granted / denied / unavailable
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Observable behaviour that proves the bug is fixed. Prefer Given / When / Then. Use markdown checkboxes.
+      value: |
+        - [ ] Given ...
+          When ...
+          Then ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: regression-test-requirements
+    attributes:
+      label: Regression Test Requirements
+      description: Automated regression coverage required for this fix.
+      value: |
+        - [ ] An automated regression test covers the failure where technically practical
+        - [ ] Existing tests remain passing
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Screenshots, logs without secrets, related issues, or requirement references.
+    validations:
+      required: false

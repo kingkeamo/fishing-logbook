@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
-using FishingLogBook.Shared.SystemStatus;
+using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Api.Tests.SystemEndpointsTests;
 
@@ -20,7 +20,7 @@ public class WhenTestingGetHealth : BaseSystemEndpointsTest
 
         // Act
         var response = await client.GetAsync("/health");
-        var body = await response.Content.ReadFromJsonAsync<HealthResponse>();
+        var body = await response.Content.ReadFromJsonAsync<HealthDto>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

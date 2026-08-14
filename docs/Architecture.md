@@ -347,6 +347,8 @@ Synchronisation
 
 This must be tested on real Android and iPhone devices before substantial feature development proceeds.
 
+Location metadata is part of that offline Catch path (see `docs/Requirements.md` §32 and §44). Architecture should later specify how optional coordinates, accuracy, source, visibility and consent travel with the catch through IndexedDB and synchronisation, without blocking save when location is unavailable. Mapping providers, heat maps and aggregated location analytics are not part of the first or second architecture milestone.
+
 ---
 
 ## Architecture Rule

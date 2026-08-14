@@ -1,10 +1,8 @@
 namespace FishingLogBook.Db.Migrations;
 
 /// <summary>
-/// Orders migration scripts by their <c>YYYYMMDDHHMM_Description.sql</c> filename only,
-/// ignoring the numbered folder they live in. This guarantees scripts run in true
-/// chronological order across folders (e.g. a seed authored before a later table change
-/// still runs first), with the full resource name used as a stable tie-breaker.
+/// Orders scripts by filename only. New files:
+/// <c>YYYYMMDDHHMM_{GitHubIssue}_{Description}.sql</c>. Sort key is the timestamp prefix.
 /// </summary>
 public class FilenameOnlyScriptComparer : IComparer<string>
 {
@@ -28,7 +26,7 @@ public class FilenameOnlyScriptComparer : IComparer<string>
         var scriptOneFilename = GetFilename(scriptOne);
         var scriptTwoFilename = GetFilename(scriptTwo);
 
-        // Compare alphabetically (which gives us timestamp order due to the YYYYMMDDHHMI prefix).
+        // Compare alphabetically (timestamp order from the YYYYMMDDHHMM prefix).
         var filenameComparison = string.Compare(scriptOneFilename, scriptTwoFilename, StringComparison.Ordinal);
 
         if (filenameComparison == 0)
@@ -52,7 +50,7 @@ public class FilenameOnlyScriptComparer : IComparer<string>
         // First 4 parts are: FishingLogBook.Db.Migrations.<FolderName>
         if (parts.Length < 5)
         {
-            var errorMessage = $"Script name '{scriptName}' does not follow the expected naming convention. YEAR:MONTH:DAY:HOUR:MINUTE_DESCRIPTION example - 202306120905_CreateSystemTest.sql ";
+            var errorMessage = $"Script name '{scriptName}' does not follow the expected naming convention. Example: 202608141200_3_AddCatchTable.sql";
             throw new InvalidOperationException(errorMessage);
         }
 

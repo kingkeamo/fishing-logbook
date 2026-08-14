@@ -22,7 +22,7 @@ different project's test project.
 |---------|-------|------------|
 | `FishingLogBook.Tests.Common` | Shared test builders/fixtures — **no tests** (plain class library) | Domain, Shared |
 | `FishingLogBook.Shared.Tests` | DTO / contract serialisation | Shared, Tests.Common |
-| `FishingLogBook.Application.Tests` | Application services | Application, Tests.Common |
+| `FishingLogBook.Application.Tests` | CQRS handlers + FluentValidation validators | Application, Tests.Common |
 | `FishingLogBook.Infrastructure.Tests` | Infrastructure logic that needs no live DB | Infrastructure, Tests.Common |
 | `FishingLogBook.Db.Migrations.Tests` | Migration ordering (`FilenameOnlyScriptComparer`) and engine helpers | Db.Migrations, Tests.Common |
 | `FishingLogBook.Api.Tests` | API endpoints via `WebApplicationFactory<Program>` (repositories mocked — no live DB in CI) | Api, Shared, Application, Tests.Common |
@@ -55,8 +55,11 @@ Assert more than "no exception":
 
 | Layer | Minimum assertions |
 |-------|-------------------|
-| Application services | Returned data/outcome **and** `Received()` / `DidNotReceive()` with `Arg.Is<>` on meaningful inputs |
+| CQRS handlers | Outcome (`IsSuccess` / `IsFailure`, `ErrorMessage`, returned data) **and** `Received()` / `DidNotReceive()` with `Arg.Is<>` on meaningful inputs |
+| Validators | `ShouldHaveValidationErrorFor` / `ShouldNotHaveAnyValidationErrors` for the rule under test |
 | API endpoints (integration) | HTTP status code **and** response body shape/values |
+
+**Anti-patterns (insufficient):** `result.IsSuccess.Should().BeTrue()` only; `Received(Arg.Any<T>())` when the SUT passes specific values; a success test with no `Received()` verification.
 
 After writing a test, mentally invert one line of production behaviour it covers — the test
 must fail. If it would not, add assertions.
@@ -65,35 +68,44 @@ must fail. If it would not, add assertions.
 
 xUnit + NSubstitute + AwesomeAssertions (the Apache-2.0 fork of FluentAssertions; use
 `using AwesomeAssertions;`) + coverlet.collector. Integration tests use
-`Microsoft.AspNetCore.Mvc.Testing`.
+`Microsoft.AspNetCore.Mvc.Testing`. Handler tests instantiate the handler directly.
+Validator tests use **FluentValidation.TestHelper**.
 
 - `Fact` is available via the project's global `Using Include="Xunit"`.
 - Never hand-roll fakes/stubs — use NSubstitute (`Substitute.For<T>()`, `Returns`,
   `Arg.Any<T>()`, `Arg.Is<T>(...)`, `Received()`, `DidNotReceive()`).
+- NSubstitute fields: `Mock*` prefix (`MockSystemRepository`) — same as rah-portal.
 
 ## Naming & structure — `WhenTesting` convention (mandatory)
 
-Follow the RefAssured-style `WhenTesting` layout:
+Follow the rah-portal / RefAssured `WhenTesting` layout. Mirror production namespaces:
 
-- **One folder per system-under-test:** `{Sut}Tests/` (e.g. `SystemStatusServiceTests/`).
+```text
+tests/FishingLogBook.Application.Tests/{Feature}/Commands/{Name}CommandTests/WhenTestingHandle.cs
+tests/FishingLogBook.Application.Tests/{Feature}/Commands/{Name}CommandValidatorTests/WhenTestingValidate.cs
+tests/FishingLogBook.Application.Tests/{Feature}/Queries/{Name}QueryTests/WhenTestingHandle.cs
+tests/FishingLogBook.Api.Tests/SystemEndpointsTests/WhenTestingGetHealth.cs
+```
+
+- **One folder per system-under-test:** `{Sut}Tests/` (e.g. `AddCatchCommandTests/`).
 - **Base class** `Base{Sut}Test` in that folder holds the SUT and its NSubstitute
   dependencies as `protected` fields, constructed in the constructor (no `[SetUp]`):
 
 ```csharp
-public class BaseSystemStatusServiceTest
+public class BaseAddCatchCommandTest
 {
-    protected readonly ISystemRepository SystemRepository = Substitute.For<ISystemRepository>();
-    protected readonly SystemStatusService Sut;
+    protected readonly ICatchRepository MockCatchRepository = Substitute.For<ICatchRepository>();
+    protected readonly AddCatchHandler Sut;
 
-    protected BaseSystemStatusServiceTest()
+    protected BaseAddCatchCommandTest()
     {
-        Sut = new SystemStatusService(SystemRepository);
+        Sut = new AddCatchHandler(MockCatchRepository);
     }
 }
 ```
 
 - **One class per method/behaviour under test:** `WhenTesting{MethodOrBehaviour}`, inheriting
-  the base (e.g. `WhenTestingGetDatabaseStatusAsync : BaseSystemStatusServiceTest`).
+  the base (e.g. `WhenTestingHandle : BaseAddCatchCommandTest`).
 - **Test methods:** `ItShould{ExpectedOutcome}` — append `_When{Condition}` when one
   `WhenTesting` class covers several conditions
   (e.g. `ItShouldReturnDegradedWithNoName_WhenNoRecordExists`).
@@ -109,12 +121,31 @@ Every test method uses exactly these section comments — no other comments:
 // Assert
 ```
 
-## Application service tests (Application.Tests)
+## Handler tests (Application.Tests)
 
-- The base test constructs the service with `Substitute.For<I*Repository>()` dependencies.
-- Assert the returned contract/DTO **and** verify the repository was called with the
-  expected arguments (`Received(1)` + `Arg.Is<>`), or `DidNotReceive()` for early exits.
+- Instantiate the handler directly with `Substitute.For<I*Service>()` — do not run the
+  full MediatR pipeline unless testing integration.
+- Call `await Sut.Handle(command, CancellationToken.None)`.
+- Assert `result.IsFailure` / `IsSuccess`, `ErrorMessage`, `ValidationErrors`, and success
+  data.
+- **Every test** must verify mocks with `Received()` / `DidNotReceive()` and `Arg.Is<T>(...)`.
 - Build domain inputs with the shared builders from `FishingLogBook.Tests.Common`.
+- API tests still mock **repositories** (not `IMediator`) so the real handler and service
+  run inside `WebApplicationFactory`.
+
+## Service tests (Application.Tests)
+
+- Extend `Base{Service}Test`. Construct the service with `Substitute.For<I*Repository>()`
+  and a Mapster `TypeAdapterConfig` when the service calls `.Adapt<T>()`.
+- Assert FluentResults `IsSuccess` / `IsFailed` **and** `Received()` / `Arg.Is<>`.
+
+## Validator tests (Application.Tests)
+
+- Separate folder: `{Command}ValidatorTests/WhenTestingValidate.cs`
+- Use `_validator.TestValidate(command)` from FluentValidation.TestHelper
+- Assert with `ShouldNotHaveAnyValidationErrors()` / `ShouldHaveValidationErrorFor(...)`
+- Do **not** add `RuleFor(x => x).NotNull()` on the command — FluentValidation rejects
+  `Validate(null)` before that rule runs. Validate nested properties instead.
 
 ## API integration tests (Api.Tests)
 
@@ -125,13 +156,42 @@ Every test method uses exactly these section comments — no other comments:
 - Assert `response.StatusCode` **and** the deserialised body. Cover success and failure
   paths (e.g. healthy record → 200; missing record and repository exception → 503).
 
+## DI container tests (Api.Tests)
+
+Unit tests construct services directly, so they will not catch a missing
+`AddScoped` / `AddSingleton` in `AddFishingLogBook`. Keep a
+`DependencyInjectionTests/` suite that:
+
+- builds the real API host (`WebApplicationFactory<Program>`) with `ValidateOnBuild`
+  and `ValidateScopes`,
+- reflects endpoint handler methods under `FishingLogBook.Api.Endpoints` and
+  `GetRequiredService`s every DI parameter (skip `CancellationToken`, HTTP types,
+  primitives, and Shared/Domain bindable DTOs).
+
+This is the safety net for “all tests passed but the app dies on first request”.
+
 ## Coverage
 
-Aim for high, meaningful coverage of the code under test (service methods, endpoint
-handlers, logic-bearing helpers). Do not write filler tests purely to raise a coverage
-number, and do not widen production visibility or use reflection just to reach a branch.
+Aim for **100% line and branch coverage** of the handler, validator, or endpoint under
+test. Do not write filler tests purely to raise a number, and do not widen production
+visibility or use reflection just to reach a branch.
+
+## AI feature definition of done (mandatory)
+
+When you add or change production code, add or update tests in the **matching test
+project in the same task**.
+
+| Production project | Test project |
+|--------------------|--------------|
+| `FishingLogBook.Application` | `FishingLogBook.Application.Tests` (handler + validator) |
+| `FishingLogBook.Api` | `FishingLogBook.Api.Tests` |
+| `FishingLogBook.Infrastructure` | `FishingLogBook.Infrastructure.Tests` |
+| `FishingLogBook.Shared` | `FishingLogBook.Shared.Tests` |
+| `FishingLogBook.Web` | `FishingLogBook.Web.Tests` — see **`testing-blazor.md`** |
+
+Before marking complete: run targeted `dotnet test` for every test project you changed.
 
 ## Before writing new tests
 
-Read the existing test classes of the same type before adding a new one and match the
-pattern.
+Read at least **5 existing test classes of the same type** (handler, validator, endpoint)
+before writing a new one, and match the pattern.

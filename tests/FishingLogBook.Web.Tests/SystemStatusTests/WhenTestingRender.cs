@@ -1,6 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
-using FishingLogBook.Shared.SystemStatus;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Pages.SystemStatus;
 using FishingLogBook.Web.Services;
@@ -17,9 +17,9 @@ public class WhenTestingRender : BaseSystemStatusTest
         using var culture = TestCulture.Use(CultureNames.English);
         var statusClient = Substitute.For<ISystemStatusClient>();
         statusClient.GetApiHealthAsync(Arg.Any<CancellationToken>())
-            .Returns(new HealthResponse("Healthy"));
+            .Returns(new HealthDto("Healthy"));
         statusClient.GetDatabaseStatusAsync(Arg.Any<CancellationToken>())
-            .Returns(new DatabaseTestResponse("Healthy", "FishingLogBook database online"));
+            .Returns(new DatabaseTestDto("Healthy", "FishingLogBook database online"));
         await using var context = CreateContext(statusClient);
 
         // Act
@@ -43,7 +43,7 @@ public class WhenTestingRender : BaseSystemStatusTest
         using var culture = TestCulture.Use(CultureNames.English);
         var statusClient = Substitute.For<ISystemStatusClient>();
         statusClient.GetApiHealthAsync(Arg.Any<CancellationToken>())
-            .Returns<HealthResponse?>(_ => throw new HttpRequestException("offline"));
+            .Returns<HealthDto?>(_ => throw new HttpRequestException("offline"));
         await using var context = CreateContext(statusClient);
 
         // Act
@@ -66,9 +66,9 @@ public class WhenTestingRender : BaseSystemStatusTest
         using var culture = TestCulture.Use(CultureNames.French);
         var statusClient = Substitute.For<ISystemStatusClient>();
         statusClient.GetApiHealthAsync(Arg.Any<CancellationToken>())
-            .Returns(new HealthResponse("Healthy"));
+            .Returns(new HealthDto("Healthy"));
         statusClient.GetDatabaseStatusAsync(Arg.Any<CancellationToken>())
-            .Returns(new DatabaseTestResponse("Healthy", "FishingLogBook database online"));
+            .Returns(new DatabaseTestDto("Healthy", "FishingLogBook database online"));
         await using var context = CreateContext(statusClient);
 
         // Act

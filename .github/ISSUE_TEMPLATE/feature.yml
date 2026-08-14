@@ -1,0 +1,95 @@
+name: Feature
+description: Product work driven by FishingLogBook requirements
+title: "[Feature] "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for product functionality. Acceptance Criteria must describe observable behaviour, not implementation details.
+        Do not start implementation until the issue is approved.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why this work exists and which user or organisation it serves.
+      placeholder: Recreational anglers need to record a catch beside the water when there is no network.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: The observable outcome this issue must deliver.
+      placeholder: An angler can save a catch while offline.
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirement-references
+    attributes:
+      label: Requirement References
+      description: Cite docs/Requirements.md, docs/Architecture.md and BUILD.md sections.
+      placeholder: |
+        - docs/Requirements.md # 5 Catch Logging
+        - docs/Requirements.md # 2.2 Offline First
+        - BUILD.md # 48 Second Milestone
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Observable behaviour. Prefer Given / When / Then. Use markdown checkboxes.
+      value: |
+        - [ ] Given ...
+          When ...
+          Then ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: test-requirements
+    attributes:
+      label: Test Requirements
+      description: Automated tests that must be added. Include failure, offline, location and sync cases where relevant.
+      placeholder: |
+        - Behavioural test for each Acceptance Criterion where practical
+        - Existing tests remain green
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Issues or foundations that must exist first. Write "None" if there are none.
+      placeholder: Depends on offline TestCatch persistence.
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: What this issue must not include.
+      placeholder: Payment processing, mapping, native applications.
+    validations:
+      required: true
+
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      description: Confirm completion conditions. Keep the required items below and add issue-specific items if needed.
+      value: |
+        - [ ] All Acceptance Criteria satisfied
+        - [ ] Automated tests added and passing
+        - [ ] Existing tests remain passing
+        - [ ] User-visible text localised in English and French where applicable
+        - [ ] No unrelated scope added
+    validations:
+      required: true
