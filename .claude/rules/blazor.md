@@ -14,9 +14,9 @@ Blazor tests are in **`testing-blazor.md`**.
 
 - **Blazor WebAssembly** Progressive Web App (`Microsoft.NET.Sdk.BlazorWebAssembly`),
   deployed as static assets (Cloudflare Pages) — it is not hosted by the API.
-- UI: **MudBlazor**. Register with `builder.Services.AddMudServices()` and include the
-  MudBlazor CSS/JS in `wwwroot/index.html`. Use MudBlazor components; do not add Bootstrap
-  or other UI frameworks.
+- UI: **MudBlazor**. Register MudBlazor (and all other Web services) via
+  `AddFishingLogBookWeb` and include the MudBlazor CSS/JS in `wwwroot/index.html`.
+  Use MudBlazor components; do not add Bootstrap or other UI frameworks.
 - The PWA is mobile-first with a responsive desktop layout, and supports light and dark
   themes via `MudThemeProvider`.
 - Shared contracts come from `FishingLogBook.Shared`.
@@ -61,6 +61,9 @@ PageName.razor.css    → component-scoped (isolated) CSS
 
 ## Dependency injection
 
+- Register client services, localization, and MudBlazor in `AddFishingLogBookWeb`
+  (`ServiceCollectionExtensions.cs`). `Program.cs` only builds the host and calls that
+  method.
 - Use `[Inject]` on the code-behind for services (`I*Client`, `NavigationManager`,
   `IJSRuntime`, `IDialogService`, `ISnackbar`).
 - Prefer `I*Client` interfaces from `Web/Services/` over concrete types.
@@ -101,5 +104,5 @@ Pages and components call **typed client services**, not `HttpClient` directly.
 
 ## Before writing
 
-Read the existing pages, components, and client services before adding new UI, and match
-folder placement and the three-file naming pattern.
+Read at least **5 existing files of the same type** (page, component, client service)
+before adding new UI. Match folder placement and the three-file naming pattern.

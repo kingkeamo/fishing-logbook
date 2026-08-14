@@ -1,10 +1,10 @@
-using FishingLogBook.Shared.SystemStatus;
+using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Web.Services;
 
 public interface ISystemStatusClient
 {
-    Task<HealthResponse?> GetApiHealthAsync(CancellationToken cancellationToken);
+    Task<HealthDto?> GetApiHealthAsync(CancellationToken cancellationToken);
 
-    Task<DatabaseTestResponse?> GetDatabaseStatusAsync(CancellationToken cancellationToken);
+    Task<DatabaseTestDto?> GetDatabaseStatusAsync(CancellationToken cancellationToken);
 }

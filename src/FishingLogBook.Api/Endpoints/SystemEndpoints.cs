@@ -1,5 +1,5 @@
 using FishingLogBook.Application.SystemStatus;
-using FishingLogBook.Shared.SystemStatus;
+using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Api.Endpoints;
 
@@ -9,16 +9,16 @@ public static class SystemEndpoints
 
     public static IEndpointRouteBuilder MapSystemEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/health", () => Results.Ok(new HealthResponse(HealthyStatus)))
+        endpoints.MapGet("/health", () => Results.Ok(new HealthDto(HealthyStatus)))
             .WithName("GetHealth")
             .WithTags("System")
-            .Produces<HealthResponse>(StatusCodes.Status200OK);
+            .Produces<HealthDto>(StatusCodes.Status200OK);
 
         endpoints.MapGet("/api/system/database", GetDatabaseStatusAsync)
             .WithName("GetDatabaseStatus")
             .WithTags("System")
-            .Produces<DatabaseTestResponse>(StatusCodes.Status200OK)
-            .Produces<DatabaseTestResponse>(StatusCodes.Status503ServiceUnavailable);
+            .Produces<DatabaseTestDto>(StatusCodes.Status200OK)
+            .Produces<DatabaseTestDto>(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
     }
@@ -45,7 +45,7 @@ public static class SystemEndpoints
         {
             logger.LogError(exception, "Database connectivity check failed.");
             return Results.Json(
-                new DatabaseTestResponse("Unhealthy", null),
+                new DatabaseTestDto("Unhealthy", null),
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }

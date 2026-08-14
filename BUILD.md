@@ -306,8 +306,8 @@ Do not expose server-side implementation assemblies to the WebAssembly client.
 Examples:
 
 ```text
-HealthResponse
-DatabaseTestResponse
+HealthDto
+DatabaseTestDto
 TestRecordDto
 ```
 
@@ -487,7 +487,9 @@ Scripts live under numbered folders inside `FishingLogBook.Db.Migrations`:
 01_Tables/     02_SeedData/     03_Routines/     04_Scripts/
 ```
 
-Filename convention: `YYYYMMDDHHMM_Description.sql`. Initial scripts:
+Filename convention: `YYYYMMDDHHMM_{GitHubIssue}_{Description}.sql` (no `#`).
+Example: `202608141200_3_AddCatchTable.sql` for issue `#3`. Initial scripts (already
+applied — do not rename):
 
 ```text
 01_Tables/202608131200_CreateSystemTest.sql

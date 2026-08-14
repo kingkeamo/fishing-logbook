@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using FishingLogBook.Domain.SystemStatus;
-using FishingLogBook.Shared.SystemStatus;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Tests.Common.Builders;
 using NSubstitute;
 
@@ -26,7 +26,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
 
         // Act
         var response = await client.GetAsync("/api/system/database");
-        var body = await response.Content.ReadFromJsonAsync<DatabaseTestResponse>();
+        var body = await response.Content.ReadFromJsonAsync<DatabaseTestDto>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -45,7 +45,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
 
         // Act
         var response = await client.GetAsync("/api/system/database");
-        var body = await response.Content.ReadFromJsonAsync<DatabaseTestResponse>();
+        var body = await response.Content.ReadFromJsonAsync<DatabaseTestDto>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
@@ -63,7 +63,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
 
         // Act
         var response = await client.GetAsync("/api/system/database");
-        var body = await response.Content.ReadFromJsonAsync<DatabaseTestResponse>();
+        var body = await response.Content.ReadFromJsonAsync<DatabaseTestDto>();
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);

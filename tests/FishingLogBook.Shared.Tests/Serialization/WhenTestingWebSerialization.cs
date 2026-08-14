@@ -1,20 +1,20 @@
 using System.Text.Json;
 using AwesomeAssertions;
-using FishingLogBook.Shared.SystemStatus;
+using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Shared.Tests.Serialization;
 
 public class WhenTestingWebSerialization : BaseSerializationTest
 {
     [Fact]
-    public void ItShouldRoundTripHealthResponseUsingWebDefaults()
+    public void ItShouldRoundTripHealthDtoUsingWebDefaults()
     {
         // Arrange
-        var original = new HealthResponse("Healthy");
+        var original = new HealthDto("Healthy");
 
         // Act
         var json = JsonSerializer.Serialize(original, WebOptions);
-        var deserialized = JsonSerializer.Deserialize<HealthResponse>(json, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<HealthDto>(json, WebOptions);
 
         // Assert
         json.Should().Contain("\"status\":\"Healthy\"");
@@ -22,14 +22,14 @@ public class WhenTestingWebSerialization : BaseSerializationTest
     }
 
     [Fact]
-    public void ItShouldRoundTripDatabaseTestResponseUsingWebDefaults()
+    public void ItShouldRoundTripDatabaseTestDtoUsingWebDefaults()
     {
         // Arrange
-        var original = new DatabaseTestResponse("Healthy", "FishingLogBook database online");
+        var original = new DatabaseTestDto("Healthy", "FishingLogBook database online");
 
         // Act
         var json = JsonSerializer.Serialize(original, WebOptions);
-        var deserialized = JsonSerializer.Deserialize<DatabaseTestResponse>(json, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<DatabaseTestDto>(json, WebOptions);
 
         // Assert
         json.Should().Contain("\"name\":\"FishingLogBook database online\"");

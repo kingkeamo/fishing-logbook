@@ -14,8 +14,8 @@ paths:
 | Project | Role |
 |---------|------|
 | `FishingLogBook.Domain` | Entities and domain types. **No project dependencies.** |
-| `FishingLogBook.Shared` | API contracts (DTOs) shared between the API and the Web client. |
-| `FishingLogBook.Application` | Application services and contracts (`I*Repository`). |
+| `FishingLogBook.Shared` | Shared `*Dto` / `*Enum` / `*Constants` between API and Web. |
+| `FishingLogBook.Application` | MediatR CQRS, FluentValidation, `ValidatedResponse` — see **`cqrs.md`**. |
 | `FishingLogBook.Infrastructure` | Dapper repositories, Npgsql connection factory. |
 | `FishingLogBook.DependencyInjection` | Composition root (`AddFishingLogBook`) — see below. |
 | `FishingLogBook.Db.Migrations` | DbUp SQL scripts + migration engine — see **`database.md`**. |
@@ -40,9 +40,10 @@ Web                  -> Shared only
 The Blazor WebAssembly project must **never** reference `Application` or `Infrastructure`.
 Do not expose server-side implementation assemblies to the WebAssembly client.
 
-**Do not introduce:** Entity Framework / `DbContext`, MediatR, Mapster, FluentMigrator, or
-a CQRS pipeline. This project uses plain application services + Dapper + DbUp. Add
-abstractions only when they provide genuine value (see below).
+**Do not introduce:** Entity Framework / `DbContext`, FluentMigrator, Wolverine, MediatR
+13+ / Lucky Penny, or a second mediator. Persistence is Dapper + DbUp. Application work
+is **CQRS via MediatR 12.5.0 (Apache-2.0) + FluentValidation + Mapster + FluentResults**
+— see **`cqrs.md`**. Add further abstractions only when they provide genuine value.
 
 ## Database and migrations
 
@@ -50,6 +51,9 @@ Data access and migration rules live in **`database.md`**. Summary: PostgreSQL v
 **Dapper + Npgsql**; migrations via **DbUp** in the dedicated `FishingLogBook.Db.Migrations`
 project (embedded SQL scripts) applied by the `FishingLogBook.Db.Migrations.App` runner —
 the API does not migrate on startup. Table names must **not** contain underscores.
+Feature migrations are **expand-only** (add column/table, keep the old one). Destructive
+cleanup (`DROP COLUMN`, etc.) is a separate follow-up task after the feature is live —
+see **`database.md`**.
 
 ## General C# style
 
@@ -58,6 +62,7 @@ the API does not migrate on startup. Table names must **not** contain underscore
 - File-scoped namespaces.
 - Use `is null` / `is not null` for null checks.
 - Inject interfaces from `Application/Contracts`, never concrete types from another layer.
+  API endpoints inject `IMediator`, not repositories or handlers (see **`cqrs.md`**).
 - Use `ILogger<T>` for logging. Use `async`/`await` and pass `CancellationToken` through
   database/API/service methods.
 - Prefer readable explicit code. Avoid unnecessary abstractions. Do **not** create a
@@ -93,22 +98,42 @@ helpers over long `if`/`switch` chains. Split a method before it exceeds 10.
 Use **block bodies** for methods and local functions — not expression bodies (`=>`).
 Run `dotnet format FishingLogBook.sln` after editing C#.
 
+### Folder suffix naming (mandatory)
+
+Types must be suffixed with the **singular** of their parent folder name. The **file
+name must match the type name**.
+
+| Folder | Suffix | Location | Examples |
+|--------|--------|----------|----------|
+| `Dtos/` | `Dto` | `FishingLogBook.Shared/Dtos/` | `HealthDto`, `DatabaseTestDto`, `TestRecordDto` |
+| `Enums/` | `Enum` | Shared or Domain | `CatchMethodEnum` |
+| `Constants/` | `Constants` | Shared | `CultureNames` stays until converted to `CultureConstants` |
+| `Args/` | `Args` | `FishingLogBook.Application/Args/` | `FilterCatchesArgs` |
+
+**Enums:** do not use `Type` or other suffixes in `Enums/` — use `Enum` only.
+
+**DTO properties** may drop the `Enum` suffix when the meaning is clear (e.g. property
+`Method` of type `CatchMethodEnum`).
+
 ## Domain layer (`FishingLogBook.Domain`)
 
 - POCO entities only. No dependencies on other projects, no infrastructure concerns.
 
 ## Shared layer (`FishingLogBook.Shared`)
 
-- API contracts shared over the wire (e.g. `HealthResponse`, `DatabaseTestResponse`,
-  `TestRecordDto`). Prefer `record` types.
-- Do **not** place repositories, services, secrets, or server configuration here.
+- API contracts shared over the wire, in `Shared/Dtos/` as `*Dto` records
+  (e.g. `HealthDto`, `DatabaseTestDto`, `TestRecordDto`).
+- Shared enums/constants follow folder suffix naming above.
+- Do **not** place repositories, services, secrets, handlers, or server configuration here.
 
 ## Application layer (`FishingLogBook.Application`)
 
-- Application services (e.g. `SystemStatusService`) orchestrate domain + repository calls
-  and map to `Shared` contracts.
-- Contracts (`I*Repository`, `IDatabaseMigrator`) live in `Application/Contracts/` and are
-  implemented in Infrastructure.
+- CQRS vertical slices — same as rah-portal. Layout, naming, one-file command/query,
+  `ValidatedResponse`, FluentValidation, Mapster, and the handler → `I*Service` →
+  repository chain are in **`cqrs.md`**.
+- Contracts: `Application/Contracts/Repositories/I*Repository` and
+  `Application/Contracts/Services/I*Service`. Implementations of services live in
+  `Application/Services/`; repositories in Infrastructure.
 - This layer contains no DI registration of its own (see the composition root below).
 
 ## Infrastructure layer (`FishingLogBook.Infrastructure`)
@@ -124,7 +149,12 @@ Run `dotnet format FishingLogBook.sln` after editing C#.
   project. Referenced only by the API (and any future host).
 - `ServiceCollectionExtensions` exposes `AddFishingLogBook(IConfiguration)`, which composes
   `AddFishingLogBookApplication()` and `AddFishingLogBookInfrastructure(IConfiguration)`.
-- When adding a new service or repository, register it here in the matching `Add*` method.
+- `AddFishingLogBookApplication` registers MediatR (scan Application),
+  `AddValidatorsFromAssembly`, `ValidationBehaviour<,>`, Mapster mappings, and
+  application `I*Service` implementations. Register new repositories in
+  `AddFishingLogBookInfrastructure`. Do not register individual handlers or validators.
+- The Blazor host has its own composition method: `AddFishingLogBookWeb` in
+  `FishingLogBook.Web`. Register new Web client services there, not only in `Program.cs`.
 
 ## Package versions
 
@@ -134,9 +164,11 @@ Run `dotnet format FishingLogBook.sln` after editing C#.
 
 ## API layer (`FishingLogBook.Api`)
 
-- Minimal APIs. Group endpoint mappings in `Endpoints/` extension methods
-  (e.g. `MapSystemEndpoints`).
-- Keep endpoint handlers thin; delegate to Application services.
+- Minimal APIs (no controllers). Group endpoint mappings in `Endpoints/` extension methods
+  (e.g. `MapSystemEndpoints`). Keep the Visual Studio `.http` scratch file in sync with
+  those routes, grouped by the same area as the `Endpoints/` files.
+- Keep endpoint handlers thin; send a MediatR command/query via `IMediator`;
+  `IsFailure` → `Results.BadRequest`, else `Results.Ok` (see **`cqrs.md`**).
 - Runtime health must reflect reality — never return a faked "healthy" response for a
   service that was not actually checked. If a dependency is unreachable, return an
   appropriate error status (e.g. 503).
@@ -145,5 +177,5 @@ Run `dotnet format FishingLogBook.sln` after editing C#.
 
 ## Before writing a new class
 
-Read the existing classes of the same type (endpoint mapping, application service,
-repository, contract) before adding a new one, and match the established pattern.
+Read at least **5 existing classes of the same type** (endpoint mapping, command/query
+file, repository, contract) before adding a new one, and match the established pattern.

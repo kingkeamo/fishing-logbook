@@ -33,6 +33,20 @@ public class WhenTestingCompare : BaseFilenameOnlyScriptComparerTest
     }
 
     [Fact]
+    public void ItShouldOrderByTimestamp_WhenFilenamesIncludeGitHubIssueNumbers()
+    {
+        // Arrange
+        var laterIssue = "FishingLogBook.Db.Migrations.01_Tables.202608141300_3_AddCatchTable.sql";
+        var earlierIssue = "FishingLogBook.Db.Migrations.04_Scripts.202608141200_12_BackfillCatch.sql";
+
+        // Act
+        var result = Sut.Compare(laterIssue, earlierIssue);
+
+        // Assert
+        result.Should().BePositive("the timestamp prefix still determines order when issue numbers differ");
+    }
+
+    [Fact]
     public void ItShouldUseFolderAsTieBreaker_WhenTimestampsMatch()
     {
         // Arrange
