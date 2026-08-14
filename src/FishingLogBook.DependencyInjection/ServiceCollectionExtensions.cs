@@ -27,9 +27,12 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddFishingLogBookInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString(PostgresConnectionName) ?? string.Empty;
-
-        services.AddSingleton<IDbConnectionFactory>(_ => new NpgsqlConnectionFactory(connectionString));
+        services.AddSingleton<IDbConnectionFactory>(sp =>
+        {
+            var resolvedConfiguration = sp.GetService<IConfiguration>() ?? configuration;
+            var connectionString = resolvedConfiguration.GetConnectionString(PostgresConnectionName) ?? string.Empty;
+            return new NpgsqlConnectionFactory(connectionString);
+        });
         services.AddScoped<ISystemRepository, SystemRepository>();
 
         return services;

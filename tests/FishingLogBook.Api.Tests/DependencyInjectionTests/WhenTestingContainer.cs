@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.SystemStatus;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -40,6 +41,19 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
 
         // Assert
         injectedTypes.Should().Contain(typeof(SystemStatusService));
+        resolve.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ItShouldResolveDbConnectionFactory_WhenTestHostProvidesConnectionString()
+    {
+        // Arrange
+        using var scope = Factory.Services.CreateScope();
+
+        // Act
+        Action resolve = () => _ = scope.ServiceProvider.GetRequiredService<ISystemRepository>();
+
+        // Assert
         resolve.Should().NotThrow();
     }
 }

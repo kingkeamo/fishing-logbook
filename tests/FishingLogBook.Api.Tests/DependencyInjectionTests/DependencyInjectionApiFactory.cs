@@ -9,7 +9,7 @@ public sealed class DependencyInjectionApiFactory : WebApplicationFactory<Progra
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment("Testing");
 
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
