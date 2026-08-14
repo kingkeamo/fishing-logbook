@@ -12,6 +12,7 @@ primary_region = "iad"
 [env]
   ASPNETCORE_ENVIRONMENT = "Production"
   ASPNETCORE_HTTP_PORTS = "8080"
+  ExternalLogging__Environment = "prod"
 
 [http_service]
   internal_port = 8080

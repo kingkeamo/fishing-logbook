@@ -1,7 +1,13 @@
 using FishingLogBook.Api.Endpoints;
+using FishingLogBook.Api.Logging;
+using FishingLogBook.Api.Middleware;
 using FishingLogBook.DependencyInjection;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+    SerilogHostLogging.Configure(loggerConfiguration, context.Configuration));
 
 const string webClientCorsPolicy = "WebClient";
 
@@ -30,7 +36,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.Logger.LogInformation(
-    "FishingLogBook API starting in {Environment} environment.",
+    "FishingLogBook API starting in {HostingEnvironment} environment.",
     app.Environment.EnvironmentName);
 
 if (app.Environment.IsDevelopment())
@@ -44,9 +50,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(webClientCorsPolicy);
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 app.MapSystemEndpoints();
 app.MapTestCatchEndpoints();
+app.MapDiagnosticEndpoints();
 
 app.Run();
 

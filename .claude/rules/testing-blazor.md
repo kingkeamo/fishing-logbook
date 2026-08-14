@@ -70,11 +70,11 @@ public class BaseSystemStatusTest
     }
 }
 
-// SystemStatusTests/WhenTestingRender.cs
-public class WhenTestingRender : BaseSystemStatusTest
+// SystemStatusTests/WhenTestingHealthyRender.cs
+public class WhenTestingHealthyRender : BaseSystemStatusTest
 {
     [Fact]
-    public async Task ItShouldShowOnline_WhenApiAndDatabaseAreHealthy()
+    public async Task ItShouldShowOnline()
     {
         // Arrange
         var client = Substitute.For<ISystemStatusClient>();
@@ -103,7 +103,8 @@ public class WhenTestingRender : BaseSystemStatusTest
 
 - Folder `{Component}Tests/` with a `Base{Component}Test` (holds `CreateContext`) and one
   `WhenTesting{Behaviour}` class per behaviour, inheriting the base.
-- Test methods: `ItShould{Behaviour}_When{Condition}`.
+- Test methods: `ItShould{Outcome}` with **no underscores**. Put the condition in the
+  `WhenTesting{Behaviour}` class name, not in the method name.
 - Every test uses exactly the `// Arrange` / `// Act` / `// Assert` section comments.
 - See **`testing-csharp.md`** for the full `WhenTesting` convention.
 

@@ -12,6 +12,26 @@ paths:
 
 Blazor / bUnit tests are in **`testing-blazor.md`**.
 
+## Issue test requirements (mandatory)
+
+Tests are part of every feature and are not optional follow-up work.
+
+For every GitHub issue:
+
+1. Review every Acceptance Criterion.
+2. Add automated tests for each criterion where technically practical.
+3. Prefer behavioural tests over implementation-detail tests.
+4. Follow this file and **`testing-blazor.md`**.
+5. Use the testing libraries already selected by the solution.
+6. Do not introduce a new testing framework without a specific reason.
+7. Do not add meaningless tests purely to increase coverage.
+8. Test failure paths where Acceptance Criteria describe failure behaviour.
+9. Offline features must test offline persistence and reconnection behaviour.
+10. Location features must test permission granted, denied and unavailable scenarios where relevant.
+11. Synchronisation tests must verify retry behaviour does not create duplicate server records.
+12. Existing tests must remain green.
+13. Run the appropriate test projects before considering implementation complete.
+
 ## Test projects (one per production project)
 
 Each production project has its **own** `FishingLogBook.<Project>.Tests` project; shared
@@ -106,9 +126,13 @@ public class BaseAddCatchCommandTest
 
 - **One class per method/behaviour under test:** `WhenTesting{MethodOrBehaviour}`, inheriting
   the base (e.g. `WhenTestingHandle : BaseAddCatchCommandTest`).
-- **Test methods:** `ItShould{ExpectedOutcome}` — append `_When{Condition}` when one
-  `WhenTesting` class covers several conditions
-  (e.g. `ItShouldReturnDegradedWithNoName_WhenNoRecordExists`).
+  The condition lives in the class name (`WhenTestingReloadedFromTheStore`), not in the
+  method name.
+- **Test methods:** `ItShould{ExpectedOutcome}` only
+  (e.g. `ItShouldKeepQueuedEvents`, `ItShouldReturnDegradedWithNoName`).
+- **Do not use underscores in test method names.** Never write
+  `ItShouldKeepQueuedEvents_WhenReloadedFromTheStore`. If two conditions need separate
+  outcomes, use two `WhenTesting{Condition}` classes.
 - Mirror the production namespace/type under the test project via these folders.
 
 ## Arrange / Act / Assert

@@ -42,6 +42,35 @@
                 });
             }
         };
+        window.fishingLogBookDiagnostics = {
+            getSessionId: () => {
+                try { return localStorage.getItem('flb-anonymous-session-id'); }
+                catch { return null; }
+            },
+            setSessionId: (value) => {
+                try { localStorage.setItem('flb-anonymous-session-id', value); } catch { /* ignore */ }
+            },
+            getPlatform: () => {
+                const platform = navigator.userAgentData?.platform || navigator.platform || '';
+                const browser = navigator.userAgent || '';
+                return `${platform} ${browser}`.trim().slice(0, 120);
+            },
+            console: (level, eventName, message) => {
+                const line = `[FLB] ${eventName}: ${message}`;
+                if (level === 'Error' || level === 'Critical') {
+                    console.error(line);
+                } else if (level === 'Warning') {
+                    console.warn(line);
+                } else {
+                    console.debug(line);
+                }
+            }
+        };
+        navigator.serviceWorker?.addEventListener('message', (event) => {
+            if (event.data?.type === 'ServiceWorkerError') {
+                console.error('[FLB] ServiceWorkerError', event.data.message);
+            }
+        });
         const storedCulture = window.fishingLogBookCulture.get();
         if (storedCulture) {
             document.documentElement.lang = storedCulture;

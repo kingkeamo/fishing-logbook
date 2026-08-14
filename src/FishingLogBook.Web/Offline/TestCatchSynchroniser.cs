@@ -1,4 +1,6 @@
+using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Models;
 using FishingLogBook.Web.Services;
 
@@ -10,17 +12,20 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
     private readonly ITestCatchPhotoStore _photoStore;
     private readonly ITestCatchClient _client;
     private readonly INetworkStatus _networkStatus;
+    private readonly IDiagnosticLogger? _diagnostics;
 
     public TestCatchSynchroniser(
         ITestCatchStore store,
         ITestCatchPhotoStore photoStore,
         ITestCatchClient client,
-        INetworkStatus networkStatus)
+        INetworkStatus networkStatus,
+        IDiagnosticLogger? diagnostics = null)
     {
         _store = store;
         _photoStore = photoStore;
         _client = client;
         _networkStatus = networkStatus;
+        _diagnostics = diagnostics;
     }
 
     public async Task SynchronisePendingAsync(CancellationToken cancellationToken)
@@ -30,24 +35,35 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
             return;
         }
 
-        await MergeFromServerAsync(cancellationToken);
-
-        var local = await _store.GetAllAsync(cancellationToken);
-        foreach (var testCatch in local.Where(NeedsCatchSync))
+        await SafeLogAsync(DiagnosticLevel.Information, DiagnosticEventNames.SyncStarted, "Catch synchronisation started.", cancellationToken);
+        try
         {
-            await _store.SaveAsync(testCatch with { SyncStatus = SyncStatus.WaitingToSynchronise }, cancellationToken);
+            await MergeFromServerAsync(cancellationToken);
+
+            var local = await _store.GetAllAsync(cancellationToken);
+            foreach (var testCatch in local.Where(NeedsCatchSync))
+            {
+                await _store.SaveAsync(testCatch with { SyncStatus = SyncStatus.WaitingToSynchronise }, cancellationToken);
+            }
+
+            local = await _store.GetAllAsync(cancellationToken);
+            foreach (var testCatch in local.Where(NeedsCatchSync))
+            {
+                await SynchroniseCatchAsync(testCatch, cancellationToken);
+            }
+
+            local = await _store.GetAllAsync(cancellationToken);
+            foreach (var testCatch in local.Where(catchItem => catchItem.SyncStatus == SyncStatus.Synchronised && NeedsPhotoSync(catchItem)))
+            {
+                await SynchronisePhotographAsync(testCatch, cancellationToken);
+            }
+
+            await SafeLogAsync(DiagnosticLevel.Information, DiagnosticEventNames.SyncCompleted, "Catch synchronisation completed.", cancellationToken);
         }
-
-        local = await _store.GetAllAsync(cancellationToken);
-        foreach (var testCatch in local.Where(NeedsCatchSync))
+        catch (Exception exception)
         {
-            await SynchroniseCatchAsync(testCatch, cancellationToken);
-        }
-
-        local = await _store.GetAllAsync(cancellationToken);
-        foreach (var testCatch in local.Where(catchItem => catchItem.SyncStatus == SyncStatus.Synchronised && NeedsPhotoSync(catchItem)))
-        {
-            await SynchronisePhotographAsync(testCatch, cancellationToken);
+            await SafeLogAsync(DiagnosticLevel.Error, DiagnosticEventNames.SyncFailed, "Catch synchronisation failed.", cancellationToken, exception);
+            throw;
         }
     }
 
@@ -66,6 +82,7 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
             return;
         }
 
+        await SafeLogAsync(DiagnosticLevel.Information, DiagnosticEventNames.SyncRetry, "Catch synchronisation retry started.", cancellationToken);
         await SynchroniseCatchAsync(testCatch, cancellationToken);
         local = await _store.GetAllAsync(cancellationToken);
         testCatch = local.SingleOrDefault(item => item.Id == id);
@@ -249,5 +266,27 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
         return testCatch.Photograph?.SyncStatus is SyncStatus.SavedLocally
             or SyncStatus.WaitingToSynchronise
             or SyncStatus.FailedToSynchronise;
+    }
+
+    private async Task SafeLogAsync(
+        DiagnosticLevel level,
+        string eventName,
+        string message,
+        CancellationToken cancellationToken,
+        Exception? exception = null)
+    {
+        if (_diagnostics is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _diagnostics.LogAsync(level, eventName, message, exception: exception, cancellationToken: cancellationToken);
+        }
+        catch
+        {
+            // Diagnostic failure must not affect catch synchronisation.
+        }
     }
 }

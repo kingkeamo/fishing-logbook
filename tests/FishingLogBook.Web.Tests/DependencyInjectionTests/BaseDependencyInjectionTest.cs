@@ -17,6 +17,7 @@ public class BaseDependencyInjectionTest
         services.AddSingleton<NavigationManager, TestNavigationManager>();
         services.AddFishingLogBookWeb(
             new ApiConfig { BaseUrl = "https://example.test/" },
+            new DiagnosticsClientConfig(),
             new Uri("https://example.test/"));
 
         return services.BuildServiceProvider(new ServiceProviderOptions

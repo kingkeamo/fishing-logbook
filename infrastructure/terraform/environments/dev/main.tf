@@ -34,3 +34,10 @@ module "cloudflare_pages" {
   account_id        = var.cloudflare_account_id
   production_branch = var.pages_production_branch
 }
+
+module "grafana_cloud" {
+  source      = "../../modules/grafana-cloud"
+  count       = var.grafana_cloud_stack_slug == "" ? 0 : 1
+  environment = var.environment
+  stack_slug  = var.grafana_cloud_stack_slug
+}

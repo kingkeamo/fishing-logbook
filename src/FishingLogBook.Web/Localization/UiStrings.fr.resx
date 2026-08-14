@@ -135,4 +135,46 @@
   <data name="TestCatch_PhotoFailed" xml:space="preserve">
     <value>Échec du téléversement de la photo</value>
   </data>
+  <data name="Diagnostics_PageTitle" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="Diagnostics_Title" xml:space="preserve">
+    <value>État des diagnostics</value>
+  </data>
+  <data name="Diagnostics_Nav" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="Diagnostics_QueuedCount" xml:space="preserve">
+    <value>Événements en file</value>
+  </data>
+  <data name="Diagnostics_LastError" xml:space="preserve">
+    <value>Dernière erreur de diagnostic</value>
+  </data>
+  <data name="Diagnostics_Online" xml:space="preserve">
+    <value>État de connexion</value>
+  </data>
+  <data name="Diagnostics_OnlineYes" xml:space="preserve">
+    <value>En ligne</value>
+  </data>
+  <data name="Diagnostics_OnlineNo" xml:space="preserve">
+    <value>Hors ligne</value>
+  </data>
+  <data name="Diagnostics_StorageUsage" xml:space="preserve">
+    <value>Utilisation du stockage (octets)</value>
+  </data>
+  <data name="Diagnostics_StorageQuota" xml:space="preserve">
+    <value>Quota de stockage (octets)</value>
+  </data>
+  <data name="Diagnostics_None" xml:space="preserve">
+    <value>Aucune</value>
+  </data>
+  <data name="Diagnostics_Unknown" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+  <data name="Diagnostics_Unavailable" xml:space="preserve">
+    <value>Les diagnostics ne sont pas disponibles dans cet environnement.</value>
+  </data>
+  <data name="Diagnostics_UnavailableValue" xml:space="preserve">
+    <value>Indisponible</value>
+  </data>
 </root>

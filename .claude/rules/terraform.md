@@ -1,12 +1,47 @@
----
-paths:
-  - "infrastructure/**/*.tf"
-  - "infrastructure/**/*.tfvars"
-  - "infrastructure/**/*.tfvars.example"
-  - "infrastructure/**/backend.hcl.example"
----
-
 # Terraform & Infrastructure Conventions
+
+These rules always apply. Do not wait until a `.tf` file is open.
+
+
+## Manual apply only
+
+Terraform is applied **manually only**, after reviewing the complete `terraform plan`.
+
+Permitted without explicit developer approval:
+
+- `terraform fmt`
+- `terraform validate`
+- `terraform init -backend=false`
+- `terraform plan`
+
+Never run without explicit developer instruction:
+
+- `terraform apply`
+- `terraform destroy`
+- `terraform import`
+
+Do not:
+
+- create cloud infrastructure automatically
+- resize Fly.io machines
+- create additional databases
+- create paid provider resources
+- enable autoscaling
+- provision load balancers
+- change production infrastructure
+
+GitHub Actions may deploy application code to infrastructure that already exists.
+GitHub Actions must **never** apply Terraform.
+
+If new infrastructure is required for a feature, stop and report:
+
+1. What resource is required.
+2. Why it is required.
+3. Expected recurring cost where known.
+4. Required Terraform changes.
+5. Required manual deployment steps.
+
+Never attempt to solve an application problem by provisioning additional infrastructure without explicit approval.
 
 ## Golden rules
 
@@ -19,7 +54,8 @@ paths:
   rather than guessing.
 - Add resources **deliberately, one at a time, only when explicitly approved.** Neon
   currently defines `neon_project`; R2 defines `cloudflare_r2_bucket` (photos); Pages
-  defines `cloudflare_pages_project`. Cognito and Fly remain skeletons.
+  defines `cloudflare_pages_project`; Grafana Cloud looks up an existing stack and
+  defines a Loki `logs:write` access policy. Cognito and Fly remain skeletons.
 
 ## Stack (who does what)
 
@@ -29,6 +65,7 @@ paths:
 | Photo storage | Cloudflare R2 (`cloudflare/cloudflare`) | private buckets; zero-egress |
 | Database | Neon PostgreSQL (`kislerdm/neon`) | separate DB per env |
 | Auth | Amazon Cognito (`hashicorp/aws`) | the only reason we use AWS |
+| Diagnostic logs | Grafana Cloud (`grafana/grafana`) | lookup existing free stack; Loki write token only |
 | API hosting | **Fly.io — via `flyctl`, NOT Terraform** | no stable TF provider |
 
 Fly.io is intentionally **not** managed by a Terraform provider (the official provider is

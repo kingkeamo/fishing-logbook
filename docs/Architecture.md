@@ -419,6 +419,40 @@ These are initial hosting decisions and may be changed later without redesigning
 
 ---
 
+## Diagnostic logging
+
+FishingLogBook records **privacy-safe diagnostics** so offline failures (especially iOS Home Screen PWA IndexedDB hangs) can be investigated without a debugger attached.
+
+### Client
+
+The PWA writes diagnostic events to a **separate IndexedDB database** (`FishingLogBookDiagnostics`), not the Catch/photograph database. That isolation exists so diagnosing IndexedDB must not depend on the same Catch store succeeding, and so a logging failure cannot recurse into another Catch write.
+
+Queued events are bounded (default 500). The oldest events are discarded first. Diagnostic persistence and upload must never:
+
+- block Catch or photograph save
+- block Catch/photograph synchronisation
+- leave the Save button permanently busy
+
+When connectivity returns, pending diagnostics upload **after** Catch/photograph synchronisation, in batches, to `POST /api/diagnostics/client`. Retry is bounded. Successfully uploaded events are removed. Client-generated event IDs provide lightweight duplicate protection.
+
+Production persists Warning, Error and Critical. Information is retained for selected lifecycle events during Development. Debug is not normally persisted or uploaded from Production. Minimum persist level is configurable per environment.
+
+Diagnostics must not include exact GPS coordinates, photographs or binary/base64, private catch notes, tokens, passwords, connection strings, secrets, Cognito tokens, or raw sensitive user information. Metadata is an explicit allow-list (operation name, elapsed milliseconds, store name, record count, retry number, HTTP status, platform/browser, online state, storage quota/usage).
+
+A non-personal correlation ID is created for a user action such as Save Catch and sent as `X-Correlation-Id`. An anonymous session ID is a random GUID stored in localStorage.
+
+### API
+
+The API logs through structured `ILogger`. Request middleware records CorrelationId, RequestPath, HTTP method, StatusCode and ElapsedMilliseconds. Successful HTTP requests are Debug (not Information) so Production volume stays low. Request bodies and authentication headers are not logged.
+
+Accepted client diagnostics are sanitised again on the server and written through `ILogger`. The API host uses **Serilog**; when `ExternalLogging` is configured it adds `Serilog.Sinks.Grafana.Loki`. Application and Domain must not reference Grafana or Serilog sink types. Credentials exist only on the server (user secrets / Fly secrets copied from Terraform outputs). Loki stream labels are `app` and `env` (`localhost`, `dev`, or `prod`). Do not use `ASPNETCORE_ENVIRONMENT` for `env` — Fly Dev also runs as Production. If Grafana is unconfigured or the sink fails, the API still runs.
+
+Logging volume must stay within a free/low-cost tier during MVP. Do not log every UI click, every HTTP success, every Production IndexedDB read, renders, large objects, photos or catch payloads.
+
+A Development-only inspector can show queued count, last diagnostic error, storage estimate and online/offline state. It is not shown in Production unless explicitly configured.
+
+---
+
 ## Infrastructure as Code Safety
 
 Terraform is mandatory for infrastructure definition but must be applied **manually only**.

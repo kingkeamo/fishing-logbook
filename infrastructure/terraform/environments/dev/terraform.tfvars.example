@@ -1,7 +1,7 @@
 # Copy this file to terraform.tfvars and adjust the values for your Dev environment.
 # Do NOT commit terraform.tfvars (it is gitignored).
 #
-# Provider credentials (AWS, Neon, Fly.io, Cloudflare) must be supplied through
+# Provider credentials (AWS, Neon, Fly.io, Cloudflare, Grafana Cloud) must be supplied through
 # environment variables or your local provider configuration. NEVER commit credentials
 # or real resource identifiers to this repository.
 
@@ -22,3 +22,5 @@ environment = "dev"
 # fly_vm_size = "shared-cpu-1x"
 
 # pages_production_branch = "develop"
+
+# grafana_cloud_stack_slug = "<slug from https://<slug>.grafana.net after Grafana Cloud signup>"

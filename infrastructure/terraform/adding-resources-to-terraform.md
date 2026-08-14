@@ -12,6 +12,7 @@ time, and only when explicitly approved. Read `.claude/rules/terraform.md` first
 | PWA hosting | `modules/cloudflare-pages` | `cloudflare/cloudflare` |
 | Photo storage | `modules/r2` | `cloudflare/cloudflare` |
 | Database | `modules/neon` | `kislerdm/neon` |
+| Diagnostic logs | `modules/grafana-cloud` | `grafana/grafana` |
 | Auth | `modules/cognito` | `hashicorp/aws` |
 | API hosting | `modules/fly` | **flyctl, not Terraform** |
 

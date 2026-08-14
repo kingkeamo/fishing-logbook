@@ -1,4 +1,5 @@
 using Bunit;
+using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Offline;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,8 @@ public class BaseTestCatchLogTest
     protected static BunitContext CreateContext(
         ITestCatchStore store,
         ITestCatchSynchroniser synchroniser,
-        ITestCatchPhotoStore photoStore)
+        ITestCatchPhotoStore photoStore,
+        IDiagnosticLogger? diagnostics = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -31,6 +33,9 @@ public class BaseTestCatchLogTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(synchroniser);
         context.Services.AddSingleton(photoStore);
+        context.Services.AddSingleton(diagnostics ?? Substitute.For<IDiagnosticLogger>());
+        context.Services.AddSingleton(Substitute.For<IDiagnosticSynchroniser>());
+        context.Services.AddSingleton(new CorrelationContext());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
 

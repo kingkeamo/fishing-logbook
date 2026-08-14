@@ -1102,6 +1102,7 @@ During initial implementation log:
 - DbUp migration execution
 - Database connectivity failures
 - API errors
+- Sanitised client diagnostic events uploaded from the PWA
 
 Never log:
 
@@ -1111,6 +1112,17 @@ Never log:
 - refresh tokens
 - Cognito credentials
 - R2 secrets
+- exact GPS coordinates
+- photographs or photograph bytes
+- private catch notes
+- request bodies globally
+- authentication headers
+
+The PWA queues diagnostics locally while offline and uploads them in batches when connectivity returns. Diagnostic upload is lower priority than Catch/photograph synchronisation. See `docs/Architecture.md` Diagnostic logging.
+
+Grafana Cloud is the preferred initial external provider. The API ships logs with Serilog's Grafana Loki sink when `ExternalLogging` is configured. Do not put Grafana credentials in the PWA. If Grafana is unconfigured, the API must still run.
+
+Keep MVP logging inside a free/low-cost tier: persist Warning/Error/Critical from Production clients; do not log every click, render, HTTP 2xx or Production IndexedDB read.
 
 ---
 
