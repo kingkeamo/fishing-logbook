@@ -15,6 +15,10 @@ terraform {
       source  = "kislerdm/neon"
       version = "~> 0.15"
     }
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 4.45"
+    }
   }
 }
 
@@ -30,6 +34,10 @@ provider "aws" {
 
 # Neon PostgreSQL. The API key is read from the NEON_API_KEY environment variable.
 provider "neon" {}
+
+# Grafana Cloud. The management token is read from GRAFANA_CLOUD_ACCESS_POLICY_TOKEN.
+# Required only when grafana_cloud_stack_slug is set. Never commit the token.
+provider "grafana" {}
 
 # NOTE: Fly.io is intentionally NOT managed by a Terraform provider. The official
 # provider is archived/unmaintained and the community alternative is immature, so Fly

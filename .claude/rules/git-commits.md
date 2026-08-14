@@ -1,9 +1,6 @@
----
-description: Git commit message style — no AI attribution
-alwaysApply: true
----
+# Git commits
 
-Commit messages describe the change only. They must not mention AI, Cursor, Copilot, ChatGPT, or any assistant.
+Commit messages describe the change only. They must not mention AI, Cursor, Copilot, ChatGPT, Claude, or any assistant.
 
 Do not add:
 

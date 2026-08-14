@@ -1,3 +1,6 @@
+using FishingLogBook.Shared.Diagnostics;
+using FishingLogBook.Web.Configuration;
+using FishingLogBook.Web.Diagnostics;
 using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Offline;
@@ -5,36 +8,70 @@ namespace FishingLogBook.Web.Offline;
 public sealed class IndexedDbTestCatchPhotoStore : ITestCatchPhotoStore
 {
     private const string ModulePath = "./js/offline-store.js";
+    private const string StoreName = "testCatchPhotographs";
 
     private readonly IJSRuntime _jsRuntime;
+    private readonly IDiagnosticLogger _diagnostics;
+    private readonly DiagnosticsClientConfig _config;
     private readonly SemaphoreSlim _moduleLock = new(1, 1);
     private IJSObjectReference? _module;
 
-    public IndexedDbTestCatchPhotoStore(IJSRuntime jsRuntime)
+    public IndexedDbTestCatchPhotoStore(
+        IJSRuntime jsRuntime,
+        IDiagnosticLogger diagnostics,
+        DiagnosticsClientConfig config)
     {
         _jsRuntime = jsRuntime;
+        _diagnostics = diagnostics;
+        _config = config;
     }
 
     public async Task PutAsync(Guid testCatchId, byte[] bytes, string contentType, CancellationToken cancellationToken)
     {
-        var module = await GetModuleAsync(cancellationToken);
-        await module.InvokeVoidAsync("putTestCatchPhotograph", cancellationToken, testCatchId.ToString(), bytes, contentType);
+        await OfflineOperation.ExecuteAsync(
+            "write",
+            StoreName,
+            DiagnosticEventNames.PhotoOfflineSaveStarted,
+            DiagnosticEventNames.PhotoOfflineSaveCompleted,
+            DiagnosticEventNames.PhotoOfflineSaveFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                await module.InvokeVoidAsync("putTestCatchPhotograph", token, testCatchId.ToString(), bytes, contentType);
+            },
+            cancellationToken);
     }
 
     public async Task<TestCatchPhotoBytes?> GetAsync(Guid testCatchId, CancellationToken cancellationToken)
     {
-        var module = await GetModuleAsync(cancellationToken);
-        var stored = await module.InvokeAsync<PhotographJsDto?>(
-            "getTestCatchPhotograph",
-            cancellationToken,
-            testCatchId.ToString());
+        return await OfflineOperation.ExecuteAsync(
+            "read",
+            StoreName,
+            DiagnosticEventNames.OfflineDbReadStarted,
+            DiagnosticEventNames.OfflineDbReadCompleted,
+            DiagnosticEventNames.OfflineDbReadFailed,
+            DiagnosticEventNames.OfflineDbReadTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                var stored = await module.InvokeAsync<PhotographJsDto?>(
+                    "getTestCatchPhotograph",
+                    token,
+                    testCatchId.ToString());
 
-        if (string.IsNullOrWhiteSpace(stored?.BytesBase64) || string.IsNullOrWhiteSpace(stored.ContentType))
-        {
-            return null;
-        }
+                if (string.IsNullOrWhiteSpace(stored?.BytesBase64) || string.IsNullOrWhiteSpace(stored.ContentType))
+                {
+                    return null;
+                }
 
-        return new TestCatchPhotoBytes(Convert.FromBase64String(stored.BytesBase64), stored.ContentType);
+                return new TestCatchPhotoBytes(Convert.FromBase64String(stored.BytesBase64), stored.ContentType);
+            },
+            cancellationToken);
     }
 
     private async Task<IJSObjectReference> GetModuleAsync(CancellationToken cancellationToken)

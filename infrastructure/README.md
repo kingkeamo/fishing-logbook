@@ -1,9 +1,10 @@
 # FishingLogBook Infrastructure
 
 Infrastructure for FishingLogBook is defined with **Terraform** and is applied
-**manually only**. Neon (`neon_project`), R2 photos (`cloudflare_r2_bucket`), and
-Pages (`cloudflare_pages_project`) are defined. Cognito and Fly remain skeletons.
-Further resources are added deliberately, one at a time, only when explicitly approved.
+**manually only**. Neon (`neon_project`), R2 photos (`cloudflare_r2_bucket`), Pages
+(`cloudflare_pages_project`), and Grafana Cloud Loki write access are defined. Cognito
+and Fly remain skeletons. Further resources are added deliberately, one at a time, only
+when explicitly approved.
 
 ## ⚠️ Cost and safety warning
 
@@ -46,7 +47,7 @@ infrastructure/
 │   └── fly.prod.toml
 └── terraform/
     ├── adding-resources-to-terraform.md
-    ├── modules/                       # neon, r2 (photos), pages; cognito/fly naming only
+    ├── modules/                       # neon, r2 (photos), pages, grafana-cloud; cognito/fly naming only
     └── environments/
         ├── dev/
         └── prod/
@@ -81,6 +82,7 @@ Commit the resulting `.terraform.lock.hcl` in each environment directory.
 | Cloudflare Pages + R2 | `cloudflare/cloudflare` | `CLOUDFLARE_API_TOKEN` |
 | Amazon Cognito | `hashicorp/aws` | standard AWS credentials / profile |
 | Neon PostgreSQL | `kislerdm/neon` | `NEON_API_KEY` |
+| Grafana Cloud | `grafana/grafana` | `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` |
 | Fly.io API | **flyctl, not Terraform** | `flyctl auth` / `FLY_API_TOKEN` |
 
 **Fly.io is intentionally not managed by Terraform.** The official Fly provider is
@@ -94,8 +96,9 @@ identifiers.** Each environment provides a `terraform.tfvars.example`; copy it t
 `terraform.tfvars` (gitignored) and fill in non-sensitive values locally.
 
 Some providers require manual account setup before Terraform can manage resources (an AWS
-account/region, a Neon account, a Fly.io organisation, and a Cloudflare account with R2
-enabled). Document such manual prerequisites here as resources are added.
+account/region, a Neon account, a Fly.io organisation, a Cloudflare account with R2
+enabled, and a Grafana Cloud free account with one stack). Document such manual
+prerequisites here as resources are added.
 
 ## Neon (Dev)
 
@@ -164,6 +167,59 @@ terraform apply dev.tfplan
 
 Do not apply prod until you want a separate bucket and Pages project.
 
+## Grafana Cloud (diagnostic logs)
+
+Terraform does **not** create a Grafana Cloud stack. Free signup includes one stack;
+creating a second stack can require a paid plan. After you have a stack, Terraform
+creates a Loki `logs:write` access policy and token for the API.
+
+1. Sign up at https://grafana.com/auth/sign-up/create-user (Free forever plan).
+2. Open the stack. The URL is `https://<slug>.grafana.net` — that `<slug>` is
+   `grafana_cloud_stack_slug`.
+3. Create the Terraform **management** token on the **Cloud Portal**, not inside
+   `https://<slug>.grafana.net`.
+   - Open **https://grafana.com** (the account site). Do not use Administration →
+     Users / Teams / Service accounts inside the Grafana app — those tokens cannot
+     read stacks and Terraform returns `403 Forbidden`.
+   - Open your organisation → **Security** → **Access Policies**.
+   - **Create access policy**. Realm must be the **organisation** (all stacks), not
+     only one stack.
+   - Scopes:
+     - `stacks:read`
+     - `accesspolicies:read`
+     - `accesspolicies:write`
+     - `accesspolicies:delete`
+   - Add a token. Set `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` in the **same** PowerShell
+     window you will run `terraform plan` from. Do not paste it into git or chat.
+     Close and reopen that window after changing the token, then set the env var
+     again.
+4. Put the stack slug in gitignored `terraform.tfvars` (`grafana_cloud_stack_slug`).
+5. Plan in `environments/dev`. Expect **2 to add** (access policy + token). Abort if
+   anything shows a new stack, destroy, or replace of Neon/R2/Pages.
+
+```powershell
+$env:GRAFANA_CLOUD_ACCESS_POLICY_TOKEN = "<management-token>"
+cd C:\git\fishing-logbook\infrastructure\terraform\environments\dev
+terraform plan -out dev.tfplan
+```
+
+After a reviewed apply, copy outputs into local user-secrets and Fly (never commit):
+
+```powershell
+terraform output -raw grafana_loki_push_url
+terraform output -raw grafana_loki_user
+terraform output -raw grafana_loki_write_token
+```
+
+```powershell
+dotnet user-secrets set "ExternalLogging:Provider" "GrafanaCloud" --project src/FishingLogBook.Api
+dotnet user-secrets set "ExternalLogging:Url" "<grafana_loki_push_url>" --project src/FishingLogBook.Api
+dotnet user-secrets set "ExternalLogging:User" "<grafana_loki_user>" --project src/FishingLogBook.Api
+dotnet user-secrets set "ExternalLogging:ApiToken" "<grafana_loki_write_token>" --project src/FishingLogBook.Api
+```
+
+Do not apply Grafana in prod until you want a separate Loki write token for production.
+
 ## Manual deployment process
 
 Development:
@@ -211,7 +267,7 @@ gitignored and must never be committed. `.terraform.lock.hcl` **is** committed.
 
 ## Cost alerts
 
-Where supported, configure billing alerts for AWS, Fly.io, Neon, and Cloudflare. Billing
+Where supported, configure billing alerts for AWS, Fly.io, Neon, Cloudflare, and Grafana Cloud. Billing
 alerts are preferable to relying solely on provider free tiers — a free tier does not
 guarantee zero cost. Terraform must not automatically upgrade resources after thresholds
 are reached.

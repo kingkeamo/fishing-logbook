@@ -53,3 +53,24 @@ output "cloudflare_pages_subdomain" {
   description = "Cloudflare Pages subdomain."
   value       = module.cloudflare_pages.subdomain
 }
+
+output "grafana_url" {
+  description = "Grafana UI URL. Null until grafana_cloud_stack_slug is set."
+  value       = try(module.grafana_cloud[0].grafana_url, null)
+}
+
+output "grafana_loki_push_url" {
+  description = "Loki push URL for ExternalLogging__Url. Null until grafana_cloud_stack_slug is set."
+  value       = try(module.grafana_cloud[0].loki_push_url, null)
+}
+
+output "grafana_loki_user" {
+  description = "Loki basic-auth user for ExternalLogging__User. Null until grafana_cloud_stack_slug is set."
+  value       = try(module.grafana_cloud[0].loki_user, null)
+}
+
+output "grafana_loki_write_token" {
+  description = "Loki write token for ExternalLogging__ApiToken. Sensitive — copy into Fly secrets or user-secrets, never commit or log."
+  value       = try(module.grafana_cloud[0].loki_write_token, null)
+  sensitive   = true
+}

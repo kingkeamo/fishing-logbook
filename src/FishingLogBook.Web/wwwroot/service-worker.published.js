@@ -8,6 +8,8 @@ self.importScripts('./service-worker-assets.js');
 self.addEventListener('install', event => event.waitUntil(onInstall(event)));
 self.addEventListener('activate', event => event.waitUntil(onActivate(event)));
 self.addEventListener('fetch', event => event.respondWith(onFetch(event)));
+self.addEventListener('error', event => notifyServiceWorkerError(event.message || 'error'));
+self.addEventListener('unhandledrejection', event => notifyServiceWorkerError(String(event.reason || 'unhandledrejection')));
 
 const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
@@ -129,4 +131,11 @@ async function withoutRedirect(response) {
         status: clonedResponse.status,
         statusText: clonedResponse.statusText
     });
+}
+
+function notifyServiceWorkerError(message) {
+    console.error('[FLB] ServiceWorkerError', message);
+    self.clients.matchAll({ includeUncontrolled: true }).then((clients) => {
+        clients.forEach((client) => client.postMessage({ type: 'ServiceWorkerError', message: String(message).slice(0, 200) }));
+    }).catch(() => { });
 }

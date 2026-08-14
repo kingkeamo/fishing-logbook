@@ -76,3 +76,9 @@ variable "pages_production_branch" {
   description = "Git branch mapped to this Pages environment."
   default     = "develop"
 }
+
+variable "grafana_cloud_stack_slug" {
+  type        = string
+  description = "Existing Grafana Cloud stack slug (https://<slug>.grafana.net). Leave empty to skip Grafana resources. Account-specific; supply locally, never commit."
+  default     = ""
+}

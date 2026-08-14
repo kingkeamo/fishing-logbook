@@ -1,0 +1,24 @@
+@page "/diagnostics"
+@using FishingLogBook.Web.Diagnostics
+
+<PageTitle>@Loc["Diagnostics_PageTitle"]</PageTitle>
+
+@if (!Config.ShowInspector)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
+        <MudText Typo="Typo.h6">@Loc["Diagnostics_Unavailable"]</MudText>
+    </MudContainer>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h5">@Loc["Diagnostics_Title"]</MudText>
+            <MudText>@Loc["Diagnostics_QueuedCount"]: @_queuedCount</MudText>
+            <MudText>@Loc["Diagnostics_LastError"]: @(_lastError ?? Loc["Diagnostics_None"])</MudText>
+            <MudText>@Loc["Diagnostics_Online"]: @OnlineLabel</MudText>
+            <MudText>@Loc["Diagnostics_StorageUsage"]: @_usageLabel</MudText>
+            <MudText>@Loc["Diagnostics_StorageQuota"]: @_quotaLabel</MudText>
+        </MudStack>
+    </MudContainer>
+}

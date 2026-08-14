@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -13,6 +14,9 @@ public partial class MainLayout : LayoutComponentBase
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    [Inject]
+    private DiagnosticsClientConfig DiagnosticsConfig { get; set; } = default!;
 
     private string ThemeToggleIcon
     {

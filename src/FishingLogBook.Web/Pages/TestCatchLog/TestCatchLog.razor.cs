@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Diagnostics;
+using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Models;
 using FishingLogBook.Web.Offline;
@@ -35,6 +37,15 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     private ITestCatchSynchroniser TestCatchSynchroniser { get; set; } = default!;
 
     [Inject]
+    private IDiagnosticLogger Diagnostics { get; set; } = default!;
+
+    [Inject]
+    private IDiagnosticSynchroniser DiagnosticSynchroniser { get; set; } = default!;
+
+    [Inject]
+    private CorrelationContext CorrelationContext { get; set; } = default!;
+
+    [Inject]
     private IJSRuntime JsRuntime { get; set; } = default!;
 
     [Inject]
@@ -46,6 +57,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     {
         await LoadAsync();
         await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        await SafeDiagnosticSyncAsync();
         await LoadAsync();
     }
 
@@ -64,6 +76,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     public async Task OnBrowserOnline()
     {
         await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        await SafeDiagnosticSyncAsync();
         await LoadAsync();
         await InvokeAsync(StateHasChanged);
     }
@@ -89,42 +102,71 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
 
         _isSaving = true;
-
-        TestCatchPhotograph? photograph = null;
-        if (_pendingPhotographBytes is { Length: > 0 } && _pendingPhotographContentType is not null)
+        CorrelationContext.StartNew();
+        try
         {
-            photograph = new TestCatchPhotograph(
+            await SafeLogAsync(
+                DiagnosticLevel.Information,
+                DiagnosticEventNames.CatchOfflineSaveStarted,
+                "Catch offline save started.");
+
+            TestCatchPhotograph? photograph = null;
+            if (_pendingPhotographBytes is { Length: > 0 } && _pendingPhotographContentType is not null)
+            {
+                photograph = new TestCatchPhotograph(
+                    Guid.NewGuid(),
+                    _pendingPhotographContentType,
+                    SyncStatus.SavedLocally);
+            }
+
+            var testCatch = new TestCatch(
                 Guid.NewGuid(),
-                _pendingPhotographContentType,
-                SyncStatus.SavedLocally);
+                _speciesName.Trim(),
+                DateTimeOffset.UtcNow,
+                string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+                SyncStatus.SavedLocally,
+                photograph);
+
+            try
+            {
+                await TestCatchStore.SaveAsync(testCatch, _cancellationTokenSource.Token);
+                if (photograph is not null && _pendingPhotographBytes is not null)
+                {
+                    await TestCatchPhotoStore.PutAsync(
+                        testCatch.Id,
+                        _pendingPhotographBytes,
+                        photograph.ContentType,
+                        _cancellationTokenSource.Token);
+                }
+
+                await SafeLogAsync(
+                    DiagnosticLevel.Information,
+                    DiagnosticEventNames.CatchOfflineSaveCompleted,
+                    "Catch offline save completed.");
+            }
+            catch (Exception exception)
+            {
+                await SafeLogAsync(
+                    DiagnosticLevel.Error,
+                    DiagnosticEventNames.CatchOfflineSaveFailed,
+                    "Catch offline save failed.",
+                    exception);
+                return;
+            }
+
+            _speciesName = string.Empty;
+            _notes = string.Empty;
+            _pendingPhotographBytes = null;
+            _pendingPhotographContentType = null;
+            _pendingPhotographUrl = null;
+            await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+            await SafeDiagnosticSyncAsync();
+            await LoadAsync();
         }
-
-        var testCatch = new TestCatch(
-            Guid.NewGuid(),
-            _speciesName.Trim(),
-            DateTimeOffset.UtcNow,
-            string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
-            SyncStatus.SavedLocally,
-            photograph);
-
-        await TestCatchStore.SaveAsync(testCatch, _cancellationTokenSource.Token);
-        if (photograph is not null && _pendingPhotographBytes is not null)
+        finally
         {
-            await TestCatchPhotoStore.PutAsync(
-                testCatch.Id,
-                _pendingPhotographBytes,
-                photograph.ContentType,
-                _cancellationTokenSource.Token);
+            _isSaving = false;
         }
-
-        _speciesName = string.Empty;
-        _notes = string.Empty;
-        _pendingPhotographBytes = null;
-        _pendingPhotographContentType = null;
-        _pendingPhotographUrl = null;
-        await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
-        await LoadAsync();
-        _isSaving = false;
     }
 
     private async Task RetryAsync(Guid id)
@@ -141,19 +183,63 @@ public partial class TestCatchLog : ComponentBase, IDisposable
 
     private async Task LoadAsync()
     {
-        _catches = await TestCatchStore.GetAllAsync(_cancellationTokenSource.Token);
-        _photographUrls.Clear();
-        foreach (var testCatch in _catches)
+        try
         {
-            var local = await TestCatchPhotoStore.GetAsync(testCatch.Id, _cancellationTokenSource.Token);
-            if (local is not null)
+            _catches = await TestCatchStore.GetAllAsync(_cancellationTokenSource.Token);
+            _photographUrls.Clear();
+            foreach (var testCatch in _catches)
             {
-                _photographUrls[testCatch.Id] = $"data:{local.ContentType};base64,{Convert.ToBase64String(local.Bytes)}";
+                var local = await TestCatchPhotoStore.GetAsync(testCatch.Id, _cancellationTokenSource.Token);
+                if (local is not null)
+                {
+                    _photographUrls[testCatch.Id] = $"data:{local.ContentType};base64,{Convert.ToBase64String(local.Bytes)}";
+                }
+                else if (!string.IsNullOrWhiteSpace(testCatch.Photograph?.RemoteUrl))
+                {
+                    _photographUrls[testCatch.Id] = testCatch.Photograph.RemoteUrl;
+                }
             }
-            else if (!string.IsNullOrWhiteSpace(testCatch.Photograph?.RemoteUrl))
-            {
-                _photographUrls[testCatch.Id] = testCatch.Photograph.RemoteUrl;
-            }
+        }
+        catch (Exception exception)
+        {
+            await SafeLogAsync(
+                DiagnosticLevel.Error,
+                DiagnosticEventNames.OfflineDbReadFailed,
+                "Loading local catches failed.",
+                exception);
+        }
+    }
+
+    private async Task SafeDiagnosticSyncAsync()
+    {
+        try
+        {
+            await DiagnosticSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        }
+        catch
+        {
+            // Diagnostic upload must never block catch use.
+        }
+    }
+
+    private async Task SafeLogAsync(
+        DiagnosticLevel level,
+        string eventName,
+        string message,
+        Exception? exception = null)
+    {
+        try
+        {
+            await Diagnostics.LogAsync(
+                level,
+                eventName,
+                message,
+                exception: exception,
+                cancellationToken: _cancellationTokenSource.Token);
+        }
+        catch
+        {
+            // Diagnostic failure must never prevent catch save or load.
         }
     }
 

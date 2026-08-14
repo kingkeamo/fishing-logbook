@@ -1,0 +1,21 @@
+---
+description: All FishingLogBook conventions live in .claude/rules — read those files
+alwaysApply: true
+---
+
+All project rules live in `.claude/rules/`. There is no second copy.
+
+Before planning, coding, testing, committing, or touching infrastructure, read the relevant file in full and follow it.
+
+| Work | Read |
+|------|------|
+| Planning or implementing a GitHub issue | `.claude/rules/product-workflow.md` |
+| C# (API, Application, Domain, Infrastructure, Shared) | `.claude/rules/csharp.md` |
+| CQRS / application services | `.claude/rules/cqrs.md` |
+| Blazor WASM / MudBlazor / PWA | `.claude/rules/blazor.md` |
+| Tests (including `WhenTesting` naming) | `.claude/rules/testing-csharp.md` and `.claude/rules/testing-blazor.md` |
+| PostgreSQL, Dapper, DbUp | `.claude/rules/database.md` |
+| Terraform, Fly, cloud cost | `.claude/rules/terraform.md` |
+| Git commits | `.claude/rules/git-commits.md` |
+
+Do not add coding or workflow conventions to `.cursor/rules/`. Change `.claude/rules/` instead.

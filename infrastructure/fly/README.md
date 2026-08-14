@@ -23,6 +23,24 @@ fly secrets set ConnectionStrings__Postgres="<neon npgsql string>" --app fishing
 fly secrets set ObjectStorage__ServiceUrl="https://<account-id>.r2.cloudflarestorage.com" ObjectStorage__BucketName="fishing-logbook-dev" ObjectStorage__AccessKeyId="<r2-access-key>" ObjectStorage__SecretAccessKey="<r2-secret>" --app fishing-logbook-dev-api
 ```
 
+Optional Grafana Cloud log shipping (leave unset to keep external logging disabled).
+After Terraform has created the Loki write token (see `infrastructure/README.md`):
+
+```powershell
+fly secrets set `
+  ExternalLogging__Provider="GrafanaCloud" `
+  ExternalLogging__Url="<terraform output grafana_loki_push_url>" `
+  ExternalLogging__User="<terraform output grafana_loki_user>" `
+  ExternalLogging__ApiToken="<terraform output grafana_loki_write_token>" `
+  --app fishing-logbook-dev-api
+```
+
+`ExternalLogging__Environment` is not a secret. Dev is `dev` and prod is `prod`, set in the Fly toml `[env]` block. Local Development uses `localhost` from `appsettings.Development.json`. Query Grafana with `{app="fishing-logbook-api", env="localhost"}` or `env="dev"`.
+
+Do not invent these Grafana values. Copy them from Terraform outputs after a reviewed
+apply, or from the Grafana Cloud portal if Terraform has not been applied yet. The API
+runs without them.
+
 ## Deploy
 
 Local (from the repository root):
