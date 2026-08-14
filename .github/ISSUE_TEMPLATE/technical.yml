@@ -1,0 +1,96 @@
+name: Technical
+description: Technical foundation or architecture work that enables product features
+title: "[Technical] "
+labels: ["technical"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for technical work. Do not use technical issues to bypass product Acceptance Criteria.
+        Technical work must still be testable and must not expand into unrelated product features.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why this technical work is required and which product capability it enables.
+      placeholder: IndexedDB persistence is required before the offline catch journey can be proven.
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-goal
+    attributes:
+      label: Technical Goal
+      description: The technical outcome this issue must deliver, described in observable terms where possible.
+      placeholder: A TestCatch created while offline is still present after the application is closed and reopened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: architecture-build-references
+    attributes:
+      label: Architecture / BUILD References
+      description: Cite docs/Architecture.md, BUILD.md and any related Requirements.md sections.
+      placeholder: |
+        - BUILD.md # 48 Second Milestone
+        - docs/Architecture.md Second Architecture Milestone
+        - docs/Requirements.md # 2.2 Offline First
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Observable behaviour. Prefer Given / When / Then. Use markdown checkboxes. Do not substitute implementation notes for criteria.
+      value: |
+        - [ ] Given ...
+          When ...
+          Then ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: test-requirements
+    attributes:
+      label: Test Requirements
+      description: Automated tests that must be added. Include failure, offline, location and sync cases where relevant.
+      placeholder: |
+        - Behavioural test for each Acceptance Criterion where practical
+        - Existing tests remain green
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Issues or foundations that must exist first. Write "None" if there are none.
+      placeholder: Depends on the local API and PostgreSQL vertical slice.
+    validations:
+      required: true
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: What this issue must not include. Technical issues must not silently deliver unrelated product features.
+      placeholder: Full catch UI, competitions, terraform apply, payment processing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      description: Confirm completion conditions. Keep the required items below and add issue-specific items if needed.
+      value: |
+        - [ ] All Acceptance Criteria satisfied
+        - [ ] Automated tests added and passing
+        - [ ] Existing tests remain passing
+        - [ ] User-visible text localised in English and French where applicable
+        - [ ] No unrelated scope added
+        - [ ] Product Acceptance Criteria are not bypassed by this technical work
+    validations:
+      required: true

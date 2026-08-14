@@ -1,0 +1,22 @@
+---
+description: FishingLogBook testing requirements
+alwaysApply: true
+---
+
+Tests are part of every feature and are not optional follow-up work.
+
+For every GitHub issue:
+
+1. Review every Acceptance Criterion.
+2. Add automated tests for each criterion where technically practical.
+3. Prefer behavioural tests over implementation-detail tests.
+4. Follow the existing FishingLogBook testing conventions.
+5. Use the testing libraries already selected by the solution.
+6. Do not introduce a new testing framework without a specific reason.
+7. Do not add meaningless tests purely to increase coverage.
+8. Test failure paths where Acceptance Criteria describe failure behaviour.
+9. Offline features must test offline persistence and reconnection behaviour.
+10. Location features must test permission granted, denied and unavailable scenarios where relevant.
+11. Synchronisation tests must verify retry behaviour does not create duplicate server records.
+12. Existing tests must remain green.
+13. Run the appropriate test projects before considering implementation complete.
