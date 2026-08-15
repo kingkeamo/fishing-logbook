@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using DbUp.Engine;
 using FishingLogBook.Db.Migrations;
 using Microsoft.Extensions.Configuration;
