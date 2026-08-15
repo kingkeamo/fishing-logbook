@@ -22,10 +22,27 @@
                               Variant="Variant.Outlined"
                               Lines="3"
                               id="test-catch-notes" />
-                <InputFile OnChange="OnPhotographSelected"
-                           accept="image/*"
-                           capture="environment"
-                           id="test-catch-photo" />
+                <div class="test-catch-photo-actions">
+                    <label for="test-catch-photo-camera"
+                           class="test-catch-photo-picker"
+                           id="test-catch-take-photo">
+                        @Loc["TestCatch_TakePhoto"]
+                    </label>
+                    <label for="test-catch-photo-gallery"
+                           class="test-catch-photo-picker"
+                           id="test-catch-choose-photo">
+                        @Loc["TestCatch_ChoosePhoto"]
+                    </label>
+                    <InputFile OnChange="OnPhotographSelected"
+                               accept="image/*"
+                               capture="environment"
+                               class="test-catch-photo-input"
+                               id="test-catch-photo-camera" />
+                    <InputFile OnChange="OnPhotographSelected"
+                               accept="image/*"
+                               class="test-catch-photo-input"
+                               id="test-catch-photo-gallery" />
+                </div>
                 @if (_pendingPhotographUrl is not null)
                 {
                     <img src="@_pendingPhotographUrl"
