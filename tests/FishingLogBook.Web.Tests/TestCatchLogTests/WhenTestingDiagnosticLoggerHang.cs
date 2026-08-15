@@ -1,0 +1,88 @@
+using AwesomeAssertions;
+using Bunit;
+using FishingLogBook.Web.Localization;
+using FishingLogBook.Web.Models;
+using FishingLogBook.Web.Offline;
+using FishingLogBook.Web.Pages.TestCatchLog;
+using NSubstitute;
+
+namespace FishingLogBook.Web.Tests.TestCatchLogTests;
+
+public class WhenTestingDiagnosticLoggerHang : BaseTestCatchLogTest
+{
+    [Fact]
+    public async Task ItShouldLoadExistingCatches_WhenDiagnosticLoggingNeverCompletes()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var existing = new TestCatch(
+            Guid.Parse("8c0e91a2-4d77-4b18-a6f1-0c3d5e7a9b21"),
+            "Roach",
+            DateTimeOffset.Parse("2026-08-15T18:10:00Z"),
+            null,
+            SyncStatus.SavedLocally);
+        var store = Substitute.For<ITestCatchStore>();
+        store.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<TestCatch>>([existing]));
+        await using var context = CreateContext(
+            store,
+            Substitute.For<ITestCatchSynchroniser>(),
+            Substitute.For<ITestCatchPhotoStore>(),
+            HangingDiagnostics());
+
+        // Act
+        var cut = context.Render<TestCatchLog>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find($"#test-catch-item-{existing.Id}").Should().NotBeNull();
+            cut.Find($"#test-catch-species-{existing.Id}").TextContent.Should().Contain("Roach");
+        });
+        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(Arg.Any<TestCatch>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSaveTheCatch_WhenDiagnosticLoggingNeverCompletes()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var saved = new List<TestCatch>();
+        var store = Substitute.For<ITestCatchStore>();
+        store.SaveAsync(Arg.Any<TestCatch>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                saved.Add(callInfo.Arg<TestCatch>());
+                return Task.CompletedTask;
+            });
+        store.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<IReadOnlyList<TestCatch>>(saved.ToArray()));
+        await using var context = CreateContext(
+            store,
+            Substitute.For<ITestCatchSynchroniser>(),
+            Substitute.For<ITestCatchPhotoStore>(),
+            HangingDiagnostics());
+        var cut = context.Render<TestCatchLog>();
+        cut.WaitForAssertion(() => cut.Find("#test-catch-species").Should().NotBeNull());
+
+        // Act
+        cut.Find("#test-catch-species").Input("Bream");
+        await cut.Find("#save-test-catch-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            saved.Should().ContainSingle();
+            saved[0].SpeciesName.Should().Be("Bream");
+            cut.Find($"#test-catch-species-{saved[0].Id}").TextContent.Should().Contain("Bream");
+            cut.FindAll("#save-test-catch-spinner").Should().BeEmpty();
+            cut.Find("#save-test-catch-button").TextContent.Should().Contain("Save catch");
+        });
+        await store.Received(1).SaveAsync(
+            Arg.Is<TestCatch>(testCatch =>
+                testCatch.SpeciesName == "Bream" &&
+                testCatch.SyncStatus == SyncStatus.SavedLocally),
+            Arg.Any<CancellationToken>());
+    }
+}

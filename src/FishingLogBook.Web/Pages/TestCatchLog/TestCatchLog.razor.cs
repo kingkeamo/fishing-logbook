@@ -65,10 +65,10 @@ public partial class TestCatchLog : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        await RefreshLocationPromptAsync();
         await LoadAsync();
+        TryToRefreshLocationPrompt();
         await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
-        await SafeDiagnosticSyncAsync();
+        TryToSynchroniseDiagnostics();
         await LoadAsync();
     }
 
@@ -87,7 +87,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     public async Task OnBrowserOnline()
     {
         await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
-        await SafeDiagnosticSyncAsync();
+        TryToSynchroniseDiagnostics();
         await LoadAsync();
         await InvokeAsync(StateHasChanged);
     }
@@ -118,7 +118,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         var saved = false;
         try
         {
-            await SafeLogAsync(
+            TryToLog(
                 DiagnosticLevel.Warning,
                 DiagnosticEventNames.CatchOfflineSaveStarted,
                 "Catch offline save started.");
@@ -155,7 +155,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
                         _cancellationTokenSource.Token);
                 }
 
-                await SafeLogAsync(
+                TryToLog(
                     DiagnosticLevel.Warning,
                     DiagnosticEventNames.CatchOfflineSaveCompleted,
                     "Catch offline save completed.");
@@ -168,7 +168,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
             }
             catch (Exception exception)
             {
-                await SafeLogAsync(
+                TryToLog(
                     DiagnosticLevel.Error,
                     DiagnosticEventNames.CatchOfflineSaveFailed,
                     "Catch offline save failed.",
@@ -186,7 +186,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
 
         await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
-        await SafeDiagnosticSyncAsync();
+        TryToSynchroniseDiagnostics();
         await LoadAsync();
     }
 
@@ -194,11 +194,15 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     {
         try
         {
-            await LocationService.TryCaptureAsync(true, _cancellationTokenSource.Token);
+            await LocationService
+                .TryCaptureAsync(true, _cancellationTokenSource.Token)
+                .WaitAsync(
+                    TimeSpan.FromMilliseconds(BrowserLocationService.CaptureTimeoutMilliseconds),
+                    _cancellationTokenSource.Token);
         }
         catch (Exception exception)
         {
-            await SafeLogAsync(
+            TryToLog(
                 DiagnosticLevel.Warning,
                 DiagnosticEventNames.LocationCaptureFailed,
                 "Location capture failed.",
@@ -216,7 +220,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("location prompt", exception, _cancellationTokenSource.Token);
+            TryToLogError("location prompt", exception);
         }
 
         await RefreshLocationPromptAsync();
@@ -241,24 +245,33 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     {
         try
         {
-            _locationPrompt = await LocationService.GetPromptStatusAsync(_cancellationTokenSource.Token);
+            _locationPrompt = await LocationService.GetPromptStatusAsync(_cancellationTokenSource.Token)
+                .WaitAsync(
+                    TimeSpan.FromMilliseconds(BrowserLocationService.PermissionQueryTimeoutMilliseconds),
+                    _cancellationTokenSource.Token);
         }
         catch (Exception exception)
         {
             _locationPrompt = new LocationPromptStatus(false, true, false);
-            await Logging.LogErrorAsync("location prompt", exception, _cancellationTokenSource.Token);
+            TryToLogError("location prompt", exception);
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task<TestCatchLocation?> TryCaptureLocationAsync()
     {
         try
         {
-            return await LocationService.TryCaptureAsync(false, _cancellationTokenSource.Token);
+            return await LocationService
+                .TryCaptureAsync(false, _cancellationTokenSource.Token)
+                .WaitAsync(
+                    TimeSpan.FromMilliseconds(BrowserLocationService.CaptureTimeoutMilliseconds),
+                    _cancellationTokenSource.Token);
         }
         catch (Exception exception)
         {
-            await SafeLogAsync(
+            TryToLog(
                 DiagnosticLevel.Warning,
                 DiagnosticEventNames.LocationCaptureFailed,
                 "Location capture failed.",
@@ -289,7 +302,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         _isLoading = true;
         try
         {
-            await SafeLogAsync(
+            TryToLog(
                 DiagnosticLevel.Warning,
                 DiagnosticEventNames.CatchOfflineLoadStarted,
                 "Catch offline load started.");
@@ -304,7 +317,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
             catch (Exception exception)
             {
                 _loadFailed = true;
-                await SafeLogAsync(
+                TryToLog(
                     DiagnosticLevel.Error,
                     DiagnosticEventNames.OfflineDbReadFailed,
                     "Loading local catches failed.",
@@ -313,7 +326,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
             }
 
             await LoadPhotographsAsync();
-            await SafeLogAsync(
+            TryToLog(
                 DiagnosticLevel.Warning,
                 DiagnosticEventNames.CatchOfflineLoadCompleted,
                 "Catch offline load completed.");
@@ -358,7 +371,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
         catch (Exception exception)
         {
-            await SafeLogAsync(
+            TryToLog(
                 DiagnosticLevel.Error,
                 DiagnosticEventNames.OfflineDbReadFailed,
                 "Loading local photograph failed.",
@@ -376,6 +389,16 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
     }
 
+    private void TryToRefreshLocationPrompt()
+    {
+        _ = RefreshLocationPromptAsync();
+    }
+
+    private void TryToSynchroniseDiagnostics()
+    {
+        _ = SafeDiagnosticSyncAsync();
+    }
+
     private async Task SafeDiagnosticSyncAsync()
     {
         try
@@ -384,8 +407,22 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("diagnostic upload", exception, _cancellationTokenSource.Token);
+            TryToLogError("diagnostic upload", exception);
         }
+    }
+
+    private void TryToLog(
+        DiagnosticLevel level,
+        string eventName,
+        string message,
+        Exception? exception = null)
+    {
+        _ = SafeLogAsync(level, eventName, message, exception);
+    }
+
+    private void TryToLogError(string source, Exception exception)
+    {
+        _ = Logging.LogErrorAsync(source, exception, _cancellationTokenSource.Token);
     }
 
     private async Task SafeLogAsync(
@@ -405,7 +442,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
         catch (Exception loggingException)
         {
-            await Logging.LogErrorAsync("diagnostic log", loggingException, _cancellationTokenSource.Token);
+            TryToLogError("diagnostic log", loggingException);
         }
     }
 

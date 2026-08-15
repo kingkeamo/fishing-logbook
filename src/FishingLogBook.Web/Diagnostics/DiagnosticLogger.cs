@@ -226,9 +226,14 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         }
         catch (Exception exception)
         {
-            _ = _logging.LogErrorAsync("diagnostic route read", exception);
+            TryToLogError("diagnostic route read", exception);
             return string.Empty;
         }
+    }
+
+    private void TryToLogError(string source, Exception exception)
+    {
+        _ = _logging.LogErrorAsync(source, exception);
     }
 
     private async Task WriteConsoleAsync(
