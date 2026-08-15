@@ -18,6 +18,7 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
     private readonly INetworkStatus _networkStatus;
     private readonly NavigationManager _navigationManager;
     private readonly IJSRuntime _jsRuntime;
+    private readonly ILoggingService _logging;
     private readonly DiagnosticLevel _minimumPersistLevel;
     private readonly string _appVersion;
     private Guid? _anonymousSessionId;
@@ -29,7 +30,8 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         CorrelationContext correlationContext,
         INetworkStatus networkStatus,
         NavigationManager navigationManager,
-        IJSRuntime jsRuntime)
+        IJSRuntime jsRuntime,
+        ILoggingService logging)
     {
         _store = store;
         _status = status;
@@ -38,6 +40,7 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         _networkStatus = networkStatus;
         _navigationManager = navigationManager;
         _jsRuntime = jsRuntime;
+        _logging = logging;
         _minimumPersistLevel = Enum.TryParse(config.MinimumPersistLevel, true, out DiagnosticLevel level)
             ? level
             : DiagnosticLevel.Warning;
@@ -69,15 +72,26 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
             IsWriting.Value = true;
             try
             {
-                var diagnosticEvent = await CreateEventAsync(
+                var persistTask = PersistQueuedEventAsync(
                     level,
                     eventName,
                     message,
                     metadata,
                     exception,
                     cancellationToken);
-                await _store.EnqueueAsync(diagnosticEvent, cancellationToken);
-                _status.QueuedCount = await _store.GetCountAsync(cancellationToken);
+                var completed = await Task.WhenAny(persistTask, Task.Delay(_config.OperationTimeout, CancellationToken.None));
+                if (completed != persistTask)
+                {
+                    await RecordFailureAsync(new TimeoutException("Diagnostic persistence timed out."), eventName, cancellationToken);
+                    await WriteConsoleAsync(
+                        DiagnosticLevel.Error,
+                        eventName,
+                        "Diagnostic persistence timed out.",
+                        cancellationToken);
+                    return;
+                }
+
+                await persistTask;
             }
             finally
             {
@@ -86,9 +100,34 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         }
         catch (Exception exceptionWhileLogging)
         {
-            _status.LastError = exceptionWhileLogging.GetType().Name;
+            await RecordFailureAsync(exceptionWhileLogging, eventName, cancellationToken);
             await WriteConsoleAsync(DiagnosticLevel.Error, eventName, "Diagnostic persistence failed.", cancellationToken);
         }
+    }
+
+    private async Task PersistQueuedEventAsync(
+        DiagnosticLevel level,
+        string eventName,
+        string message,
+        IReadOnlyDictionary<string, string>? metadata,
+        Exception? exception,
+        CancellationToken cancellationToken)
+    {
+        var diagnosticEvent = await CreateEventAsync(
+            level,
+            eventName,
+            message,
+            metadata,
+            exception,
+            cancellationToken);
+        await _store.EnqueueAsync(diagnosticEvent, cancellationToken);
+        _status.QueuedCount = await _store.GetCountAsync(cancellationToken);
+    }
+
+    private async Task RecordFailureAsync(Exception exception, string eventName, CancellationToken cancellationToken)
+    {
+        _status.LastError = exception.GetType().Name;
+        await _logging.LogErrorAsync(eventName, exception, cancellationToken);
     }
 
     private async Task<DiagnosticEvent> CreateEventAsync(
@@ -104,9 +143,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         {
             isOnline = await _networkStatus.IsOnlineAsync(cancellationToken);
         }
-        catch
+        catch (Exception onlineCheckException)
         {
-            // Online state is optional on the diagnostic event.
+            await _logging.LogErrorAsync("diagnostic online check", onlineCheckException, cancellationToken);
         }
 
         return new DiagnosticEvent
@@ -145,9 +184,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 return parsed;
             }
         }
-        catch
+        catch (Exception exception)
         {
-            // Fall through and create a session locally.
+            await _logging.LogErrorAsync("diagnostic session read", exception, cancellationToken);
         }
 
         var created = Guid.NewGuid();
@@ -156,9 +195,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         {
             await _jsRuntime.InvokeVoidAsync("fishingLogBookDiagnostics.setSessionId", cancellationToken, created.ToString("D"));
         }
-        catch
+        catch (Exception exception)
         {
-            // Session id still works for this in-memory lifetime.
+            await _logging.LogErrorAsync("diagnostic session write", exception, cancellationToken);
         }
 
         return created;
@@ -172,8 +211,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 await _jsRuntime.InvokeAsync<string>("fishingLogBookDiagnostics.getPlatform", cancellationToken),
                 120);
         }
-        catch
+        catch (Exception exception)
         {
+            await _logging.LogErrorAsync("diagnostic platform read", exception, cancellationToken);
             return null;
         }
     }
@@ -184,8 +224,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         {
             return DiagnosticMetadata.Truncate(new Uri(_navigationManager.Uri).AbsolutePath, 80);
         }
-        catch
+        catch (Exception exception)
         {
+            _ = _logging.LogErrorAsync("diagnostic route read", exception);
             return string.Empty;
         }
     }
@@ -205,9 +246,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 eventName,
                 message);
         }
-        catch
+        catch (Exception exception)
         {
-            // Console fallback must never throw.
+            await _logging.LogErrorAsync("diagnostic console", exception, cancellationToken);
         }
     }
 }

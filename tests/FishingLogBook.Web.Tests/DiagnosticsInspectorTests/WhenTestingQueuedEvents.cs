@@ -5,6 +5,7 @@ using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Pages.Diagnostics;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace FishingLogBook.Web.Tests.DiagnosticsInspectorTests;
 
@@ -131,5 +132,52 @@ public class WhenTestingQueuedEvents : BaseDiagnosticsInspectorTest
         await synchroniser.Received(2).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await store.Received(2).GetPendingAsync(500, Arg.Any<CancellationToken>());
         await store.Received(2).GetCountAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheErrorType_WhenQueueReadFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = CreateStore();
+        store.GetPendingAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new TimeoutException("queue read timed out"));
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<DiagnosticsInspector>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#diagnostics-last-error").TextContent.Should().Contain(nameof(TimeoutException));
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldShowLastErrorFromLoggingService()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = CreateStore();
+        var logging = SilentLogging();
+        logging.GetLastErrorAsync(Arg.Any<CancellationToken>()).Returns(new LastErrorLog
+        {
+            TimestampUtc = DateTimeOffset.Parse("2026-08-15T08:00:00Z"),
+            Source = "diagnostics refresh",
+            ErrorType = nameof(TimeoutException),
+            Message = "queue read timed out"
+        });
+        await using var context = CreateContext(store, logging: logging);
+
+        // Act
+        var cut = context.Render<DiagnosticsInspector>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#diagnostics-last-error").TextContent.Should().Contain(nameof(TimeoutException));
+            cut.Find("#diagnostics-last-error").TextContent.Should().Contain("queue read timed out");
+        });
     }
 }

@@ -42,6 +42,9 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     private IDiagnosticLogger Diagnostics { get; set; } = default!;
 
     [Inject]
+    private ILoggingService Logging { get; set; } = default!;
+
+    [Inject]
     private IDiagnosticSynchroniser DiagnosticSynchroniser { get; set; } = default!;
 
     [Inject]
@@ -110,7 +113,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         try
         {
             await SafeLogAsync(
-                DiagnosticLevel.Information,
+                DiagnosticLevel.Warning,
                 DiagnosticEventNames.CatchOfflineSaveStarted,
                 "Catch offline save started.");
 
@@ -144,7 +147,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
                 }
 
                 await SafeLogAsync(
-                    DiagnosticLevel.Information,
+                    DiagnosticLevel.Warning,
                     DiagnosticEventNames.CatchOfflineSaveCompleted,
                     "Catch offline save completed.");
                 _speciesName = string.Empty;
@@ -200,6 +203,11 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         _isLoading = true;
         try
         {
+            await SafeLogAsync(
+                DiagnosticLevel.Warning,
+                DiagnosticEventNames.CatchOfflineLoadStarted,
+                "Catch offline load started.");
+
             try
             {
                 _catches = (await TestCatchStore.GetAllAsync(_cancellationTokenSource.Token))
@@ -219,6 +227,10 @@ public partial class TestCatchLog : ComponentBase, IDisposable
             }
 
             await LoadPhotographsAsync();
+            await SafeLogAsync(
+                DiagnosticLevel.Warning,
+                DiagnosticEventNames.CatchOfflineLoadCompleted,
+                "Catch offline load completed.");
         }
         finally
         {
@@ -284,9 +296,9 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         {
             await DiagnosticSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
         }
-        catch
+        catch (Exception exception)
         {
-            // Diagnostic upload must never block catch use.
+            await Logging.LogErrorAsync("diagnostic upload", exception, _cancellationTokenSource.Token);
         }
     }
 
@@ -305,9 +317,9 @@ public partial class TestCatchLog : ComponentBase, IDisposable
                 exception: exception,
                 cancellationToken: _cancellationTokenSource.Token);
         }
-        catch
+        catch (Exception loggingException)
         {
-            // Diagnostic failure must never prevent catch save or load.
+            await Logging.LogErrorAsync("diagnostic log", loggingException, _cancellationTokenSource.Token);
         }
     }
 

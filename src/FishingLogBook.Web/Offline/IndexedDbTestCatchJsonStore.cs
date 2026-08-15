@@ -12,6 +12,7 @@ public sealed class IndexedDbTestCatchJsonStore : ITestCatchJsonStore
 
     private readonly IJSRuntime _jsRuntime;
     private readonly IDiagnosticLogger _diagnostics;
+    private readonly ILoggingService _logging;
     private readonly DiagnosticsClientConfig _config;
     private readonly SemaphoreSlim _moduleLock = new(1, 1);
     private IJSObjectReference? _module;
@@ -19,10 +20,12 @@ public sealed class IndexedDbTestCatchJsonStore : ITestCatchJsonStore
     public IndexedDbTestCatchJsonStore(
         IJSRuntime jsRuntime,
         IDiagnosticLogger diagnostics,
+        ILoggingService logging,
         DiagnosticsClientConfig config)
     {
         _jsRuntime = jsRuntime;
         _diagnostics = diagnostics;
+        _logging = logging;
         _config = config;
     }
 
@@ -42,7 +45,8 @@ public sealed class IndexedDbTestCatchJsonStore : ITestCatchJsonStore
                 var module = await GetModuleAsync(token);
                 await module.InvokeVoidAsync("putTestCatch", token, json);
             },
-            cancellationToken);
+            cancellationToken,
+            _logging);
     }
 
     public async Task<IReadOnlyList<string>> GetAllAsync(CancellationToken cancellationToken)
@@ -62,7 +66,8 @@ public sealed class IndexedDbTestCatchJsonStore : ITestCatchJsonStore
                 var items = await module.InvokeAsync<string[]>("getAllTestCatches", token);
                 return (IReadOnlyList<string>)(items ?? []);
             },
-            cancellationToken);
+            cancellationToken,
+            _logging);
     }
 
     private async Task<IJSObjectReference> GetModuleAsync(CancellationToken cancellationToken)

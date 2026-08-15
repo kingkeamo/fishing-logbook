@@ -25,6 +25,9 @@ public partial class DiagnosticsInspector : ComponentBase
     private INetworkStatus NetworkStatus { get; set; } = default!;
 
     [Inject]
+    private ILoggingService Logging { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private IReadOnlyList<DiagnosticEvent> _events = [];
@@ -55,7 +58,7 @@ public partial class DiagnosticsInspector : ComponentBase
             await SafeSynchroniseAsync();
             _queuedCount = await Store.GetCountAsync(CancellationToken.None);
             _events = await Store.GetPendingAsync(Config.MaxQueueSize, CancellationToken.None);
-            _lastError = Status.LastError;
+            _lastError = await ReadLastErrorAsync();
             _isOnline = await NetworkStatus.IsOnlineAsync(CancellationToken.None);
             var estimate = await Store.GetStorageEstimateAsync(CancellationToken.None);
             _usageLabel = estimate.Usage?.ToString() ?? Loc["Diagnostics_UnavailableValue"];
@@ -65,9 +68,11 @@ public partial class DiagnosticsInspector : ComponentBase
             Status.StorageUsageBytes = estimate.Usage;
             Status.StorageQuotaBytes = estimate.Quota;
         }
-        catch
+        catch (Exception exception)
         {
-            _lastError = Status.LastError ?? Loc["Diagnostics_Unknown"];
+            await Logging.LogErrorAsync("diagnostics refresh", exception);
+            _lastError = await ReadLastErrorAsync() ?? exception.GetType().Name;
+            Status.LastError = exception.GetType().Name;
         }
         finally
         {
@@ -81,9 +86,26 @@ public partial class DiagnosticsInspector : ComponentBase
         {
             await Synchroniser.SynchronisePendingAsync(CancellationToken.None);
         }
-        catch
+        catch (Exception exception)
         {
-            // Upload failure must not hide the remaining local queue.
+            await Logging.LogErrorAsync("diagnostic upload", exception);
+            Status.LastError = exception.GetType().Name;
         }
+    }
+
+    private async Task<string?> ReadLastErrorAsync()
+    {
+        var lastError = await Logging.GetLastErrorAsync();
+        if (lastError is null)
+        {
+            return Status.LastError;
+        }
+
+        if (string.IsNullOrWhiteSpace(lastError.ErrorType))
+        {
+            return lastError.Message;
+        }
+
+        return $"{lastError.ErrorType}: {lastError.Message}";
     }
 }

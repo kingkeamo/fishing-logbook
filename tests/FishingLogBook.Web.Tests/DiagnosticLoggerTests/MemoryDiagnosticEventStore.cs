@@ -13,12 +13,19 @@ public sealed class MemoryDiagnosticEventStore : IDiagnosticEventStore
 
     public Exception? ThrowOnEnqueue { get; set; }
 
+    public TaskCompletionSource<bool>? HangOnEnqueue { get; set; }
+
     public Task EnqueueAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken)
     {
         EnqueueCalls++;
         if (ThrowOnEnqueue is not null)
         {
             throw ThrowOnEnqueue;
+        }
+
+        if (HangOnEnqueue is not null)
+        {
+            return HangOnEnqueue.Task;
         }
 
         var index = Items.FindIndex(item => item.Id == diagnosticEvent.Id);

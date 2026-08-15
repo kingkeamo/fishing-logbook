@@ -28,6 +28,9 @@ public static class DiagnosticEventNames
     public const string CatchOfflineSaveCompleted = "CatchOfflineSaveCompleted";
     public const string CatchOfflineSaveFailed = "CatchOfflineSaveFailed";
 
+    public const string CatchOfflineLoadStarted = "CatchOfflineLoadStarted";
+    public const string CatchOfflineLoadCompleted = "CatchOfflineLoadCompleted";
+
     public const string PhotoOfflineSaveStarted = "PhotoOfflineSaveStarted";
     public const string PhotoOfflineSaveCompleted = "PhotoOfflineSaveCompleted";
     public const string PhotoOfflineSaveFailed = "PhotoOfflineSaveFailed";

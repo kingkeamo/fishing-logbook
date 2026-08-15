@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITestCatchPhotoStore, IndexedDbTestCatchPhotoStore>();
         services.AddScoped<ITestCatchSynchroniser, TestCatchSynchroniser>();
         services.AddSingleton<DiagnosticStatus>();
+        services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();
         services.AddScoped<IDiagnosticLogger, DiagnosticLogger>();
         services.AddScoped<IDiagnosticSynchroniser, DiagnosticSynchroniser>();
