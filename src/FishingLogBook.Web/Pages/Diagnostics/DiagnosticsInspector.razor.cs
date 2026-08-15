@@ -19,16 +19,21 @@ public partial class DiagnosticsInspector : ComponentBase
     private IDiagnosticEventStore Store { get; set; } = default!;
 
     [Inject]
+    private IDiagnosticSynchroniser Synchroniser { get; set; } = default!;
+
+    [Inject]
     private INetworkStatus NetworkStatus { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
+    private IReadOnlyList<DiagnosticEvent> _events = [];
     private int _queuedCount;
     private string? _lastError;
     private string _usageLabel = "-";
     private string _quotaLabel = "-";
     private bool? _isOnline;
+    private bool _isLoading;
 
     private string OnlineLabel => _isOnline switch
     {
@@ -39,14 +44,17 @@ public partial class DiagnosticsInspector : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        if (!Config.ShowInspector)
-        {
-            return;
-        }
+        await RefreshAsync();
+    }
 
+    private async Task RefreshAsync()
+    {
+        _isLoading = true;
         try
         {
+            await SafeSynchroniseAsync();
             _queuedCount = await Store.GetCountAsync(CancellationToken.None);
+            _events = await Store.GetPendingAsync(Config.MaxQueueSize, CancellationToken.None);
             _lastError = Status.LastError;
             _isOnline = await NetworkStatus.IsOnlineAsync(CancellationToken.None);
             var estimate = await Store.GetStorageEstimateAsync(CancellationToken.None);
@@ -60,6 +68,22 @@ public partial class DiagnosticsInspector : ComponentBase
         catch
         {
             _lastError = Status.LastError ?? Loc["Diagnostics_Unknown"];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SafeSynchroniseAsync()
+    {
+        try
+        {
+            await Synchroniser.SynchronisePendingAsync(CancellationToken.None);
+        }
+        catch
+        {
+            // Upload failure must not hide the remaining local queue.
         }
     }
 }

@@ -16,6 +16,6 @@ Before planning, coding, testing, committing, or touching infrastructure, read t
 | Tests (including `WhenTesting` naming) | `.claude/rules/testing-csharp.md` and `.claude/rules/testing-blazor.md` |
 | PostgreSQL, Dapper, DbUp | `.claude/rules/database.md` |
 | Terraform, Fly, cloud cost | `.claude/rules/terraform.md` |
-| Git commits | `.claude/rules/git-commits.md` |
+| Git commits and branches | `.claude/rules/git-commits.md` |
 
 Do not add coding or workflow conventions to `.cursor/rules/`. Change `.claude/rules/` instead.

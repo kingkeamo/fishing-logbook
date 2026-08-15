@@ -24,6 +24,7 @@ public sealed class TestCatchStore : ITestCatchStore
             .Select(json => JsonSerializer.Deserialize<TestCatch>(json, TestCatchJson.Options))
             .Where(testCatch => testCatch is not null)
             .Cast<TestCatch>()
+            .OrderByDescending(testCatch => testCatch.CaughtOn)
             .ToArray();
     }
 }

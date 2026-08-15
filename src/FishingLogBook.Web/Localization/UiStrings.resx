@@ -93,6 +93,9 @@
   <data name="TestCatch_Save" xml:space="preserve">
     <value>Save catch</value>
   </data>
+  <data name="TestCatch_Saving" xml:space="preserve">
+    <value>Saving catch</value>
+  </data>
   <data name="TestCatch_Empty" xml:space="preserve">
     <value>No catches saved yet</value>
   </data>
@@ -135,6 +138,12 @@
   <data name="TestCatch_PhotoFailed" xml:space="preserve">
     <value>Photograph upload failed</value>
   </data>
+  <data name="TestCatch_LoadFailed" xml:space="preserve">
+    <value>Could not load local catches. Your saved catches are still stored on this device.</value>
+  </data>
+  <data name="TestCatch_RetryLoad" xml:space="preserve">
+    <value>Retry loading</value>
+  </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
   </data>
@@ -176,5 +185,8 @@
   </data>
   <data name="Diagnostics_UnavailableValue" xml:space="preserve">
     <value>Unavailable</value>
+  </data>
+  <data name="Diagnostics_EmptyQueue" xml:space="preserve">
+    <value>No diagnostic events are queued</value>
   </data>
 </root>

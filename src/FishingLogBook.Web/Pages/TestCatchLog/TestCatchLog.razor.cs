@@ -23,6 +23,8 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     private string _notes = string.Empty;
     private IReadOnlyList<TestCatch> _catches = [];
     private bool _isSaving;
+    private bool _isLoading;
+    private bool _loadFailed;
     private byte[]? _pendingPhotographBytes;
     private string? _pendingPhotographContentType;
     private string? _pendingPhotographUrl;
@@ -102,7 +104,9 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         }
 
         _isSaving = true;
+        await InvokeAsync(StateHasChanged);
         CorrelationContext.StartNew();
+        var saved = false;
         try
         {
             await SafeLogAsync(
@@ -143,6 +147,12 @@ public partial class TestCatchLog : ComponentBase, IDisposable
                     DiagnosticLevel.Information,
                     DiagnosticEventNames.CatchOfflineSaveCompleted,
                     "Catch offline save completed.");
+                _speciesName = string.Empty;
+                _notes = string.Empty;
+                _pendingPhotographBytes = null;
+                _pendingPhotographContentType = null;
+                _pendingPhotographUrl = null;
+                saved = true;
             }
             catch (Exception exception)
             {
@@ -151,22 +161,21 @@ public partial class TestCatchLog : ComponentBase, IDisposable
                     DiagnosticEventNames.CatchOfflineSaveFailed,
                     "Catch offline save failed.",
                     exception);
-                return;
             }
-
-            _speciesName = string.Empty;
-            _notes = string.Empty;
-            _pendingPhotographBytes = null;
-            _pendingPhotographContentType = null;
-            _pendingPhotographUrl = null;
-            await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
-            await SafeDiagnosticSyncAsync();
-            await LoadAsync();
         }
         finally
         {
             _isSaving = false;
         }
+
+        if (!saved)
+        {
+            return;
+        }
+
+        await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        await SafeDiagnosticSyncAsync();
+        await LoadAsync();
     }
 
     private async Task RetryAsync(Guid id)
@@ -181,32 +190,91 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         await LoadAsync();
     }
 
+    private async Task RetryLoadAsync()
+    {
+        await LoadAsync();
+    }
+
     private async Task LoadAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            try
+            {
+                _catches = (await TestCatchStore.GetAllAsync(_cancellationTokenSource.Token))
+                    .OrderByDescending(testCatch => testCatch.CaughtOn)
+                    .ToArray();
+                _loadFailed = false;
+            }
+            catch (Exception exception)
+            {
+                _loadFailed = true;
+                await SafeLogAsync(
+                    DiagnosticLevel.Error,
+                    DiagnosticEventNames.OfflineDbReadFailed,
+                    "Loading local catches failed.",
+                    exception);
+                return;
+            }
+
+            await LoadPhotographsAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadPhotographsAsync()
+    {
+        _photographUrls.Clear();
+        var photographFailed = false;
+        foreach (var testCatch in _catches)
+        {
+            if (!await TryLoadPhotographAsync(testCatch))
+            {
+                photographFailed = true;
+            }
+        }
+
+        if (photographFailed)
+        {
+            _loadFailed = true;
+        }
+    }
+
+    private async Task<bool> TryLoadPhotographAsync(TestCatch testCatch)
     {
         try
         {
-            _catches = await TestCatchStore.GetAllAsync(_cancellationTokenSource.Token);
-            _photographUrls.Clear();
-            foreach (var testCatch in _catches)
+            var local = await TestCatchPhotoStore.GetAsync(testCatch.Id, _cancellationTokenSource.Token);
+            if (local is not null)
             {
-                var local = await TestCatchPhotoStore.GetAsync(testCatch.Id, _cancellationTokenSource.Token);
-                if (local is not null)
-                {
-                    _photographUrls[testCatch.Id] = $"data:{local.ContentType};base64,{Convert.ToBase64String(local.Bytes)}";
-                }
-                else if (!string.IsNullOrWhiteSpace(testCatch.Photograph?.RemoteUrl))
-                {
-                    _photographUrls[testCatch.Id] = testCatch.Photograph.RemoteUrl;
-                }
+                _photographUrls[testCatch.Id] = $"data:{local.ContentType};base64,{Convert.ToBase64String(local.Bytes)}";
+                return true;
             }
+
+            ApplyRemotePhotograph(testCatch);
+            return true;
         }
         catch (Exception exception)
         {
             await SafeLogAsync(
                 DiagnosticLevel.Error,
                 DiagnosticEventNames.OfflineDbReadFailed,
-                "Loading local catches failed.",
+                "Loading local photograph failed.",
                 exception);
+            ApplyRemotePhotograph(testCatch);
+            return false;
+        }
+    }
+
+    private void ApplyRemotePhotograph(TestCatch testCatch)
+    {
+        if (!string.IsNullOrWhiteSpace(testCatch.Photograph?.RemoteUrl))
+        {
+            _photographUrls[testCatch.Id] = testCatch.Photograph.RemoteUrl;
         }
     }
 
