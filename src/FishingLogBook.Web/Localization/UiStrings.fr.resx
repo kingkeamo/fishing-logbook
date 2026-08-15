@@ -120,6 +120,12 @@
   <data name="TestCatch_RetryPhotograph" xml:space="preserve">
     <value>Réessayer le téléversement de la photo</value>
   </data>
+  <data name="TestCatch_TakePhoto" xml:space="preserve">
+    <value>Prendre une photo</value>
+  </data>
+  <data name="TestCatch_ChoosePhoto" xml:space="preserve">
+    <value>Choisir une photo existante</value>
+  </data>
   <data name="TestCatch_PhotographAlt" xml:space="preserve">
     <value>Photo de la prise</value>
   </data>

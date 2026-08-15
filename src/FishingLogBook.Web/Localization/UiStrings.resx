@@ -120,6 +120,12 @@
   <data name="TestCatch_RetryPhotograph" xml:space="preserve">
     <value>Retry photograph upload</value>
   </data>
+  <data name="TestCatch_TakePhoto" xml:space="preserve">
+    <value>Take photo</value>
+  </data>
+  <data name="TestCatch_ChoosePhoto" xml:space="preserve">
+    <value>Choose existing photo</value>
+  </data>
   <data name="TestCatch_PhotographAlt" xml:space="preserve">
     <value>Catch photograph</value>
   </data>
