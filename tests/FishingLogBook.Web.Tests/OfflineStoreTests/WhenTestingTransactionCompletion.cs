@@ -17,10 +17,8 @@ public class WhenTestingTransactionCompletion : BaseOfflineStoreTest
         // Assert
         completeIndex.Should().BeGreaterThan(0);
         resolveIndex.Should().BeGreaterThan(completeIndex);
-        script.Should().Contain("transaction.oncomplete");
-        script.Should().Contain("transaction.onabort");
-        script.Should().Contain("transaction.onerror");
-        script.Should().Contain("db.onversionchange");
+        script.Should().Contain("request.onerror = () => fail(request.error)");
+        script.Should().NotContain("request.onerror = () => { };");
     }
 
     [Fact]

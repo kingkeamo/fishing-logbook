@@ -1,5 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
+using FishingLogBook.Shared.Diagnostics;
+using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Models;
 using FishingLogBook.Web.Offline;
@@ -46,6 +48,50 @@ public class WhenTestingSave : BaseTestCatchLogTest
             Arg.Is<TestCatch>(testCatch =>
                 testCatch.SpeciesName == "Pike" &&
                 testCatch.SyncStatus == SyncStatus.SavedLocally),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldLogWarningSaveStartedAndCompleted_WhenSaved()
+    {
+        // Arrange
+        var saved = new List<TestCatch>();
+        var store = Substitute.For<ITestCatchStore>();
+        store.SaveAsync(Arg.Any<TestCatch>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                saved.Add(callInfo.Arg<TestCatch>());
+                return Task.CompletedTask;
+            });
+        store.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<IReadOnlyList<TestCatch>>(saved.ToArray()));
+        var diagnostics = Substitute.For<IDiagnosticLogger>();
+        await using var context = CreateContext(
+            store,
+            Substitute.For<ITestCatchSynchroniser>(),
+            Substitute.For<ITestCatchPhotoStore>(),
+            diagnostics);
+        var cut = context.Render<TestCatchLog>();
+
+        // Act
+        cut.Find("#test-catch-species").Input("Pike");
+        await cut.Find("#save-test-catch-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => saved.Should().ContainSingle());
+        await diagnostics.Received().LogAsync(
+            DiagnosticLevel.Warning,
+            DiagnosticEventNames.CatchOfflineSaveStarted,
+            "Catch offline save started.",
+            Arg.Any<IReadOnlyDictionary<string, string>?>(),
+            Arg.Any<Exception?>(),
+            Arg.Any<CancellationToken>());
+        await diagnostics.Received().LogAsync(
+            DiagnosticLevel.Warning,
+            DiagnosticEventNames.CatchOfflineSaveCompleted,
+            "Catch offline save completed.",
+            Arg.Any<IReadOnlyDictionary<string, string>?>(),
+            Arg.Any<Exception?>(),
             Arg.Any<CancellationToken>());
     }
 

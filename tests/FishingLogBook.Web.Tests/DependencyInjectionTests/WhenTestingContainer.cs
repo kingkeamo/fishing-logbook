@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Offline;
 using FishingLogBook.Web.Services;
@@ -46,6 +47,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         injectedTypes.Should().Contain(typeof(ITestCatchPhotoStore));
         injectedTypes.Should().Contain(typeof(ITestCatchSynchroniser));
         injectedTypes.Should().Contain(typeof(ICultureService));
+        injectedTypes.Should().Contain(typeof(ILoggingService));
         injectedTypes.Should().Contain(typeof(IStringLocalizer<UiStrings>));
         resolve.Should().NotThrow();
     }

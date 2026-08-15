@@ -15,7 +15,8 @@ public static class OfflineOperation
         TimeSpan timeout,
         IDiagnosticLogger diagnostics,
         Func<CancellationToken, Task> action,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILoggingService? logging = null)
     {
         await ExecuteAsync(
             operation,
@@ -31,7 +32,8 @@ public static class OfflineOperation
                 await action(token);
                 return 0;
             },
-            cancellationToken);
+            cancellationToken,
+            logging);
     }
 
     public static async Task<T> ExecuteAsync<T>(
@@ -44,10 +46,11 @@ public static class OfflineOperation
         TimeSpan timeout,
         IDiagnosticLogger diagnostics,
         Func<CancellationToken, Task<T>> action,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILoggingService? logging = null)
     {
         var metadata = StartingMetadata(operation, storeName, timeout);
-        await SafeLogAsync(diagnostics, DiagnosticLevel.Debug, startedEvent, $"{operation} started.", metadata, null, cancellationToken);
+        await SafeLogAsync(diagnostics, logging, DiagnosticLevel.Debug, startedEvent, $"{operation} started.", metadata, null, cancellationToken);
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -58,6 +61,7 @@ public static class OfflineOperation
             stopwatch.Stop();
             await SafeLogAsync(
                 diagnostics,
+                logging,
                 DiagnosticLevel.Debug,
                 completedEvent,
                 $"{operation} completed.",
@@ -71,6 +75,7 @@ public static class OfflineOperation
             stopwatch.Stop();
             await SafeLogAsync(
                 diagnostics,
+                logging,
                 DiagnosticLevel.Warning,
                 timedOutEvent,
                 $"{operation} timed out.",
@@ -85,6 +90,7 @@ public static class OfflineOperation
             var timedOut = IsTimeout(exception);
             await SafeLogAsync(
                 diagnostics,
+                logging,
                 timedOut ? DiagnosticLevel.Warning : DiagnosticLevel.Error,
                 timedOut ? timedOutEvent : failedEvent,
                 timedOut ? $"{operation} timed out." : $"{operation} failed.",
@@ -143,6 +149,7 @@ public static class OfflineOperation
 
     private static async Task SafeLogAsync(
         IDiagnosticLogger diagnostics,
+        ILoggingService? logging,
         DiagnosticLevel level,
         string eventName,
         string message,
@@ -154,9 +161,12 @@ public static class OfflineOperation
         {
             await diagnostics.LogAsync(level, eventName, message, metadata, exception, cancellationToken);
         }
-        catch
+        catch (Exception loggingException)
         {
-            // Diagnostic failure must not change the original operation outcome.
+            if (logging is not null)
+            {
+                await logging.LogErrorAsync("diagnostic log", loggingException, cancellationToken);
+            }
         }
     }
 }

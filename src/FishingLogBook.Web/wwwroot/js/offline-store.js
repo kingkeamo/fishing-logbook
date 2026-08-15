@@ -177,6 +177,19 @@ function runTransaction(objectStoreName, mode, operationName, execute) {
                     operation: operationName,
                     elapsedMilliseconds: elapsedSince(started)
                 });
+            }, (error) => {
+                emit('OfflineDbTransactionError', {
+                    storeName: objectStoreName,
+                    operation: operationName,
+                    elapsedMilliseconds: elapsedSince(started),
+                    errorType: error?.name
+                });
+                try {
+                    transaction.abort();
+                } catch {
+                    // Already aborted.
+                }
+                reject(error || new Error('IndexedDB request failed'));
             });
         });
 
@@ -194,15 +207,15 @@ function runTransaction(objectStoreName, mode, operationName, execute) {
 
 export async function putTestCatch(json) {
     const catchRecord = JSON.parse(json);
-    await runTransaction(storeName, 'readwrite', 'write', (store, succeed) => {
+    await runTransaction(storeName, 'readwrite', 'write', (store, succeed, fail) => {
         const request = store.put(catchRecord);
         request.onsuccess = () => succeed();
-        request.onerror = () => { };
+        request.onerror = () => fail(request.error);
     });
 }
 
 export async function getAllTestCatches() {
-    return runTransaction(storeName, 'readonly', 'read', (store, succeed) => {
+    return runTransaction(storeName, 'readonly', 'read', (store, succeed, fail) => {
         const items = [];
         const request = store.openCursor();
         request.onsuccess = () => {
@@ -215,16 +228,16 @@ export async function getAllTestCatches() {
             items.push(cursor.value);
             cursor.continue();
         };
-        request.onerror = () => { };
+        request.onerror = () => fail(request.error);
     });
 }
 
 export async function putTestCatchPhotograph(id, bytes, contentType) {
     const storedBytes = toStoredBytes(bytes);
-    await runTransaction(photographStoreName, 'readwrite', 'write', (store, succeed) => {
+    await runTransaction(photographStoreName, 'readwrite', 'write', (store, succeed, fail) => {
         const request = store.put({ id, bytes: storedBytes, contentType });
         request.onsuccess = () => succeed();
-        request.onerror = () => { };
+        request.onerror = () => fail(request.error);
     });
 }
 
@@ -287,7 +300,7 @@ function readPhotograph(db, id, started) {
             });
             item = photographFromRecord(request.result);
         };
-        request.onerror = () => { };
+        request.onerror = () => reject(request.error);
     }).then((record) => completePhotograph(record));
 }
 

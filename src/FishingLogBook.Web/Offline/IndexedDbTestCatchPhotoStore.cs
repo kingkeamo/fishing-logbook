@@ -12,6 +12,7 @@ public sealed class IndexedDbTestCatchPhotoStore : ITestCatchPhotoStore
 
     private readonly IJSRuntime _jsRuntime;
     private readonly IDiagnosticLogger _diagnostics;
+    private readonly ILoggingService _logging;
     private readonly DiagnosticsClientConfig _config;
     private readonly SemaphoreSlim _moduleLock = new(1, 1);
     private IJSObjectReference? _module;
@@ -19,10 +20,12 @@ public sealed class IndexedDbTestCatchPhotoStore : ITestCatchPhotoStore
     public IndexedDbTestCatchPhotoStore(
         IJSRuntime jsRuntime,
         IDiagnosticLogger diagnostics,
+        ILoggingService logging,
         DiagnosticsClientConfig config)
     {
         _jsRuntime = jsRuntime;
         _diagnostics = diagnostics;
+        _logging = logging;
         _config = config;
     }
 
@@ -42,7 +45,8 @@ public sealed class IndexedDbTestCatchPhotoStore : ITestCatchPhotoStore
                 var module = await GetModuleAsync(token);
                 await module.InvokeVoidAsync("putTestCatchPhotograph", token, testCatchId.ToString(), bytes, contentType);
             },
-            cancellationToken);
+            cancellationToken,
+            _logging);
     }
 
     public async Task<TestCatchPhotoBytes?> GetAsync(Guid testCatchId, CancellationToken cancellationToken)
@@ -71,7 +75,8 @@ public sealed class IndexedDbTestCatchPhotoStore : ITestCatchPhotoStore
 
                 return new TestCatchPhotoBytes(Convert.FromBase64String(stored.BytesBase64), stored.ContentType);
             },
-            cancellationToken);
+            cancellationToken,
+            _logging);
     }
 
     private async Task<IJSObjectReference> GetModuleAsync(CancellationToken cancellationToken)

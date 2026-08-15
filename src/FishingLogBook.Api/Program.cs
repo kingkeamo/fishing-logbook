@@ -39,13 +39,14 @@ app.Logger.LogInformation(
     "FishingLogBook API starting in {HostingEnvironment} environment.",
     app.Environment.EnvironmentName);
 
+app.MapOpenApi();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/openapi/v1.json", "FishingLogBook API");
+});
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/openapi/v1.json", "FishingLogBook API");
-    });
     app.UseHttpsRedirection();
 }
 

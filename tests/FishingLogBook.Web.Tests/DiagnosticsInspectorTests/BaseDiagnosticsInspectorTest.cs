@@ -15,7 +15,8 @@ public class BaseDiagnosticsInspectorTest
         IDiagnosticEventStore store,
         IDiagnosticSynchroniser? synchroniser = null,
         INetworkStatus? network = null,
-        DiagnosticsClientConfig? config = null)
+        DiagnosticsClientConfig? config = null,
+        ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -26,6 +27,7 @@ public class BaseDiagnosticsInspectorTest
         context.Services.AddSingleton(new DiagnosticStatus());
         context.Services.AddSingleton(config ?? new DiagnosticsClientConfig { MaxQueueSize = 500 });
         context.Services.AddSingleton(network ?? OnlineNetwork());
+        context.Services.AddSingleton(logging ?? SilentLogging());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
@@ -47,5 +49,16 @@ public class BaseDiagnosticsInspectorTest
         store.GetStorageEstimateAsync(Arg.Any<CancellationToken>())
             .Returns(new StorageEstimate { Quota = 1000, Usage = 10 });
         return store;
+    }
+
+    protected static ILoggingService SilentLogging()
+    {
+        var logging = Substitute.For<ILoggingService>();
+        logging.GetLastErrorAsync(Arg.Any<CancellationToken>()).Returns((LastErrorLog?)null);
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return logging;
     }
 }

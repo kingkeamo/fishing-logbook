@@ -97,20 +97,51 @@ public class WhenTestingLog
         store.Items[0].Metadata.Should().NotContainKey("notes");
     }
 
+    [Fact]
+    public async Task ItShouldReturnAndRecordTimeout_WhenPersistenceDoesNotComplete()
+    {
+        // Arrange
+        var store = new MemoryDiagnosticEventStore
+        {
+            HangOnEnqueue = new TaskCompletionSource<bool>()
+        };
+        var status = new DiagnosticStatus();
+        var sut = CreateLogger(
+            store,
+            new DiagnosticsClientConfig
+            {
+                MinimumPersistLevel = "Information",
+                OperationTimeoutMilliseconds = 250
+            },
+            status);
+
+        // Act
+        await sut.LogAsync(
+            DiagnosticLevel.Warning,
+            DiagnosticEventNames.CatchOfflineSaveStarted,
+            "started");
+
+        // Assert
+        store.Items.Should().BeEmpty();
+        status.LastError.Should().Be(nameof(TimeoutException));
+    }
+
     private static DiagnosticLogger CreateLogger(
         MemoryDiagnosticEventStore store,
-        DiagnosticsClientConfig? config = null)
+        DiagnosticsClientConfig? config = null,
+        DiagnosticStatus? status = null)
     {
         var network = Substitute.For<INetworkStatus>();
         network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(false);
         return new DiagnosticLogger(
             store,
-            new DiagnosticStatus(),
+            status ?? new DiagnosticStatus(),
             config ?? new DiagnosticsClientConfig { MinimumPersistLevel = "Information" },
             new CorrelationContext(),
             network,
             new TestNavigation(),
-            Substitute.For<IJSRuntime>());
+            Substitute.For<IJSRuntime>(),
+            Substitute.For<ILoggingService>());
     }
 
     private sealed class TestNavigation : NavigationManager

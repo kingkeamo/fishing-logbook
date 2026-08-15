@@ -13,19 +13,22 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
     private readonly ITestCatchClient _client;
     private readonly INetworkStatus _networkStatus;
     private readonly IDiagnosticLogger? _diagnostics;
+    private readonly ILoggingService? _logging;
 
     public TestCatchSynchroniser(
         ITestCatchStore store,
         ITestCatchPhotoStore photoStore,
         ITestCatchClient client,
         INetworkStatus networkStatus,
-        IDiagnosticLogger? diagnostics = null)
+        IDiagnosticLogger? diagnostics = null,
+        ILoggingService? logging = null)
     {
         _store = store;
         _photoStore = photoStore;
         _client = client;
         _networkStatus = networkStatus;
         _diagnostics = diagnostics;
+        _logging = logging;
     }
 
     public async Task SynchronisePendingAsync(CancellationToken cancellationToken)
@@ -284,9 +287,12 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
         {
             await _diagnostics.LogAsync(level, eventName, message, exception: exception, cancellationToken: cancellationToken);
         }
-        catch
+        catch (Exception loggingException)
         {
-            // Diagnostic failure must not affect catch synchronisation.
+            if (_logging is not null)
+            {
+                await _logging.LogErrorAsync("diagnostic log", loggingException, cancellationToken);
+            }
         }
     }
 }

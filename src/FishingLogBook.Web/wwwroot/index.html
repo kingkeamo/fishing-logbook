@@ -64,6 +64,12 @@
                 } else {
                     console.debug(line);
                 }
+            },
+            setLastError: (json) => {
+                try { localStorage.setItem('flb-last-error', json); } catch { }
+            },
+            getLastError: () => {
+                try { return localStorage.getItem('flb-last-error'); } catch { return null; }
             }
         };
         navigator.serviceWorker?.addEventListener('message', (event) => {

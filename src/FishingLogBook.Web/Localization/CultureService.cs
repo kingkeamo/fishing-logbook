@@ -1,4 +1,5 @@
 using System.Globalization;
+using FishingLogBook.Web.Diagnostics;
 using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Localization;
@@ -6,10 +7,12 @@ namespace FishingLogBook.Web.Localization;
 public sealed class CultureService : ICultureService
 {
     private readonly IJSRuntime _jsRuntime;
+    private readonly ILoggingService _logging;
 
-    public CultureService(IJSRuntime jsRuntime)
+    public CultureService(IJSRuntime jsRuntime, ILoggingService logging)
     {
         _jsRuntime = jsRuntime;
+        _logging = logging;
     }
 
     public string CurrentCulture => CultureInfo.CurrentUICulture.Name;
@@ -23,8 +26,9 @@ public sealed class CultureService : ICultureService
             stored = await _jsRuntime.InvokeAsync<string?>("fishingLogBookCulture.get");
             browser = await _jsRuntime.InvokeAsync<string?>("fishingLogBookCulture.browser");
         }
-        catch (JSException)
+        catch (JSException exception)
         {
+            await _logging.LogErrorAsync("culture read", exception);
         }
 
         Apply(CultureMatcher.Resolve(stored, browser));
