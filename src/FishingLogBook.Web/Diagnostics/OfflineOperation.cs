@@ -50,7 +50,7 @@ public static class OfflineOperation
         ILoggingService? logging = null)
     {
         var metadata = StartingMetadata(operation, storeName, timeout);
-        await SafeLogAsync(diagnostics, logging, DiagnosticLevel.Debug, startedEvent, $"{operation} started.", metadata, null, cancellationToken);
+        TryToLog(diagnostics, logging, DiagnosticLevel.Debug, startedEvent, $"{operation} started.", metadata, null, cancellationToken);
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -59,7 +59,7 @@ public static class OfflineOperation
             timeoutSource.CancelAfter(timeout);
             var result = await action(timeoutSource.Token);
             stopwatch.Stop();
-            await SafeLogAsync(
+            TryToLog(
                 diagnostics,
                 logging,
                 DiagnosticLevel.Debug,
@@ -73,7 +73,7 @@ public static class OfflineOperation
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
             stopwatch.Stop();
-            await SafeLogAsync(
+            TryToLog(
                 diagnostics,
                 logging,
                 DiagnosticLevel.Warning,
@@ -88,7 +88,7 @@ public static class OfflineOperation
         {
             stopwatch.Stop();
             var timedOut = IsTimeout(exception);
-            await SafeLogAsync(
+            TryToLog(
                 diagnostics,
                 logging,
                 timedOut ? DiagnosticLevel.Warning : DiagnosticLevel.Error,
@@ -145,6 +145,19 @@ public static class OfflineOperation
     {
         return exception is TimeoutException ||
                exception.Message.Contains("timed out", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void TryToLog(
+        IDiagnosticLogger diagnostics,
+        ILoggingService? logging,
+        DiagnosticLevel level,
+        string eventName,
+        string message,
+        IReadOnlyDictionary<string, string> metadata,
+        Exception? exception,
+        CancellationToken cancellationToken)
+    {
+        _ = SafeLogAsync(diagnostics, logging, level, eventName, message, metadata, exception, cancellationToken);
     }
 
     private static async Task SafeLogAsync(

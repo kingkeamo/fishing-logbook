@@ -46,6 +46,40 @@ public class BaseTestCatchLogTest
         return context;
     }
 
+    protected static Task Hang()
+    {
+        return new TaskCompletionSource().Task;
+    }
+
+    protected static Task<T> Hang<T>()
+    {
+        return new TaskCompletionSource<T>().Task;
+    }
+
+    protected static ILocationService HangingLocation()
+    {
+        var location = Substitute.For<ILocationService>();
+        location.GetPromptStatusAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Hang<LocationPromptStatus>());
+        location.TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Hang<TestCatchLocation?>());
+        return location;
+    }
+
+    protected static IDiagnosticLogger HangingDiagnostics()
+    {
+        var diagnostics = Substitute.For<IDiagnosticLogger>();
+        diagnostics.LogAsync(
+                Arg.Any<FishingLogBook.Shared.Diagnostics.DiagnosticLevel>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyDictionary<string, string>?>(),
+                Arg.Any<Exception?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ => Hang());
+        return diagnostics;
+    }
+
     protected static ILocationService DeniedLocation()
     {
         var location = Substitute.For<ILocationService>();
