@@ -65,6 +65,55 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         await _factory.TestCatchRepository.DidNotReceive()
             .UpsertAsync(Arg.Any<TestCatchRecord>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldAcceptLocation_WhenPostedWithTheCatch()
+    {
+        // Arrange
+        var location = new CatchLocationDto(
+            53.2707,
+            -9.0568,
+            12,
+            DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+            LocationDefaults.DeviceGps,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion);
+        var record = new TestCatchRecord
+        {
+            Id = Guid.Parse("3a1f9c80-2b46-4e15-9d70-6c8e4a2f1b09"),
+            SpeciesName = "Pike",
+            CaughtOn = DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+            Notes = null,
+            Latitude = location.Latitude,
+            Longitude = location.Longitude,
+            LocationAccuracyMetres = location.AccuracyMetres,
+            LocationCapturedOn = location.CapturedOn,
+            LocationSource = location.Source,
+            LocationVisibility = location.Visibility,
+            LocationConsentVersion = location.ConsentVersion
+        };
+        _factory.TestCatchRepository.ClearReceivedCalls();
+        _factory.TestCatchRepository
+            .UpsertAsync(Arg.Any<TestCatchRecord>(), Arg.Any<CancellationToken>())
+            .Returns(record);
+        var client = _factory.CreateClient();
+        var dto = new TestCatchDto(record.Id, record.SpeciesName, record.CaughtOn, record.Notes, Location: location);
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/test-catches", dto);
+        var body = await response.Content.ReadFromJsonAsync<TestCatchDto>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body!.Location.Should().Be(location);
+        await _factory.TestCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<TestCatchRecord>(item =>
+                item.Id == record.Id &&
+                item.Latitude == location.Latitude &&
+                item.Longitude == location.Longitude &&
+                item.LocationVisibility == LocationDefaults.Private),
+            Arg.Any<CancellationToken>());
+    }
 }
 
 public class WhenTestingList : IClassFixture<SystemApiFactory>

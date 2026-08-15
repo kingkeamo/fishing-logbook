@@ -49,4 +49,33 @@ public class WhenTestingWebSerialization : BaseSerializationTest
         // Assert
         deserialized.Should().Be(original);
     }
+
+    [Fact]
+    public void ItShouldRoundTripTestCatchDtoLocationUsingWebDefaults()
+    {
+        // Arrange
+        var original = new TestCatchDto(
+            Guid.NewGuid(),
+            "Pike",
+            DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+            null,
+            Location: new CatchLocationDto(
+                53.2707,
+                -9.0568,
+                12,
+                DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion));
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<TestCatchDto>(json, WebOptions);
+
+        // Assert
+        json.Should().Contain("\"latitude\":53.2707");
+        deserialized.Should().Be(original);
+        deserialized!.Location.Should().NotBeNull();
+        deserialized.Location!.Visibility.Should().Be(LocationDefaults.Private);
+    }
 }

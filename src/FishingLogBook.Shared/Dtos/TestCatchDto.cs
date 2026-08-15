@@ -7,4 +7,5 @@ public sealed record TestCatchDto(
     string? Notes,
     Guid? PhotographId = null,
     string? PhotographContentType = null,
-    string? PhotographUrl = null);
+    string? PhotographUrl = null,
+    CatchLocationDto? Location = null);

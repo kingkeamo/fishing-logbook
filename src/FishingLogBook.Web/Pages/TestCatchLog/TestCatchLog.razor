@@ -22,6 +22,48 @@
                               Variant="Variant.Outlined"
                               Lines="3"
                               id="test-catch-notes" />
+                @if (_locationPrompt.ShowExplainer)
+                {
+                    <MudPaper Class="pa-3" Outlined="true" id="test-catch-location-explainer">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.subtitle2">@Loc["TestCatch_LocationTitle"]</MudText>
+                            <MudText Typo="Typo.body2">@Loc["TestCatch_LocationExplainer"]</MudText>
+                            <MudStack Spacing="2">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           FullWidth="true"
+                                           OnClick="AllowLocationAsync"
+                                           id="test-catch-location-allow">
+                                    @Loc["TestCatch_LocationAllow"]
+                                </MudButton>
+                                <MudButton Variant="Variant.Outlined"
+                                           Color="Color.Primary"
+                                           FullWidth="true"
+                                           OnClick="DismissLocationAsync"
+                                           id="test-catch-location-not-now">
+                                    @Loc["TestCatch_LocationNotNow"]
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                }
+                else if (_locationPrompt.WillCaptureOnSave)
+                {
+                    <MudText Typo="Typo.caption" id="test-catch-location-status">@Loc["TestCatch_LocationWillCapture"]</MudText>
+                }
+                else if (_locationPrompt.ShowEnableLater)
+                {
+                    <MudStack Spacing="1" id="test-catch-location-enable">
+                        <MudText Typo="Typo.caption">@Loc["TestCatch_LocationOff"]</MudText>
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   OnClick="AllowLocationAsync"
+                                   id="test-catch-location-try-again">
+                            @Loc["TestCatch_LocationTryAgain"]
+                        </MudButton>
+                    </MudStack>
+                }
                 <div class="test-catch-photo-actions">
                     <label for="test-catch-photo-camera"
                            class="test-catch-photo-picker"
@@ -108,6 +150,38 @@
                                 <MudText Typo="Typo.caption" Color="@SyncStatusColor(testCatch.SyncStatus)" id="@($"test-catch-sync-status-{testCatch.Id}")">
                                     @Loc[SyncStatusKey(testCatch.SyncStatus)]
                                 </MudText>
+                                <div class="test-catch-location" id="@($"test-catch-location-status-{testCatch.Id}")">
+                                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.subtitle2">@Loc["TestCatch_LocationLabel"]</MudText>
+                                        @if (testCatch.Location is null)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Close"
+                                                     Size="Size.Small"
+                                                     Color="Color.Error"
+                                                     id="@($"test-catch-location-missing-{testCatch.Id}")" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Check"
+                                                     Size="Size.Small"
+                                                     Color="Color.Success"
+                                                     id="@($"test-catch-location-check-{testCatch.Id}")" />
+                                        }
+                                    </MudStack>
+                                    @if (testCatch.Location is not null)
+                                    {
+                                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                            <span class="test-catch-location-pill" id="@($"test-catch-location-saved-{testCatch.Id}")">@Loc["TestCatch_LocationSaved"]</span>
+                                            <MudButton Variant="Variant.Text"
+                                                       Color="Color.Error"
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => RemoveLocationAsync(testCatch.Id))"
+                                                       id="@($"remove-test-catch-location-{testCatch.Id}")">
+                                                @Loc["TestCatch_LocationRemove"]
+                                            </MudButton>
+                                        </MudStack>
+                                    }
+                                </div>
                                 @if (_photographUrls.TryGetValue(testCatch.Id, out var photographUrl))
                                 {
                                     <img src="@photographUrl"

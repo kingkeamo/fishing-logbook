@@ -15,4 +15,18 @@ public sealed class TestCatchRecord
     public string? PhotographObjectKey { get; init; }
 
     public string? PhotographContentType { get; init; }
+
+    public double? Latitude { get; init; }
+
+    public double? Longitude { get; init; }
+
+    public double? LocationAccuracyMetres { get; init; }
+
+    public DateTimeOffset? LocationCapturedOn { get; init; }
+
+    public string? LocationSource { get; init; }
+
+    public string? LocationVisibility { get; init; }
+
+    public string? LocationConsentVersion { get; init; }
 }

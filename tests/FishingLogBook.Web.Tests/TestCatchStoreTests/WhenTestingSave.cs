@@ -46,4 +46,34 @@ public class WhenTestingSave : BaseTestCatchStoreTest
         saved.Should().ContainSingle()
             .Which.Should().Be(testCatch);
     }
+
+    [Fact]
+    public async Task ItShouldStillContainLocation_WhenNewStoreReadsSamePersistence()
+    {
+        // Arrange
+        var location = new TestCatchLocation(
+            53.2707,
+            -9.0568,
+            12,
+            DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+            "DeviceGps",
+            "Private",
+            "1");
+        var testCatch = new TestCatch(
+            Guid.NewGuid(),
+            "Pike",
+            DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+            null,
+            SyncStatus.SavedLocally,
+            Location: location);
+        await Sut.SaveAsync(testCatch, CancellationToken.None);
+        var reopened = new TestCatchStore(new MemoryTestCatchJsonStore(BackingStore));
+
+        // Act
+        var saved = await reopened.GetAllAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().ContainSingle();
+        saved[0].Location.Should().Be(location);
+    }
 }

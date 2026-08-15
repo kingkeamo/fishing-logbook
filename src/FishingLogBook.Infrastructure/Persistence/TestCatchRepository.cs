@@ -8,6 +8,8 @@ public sealed class TestCatchRepository : ITestCatchRepository
 {
     private const string SelectSql = """
         SELECT t."Id", t."SpeciesName", t."CaughtOn", t."Notes",
+               t."Latitude", t."Longitude", t."LocationAccuracyMetres", t."LocationCapturedOn",
+               t."LocationSource", t."LocationVisibility", t."LocationConsentVersion",
                p."PhotographId", p."ObjectKey" AS "PhotographObjectKey", p."ContentType" AS "PhotographContentType"
         FROM "TestCatch" t
         LEFT JOIN "TestCatchPhotograph" p ON p."TestCatchId" = t."Id"
@@ -23,9 +25,22 @@ public sealed class TestCatchRepository : ITestCatchRepository
     public async Task<TestCatchRecord> UpsertAsync(TestCatchRecord record, CancellationToken cancellationToken)
     {
         const string insertSql = """
-            INSERT INTO "TestCatch" ("Id", "SpeciesName", "CaughtOn", "Notes")
-            VALUES (@Id, @SpeciesName, @CaughtOn, @Notes)
-            ON CONFLICT ("Id") DO NOTHING;
+            INSERT INTO "TestCatch" (
+                "Id", "SpeciesName", "CaughtOn", "Notes",
+                "Latitude", "Longitude", "LocationAccuracyMetres", "LocationCapturedOn",
+                "LocationSource", "LocationVisibility", "LocationConsentVersion")
+            VALUES (
+                @Id, @SpeciesName, @CaughtOn, @Notes,
+                @Latitude, @Longitude, @LocationAccuracyMetres, @LocationCapturedOn,
+                @LocationSource, @LocationVisibility, @LocationConsentVersion)
+            ON CONFLICT ("Id") DO UPDATE SET
+                "Latitude" = EXCLUDED."Latitude",
+                "Longitude" = EXCLUDED."Longitude",
+                "LocationAccuracyMetres" = EXCLUDED."LocationAccuracyMetres",
+                "LocationCapturedOn" = EXCLUDED."LocationCapturedOn",
+                "LocationSource" = EXCLUDED."LocationSource",
+                "LocationVisibility" = EXCLUDED."LocationVisibility",
+                "LocationConsentVersion" = EXCLUDED."LocationConsentVersion";
             """;
 
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

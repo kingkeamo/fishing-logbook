@@ -156,7 +156,8 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
                     dto.CaughtOn,
                     dto.Notes,
                     SyncStatus.Synchronised,
-                    photograph),
+                    photograph,
+                    FromRemoteLocation(dto.Location)),
                 cancellationToken);
         }
     }
@@ -168,7 +169,12 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
         try
         {
             await _client.UpsertAsync(
-                new TestCatchDto(testCatch.Id, testCatch.SpeciesName, testCatch.CaughtOn, testCatch.Notes),
+                new TestCatchDto(
+                    testCatch.Id,
+                    testCatch.SpeciesName,
+                    testCatch.CaughtOn,
+                    testCatch.Notes,
+                    Location: ToRemoteLocation(testCatch.Location)),
                 cancellationToken);
             await _store.SaveAsync(testCatch with { SyncStatus = SyncStatus.Synchronised }, cancellationToken);
         }
@@ -241,6 +247,40 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
         return _store.SaveAsync(
             testCatch with { Photograph = testCatch.Photograph with { SyncStatus = photoStatus } },
             cancellationToken);
+    }
+
+    private static CatchLocationDto? ToRemoteLocation(TestCatchLocation? location)
+    {
+        if (location is null)
+        {
+            return null;
+        }
+
+        return new CatchLocationDto(
+            location.Latitude,
+            location.Longitude,
+            location.AccuracyMetres,
+            location.CapturedOn,
+            location.Source,
+            location.Visibility,
+            location.ConsentVersion);
+    }
+
+    private static TestCatchLocation? FromRemoteLocation(CatchLocationDto? location)
+    {
+        if (location is null)
+        {
+            return null;
+        }
+
+        return new TestCatchLocation(
+            location.Latitude,
+            location.Longitude,
+            location.AccuracyMetres,
+            location.CapturedOn,
+            location.Source,
+            location.Visibility,
+            location.ConsentVersion);
     }
 
     private static TestCatchPhotograph? FromRemotePhotograph(TestCatchDto dto)

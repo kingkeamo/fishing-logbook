@@ -3,6 +3,7 @@ using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Models;
 using FishingLogBook.Web.Offline;
+using FishingLogBook.Web.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
@@ -28,6 +29,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     private byte[]? _pendingPhotographBytes;
     private string? _pendingPhotographContentType;
     private string? _pendingPhotographUrl;
+    private LocationPromptStatus _locationPrompt = new(false, false, false);
 
     [Inject]
     private ITestCatchStore TestCatchStore { get; set; } = default!;
@@ -56,10 +58,14 @@ public partial class TestCatchLog : ComponentBase, IDisposable
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
+    [Inject]
+    private ILocationService LocationService { get; set; } = default!;
+
     private bool CanSave => !_isSaving && !string.IsNullOrWhiteSpace(_speciesName);
 
     protected override async Task OnInitializedAsync()
     {
+        await RefreshLocationPromptAsync();
         await LoadAsync();
         await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
         await SafeDiagnosticSyncAsync();
@@ -126,13 +132,16 @@ public partial class TestCatchLog : ComponentBase, IDisposable
                     SyncStatus.SavedLocally);
             }
 
+            var location = await TryCaptureLocationAsync();
+
             var testCatch = new TestCatch(
                 Guid.NewGuid(),
                 _speciesName.Trim(),
                 DateTimeOffset.UtcNow,
                 string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
                 SyncStatus.SavedLocally,
-                photograph);
+                photograph,
+                location);
 
             try
             {
@@ -179,6 +188,83 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
         await SafeDiagnosticSyncAsync();
         await LoadAsync();
+    }
+
+    private async Task AllowLocationAsync()
+    {
+        try
+        {
+            await LocationService.TryCaptureAsync(true, _cancellationTokenSource.Token);
+        }
+        catch (Exception exception)
+        {
+            await SafeLogAsync(
+                DiagnosticLevel.Warning,
+                DiagnosticEventNames.LocationCaptureFailed,
+                "Location capture failed.",
+                exception);
+        }
+
+        await RefreshLocationPromptAsync();
+    }
+
+    private async Task DismissLocationAsync()
+    {
+        try
+        {
+            await LocationService.DismissPromptAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("location prompt", exception, _cancellationTokenSource.Token);
+        }
+
+        await RefreshLocationPromptAsync();
+    }
+
+    private async Task RemoveLocationAsync(Guid id)
+    {
+        var testCatch = _catches.FirstOrDefault(item => item.Id == id);
+        if (testCatch?.Location is null)
+        {
+            return;
+        }
+
+        await TestCatchStore.SaveAsync(
+            testCatch with { Location = null, SyncStatus = SyncStatus.SavedLocally },
+            _cancellationTokenSource.Token);
+        await LoadAsync();
+        await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+    }
+
+    private async Task RefreshLocationPromptAsync()
+    {
+        try
+        {
+            _locationPrompt = await LocationService.GetPromptStatusAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception exception)
+        {
+            _locationPrompt = new LocationPromptStatus(false, true, false);
+            await Logging.LogErrorAsync("location prompt", exception, _cancellationTokenSource.Token);
+        }
+    }
+
+    private async Task<TestCatchLocation?> TryCaptureLocationAsync()
+    {
+        try
+        {
+            return await LocationService.TryCaptureAsync(false, _cancellationTokenSource.Token);
+        }
+        catch (Exception exception)
+        {
+            await SafeLogAsync(
+                DiagnosticLevel.Warning,
+                DiagnosticEventNames.LocationCaptureFailed,
+                "Location capture failed.",
+                exception);
+            return null;
+        }
     }
 
     private async Task RetryAsync(Guid id)

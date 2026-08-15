@@ -2,6 +2,7 @@ using Bunit;
 using FishingLogBook.Web.Diagnostics;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Offline;
+using FishingLogBook.Web.Services;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using NSubstitute;
@@ -24,7 +25,8 @@ public class BaseTestCatchLogTest
         ITestCatchStore store,
         ITestCatchSynchroniser synchroniser,
         ITestCatchPhotoStore photoStore,
-        IDiagnosticLogger? diagnostics = null)
+        IDiagnosticLogger? diagnostics = null,
+        ILocationService? location = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -38,8 +40,29 @@ public class BaseTestCatchLogTest
         context.Services.AddSingleton(Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(new CorrelationContext());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
+        context.Services.AddSingleton(location ?? DeniedLocation());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
 
         return context;
+    }
+
+    protected static ILocationService DeniedLocation()
+    {
+        var location = Substitute.For<ILocationService>();
+        location.GetPromptStatusAsync(Arg.Any<CancellationToken>())
+            .Returns(new LocationPromptStatus(false, true, false));
+        location.TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns((TestCatchLocation?)null);
+        return location;
+    }
+
+    protected static ILocationService GrantedLocation(TestCatchLocation captured)
+    {
+        var location = Substitute.For<ILocationService>();
+        location.GetPromptStatusAsync(Arg.Any<CancellationToken>())
+            .Returns(new LocationPromptStatus(false, false, true));
+        location.TryCaptureAsync(false, Arg.Any<CancellationToken>())
+            .Returns(captured);
+        return location;
     }
 }

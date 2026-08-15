@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITestCatchClient, TestCatchClient>();
         services.AddScoped<IDiagnosticClient, DiagnosticClient>();
         services.AddScoped<INetworkStatus, BrowserNetworkStatus>();
+        services.AddScoped<ILocationService, BrowserLocationService>();
         services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();
         services.AddScoped<ITestCatchStore, TestCatchStore>();
         services.AddScoped<ITestCatchPhotoStore, IndexedDbTestCatchPhotoStore>();

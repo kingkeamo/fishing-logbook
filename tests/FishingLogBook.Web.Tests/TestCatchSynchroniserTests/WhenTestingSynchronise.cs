@@ -227,6 +227,73 @@ public class WhenTestingSynchronise
         saved[0].Photograph!.RemoteUrl.Should().Be("https://storage.test/download/photo");
     }
 
+    [Fact]
+    public async Task ItShouldSendLocationWithTheCatch_WhenSynchronising()
+    {
+        // Arrange
+        var location = new TestCatchLocation(
+            53.2707,
+            -9.0568,
+            12,
+            DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+            "DeviceGps",
+            "Private",
+            "1");
+        var testCatch = CreateCatch(SyncStatus.SavedLocally) with { Location = location };
+        var store = CreateStore([testCatch]);
+        var client = Substitute.For<ITestCatchClient>();
+        client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([]);
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, Online());
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+
+        // Assert
+        await client.Received(1).UpsertAsync(
+            Arg.Is<TestCatchDto>(dto =>
+                dto.Id == testCatch.Id &&
+                dto.Location != null &&
+                dto.Location.Latitude == location.Latitude &&
+                dto.Location.Longitude == location.Longitude &&
+                dto.Location.Visibility == "Private"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepRemoteLocation_WhenMergedFromApi()
+    {
+        // Arrange
+        var store = CreateStore([]);
+        var remoteLocation = new CatchLocationDto(
+            53.2707,
+            -9.0568,
+            8,
+            DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
+            "DeviceGps",
+            "Private",
+            "1");
+        var remote = new TestCatchDto(
+            Guid.Parse("6f4c8a12-3e90-4b7d-a1c5-9d2e8f0b6a33"),
+            "Bream",
+            DateTimeOffset.Parse("2026-08-14T16:00:00Z"),
+            null,
+            Location: remoteLocation);
+        var client = Substitute.For<ITestCatchClient>();
+        client.GetAllAsync(Arg.Any<CancellationToken>()).Returns([remote]);
+        var sut = new TestCatchSynchroniser(store, EmptyPhotos(), client, Online());
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAllAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().ContainSingle();
+        saved[0].Location.Should().NotBeNull();
+        saved[0].Location!.Latitude.Should().Be(remoteLocation.Latitude);
+        saved[0].Location!.Longitude.Should().Be(remoteLocation.Longitude);
+        saved[0].Location!.Visibility.Should().Be("Private");
+    }
+
     private static INetworkStatus Online()
     {
         var network = Substitute.For<INetworkStatus>();

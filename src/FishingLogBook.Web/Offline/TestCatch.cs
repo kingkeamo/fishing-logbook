@@ -8,4 +8,5 @@ public sealed record TestCatch(
     DateTimeOffset CaughtOn,
     string? Notes,
     SyncStatus SyncStatus,
-    TestCatchPhotograph? Photograph = null);
+    TestCatchPhotograph? Photograph = null,
+    TestCatchLocation? Location = null);

@@ -27,7 +27,14 @@ public sealed class TestCatchService
             Id = testCatch.Id,
             SpeciesName = testCatch.SpeciesName,
             CaughtOn = testCatch.CaughtOn,
-            Notes = testCatch.Notes
+            Notes = testCatch.Notes,
+            Latitude = testCatch.Location?.Latitude,
+            Longitude = testCatch.Location?.Longitude,
+            LocationAccuracyMetres = testCatch.Location?.AccuracyMetres,
+            LocationCapturedOn = testCatch.Location?.CapturedOn,
+            LocationSource = testCatch.Location?.Source,
+            LocationVisibility = testCatch.Location?.Visibility,
+            LocationConsentVersion = testCatch.Location?.ConsentVersion
         };
 
         var saved = await _testCatchRepository.UpsertAsync(record, cancellationToken);
@@ -112,7 +119,25 @@ public sealed class TestCatchService
             record.Notes,
             record.PhotographId,
             record.PhotographContentType,
-            photographUrl);
+            photographUrl,
+            ToLocation(record));
+    }
+
+    private static CatchLocationDto? ToLocation(TestCatchRecord record)
+    {
+        if (record.Latitude is null || record.Longitude is null || record.LocationCapturedOn is null)
+        {
+            return null;
+        }
+
+        return new CatchLocationDto(
+            record.Latitude.Value,
+            record.Longitude.Value,
+            record.LocationAccuracyMetres,
+            record.LocationCapturedOn.Value,
+            record.LocationSource ?? LocationDefaults.DeviceGps,
+            record.LocationVisibility ?? LocationDefaults.Private,
+            record.LocationConsentVersion ?? LocationDefaults.ConsentVersion);
     }
 
     private static string ObjectKey(Guid testCatchId, Guid photographId)

@@ -150,6 +150,39 @@
   <data name="TestCatch_RetryLoad" xml:space="preserve">
     <value>Réessayer le chargement</value>
   </data>
+  <data name="TestCatch_LocationTitle" xml:space="preserve">
+    <value>Enregistrer le lieu de la prise</value>
+  </data>
+  <data name="TestCatch_LocationExplainer" xml:space="preserve">
+    <value>Conservez un historique de l’endroit où vous avez pris ce poisson, pour vos cartes et votre historique. Votre position précise reste privée par défaut.</value>
+  </data>
+  <data name="TestCatch_LocationAllow" xml:space="preserve">
+    <value>Autoriser la localisation</value>
+  </data>
+  <data name="TestCatch_LocationNotNow" xml:space="preserve">
+    <value>Pas maintenant</value>
+  </data>
+  <data name="TestCatch_LocationWillCapture" xml:space="preserve">
+    <value>La localisation sera enregistrée avec cette prise.</value>
+  </data>
+  <data name="TestCatch_LocationOff" xml:space="preserve">
+    <value>La localisation est désactivée. Vous pourrez l’activer plus tard sans empêcher l’enregistrement.</value>
+  </data>
+  <data name="TestCatch_LocationTryAgain" xml:space="preserve">
+    <value>Réessayer la localisation</value>
+  </data>
+  <data name="TestCatch_LocationSaved" xml:space="preserve">
+    <value>Enregistrée</value>
+  </data>
+  <data name="TestCatch_LocationLabel" xml:space="preserve">
+    <value>Localisation</value>
+  </data>
+  <data name="TestCatch_LocationRemove" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="TestCatch_LocationMissing" xml:space="preserve">
+    <value>Pas de localisation</value>
+  </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
   </data>

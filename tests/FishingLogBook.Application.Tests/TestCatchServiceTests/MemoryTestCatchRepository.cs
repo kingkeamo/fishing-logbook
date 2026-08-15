@@ -9,7 +9,31 @@ internal sealed class MemoryTestCatchRepository : ITestCatchRepository
 
     public Task<TestCatchRecord> UpsertAsync(TestCatchRecord record, CancellationToken cancellationToken)
     {
-        _records.TryAdd(record.Id, record);
+        if (_records.TryGetValue(record.Id, out var existing))
+        {
+            _records[record.Id] = new TestCatchRecord
+            {
+                Id = existing.Id,
+                SpeciesName = existing.SpeciesName,
+                CaughtOn = existing.CaughtOn,
+                Notes = existing.Notes,
+                Latitude = record.Latitude,
+                Longitude = record.Longitude,
+                LocationAccuracyMetres = record.LocationAccuracyMetres,
+                LocationCapturedOn = record.LocationCapturedOn,
+                LocationSource = record.LocationSource,
+                LocationVisibility = record.LocationVisibility,
+                LocationConsentVersion = record.LocationConsentVersion,
+                PhotographId = existing.PhotographId,
+                PhotographObjectKey = existing.PhotographObjectKey,
+                PhotographContentType = existing.PhotographContentType
+            };
+        }
+        else
+        {
+            _records[record.Id] = record;
+        }
+
         return Task.FromResult(_records[record.Id]);
     }
 
@@ -38,6 +62,13 @@ internal sealed class MemoryTestCatchRepository : ITestCatchRepository
             SpeciesName = existing.SpeciesName,
             CaughtOn = existing.CaughtOn,
             Notes = existing.Notes,
+            Latitude = existing.Latitude,
+            Longitude = existing.Longitude,
+            LocationAccuracyMetres = existing.LocationAccuracyMetres,
+            LocationCapturedOn = existing.LocationCapturedOn,
+            LocationSource = existing.LocationSource,
+            LocationVisibility = existing.LocationVisibility,
+            LocationConsentVersion = existing.LocationConsentVersion,
             PhotographId = photographId,
             PhotographObjectKey = objectKey,
             PhotographContentType = contentType
