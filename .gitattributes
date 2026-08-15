@@ -1,0 +1,45 @@
+# Checkout and commit text files as LF on every OS.
+# This overrides core.autocrlf, so Windows machines do not rewrite files as CRLF.
+* text=auto eol=lf
+
+# Keep common source types explicit in case Git's text detection misses them.
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.json text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.razor text eol=lf
+*.resx text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.xml text eol=lf
+*.sql text eol=lf
+*.tf text eol=lf
+*.ps1 text eol=lf
+*.sh text eol=lf
+*.http text eol=lf
+*.webmanifest text eol=lf
+*.editorconfig text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# Binary files must not be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.wasm binary
+*.dll binary
+*.pdb binary
+*.exe binary
