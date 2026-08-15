@@ -39,10 +39,38 @@
                            Disabled="@(!CanSave)"
                            OnClick="SaveAsync"
                            id="save-test-catch-button">
-                    @Loc["TestCatch_Save"]
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small"
+                                             Indeterminate="true"
+                                             Color="Color.Inherit"
+                                             Class="me-2"
+                                             id="save-test-catch-spinner" />
+                        @Loc["TestCatch_Saving"]
+                    }
+                    else
+                    {
+                        @Loc["TestCatch_Save"]
+                    }
                 </MudButton>
             </MudStack>
         </MudPaper>
+
+        @if (_loadFailed)
+        {
+            <MudPaper Class="pa-4" Elevation="2" id="test-catch-load-error">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.body2" Color="Color.Error">@Loc["TestCatch_LoadFailed"]</MudText>
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               Disabled="@_isLoading"
+                               OnClick="RetryLoadAsync"
+                               id="retry-load-test-catches-button">
+                        @Loc["TestCatch_RetryLoad"]
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
 
         <MudPaper Class="pa-4" Elevation="2" id="test-catch-list">
             @if (_catches.Count == 0)

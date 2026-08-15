@@ -17,7 +17,12 @@ public static class DiagnosticEventNames
     public const string OfflineDbWriteFailed = "OfflineDbWriteFailed";
     public const string OfflineDbWriteTimedOut = "OfflineDbWriteTimedOut";
 
+    public const string OfflineDbTransactionStarted = "OfflineDbTransactionStarted";
+    public const string OfflineDbTransactionCompleted = "OfflineDbTransactionCompleted";
     public const string OfflineDbTransactionAborted = "OfflineDbTransactionAborted";
+    public const string OfflineDbTransactionError = "OfflineDbTransactionError";
+    public const string OfflineDbRequestSucceeded = "OfflineDbRequestSucceeded";
+    public const string OfflineDbClosed = "OfflineDbClosed";
 
     public const string CatchOfflineSaveStarted = "CatchOfflineSaveStarted";
     public const string CatchOfflineSaveCompleted = "CatchOfflineSaveCompleted";

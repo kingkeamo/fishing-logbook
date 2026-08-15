@@ -37,17 +37,18 @@ When asked to plan work:
 When asked to implement a GitHub issue:
 
 1. Read the complete GitHub issue.
-2. Read every Requirements, Architecture and BUILD section referenced by the issue.
-3. Do not expand scope beyond the issue.
-4. Convert each Acceptance Criterion into one or more automated tests where practical.
-5. Implement only what is required to satisfy the Acceptance Criteria.
-6. Existing tests must continue to pass.
-7. All new user-visible text must use localisation resources.
-8. Add both English and French resource values.
-9. Do not hard-code user-visible English.
-10. Do not create or change cloud infrastructure unless explicitly instructed.
-11. Never run terraform apply or terraform destroy. Follow `.claude/rules/terraform.md`.
-12. Run the build and relevant tests before considering the work complete.
-13. Report any Acceptance Criterion that cannot be satisfied rather than pretending it is complete.
-14. A pull request should reference the GitHub issue.
-15. Do not mark an issue complete unless every Acceptance Criterion is satisfied.
+2. Create a branch from `main` using the prefixes in **`git-commits.md`**: bugs are `fix/<n>-…`, urgent production patches are `hotfix/<n>-…`, everything else is `feature/<n>-…`.
+3. Read every Requirements, Architecture and BUILD section referenced by the issue.
+4. Do not expand scope beyond the issue.
+5. Convert each Acceptance Criterion into one or more automated tests where practical.
+6. Implement only what is required to satisfy the Acceptance Criteria.
+7. Existing tests must continue to pass.
+8. All new user-visible text must use localisation resources.
+9. Add both English and French resource values.
+10. Do not hard-code user-visible English.
+11. Do not create or change cloud infrastructure unless explicitly instructed.
+12. Never run terraform apply or terraform destroy. Follow `.claude/rules/terraform.md`.
+13. Run the build and relevant tests before considering the work complete.
+14. Report any Acceptance Criterion that cannot be satisfied rather than pretending it is complete.
+15. A pull request should reference the GitHub issue.
+16. Do not mark an issue complete unless every Acceptance Criterion is satisfied.

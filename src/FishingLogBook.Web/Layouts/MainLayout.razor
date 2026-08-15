@@ -14,14 +14,13 @@
                        Color="Color.Inherit"
                        aria-label="@Loc["TestCatch_Nav"]"
                        id="test-catch-nav-button" />
-        @if (DiagnosticsConfig.ShowInspector)
-        {
-            <MudIconButton Href="/diagnostics"
-                           Icon="@Icons.Material.Filled.BugReport"
-                           Color="Color.Inherit"
-                           aria-label="@Loc["Diagnostics_Nav"]"
-                           id="diagnostics-nav-button" />
-        }
+        <MudButton Href="/diagnostics"
+                   Variant="Variant.Text"
+                   Color="Color.Inherit"
+                   StartIcon="@Icons.Material.Filled.BugReport"
+                   id="diagnostics-nav-button">
+            @Loc["Diagnostics_Nav"]
+        </MudButton>
         <LanguageSwitcher />
         <MudIconButton Icon="@ThemeToggleIcon"
                        Color="Color.Inherit"

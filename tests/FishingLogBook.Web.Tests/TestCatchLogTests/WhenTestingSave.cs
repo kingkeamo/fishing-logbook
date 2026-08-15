@@ -39,6 +39,8 @@ public class WhenTestingSave : BaseTestCatchLogTest
             cut.Find($"#test-catch-species-{saved[0].Id}").TextContent.Should().Contain("Pike");
             cut.Find($"#test-catch-sync-status-{saved[0].Id}").TextContent.Should()
                 .Contain("Saved locally — not synchronised");
+            cut.FindAll("#save-test-catch-spinner").Should().BeEmpty();
+            cut.Find("#save-test-catch-button").TextContent.Should().Contain("Save catch");
         });
         await store.Received(1).SaveAsync(
             Arg.Is<TestCatch>(testCatch =>

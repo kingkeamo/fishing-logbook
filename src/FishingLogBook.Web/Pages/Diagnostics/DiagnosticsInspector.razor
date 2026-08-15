@@ -3,22 +3,43 @@
 
 <PageTitle>@Loc["Diagnostics_PageTitle"]</PageTitle>
 
-@if (!Config.ShowInspector)
-{
-    <MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
-        <MudText Typo="Typo.h6">@Loc["Diagnostics_Unavailable"]</MudText>
-    </MudContainer>
-}
-else
-{
-    <MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
-        <MudStack Spacing="3">
-            <MudText Typo="Typo.h5">@Loc["Diagnostics_Title"]</MudText>
-            <MudText>@Loc["Diagnostics_QueuedCount"]: @_queuedCount</MudText>
-            <MudText>@Loc["Diagnostics_LastError"]: @(_lastError ?? Loc["Diagnostics_None"])</MudText>
-            <MudText>@Loc["Diagnostics_Online"]: @OnlineLabel</MudText>
-            <MudText>@Loc["Diagnostics_StorageUsage"]: @_usageLabel</MudText>
-            <MudText>@Loc["Diagnostics_StorageQuota"]: @_quotaLabel</MudText>
-        </MudStack>
-    </MudContainer>
-}
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h5">@Loc["Diagnostics_Title"]</MudText>
+        <MudText id="diagnostics-queued-count">@Loc["Diagnostics_QueuedCount"]: @_queuedCount</MudText>
+        <MudText id="diagnostics-last-error">@Loc["Diagnostics_LastError"]: @(_lastError ?? Loc["Diagnostics_None"])</MudText>
+        <MudText id="diagnostics-online">@Loc["Diagnostics_Online"]: @OnlineLabel</MudText>
+        <MudText id="diagnostics-storage-usage">@Loc["Diagnostics_StorageUsage"]: @_usageLabel</MudText>
+        <MudText id="diagnostics-storage-quota">@Loc["Diagnostics_StorageQuota"]: @_quotaLabel</MudText>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   Disabled="@_isLoading"
+                   OnClick="RefreshAsync"
+                   id="refresh-diagnostics-button">
+            @Loc["Action_Refresh"]
+        </MudButton>
+        @if (_events.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary" id="diagnostic-queue-empty">
+                @Loc["Diagnostics_EmptyQueue"]
+            </MudText>
+        }
+        else
+        {
+            <MudStack Spacing="2" id="diagnostic-queue">
+                @foreach (var diagnosticEvent in _events)
+                {
+                    <MudPaper Class="pa-3" Outlined="true" id="@($"diagnostic-event-{diagnosticEvent.Id}")">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle2" id="@($"diagnostic-event-name-{diagnosticEvent.Id}")">@diagnosticEvent.EventName</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary" id="@($"diagnostic-event-level-{diagnosticEvent.Id}")">@diagnosticEvent.Level</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary" id="@($"diagnostic-event-time-{diagnosticEvent.Id}")">@diagnosticEvent.TimestampUtc.ToLocalTime().ToString("g")</MudText>
+                            <MudText Typo="Typo.body2" id="@($"diagnostic-event-message-{diagnosticEvent.Id}")">@diagnosticEvent.Message</MudText>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </MudStack>
+</MudContainer>

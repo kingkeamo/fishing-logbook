@@ -11,13 +11,10 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 var apiConfig = builder.Configuration.GetSection(ApiConfig.SectionName).Get<ApiConfig>() ?? new ApiConfig();
 var diagnosticsConfig = builder.Configuration.GetSection(DiagnosticsClientConfig.SectionName).Get<DiagnosticsClientConfig>()
     ?? new DiagnosticsClientConfig();
-if (builder.HostEnvironment.IsDevelopment())
+diagnosticsConfig.ShowInspector = true;
+if (string.Equals(diagnosticsConfig.MinimumPersistLevel, "Warning", StringComparison.OrdinalIgnoreCase))
 {
-    diagnosticsConfig.ShowInspector = true;
-    if (string.Equals(diagnosticsConfig.MinimumPersistLevel, "Warning", StringComparison.OrdinalIgnoreCase))
-    {
-        diagnosticsConfig.MinimumPersistLevel = "Information";
-    }
+    diagnosticsConfig.MinimumPersistLevel = "Information";
 }
 
 var apiBaseAddress = string.IsNullOrWhiteSpace(apiConfig.BaseUrl)

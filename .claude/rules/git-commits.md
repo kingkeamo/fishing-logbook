@@ -1,4 +1,18 @@
-# Git commits
+# Git commits and branches
+
+## Branch names
+
+Create the branch from `main`. Prefix from the GitHub issue type, then the issue number:
+
+| Issue | Prefix | Example |
+|---|---|---|
+| Bug | `fix/` | `fix/57-ios-indexeddb-hang` |
+| Urgent production fix | `hotfix/` | `hotfix/8-restore-online-navigation` |
+| Feature, technical, or docs | `feature/` | `feature/58-diagnostic-logging` |
+
+Do not use `feature/` for a bug or hotfix. Do not use `bug/` or unprefixed names. Use `hotfix/` only for an urgent production patch that must ship immediately; use `fix/` for a normal bug.
+
+## Commit messages
 
 Commit messages describe the change only. They must not mention AI, Cursor, Copilot, ChatGPT, Claude, or any assistant.
 

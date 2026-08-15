@@ -93,6 +93,9 @@
   <data name="TestCatch_Save" xml:space="preserve">
     <value>Enregistrer la prise</value>
   </data>
+  <data name="TestCatch_Saving" xml:space="preserve">
+    <value>Enregistrement de la prise</value>
+  </data>
   <data name="TestCatch_Empty" xml:space="preserve">
     <value>Aucune prise enregistrée</value>
   </data>
@@ -135,6 +138,12 @@
   <data name="TestCatch_PhotoFailed" xml:space="preserve">
     <value>Échec du téléversement de la photo</value>
   </data>
+  <data name="TestCatch_LoadFailed" xml:space="preserve">
+    <value>Impossible de charger les prises locales. Vos prises enregistrées sont toujours stockées sur cet appareil.</value>
+  </data>
+  <data name="TestCatch_RetryLoad" xml:space="preserve">
+    <value>Réessayer le chargement</value>
+  </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
   </data>
@@ -176,5 +185,8 @@
   </data>
   <data name="Diagnostics_UnavailableValue" xml:space="preserve">
     <value>Indisponible</value>
+  </data>
+  <data name="Diagnostics_EmptyQueue" xml:space="preserve">
+    <value>Aucun événement de diagnostic n’est en file</value>
   </data>
 </root>

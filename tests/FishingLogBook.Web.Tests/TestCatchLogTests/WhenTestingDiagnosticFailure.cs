@@ -74,6 +74,7 @@ public class WhenTestingDiagnosticFailure : BaseTestCatchLogTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#save-test-catch-button").HasAttribute("disabled").Should().BeFalse();
+            cut.Find("#test-catch-load-error").Should().NotBeNull();
         });
         await store.Received().SaveAsync(Arg.Any<TestCatch>(), Arg.Any<CancellationToken>());
     }

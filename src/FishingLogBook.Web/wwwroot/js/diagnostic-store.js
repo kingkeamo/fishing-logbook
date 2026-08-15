@@ -102,7 +102,8 @@ export async function getPendingDiagnosticEvents(maxCount) {
     }
 }
 
-export async function deleteDiagnosticEvents(ids) {
+export async function deleteDiagnosticEvents(idsJson) {
+    const keys = JSON.parse(idsJson || '[]').map((id) => String(id));
     const db = await openDatabase();
     try {
         await withTimeout(new Promise((resolve, reject) => {
@@ -111,8 +112,8 @@ export async function deleteDiagnosticEvents(ids) {
             transaction.onabort = () => reject(transaction.error || new Error('diagnostic transaction aborted'));
             transaction.onerror = () => reject(transaction.error);
             const store = transaction.objectStore(storeName);
-            for (const id of ids) {
-                store.delete(id);
+            for (const key of keys) {
+                store.delete(key);
             }
         }), openTimeoutMs, 'diagnostic delete');
     } finally {

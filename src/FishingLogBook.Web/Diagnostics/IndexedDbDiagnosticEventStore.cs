@@ -61,7 +61,7 @@ public sealed class IndexedDbDiagnosticEventStore : IDiagnosticEventStore
         await module.InvokeVoidAsync(
             "deleteDiagnosticEvents",
             timeoutSource.Token,
-            ids.Select(id => id.ToString("D")).ToArray());
+            JsonSerializer.Serialize(ids.Select(id => id.ToString("D")).ToArray()));
     }
 
     public async Task<int> GetCountAsync(CancellationToken cancellationToken)
