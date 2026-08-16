@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FishingLogBook.Web\FishingLogBook.Web.csproj" />
     <ProjectReference Include="..\..\src\FishingLogBook.Shared\FishingLogBook.Shared.csproj" />
+    <ProjectReference Include="..\FishingLogBook.Tests.Common\FishingLogBook.Tests.Common.csproj" />
   </ItemGroup>
 
 </Project>

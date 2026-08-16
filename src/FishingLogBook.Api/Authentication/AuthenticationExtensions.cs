@@ -2,7 +2,7 @@ using System.Security.Claims;
 using FishingLogBook.Api.Configuration;
 using FishingLogBook.Shared.Constants;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace FishingLogBook.Api.Authentication;
@@ -11,17 +11,24 @@ public static class AuthenticationExtensions
 {
     public static IServiceCollection AddFishingLogBookJwtBearer(
         this IServiceCollection services,
-        AuthConfig authConfig)
+        IConfiguration configuration)
     {
-        services.AddSingleton(authConfig);
+        services.AddOptions<AuthConfig>()
+            .Bind(configuration.GetSection(AuthConfig.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<AuthConfig>, AuthConfigStartupValidator>();
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<AuthConfig>>().Value);
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options => ConfigureJwtBearer(options, authConfig));
+            .AddJwtBearer();
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<AuthConfig>(ConfigureJwtBearer);
         services.AddAuthorization();
         return services;
     }
 
     private static void ConfigureJwtBearer(JwtBearerOptions options, AuthConfig authConfig)
     {
+        authConfig.EnsureRequired();
         options.MapInboundClaims = false;
         options.IncludeErrorDetails = false;
         options.TokenValidationParameters = CreateValidationParameters(authConfig);
@@ -34,16 +41,6 @@ public static class AuthenticationExtensions
             }
         };
 
-        if (string.IsNullOrWhiteSpace(authConfig.Authority))
-        {
-            options.RequireHttpsMetadata = false;
-            options.Configuration = new OpenIdConnectConfiguration
-            {
-                Issuer = "unconfigured"
-            };
-            return;
-        }
-
         options.Authority = authConfig.Authority;
         options.RequireHttpsMetadata = authConfig.Authority.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
         options.MetadataAddress = $"{authConfig.Authority.TrimEnd('/')}/.well-known/openid-configuration";
@@ -51,15 +48,12 @@ public static class AuthenticationExtensions
 
     private static TokenValidationParameters CreateValidationParameters(AuthConfig authConfig)
     {
-        var issuer = string.IsNullOrWhiteSpace(authConfig.Authority) ? "unconfigured" : authConfig.Authority;
         return new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = issuer,
+            ValidIssuer = authConfig.Authority,
             ValidateAudience = true,
-            ValidAudience = string.IsNullOrWhiteSpace(authConfig.ApiResource)
-                ? AuthConstants.DevApiResourceUri
-                : authConfig.ApiResource,
+            ValidAudience = authConfig.ApiResource,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromSeconds(30)
@@ -87,7 +81,7 @@ public static class AuthenticationExtensions
             return Task.CompletedTask;
         }
 
-        if (!string.IsNullOrWhiteSpace(authConfig.ApiScope) && !HasScope(principal, authConfig.ApiScope))
+        if (!HasScope(principal, authConfig.ApiScope))
         {
             context.Fail("Missing required scope.");
             return Task.CompletedTask;
@@ -107,5 +101,21 @@ public static class AuthenticationExtensions
         var scopes = principal.FindAll("scope")
             .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
         return scopes.Contains(requiredScope, StringComparer.Ordinal);
+    }
+
+    private sealed class AuthConfigStartupValidator : IValidateOptions<AuthConfig>
+    {
+        public ValidateOptionsResult Validate(string? name, AuthConfig options)
+        {
+            try
+            {
+                options.EnsureRequired();
+                return ValidateOptionsResult.Success;
+            }
+            catch (InvalidOperationException exception)
+            {
+                return ValidateOptionsResult.Fail(exception.Message);
+            }
+        }
     }
 }

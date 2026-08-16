@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         AuthConfig authConfig,
         Uri apiBaseAddress)
     {
+        authConfig.EnsureRequired();
         services.AddSingleton(apiConfig);
         services.AddSingleton(diagnosticsConfig);
         services.AddSingleton(authConfig);
@@ -86,10 +87,7 @@ public static class ServiceCollectionExtensions
             services.GetRequiredService<IAccessTokenProvider>(),
             services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>());
         var authorizedUrl = apiBaseAddress.ToString().TrimEnd('/');
-        var scopes = string.IsNullOrWhiteSpace(authConfig.ApiScope)
-            ? Array.Empty<string>()
-            : [authConfig.ApiScope];
-        handler.ConfigureHandler([authorizedUrl], scopes);
+        handler.ConfigureHandler([authorizedUrl], [authConfig.ApiScope]);
         return handler;
     }
 
@@ -104,14 +102,7 @@ public static class ServiceCollectionExtensions
         options.ProviderOptions.DefaultScopes.Add("openid");
         options.ProviderOptions.DefaultScopes.Add("profile");
         options.ProviderOptions.DefaultScopes.Add("email");
-        if (!string.IsNullOrWhiteSpace(authConfig.ApiScope))
-        {
-            options.ProviderOptions.DefaultScopes.Add(authConfig.ApiScope);
-        }
-
-        if (!string.IsNullOrWhiteSpace(authConfig.ApiResource))
-        {
-            options.ProviderOptions.AdditionalProviderParameters["resource"] = authConfig.ApiResource;
-        }
+        options.ProviderOptions.DefaultScopes.Add(authConfig.ApiScope);
+        options.ProviderOptions.AdditionalProviderParameters["resource"] = authConfig.ApiResource;
     }
 }

@@ -1,4 +1,3 @@
-using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Localization;
@@ -19,15 +18,7 @@ if (string.Equals(diagnosticsConfig.MinimumPersistLevel, "Warning", StringCompar
 }
 
 var authConfig = builder.Configuration.GetSection(AuthConfig.SectionName).Get<AuthConfig>() ?? new AuthConfig();
-if (string.IsNullOrWhiteSpace(authConfig.ApiScope))
-{
-    authConfig.ApiScope = AuthConstants.ApiScope;
-}
-
-if (string.IsNullOrWhiteSpace(authConfig.ApiResource))
-{
-    authConfig.ApiResource = AuthConstants.DevApiResourceUri;
-}
+authConfig.EnsureRequired();
 
 var apiBaseAddress = string.IsNullOrWhiteSpace(apiConfig.BaseUrl)
     ? builder.HostEnvironment.BaseAddress

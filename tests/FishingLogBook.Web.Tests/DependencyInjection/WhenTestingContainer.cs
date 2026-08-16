@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using FishingLogBook.Shared.Constants;
+using FishingLogBook.Tests.Common.TestSupport;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Diagnostics.Models;
@@ -87,7 +87,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         oidc.ClientId.Should().Be("test-pwa-client");
         typeof(OidcProviderOptions).GetProperty("ClientSecret").Should().BeNull();
         oidc.DefaultScopes.Should().Contain("openid");
-        oidc.DefaultScopes.Should().Contain(AuthConstants.ApiScope);
+        oidc.DefaultScopes.Should().Contain(TestAuthConstants.ApiScope);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
 
         // Assert
         oidc.AdditionalProviderParameters.Should().ContainKey("resource");
-        oidc.AdditionalProviderParameters["resource"].Should().Be(AuthConstants.DevApiResourceUri);
+        oidc.AdditionalProviderParameters["resource"].Should().Be(TestAuthConstants.ApiResource);
         oidc.ResponseType.Should().Be("code");
         typeof(OidcProviderOptions).GetProperty("ClientSecret").Should().BeNull();
     }

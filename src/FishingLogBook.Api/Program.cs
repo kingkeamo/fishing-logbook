@@ -4,7 +4,6 @@ using FishingLogBook.Api.Endpoints;
 using FishingLogBook.Api.Logging;
 using FishingLogBook.Api.Middleware;
 using FishingLogBook.DependencyInjection;
-using FishingLogBook.Shared.Constants;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,19 +15,7 @@ const string webClientCorsPolicy = "WebClient";
 
 builder.Services.AddFishingLogBook(builder.Configuration);
 builder.Services.AddOpenApi();
-
-var authConfig = builder.Configuration.GetSection(AuthConfig.SectionName).Get<AuthConfig>() ?? new AuthConfig();
-if (string.IsNullOrWhiteSpace(authConfig.ApiScope))
-{
-    authConfig.ApiScope = AuthConstants.ApiScope;
-}
-
-if (string.IsNullOrWhiteSpace(authConfig.ApiResource))
-{
-    authConfig.ApiResource = AuthConstants.DevApiResourceUri;
-}
-
-builder.Services.AddFishingLogBookJwtBearer(authConfig);
+builder.Services.AddFishingLogBookJwtBearer(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
@@ -49,6 +36,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+_ = app.Services.GetRequiredService<AuthConfig>();
 
 app.Logger.LogInformation(
     "FishingLogBook API starting in {HostingEnvironment} environment.",

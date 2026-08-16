@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using FishingLogBook.Api.Configuration;
 using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Application.Contracts;
-using FishingLogBook.Shared.Constants;
+using FishingLogBook.Tests.Common.TestSupport;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -54,8 +54,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
             {
                 Authority = TestJwt.Issuer,
                 ClientId = TestJwt.ClientId,
-                ApiScope = AuthConstants.ApiScope,
-                ApiResource = AuthConstants.DevApiResourceUri
+                ApiScope = TestAuthConstants.ApiScope,
+                ApiResource = TestAuthConstants.ApiResource
             });
             TestAuthentication.ConfigureJwtBearer(services);
             services.RemoveAll<ISystemRepository>();

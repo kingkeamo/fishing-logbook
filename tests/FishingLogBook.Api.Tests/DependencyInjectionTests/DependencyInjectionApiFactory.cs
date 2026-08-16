@@ -1,5 +1,5 @@
 using FishingLogBook.Api.Tests.TestSupport;
-using FishingLogBook.Shared.Constants;
+using FishingLogBook.Tests.Common.TestSupport;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -22,8 +22,8 @@ public sealed class DependencyInjectionApiFactory : WebApplicationFactory<Progra
                     "Host=127.0.0.1;Database=fishing-logbook-di-test;Username=test;Password=test",
                 ["Auth:Authority"] = TestJwt.Issuer,
                 ["Auth:ClientId"] = TestJwt.ClientId,
-                ["Auth:ApiScope"] = AuthConstants.ApiScope,
-                ["Auth:ApiResource"] = AuthConstants.DevApiResourceUri
+                ["Auth:ApiScope"] = TestAuthConstants.ApiScope,
+                ["Auth:ApiResource"] = TestAuthConstants.ApiResource
             });
         });
 

@@ -1,4 +1,4 @@
-using FishingLogBook.Shared.Constants;
+using FishingLogBook.Tests.Common.TestSupport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Protocols;
@@ -12,8 +12,8 @@ public static class TestAuthentication
     {
         ["Auth:Authority"] = TestJwt.Issuer,
         ["Auth:ClientId"] = TestJwt.ClientId,
-        ["Auth:ApiScope"] = AuthConstants.ApiScope,
-        ["Auth:ApiResource"] = AuthConstants.DevApiResourceUri
+        ["Auth:ApiScope"] = TestAuthConstants.ApiScope,
+        ["Auth:ApiResource"] = TestAuthConstants.ApiResource
     };
 
     public static void ConfigureJwtBearer(IServiceCollection services)
@@ -35,7 +35,7 @@ public static class TestAuthentication
             options.TokenValidationParameters.ValidateIssuerSigningKey = true;
             options.TokenValidationParameters.ValidateIssuer = true;
             options.TokenValidationParameters.ValidateAudience = true;
-            options.TokenValidationParameters.ValidAudience = AuthConstants.DevApiResourceUri;
+            options.TokenValidationParameters.ValidAudience = TestAuthConstants.ApiResource;
             options.TokenValidationParameters.ValidateLifetime = true;
             options.TokenValidationParameters.ClockSkew = TimeSpan.FromSeconds(30);
             options.MapInboundClaims = false;

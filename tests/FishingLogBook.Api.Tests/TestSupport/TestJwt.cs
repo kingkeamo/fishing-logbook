@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Tests.Common.TestSupport;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -27,7 +28,7 @@ public static class TestJwt
         var descriptor = new SecurityTokenDescriptor
         {
             Issuer = issuer ?? Issuer,
-            Audience = includeAudience ? audience ?? AuthConstants.DevApiResourceUri : null,
+            Audience = includeAudience ? audience ?? TestAuthConstants.ApiResource : null,
             NotBefore = notBefore,
             Expires = expiresAt,
             SigningCredentials = new SigningCredentials(SigningKey, SecurityAlgorithms.RsaSha256),
@@ -36,7 +37,7 @@ public static class TestJwt
                 ["sub"] = Subject,
                 ["token_use"] = tokenUse ?? AuthConstants.TokenUseAccess,
                 ["client_id"] = clientId ?? ClientId,
-                ["scope"] = scope ?? $"openid profile email {AuthConstants.ApiScope}"
+                ["scope"] = scope ?? $"openid profile email {TestAuthConstants.ApiScope}"
             }
         };
 

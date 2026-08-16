@@ -767,13 +767,20 @@ The resulting API scope is `https://fishing-logbook-dev-api.fly.dev/access`.
 
 Copy Terraform outputs into (these values are public identifiers, not secrets):
 
-- Web `wwwroot/appsettings.Development.json` → `Auth:Authority`, `Auth:ClientId`
-  (`Auth:ApiScope` and `Auth:ApiResource` are already in appsettings)
+- Web `wwwroot/appsettings.Development.json` and API `appsettings.Development.json` →
+  `Auth:Authority`, `Auth:ClientId`, `Auth:ApiScope`, `Auth:ApiResource`
+- Web `wwwroot/appsettings.Production.json` is this repository's **Dev Cloudflare Pages
+  overlay** (Release publish). Keep Dev Auth there until a real production overlay exists.
+  Base `appsettings.json` must not contain environment Auth values.
 - GitHub `dev` environment **variables** (not secrets): `AUTH_AUTHORITY`, `AUTH_CLIENT_ID`,
   `AUTH_API_SCOPE` (`https://fishing-logbook-dev-api.fly.dev/access`), `AUTH_API_RESOURCE`
-  (`https://fishing-logbook-dev-api.fly.dev`)
-- Fly.io API env: `Auth__Authority`, `Auth__ClientId`, plus `Auth__ApiScope` and
-  `Auth__ApiResource` already set in `infrastructure/fly/fly.dev.toml`
+  (`https://fishing-logbook-dev-api.fly.dev`). Missing variables fail `deploy-web`.
+- Fly.io Dev API env in `infrastructure/fly/fly.dev.toml`: `Auth__Authority`,
+  `Auth__ClientId`, `Auth__ApiScope`, `Auth__ApiResource`
+
+API and Web startup fail if any of `Auth:Authority`, `Auth:ClientId`, `Auth:ApiResource`,
+or `Auth:ApiScope` is missing or whitespace. JWT validation always uses the configured
+`ApiResource` as `aud` and requires `ApiScope`.
 
 Local Web points at the **Dev** Cognito pool. Do not create a user pool on a laptop.
 

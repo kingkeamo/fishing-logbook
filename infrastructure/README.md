@@ -261,11 +261,14 @@ terraform output cognito_hosted_ui_domain
 terraform output cognito_api_scope
 ```
 
-Put `Authority` / `ClientId` into local Web `appsettings.Development.json`, GitHub `dev`
-**variables** `AUTH_AUTHORITY`, `AUTH_CLIENT_ID`, `AUTH_API_SCOPE`, `AUTH_API_RESOURCE`,
-and Fly `Auth__Authority`, `Auth__ClientId`. `Auth__ApiScope` and `Auth__ApiResource` are
-already in `infrastructure/fly/fly.dev.toml`. These are public identifiers — do not mark
-the client ID as a GitHub secret.
+Put `Authority`, `ClientId`, `ApiScope`, and `ApiResource` into local
+`appsettings.Development.json`, GitHub `dev` **variables** `AUTH_AUTHORITY`,
+`AUTH_CLIENT_ID`, `AUTH_API_SCOPE`, `AUTH_API_RESOURCE`, and Fly
+`Auth__Authority` / `Auth__ClientId` / `Auth__ApiScope` / `Auth__ApiResource` in
+`infrastructure/fly/fly.dev.toml`. Base `appsettings.json` must not silently represent
+Dev. Missing GitHub `AUTH_*` variables fail `deploy-web`. Missing Auth at API/Web
+startup throws. These are public identifiers — do not mark the client ID as a GitHub
+secret.
 
 Cognito resource-server identifier is the Dev API URL
 (`https://fishing-logbook-dev-api.fly.dev`). Custom scopes can only be requested
