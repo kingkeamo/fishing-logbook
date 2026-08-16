@@ -63,6 +63,7 @@ app.MapSystemEndpoints();
 app.MapTestCatchEndpoints();
 app.MapDiagnosticEndpoints();
 app.MapUserEndpoints();
+app.MapProfileEndpoints();
 
 app.Run();
 

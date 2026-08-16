@@ -15,5 +15,7 @@ public static class LocationDefaults
 
     public const string Private = "Private";
 
+    public const string Public = "Public";
+
     public const string ConsentVersion = "1";
 }

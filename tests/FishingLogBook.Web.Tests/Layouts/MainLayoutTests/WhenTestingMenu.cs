@@ -1,0 +1,44 @@
+using AwesomeAssertions;
+using Bunit;
+using FishingLogBook.Web.Layouts.MainLayout;
+using FishingLogBook.Web.Localization;
+
+namespace FishingLogBook.Web.Tests.Layouts.MainLayoutTests;
+
+public class WhenTestingMenu : BaseMainLayoutTest
+{
+    [Fact]
+    public async Task ItShouldShowProfileAndExistingDestinationsInTheMenu()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext(isAuthenticated: true);
+
+        // Act
+        var cut = context.Render<MainLayout>();
+        await cut.Find("#app-menu-button").ClickAsync();
+
+        // Assert
+        cut.Find("#app-menu-button").GetAttribute("aria-label").Should().Be("Open menu");
+        cut.Find("#profile-nav-link").TextContent.Should().Contain("Profile");
+        cut.Find("#profile-nav-link").GetAttribute("href").Should().Be("/profile");
+        cut.Find("#test-catch-nav-button").GetAttribute("href").Should().Be("/test-catch");
+        cut.Find("#diagnostics-nav-button").GetAttribute("href").Should().Be("/diagnostics");
+        cut.Find("#home-nav-link").GetAttribute("href").Should().Be("/");
+    }
+
+    [Fact]
+    public async Task ItShouldShowFrenchProfileNav()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.French);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<MainLayout>();
+
+        // Assert
+        cut.Find("#profile-nav-link").TextContent.Should().Contain("Profil");
+        cut.Find("#app-menu-button").GetAttribute("aria-label").Should().Be("Ouvrir le menu");
+    }
+}

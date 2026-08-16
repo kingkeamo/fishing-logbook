@@ -94,8 +94,10 @@ or resolves the mapping and stores Email; later requests reuse that UserId and r
 Email when the authenticated claim changes.
 The API derives the current user from the validated access token; it does not trust a
 client-supplied UserId or email. Offline device-generated ids are for synchronisation
-idempotency, not ownership. Future profile work may add FirstName, LastName, and
-DisplayName.
+idempotency, not ownership. Display name, profile photograph, home region, preferred
+fishing types and species, visibility flags, and optional captured home location live
+on the angler `Profile`, not on `User`. Precise profile coordinates stay private
+unless the angler explicitly shares them.
 
 ### Offline client storage
 
@@ -148,7 +150,9 @@ There is an explicit distinction between:
 
 A user may allow FishingLogBook to record precise coordinates for their private fishing history without allowing those coordinates to be visible to other users.
 
-Precise coordinates are **private by default**.
+Precise coordinates are **private by default**. The same capture-versus-share rule
+applies to an angler profile home location: enabling device location must not publish
+those coordinates.
 
 Potential visibility levels include:
 

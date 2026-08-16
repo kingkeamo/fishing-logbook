@@ -1,0 +1,53 @@
+@page "/profile/{UserId:guid}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>@Loc["Profile_PublicPageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="profile-container pa-4">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudText Typo="Typo.h4" Align="Align.Center">@Loc["Profile_PublicTitle"]</MudText>
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="public-profile-load-failed">@Loc["Profile_LoadFailed"]</MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center" id="public-profile-loading" />
+        }
+        else if (_profile is not null)
+        {
+            <MudPaper Class="pa-4" Elevation="2" id="public-profile-card">
+                <MudStack Spacing="3">
+                    @if (!string.IsNullOrWhiteSpace(_profile.DisplayName))
+                    {
+                        <MudText Typo="Typo.h6" id="public-profile-display-name">@_profile.DisplayName</MudText>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_profile.PhotographUrl))
+                    {
+                        <img src="@_profile.PhotographUrl"
+                             alt="@Loc["Profile_PhotographAlt"]"
+                             class="profile-photo-preview"
+                             id="public-profile-photo" />
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_profile.HomeRegion))
+                    {
+                        <MudText id="public-profile-home-region">@_profile.HomeRegion</MudText>
+                    }
+                    @if (_profile.PreferredFishingTypes.Count > 0)
+                    {
+                        <MudText id="public-profile-fishing-types">@string.Join(", ", _profile.PreferredFishingTypes)</MudText>
+                    }
+                    @if (_profile.PreferredSpecies.Count > 0)
+                    {
+                        <MudText id="public-profile-preferred-species">@string.Join(", ", _profile.PreferredSpecies)</MudText>
+                    }
+                    @if (_profile.Location is not null)
+                    {
+                        <MudText id="public-profile-location">@Loc["Profile_PreciseLocationShared"]</MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+</MudContainer>

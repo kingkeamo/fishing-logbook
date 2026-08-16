@@ -58,10 +58,12 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         // Act
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var userIdentityService = scope.ServiceProvider.GetRequiredService<IUserIdentityService>();
+        var profileService = scope.ServiceProvider.GetRequiredService<IProfileService>();
 
         // Assert
         mediator.Should().NotBeNull();
         userIdentityService.Should().NotBeNull();
+        profileService.Should().NotBeNull();
     }
 
     [Fact]

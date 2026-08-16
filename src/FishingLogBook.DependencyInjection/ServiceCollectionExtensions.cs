@@ -4,6 +4,7 @@ using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Diagnostics;
+using FishingLogBook.Application.Profiles.Services;
 using FishingLogBook.Application.SystemStatus;
 using FishingLogBook.Application.TestCatches;
 using FishingLogBook.Application.Users;
@@ -46,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DiagnosticLogService>();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
+        services.AddScoped<IProfileService, ProfileService>();
 
         return services;
     }
@@ -68,6 +70,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISystemRepository, SystemRepository>();
         services.AddScoped<ITestCatchRepository, TestCatchRepository>();
         services.AddScoped<IUserIdentityRepository, UserIdentityRepository>();
+        services.AddScoped<IProfileRepository, ProfileRepository>();
         services.Configure<ObjectStorageConfig>(configuration.GetSection(ObjectStorageConfig.SectionName));
         services.Configure<DiagnosticsConfig>(configuration.GetSection(DiagnosticsConfig.SectionName));
         services.AddSingleton<IObjectStorage, S3CompatibleObjectStorage>();

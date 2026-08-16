@@ -5,6 +5,7 @@ using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Domain.Users;
 using FishingLogBook.Tests.Common.TestSupport;
 using FluentResults;
@@ -30,6 +31,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
 
     public IUserIdentityRepository UserIdentityRepository { get; } = Substitute.For<IUserIdentityRepository>();
 
+    public IProfileRepository ProfileRepository { get; } = Substitute.For<IProfileRepository>();
+
     public bool MappingFailed { get; set; }
 
     public SystemApiFactory()
@@ -43,6 +46,23 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
         UserIdentityRepository
             .UpdateEmailAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
+        ProfileRepository
+            .UserExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(true));
+        ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        ProfileRepository
+            .UpsertAsync(Arg.Any<Profile>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Profile>(0)));
+        ProfileRepository
+            .UpdatePhotographAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<Guid>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(new Profile { UserId = call.ArgAt<Guid>(0) }));
     }
 
     public HttpClient CreateAuthenticatedClient(string? accessToken = null)
@@ -90,6 +110,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(_ => ObjectStorage);
             services.RemoveAll<IUserIdentityRepository>();
             services.AddSingleton(UserIdentityRepository);
+            services.RemoveAll<IProfileRepository>();
+            services.AddSingleton(ProfileRepository);
         });
     }
 

@@ -252,6 +252,111 @@
   <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
     <value>Base de données de diagnostic de production non initialisée</value>
   </data>
+  <data name="Nav_Menu" xml:space="preserve">
+    <value>Ouvrir le menu</value>
+  </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Accueil</value>
+  </data>
+  <data name="Profile_Nav" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="Profile_PageTitle" xml:space="preserve">
+    <value>FishingLogBook - Profil</value>
+  </data>
+  <data name="Profile_PublicPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Profil pêcheur</value>
+  </data>
+  <data name="Profile_Title" xml:space="preserve">
+    <value>Votre profil</value>
+  </data>
+  <data name="Profile_PublicTitle" xml:space="preserve">
+    <value>Profil pêcheur</value>
+  </data>
+  <data name="Profile_Subtitle" xml:space="preserve">
+    <value>Choisissez ce que les autres pêcheurs peuvent voir. La position précise reste privée tant que vous ne la partagez pas.</value>
+  </data>
+  <data name="Profile_DisplayName" xml:space="preserve">
+    <value>Nom affiché</value>
+  </data>
+  <data name="Profile_ShowDisplayName" xml:space="preserve">
+    <value>Afficher le nom aux autres pêcheurs</value>
+  </data>
+  <data name="Profile_HomeRegion" xml:space="preserve">
+    <value>Région d’origine</value>
+  </data>
+  <data name="Profile_ShowHomeRegion" xml:space="preserve">
+    <value>Afficher la région d’origine aux autres pêcheurs</value>
+  </data>
+  <data name="Profile_FishingTypes" xml:space="preserve">
+    <value>Types de pêche préférés</value>
+  </data>
+  <data name="Profile_ShowFishingTypes" xml:space="preserve">
+    <value>Afficher les types de pêche préférés aux autres pêcheurs</value>
+  </data>
+  <data name="Profile_PreferredSpecies" xml:space="preserve">
+    <value>Espèces préférées</value>
+  </data>
+  <data name="Profile_PreferredSpeciesHelp" xml:space="preserve">
+    <value>Séparez les espèces par des virgules</value>
+  </data>
+  <data name="Profile_ShowPreferredSpecies" xml:space="preserve">
+    <value>Afficher les espèces préférées aux autres pêcheurs</value>
+  </data>
+  <data name="Profile_ChoosePhoto" xml:space="preserve">
+    <value>Choisir une photo de profil</value>
+  </data>
+  <data name="Profile_PhotographAlt" xml:space="preserve">
+    <value>Photo de profil</value>
+  </data>
+  <data name="Profile_ShowPhotograph" xml:space="preserve">
+    <value>Afficher la photo de profil aux autres pêcheurs</value>
+  </data>
+  <data name="Profile_LocationTitle" xml:space="preserve">
+    <value>Position du domicile</value>
+  </data>
+  <data name="Profile_LocationExplainer" xml:space="preserve">
+    <value>FishingLogBook peut enregistrer une position précise pour vous. La capturer ne la rend pas publique.</value>
+  </data>
+  <data name="Profile_LocationAllow" xml:space="preserve">
+    <value>Autoriser la localisation</value>
+  </data>
+  <data name="Profile_LocationNotNow" xml:space="preserve">
+    <value>Pas maintenant</value>
+  </data>
+  <data name="Profile_LocationSaved" xml:space="preserve">
+    <value>Position enregistrée</value>
+  </data>
+  <data name="Profile_LocationRemove" xml:space="preserve">
+    <value>Retirer</value>
+  </data>
+  <data name="Profile_LocationOff" xml:space="preserve">
+    <value>La localisation de l’appareil est désactivée</value>
+  </data>
+  <data name="Profile_LocationTryAgain" xml:space="preserve">
+    <value>Réessayer la localisation</value>
+  </data>
+  <data name="Profile_SharePreciseLocation" xml:space="preserve">
+    <value>Partager la position précise avec les autres pêcheurs</value>
+  </data>
+  <data name="Profile_LocationPrivacy" xml:space="preserve">
+    <value>Activer la localisation de l’appareil ou rejoindre un club ne partage pas vos coordonnées précises.</value>
+  </data>
+  <data name="Profile_PreciseLocationShared" xml:space="preserve">
+    <value>La position précise est partagée</value>
+  </data>
+  <data name="Profile_Save" xml:space="preserve">
+    <value>Enregistrer le profil</value>
+  </data>
+  <data name="Profile_Saving" xml:space="preserve">
+    <value>Enregistrement</value>
+  </data>
+  <data name="Profile_LoadFailed" xml:space="preserve">
+    <value>Impossible de charger le profil.</value>
+  </data>
+  <data name="Profile_SaveFailed" xml:space="preserve">
+    <value>Impossible d’enregistrer le profil.</value>
+  </data>
   <data name="Auth_SignIn" xml:space="preserve">
     <value>Connexion</value>
   </data>

@@ -10,6 +10,7 @@ public partial class MainLayout : LayoutComponentBase
     private readonly MudTheme _theme = new();
 
     private bool _isDarkMode;
+    private bool _drawerOpen;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
@@ -33,5 +34,10 @@ public partial class MainLayout : LayoutComponentBase
     private void ToggleDarkMode()
     {
         _isDarkMode = !_isDarkMode;
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
     }
 }

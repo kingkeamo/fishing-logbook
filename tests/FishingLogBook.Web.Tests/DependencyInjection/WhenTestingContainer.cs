@@ -6,6 +6,7 @@ using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
+using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
@@ -56,6 +57,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         injectedTypes.Should().Contain(typeof(ITestCatchStore));
         injectedTypes.Should().Contain(typeof(ITestCatchPhotoStore));
         injectedTypes.Should().Contain(typeof(ITestCatchSynchroniser));
+        injectedTypes.Should().Contain(typeof(IProfileClient));
         injectedTypes.Should().Contain(typeof(ICultureService));
         injectedTypes.Should().Contain(typeof(ILoggingService));
         injectedTypes.Should().Contain(typeof(ILocationService));

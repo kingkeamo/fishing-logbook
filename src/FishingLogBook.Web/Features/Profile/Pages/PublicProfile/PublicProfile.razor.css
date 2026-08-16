@@ -1,0 +1,11 @@
+.profile-container {
+    padding-top: 2rem;
+}
+
+.profile-photo-preview {
+    display: block;
+    width: 100%;
+    max-height: 12rem;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}

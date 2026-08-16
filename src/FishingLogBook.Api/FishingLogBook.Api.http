@@ -22,4 +22,61 @@ GET {{FishingLogBook.Api_HostAddress}}/api/users/current
 Accept: application/json
 Authorization: Bearer <access-token>
 
+### Profiles (requires a Cognito access token; never commit real tokens)
+
+GET {{FishingLogBook.Api_HostAddress}}/api/profiles/me
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+PUT {{FishingLogBook.Api_HostAddress}}/api/profiles/me
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "displayName": "Eamonn",
+  "homeRegion": "Westmeath",
+  "preferredFishingTypes": [ "Coarse" ],
+  "preferredSpecies": [ "Pike" ],
+  "showDisplayName": true,
+  "showPhotograph": false,
+  "showHomeRegion": true,
+  "showPreferredFishingTypes": true,
+  "showPreferredSpecies": false,
+  "location": null
+}
+
+###
+
+GET {{FishingLogBook.Api_HostAddress}}/api/profiles/00000000-0000-0000-0000-000000000000
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/profiles/me/photograph/upload-url
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "photographId": "00000000-0000-0000-0000-000000000000",
+  "contentType": "image/jpeg"
+}
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/profiles/me/photograph
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "photographId": "00000000-0000-0000-0000-000000000000",
+  "objectKey": "profiles/00000000-0000-0000-0000-000000000000/00000000-0000-0000-0000-000000000000",
+  "contentType": "image/jpeg"
+}
+
 ###
