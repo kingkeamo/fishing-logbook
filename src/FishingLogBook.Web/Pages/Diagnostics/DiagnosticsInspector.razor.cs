@@ -45,6 +45,7 @@ public partial class DiagnosticsInspector : ComponentBase
     private bool _isLoading;
     private DiagnosticProbeResult? _isolatedProbe;
     private DiagnosticProbeResult? _productionProbe;
+    private bool _productionNotInitialised;
 
     private string OnlineLabel => _isOnline switch
     {
@@ -56,6 +57,10 @@ public partial class DiagnosticsInspector : ComponentBase
     private string QueueCountLabel => _queueCountAvailable
         ? $"{Loc["Diagnostics_QueuedCount"]}: {_queuedCount}"
         : Loc["Diagnostics_QueueUnavailable"];
+
+    private string ProductionProbeLabel => _productionNotInitialised
+        ? Loc["Diagnostics_ProductionNotInitialised"]
+        : (_productionProbe?.LastCompletedStage ?? Loc["Diagnostics_None"]);
 
     private bool ShowEmptyQueue => _queueCountAvailable && !_eventsUnavailable && _events.Count == 0;
 
@@ -70,8 +75,18 @@ public partial class DiagnosticsInspector : ComponentBase
         try
         {
             await RunProbesAsync();
-            await SafeSynchroniseAsync();
-            await ReadQueueAsync();
+            if (_productionNotInitialised)
+            {
+                _queueCountAvailable = false;
+                _eventsUnavailable = false;
+                _events = [];
+            }
+            else
+            {
+                await SafeSynchroniseAsync();
+                await ReadQueueAsync();
+            }
+
             await ReadOnlineAndStorageAsync();
             await ApplyStatusLabelsAsync();
         }
@@ -97,14 +112,54 @@ public partial class DiagnosticsInspector : ComponentBase
 
     private async Task RunProbesAsync()
     {
-        _isolatedProbe = await Probe.RunAsync(
-            BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
-            true,
-            CancellationToken.None);
-        _productionProbe = await Probe.RunAsync(
-            BrowserDiagnosticIndexedDbProbe.ProductionDatabaseName,
-            false,
-            CancellationToken.None);
+        _isolatedProbe = await Probe.RunIsolatedAsync(CancellationToken.None);
+        try
+        {
+            var inspection = await Store.InspectExistingAsync(CancellationToken.None)
+                ?? new DiagnosticDatabaseInspection();
+            _productionNotInitialised = !inspection.Exists;
+            _productionProbe = ToProductionProbe(inspection);
+        }
+        catch (Exception exception)
+        {
+            _productionNotInitialised = true;
+            _productionProbe = new DiagnosticProbeResult
+            {
+                DatabaseName = IndexedDbDiagnosticEventStore.DatabaseName,
+                FailedStage = BrowserDiagnosticIndexedDbProbe.StageOpeningDatabase,
+                Error = exception.GetType().Name
+            };
+            TryToLogError("diagnostics production inspect", exception);
+        }
+    }
+
+    private static DiagnosticProbeResult ToProductionProbe(DiagnosticDatabaseInspection inspection)
+    {
+        if (!inspection.Exists)
+        {
+            return new DiagnosticProbeResult
+            {
+                DatabaseName = IndexedDbDiagnosticEventStore.DatabaseName
+            };
+        }
+
+        if (!inspection.HasStore)
+        {
+            return new DiagnosticProbeResult
+            {
+                DatabaseName = IndexedDbDiagnosticEventStore.DatabaseName,
+                LastCompletedStage = BrowserDiagnosticIndexedDbProbe.StageDatabaseOpened,
+                FailedStage = BrowserDiagnosticIndexedDbProbe.StageReadingCount,
+                Error = "object store was not found"
+            };
+        }
+
+        return new DiagnosticProbeResult
+        {
+            DatabaseName = IndexedDbDiagnosticEventStore.DatabaseName,
+            LastCompletedStage = BrowserDiagnosticIndexedDbProbe.StageCountReturned,
+            Count = inspection.Count
+        };
     }
 
     private async Task ReadQueueAsync()

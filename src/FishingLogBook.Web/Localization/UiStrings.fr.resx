@@ -249,4 +249,7 @@
   <data name="Diagnostics_RetryProbe" xml:space="preserve">
     <value>Réessayer la sonde de diagnostic</value>
   </data>
+  <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
+    <value>Base de données de diagnostic de production non initialisée</value>
+  </data>
 </root>

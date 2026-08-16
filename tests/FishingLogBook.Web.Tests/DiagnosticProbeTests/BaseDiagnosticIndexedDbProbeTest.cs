@@ -34,9 +34,9 @@ public class BaseDiagnosticIndexedDbProbeTest
 
     protected sealed class RecordingProbeJsRuntime : IJSRuntime, IJSObjectReference
     {
-        public List<string> DatabaseNames { get; } = [];
+        public List<string> ImportPaths { get; } = [];
 
-        public List<string> StoreNames { get; } = [];
+        public List<string> Invocations { get; } = [];
 
         public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args)
         {
@@ -47,19 +47,11 @@ public class BaseDiagnosticIndexedDbProbeTest
         {
             if (identifier == "import")
             {
+                ImportPaths.Add(args?[0] as string ?? string.Empty);
                 return ValueTask.FromResult((TValue)(object)this);
             }
 
-            if (args is { Length: > 0 } && args[0] is string databaseName)
-            {
-                DatabaseNames.Add(databaseName);
-            }
-
-            if (args is { Length: > 1 } && args[1] is string storeName)
-            {
-                StoreNames.Add(storeName);
-            }
-
+            Invocations.Add(identifier);
             if (identifier == "countProbeRecords")
             {
                 return ValueTask.FromResult((TValue)(object)1);

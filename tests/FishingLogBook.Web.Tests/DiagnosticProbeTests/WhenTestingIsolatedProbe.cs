@@ -13,16 +13,14 @@ public class WhenTestingIsolatedProbe : BaseDiagnosticIndexedDbProbeTest
         var sut = CreateSut(js);
 
         // Act
-        var result = await sut.RunAsync(
-            BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
-            true,
-            CancellationToken.None);
+        var result = await sut.RunIsolatedAsync(CancellationToken.None);
 
         // Assert
         result.Succeeded.Should().BeTrue();
+        result.DatabaseName.Should().Be(BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName);
         result.LastCompletedStage.Should().Be(BrowserDiagnosticIndexedDbProbe.StageCountReturned);
-        js.DatabaseNames.Should().OnlyContain(name => name == BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName);
-        js.StoreNames.Should().OnlyContain(name => name == BrowserDiagnosticIndexedDbProbe.IsolatedStoreName);
-        js.DatabaseNames.Should().NotContain("FishingLogBook");
+        js.ImportPaths.Should().Equal("./js/diagnostic-probe.js");
+        js.Invocations.Should().Equal("openProbeDatabase", "writeProbeRecord", "countProbeRecords");
+        js.ImportPaths.Should().NotContain(path => path.Contains("diagnostic-store.js", StringComparison.Ordinal));
     }
 }

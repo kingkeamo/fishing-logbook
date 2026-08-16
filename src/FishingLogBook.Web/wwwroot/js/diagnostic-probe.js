@@ -1,3 +1,5 @@
+const databaseName = 'FishingLogBookDiagnosticsTest';
+const storeName = 'probeEvents';
 const version = 1;
 
 function withTimeout(promise, milliseconds, operationName) {
@@ -15,7 +17,7 @@ function withTimeout(promise, milliseconds, operationName) {
     });
 }
 
-function openDatabase(databaseName, storeName, timeoutMs) {
+function openIsolatedDatabase(timeoutMs) {
     return withTimeout(new Promise((resolve, reject) => {
         const request = indexedDB.open(databaseName, version);
         request.onupgradeneeded = () => {
@@ -34,13 +36,13 @@ function openDatabase(databaseName, storeName, timeoutMs) {
     }), timeoutMs, 'probe open');
 }
 
-export async function openProbeDatabase(databaseName, storeName, timeoutMs) {
-    const db = await openDatabase(databaseName, storeName, timeoutMs);
+export async function openProbeDatabase(timeoutMs) {
+    const db = await openIsolatedDatabase(timeoutMs);
     db.close();
 }
 
-export async function writeProbeRecord(databaseName, storeName, timeoutMs) {
-    const db = await openDatabase(databaseName, storeName, timeoutMs);
+export async function writeProbeRecord(timeoutMs) {
+    const db = await openIsolatedDatabase(timeoutMs);
     try {
         await withTimeout(new Promise((resolve, reject) => {
             const transaction = db.transaction(storeName, 'readwrite');
@@ -48,8 +50,7 @@ export async function writeProbeRecord(databaseName, storeName, timeoutMs) {
             transaction.onabort = () => reject(transaction.error || new Error('probe transaction aborted'));
             transaction.onerror = () => reject(transaction.error);
             transaction.objectStore(storeName).put({
-                id: 'probe',
-                timestampUtc: new Date().toISOString()
+                id: 'probe'
             });
         }), timeoutMs, 'probe write');
     } finally {
@@ -57,8 +58,8 @@ export async function writeProbeRecord(databaseName, storeName, timeoutMs) {
     }
 }
 
-export async function countProbeRecords(databaseName, storeName, timeoutMs) {
-    const db = await openDatabase(databaseName, storeName, timeoutMs);
+export async function countProbeRecords(timeoutMs) {
+    const db = await openIsolatedDatabase(timeoutMs);
     try {
         return await withTimeout(new Promise((resolve, reject) => {
             const transaction = db.transaction(storeName, 'readonly');

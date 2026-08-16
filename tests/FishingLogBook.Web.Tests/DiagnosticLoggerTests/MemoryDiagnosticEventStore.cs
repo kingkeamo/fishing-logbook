@@ -59,6 +59,16 @@ public sealed class MemoryDiagnosticEventStore : IDiagnosticEventStore
         return Task.FromResult(Items.Count);
     }
 
+    public Task<DiagnosticDatabaseInspection> InspectExistingAsync(CancellationToken cancellationToken)
+    {
+        return Task.FromResult(new DiagnosticDatabaseInspection
+        {
+            Exists = true,
+            HasStore = true,
+            Count = Items.Count
+        });
+    }
+
     public Task SaveAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken)
     {
         return EnqueueAsync(diagnosticEvent, cancellationToken);

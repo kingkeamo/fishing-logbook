@@ -50,6 +50,13 @@ public class BaseDiagnosticsInspectorTest
             .Returns(Task.FromResult<IReadOnlyList<DiagnosticEvent>>(events));
         store.GetStorageEstimateAsync(Arg.Any<CancellationToken>())
             .Returns(new StorageEstimate { Quota = 1000, Usage = 10 });
+        store.InspectExistingAsync(Arg.Any<CancellationToken>())
+            .Returns(new DiagnosticDatabaseInspection
+            {
+                Exists = true,
+                HasStore = true,
+                Count = events.Length
+            });
         return store;
     }
 
@@ -67,13 +74,13 @@ public class BaseDiagnosticsInspectorTest
     protected static IDiagnosticIndexedDbProbe SilentProbe()
     {
         var probe = Substitute.For<IDiagnosticIndexedDbProbe>();
-        probe.RunAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(new DiagnosticProbeResult
+        probe.RunIsolatedAsync(Arg.Any<CancellationToken>())
+            .Returns(new DiagnosticProbeResult
             {
-                DatabaseName = callInfo.Arg<string>(),
+                DatabaseName = BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
                 LastCompletedStage = BrowserDiagnosticIndexedDbProbe.StageCountReturned,
                 Count = 0
-            }));
+            });
         return probe;
     }
 }

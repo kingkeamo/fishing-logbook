@@ -6,6 +6,8 @@ namespace FishingLogBook.Web.Diagnostics;
 
 public sealed class IndexedDbDiagnosticEventStore : IDiagnosticEventStore
 {
+    public const string DatabaseName = "FishingLogBookDiagnostics";
+
     private const string ModulePath = "./js/diagnostic-store.js";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -63,6 +65,16 @@ public sealed class IndexedDbDiagnosticEventStore : IDiagnosticEventStore
         return WithTimeoutAsync(
             (module, token) => module.InvokeAsync<int>("getDiagnosticQueueCount", token).AsTask(),
             cancellationToken);
+    }
+
+    public async Task<DiagnosticDatabaseInspection> InspectExistingAsync(CancellationToken cancellationToken)
+    {
+        var inspection = await WithTimeoutAsync(
+            (module, token) => module.InvokeAsync<DiagnosticDatabaseInspection?>(
+                "inspectExistingDiagnosticDatabase",
+                token).AsTask(),
+            cancellationToken);
+        return inspection ?? new DiagnosticDatabaseInspection();
     }
 
     public Task SaveAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken)

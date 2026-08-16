@@ -12,10 +12,7 @@ public class WhenTestingModuleImportNeverCompletes : BaseDiagnosticIndexedDbProb
         var sut = CreateSut(new HangingImportJsRuntime(), 250);
 
         // Act
-        var result = await sut.RunAsync(
-            BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
-            true,
-            CancellationToken.None);
+        var result = await sut.RunIsolatedAsync(CancellationToken.None);
 
         // Assert
         result.DatabaseName.Should().Be(BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName);
