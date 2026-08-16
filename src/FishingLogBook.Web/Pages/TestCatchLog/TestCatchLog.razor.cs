@@ -118,62 +118,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         var saved = false;
         try
         {
-            TryToLog(
-                DiagnosticLevel.Warning,
-                DiagnosticEventNames.CatchOfflineSaveStarted,
-                "Catch offline save started.");
-
-            TestCatchPhotograph? photograph = null;
-            if (_pendingPhotographBytes is { Length: > 0 } && _pendingPhotographContentType is not null)
-            {
-                photograph = new TestCatchPhotograph(
-                    Guid.NewGuid(),
-                    _pendingPhotographContentType,
-                    SyncStatus.SavedLocally);
-            }
-
-            var location = await TryCaptureLocationAsync();
-
-            var testCatch = new TestCatch(
-                Guid.NewGuid(),
-                _speciesName.Trim(),
-                DateTimeOffset.UtcNow,
-                string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
-                SyncStatus.SavedLocally,
-                photograph,
-                location);
-
-            try
-            {
-                await TestCatchStore.SaveAsync(testCatch, _cancellationTokenSource.Token);
-                if (photograph is not null && _pendingPhotographBytes is not null)
-                {
-                    await TestCatchPhotoStore.PutAsync(
-                        testCatch.Id,
-                        _pendingPhotographBytes,
-                        photograph.ContentType,
-                        _cancellationTokenSource.Token);
-                }
-
-                TryToLog(
-                    DiagnosticLevel.Warning,
-                    DiagnosticEventNames.CatchOfflineSaveCompleted,
-                    "Catch offline save completed.");
-                _speciesName = string.Empty;
-                _notes = string.Empty;
-                _pendingPhotographBytes = null;
-                _pendingPhotographContentType = null;
-                _pendingPhotographUrl = null;
-                saved = true;
-            }
-            catch (Exception exception)
-            {
-                TryToLog(
-                    DiagnosticLevel.Error,
-                    DiagnosticEventNames.CatchOfflineSaveFailed,
-                    "Catch offline save failed.",
-                    exception);
-            }
+            saved = await PersistNewCatchAsync();
         }
         finally
         {
@@ -185,9 +130,86 @@ public partial class TestCatchLog : ComponentBase, IDisposable
             return;
         }
 
-        await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        await InvokeAsync(StateHasChanged);
+        await TryToReloadLocalCatchesAsync();
+        TryToSynchroniseCatches();
         TryToSynchroniseDiagnostics();
-        await LoadAsync();
+    }
+
+    private async Task<bool> PersistNewCatchAsync()
+    {
+        TryToLog(
+            DiagnosticLevel.Warning,
+            DiagnosticEventNames.CatchOfflineSaveStarted,
+            "Catch offline save started.");
+
+        var photograph = CreatePendingPhotograph();
+        var location = await TryCaptureLocationAsync();
+        var testCatch = new TestCatch(
+            Guid.NewGuid(),
+            _speciesName.Trim(),
+            DateTimeOffset.UtcNow,
+            string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+            SyncStatus.SavedLocally,
+            photograph,
+            location);
+
+        try
+        {
+            await TestCatchStore.SaveAsync(testCatch, _cancellationTokenSource.Token);
+            await PersistPendingPhotographAsync(testCatch.Id, photograph);
+            TryToLog(
+                DiagnosticLevel.Warning,
+                DiagnosticEventNames.CatchOfflineSaveCompleted,
+                "Catch offline save completed.");
+            ClearForm();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            TryToLog(
+                DiagnosticLevel.Error,
+                DiagnosticEventNames.CatchOfflineSaveFailed,
+                "Catch offline save failed.",
+                exception);
+            return false;
+        }
+    }
+
+    private TestCatchPhotograph? CreatePendingPhotograph()
+    {
+        if (_pendingPhotographBytes is not { Length: > 0 } || _pendingPhotographContentType is null)
+        {
+            return null;
+        }
+
+        return new TestCatchPhotograph(
+            Guid.NewGuid(),
+            _pendingPhotographContentType,
+            SyncStatus.SavedLocally);
+    }
+
+    private async Task PersistPendingPhotographAsync(Guid testCatchId, TestCatchPhotograph? photograph)
+    {
+        if (photograph is null || _pendingPhotographBytes is null)
+        {
+            return;
+        }
+
+        await TestCatchPhotoStore.PutAsync(
+            testCatchId,
+            _pendingPhotographBytes,
+            photograph.ContentType,
+            _cancellationTokenSource.Token);
+    }
+
+    private void ClearForm()
+    {
+        _speciesName = string.Empty;
+        _notes = string.Empty;
+        _pendingPhotographBytes = null;
+        _pendingPhotographContentType = null;
+        _pendingPhotographUrl = null;
     }
 
     private async Task AllowLocationAsync()
@@ -394,9 +416,41 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         _ = RefreshLocationPromptAsync();
     }
 
+    private void TryToSynchroniseCatches()
+    {
+        _ = SafeCatchSyncAsync();
+    }
+
     private void TryToSynchroniseDiagnostics()
     {
         _ = SafeDiagnosticSyncAsync();
+    }
+
+    private async Task TryToReloadLocalCatchesAsync()
+    {
+        try
+        {
+            await LoadAsync();
+        }
+        catch (Exception exception)
+        {
+            TryToLogError("catch list reload", exception);
+        }
+    }
+
+    private async Task SafeCatchSyncAsync()
+    {
+        try
+        {
+            await TestCatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception exception)
+        {
+            TryToLogError("catch sync", exception);
+        }
+
+        await TryToReloadLocalCatchesAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SafeDiagnosticSyncAsync()

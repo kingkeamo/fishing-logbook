@@ -26,7 +26,8 @@ public class BaseTestCatchLogTest
         ITestCatchSynchroniser synchroniser,
         ITestCatchPhotoStore photoStore,
         IDiagnosticLogger? diagnostics = null,
-        ILocationService? location = null)
+        ILocationService? location = null,
+        IDiagnosticSynchroniser? diagnosticSynchroniser = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -37,7 +38,7 @@ public class BaseTestCatchLogTest
         context.Services.AddSingleton(photoStore);
         context.Services.AddSingleton(diagnostics ?? Substitute.For<IDiagnosticLogger>());
         context.Services.AddSingleton(Substitute.For<ILoggingService>());
-        context.Services.AddSingleton(Substitute.For<IDiagnosticSynchroniser>());
+        context.Services.AddSingleton(diagnosticSynchroniser ?? Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(new CorrelationContext());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddSingleton(location ?? DeniedLocation());
