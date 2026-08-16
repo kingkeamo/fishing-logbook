@@ -1,4 +1,6 @@
 using System.Reflection;
+using FishingLogBook.Tests.Common.TestSupport;
+using FishingLogBook.Web;
 using FishingLogBook.Web.Configuration;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +11,7 @@ namespace FishingLogBook.Web.Tests.DependencyInjection;
 
 public class BaseDependencyInjectionTest
 {
-    protected static ServiceProvider CreateProvider()
+    protected static ServiceProvider CreateProvider(AuthConfig? authConfig = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -18,6 +20,7 @@ public class BaseDependencyInjectionTest
         services.AddFishingLogBookWeb(
             new ApiConfig { BaseUrl = "https://example.test/" },
             new DiagnosticsClientConfig(),
+            authConfig ?? CreateCompleteAuthConfig(),
             new Uri("https://example.test/"));
 
         return services.BuildServiceProvider(new ServiceProviderOptions
@@ -25,6 +28,17 @@ public class BaseDependencyInjectionTest
             ValidateScopes = true,
             ValidateOnBuild = true
         });
+    }
+
+    protected static AuthConfig CreateCompleteAuthConfig()
+    {
+        return new AuthConfig
+        {
+            Authority = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool",
+            ClientId = "test-pwa-client",
+            ApiScope = TestAuthConstants.ApiScope,
+            ApiResource = TestAuthConstants.ApiResource
+        };
     }
 
     protected static IReadOnlyCollection<Type> GetComponentInjectedServiceTypes()

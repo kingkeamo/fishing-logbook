@@ -2,9 +2,10 @@
 
 Infrastructure for FishingLogBook is defined with **Terraform** and is applied
 **manually only**. Neon (`neon_project`), R2 photos (`cloudflare_r2_bucket`), Pages
-(`cloudflare_pages_project`), and Grafana Cloud Loki write access are defined. Cognito
-and Fly remain skeletons. Further resources are added deliberately, one at a time, only
-when explicitly approved.
+(`cloudflare_pages_project`), Grafana Cloud Loki write access, and Cognito (user pool,
+public PWA client, hosted-UI domain, API resource server) are defined. Fly remains a
+skeleton. Further resources are added deliberately, one at a time, only when explicitly
+approved.
 
 ## ⚠️ Cost and safety warning
 
@@ -47,7 +48,7 @@ infrastructure/
 │   └── fly.prod.toml
 └── terraform/
     ├── adding-resources-to-terraform.md
-    ├── modules/                       # neon, r2 (photos), pages, grafana-cloud; cognito/fly naming only
+    ├── modules/                       # neon, r2, pages, grafana-cloud, cognito; fly naming only
     └── environments/
         ├── dev/
         └── prod/
@@ -219,6 +220,66 @@ dotnet user-secrets set "ExternalLogging:ApiToken" "<grafana_loki_write_token>" 
 ```
 
 Do not apply Grafana in prod until you want a separate Loki write token for production.
+
+## Amazon Cognito (authentication)
+
+Cognito is the only AWS application service this project uses. Terraform owns the user
+pool, resource server, public PWA app client (`generate_secret = false`), hosted-UI
+domain, and managed-login branding. There is no client secret to output or store.
+
+The PWA uses Authorization Code + PKCE S256 via
+`Microsoft.AspNetCore.Components.WebAssembly.Authentication`. FishingLogBook does not
+collect Cognito passwords. MFA is off (no SMS). Email is the username; Cognito sends
+verification with the default Cognito email quota (no SES).
+
+Token settings (explicit):
+
+| Token | Lifetime | Why |
+|---|---|---|
+| Access | 1 hour | Short-lived API bearer for a PWA |
+| ID | 1 hour | Matches access; used by the OIDC session, not the API |
+| Refresh | 30 days | Consumer app should not force daily re-login; rotation limits theft |
+| Refresh retry grace | 5 seconds | Enough for a flaky retry; Cognito max is 60 |
+
+Also enabled: token revocation, refresh rotation, `prevent_user_existence_errors`.
+
+Password policy: minimum 12 characters, upper + lower + number required, symbols not
+required. Length over extra complexity.
+
+**Do not apply until you have reviewed `terraform plan`.** Expected new resources in
+Dev: user pool, resource server, public PWA app client, user-pool domain, managed-login
+branding (5). Abort if the plan shows destroy/replace of Neon, R2, Pages, or Grafana.
+Prod must not be applied until real production callback/logout HTTPS URLs exist.
+
+After a reviewed apply, copy **public** outputs:
+
+```powershell
+terraform output cognito_user_pool_id
+terraform output cognito_client_id
+terraform output cognito_authority
+terraform output cognito_hosted_ui_domain
+terraform output cognito_api_scope
+```
+
+Put `Authority`, `ClientId`, `ApiScope`, and `ApiResource` into local
+`appsettings.Development.json`, GitHub `dev` **variables** `AUTH_AUTHORITY`,
+`AUTH_CLIENT_ID`, `AUTH_API_SCOPE`, `AUTH_API_RESOURCE`, and Fly
+`Auth__Authority` / `Auth__ClientId` / `Auth__ApiScope` / `Auth__ApiResource` in
+`infrastructure/fly/fly.dev.toml`. Base `appsettings.json` must not silently represent
+Dev. Missing GitHub `AUTH_*` variables fail `deploy-web`. Missing Auth at API/Web
+startup throws. These are public identifiers — do not mark the client ID as a GitHub
+secret.
+
+Cognito resource-server identifier is the Dev API URL
+(`https://fishing-logbook-dev-api.fly.dev`). Custom scopes can only be requested
+together with RFC 8707 `resource` when they belong to that identifier. The PWA
+sends `resource` = `Auth:ApiResource` (the same URL). Cognito then puts that URL
+in access-token `aud`. The API scope is `https://fishing-logbook-dev-api.fly.dev/access`.
+The API validates both `aud` and `client_id`. Access tokens do not inherently contain
+`aud` unless resource binding is requested.
+
+Create a test user in Cognito Hosted UI (email + verification), then Sign in from the
+PWA. Sign-out must clear the OIDC session and send the browser to an allowed logout URL.
 
 ## Manual deployment process
 

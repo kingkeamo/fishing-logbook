@@ -10,6 +10,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "cognito_api_resource_identifier" {
+  type        = string
+  description = "Cognito resource-server identifier and RFC 8707 resource/aud URI. Set to the production API URL before applying prod."
+  default     = ""
+}
+
 variable "cloudflare_account_id" {
   type        = string
   description = "Cloudflare account ID that owns the Pages project and R2 bucket. Account-specific; supply locally, never commit."

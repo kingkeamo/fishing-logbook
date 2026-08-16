@@ -693,24 +693,108 @@ Blazor assemblies
 
 # 25. Authentication Infrastructure
 
-Terraform should define Amazon Cognito infrastructure.
+Terraform defines Amazon Cognito in `infrastructure/terraform/modules/cognito/`. Each
+environment has its own user pool, resource server, public PWA app client, hosted-UI
+domain, and managed-login branding. Apply is **manual only** — see `infrastructure/README.md`.
 
-Initially define:
+## Flow
 
 ```text
-Dev User Pool
-Dev App Client
-Prod User Pool
-Prod App Client
+FishingLogBook PWA
+    -> Cognito managed login (email + password; no FishingLogBook login form)
+    -> Authorization Code callback (/authentication/login-callback)
+    -> Microsoft.AspNetCore.Components.WebAssembly.Authentication completes code + PKCE S256
+    -> Access token attached only to FishingLogBook API requests
 ```
 
-or an equivalent clearly isolated environment design.
+The PWA is a public browser client. There is **no Cognito client secret** in Blazor,
+`appsettings`, JavaScript, GitHub variables, Cloudflare Pages, or Terraform outputs.
 
-Use Authorization Code flow with PKCE for the PWA.
+OIDC `Authority` is the user-pool issuer:
 
-Do not use a client secret in the Blazor application.
+```text
+https://cognito-idp.<region>.amazonaws.com/<userPoolId>
+```
 
-External identity providers do not need to be implemented in the first vertical slice, but the Cognito configuration must allow them to be added later.
+Credential entry belongs to Cognito Hosted UI / Managed Login. FishingLogBook only has
+Sign in / Create account / Sign out actions.
+
+## Local and Dev callback URLs
+
+Exact URLs only (no wildcards). HTTP is allowed only for localhost.
+
+- `https://localhost:7005/authentication/login-callback`
+- `http://localhost:5019/authentication/login-callback`
+- `https://fishing-logbook-dev.pages.dev/authentication/login-callback`
+
+Logout URLs include the matching `/authentication/logout-callback` paths and site roots.
+
+Do not invent production callback URLs until the production web origin exists.
+
+## API JWT validation
+
+The API validates Cognito **access** tokens locally with ASP.NET Core JWT Bearer
+middleware (OIDC metadata / JWKS). It does not call Cognito on each request.
+
+Final validation requires all of:
+
+1. Valid signature
+2. Correct issuer
+3. Valid lifetime
+4. Correct `aud` (FishingLogBook API resource URI)
+5. `token_use` == `access`
+6. Correct `client_id` (PWA app client)
+7. Required API scope `https://fishing-logbook-dev-api.fly.dev/access`
+
+ID tokens are rejected even when `aud` is present.
+
+Cognito access tokens normally identify the app client with `client_id` and do **not**
+inherently contain `aud`. FishingLogBook explicitly requests RFC 8707 resource binding
+by setting Microsoft OIDC `ProviderOptions.AdditionalProviderParameters["resource"]`
+to `Auth:ApiResource`. Cognito then adds `aud` containing that FishingLogBook API
+resource URI. The API validates **both** `aud` and `client_id`.
+
+Dev `Auth:ApiResource` is `https://fishing-logbook-dev-api.fly.dev` (the current Dev
+Fly API URL). Local Blazor still requests that same audience when using the Dev Cognito
+pool; `aud` is an OAuth identifier, not a requirement that the HTTP Host match it.
+
+The Cognito resource-server identifier is the same URL as `Auth:ApiResource`
+(`https://fishing-logbook-dev-api.fly.dev`). Cognito only accepts custom scopes
+with RFC 8707 resource binding when those scopes belong to that URL identifier.
+The resulting API scope is `https://fishing-logbook-dev-api.fly.dev/access`.
+
+## Public configuration after a reviewed apply
+
+Copy Terraform outputs into (these values are public identifiers, not secrets):
+
+- Web `wwwroot/appsettings.Development.json` and API `appsettings.Development.json` →
+  `Auth:Authority`, `Auth:ClientId`, `Auth:ApiScope`, `Auth:ApiResource`
+- Web `wwwroot/appsettings.Production.json` is this repository's **Dev Cloudflare Pages
+  overlay** (Release publish). Keep Dev Auth there until a real production overlay exists.
+  Base `appsettings.json` must not contain environment Auth values.
+- GitHub `dev` environment **variables** (not secrets): `AUTH_AUTHORITY`, `AUTH_CLIENT_ID`,
+  `AUTH_API_SCOPE` (`https://fishing-logbook-dev-api.fly.dev/access`), `AUTH_API_RESOURCE`
+  (`https://fishing-logbook-dev-api.fly.dev`). Missing variables fail `deploy-web`.
+- Fly.io Dev API env in `infrastructure/fly/fly.dev.toml`: `Auth__Authority`,
+  `Auth__ClientId`, `Auth__ApiScope`, `Auth__ApiResource`
+
+API and Web startup fail if any of `Auth:Authority`, `Auth:ClientId`, `Auth:ApiResource`,
+or `Auth:ApiScope` is missing or whitespace. JWT validation always uses the configured
+`ApiResource` as `aud` and requires `ApiScope`.
+
+Local Web points at the **Dev** Cognito pool. Do not create a user pool on a laptop.
+
+## Creating a test user
+
+1. Open the Cognito hosted UI (domain from `cognito_hosted_ui_domain`).
+2. Create an account with email and complete email verification.
+3. In the PWA, Sign in / Create account — Cognito collects credentials.
+4. After sign-in, `/test-catch` is available. Sign out must require sign-in again
+   before protected TestCatch API calls succeed.
+
+External identity providers are not enabled in this slice, but the user pool can accept
+them later. Internal `UserId` mapping is a later issue — do not persist Cognito `sub`
+as Catch.UserId.
 
 ---
 

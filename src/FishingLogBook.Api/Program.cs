@@ -1,3 +1,5 @@
+using FishingLogBook.Api.Authentication;
+using FishingLogBook.Api.Configuration;
 using FishingLogBook.Api.Endpoints;
 using FishingLogBook.Api.Logging;
 using FishingLogBook.Api.Middleware;
@@ -13,6 +15,7 @@ const string webClientCorsPolicy = "WebClient";
 
 builder.Services.AddFishingLogBook(builder.Configuration);
 builder.Services.AddOpenApi();
+builder.Services.AddFishingLogBookJwtBearer(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
@@ -20,20 +23,20 @@ builder.Services.AddCors(options =>
     {
         var allowedOrigins = builder.Configuration
             .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() ?? Array.Empty<string>();
+            .Get<string[]>() ?? [];
 
-        if (allowedOrigins.Length > 0)
+        if (allowedOrigins.Length == 0)
         {
-            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+            policy.SetIsOriginAllowed(_ => false).AllowAnyHeader().AllowAnyMethod();
+            return;
         }
-        else
-        {
-            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-        }
+
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
+_ = app.Services.GetRequiredService<AuthConfig>();
 
 app.Logger.LogInformation(
     "FishingLogBook API starting in {HostingEnvironment} environment.",
@@ -52,6 +55,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(webClientCorsPolicy);
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapSystemEndpoints();
 app.MapTestCatchEndpoints();

@@ -1,5 +1,8 @@
+using FishingLogBook.Api.Tests.TestSupport;
+using FishingLogBook.Tests.Common.TestSupport;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,9 +19,15 @@ public sealed class DependencyInjectionApiFactory : WebApplicationFactory<Progra
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Postgres"] =
-                    "Host=127.0.0.1;Database=fishing-logbook-di-test;Username=test;Password=test"
+                    "Host=127.0.0.1;Database=fishing-logbook-di-test;Username=test;Password=test",
+                ["Auth:Authority"] = TestJwt.Issuer,
+                ["Auth:ClientId"] = TestJwt.ClientId,
+                ["Auth:ApiScope"] = TestAuthConstants.ApiScope,
+                ["Auth:ApiResource"] = TestAuthConstants.ApiResource
             });
         });
+
+        builder.ConfigureTestServices(TestAuthentication.ConfigureJwtBearer);
 
         builder.UseDefaultServiceProvider((_, options) =>
         {

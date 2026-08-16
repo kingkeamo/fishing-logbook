@@ -6,8 +6,14 @@ variable "environment" {
 
 variable "aws_region" {
   type        = string
-  description = "AWS region for Cognito resources."
+  description = "AWS region for Cognito resources. Dev must set this in terraform.tfvars."
   default     = "us-east-1"
+}
+
+variable "cognito_api_resource_identifier" {
+  type        = string
+  description = "Cognito resource-server identifier and RFC 8707 resource/aud URI. Must match Auth:ApiResource."
+  default     = "https://fishing-logbook-dev-api.fly.dev"
 }
 
 variable "cloudflare_account_id" {
@@ -24,14 +30,25 @@ variable "r2_location" {
 
 variable "cognito_callback_urls" {
   type        = list(string)
-  description = "Allowed OAuth callback URLs for the PWA app client."
-  default     = []
+  description = "Exact OAuth callback URLs for the PWA app client."
+  default = [
+    "https://localhost:7005/authentication/login-callback",
+    "http://localhost:5019/authentication/login-callback",
+    "https://fishing-logbook-dev.pages.dev/authentication/login-callback",
+  ]
 }
 
 variable "cognito_logout_urls" {
   type        = list(string)
-  description = "Allowed sign-out redirect URLs for the PWA app client."
-  default     = []
+  description = "Exact sign-out redirect URLs for the PWA app client."
+  default = [
+    "https://localhost:7005/authentication/logout-callback",
+    "https://localhost:7005/",
+    "http://localhost:5019/authentication/logout-callback",
+    "http://localhost:5019/",
+    "https://fishing-logbook-dev.pages.dev/authentication/logout-callback",
+    "https://fishing-logbook-dev.pages.dev/",
+  ]
 }
 
 variable "neon_region" {

@@ -1,8 +1,10 @@
 module "cognito" {
-  source        = "../../modules/cognito"
-  environment   = var.environment
-  callback_urls = var.cognito_callback_urls
-  logout_urls   = var.cognito_logout_urls
+  source                  = "../../modules/cognito"
+  environment             = var.environment
+  region                  = var.aws_region
+  api_resource_identifier = var.cognito_api_resource_identifier
+  callback_urls           = var.cognito_callback_urls
+  logout_urls             = var.cognito_logout_urls
 }
 
 module "neon" {

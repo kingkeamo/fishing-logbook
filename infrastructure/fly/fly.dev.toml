@@ -14,6 +14,13 @@ primary_region = "iad"
   ASPNETCORE_ENVIRONMENT = "Production"
   ASPNETCORE_HTTP_PORTS = "8080"
   ExternalLogging__Environment = "dev"
+  Cors__AllowedOrigins__0 = "https://fishing-logbook-dev.pages.dev"
+  Cors__AllowedOrigins__1 = "https://localhost:7005"
+  Cors__AllowedOrigins__2 = "http://localhost:5019"
+  Auth__Authority = "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_J4Kt9QB06"
+  Auth__ClientId = "e80socqio7bpv79or57fb1e5l"
+  Auth__ApiScope = "https://fishing-logbook-dev-api.fly.dev/access"
+  Auth__ApiResource = "https://fishing-logbook-dev-api.fly.dev"
 
 [http_service]
   internal_port = 8080

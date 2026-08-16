@@ -17,11 +17,14 @@ if (string.Equals(diagnosticsConfig.MinimumPersistLevel, "Warning", StringCompar
     diagnosticsConfig.MinimumPersistLevel = "Information";
 }
 
+var authConfig = builder.Configuration.GetSection(AuthConfig.SectionName).Get<AuthConfig>() ?? new AuthConfig();
+authConfig.EnsureRequired();
+
 var apiBaseAddress = string.IsNullOrWhiteSpace(apiConfig.BaseUrl)
     ? builder.HostEnvironment.BaseAddress
     : apiConfig.BaseUrl;
 
-builder.Services.AddFishingLogBookWeb(apiConfig, diagnosticsConfig, new Uri(apiBaseAddress));
+builder.Services.AddFishingLogBookWeb(apiConfig, diagnosticsConfig, authConfig, new Uri(apiBaseAddress));
 
 var host = builder.Build();
 await host.Services.GetRequiredService<ICultureService>().InitializeAsync();

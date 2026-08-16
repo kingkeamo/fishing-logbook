@@ -30,7 +30,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         _factory.TestCatchRepository
             .UpsertAsync(Arg.Any<TestCatchRecord>(), Arg.Any<CancellationToken>())
             .Returns(record);
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var dto = new TestCatchDto(record.Id, record.SpeciesName, record.CaughtOn, record.Notes);
 
         // Act
@@ -54,7 +54,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     {
         // Arrange
         _factory.TestCatchRepository.ClearReceivedCalls();
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var dto = new TestCatchDto(Guid.NewGuid(), "  ", DateTimeOffset.UtcNow, null);
 
         // Act
@@ -96,7 +96,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         _factory.TestCatchRepository
             .UpsertAsync(Arg.Any<TestCatchRecord>(), Arg.Any<CancellationToken>())
             .Returns(record);
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var dto = new TestCatchDto(record.Id, record.SpeciesName, record.CaughtOn, record.Notes, Location: location);
 
         // Act
@@ -139,7 +139,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         _factory.TestCatchRepository
             .GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<TestCatchRecord>>([record]));
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
 
         // Act
         var response = await client.GetAsync("/api/test-catches");

@@ -252,4 +252,13 @@
   <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
     <value>Production diagnostic database not initialised</value>
   </data>
+  <data name="Auth_SignIn" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="Auth_CreateAccount" xml:space="preserve">
+    <value>Create account</value>
+  </data>
+  <data name="Auth_SignOut" xml:space="preserve">
+    <value>Sign out</value>
+  </data>
 </root>

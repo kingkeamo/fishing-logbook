@@ -10,27 +10,35 @@ public static class TestCatchEndpoints
         endpoints.MapPost("/api/test-catches", UpsertAsync)
             .WithName("UpsertTestCatch")
             .WithTags("TestCatch")
+            .RequireAuthorization()
             .Produces<TestCatchDto>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest);
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
 
         endpoints.MapGet("/api/test-catches", ListAsync)
             .WithName("ListTestCatches")
             .WithTags("TestCatch")
-            .Produces<IReadOnlyList<TestCatchDto>>(StatusCodes.Status200OK);
+            .RequireAuthorization()
+            .Produces<IReadOnlyList<TestCatchDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
 
         endpoints.MapPost("/api/test-catches/{id:guid}/photographs/upload-url", CreatePhotographUploadAsync)
             .WithName("CreateTestCatchPhotographUpload")
             .WithTags("TestCatch")
+            .RequireAuthorization()
             .Produces<PhotographUploadDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
         endpoints.MapPost("/api/test-catches/{id:guid}/photographs", RecordPhotographAsync)
             .WithName("RecordTestCatchPhotograph")
             .WithTags("TestCatch")
+            .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
         return endpoints;

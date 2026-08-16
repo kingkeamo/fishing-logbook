@@ -1,6 +1,7 @@
 using AwesomeAssertions;
+using FishingLogBook.Tests.Common.TestSupport;
 using FishingLogBook.Web.Browser.Location;
-using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
@@ -9,8 +10,10 @@ using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
 using FishingLogBook.Web.Features.TestCatch.Services;
 using FishingLogBook.Web.Localization;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 
 namespace FishingLogBook.Web.Tests.DependencyInjection;
 
@@ -57,5 +60,53 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         injectedTypes.Should().Contain(typeof(ILocationService));
         injectedTypes.Should().Contain(typeof(IStringLocalizer<UiStrings>));
         resolve.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ItShouldRegisterAuthorizedAndAnonymousHttpClients()
+    {
+        // Arrange
+        using var provider = CreateProvider();
+        using var scope = provider.CreateScope();
+        var factory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>();
+
+        // Act
+        var apiClient = factory.CreateClient(HttpClientNames.AuthorizedApi);
+        var anonymousClient = factory.CreateClient(HttpClientNames.Anonymous);
+
+        // Assert
+        apiClient.BaseAddress.Should().Be(new Uri("https://example.test/"));
+        anonymousClient.BaseAddress.Should().Be(new Uri("https://example.test/"));
+        scope.ServiceProvider.GetRequiredService<IAccessTokenProvider>().Should().NotBeNull();
+        scope.ServiceProvider.GetRequiredService<ITestCatchClient>().Should().BeOfType<TestCatchClient>();
+        var oidc = scope.ServiceProvider
+            .GetRequiredService<IOptionsSnapshot<RemoteAuthenticationOptions<OidcProviderOptions>>>()
+            .Value
+            .ProviderOptions;
+        oidc.ResponseType.Should().Be("code");
+        oidc.ClientId.Should().Be("test-pwa-client");
+        typeof(OidcProviderOptions).GetProperty("ClientSecret").Should().BeNull();
+        oidc.DefaultScopes.Should().Contain("openid");
+        oidc.DefaultScopes.Should().Contain(TestAuthConstants.ApiScope);
+    }
+
+    [Fact]
+    public void ItShouldRequestTheConfiguredApiResourceThroughStandardOidcOptions()
+    {
+        // Arrange
+        using var provider = CreateProvider();
+        using var scope = provider.CreateScope();
+
+        // Act
+        var oidc = scope.ServiceProvider
+            .GetRequiredService<IOptionsSnapshot<RemoteAuthenticationOptions<OidcProviderOptions>>>()
+            .Value
+            .ProviderOptions;
+
+        // Assert
+        oidc.AdditionalProviderParameters.Should().ContainKey("resource");
+        oidc.AdditionalProviderParameters["resource"].Should().Be(TestAuthConstants.ApiResource);
+        oidc.ResponseType.Should().Be("code");
+        typeof(OidcProviderOptions).GetProperty("ClientSecret").Should().BeNull();
     }
 }

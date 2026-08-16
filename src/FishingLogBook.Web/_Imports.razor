@@ -1,9 +1,12 @@
 ﻿@using System.Net.Http
 @using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Microsoft.AspNetCore.Components.WebAssembly.Http
 @using Microsoft.Extensions.Localization
 @using Microsoft.JSInterop
@@ -13,6 +16,8 @@
 @using FishingLogBook.Web.Browser.Network
 @using FishingLogBook.Web.Common
 @using FishingLogBook.Web.Components.LanguageSwitcher
+@using FishingLogBook.Web.Features.Authentication.Components.LoginDisplay
+@using FishingLogBook.Web.Features.Authentication.Components.RedirectToLogin
 @using FishingLogBook.Web.Features.Diagnostics.Models
 @using FishingLogBook.Web.Features.Diagnostics.Services
 @using FishingLogBook.Web.Features.Diagnostics.Storage

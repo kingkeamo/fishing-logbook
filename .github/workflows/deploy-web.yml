@@ -49,6 +49,47 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # This repository's Release/Pages publish uses appsettings.Production.json as the
+      # Dev Cloudflare Pages overlay. GitHub `dev` environment AUTH_* variables must be
+      # set; missing values fail this step instead of emitting Dev defaults.
+      - name: Apply public Auth configuration
+        env:
+          AUTH_AUTHORITY: ${{ vars.AUTH_AUTHORITY }}
+          AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
+          AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
+          AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          required = [
+              "AUTH_AUTHORITY",
+              "AUTH_CLIENT_ID",
+              "AUTH_API_SCOPE",
+              "AUTH_API_RESOURCE",
+          ]
+          missing = [name for name in required if not os.environ.get(name, "").strip()]
+          if missing:
+              sys.exit(
+                  "Missing required GitHub environment variables: "
+                  + ", ".join(missing)
+                  + ". Set them on the GitHub dev environment."
+              )
+
+          path = Path("src/FishingLogBook.Web/wwwroot/appsettings.Production.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          data["Auth"] = {
+              "Authority": os.environ["AUTH_AUTHORITY"].strip(),
+              "ClientId": os.environ["AUTH_CLIENT_ID"].strip(),
+              "ApiScope": os.environ["AUTH_API_SCOPE"].strip(),
+              "ApiResource": os.environ["AUTH_API_RESOURCE"].strip(),
+          }
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
+
       - name: Publish Web
         run: dotnet publish src/FishingLogBook.Web --configuration Release -o artifacts/web
 

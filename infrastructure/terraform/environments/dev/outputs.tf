@@ -3,6 +3,31 @@ output "cognito_resource_prefix" {
   value       = module.cognito.resource_prefix
 }
 
+output "cognito_user_pool_id" {
+  description = "Cognito user pool ID. Public identifier."
+  value       = module.cognito.user_pool_id
+}
+
+output "cognito_client_id" {
+  description = "Public PWA app client ID. Not a secret."
+  value       = module.cognito.client_id
+}
+
+output "cognito_authority" {
+  description = "OIDC issuer/authority for Blazor OIDC and API JWT validation."
+  value       = module.cognito.authority
+}
+
+output "cognito_hosted_ui_domain" {
+  description = "Cognito hosted UI / managed login hostname (no scheme)."
+  value       = module.cognito.hosted_ui_domain
+}
+
+output "cognito_api_scope" {
+  description = "Resource-server scope the PWA must request for FishingLogBook API access."
+  value       = module.cognito.api_scope
+}
+
 output "neon_project_name" {
   description = "Neon project name."
   value       = module.neon.project_name

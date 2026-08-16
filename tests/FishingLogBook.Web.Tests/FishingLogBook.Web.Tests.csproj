@@ -11,6 +11,8 @@
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="bunit" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Localization" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NSubstitute" />
@@ -26,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FishingLogBook.Web\FishingLogBook.Web.csproj" />
     <ProjectReference Include="..\..\src\FishingLogBook.Shared\FishingLogBook.Shared.csproj" />
+    <ProjectReference Include="..\FishingLogBook.Tests.Common\FishingLogBook.Tests.Common.csproj" />
   </ItemGroup>
 
 </Project>
