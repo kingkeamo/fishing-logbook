@@ -72,6 +72,31 @@ public class WhenTestingQueuedEvents : BaseDiagnosticsInspectorTest
     }
 
     [Fact]
+    public async Task ItShouldNotTreatAFailedCountAsAnEmptyQueue()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = CreateStore();
+        store.GetCountAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new TimeoutException("queue count timed out"));
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<DiagnosticsInspector>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#diagnostics-queued-count").TextContent.Should().Contain("Unable to read queue");
+            cut.Find("#diagnostics-queued-count").TextContent.Should().NotContain("0");
+            cut.Find("#diagnostics-last-error").TextContent.Should().Contain(DiagnosticOperations.QueueCount);
+            cut.Find("#diagnostics-last-error").TextContent.Should().Contain(nameof(TimeoutException));
+            cut.Find("#diagnostics-last-operation").TextContent.Should().Contain(DiagnosticOperations.QueueCount);
+            cut.FindAll("#diagnostic-queue-empty").Should().BeEmpty();
+        });
+    }
+
+    [Fact]
     public async Task ItShouldShowFrenchEmptyQueue()
     {
         // Arrange

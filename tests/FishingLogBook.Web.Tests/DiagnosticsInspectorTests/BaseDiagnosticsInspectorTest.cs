@@ -16,7 +16,8 @@ public class BaseDiagnosticsInspectorTest
         IDiagnosticSynchroniser? synchroniser = null,
         INetworkStatus? network = null,
         DiagnosticsClientConfig? config = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        IDiagnosticIndexedDbProbe? probe = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -28,6 +29,7 @@ public class BaseDiagnosticsInspectorTest
         context.Services.AddSingleton(config ?? new DiagnosticsClientConfig { MaxQueueSize = 500 });
         context.Services.AddSingleton(network ?? OnlineNetwork());
         context.Services.AddSingleton(logging ?? SilentLogging());
+        context.Services.AddSingleton(probe ?? SilentProbe());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
@@ -60,5 +62,18 @@ public class BaseDiagnosticsInspectorTest
         logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         return logging;
+    }
+
+    protected static IDiagnosticIndexedDbProbe SilentProbe()
+    {
+        var probe = Substitute.For<IDiagnosticIndexedDbProbe>();
+        probe.RunAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(new DiagnosticProbeResult
+            {
+                DatabaseName = callInfo.Arg<string>(),
+                LastCompletedStage = BrowserDiagnosticIndexedDbProbe.StageCountReturned,
+                Count = 0
+            }));
+        return probe;
     }
 }

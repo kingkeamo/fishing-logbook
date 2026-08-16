@@ -123,7 +123,8 @@ public class WhenTestingLog
 
         // Assert
         store.Items.Should().BeEmpty();
-        status.LastError.Should().Be(nameof(TimeoutException));
+        status.LastError.Should().Contain(DiagnosticOperations.Persist);
+        status.LastError.Should().Contain(nameof(TimeoutException));
     }
 
     private static DiagnosticLogger CreateLogger(

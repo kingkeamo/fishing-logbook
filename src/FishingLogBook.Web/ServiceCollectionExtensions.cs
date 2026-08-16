@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DiagnosticStatus>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();
+        services.AddScoped<IDiagnosticIndexedDbProbe, BrowserDiagnosticIndexedDbProbe>();
         services.AddScoped<IDiagnosticLogger, DiagnosticLogger>();
         services.AddScoped<IDiagnosticSynchroniser, DiagnosticSynchroniser>();
         services.AddLocalization();

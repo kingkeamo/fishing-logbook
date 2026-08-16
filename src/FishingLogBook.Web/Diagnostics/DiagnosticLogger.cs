@@ -126,7 +126,7 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
 
     private async Task RecordFailureAsync(Exception exception, string eventName, CancellationToken cancellationToken)
     {
-        _status.LastError = exception.GetType().Name;
+        _status.RecordFailure(DiagnosticOperations.Persist, exception);
         await _logging.LogErrorAsync(eventName, exception, cancellationToken);
     }
 
