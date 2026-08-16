@@ -37,5 +37,6 @@ public class WhenTestingRender : BaseLanguageSwitcherTest
 
         // Assert
         cut.Find("#language-menu-button").GetAttribute("aria-label").Should().Be("Langue");
+        await cultureService.DidNotReceive().SetCultureAsync(Arg.Any<string>());
     }
 }

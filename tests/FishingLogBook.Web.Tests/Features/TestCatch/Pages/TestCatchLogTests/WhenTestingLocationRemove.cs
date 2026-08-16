@@ -61,7 +61,7 @@ public class WhenTestingLocationRemove : BaseTestCatchLogTest
             cut.FindAll($"#remove-test-catch-location-{existing.Id}").Should().BeEmpty();
             cut.FindAll($"#test-catch-location-saved-{existing.Id}").Should().BeEmpty();
         });
-        await store.Received().SaveAsync(
+        await store.Received(1).SaveAsync(
             Arg.Is<TestCatchModel>(testCatch =>
                 testCatch.Id == existing.Id &&
                 testCatch.Location == null &&

@@ -32,7 +32,7 @@ public class WhenTestingLoadFailure : BaseTestCatchLogTest
                 .Contain("Could not load local catches. Your saved catches are still stored on this device.");
             cut.Find("#retry-load-test-catches-button").TextContent.Should().Contain("Retry loading");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 
@@ -56,7 +56,7 @@ public class WhenTestingLoadFailure : BaseTestCatchLogTest
                 .Contain("Impossible de charger les prises locales. Vos prises enregistrées sont toujours stockées sur cet appareil.");
             cut.Find("#retry-load-test-catches-button").TextContent.Should().Contain("Réessayer le chargement");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class WhenTestingLoadFailure : BaseTestCatchLogTest
             cut.Find($"#test-catch-item-{existing.Id}").Should().NotBeNull();
             cut.Find("#test-catch-load-error").Should().NotBeNull();
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 
@@ -158,8 +158,8 @@ public class WhenTestingLoadFailure : BaseTestCatchLogTest
             cut.Find("#test-catch-load-error").Should().NotBeNull();
             cut.Find("#retry-load-test-catches-button").Should().NotBeNull();
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
-        await photos.Received().GetAsync(existing.Id, Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        await photos.Received(2).GetAsync(existing.Id, Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 }

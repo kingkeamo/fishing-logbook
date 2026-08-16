@@ -48,7 +48,7 @@ public class WhenTestingTimeout
 
         // Assert
         location.Should().BeNull();
-        await diagnostics.Received().LogAsync(
+        await diagnostics.Received(1).LogAsync(
             Arg.Any<FishingLogBook.Shared.Diagnostics.DiagnosticLevel>(),
             Arg.Any<string>(),
             Arg.Any<string>(),

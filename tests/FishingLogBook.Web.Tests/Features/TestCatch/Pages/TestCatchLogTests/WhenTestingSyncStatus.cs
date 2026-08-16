@@ -65,6 +65,8 @@ public class WhenTestingSyncStatus : BaseTestCatchLogTest
                 .Contain("Synchronised");
         });
         cut.FindAll($"#retry-test-catch-{existing.Id}").Should().BeEmpty();
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -96,5 +98,7 @@ public class WhenTestingSyncStatus : BaseTestCatchLogTest
                 .Contain(expected);
         });
         cut.FindAll($"#retry-test-catch-{existing.Id}").Should().BeEmpty();
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 }

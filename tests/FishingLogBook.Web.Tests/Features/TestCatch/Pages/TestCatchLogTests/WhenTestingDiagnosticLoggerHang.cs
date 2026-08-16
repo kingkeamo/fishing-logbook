@@ -40,7 +40,7 @@ public class WhenTestingDiagnosticLoggerHang : BaseTestCatchLogTest
             cut.Find($"#test-catch-item-{existing.Id}").Should().NotBeNull();
             cut.Find($"#test-catch-species-{existing.Id}").TextContent.Should().Contain("Roach");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 

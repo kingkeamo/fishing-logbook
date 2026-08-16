@@ -53,7 +53,29 @@ FishingLogBook.Db.Migrations         DbUp scripts and engine. Not referenced by 
 
 The Blazor client must not reference Application or Infrastructure. Server implementation assemblies must not ship to the browser.
 
-Internal user identity is a FishingLogBook `UserId`. Cognito subject identifiers are mapped to that user. They are not the primary domain key.
+New Application use cases use MediatR 12.5.0 CQRS: one file per command/query (request,
+handler, `ValidatedResponse`, validator). The API translates a validated access token
+into `Provider`, `Subject`, and authenticated `Email` and sends
+`ResolveCurrentUserCommand`. Email is account data, not the identity lookup key.
+Handlers call application services; services call repositories. Repositories own SQL
+transactions. After identity resolution, domain code uses `ICurrentUser.UserId` (and
+`ICurrentUser.Email` for account data), not Cognito `sub`. Do not pass `HttpContext`,
+`ClaimsPrincipal`, or JWT types into Application.
+
+The PWA presents the authenticated OIDC email claim in the app bar. That is display
+only. Server ownership remains validated access token → Provider + Subject → UserId.
+
+Internal user identity is a FishingLogBook `UserId`. Cognito authenticates the person
+and supplies `sub`; that value is stored only as an external `UserIdentity`
+(`Provider` + `Subject`) and is not the domain key. `UNIQUE (Provider, Subject)` is
+the lookup key. `User.Email` is required account data: mutable, not unique, and never
+used to find or merge users. Domain records use internal `UserId`. The first
+authenticated API interaction creates or resolves the mapping and stores Email; later
+requests reuse that UserId and refresh Email when the authenticated claim changes.
+The API derives the current user from the validated access token; it does not trust a
+client-supplied UserId or email. Offline device-generated ids are for synchronisation
+idempotency, not ownership. Future profile work may add FirstName, LastName, and
+DisplayName.
 
 ### Offline client storage
 

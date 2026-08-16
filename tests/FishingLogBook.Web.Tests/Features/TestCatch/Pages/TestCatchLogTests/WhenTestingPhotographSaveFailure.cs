@@ -47,12 +47,17 @@ public class WhenTestingPhotographSaveFailure : BaseTestCatchLogTest
             cut.Find("#save-test-catch-button").TextContent.Should().Contain("Save catch");
             cut.Find("#test-catch-species").GetAttribute("value").Should().Be("Carp");
             cut.Find("#test-catch-photo-preview").Should().NotBeNull();
+            saved.Should().ContainSingle();
         });
         await photos.Received(1).PutAsync(
-            Arg.Any<Guid>(),
+            saved[0].Id,
             Arg.Is<byte[]>(bytes => bytes.SequenceEqual(new byte[] { 0xFF, 0xD8, 0xFF })),
             "image/jpeg",
             Arg.Any<CancellationToken>());
-        await store.Received(1).SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
+        await store.Received(1).SaveAsync(
+            Arg.Is<TestCatchModel>(testCatch =>
+                testCatch.SpeciesName == "Carp" &&
+                testCatch.Photograph != null),
+            Arg.Any<CancellationToken>());
     }
 }

@@ -46,5 +46,11 @@ public class WhenTestingLocationDenied : BaseTestCatchLogTest
             cut.FindAll("#test-catch-location-explainer").Should().BeEmpty();
             cut.Find("#test-catch-location-enable").Should().NotBeNull();
         });
+        await store.Received(1).SaveAsync(
+            Arg.Is<TestCatchModel>(testCatch =>
+                testCatch.SpeciesName == "Roach" &&
+                testCatch.Location == null &&
+                testCatch.SyncStatus == SyncStatus.SavedLocally),
+            Arg.Any<CancellationToken>());
     }
 }

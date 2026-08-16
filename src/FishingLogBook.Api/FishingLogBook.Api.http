@@ -17,3 +17,9 @@ Accept: application/json
 Authorization: Bearer <access-token>
 
 ###
+
+GET {{FishingLogBook.Api_HostAddress}}/api/users/current
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###

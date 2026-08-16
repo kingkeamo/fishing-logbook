@@ -10,10 +10,13 @@
   <ItemGroup>
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="FluentResults" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
@@ -23,6 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FishingLogBook.Application\FishingLogBook.Application.csproj" />
+    <ProjectReference Include="..\..\src\FishingLogBook.Db.Migrations\FishingLogBook.Db.Migrations.csproj" />
     <ProjectReference Include="..\..\src\FishingLogBook.Infrastructure\FishingLogBook.Infrastructure.csproj" />
     <ProjectReference Include="..\FishingLogBook.Tests.Common\FishingLogBook.Tests.Common.csproj" />
   </ItemGroup>

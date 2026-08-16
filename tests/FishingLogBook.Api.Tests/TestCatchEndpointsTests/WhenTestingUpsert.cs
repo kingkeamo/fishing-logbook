@@ -27,6 +27,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
             CaughtOn = DateTimeOffset.Parse("2026-08-14T14:00:00Z"),
             Notes = "Weir pool"
         };
+        _factory.TestCatchRepository.ClearReceivedCalls();
         _factory.TestCatchRepository
             .UpsertAsync(Arg.Any<TestCatchRecord>(), Arg.Any<CancellationToken>())
             .Returns(record);
@@ -45,7 +46,10 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         firstBody.Should().Be(dto);
         secondBody.Should().Be(dto);
         await _factory.TestCatchRepository.Received(2).UpsertAsync(
-            Arg.Is<TestCatchRecord>(item => item.Id == record.Id),
+            Arg.Is<TestCatchRecord>(item =>
+                item.Id == record.Id &&
+                item.SpeciesName == "Trout" &&
+                item.Notes == "Weir pool"),
             Arg.Any<CancellationToken>());
     }
 
@@ -136,6 +140,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
             CaughtOn = DateTimeOffset.Parse("2026-08-14T15:00:00Z"),
             Notes = null
         };
+        _factory.TestCatchRepository.ClearReceivedCalls();
         _factory.TestCatchRepository
             .GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<TestCatchRecord>>([record]));
@@ -149,5 +154,6 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().ContainSingle()
             .Which.Should().Be(new TestCatchDto(record.Id, record.SpeciesName, record.CaughtOn, record.Notes));
+        await _factory.TestCatchRepository.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
     }
 }

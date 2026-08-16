@@ -34,14 +34,14 @@ public class WhenTestingLoadDiagnostics : BaseTestCatchLogTest
         cut.WaitForAssertion(() => cut.Find("#test-catch-empty").Should().NotBeNull());
 
         // Assert
-        await diagnostics.Received().LogAsync(
+        await diagnostics.Received(2).LogAsync(
             DiagnosticLevel.Warning,
             DiagnosticEventNames.CatchOfflineLoadStarted,
             "Catch offline load started.",
             Arg.Any<IReadOnlyDictionary<string, string>?>(),
             Arg.Any<Exception?>(),
             Arg.Any<CancellationToken>());
-        await diagnostics.Received().LogAsync(
+        await diagnostics.Received(2).LogAsync(
             DiagnosticLevel.Warning,
             DiagnosticEventNames.CatchOfflineLoadCompleted,
             "Catch offline load completed.",
@@ -69,7 +69,7 @@ public class WhenTestingLoadDiagnostics : BaseTestCatchLogTest
         cut.WaitForAssertion(() => cut.Find("#test-catch-load-error").Should().NotBeNull());
 
         // Assert
-        await diagnostics.Received().LogAsync(
+        await diagnostics.Received(2).LogAsync(
             DiagnosticLevel.Warning,
             DiagnosticEventNames.CatchOfflineLoadStarted,
             "Catch offline load started.",

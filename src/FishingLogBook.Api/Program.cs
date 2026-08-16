@@ -57,10 +57,12 @@ app.UseCors(webClientCorsPolicy);
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<CurrentUserMiddleware>();
 
 app.MapSystemEndpoints();
 app.MapTestCatchEndpoints();
 app.MapDiagnosticEndpoints();
+app.MapUserEndpoints();
 
 app.Run();
 

@@ -86,5 +86,6 @@ public class WhenTestingRender : BaseSystemStatusTest
             cut.Find("#refresh-status-button").TextContent.Should().Contain("Actualiser");
         });
         await statusClient.Received(1).GetApiHealthAsync(Arg.Any<CancellationToken>());
+        await statusClient.Received(1).GetDatabaseStatusAsync(Arg.Any<CancellationToken>());
     }
 }

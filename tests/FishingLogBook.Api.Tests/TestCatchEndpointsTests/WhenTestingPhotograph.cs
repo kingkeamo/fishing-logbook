@@ -74,6 +74,12 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         body.Should().NotBeNull();
         body!.ObjectKey.Should().Be($"test-catches/{catchId:D}/{photographId:D}");
         body.UploadUrl.Should().Be("https://storage.test/upload");
+        await _factory.TestCatchRepository.Received(1).GetByIdAsync(catchId, Arg.Any<CancellationToken>());
+        await _factory.ObjectStorage.Received(1).CreateUploadUrlAsync(
+            $"test-catches/{catchId:D}/{photographId:D}",
+            "image/jpeg",
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

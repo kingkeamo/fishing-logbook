@@ -2,7 +2,7 @@ using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.SystemStatus;
 using NSubstitute;
 
-namespace FishingLogBook.Application.Tests.SystemStatusServiceTests;
+namespace FishingLogBook.Application.Tests.SystemStatus.SystemStatusServiceTests;
 
 public class BaseSystemStatusServiceTest
 {

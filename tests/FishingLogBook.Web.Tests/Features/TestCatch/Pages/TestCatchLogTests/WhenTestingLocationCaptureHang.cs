@@ -56,6 +56,6 @@ public class WhenTestingLocationCaptureHang : BaseTestCatchLogTest
                 testCatch.Location == null &&
                 testCatch.SyncStatus == SyncStatus.SavedLocally),
             Arg.Any<CancellationToken>());
-        await synchroniser.Received().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(2).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 }

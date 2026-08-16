@@ -54,6 +54,7 @@ public class WhenTestingRender : BaseLoginDisplayTest
         cut.Find("#auth-sign-out-button").TextContent.Should().Contain("Sign out");
         cut.FindAll("#auth-sign-in-button").Should().BeEmpty();
         cut.FindAll("#auth-create-account-button").Should().BeEmpty();
+        cut.FindAll("#auth-current-user-email").Should().BeEmpty();
     }
 
     [Fact]

@@ -40,7 +40,7 @@ public class WhenTestingUninitialisedProductionDatabase : BaseDiagnosticsInspect
             cut.FindAll("#diagnostics-probe-production-error").Should().BeEmpty();
         });
         await probe.Received(1).RunIsolatedAsync(Arg.Any<CancellationToken>());
-        await store.Received().InspectExistingAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).InspectExistingAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class WhenTestingUninitialisedProductionDatabase : BaseDiagnosticsInspect
             cut.Find("#diagnostics-queued-count").TextContent.Should().NotContain("0");
             cut.FindAll("#diagnostic-queue-empty").Should().BeEmpty();
         });
-        await store.Received().InspectExistingAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).InspectExistingAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().GetCountAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().GetPendingAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
         await store.DidNotReceive().EnqueueAsync(Arg.Any<DiagnosticEventModel>(), Arg.Any<CancellationToken>());

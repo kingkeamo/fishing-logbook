@@ -80,6 +80,7 @@ public class WhenTestingConfigure
         captured.Should().NotBeNull();
         captured!.Properties.Should().ContainKey("env");
         captured.Properties["env"].Should().BeOfType<ScalarValue>().Which.Value.Should().Be("localhost");
+        mockSink.Received(1).Emit(Arg.Is<LogEvent>(logEvent => logEvent.Properties.ContainsKey("env")));
     }
 
     private static IConfiguration BuildConfiguration(Dictionary<string, string?> values)

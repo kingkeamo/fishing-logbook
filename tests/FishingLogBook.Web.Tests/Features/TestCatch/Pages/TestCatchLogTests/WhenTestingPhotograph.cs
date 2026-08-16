@@ -45,6 +45,8 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
             cut.Find($"#test-catch-photo-status-{existing.Id}").TextContent.Should()
                 .Contain("Photograph saved locally — not uploaded");
         });
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        await photos.Received(2).GetAsync(existing.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -82,6 +84,7 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
             .Contain("Photograph upload failed");
         cut.FindAll($"#retry-test-catch-{existing.Id}").Should().BeEmpty();
         await synchroniser.Received(1).RetryPhotographAsync(existing.Id, Arg.Any<CancellationToken>());
+        await photos.Received(3).GetAsync(existing.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -119,5 +122,7 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
             cut.Find($"#test-catch-photo-status-{existing.Id}").TextContent.Should()
                 .Contain("Photograph uploaded");
         });
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        await photos.Received(2).GetAsync(existing.Id, Arg.Any<CancellationToken>());
     }
 }

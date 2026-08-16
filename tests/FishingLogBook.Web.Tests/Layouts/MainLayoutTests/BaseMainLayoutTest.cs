@@ -1,5 +1,6 @@
 using Bunit;
 using Bunit.TestDoubles;
+using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -15,6 +16,7 @@ public class BaseMainLayoutTest
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
+        context.Services.AddSingleton<ISignedInUserDisplayService, SignedInUserDisplayService>();
         var authorization = context.AddAuthorization();
         if (isAuthenticated)
         {

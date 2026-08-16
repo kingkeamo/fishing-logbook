@@ -3,7 +3,7 @@ using FishingLogBook.Domain.SystemStatus;
 using FishingLogBook.Tests.Common.Builders;
 using NSubstitute;
 
-namespace FishingLogBook.Application.Tests.SystemStatusServiceTests;
+namespace FishingLogBook.Application.Tests.SystemStatus.SystemStatusServiceTests;
 
 public class WhenTestingGetDatabaseStatusAsync : BaseSystemStatusServiceTest
 {

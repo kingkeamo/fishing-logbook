@@ -82,14 +82,14 @@ public class WhenTestingSave : BaseTestCatchLogTest
 
         // Assert
         cut.WaitForAssertion(() => saved.Should().ContainSingle());
-        await diagnostics.Received().LogAsync(
+        await diagnostics.Received(1).LogAsync(
             DiagnosticLevel.Warning,
             DiagnosticEventNames.CatchOfflineSaveStarted,
             "Catch offline save started.",
             Arg.Any<IReadOnlyDictionary<string, string>?>(),
             Arg.Any<Exception?>(),
             Arg.Any<CancellationToken>());
-        await diagnostics.Received().LogAsync(
+        await diagnostics.Received(1).LogAsync(
             DiagnosticLevel.Warning,
             DiagnosticEventNames.CatchOfflineSaveCompleted,
             "Catch offline save completed.",

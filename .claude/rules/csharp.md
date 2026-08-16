@@ -109,6 +109,7 @@ name must match the type name**.
 | `Enums/` | `Enum` | Shared or Domain | `CatchMethodEnum` |
 | `Constants/` | `Constants` | Shared | `CultureNames` stays until converted to `CultureConstants` |
 | `Args/` | `Args` | `FishingLogBook.Application/Args/` | `FilterCatchesArgs` |
+| `Mappings/` | `MappingRegistration` | `FishingLogBook.Application/Common/Mappings/` | `UserMappingRegistration` |
 
 **Enums:** do not use `Type` or other suffixes in `Enums/` — use `Enum` only.
 
@@ -168,9 +169,11 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 - `ServiceCollectionExtensions` exposes `AddFishingLogBook(IConfiguration)`, which composes
   `AddFishingLogBookApplication()` and `AddFishingLogBookInfrastructure(IConfiguration)`.
 - `AddFishingLogBookApplication` registers MediatR (scan Application),
-  `AddValidatorsFromAssembly`, `ValidationBehaviour<,>`, Mapster mappings, and
-  application `I*Service` implementations. Register new repositories in
-  `AddFishingLogBookInfrastructure`. Do not register individual handlers or validators.
+  `AddValidatorsFromAssembly`, `ValidationBehaviour<,>`, Mapster
+  (`TypeAdapterConfig.GlobalSettings.Scan` + `IMapper` singleton, same as rah-portal),
+  and application `I*Service` implementations. Register new repositories in
+  `AddFishingLogBookInfrastructure`. Do not register individual handlers, validators,
+  or `IRegister` types.
 - The Blazor host has its own composition method: `AddFishingLogBookWeb` in
   `FishingLogBook.Web`. Register new Web client services there, not only in `Program.cs`.
 
