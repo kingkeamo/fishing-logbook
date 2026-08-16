@@ -21,7 +21,7 @@ paths:
 | `FishingLogBook.Db.Migrations` | DbUp SQL scripts + migration engine — see **`database.md`**. |
 | `FishingLogBook.Db.Migrations.App` | Console migration runner — see **`database.md`**. |
 | `FishingLogBook.Api` | ASP.NET Core minimal API host; thin endpoint mappings. |
-| `FishingLogBook.Web` | Blazor WebAssembly PWA — see **`blazor.md`**. |
+| `FishingLogBook.Web` | Blazor WebAssembly PWA — **feature-first**. See **`blazor.md`**. |
 
 **Dependency direction (do not violate):**
 
@@ -115,6 +115,24 @@ name must match the type name**.
 **DTO properties** may drop the `Enum` suffix when the meaning is clear (e.g. property
 `Method` of type `CatchMethodEnum`).
 
+## Web production C# (`FishingLogBook.Web`)
+
+Folder placement, Razor three-file structure, and feature ownership are in **`blazor.md`**.
+Summary of naming that applies to Web C#:
+
+- Feature-specific types live in `Features/<Feature>/`, including models in
+  `Features/<Feature>/Models/`.
+- Do not create global dumping-ground `Models`, `Services`, `Offline`, or `Components`
+  folders for feature-specific code.
+- Role suffixes: `Model`, `Service`, `Client`, `Store`, `Synchroniser`, `Request`,
+  `Response`, `Dto`, `Validator`, `Mapper`, `Provider`, `Factory`, `Repository`,
+  `Options`/`Config`.
+- Interfaces: `I<Name><Role>` (e.g. `ICatchStore`, `ILocationService`).
+- Razor components keep natural UI names (`CatchLog`) — no Model/Service suffix.
+- Before adding a file: decide owning feature, architectural role, folder, and name.
+
+Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
+
 ## Domain layer (`FishingLogBook.Domain`)
 
 - POCO entities only. No dependencies on other projects, no infrastructure concerns.
@@ -177,5 +195,7 @@ name must match the type name**.
 
 ## Before writing a new class
 
-Read at least **5 existing classes of the same type** (endpoint mapping, command/query
-file, repository, contract) before adding a new one, and match the established pattern.
+For Web types, first decide the owning feature, architectural role, folder, and name
+(see **`blazor.md`**). For server-side types, read at least **5 existing classes of the
+same type** (endpoint mapping, command/query file, repository, contract) before adding a
+new one, and match the established pattern.
