@@ -37,7 +37,7 @@ When asked to plan work:
 When asked to implement a GitHub issue:
 
 1. Read the complete GitHub issue.
-2. Create a branch from `main` using the prefixes in **`git-commits.md`**: bugs are `fix/<n>-…`, urgent production patches are `hotfix/<n>-…`, everything else is `feature/<n>-…`.
+2. Fetch latest `origin/main`, then create a branch from **`origin/main`** (not local `main`) using the prefixes in **`git-commits.md`**: bugs are `fix/<n>-…`, urgent production patches are `hotfix/<n>-…`, everything else is `feature/<n>-…`.
 3. Read every Requirements, Architecture and BUILD section referenced by the issue.
 4. Do not expand scope beyond the issue.
 5. Convert each Acceptance Criterion into one or more automated tests where practical.
