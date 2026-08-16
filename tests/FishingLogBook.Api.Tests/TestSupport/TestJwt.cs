@@ -12,7 +12,8 @@ public static class TestJwt
     public const string ClientId = "test-pwa-client";
     public const string Subject = "test-subject";
 
-    // FishingLogBook API contract requires email; default Cognito access tokens may omit it.
+    // FishingLogBook API contract requires email. Cognito access tokens include it via
+    // the Pre Token Generation Lambda (V2_0) after a reviewed Terraform apply.
     public const string Email = "tester@example.test";
 
     public static readonly RsaSecurityKey SigningKey = CreateSigningKey();

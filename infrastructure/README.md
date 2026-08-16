@@ -82,6 +82,7 @@ Commit the resulting `.terraform.lock.hcl` in each environment directory.
 |---|---|---|
 | Cloudflare Pages + R2 | `cloudflare/cloudflare` | `CLOUDFLARE_API_TOKEN` |
 | Amazon Cognito | `hashicorp/aws` | standard AWS credentials / profile |
+| Lambda zip helper | `hashicorp/archive` | none |
 | Neon PostgreSQL | `kislerdm/neon` | `NEON_API_KEY` |
 | Grafana Cloud | `grafana/grafana` | `GRAFANA_CLOUD_ACCESS_POLICY_TOKEN` |
 | Fly.io API | **flyctl, not Terraform** | `flyctl auth` / `FLY_API_TOKEN` |
@@ -225,7 +226,10 @@ Do not apply Grafana in prod until you want a separate Loki write token for prod
 
 Cognito is the only AWS application service this project uses. Terraform owns the user
 pool, resource server, public PWA app client (`generate_secret = false`), hosted-UI
-domain, and managed-login branding. There is no client secret to output or store.
+domain, managed-login branding, and a Pre Token Generation Lambda (event version V2_0)
+that copies the verified email user attribute onto the **access** token. Cognito access
+tokens omit email by default; ID tokens are rejected by the API. There is no client
+secret to output or store. The Lambda does not log PII. JWT validation is unchanged.
 
 The PWA uses Authorization Code + PKCE S256 via
 `Microsoft.AspNetCore.Components.WebAssembly.Authentication`. FishingLogBook does not
@@ -246,9 +250,12 @@ Also enabled: token revocation, refresh rotation, `prevent_user_existence_errors
 Password policy: minimum 12 characters, upper + lower + number required, symbols not
 required. Length over extra complexity.
 
-**Do not apply until you have reviewed `terraform plan`.** Expected new resources in
-Dev: user pool, resource server, public PWA app client, user-pool domain, managed-login
-branding (5). Abort if the plan shows destroy/replace of Neon, R2, Pages, or Grafana.
+**Do not apply until you have reviewed `terraform plan`.** For an existing Dev user
+pool, expect to **add** the Pre Token Generation Lambda, IAM role, log-group (7-day
+retention), basic-execution attachment, and invoke permission, and to **update** the
+user pool `lambda_config` in place. Abort if the plan shows replace/destroy of the
+user pool, Neon, R2, Pages, or Grafana. Tokens include Email only after this apply.
+
 Prod must not be applied until real production callback/logout HTTPS URLs exist.
 
 After a reviewed apply, copy **public** outputs:

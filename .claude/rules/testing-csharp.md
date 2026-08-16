@@ -460,11 +460,11 @@ Mapper = new Mapper(config);
 Builders such as `TestJwt` must represent the **application token contract**, not
 whatever an external provider emits by default.
 
-`TestJwt.Email` is present because the FishingLogBook API currently requires a
-trusted authenticated `email` claim in addition to `sub`. That is an application
-contract. It does **not** mean default Cognito access tokens universally contain
-Email. Aligning deployed Cognito tokens with this contract is a separate
-authentication follow-up; do not imply that Cognito always supplies Email.
+`TestJwt.Email` is present because the FishingLogBook API requires a trusted
+authenticated `email` claim in addition to `sub`. Cognito access tokens include
+that claim via a Pre Token Generation Lambda (event version V2_0) after a reviewed
+Terraform apply. `TestJwt` still represents the application contract, not a raw
+Cognito default token.
 
 ## Database-backed infrastructure tests
 

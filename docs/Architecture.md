@@ -58,8 +58,10 @@ handler, `ValidatedResponse`, validator). The API translates a validated access 
 into `Provider`, `Subject`, and authenticated `Email` and sends
 `ResolveCurrentUserCommand`. Email is account data, not the identity lookup key.
 The FishingLogBook API requires that trusted `email` claim on the access token together
-with `sub`. That is an application contract; default Cognito access tokens do not
-universally include Email. Aligning Cognito token issuance is a separate follow-up.
+with `sub`. Cognito access tokens include Email via a Pre Token Generation Lambda
+(event version V2_0) that copies the verified email user attribute. JWT validation
+is unchanged. Tokens include Email only after that Lambda is applied in the
+environment.
 
 Handlers call application services; services call repositories. Repositories own SQL
 transactions.
