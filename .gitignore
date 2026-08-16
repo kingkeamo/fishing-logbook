@@ -31,6 +31,7 @@ secrets.json
 # Terraform — never commit state, secrets, plans, or local overrides.
 # .terraform.lock.hcl IS committed (provider version lock).
 **/.terraform/
+infrastructure/terraform/modules/cognito/.build/
 *.tfstate
 *.tfstate.*
 .terraform.tfstate.lock.info

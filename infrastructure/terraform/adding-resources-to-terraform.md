@@ -3,8 +3,9 @@
 All Terraform lives under `infrastructure/terraform/`. Fly is still a **skeleton**.
 Neon (`neon_project`), R2 (`cloudflare_r2_bucket` photos), Pages
 (`cloudflare_pages_project`), Grafana Cloud Loki write access, and Cognito (user pool,
-public PWA client, hosted-UI domain, API resource server) are defined. Add further
-resources deliberately, one at a time, and only when explicitly approved. Read
+public PWA client, hosted-UI domain, API resource server, Pre Token Generation Lambda)
+are defined. Add further resources deliberately, one at a time, and only when explicitly
+approved. Read
 `.claude/rules/terraform.md` first.
 
 ## Step 1 — Pick the module

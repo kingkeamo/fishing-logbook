@@ -97,3 +97,19 @@ jobs:
 
       - name: Terraform validate
         run: terraform validate
+
+  cognito-lambda-test:
+    name: Cognito pre-token Lambda tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Test pre-token generation Lambda
+        run: node --test
+        working-directory: infrastructure/terraform/modules/cognito/lambda

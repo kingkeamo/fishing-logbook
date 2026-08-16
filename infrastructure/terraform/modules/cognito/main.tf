@@ -1,9 +1,12 @@
 # Amazon Cognito user pool, resource server, public PWA app client, hosted-UI domain,
-# and managed-login branding for one environment.
+# managed-login branding, and Pre Token Generation Lambda (V2_0) for one environment.
 #
 # The PWA is a public browser client: generate_secret is false. OAuth is Authorization
 # Code only (no implicit, no client_credentials). PKCE S256 is enforced by the Blazor
 # OIDC library against this public client.
+#
+# Access tokens omit email by default. The V2_0 Pre Token Generation trigger copies the
+# verified email user attribute onto the access token. Essentials-tier pools support V2_0.
 #
 # Destroying the user pool permanently deletes registered users. prevent_destroy and
 # deletion_protection are both set.
@@ -57,6 +60,17 @@ resource "aws_cognito_user_pool" "this" {
 
   verification_message_template {
     default_email_option = "CONFIRM_WITH_CODE"
+  }
+
+  # pre_token_generation and pre_token_generation_config must use the same ARN.
+  # V2_0 is required so the trigger can add claims to access tokens (V1_0 is ID-token only).
+  lambda_config {
+    pre_token_generation = aws_lambda_function.pre_token_generation.arn
+
+    pre_token_generation_config {
+      lambda_arn     = aws_lambda_function.pre_token_generation.arn
+      lambda_version = "V2_0"
+    }
   }
 
   tags = {

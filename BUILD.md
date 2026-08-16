@@ -728,7 +728,9 @@ Blazor assemblies
 
 Terraform defines Amazon Cognito in `infrastructure/terraform/modules/cognito/`. Each
 environment has its own user pool, resource server, public PWA app client, hosted-UI
-domain, and managed-login branding. Apply is **manual only** — see `infrastructure/README.md`.
+domain, managed-login branding, and a Pre Token Generation Lambda that adds the
+verified email claim to access tokens. Apply is **manual only** — see
+`infrastructure/README.md`.
 
 ## Flow
 
@@ -796,6 +798,30 @@ The Cognito resource-server identifier is the same URL as `Auth:ApiResource`
 with RFC 8707 resource binding when those scopes belong to that URL identifier.
 The resulting API scope is `https://fishing-logbook-dev-api.fly.dev/access`.
 
+## Access token Email claim
+
+Cognito access tokens omit `email` by default. ID tokens include it when the `email`
+scope is requested; the API rejects ID tokens (`token_use` must be `access`).
+
+The supported mechanism is a Cognito **Pre Token Generation** Lambda trigger using
+event version **V2_0**. V1_0 customizes ID tokens only. V2_0 can add claims to
+**access** tokens and is available on this project's Essentials-tier user pool.
+`email` is not a forbidden override claim (`sub`, `token_use`, `aud`, `iss`, and
+similar remain untouched).
+
+The Lambda copies `event.request.userAttributes.email` onto
+`response.claimsAndScopeOverrideDetails.accessTokenGeneration.claimsToAddOrOverride.email`
+only when that email is present and `email_verified` is true. Missing or unverified
+email leaves the token unchanged; `CurrentUserMiddleware` then returns 401. The
+Lambda does not log email or other PII. It does not call `/userinfo`.
+
+JWT validation is unchanged: signature, issuer, lifetime, `aud`, `token_use==access`,
+`client_id`, and API scope still apply. After those checks, the API still requires
+the trusted `email` claim together with `sub`.
+
+Tokens include Email only after a reviewed Terraform apply of this Lambda in that
+environment.
+
 ## Public configuration after a reviewed apply
 
 Copy Terraform outputs into (these values are public identifiers, not secrets):
@@ -858,11 +884,10 @@ Email is never used to find a User, resolve a UserId, merge users, or prove
 ownership. Two different Provider+Subject identities may share the same email and
 remain different internal Users. Changing email does not change UserId.
 
-The FishingLogBook API currently requires the trusted `email` claim on the access
-token in addition to `sub`. That is an application contract, not a statement that
-default Cognito access tokens contain Email. `TestJwt` includes Email because tests
-must satisfy that API contract. Aligning deployed Cognito tokens is a separate
-authentication follow-up (GitHub issue for Cognito access-token Email).
+The FishingLogBook API requires the trusted `email` claim on the access token in
+addition to `sub`. Cognito includes that claim on access tokens via the Pre Token
+Generation Lambda (event version V2_0) described in §25. `TestJwt` includes Email
+because tests represent that same application contract. JWT validation is unchanged.
 
 `UNIQUE (Provider, Subject)` is the lookup key. Username, display name, and
 device id are not identity keys.

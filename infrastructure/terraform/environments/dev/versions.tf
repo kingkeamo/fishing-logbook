@@ -19,6 +19,10 @@ terraform {
       source  = "grafana/grafana"
       version = "~> 4.45"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.8"
+    }
   }
 }
 
@@ -38,6 +42,9 @@ provider "neon" {}
 # Grafana Cloud. The management token is read from GRAFANA_CLOUD_ACCESS_POLICY_TOKEN.
 # Required only when grafana_cloud_stack_slug is set. Never commit the token.
 provider "grafana" {}
+
+# Zip helper for the Cognito Pre Token Generation Lambda. No credentials.
+provider "archive" {}
 
 # NOTE: Fly.io is intentionally NOT managed by a Terraform provider. The official
 # provider is archived/unmaintained and the community alternative is immature, so Fly

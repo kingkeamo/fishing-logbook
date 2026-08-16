@@ -56,7 +56,8 @@ Never attempt to solve an application problem by provisioning additional infrast
   currently defines `neon_project`; R2 defines `cloudflare_r2_bucket` (photos); Pages
   defines `cloudflare_pages_project`; Grafana Cloud looks up an existing stack and
   defines a Loki `logs:write` access policy. Cognito defines the user pool, resource
-  server, public PWA app client, hosted-UI domain, and managed-login branding. Fly
+  server, public PWA app client, hosted-UI domain, managed-login branding, and a
+  Pre Token Generation Lambda that adds verified Email to access tokens. Fly
   remains a skeleton.
 
 ## Stack (who does what)
