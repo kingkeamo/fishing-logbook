@@ -109,6 +109,7 @@ name must match the type name**.
 | `Enums/` | `Enum` | Shared or Domain | `CatchMethodEnum` |
 | `Constants/` | `Constants` | Shared | `CultureNames` stays until converted to `CultureConstants` |
 | `Args/` | `Args` | `FishingLogBook.Application/Args/` | `FilterCatchesArgs` |
+| `Mappings/` | `MappingRegistration` | `FishingLogBook.Application/Common/Mappings/` | `UserMappingRegistration` |
 
 **Enums:** do not use `Type` or other suffixes in `Enums/` — use `Enum` only.
 
@@ -136,6 +137,11 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 ## Domain layer (`FishingLogBook.Domain`)
 
 - POCO entities only. No dependencies on other projects, no infrastructure concerns.
+- Business concepts with identity/state are Domain entities/models (`User`,
+  `UserIdentity`).
+- `ICurrentUser` is **not** a Domain type. It is a request-scoped Application
+  contract (`Application/Contracts/Services`) that indicates which Domain `User`
+  is authenticated for this request. Do not move it into Domain.
 
 ## Shared layer (`FishingLogBook.Shared`)
 
@@ -150,14 +156,16 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
   `ValidatedResponse`, FluentValidation, Mapster, and the handler → `I*Service` →
   repository chain are in **`cqrs.md`**.
 - Contracts: `Application/Contracts/Repositories/I*Repository` and
-  `Application/Contracts/Services/I*Service`. Implementations of services live in
-  `Application/Services/`; repositories in Infrastructure.
+  `Application/Contracts/Services/I*Service`. Feature-owned service
+  implementations live in `Application/{Feature}/Services/` (for example
+  `Users/Services/UserIdentityService`). Only a genuinely cross-feature service
+  may live outside a feature folder. Repositories live in Infrastructure.
 - This layer contains no DI registration of its own (see the composition root below).
 
 ## Infrastructure layer (`FishingLogBook.Infrastructure`)
 
 - Dapper repositories in `Persistence/`; connection via `IDbConnectionFactory`.
-- DbUp migrator in `Migrations/`.
+- DbUp migrations live in `FishingLogBook.Db.Migrations`, not in Infrastructure.
 - Parameterised SQL only — never string-concatenate values.
 - This layer contains no DI registration of its own (see the composition root below).
 
@@ -168,9 +176,11 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 - `ServiceCollectionExtensions` exposes `AddFishingLogBook(IConfiguration)`, which composes
   `AddFishingLogBookApplication()` and `AddFishingLogBookInfrastructure(IConfiguration)`.
 - `AddFishingLogBookApplication` registers MediatR (scan Application),
-  `AddValidatorsFromAssembly`, `ValidationBehaviour<,>`, Mapster mappings, and
-  application `I*Service` implementations. Register new repositories in
-  `AddFishingLogBookInfrastructure`. Do not register individual handlers or validators.
+  `AddValidatorsFromAssembly`, `ValidationBehaviour<,>`, Mapster
+  (`TypeAdapterConfig.GlobalSettings.Scan` + `IMapper` singleton, same as rah-portal),
+  and application `I*Service` implementations. Register new repositories in
+  `AddFishingLogBookInfrastructure`. Do not register individual handlers, validators,
+  or `IRegister` types.
 - The Blazor host has its own composition method: `AddFishingLogBookWeb` in
   `FishingLogBook.Web`. Register new Web client services there, not only in `Program.cs`.
 

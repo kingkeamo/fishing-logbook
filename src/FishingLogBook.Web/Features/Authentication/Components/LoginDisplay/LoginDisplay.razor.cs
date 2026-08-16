@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
@@ -13,6 +15,9 @@ public partial class LoginDisplay : ComponentBase
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
+    [Inject]
+    private ISignedInUserDisplayService SignedInUserDisplay { get; set; } = default!;
+
     private void BeginSignIn()
     {
         Navigation.NavigateToLogin("authentication/login");
@@ -21,5 +26,10 @@ public partial class LoginDisplay : ComponentBase
     private void BeginSignOut()
     {
         Navigation.NavigateToLogout("authentication/logout");
+    }
+
+    private string? GetEmail(ClaimsPrincipal user)
+    {
+        return SignedInUserDisplay.GetEmail(user);
     }
 }

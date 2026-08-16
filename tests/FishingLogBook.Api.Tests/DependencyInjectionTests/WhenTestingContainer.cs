@@ -1,7 +1,9 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Contracts;
+using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.SystemStatus;
 using FishingLogBook.Application.TestCatches;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FishingLogBook.Api.Tests.DependencyInjectionTests;
@@ -43,11 +45,27 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         // Assert
         injectedTypes.Should().Contain(typeof(SystemStatusService));
         injectedTypes.Should().Contain(typeof(TestCatchService));
+        injectedTypes.Should().Contain(typeof(ICurrentUser));
         resolve.Should().NotThrow();
     }
 
     [Fact]
-    public void ItShouldResolveDbConnectionFactory_WhenTestHostProvidesConnectionString()
+    public void ItShouldResolveTheCqrsPipeline()
+    {
+        // Arrange
+        using var scope = Factory.Services.CreateScope();
+
+        // Act
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var userIdentityService = scope.ServiceProvider.GetRequiredService<IUserIdentityService>();
+
+        // Assert
+        mediator.Should().NotBeNull();
+        userIdentityService.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ItShouldResolveDbConnectionFactoryWhenTestHostProvidesConnectionString()
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();

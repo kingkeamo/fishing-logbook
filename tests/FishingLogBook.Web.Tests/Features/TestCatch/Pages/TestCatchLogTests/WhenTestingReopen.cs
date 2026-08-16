@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingReopen : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldShowSavedCatch_WhenPageIsCreatedAgain()
+    public async Task ItShouldShowSavedCatchWhenPageIsCreatedAgain()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -38,12 +38,12 @@ public class WhenTestingReopen : BaseTestCatchLogTest
             cut.Find($"#test-catch-sync-status-{existing.Id}").TextContent.Should()
                 .Contain("Saved locally — not synchronised");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldShowFrenchLocalStatus_WhenUiCultureIsFrench()
+    public async Task ItShouldShowFrenchLocalStatusWhenUiCultureIsFrench()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
@@ -67,6 +67,6 @@ public class WhenTestingReopen : BaseTestCatchLogTest
             cut.Find($"#test-catch-sync-status-{existing.Id}").TextContent.Should()
                 .Contain("Enregistrée localement — pas encore synchronisée");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
     }
 }

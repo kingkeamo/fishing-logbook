@@ -130,8 +130,32 @@ null). They still must not drop the source column.
 - Return **FluentResults** `Result`, `Result<T>` — not exceptions for expected failures
   (not found, constraint, connectivity wrapped as `Fail`). Do not leak Npgsql/Dapper
   types across the boundary.
-- Filter/query methods accept `*Args` types from `Application/Args/` when they take more
-  than one or two parameters.
+- SQL transactions (begin/commit/rollback) and unique-constraint recovery live here,
+  not in CQRS handlers. Handlers orchestrate; they do not hold `NpgsqlTransaction`.
+- Filter/query/lookup methods accept `*Args` types from `Application/Args/`.
+- Do not create a partially initialised Domain entity merely to transport
+  lookup/filter criteria.
+
+GOOD:
+
+```csharp
+CreateAsync(User user, UserIdentity identity, cancellationToken);
+FindUserIdAsync(FindUserIdentityArgs args, cancellationToken);
+```
+
+BAD:
+
+```csharp
+CreateAsync(Guid userId, Guid identityId, string provider, string subject, string email, ...);
+FindUserIdAsync(new UserIdentity { Provider = provider, Subject = subject }, ...);
+```
+
+Repository create/update operations accept meaningful Domain concepts. Infrastructure
+may decompose those objects into SQL parameters internally.
+
+`User` is the FishingLogBook business entity. `ICurrentUser` is the request-scoped
+Application indication of which User is authenticated. Repositories persist `User` /
+`UserIdentity`; they do not take `ICurrentUser`.
 
 ## Connection & configuration
 
@@ -140,6 +164,34 @@ null). They still must not drop the source column.
 - Never commit live database credentials. Never log connection strings.
 - `IDbConnectionFactory` is registered in Infrastructure DI. If no connection string is
   configured, the factory throws a clear error rather than returning a fake connection.
+
+## Live-database repository tests
+
+API tests mock repositories and must not require live PostgreSQL.
+
+When uniqueness, transactions, or concurrency must be proven against a real database,
+put those tests in `tests/FishingLogBook.Infrastructure.Tests/Integration/`:
+
+```text
+FishingLogBook.Infrastructure.Tests/
+    {Sut}Tests/                         → unit tests (no live database)
+    Integration/
+        TestSupport/
+            PostgresFixture.cs
+        {Feature}/
+            {Repository}Tests/
+```
+
+Example: `Integration/Users/UserIdentityRepositoryTests/`. Use the word **Integration**,
+not Sandbox.
+
+These tests run in normal GitHub Actions CI via Testcontainers PostgreSQL on the
+hosted Ubuntu runner. They do **not** use Neon, a shared CI database, or database
+connection secrets. Do not add a workflow Postgres service unless a later issue
+actually requires one.
+
+Do not place live-database repository tests next to unit tests at the project root.
+Folder and naming conventions are in **`testing-csharp.md`**.
 
 ## Before writing
 

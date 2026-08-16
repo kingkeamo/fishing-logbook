@@ -1,18 +1,17 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Diagnostics;
-using FishingLogBook.Domain.Config;
 using FishingLogBook.Shared.Dtos;
-using Microsoft.Extensions.Options;
+using NSubstitute;
 
-namespace FishingLogBook.Application.Tests.DiagnosticLogServiceTests;
+namespace FishingLogBook.Application.Tests.Diagnostics.DiagnosticLogServiceTests;
 
-public class WhenTestingAccept
+public class WhenTestingAccept : BaseDiagnosticLogServiceTest
 {
     [Fact]
     public async Task ItShouldRejectOversizedBatches()
     {
         // Arrange
-        var sut = CreateSut(out _);
+        var sut = CreateSut(new RecordingLogger<DiagnosticLogService>());
         var batch = new ClientDiagnosticBatchDto
         {
             Events = Enumerable.Range(0, 51).Select(_ => ValidEvent()).ToArray()
@@ -23,6 +22,7 @@ public class WhenTestingAccept
 
         // Assert
         result.IsValid.Should().BeFalse();
+        MockDeduplicator.DidNotReceive().TryAccept(Arg.Any<Guid>());
     }
 
     [Fact]
@@ -31,18 +31,16 @@ public class WhenTestingAccept
         // Arrange
         var logger = new RecordingLogger<DiagnosticLogService>();
         var sut = CreateSut(logger);
+        var diagnostic = ValidEvent(metadata: new Dictionary<string, string>
+        {
+            ["notes"] = "secret catch notes",
+            ["latitude"] = "53.1",
+            ["elapsedMilliseconds"] = "12",
+            ["photograph"] = "base64"
+        });
         var batch = new ClientDiagnosticBatchDto
         {
-            Events =
-            [
-                ValidEvent(metadata: new Dictionary<string, string>
-                {
-                    ["notes"] = "secret catch notes",
-                    ["latitude"] = "53.1",
-                    ["elapsedMilliseconds"] = "12",
-                    ["photograph"] = "base64"
-                })
-            ]
+            Events = [diagnostic]
         };
 
         // Act
@@ -58,14 +56,17 @@ public class WhenTestingAccept
             scope.Any(pair => pair.Key.Contains("latitude", StringComparison.OrdinalIgnoreCase)));
         logger.Scopes.Should().NotContain(scope =>
             scope.Any(pair => pair.Key.Contains("photograph", StringComparison.OrdinalIgnoreCase)));
+        MockDeduplicator.Received(1).TryAccept(diagnostic.Id);
     }
 
     [Fact]
     public async Task ItShouldIgnoreDuplicateEventIds()
     {
         // Arrange
-        var sut = CreateSut(out var logger);
+        var logger = new RecordingLogger<DiagnosticLogService>();
+        var sut = CreateSut(logger);
         var diagnostic = ValidEvent();
+        MockDeduplicator.TryAccept(diagnostic.Id).Returns(true, false);
         var batch = new ClientDiagnosticBatchDto { Events = [diagnostic] };
 
         // Act
@@ -74,6 +75,7 @@ public class WhenTestingAccept
 
         // Assert
         logger.Messages.Should().ContainSingle();
+        MockDeduplicator.Received(2).TryAccept(diagnostic.Id);
     }
 
     [Fact]
@@ -83,9 +85,10 @@ public class WhenTestingAccept
         var logger = new RecordingLogger<DiagnosticLogService>();
         var sut = CreateSut(logger);
         var correlationId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var diagnostic = ValidEvent(correlationId: correlationId);
         var batch = new ClientDiagnosticBatchDto
         {
-            Events = [ValidEvent(correlationId: correlationId)]
+            Events = [diagnostic]
         };
 
         // Act
@@ -94,20 +97,7 @@ public class WhenTestingAccept
         // Assert
         logger.Scopes.Should().Contain(scope =>
             scope.Any(pair => pair.Key == "CorrelationId" && Equals(pair.Value, correlationId)));
-    }
-
-    private static DiagnosticLogService CreateSut(out RecordingLogger<DiagnosticLogService> logger)
-    {
-        logger = new RecordingLogger<DiagnosticLogService>();
-        return CreateSut(logger);
-    }
-
-    private static DiagnosticLogService CreateSut(RecordingLogger<DiagnosticLogService> logger)
-    {
-        return new DiagnosticLogService(
-            Options.Create(new DiagnosticsConfig { MaxBatchSize = 50 }),
-            new MemoryDeduplicator(),
-            logger);
+        MockDeduplicator.Received(1).TryAccept(diagnostic.Id);
     }
 
     private static ClientDiagnosticEventDto ValidEvent(

@@ -12,6 +12,9 @@ public static class TestJwt
     public const string ClientId = "test-pwa-client";
     public const string Subject = "test-subject";
 
+    // FishingLogBook API contract requires email; default Cognito access tokens may omit it.
+    public const string Email = "tester@example.test";
+
     public static readonly RsaSecurityKey SigningKey = CreateSigningKey();
 
     public static string CreateAccessToken(
@@ -20,11 +23,31 @@ public static class TestJwt
         string? tokenUse = null,
         string? scope = null,
         string? audience = null,
+        string? subject = null,
+        string? email = null,
         bool includeAudience = true,
+        bool includeSubject = true,
+        bool includeEmail = true,
         DateTime? expires = null)
     {
         var expiresAt = expires ?? DateTime.UtcNow.AddMinutes(15);
         var notBefore = expiresAt.AddMinutes(-30);
+        var claims = new Dictionary<string, object>
+        {
+            ["token_use"] = tokenUse ?? AuthConstants.TokenUseAccess,
+            ["client_id"] = clientId ?? ClientId,
+            ["scope"] = scope ?? $"openid profile email {TestAuthConstants.ApiScope}"
+        };
+        if (includeSubject)
+        {
+            claims["sub"] = subject ?? Subject;
+        }
+
+        if (includeEmail)
+        {
+            claims["email"] = email ?? Email;
+        }
+
         var descriptor = new SecurityTokenDescriptor
         {
             Issuer = issuer ?? Issuer,
@@ -32,13 +55,7 @@ public static class TestJwt
             NotBefore = notBefore,
             Expires = expiresAt,
             SigningCredentials = new SigningCredentials(SigningKey, SecurityAlgorithms.RsaSha256),
-            Claims = new Dictionary<string, object>
-            {
-                ["sub"] = Subject,
-                ["token_use"] = tokenUse ?? AuthConstants.TokenUseAccess,
-                ["client_id"] = clientId ?? ClientId,
-                ["scope"] = scope ?? $"openid profile email {TestAuthConstants.ApiScope}"
-            }
+            Claims = claims
         };
 
         return new JsonWebTokenHandler().CreateToken(descriptor);

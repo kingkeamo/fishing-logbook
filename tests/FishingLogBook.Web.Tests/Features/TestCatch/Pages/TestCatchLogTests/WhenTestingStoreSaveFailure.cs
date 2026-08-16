@@ -39,7 +39,12 @@ public class WhenTestingStoreSaveFailure : BaseTestCatchLogTest
             cut.Find("#test-catch-species").GetAttribute("value").Should().Be("Pike");
             cut.Find("#test-catch-notes").GetAttribute("value").Should().Contain("Near the reeds");
         });
-        await store.Received(1).SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
+        await store.Received(1).SaveAsync(
+            Arg.Is<TestCatchModel>(testCatch =>
+                testCatch.SpeciesName == "Pike" &&
+                testCatch.Notes != null &&
+                testCatch.Notes.Contains("Near the reeds")),
+            Arg.Any<CancellationToken>());
         await photos.DidNotReceive().PutAsync(
             Arg.Any<Guid>(),
             Arg.Any<byte[]>(),

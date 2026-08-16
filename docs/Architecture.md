@@ -53,7 +53,47 @@ FishingLogBook.Db.Migrations         DbUp scripts and engine. Not referenced by 
 
 The Blazor client must not reference Application or Infrastructure. Server implementation assemblies must not ship to the browser.
 
-Internal user identity is a FishingLogBook `UserId`. Cognito subject identifiers are mapped to that user. They are not the primary domain key.
+New Application use cases use MediatR 12.5.0 CQRS: one file per command/query (request,
+handler, `ValidatedResponse`, validator). The API translates a validated access token
+into `Provider`, `Subject`, and authenticated `Email` and sends
+`ResolveCurrentUserCommand`. Email is account data, not the identity lookup key.
+The FishingLogBook API requires that trusted `email` claim on the access token together
+with `sub`. That is an application contract; default Cognito access tokens do not
+universally include Email. Aligning Cognito token issuance is a separate follow-up.
+
+Handlers call application services; services call repositories. Repositories own SQL
+transactions.
+
+Distinguish these identities:
+
+- Authentication: Cognito validates the external identity.
+- External identity: `Provider` + `Subject` (`UserIdentity`).
+- Product identity: FishingLogBook `User.Id`.
+- Account data: `User.Email` (required, mutable, not unique).
+- Request identity: `ICurrentUser` — request-scoped Application indication of which
+  Domain `User` is authenticated. Not a Domain entity.
+- Domain entity: `User`.
+
+After identity resolution, application code uses `ICurrentUser.UserId` (and
+`ICurrentUser.Email` for account data), not Cognito `sub`. Do not pass `HttpContext`,
+`ClaimsPrincipal`, or JWT types into Application.
+
+The PWA presents the authenticated OIDC email claim in the app bar. That is display
+only. Server ownership remains validated access token → Provider + Subject → UserId.
+
+Internal user identity is a FishingLogBook `UserId`. Cognito authenticates the person
+and supplies `sub`; that value is stored only as an external `UserIdentity`
+(`Provider` + `Subject`) and is not the domain key. `UNIQUE (Provider, Subject)` is
+the lookup key. `User.Email` is required account data: mutable, not unique, and never
+used to find, resolve, merge, or prove ownership of users. Two different
+Provider + Subject identities may share the same Email and remain different Users.
+Domain records use internal `UserId`. The first authenticated API interaction creates
+or resolves the mapping and stores Email; later requests reuse that UserId and refresh
+Email when the authenticated claim changes.
+The API derives the current user from the validated access token; it does not trust a
+client-supplied UserId or email. Offline device-generated ids are for synchronisation
+idempotency, not ownership. Future profile work may add FirstName, LastName, and
+DisplayName.
 
 ### Offline client storage
 
@@ -607,6 +647,12 @@ Automatically resize infrastructure
 ```
 
 Cloud infrastructure must already exist before application deployment workflows execute.
+
+Repository database integration tests run in the same GitHub Actions `build-test`
+workflow via Testcontainers PostgreSQL (`postgres:16-alpine` on `ubuntu-latest`).
+They are automated CI tests, not a sandbox. They do **not** use Neon, a shared CI
+database, or database connection secrets. Do not add a workflow database service
+unless a later issue actually requires one.
 
 ---
 

@@ -25,7 +25,7 @@ public class WhenTestingRender : BaseLanguageSwitcherTest
     }
 
     [Fact]
-    public async Task ItShouldShowFrenchLanguageControl_WhenUiCultureIsFrench()
+    public async Task ItShouldShowFrenchLanguageControlWhenUiCultureIsFrench()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
@@ -37,5 +37,6 @@ public class WhenTestingRender : BaseLanguageSwitcherTest
 
         // Assert
         cut.Find("#language-menu-button").GetAttribute("aria-label").Should().Be("Langue");
+        await cultureService.DidNotReceive().SetCultureAsync(Arg.Any<string>());
     }
 }

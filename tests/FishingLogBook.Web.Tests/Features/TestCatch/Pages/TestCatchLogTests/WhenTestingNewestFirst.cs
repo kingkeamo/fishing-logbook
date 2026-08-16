@@ -46,7 +46,7 @@ public class WhenTestingNewestFirst : BaseTestCatchLogTest
             cut.Find($"#test-catch-species-{newer.Id}").TextContent.Should().Contain("Pike");
             cut.Find($"#test-catch-species-{older.Id}").TextContent.Should().Contain("Perch");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 }

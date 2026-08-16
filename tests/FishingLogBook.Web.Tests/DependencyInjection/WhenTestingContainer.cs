@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using FishingLogBook.Tests.Common.TestSupport;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Configuration;
+using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
@@ -87,7 +88,11 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         oidc.ClientId.Should().Be("test-pwa-client");
         typeof(OidcProviderOptions).GetProperty("ClientSecret").Should().BeNull();
         oidc.DefaultScopes.Should().Contain("openid");
+        oidc.DefaultScopes.Should().Contain("profile");
+        oidc.DefaultScopes.Should().Contain("email");
         oidc.DefaultScopes.Should().Contain(TestAuthConstants.ApiScope);
+        scope.ServiceProvider.GetRequiredService<ISignedInUserDisplayService>()
+            .Should().BeOfType<SignedInUserDisplayService>();
     }
 
     [Fact]

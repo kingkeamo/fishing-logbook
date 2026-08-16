@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingLocationStatusHang : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldLoadExistingCatches_WhenLocationStatusNeverCompletes()
+    public async Task ItShouldLoadExistingCatchesWhenLocationStatusNeverCompletes()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -40,7 +40,7 @@ public class WhenTestingLocationStatusHang : BaseTestCatchLogTest
             cut.Find($"#test-catch-item-{existing.Id}").Should().NotBeNull();
             cut.Find($"#test-catch-species-{existing.Id}").TextContent.Should().Contain("Perch");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 }

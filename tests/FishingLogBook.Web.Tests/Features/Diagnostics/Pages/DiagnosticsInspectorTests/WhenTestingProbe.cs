@@ -51,7 +51,7 @@ public class WhenTestingProbe : BaseDiagnosticsInspectorTest
                 .Contain("Retry diagnostic probe");
         });
         await probe.Received(1).RunIsolatedAsync(Arg.Any<CancellationToken>());
-        await store.Received().InspectExistingAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).InspectExistingAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().EnqueueAsync(Arg.Any<DiagnosticEventModel>(), Arg.Any<CancellationToken>());
     }
 }

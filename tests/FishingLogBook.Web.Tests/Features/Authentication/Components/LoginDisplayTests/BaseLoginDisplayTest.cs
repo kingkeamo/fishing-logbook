@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using Bunit;
 using Bunit.TestDoubles;
+using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -9,16 +11,21 @@ namespace FishingLogBook.Web.Tests.Features.Authentication.Components.LoginDispl
 
 public class BaseLoginDisplayTest
 {
-    protected static BunitContext CreateContext(bool isAuthenticated)
+    protected static BunitContext CreateContext(bool isAuthenticated, params Claim[] claims)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
+        context.Services.AddSingleton<ISignedInUserDisplayService, SignedInUserDisplayService>();
         var authorization = context.AddAuthorization();
         if (isAuthenticated)
         {
-            authorization.SetAuthorized("tester@example.test");
+            authorization.SetAuthorized(" ");
+            if (claims.Length > 0)
+            {
+                authorization.SetClaims(claims);
+            }
         }
         else
         {

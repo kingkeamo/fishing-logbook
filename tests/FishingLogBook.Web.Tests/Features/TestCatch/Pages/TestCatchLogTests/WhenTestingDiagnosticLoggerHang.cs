@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingDiagnosticLoggerHang : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldLoadExistingCatches_WhenDiagnosticLoggingNeverCompletes()
+    public async Task ItShouldLoadExistingCatchesWhenDiagnosticLoggingNeverCompletes()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -40,12 +40,12 @@ public class WhenTestingDiagnosticLoggerHang : BaseTestCatchLogTest
             cut.Find($"#test-catch-item-{existing.Id}").Should().NotBeNull();
             cut.Find($"#test-catch-species-{existing.Id}").TextContent.Should().Contain("Roach");
         });
-        await store.Received().GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldSaveTheCatch_WhenDiagnosticLoggingNeverCompletes()
+    public async Task ItShouldSaveTheCatchWhenDiagnosticLoggingNeverCompletes()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

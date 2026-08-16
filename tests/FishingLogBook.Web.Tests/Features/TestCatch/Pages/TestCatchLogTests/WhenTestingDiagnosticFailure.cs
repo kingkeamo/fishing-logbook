@@ -16,7 +16,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingDiagnosticFailure : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldStillSaveTheCatch_WhenDiagnosticLoggingThrows()
+    public async Task ItShouldStillSaveTheCatchWhenDiagnosticLoggingThrows()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -53,10 +53,15 @@ public class WhenTestingDiagnosticFailure : BaseTestCatchLogTest
         // Assert
         cut.WaitForAssertion(() => saved.Should().ContainSingle());
         saved[0].SpeciesName.Should().Be("Pike");
+        await store.Received(1).SaveAsync(
+            Arg.Is<TestCatchModel>(testCatch =>
+                testCatch.SpeciesName == "Pike" &&
+                testCatch.SyncStatus == SyncStatus.SavedLocally),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldReleaseBusyState_WhenLocalReadFails()
+    public async Task ItShouldReleaseBusyStateWhenLocalReadFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -79,6 +84,8 @@ public class WhenTestingDiagnosticFailure : BaseTestCatchLogTest
             cut.Find("#save-test-catch-button").HasAttribute("disabled").Should().BeFalse();
             cut.Find("#test-catch-load-error").Should().NotBeNull();
         });
-        await store.Received().SaveAsync(Arg.Any<TestCatchModel>(), Arg.Any<CancellationToken>());
+        await store.Received(1).SaveAsync(
+            Arg.Is<TestCatchModel>(testCatch => testCatch.SpeciesName == "Pike"),
+            Arg.Any<CancellationToken>());
     }
 }

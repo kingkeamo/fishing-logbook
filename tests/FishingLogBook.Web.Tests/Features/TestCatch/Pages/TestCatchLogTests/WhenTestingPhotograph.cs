@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingPhotograph : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldShowPhotograph_WhenReopened()
+    public async Task ItShouldShowPhotographWhenReopened()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -45,10 +45,12 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
             cut.Find($"#test-catch-photo-status-{existing.Id}").TextContent.Should()
                 .Contain("Photograph saved locally — not uploaded");
         });
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        await photos.Received(2).GetAsync(existing.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldShowPhotographRetry_WhenUploadFailed()
+    public async Task ItShouldShowPhotographRetryWhenUploadFailed()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -82,10 +84,11 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
             .Contain("Photograph upload failed");
         cut.FindAll($"#retry-test-catch-{existing.Id}").Should().BeEmpty();
         await synchroniser.Received(1).RetryPhotographAsync(existing.Id, Arg.Any<CancellationToken>());
+        await photos.Received(3).GetAsync(existing.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldShowRemotePhotograph_WhenOpenedOnAnotherSession()
+    public async Task ItShouldShowRemotePhotographWhenOpenedOnAnotherSession()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -119,5 +122,7 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
             cut.Find($"#test-catch-photo-status-{existing.Id}").TextContent.Should()
                 .Contain("Photograph uploaded");
         });
+        await store.Received(2).GetAllAsync(Arg.Any<CancellationToken>());
+        await photos.Received(2).GetAsync(existing.Id, Arg.Any<CancellationToken>());
     }
 }

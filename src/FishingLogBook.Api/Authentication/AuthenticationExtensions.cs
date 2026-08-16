@@ -87,6 +87,12 @@ public static class AuthenticationExtensions
             return Task.CompletedTask;
         }
 
+        if (string.IsNullOrWhiteSpace(principal.FindFirst("sub")?.Value))
+        {
+            context.Fail("Missing subject.");
+            return Task.CompletedTask;
+        }
+
         return Task.CompletedTask;
     }
 

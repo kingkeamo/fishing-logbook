@@ -58,7 +58,7 @@ FishingLogBook.Web.Tests/
 ```
 
 This repository keeps the `WhenTesting` convention, so a leaf folder is `{Thing}Tests/`
-containing `Base{Thing}Test` plus `WhenTesting{Behaviour}` files — not a single flattened
+containing `Base{Thing}Test` plus `WhenTesting{Method}` files — not a single flattened
 `CatchLogTests.cs` unless the suite is truly one class.
 
 Use `{Thing}Tests` as the **leaf folder name** (not `{Thing}`) so the test namespace does
@@ -90,8 +90,16 @@ A test that only checks "renders without error" is not useful. Assert observable
 that would break if the UI logic changed:
 
 - rendered markup / text content / element presence (`Find`, `TextContent`),
-- mocked client services: `Received()` / `DidNotReceive()` with `Arg.Is<>` when the
-  component passes specific values.
+- mocked client services: `Received(n)` / `DidNotReceive()` with `Arg.Is<>` when the
+  component passes specific values. `Received()` without a count is forbidden.
+
+A component test that triggers a service/client operation must assert **both**:
+
+1. the resulting rendered/UI behaviour, **and**
+2. the exact client/service call made by the component.
+
+Do not consider a Web test sufficient merely because the markup looks correct if the
+component's responsibility includes calling a dependency.
 
 ## DI container tests
 
@@ -131,8 +139,8 @@ public class BaseSystemStatusTest
     }
 }
 
-// Features/SystemStatus/Pages/SystemStatusTests/WhenTestingHealthyRender.cs
-public class WhenTestingHealthyRender : BaseSystemStatusTest
+// Features/SystemStatus/Pages/SystemStatusTests/WhenTestingRender.cs
+public class WhenTestingRender : BaseSystemStatusTest
 {
     [Fact]
     public async Task ItShouldShowOnline()
@@ -164,19 +172,47 @@ public class WhenTestingHealthyRender : BaseSystemStatusTest
 
 - Place tests under the matching production feature path. The leaf folder is
   `{Component}Tests/` (or `{Service}Tests/`) with a `Base{Component}Test` (holds
-  `CreateContext`) and one `WhenTesting{Behaviour}` class per behaviour, inheriting the
-  base. Do not put that `{Thing}Tests/` folder at the test project root.
-- Test class names remain `ThingBeingTestedTests` for the folder/base, and
-  `WhenTesting{Behaviour}` for each behaviour. Do not add extra terminology suffixes.
-- Test methods: `ItShould{Outcome}` with **no underscores**. Put the condition in the
-  `WhenTesting{Behaviour}` class name, not in the method name.
+  `CreateContext`) and `WhenTesting{Method}` classes inheriting the base. Do not put
+  that `{Thing}Tests/` folder at the test project root.
+- The `WhenTesting` class corresponds to the public behaviour being exercised
+  (`WhenTestingSave`, `WhenTestingGetEmail`, `WhenTestingRender`), not every
+  individual UI state. Put all scenarios for that behaviour in the same class.
+  Do not explode bUnit tests into one file/class per rendered scenario.
+- Test methods: `ItShould{ExpectedBehaviour}()` or
+  `ItShould{ExpectedBehaviour}When{Scenario}()` with **no underscores**.
+- Order tests guard/failure → negative → happy path last, same as
+  **`testing-csharp.md`**.
 - Every test uses exactly the `// Arrange` / `// Act` / `// Assert` section comments.
 - See **`testing-csharp.md`** for the full `WhenTesting` convention.
 
 ## Dependency assertions (every test)
 
-Verify the mocked client services, not only markup. Both success and failure paths need
-`Received()` / `DidNotReceive()` with `Arg.Is<>` unless that path never calls the service.
+Follow **`testing-csharp.md` → Dependency verification**. Verify the mocked client
+services, not only markup. Both success and failure paths need `Received(n)` /
+`DidNotReceive()` with `Arg.Is<>` for meaningful inputs. `Received()` without a
+count is forbidden — extra unexpected calls must fail. `Arg.Any<CancellationToken>()`
+is acceptable. `Arg.Any<T>()` is not acceptable on `Received(n)` for DTOs, models, ids,
+or other values the component is expected to pass.
+
+After clicking Save, for example:
+
+- assert success/error UI
+- verify `SaveAsync` was called once
+- verify the DTO/model passed to `SaveAsync` contains the expected values
+
+```csharp
+cut.WaitForAssertion(() => cut.Find("#save-test-catch-spinner").Should().BeEmpty());
+await store.Received(1).SaveAsync(
+    Arg.Is<TestCatchModel>(testCatch =>
+        testCatch.SpeciesName == "Pike" &&
+        testCatch.SyncStatus == SyncStatus.SavedLocally),
+    Arg.Any<CancellationToken>());
+```
+
+For failure/guard paths, assert the UI state **and** use `DidNotReceive()` where the
+dependency must not have been called (disabled action, missing species, unauthenticated
+path, failed prerequisite, sync/upload not started). Do not infer "not called" from
+markup alone.
 
 ## Before writing new tests
 

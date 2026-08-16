@@ -1,7 +1,6 @@
-using FishingLogBook.Application.Contracts;
 using Microsoft.Extensions.Logging;
 
-namespace FishingLogBook.Application.Tests.DiagnosticLogServiceTests;
+namespace FishingLogBook.Application.Tests.Diagnostics.DiagnosticLogServiceTests;
 
 public sealed class RecordingLogger<T> : ILogger<T>
 {
@@ -39,11 +38,4 @@ public sealed class RecordingLogger<T> : ILogger<T>
         {
         }
     }
-}
-
-public sealed class MemoryDeduplicator : IDiagnosticEventDeduplicator
-{
-    private readonly HashSet<Guid> _seen = [];
-
-    public bool TryAccept(Guid id) => _seen.Add(id);
 }

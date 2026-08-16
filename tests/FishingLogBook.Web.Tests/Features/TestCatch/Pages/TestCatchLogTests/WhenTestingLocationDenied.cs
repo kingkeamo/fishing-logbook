@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingLocationDenied : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldSaveCatchWithoutLocation_WhenPermissionIsDenied()
+    public async Task ItShouldSaveCatchWithoutLocationWhenPermissionIsDenied()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -46,5 +46,11 @@ public class WhenTestingLocationDenied : BaseTestCatchLogTest
             cut.FindAll("#test-catch-location-explainer").Should().BeEmpty();
             cut.Find("#test-catch-location-enable").Should().NotBeNull();
         });
+        await store.Received(1).SaveAsync(
+            Arg.Is<TestCatchModel>(testCatch =>
+                testCatch.SpeciesName == "Roach" &&
+                testCatch.Location == null &&
+                testCatch.SyncStatus == SyncStatus.SavedLocally),
+            Arg.Any<CancellationToken>());
     }
 }

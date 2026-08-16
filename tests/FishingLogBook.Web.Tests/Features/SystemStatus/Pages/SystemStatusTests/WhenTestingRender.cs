@@ -14,7 +14,7 @@ namespace FishingLogBook.Web.Tests.Features.SystemStatus.Pages.SystemStatusTests
 public class WhenTestingRender : BaseSystemStatusTest
 {
     [Fact]
-    public async Task ItShouldShowOnline_WhenApiAndDatabaseAreHealthy()
+    public async Task ItShouldShowOnlineWhenApiAndDatabaseAreHealthy()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -40,7 +40,7 @@ public class WhenTestingRender : BaseSystemStatusTest
     }
 
     [Fact]
-    public async Task ItShouldShowOffline_WhenApiIsUnreachable()
+    public async Task ItShouldShowOfflineWhenApiIsUnreachable()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -63,7 +63,7 @@ public class WhenTestingRender : BaseSystemStatusTest
     }
 
     [Fact]
-    public async Task ItShouldShowFrenchCopy_WhenUiCultureIsFrench()
+    public async Task ItShouldShowFrenchCopyWhenUiCultureIsFrench()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
@@ -86,5 +86,6 @@ public class WhenTestingRender : BaseSystemStatusTest
             cut.Find("#refresh-status-button").TextContent.Should().Contain("Actualiser");
         });
         await statusClient.Received(1).GetApiHealthAsync(Arg.Any<CancellationToken>());
+        await statusClient.Received(1).GetDatabaseStatusAsync(Arg.Any<CancellationToken>());
     }
 }

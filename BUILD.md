@@ -246,6 +246,11 @@ Tests use xUnit + NSubstitute + **AwesomeAssertions** (the Apache-2.0 fork of
 FluentAssertions) + bUnit, and follow the `WhenTesting` naming convention documented in
 `.claude/rules/testing-csharp.md`.
 
+Infrastructure unit tests live at ordinary SUT paths. Tests that need a real database
+live under `FishingLogBook.Infrastructure.Tests/Integration/{Feature}/` and run in
+normal GitHub Actions CI via Testcontainers PostgreSQL. They do not use Neon, a shared
+CI database, or database connection secrets.
+
 ---
 
 # 8. Project Dependency Rules
@@ -296,6 +301,34 @@ FishingLogBook.Infrastructure
 ```
 
 Do not expose server-side implementation assemblies to the WebAssembly client.
+
+### CQRS (Application)
+
+New application use cases follow MediatR 12.5.0 CQRS in `FishingLogBook.Application`.
+Issue #9 established the first production slice:
+
+```text
+API (validated JWT → Provider + Subject + Email)
+    → IMediator.Send(ResolveCurrentUserCommand)
+    → ResolveCurrentUserHandler
+    → IUserIdentityService.ResolveAsync(ResolveUserIdentityArgs)
+    → IUserIdentityRepository
+```
+
+- Command, handler, response, and validator live in **one file**.
+- Get-or-create is a **command** (`ResolveCurrentUserCommand`), not a query.
+- Commands receive `Provider`, `Subject`, and authenticated `Email`, not
+  `ClaimsPrincipal` or JWTs. Email is account data; identity lookup is still
+  `Provider` + `Subject` only.
+- After resolution, application code uses FishingLogBook `UserId` and authenticated
+  `Email` via `ICurrentUser`.
+- SQL transactions stay in the repository, not the handler.
+- Feature-owned services live under `{Feature}/Services/` (for example
+  `Users/Services/UserIdentityService`).
+- Do not CQRS-rewrite existing TestCatch, diagnostics, or system endpoints in the
+  same change as a new slice.
+
+See `.claude/rules/cqrs.md`.
 
 ---
 
@@ -793,24 +826,74 @@ Local Web points at the **Dev** Cognito pool. Do not create a user pool on a lap
    before protected TestCatch API calls succeed.
 
 External identity providers are not enabled in this slice, but the user pool can accept
-them later. Internal `UserId` mapping is a later issue — do not persist Cognito `sub`
-as Catch.UserId.
+them later. Do not persist Cognito `sub` as Catch.UserId; domain ownership uses the
+internal FishingLogBook UserId from §26.
 
 ---
 
 # 26. Internal User IDs
 
-Do not make Cognito's subject identifier the primary domain key.
+Cognito authenticates the person. FishingLogBook owns the product identity.
 
-FishingLogBook should eventually have its own:
+Cognito `sub` is an **external** identity identifier. It must not be the primary
+domain key and must not be stored as a foreign key on Catch, Profile, or other
+owned domain records.
 
 ```text
-UserId
+validated Cognito access token
+    -> sub
+    -> UserIdentity (Provider = Cognito, Subject = sub)
+    -> User.Id  (FishingLogBook UserId)
+    -> Catch / Profile / club membership / later owned data
 ```
 
-Cognito identity should be mapped to that user.
+Identity:
 
-The first technical milestone does not require the full User domain implementation.
+```text
+Provider + Subject -> UserId
+```
+
+User account data currently persisted: **Email** (required, mutable, not unique).
+Email is never used to find a User, resolve a UserId, merge users, or prove
+ownership. Two different Provider+Subject identities may share the same email and
+remain different internal Users. Changing email does not change UserId.
+
+The FishingLogBook API currently requires the trusted `email` claim on the access
+token in addition to `sub`. That is an application contract, not a statement that
+default Cognito access tokens contain Email. `TestJwt` includes Email because tests
+must satisfy that API contract. Aligning deployed Cognito tokens is a separate
+authentication follow-up (GitHub issue for Cognito access-token Email).
+
+`UNIQUE (Provider, Subject)` is the lookup key. Username, display name, and
+device id are not identity keys.
+
+The first authenticated API interaction for an unmapped Cognito identity creates
+`User` (with Email) and `UserIdentity` in one transaction. Later requests, including
+the same person on another device, reuse that UserId and refresh `User.Email` from
+the authenticated email claim. Two concurrent first requests must not create two
+users; the unique constraint is the final guarantee.
+
+Ownership is derived **server-side** from the validated token. The PWA must not
+send a UserId, Cognito `sub`, or email that the API trusts as ownership.
+
+An offline catch's device-generated id is for sync/idempotency only. It does not
+establish server-side ownership. When that catch later synchronises, the API
+associates it with the UserId resolved from the authenticated request.
+
+Application code reads `UserId` and authenticated `Email` from `ICurrentUser`.
+`ICurrentUser` is request-scoped Application state: middleware resolves the identity
+once, then `Assign(userId, email)` hydrates the same instance endpoints inject. It is
+not the Domain `User` entity. It does not parse Cognito claims. Repositories do not
+read `ClaimsPrincipal`. After JWT validation the API sends `ResolveCurrentUserCommand`
+with `Provider`, `Subject`, and authenticated `Email`. Email on `ICurrentUser` is
+account data copied from the validated token after resolution; it is not the identity
+lookup key.
+
+The app bar shows the authenticated Blazor OIDC email claim, then Sign out. That
+display is not ownership. Cognito email is not the product identity.
+
+Future profile work may add FirstName, LastName, DisplayName, and other profile
+fields. Do not implement the full User/Profile domain here.
 
 ---
 
