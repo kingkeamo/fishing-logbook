@@ -19,23 +19,6 @@ public class WhenTestingGetEmail : BaseSignedInUserDisplayServiceTest
     }
 
     [Fact]
-    public void ItShouldReturnTheEmailClaim()
-    {
-        // Arrange
-        var user = AuthenticatedUser(
-            new Claim("name", "Eamonn Connolly"),
-            new Claim("given_name", "Eamonn"),
-            new Claim("family_name", "Connolly"),
-            new Claim("email", "eamonn@example.test"));
-
-        // Act
-        var email = Sut.GetEmail(user);
-
-        // Assert
-        email.Should().Be("eamonn@example.test");
-    }
-
-    [Fact]
     public void ItShouldReturnNullWhenEmailIsMissing()
     {
         // Arrange
@@ -67,6 +50,23 @@ public class WhenTestingGetEmail : BaseSignedInUserDisplayServiceTest
         email.Should().Be("eamonn@example.test");
         email.Should().NotBe("cognito-sub-abc");
         email.Should().NotBe("eamonn123");
+    }
+
+    [Fact]
+    public void ItShouldReturnTheEmailClaim()
+    {
+        // Arrange
+        var user = AuthenticatedUser(
+            new Claim("name", "Eamonn Connolly"),
+            new Claim("given_name", "Eamonn"),
+            new Claim("family_name", "Connolly"),
+            new Claim("email", "eamonn@example.test"));
+
+        // Act
+        var email = Sut.GetEmail(user);
+
+        // Assert
+        email.Should().Be("eamonn@example.test");
     }
 
     private static ClaimsPrincipal AuthenticatedUser(params Claim[] claims)

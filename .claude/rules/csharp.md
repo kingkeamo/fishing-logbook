@@ -137,6 +137,11 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 ## Domain layer (`FishingLogBook.Domain`)
 
 - POCO entities only. No dependencies on other projects, no infrastructure concerns.
+- Business concepts with identity/state are Domain entities/models (`User`,
+  `UserIdentity`).
+- `ICurrentUser` is **not** a Domain type. It is a request-scoped Application
+  contract (`Application/Contracts/Services`) that indicates which Domain `User`
+  is authenticated for this request. Do not move it into Domain.
 
 ## Shared layer (`FishingLogBook.Shared`)
 
@@ -151,8 +156,10 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
   `ValidatedResponse`, FluentValidation, Mapster, and the handler → `I*Service` →
   repository chain are in **`cqrs.md`**.
 - Contracts: `Application/Contracts/Repositories/I*Repository` and
-  `Application/Contracts/Services/I*Service`. Implementations of services live in
-  `Application/Services/`; repositories in Infrastructure.
+  `Application/Contracts/Services/I*Service`. Feature-owned service
+  implementations live in `Application/{Feature}/Services/` (for example
+  `Users/Services/UserIdentityService`). Only a genuinely cross-feature service
+  may live outside a feature folder. Repositories live in Infrastructure.
 - This layer contains no DI registration of its own (see the composition root below).
 
 ## Infrastructure layer (`FishingLogBook.Infrastructure`)

@@ -9,5 +9,6 @@ public sealed class UserMappingRegistration : IRegister
     void IRegister.Register(TypeAdapterConfig config)
     {
         config.NewConfig<ResolveCurrentUserCommand, ResolveUserIdentityArgs>();
+        config.NewConfig<ResolveUserIdentityArgs, FindUserIdentityArgs>();
     }
 }

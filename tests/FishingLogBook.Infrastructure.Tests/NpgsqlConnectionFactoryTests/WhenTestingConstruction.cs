@@ -6,7 +6,7 @@ namespace FishingLogBook.Infrastructure.Tests.NpgsqlConnectionFactoryTests;
 public class WhenTestingConstruction : BaseNpgsqlConnectionFactoryTest
 {
     [Fact]
-    public void ItShouldThrow_WhenConnectionStringIsEmpty()
+    public void ItShouldThrowWhenTheConnectionStringIsEmpty()
     {
         // Arrange
         var act = () => new NpgsqlConnectionFactory(string.Empty);
@@ -17,7 +17,7 @@ public class WhenTestingConstruction : BaseNpgsqlConnectionFactoryTest
     }
 
     [Fact]
-    public void ItShouldThrow_WhenConnectionStringIsWhitespace()
+    public void ItShouldThrowWhenTheConnectionStringIsWhitespace()
     {
         // Arrange
         var act = () => new NpgsqlConnectionFactory("   ");
@@ -28,7 +28,7 @@ public class WhenTestingConstruction : BaseNpgsqlConnectionFactoryTest
     }
 
     [Fact]
-    public void ItShouldConstruct_WhenConnectionStringIsProvided()
+    public void ItShouldConstructWhenTheConnectionStringIsProvided()
     {
         // Arrange
         var act = () => new NpgsqlConnectionFactory(ValidConnectionString);

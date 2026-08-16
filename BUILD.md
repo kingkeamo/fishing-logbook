@@ -853,6 +853,12 @@ Email is never used to find a User, resolve a UserId, merge users, or prove
 ownership. Two different Provider+Subject identities may share the same email and
 remain different internal Users. Changing email does not change UserId.
 
+The FishingLogBook API currently requires the trusted `email` claim on the access
+token in addition to `sub`. That is an application contract, not a statement that
+default Cognito access tokens contain Email. `TestJwt` includes Email because tests
+must satisfy that API contract. Aligning deployed Cognito tokens is a separate
+authentication follow-up (GitHub issue for Cognito access-token Email).
+
 `UNIQUE (Provider, Subject)` is the lookup key. Username, display name, and
 device id are not identity keys.
 
@@ -870,12 +876,13 @@ establish server-side ownership. When that catch later synchronises, the API
 associates it with the UserId resolved from the authenticated request.
 
 Application code reads `UserId` and authenticated `Email` from `ICurrentUser`.
-`ICurrentUser` is request-scoped: middleware resolves the identity once, then
-`Assign(userId, email)` hydrates the same instance endpoints inject. It does not
-parse Cognito claims. Repositories do not read `ClaimsPrincipal`. After JWT
-validation the API sends `ResolveCurrentUserCommand` with `Provider`, `Subject`,
-and authenticated `Email`. Email on `ICurrentUser` is account data copied from
-the validated token after resolution; it is not the identity lookup key.
+`ICurrentUser` is request-scoped Application state: middleware resolves the identity
+once, then `Assign(userId, email)` hydrates the same instance endpoints inject. It is
+not the Domain `User` entity. It does not parse Cognito claims. Repositories do not
+read `ClaimsPrincipal`. After JWT validation the API sends `ResolveCurrentUserCommand`
+with `Provider`, `Subject`, and authenticated `Email`. Email on `ICurrentUser` is
+account data copied from the validated token after resolution; it is not the identity
+lookup key.
 
 The app bar shows the authenticated Blazor OIDC email claim, then Sign out. That
 display is not ownership. Cognito email is not the product identity.

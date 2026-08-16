@@ -5,10 +5,8 @@ using FluentValidation.TestHelper;
 
 namespace FishingLogBook.Application.Tests.Users.Commands.ResolveCurrentUserCommandValidatorTests;
 
-public class WhenTestingValidate
+public class WhenTestingValidate : BaseResolveCurrentUserCommandValidatorTest
 {
-    private readonly ResolveCurrentUserCommandValidator _validator = new();
-
     [Fact]
     public void ItShouldHaveAValidationErrorForProvider()
     {
@@ -21,7 +19,7 @@ public class WhenTestingValidate
         };
 
         // Act
-        var result = _validator.TestValidate(command);
+        var result = Sut.TestValidate(command);
 
         // Assert
         result.ShouldHaveValidationErrorFor(c => c.Provider)
@@ -40,29 +38,11 @@ public class WhenTestingValidate
         };
 
         // Act
-        var result = _validator.TestValidate(command);
+        var result = Sut.TestValidate(command);
 
         // Assert
         result.ShouldHaveValidationErrorFor(c => c.Subject)
             .WithErrorMessage("External identity is missing.");
-    }
-
-    [Fact]
-    public void ItShouldNotHaveValidationErrorsForAValidCommand()
-    {
-        // Arrange
-        var command = new ResolveCurrentUserCommand
-        {
-            Provider = IdentityProviderConstants.Cognito,
-            Subject = "cognito-subject",
-            Email = "eamonn@example.test"
-        };
-
-        // Act
-        var result = _validator.TestValidate(command);
-
-        // Assert
-        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
@@ -77,10 +57,28 @@ public class WhenTestingValidate
         };
 
         // Act
-        var result = _validator.TestValidate(command);
+        var result = Sut.TestValidate(command);
 
         // Assert
         result.ShouldHaveValidationErrorFor(c => c.Email)
             .WithErrorMessage("Authenticated email is missing.");
+    }
+
+    [Fact]
+    public void ItShouldNotHaveValidationErrorsForAValidCommand()
+    {
+        // Arrange
+        var command = new ResolveCurrentUserCommand
+        {
+            Provider = IdentityProviderConstants.Cognito,
+            Subject = "cognito-subject",
+            Email = "eamonn@example.test"
+        };
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

@@ -1,4 +1,5 @@
 using Dapper;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Users;
 using FluentResults;
@@ -18,13 +19,13 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
     }
 
     public async Task<Result<Guid?>> FindUserIdAsync(
-        UserIdentity identity,
+        FindUserIdentityArgs args,
         CancellationToken cancellationToken)
     {
         try
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
-            var userId = await FindUserIdAsync(connection, identity, transaction: null, cancellationToken);
+            var userId = await FindUserIdAsync(connection, args, transaction: null, cancellationToken);
             return Result.Ok(userId);
         }
         catch (Exception)
@@ -108,7 +109,15 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
         UserIdentity identity,
         CancellationToken cancellationToken)
     {
-        var existing = await FindUserIdAsync(connection, identity, transaction: null, cancellationToken);
+        var existing = await FindUserIdAsync(
+            connection,
+            new FindUserIdentityArgs
+            {
+                Provider = identity.Provider,
+                Subject = identity.Subject
+            },
+            transaction: null,
+            cancellationToken);
         if (existing is Guid existingUserId && existingUserId != Guid.Empty)
         {
             await UpdateEmailAsync(
@@ -142,7 +151,7 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
 
     private static async Task<Guid?> FindUserIdAsync(
         NpgsqlConnection connection,
-        UserIdentity identity,
+        FindUserIdentityArgs args,
         NpgsqlTransaction? transaction,
         CancellationToken cancellationToken)
     {
@@ -154,7 +163,7 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
 
         var command = new CommandDefinition(
             sql,
-            identity,
+            args,
             transaction,
             cancellationToken: cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<Guid?>(command);

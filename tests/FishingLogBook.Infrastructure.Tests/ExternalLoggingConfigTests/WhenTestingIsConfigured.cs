@@ -6,7 +6,7 @@ namespace FishingLogBook.Infrastructure.Tests.ExternalLoggingConfigTests;
 public class WhenTestingIsConfigured
 {
     [Fact]
-    public void ItShouldBeUnconfigured_WhenSecretsArePlaceholders()
+    public void ItShouldBeUnconfiguredWhenSecretsArePlaceholders()
     {
         // Arrange
         var config = new ExternalLoggingConfig
@@ -25,7 +25,7 @@ public class WhenTestingIsConfigured
     }
 
     [Fact]
-    public void ItShouldBeConfigured_WhenGrafanaValuesAreProvided()
+    public void ItShouldBeConfiguredWhenGrafanaValuesAreProvided()
     {
         // Arrange
         var config = new ExternalLoggingConfig

@@ -11,6 +11,8 @@ public static class TestJwt
     public const string Issuer = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool";
     public const string ClientId = "test-pwa-client";
     public const string Subject = "test-subject";
+
+    // FishingLogBook API contract requires email; default Cognito access tokens may omit it.
     public const string Email = "tester@example.test";
 
     public static readonly RsaSecurityKey SigningKey = CreateSigningKey();

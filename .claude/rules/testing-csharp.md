@@ -43,7 +43,7 @@ different project's test project.
 | `FishingLogBook.Tests.Common` | Shared test builders/fixtures — **no tests** (plain class library) | Domain, Shared |
 | `FishingLogBook.Shared.Tests` | DTO / contract serialisation | Shared, Tests.Common |
 | `FishingLogBook.Application.Tests` | CQRS handlers + FluentValidation validators | Application, Tests.Common |
-| `FishingLogBook.Infrastructure.Tests` | Infrastructure logic; database-backed uniqueness/transaction/concurrency tests when an issue requires them | Infrastructure, Tests.Common |
+| `FishingLogBook.Infrastructure.Tests` | Unit tests at the project root by SUT; database-backed tests under `Integration/{Feature}/` | Infrastructure, Tests.Common |
 | `FishingLogBook.Db.Migrations.Tests` | Migration ordering (`FilenameOnlyScriptComparer`) and engine helpers | Db.Migrations, Tests.Common |
 | `FishingLogBook.Api.Tests` | API endpoints via `WebApplicationFactory<Program>` (repositories mocked — no live DB in CI) | Api, Shared, Application, Tests.Common |
 
@@ -136,7 +136,7 @@ Typically acceptable:
 Typically **not** acceptable on `Received()` when the SUT is expected to
 construct/pass the value:
 
-- `Arg.Any<User>()`, `Arg.Any<UserIdentity>()`, `Arg.Any<Catch>()`
+- `Arg.Any<User>()`, `Arg.Any<UserIdentity>()`, `Arg.Any<FindUserIdentityArgs>()`, `Arg.Any<Catch>()`
 - `Arg.Any<Guid>()` for UserId / record identity
 - `Arg.Any<string>()` for Provider / Subject / Email
 - `Arg.Any<Dto>()`, `Arg.Any<Model>()`, `Arg.Any<Command>()`, `Arg.Any<Request>()`
@@ -222,42 +222,162 @@ pipeline unless the test is specifically covering pipeline integration.
 
 ## Naming & structure — `WhenTesting` convention (mandatory)
 
-Follow the rah-portal / RefAssured `WhenTesting` layout. Mirror production namespaces:
+Follow the rah-portal / RefAssured `WhenTesting` layout. Mirror production namespaces.
+
+The structure is organised around the **public method** being tested, not around
+each scenario.
+
+```text
+{Sut}Tests/
+    Base{Sut}Test.cs
+    WhenTesting{Method}.cs
+```
 
 ```text
 tests/FishingLogBook.Application.Tests/{Feature}/Commands/{Name}CommandTests/WhenTestingHandle.cs
 tests/FishingLogBook.Application.Tests/{Feature}/Commands/{Name}CommandValidatorTests/WhenTestingValidate.cs
 tests/FishingLogBook.Application.Tests/{Feature}/Queries/{Name}QueryTests/WhenTestingHandle.cs
-tests/FishingLogBook.Api.Tests/SystemEndpointsTests/WhenTestingGetHealth.cs
+tests/FishingLogBook.Application.Tests/{Feature}/Services/{Name}ServiceTests/WhenTestingResolve.cs
+tests/FishingLogBook.Api.Tests/UserEndpointsTests/WhenTestingGetCurrent.cs
+tests/FishingLogBook.Infrastructure.Tests/Integration/Users/UserIdentityRepositoryTests/WhenTestingCreate.cs
 ```
 
-- **One folder per system-under-test:** `{Sut}Tests/` (e.g. `AddCatchCommandTests/`).
-- **Base class** `Base{Sut}Test` in that folder holds the SUT and its NSubstitute
-  dependencies as `protected` fields, constructed in the constructor (no `[SetUp]`):
+### One folder per SUT
+
+`{Sut}Tests/` (for example `UserIdentityServiceTests/`, `ResolveCurrentUserCommandTests/`).
+
+### Base class — no test methods
+
+`Base{Sut}Test` in that folder holds SUT construction, shared substitutes,
+shared constants, and common setup helpers as `protected` fields, constructed in
+the constructor (no `[SetUp]`). It must **not** contain `[Fact]` / `[Theory]`
+methods. Do not over-abstract Arrange logic; scenario-specific setup stays in
+the individual test.
 
 ```csharp
-public class BaseAddCatchCommandTest
+public class BaseUserIdentityServiceTest
 {
-    protected readonly ICatchRepository MockCatchRepository = Substitute.For<ICatchRepository>();
-    protected readonly AddCatchHandler Sut;
+    protected readonly IUserIdentityRepository MockUserIdentityRepository =
+        Substitute.For<IUserIdentityRepository>();
+    protected readonly UserIdentityService Sut;
 
-    protected BaseAddCatchCommandTest()
+    protected BaseUserIdentityServiceTest()
     {
-        Sut = new AddCatchHandler(MockCatchRepository);
+        Sut = new UserIdentityService(
+            MockUserIdentityRepository,
+            NullLogger<UserIdentityService>.Instance);
     }
 }
 ```
 
-- **One class per method/behaviour under test:** `WhenTesting{MethodOrBehaviour}`, inheriting
-  the base (e.g. `WhenTestingHandle : BaseAddCatchCommandTest`).
-  The condition lives in the class name (`WhenTestingReloadedFromTheStore`), not in the
-  method name.
-- **Test methods:** `ItShould{ExpectedOutcome}` only
-  (e.g. `ItShouldKeepQueuedEvents`, `ItShouldReturnDegradedWithNoName`).
-- **Do not use underscores in test method names.** Never write
-  `ItShouldKeepQueuedEvents_WhenReloadedFromTheStore`. If two conditions need separate
-  outcomes, use two `WhenTesting{Condition}` classes.
-- Mirror the production namespace/type under the test project via these folders.
+Handlers are constructed with `I*Service`, **never** `I*Repository`:
+
+```csharp
+public class BaseResolveCurrentUserCommandTest
+{
+    protected readonly IUserIdentityService MockUserIdentityService =
+        Substitute.For<IUserIdentityService>();
+    protected readonly ResolveCurrentUserHandler Sut;
+
+    protected BaseResolveCurrentUserCommandTest()
+    {
+        Sut = new ResolveCurrentUserHandler(MockUserIdentityService);
+    }
+}
+```
+
+### One class per public method
+
+`WhenTesting{Method}` inherits the base. The class name is the SUT public method
+**without** `Async`.
+
+| SUT method | Test class |
+|------------|------------|
+| `UserIdentityService.ResolveAsync(...)` | `WhenTestingResolve` |
+| `CurrentUser.Assign(...)` | `WhenTestingAssign` |
+| `ResolveCurrentUserHandler.Handle(...)` | `WhenTestingHandle` |
+| `ResolveCurrentUserCommandValidator.Validate(...)` | `WhenTestingValidate` |
+| `CatchService.UpsertAsync(...)` | `WhenTestingUpsert` |
+| `GET /api/users/current` | `WhenTestingGetCurrent` |
+
+`WhenTestingResolve` contains **all** meaningful scenarios for `ResolveAsync`.
+Do **not** create one class/file per scenario.
+
+BAD:
+
+- `WhenTestingMissingSubject`
+- `WhenTestingExistingIdentity`
+- `WhenTestingRepositoryFailure`
+- `WhenTestingHandleWhenTheServiceFails`
+
+GOOD:
+
+- `WhenTestingResolve` with `ItShouldFailWhenTheSubjectIsMissing`, …
+- `WhenTestingHandle` with `ItShouldReturnFailureWhenTheServiceFails`, …
+
+### Test method names
+
+Methods describe the behaviour/scenario:
+
+`ItShould{ExpectedBehaviour}()`
+
+or, where the scenario must be in the name:
+
+`ItShould{ExpectedBehaviour}When{Scenario}()`
+
+Examples:
+
+- `ItShouldFailWhenTheSubjectIsMissing`
+- `ItShouldReturnFailureWhenTheRepositoryFails`
+- `ItShouldNotCreateAUserWhenTheIdentityExists`
+- `ItShouldCreateAUserWhenNoMappingExists`
+
+Do **not** use underscores.
+
+BAD: `ItShouldFail_WhenSubjectIsMissing`
+BAD: `ItShouldClearLocation_WhenUpsertedWithoutLocation`
+GOOD: `ItShouldFailWhenTheSubjectIsMissing`
+GOOD: `ItShouldClearLocationWhenUpsertedWithoutLocation`
+
+### Order inside a WhenTesting class
+
+Default order, unless a different order is clearer:
+
+1. Guard / invalid-input / validation
+2. Failure / dependency-error
+3. Negative / no-op / existing-state
+4. Alternative successful scenarios
+5. Principal happy path **last**
+
+The file should read from defensive behaviour down to success.
+
+Example for `WhenTestingResolve`:
+
+1. `ItShouldFailWhenTheSubjectIsMissing`
+2. `ItShouldFailWhenTheEmailIsMissing`
+3. `ItShouldReturnFailureWhenTheLookupFails`
+4. `ItShouldReturnFailureWhenCreationFails`
+5. `ItShouldNotCreateAUserWhenTheIdentityExists`
+6. `ItShouldUpdateTheEmailWhenTheIdentityExists`
+7. `ItShouldCreateAUserWhenNoMappingExists`
+
+### CQRS tests
+
+```text
+ResolveCurrentUserCommandTests/
+    BaseResolveCurrentUserCommandTest.cs
+    WhenTestingHandle.cs
+
+ResolveCurrentUserCommandValidatorTests/
+    BaseResolveCurrentUserCommandValidatorTest.cs
+    WhenTestingValidate.cs
+```
+
+`WhenTestingHandle` contains service-failure, empty UserId, and success.
+`WhenTestingValidate` contains **all** validation scenarios. Do not create one
+validator class per invalid property.
+
+Mirror the production namespace/type under the test project via these folders.
 
 ## Arrange / Act / Assert
 
@@ -310,9 +430,11 @@ Mapper = new Mapper(config);
 
 ## Validator tests (Application.Tests)
 
-- Separate folder: `{Command}ValidatorTests/WhenTestingValidate.cs`
+- Separate folder: `{Command}ValidatorTests/` with `Base{Command}ValidatorTest` and
+  `WhenTestingValidate.cs`
 - Use `_validator.TestValidate(command)` from FluentValidation.TestHelper
 - Assert with `ShouldNotHaveAnyValidationErrors()` / `ShouldHaveValidationErrorFor(...)`
+- Put every invalid-property and valid-command scenario in `WhenTestingValidate`
 - Do **not** add `RuleFor(x => x).NotNull()` on the command — FluentValidation rejects
   `Validate(null)` before that rule runs. Validate nested properties instead.
 
@@ -327,18 +449,49 @@ Mapper = new Mapper(config);
 - Assert `response.StatusCode` **and** the deserialised body. Cover success and failure
   paths (e.g. healthy record → 200; missing record and repository exception → 503).
 - When the endpoint/use case is expected to invoke a substituted repository (or other
-  substituted dependency), also verify that call with `Received()` / `Arg.Is<>`.
-  When it must not (unauthorized, validation failure, missing prerequisite), use
-  `DidNotReceive()`.
+  substituted dependency), also verify that call with `Received(n)` / `Arg.Is<>`.
+  When it must not (unauthorized, missing required identity claim, mapping failure,
+  validation failure, missing prerequisite), use `DidNotReceive()`.
+- Group all scenarios for one endpoint/action in `WhenTesting{Action}` (for example
+  `WhenTestingGetCurrent`), ordered guard → failure → negative → success.
+
+## Security-token test builders
+
+Builders such as `TestJwt` must represent the **application token contract**, not
+whatever an external provider emits by default.
+
+`TestJwt.Email` is present because the FishingLogBook API currently requires a
+trusted authenticated `email` claim in addition to `sub`. That is an application
+contract. It does **not** mean default Cognito access tokens universally contain
+Email. Aligning deployed Cognito tokens with this contract is a separate
+authentication follow-up; do not imply that Cognito always supplies Email.
 
 ## Database-backed infrastructure tests
 
 API tests mock repositories and must not require live PostgreSQL in CI.
 
 When an issue requires proving uniqueness, transactions, or concurrency, add those
-tests in `FishingLogBook.Infrastructure.Tests` against a real database
+tests in `FishingLogBook.Infrastructure.Tests/Integration/` against a real database
 (Testcontainers PostgreSQL is acceptable). Do not mock away the behaviour that must
 be trusted.
+
+```text
+FishingLogBook.Infrastructure.Tests/
+    {Sut}Tests/                         → unit tests (no live database)
+    Integration/
+        TestSupport/
+            PostgresFixture.cs
+            PostgresCollection.cs
+        {Feature}/
+            {Repository}Tests/
+                Base{Repository}Test.cs
+                WhenTesting{Method}.cs
+```
+
+Example: `Integration/Users/UserIdentityRepositoryTests/`.
+
+Postgres fixtures live only under `Integration/TestSupport/`. Do not put live-database
+repository tests next to unit tests at the project root.
 
 Where an Infrastructure **unit** test has mocked collaborators, apply **Dependency
 verification**: assert meaningful `Received()` / `DidNotReceive()` and `Arg.Is<>`.

@@ -42,14 +42,18 @@ Organize by feature under `FishingLogBook.Application/{Feature}/`:
   Commands/   → IRequest<TResponse>, Handler, Response, Validator (same file)
   Queries/    → same pattern
   Services/   → feature-owned *Service implementations
+  Models/     → feature-owned application models, only when the feature needs them
 
 Contracts/Repositories/   → I*Repository
-Contracts/Services/       → I*Service
-Args/                     → *Args filter/query objects for repositories
+Contracts/Services/       → I*Service (including request-scoped ICurrentUser)
+Args/                     → *Args lookup/filter objects for repositories
 Common/Responses/ValidatedResponse.cs
 Common/Behaviours/ValidationBehaviour.cs
 Common/Mappings/          → Mapster *MappingRegistration (IRegister)
 ```
+
+Do not create empty `Commands/`, `Queries/`, `Services/`, or `Models/` folders
+for appearance. Add a folder when the feature has types for it.
 
 Do not put handlers in `FishingLogBook.Shared` or in the API project.
 
@@ -94,16 +98,25 @@ Endpoint → IMediator.Send → Handler → I*Service → I*Repository
 - Services inject `I*Repository` (and other services). They return
   **FluentResults** `Result` / `Result<T>` — not exceptions for expected failures.
 - Repositories return FluentResults `Result` / `Result<T>` (see **`database.md`**).
-- Map with Mapster `.Adapt<T>()` at the handler/service boundary (command/query → Args,
-  Domain ↔ Shared DTO). Do **not** hand-map with `new TArgs { Prop = command.Prop }`.
+- Map with Mapster `.Adapt<T>()` at application mapping boundaries (command/query → Args,
+  Args → lookup Args, Domain → Shared DTO). Do **not** hand-map with
+  `new TArgs { Prop = command.Prop }`. Domain construction (`new User`, `new UserIdentity`)
+  stays explicit when it represents behaviour.
 - Handlers do **not** manage SQL transactions. Begin/commit/rollback and unique-violation
   recovery belong in the application service/repository boundary (`database.md`). The
   handler is orchestration only.
 
 ## Mapster (mandatory)
 
-Same pattern as rah-portal. Handlers map command/query → Args (and Domain ↔ Shared DTO)
-with `.Adapt<T>()`. That is the only allowed mapping at this boundary.
+Same pattern as rah-portal. Use Mapster at **application mapping boundaries**:
+
+- Command/Query → Args (`command.Adapt<ResolveUserIdentityArgs>()`)
+- Args → lookup Args (`args.Adapt<FindUserIdentityArgs>()`)
+- Domain → Shared DTO
+- DTO → Web/application model where that copy is mechanical
+
+That is the only allowed mapping at those boundaries. Do **not** hand-map with
+`new TArgs { Prop = command.Prop }`.
 
 ```csharp
 var result = await _userIdentityService.ResolveAsync(
@@ -111,9 +124,14 @@ var result = await _userIdentityService.ResolveAsync(
     cancellationToken);
 ```
 
+Do **not** require Mapster for Domain object creation. `new User { ... }` and
+`new UserIdentity { ... }` are correct when that construction is application or
+domain behaviour (ids, ownership links, required fields). Do not hide that
+construction behind `.Adapt<User>()` merely for consistency.
+
 - Identical property names map by convention. Still add
   `config.NewConfig<TSource, TDest>()` in an `IRegister` when the pair is a documented
-  contract (command → service Args, Domain → DTO).
+  contract (command → service Args, Args → lookup Args, Domain → DTO).
 - Use `.Map(...)` only when names differ, nested objects need mapping, or a property
   must be ignored or transformed.
 - Put `IRegister` types in `Application/Common/Mappings/` named `*MappingRegistration`.
@@ -239,3 +257,5 @@ Do not parse claims or resolve `Provider` + `Subject` again in every handler.
 - Do not pass `HttpContext`, `ClaimsPrincipal`, JWTs, or Cognito types into Application.
 - Do not use Cognito `sub` as the domain `UserId` on commands or entities.
 - Do not hand-map command/query properties onto Args or DTOs — use `.Adapt<T>()`.
+- Do not construct a partially initialised Domain entity to carry lookup/filter
+  criteria — use `*Args`.

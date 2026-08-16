@@ -6,7 +6,7 @@ namespace FishingLogBook.Infrastructure.Tests.ObjectStorageConfigTests;
 public class WhenTestingIsConfigured
 {
     [Fact]
-    public void ItShouldBeUnconfigured_WhenSecretsAreUserSecretPlaceholders()
+    public void ItShouldBeUnconfiguredWhenSecretsAreUserSecretPlaceholders()
     {
         // Arrange
         var config = new ObjectStorageConfig
@@ -25,7 +25,7 @@ public class WhenTestingIsConfigured
     }
 
     [Fact]
-    public void ItShouldBeConfigured_WhenAllValuesAreProvided()
+    public void ItShouldBeConfiguredWhenAllValuesAreProvided()
     {
         // Arrange
         var config = new ObjectStorageConfig

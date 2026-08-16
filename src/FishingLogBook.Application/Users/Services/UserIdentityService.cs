@@ -3,6 +3,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Users;
 using FluentResults;
+using Mapster;
 using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Application.Users.Services;
@@ -40,8 +41,9 @@ public sealed class UserIdentityService : IUserIdentityService
             return Result.Fail<Guid>(MissingEmailMessage);
         }
 
-        var lookup = CreateLookup(args.Provider, args.Subject);
-        var existing = await _userIdentityRepository.FindUserIdAsync(lookup, cancellationToken);
+        var existing = await _userIdentityRepository.FindUserIdAsync(
+            args.Adapt<FindUserIdentityArgs>(),
+            cancellationToken);
         if (existing.IsFailed)
         {
             return Result.Fail<Guid>(existing.Errors);
@@ -52,7 +54,7 @@ public sealed class UserIdentityService : IUserIdentityService
             return await CompleteExistingAsync(existingUserId, args.Email, cancellationToken);
         }
 
-        return await CompleteCreateAsync(args.Provider, args.Subject, args.Email, cancellationToken);
+        return await CompleteCreateAsync(args, cancellationToken);
     }
 
     private async Task<Result<Guid>> CompleteExistingAsync(
@@ -78,22 +80,20 @@ public sealed class UserIdentityService : IUserIdentityService
     }
 
     private async Task<Result<Guid>> CompleteCreateAsync(
-        string provider,
-        string subject,
-        string email,
+        ResolveUserIdentityArgs args,
         CancellationToken cancellationToken)
     {
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = email
+            Email = args.Email
         };
         var identity = new UserIdentity
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            Provider = provider,
-            Subject = subject
+            Provider = args.Provider,
+            Subject = args.Subject
         };
         var created = await _userIdentityRepository.CreateAsync(user, identity, cancellationToken);
         if (created.IsFailed)
@@ -102,15 +102,6 @@ public sealed class UserIdentityService : IUserIdentityService
         }
 
         return EnsureUserId(created.Value, created: true);
-    }
-
-    private static UserIdentity CreateLookup(string provider, string subject)
-    {
-        return new UserIdentity
-        {
-            Provider = provider,
-            Subject = subject
-        };
     }
 
     private Result<Guid> EnsureUserId(Guid userId, bool created)

@@ -32,11 +32,11 @@ public class BaseUserIdentityServiceTest
         };
     }
 
-    protected static UserIdentity LookupFor(string subject)
+    protected static FindUserIdentityArgs LookupFor(string subject)
     {
-        return Arg.Is<UserIdentity>(identity =>
-            identity.Provider == IdentityProviderConstants.Cognito
-            && identity.Subject == subject);
+        return Arg.Is<FindUserIdentityArgs>(args =>
+            args.Provider == IdentityProviderConstants.Cognito
+            && args.Subject == subject);
     }
 
     protected static User UserWithEmail(string email)

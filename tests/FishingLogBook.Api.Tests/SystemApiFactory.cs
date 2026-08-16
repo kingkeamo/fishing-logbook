@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using FishingLogBook.Api.Configuration;
 using FishingLogBook.Api.Tests.TestSupport;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Users;
@@ -34,8 +35,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
     public SystemApiFactory()
     {
         UserIdentityRepository
-            .FindUserIdAsync(Arg.Any<UserIdentity>(), Arg.Any<CancellationToken>())
-            .Returns(call => ResolveFind(call.ArgAt<UserIdentity>(0).Subject));
+            .FindUserIdAsync(Arg.Any<FindUserIdentityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call => ResolveFind(call.ArgAt<FindUserIdentityArgs>(0).Subject));
         UserIdentityRepository
             .CreateAsync(Arg.Any<User>(), Arg.Any<UserIdentity>(), Arg.Any<CancellationToken>())
             .Returns(call => ResolveCreate(call.ArgAt<UserIdentity>(1).Subject));
