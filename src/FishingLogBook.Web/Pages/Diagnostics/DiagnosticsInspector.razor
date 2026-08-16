@@ -6,11 +6,30 @@
 <MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
     <MudStack Spacing="3">
         <MudText Typo="Typo.h5">@Loc["Diagnostics_Title"]</MudText>
-        <MudText id="diagnostics-queued-count">@Loc["Diagnostics_QueuedCount"]: @_queuedCount</MudText>
+        <MudText id="diagnostics-queued-count">@QueueCountLabel</MudText>
+        <MudText id="diagnostics-last-operation">@Loc["Diagnostics_LastOperation"]: @(_lastOperation ?? Loc["Diagnostics_None"])</MudText>
         <MudText id="diagnostics-last-error">@Loc["Diagnostics_LastError"]: @(_lastError ?? Loc["Diagnostics_None"])</MudText>
         <MudText id="diagnostics-online">@Loc["Diagnostics_Online"]: @OnlineLabel</MudText>
         <MudText id="diagnostics-storage-usage">@Loc["Diagnostics_StorageUsage"]: @_usageLabel</MudText>
         <MudText id="diagnostics-storage-quota">@Loc["Diagnostics_StorageQuota"]: @_quotaLabel</MudText>
+        <MudText id="diagnostics-probe-isolated-stage">
+            @Loc["Diagnostics_IsolatedProbe"]: @(_isolatedProbe?.LastCompletedStage ?? Loc["Diagnostics_None"])
+        </MudText>
+        @if (_isolatedProbe?.FailedStage is not null)
+        {
+            <MudText id="diagnostics-probe-isolated-error">
+                @Loc["Diagnostics_IsolatedProbeFailed"]: @_isolatedProbe.FailedStage @(_isolatedProbe.Error)
+            </MudText>
+        }
+        <MudText id="diagnostics-probe-production-stage">
+            @Loc["Diagnostics_ProductionProbe"]: @ProductionProbeLabel
+        </MudText>
+        @if (!_productionNotInitialised && _productionProbe?.FailedStage is not null)
+        {
+            <MudText id="diagnostics-probe-production-error">
+                @Loc["Diagnostics_ProductionProbeFailed"]: @_productionProbe.FailedStage @(_productionProbe.Error)
+            </MudText>
+        }
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth="true"
@@ -19,13 +38,21 @@
                    id="refresh-diagnostics-button">
             @Loc["Action_Refresh"]
         </MudButton>
-        @if (_events.Count == 0)
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   Disabled="@_isLoading"
+                   OnClick="RetryProbesAsync"
+                   id="retry-diagnostics-probe-button">
+            @Loc["Diagnostics_RetryProbe"]
+        </MudButton>
+        @if (ShowEmptyQueue)
         {
             <MudText Typo="Typo.body2" Class="mud-text-secondary" id="diagnostic-queue-empty">
                 @Loc["Diagnostics_EmptyQueue"]
             </MudText>
         }
-        else
+        else if (_events.Count > 0)
         {
             <MudStack Spacing="2" id="diagnostic-queue">
                 @foreach (var diagnosticEvent in _events)

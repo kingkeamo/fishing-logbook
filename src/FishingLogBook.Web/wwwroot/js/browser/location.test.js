@@ -63,12 +63,12 @@ describe('location', () => {
         await expect(getCurrent(1000)).resolves.toEqual({ error: 'timeout' });
     });
 
-    it('returns prompt when the permissions API is unavailable', async () => {
+    it('returns unavailable when the permissions API is missing', async () => {
         mockNavigator({
             geolocation: {}
         });
 
-        await expect(queryPermission()).resolves.toBe('prompt');
+        await expect(queryPermission()).resolves.toBe('unavailable');
     });
 
     it('returns prompt when the permissions query rejects', async () => {
@@ -90,6 +90,33 @@ describe('location', () => {
         const assertion = expect(withTimeout(never, 30, 'location permission'))
             .rejects.toThrow('location permission timed out');
         await vi.advanceTimersByTimeAsync(30);
+        await assertion;
+    });
+
+    it('returns unavailable when the permissions query never settles', async () => {
+        vi.useFakeTimers();
+        mockNavigator({
+            geolocation: {},
+            permissions: {
+                query: () => new Promise(() => { })
+            }
+        });
+
+        const assertion = expect(queryPermission()).resolves.toBe('unavailable');
+        await vi.advanceTimersByTimeAsync(2000);
+        await assertion;
+    });
+
+    it('returns timeout when getCurrent never settles', async () => {
+        vi.useFakeTimers();
+        mockNavigator({
+            geolocation: {
+                getCurrentPosition() { }
+            }
+        });
+
+        const assertion = expect(getCurrent(40)).resolves.toEqual({ error: 'timeout' });
+        await vi.advanceTimersByTimeAsync(40);
         await assertion;
     });
 

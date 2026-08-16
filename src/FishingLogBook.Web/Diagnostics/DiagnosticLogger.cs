@@ -126,7 +126,7 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
 
     private async Task RecordFailureAsync(Exception exception, string eventName, CancellationToken cancellationToken)
     {
-        _status.LastError = exception.GetType().Name;
+        _status.RecordFailure(DiagnosticOperations.Persist, exception);
         await _logging.LogErrorAsync(eventName, exception, cancellationToken);
     }
 
@@ -226,9 +226,14 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         }
         catch (Exception exception)
         {
-            _ = _logging.LogErrorAsync("diagnostic route read", exception);
+            TryToLogError("diagnostic route read", exception);
             return string.Empty;
         }
+    }
+
+    private void TryToLogError(string source, Exception exception)
+    {
+        _ = _logging.LogErrorAsync(source, exception);
     }
 
     private async Task WriteConsoleAsync(

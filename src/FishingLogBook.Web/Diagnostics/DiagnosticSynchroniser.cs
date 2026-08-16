@@ -32,7 +32,10 @@ public sealed class DiagnosticSynchroniser : IDiagnosticSynchroniser
     {
         try
         {
-            if (!await _networkStatus.IsOnlineAsync(cancellationToken))
+            var isOnline = await RunAsync(
+                DiagnosticOperations.NetworkCheck,
+                () => _networkStatus.IsOnlineAsync(cancellationToken));
+            if (!isOnline)
             {
                 _status.IsOnline = false;
                 return;
@@ -40,11 +43,17 @@ public sealed class DiagnosticSynchroniser : IDiagnosticSynchroniser
 
             _status.IsOnline = true;
             await DrainQueueAsync(cancellationToken);
-            _status.QueuedCount = await _store.GetCountAsync(cancellationToken);
+            var count = await RunAsync(
+                DiagnosticOperations.QueueCount,
+                () => _store.GetCountAsync(cancellationToken));
+            _status.RecordQueueCount(count);
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            _status.LastError = exception.GetType().Name;
+            if (_status.LastOperation == DiagnosticOperations.QueueCount)
+            {
+                _status.MarkQueueCountUnavailable();
+            }
         }
     }
 
@@ -54,7 +63,9 @@ public sealed class DiagnosticSynchroniser : IDiagnosticSynchroniser
         var previousCount = int.MaxValue;
         for (var batch = 0; batch < maxBatches; batch++)
         {
-            var count = await _store.GetCountAsync(cancellationToken);
+            var count = await RunAsync(
+                DiagnosticOperations.QueueCount,
+                () => _store.GetCountAsync(cancellationToken));
             if (count == 0 || count >= previousCount)
             {
                 return;
@@ -70,7 +81,9 @@ public sealed class DiagnosticSynchroniser : IDiagnosticSynchroniser
 
     private async Task<bool> TryUploadNextBatchAsync(CancellationToken cancellationToken)
     {
-        var pending = await _store.GetPendingAsync(_config.MaxBatchSize, cancellationToken);
+        var pending = await RunAsync(
+            DiagnosticOperations.QueueRead,
+            () => _store.GetPendingAsync(_config.MaxBatchSize, cancellationToken));
         if (pending.Count == 0)
         {
             return false;
@@ -82,7 +95,9 @@ public sealed class DiagnosticSynchroniser : IDiagnosticSynchroniser
             .ToArray();
         if (expiredIds.Length > 0)
         {
-            await _store.RemoveAsync(expiredIds, cancellationToken);
+            await RunAsync(
+                DiagnosticOperations.QueueDelete,
+                () => _store.RemoveAsync(expiredIds, cancellationToken));
         }
 
         var ready = pending.Where(item => item.RetryCount < _config.MaxUploadAttempts).ToArray();
@@ -93,8 +108,12 @@ public sealed class DiagnosticSynchroniser : IDiagnosticSynchroniser
 
         try
         {
-            await _client.UploadBatchAsync(ready.Select(ToDto).ToArray(), cancellationToken);
-            await _store.RemoveAsync(ready.Select(item => item.Id).ToArray(), cancellationToken);
+            await RunAsync(
+                DiagnosticOperations.Upload,
+                () => _client.UploadBatchAsync(ready.Select(ToDto).ToArray(), cancellationToken));
+            await RunAsync(
+                DiagnosticOperations.QueueDelete,
+                () => _store.RemoveAsync(ready.Select(item => item.Id).ToArray(), cancellationToken));
             return true;
         }
         catch (HttpRequestException exception)
@@ -114,12 +133,37 @@ public sealed class DiagnosticSynchroniser : IDiagnosticSynchroniser
         Exception exception,
         CancellationToken cancellationToken)
     {
-        _status.LastError = exception.GetType().Name;
+        _status.RecordFailure(DiagnosticOperations.Upload, exception);
         foreach (var item in ready)
         {
             item.RetryCount++;
             item.SyncStatus = SyncStatus.FailedToSynchronise;
-            await _store.SaveAsync(item, cancellationToken);
+            await RunAsync(
+                DiagnosticOperations.FailedEventSave,
+                () => _store.SaveAsync(item, cancellationToken));
+        }
+    }
+
+    private async Task RunAsync(string operation, Func<Task> action)
+    {
+        await RunAsync(operation, async () =>
+        {
+            await action();
+            return 0;
+        });
+    }
+
+    private async Task<T> RunAsync<T>(string operation, Func<Task<T>> action)
+    {
+        _status.RecordSuccess(operation);
+        try
+        {
+            return await action();
+        }
+        catch (Exception exception)
+        {
+            _status.RecordFailure(operation, exception);
+            throw;
         }
     }
 

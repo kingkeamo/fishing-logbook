@@ -228,4 +228,28 @@
   <data name="Diagnostics_EmptyQueue" xml:space="preserve">
     <value>Aucun événement de diagnostic n’est en file</value>
   </data>
+  <data name="Diagnostics_QueueUnavailable" xml:space="preserve">
+    <value>Impossible de lire la file</value>
+  </data>
+  <data name="Diagnostics_LastOperation" xml:space="preserve">
+    <value>Dernière opération</value>
+  </data>
+  <data name="Diagnostics_IsolatedProbe" xml:space="preserve">
+    <value>Sonde isolée (FishingLogBookDiagnosticsTest)</value>
+  </data>
+  <data name="Diagnostics_IsolatedProbeFailed" xml:space="preserve">
+    <value>Échec de la sonde isolée à</value>
+  </data>
+  <data name="Diagnostics_ProductionProbe" xml:space="preserve">
+    <value>Sonde de production (FishingLogBookDiagnostics)</value>
+  </data>
+  <data name="Diagnostics_ProductionProbeFailed" xml:space="preserve">
+    <value>Échec de la sonde de production à</value>
+  </data>
+  <data name="Diagnostics_RetryProbe" xml:space="preserve">
+    <value>Réessayer la sonde de diagnostic</value>
+  </data>
+  <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
+    <value>Base de données de diagnostic de production non initialisée</value>
+  </data>
 </root>

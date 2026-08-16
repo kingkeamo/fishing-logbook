@@ -3,5 +3,6 @@ export {
     getPendingDiagnosticEvents,
     deleteDiagnosticEvents,
     getDiagnosticQueueCount,
-    getStorageEstimate
+    getStorageEstimate,
+    inspectExistingDiagnosticDatabase
 } from './storage/diagnostic-store.js';

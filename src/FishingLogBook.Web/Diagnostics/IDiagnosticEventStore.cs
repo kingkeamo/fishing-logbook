@@ -10,6 +10,8 @@ public interface IDiagnosticEventStore
 
     Task<int> GetCountAsync(CancellationToken cancellationToken);
 
+    Task<DiagnosticDatabaseInspection> InspectExistingAsync(CancellationToken cancellationToken);
+
     Task SaveAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken);
 
     Task<StorageEstimate> GetStorageEstimateAsync(CancellationToken cancellationToken);

@@ -228,4 +228,28 @@
   <data name="Diagnostics_EmptyQueue" xml:space="preserve">
     <value>No diagnostic events are queued</value>
   </data>
+  <data name="Diagnostics_QueueUnavailable" xml:space="preserve">
+    <value>Unable to read queue</value>
+  </data>
+  <data name="Diagnostics_LastOperation" xml:space="preserve">
+    <value>Last operation</value>
+  </data>
+  <data name="Diagnostics_IsolatedProbe" xml:space="preserve">
+    <value>Isolated probe (FishingLogBookDiagnosticsTest)</value>
+  </data>
+  <data name="Diagnostics_IsolatedProbeFailed" xml:space="preserve">
+    <value>Isolated probe failed at</value>
+  </data>
+  <data name="Diagnostics_ProductionProbe" xml:space="preserve">
+    <value>Production probe (FishingLogBookDiagnostics)</value>
+  </data>
+  <data name="Diagnostics_ProductionProbeFailed" xml:space="preserve">
+    <value>Production probe failed at</value>
+  </data>
+  <data name="Diagnostics_RetryProbe" xml:space="preserve">
+    <value>Retry diagnostic probe</value>
+  </data>
+  <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
+    <value>Production diagnostic database not initialised</value>
+  </data>
 </root>

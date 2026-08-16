@@ -26,7 +26,8 @@ public class BaseTestCatchLogTest
         ITestCatchSynchroniser synchroniser,
         ITestCatchPhotoStore photoStore,
         IDiagnosticLogger? diagnostics = null,
-        ILocationService? location = null)
+        ILocationService? location = null,
+        IDiagnosticSynchroniser? diagnosticSynchroniser = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -37,13 +38,47 @@ public class BaseTestCatchLogTest
         context.Services.AddSingleton(photoStore);
         context.Services.AddSingleton(diagnostics ?? Substitute.For<IDiagnosticLogger>());
         context.Services.AddSingleton(Substitute.For<ILoggingService>());
-        context.Services.AddSingleton(Substitute.For<IDiagnosticSynchroniser>());
+        context.Services.AddSingleton(diagnosticSynchroniser ?? Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(new CorrelationContext());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddSingleton(location ?? DeniedLocation());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
 
         return context;
+    }
+
+    protected static Task Hang()
+    {
+        return new TaskCompletionSource().Task;
+    }
+
+    protected static Task<T> Hang<T>()
+    {
+        return new TaskCompletionSource<T>().Task;
+    }
+
+    protected static ILocationService HangingLocation()
+    {
+        var location = Substitute.For<ILocationService>();
+        location.GetPromptStatusAsync(Arg.Any<CancellationToken>())
+            .Returns(_ => Hang<LocationPromptStatus>());
+        location.TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Hang<TestCatchLocation?>());
+        return location;
+    }
+
+    protected static IDiagnosticLogger HangingDiagnostics()
+    {
+        var diagnostics = Substitute.For<IDiagnosticLogger>();
+        diagnostics.LogAsync(
+                Arg.Any<FishingLogBook.Shared.Diagnostics.DiagnosticLevel>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyDictionary<string, string>?>(),
+                Arg.Any<Exception?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ => Hang());
+        return diagnostics;
     }
 
     protected static ILocationService DeniedLocation()

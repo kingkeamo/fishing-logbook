@@ -4,6 +4,7 @@ import {
     getDiagnosticQueueCount,
     getPendingDiagnosticEvents,
     getStorageEstimate,
+    inspectExistingDiagnosticDatabase,
     putDiagnosticEvent
 } from './diagnostic-store.js';
 
@@ -33,5 +34,19 @@ describe('diagnostic-store JSInterop shim', () => {
 
         expect(estimate).toHaveProperty('quota');
         expect(estimate).toHaveProperty('usage');
+    });
+
+    it('re-exports inspect of an existing diagnostic database', async () => {
+        await putDiagnosticEvent(JSON.stringify({
+            id: 'keep',
+            timestampUtc: '2026-01-01T00:00:00.000Z',
+            eventName: 'kept'
+        }), 10);
+
+        await expect(inspectExistingDiagnosticDatabase()).resolves.toEqual({
+            exists: true,
+            hasStore: true,
+            count: 1
+        });
     });
 });

@@ -6,6 +6,7 @@ import {
     getDiagnosticQueueCount,
     getPendingDiagnosticEvents,
     getStorageEstimate,
+    inspectExistingDiagnosticDatabase,
     putDiagnosticEvent
 } from './diagnostic-store.js';
 
@@ -89,5 +90,43 @@ describe('Diagnostic store', () => {
 
         expect(estimate).toHaveProperty('quota');
         expect(estimate).toHaveProperty('usage');
+    });
+
+    it('does not create a diagnostic database when inspecting a missing one', async () => {
+        const inspection = await inspectExistingDiagnosticDatabase();
+        const databases = await indexedDB.databases();
+
+        expect(inspection).toEqual({ exists: false, hasStore: false, count: 0 });
+        expect((databases ?? []).some((item) => item.name === DIAGNOSTIC_DATABASE_NAME)).toBe(false);
+    });
+
+    it('counts queued events in an existing diagnostic database', async () => {
+        await putDiagnosticEvent(eventJson('a', '2026-01-01T00:00:00.000Z'), 10);
+
+        await expect(inspectExistingDiagnosticDatabase()).resolves.toEqual({
+            exists: true,
+            hasStore: true,
+            count: 1
+        });
+    });
+
+    it('does not count when the production store is missing', async () => {
+        await new Promise((resolve, reject) => {
+            const request = indexedDB.open(DIAGNOSTIC_DATABASE_NAME, 1);
+            request.onupgradeneeded = () => {
+                request.result.createObjectStore('other', { keyPath: 'id' });
+            };
+            request.onsuccess = () => {
+                request.result.close();
+                resolve();
+            };
+            request.onerror = () => reject(request.error);
+        });
+
+        await expect(inspectExistingDiagnosticDatabase()).resolves.toEqual({
+            exists: true,
+            hasStore: false,
+            count: 0
+        });
     });
 });

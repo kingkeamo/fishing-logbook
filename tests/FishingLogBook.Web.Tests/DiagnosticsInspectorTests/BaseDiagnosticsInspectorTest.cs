@@ -16,7 +16,8 @@ public class BaseDiagnosticsInspectorTest
         IDiagnosticSynchroniser? synchroniser = null,
         INetworkStatus? network = null,
         DiagnosticsClientConfig? config = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        IDiagnosticIndexedDbProbe? probe = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -28,6 +29,7 @@ public class BaseDiagnosticsInspectorTest
         context.Services.AddSingleton(config ?? new DiagnosticsClientConfig { MaxQueueSize = 500 });
         context.Services.AddSingleton(network ?? OnlineNetwork());
         context.Services.AddSingleton(logging ?? SilentLogging());
+        context.Services.AddSingleton(probe ?? SilentProbe());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
@@ -48,6 +50,13 @@ public class BaseDiagnosticsInspectorTest
             .Returns(Task.FromResult<IReadOnlyList<DiagnosticEvent>>(events));
         store.GetStorageEstimateAsync(Arg.Any<CancellationToken>())
             .Returns(new StorageEstimate { Quota = 1000, Usage = 10 });
+        store.InspectExistingAsync(Arg.Any<CancellationToken>())
+            .Returns(new DiagnosticDatabaseInspection
+            {
+                Exists = true,
+                HasStore = true,
+                Count = events.Length
+            });
         return store;
     }
 
@@ -60,5 +69,18 @@ public class BaseDiagnosticsInspectorTest
         logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         return logging;
+    }
+
+    protected static IDiagnosticIndexedDbProbe SilentProbe()
+    {
+        var probe = Substitute.For<IDiagnosticIndexedDbProbe>();
+        probe.RunIsolatedAsync(Arg.Any<CancellationToken>())
+            .Returns(new DiagnosticProbeResult
+            {
+                DatabaseName = BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
+                LastCompletedStage = BrowserDiagnosticIndexedDbProbe.StageCountReturned,
+                Count = 0
+            });
+        return probe;
     }
 }

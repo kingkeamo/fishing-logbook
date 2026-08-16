@@ -8,8 +8,12 @@ namespace FishingLogBook.Web.Services;
 
 public sealed class BrowserLocationService : ILocationService
 {
+    public const int CaptureTimeoutMilliseconds = 8000;
+    public const int PermissionQueryTimeoutMilliseconds = 2000;
+
     private const string ModulePath = "./js/location.js";
-    private const int CaptureTimeoutMilliseconds = 8000;
+
+    private static readonly LocationPromptStatus UnavailablePrompt = new(false, true, false);
 
     private readonly IJSRuntime _jsRuntime;
     private readonly IDiagnosticLogger _diagnostics;
@@ -24,18 +28,18 @@ public sealed class BrowserLocationService : ILocationService
 
     public async Task<LocationPromptStatus> GetPromptStatusAsync(CancellationToken cancellationToken)
     {
-        var permission = await QueryPermissionAsync(cancellationToken);
-        var dismissed = await IsDismissedAsync(cancellationToken);
-
-        return permission switch
+        try
         {
-            "granted" => new LocationPromptStatus(false, false, true),
-            "denied" => new LocationPromptStatus(false, true, false),
-            "unavailable" => new LocationPromptStatus(false, true, false),
-            _ => dismissed
-                ? new LocationPromptStatus(false, true, false)
-                : new LocationPromptStatus(true, false, false)
-        };
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(PermissionQueryTimeoutMilliseconds);
+            var permission = await QueryPermissionAsync(timeoutSource.Token);
+            var dismissed = await IsDismissedAsync(timeoutSource.Token);
+            return ToPromptStatus(permission, dismissed);
+        }
+        catch (Exception exception) when (IsBoundedFailure(exception, cancellationToken))
+        {
+            return UnavailablePrompt;
+        }
     }
 
     public async Task DismissPromptAsync(CancellationToken cancellationToken)
@@ -46,44 +50,16 @@ public sealed class BrowserLocationService : ILocationService
 
     public async Task<TestCatchLocation?> TryCaptureAsync(bool userRequested, CancellationToken cancellationToken)
     {
-        var status = await GetPromptStatusAsync(cancellationToken);
-        if (!userRequested && !status.WillCaptureOnSave)
-        {
-            return null;
-        }
-
         try
         {
-            var module = await GetModuleAsync(cancellationToken);
-            var result = await module.InvokeAsync<LocationJsResult>(
-                "getCurrent",
-                cancellationToken,
-                CaptureTimeoutMilliseconds);
-
-            if (result is null || !string.IsNullOrWhiteSpace(result.Error))
-            {
-                await LogCaptureOutcomeAsync(result?.Error, cancellationToken);
-                if (string.Equals(result?.Error, "denied", StringComparison.OrdinalIgnoreCase))
-                {
-                    await DismissPromptAsync(cancellationToken);
-                }
-
-                return null;
-            }
-
-            if (!DateTimeOffset.TryParse(result.Timestamp, out var capturedOn))
-            {
-                capturedOn = DateTimeOffset.UtcNow;
-            }
-
-            return new TestCatchLocation(
-                result.Latitude,
-                result.Longitude,
-                result.Accuracy,
-                capturedOn,
-                LocationDefaults.DeviceGps,
-                LocationDefaults.Private,
-                LocationDefaults.ConsentVersion);
+            using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutSource.CancelAfter(CaptureTimeoutMilliseconds);
+            return await CaptureAsync(userRequested, timeoutSource.Token);
+        }
+        catch (Exception exception) when (IsBoundedFailure(exception, cancellationToken))
+        {
+            await LogCaptureOutcomeAsync("timeout", cancellationToken);
+            return null;
         }
         catch (JSException exception)
         {
@@ -95,6 +71,66 @@ public sealed class BrowserLocationService : ILocationService
                 cancellationToken: cancellationToken);
             return null;
         }
+    }
+
+    private async Task<TestCatchLocation?> CaptureAsync(bool userRequested, CancellationToken cancellationToken)
+    {
+        var status = await GetPromptStatusAsync(cancellationToken);
+        if (!userRequested && !status.WillCaptureOnSave)
+        {
+            return null;
+        }
+
+        var module = await GetModuleAsync(cancellationToken);
+        var result = await module.InvokeAsync<LocationJsResult>(
+            "getCurrent",
+            cancellationToken,
+            CaptureTimeoutMilliseconds);
+
+        if (result is null || !string.IsNullOrWhiteSpace(result.Error))
+        {
+            await LogCaptureOutcomeAsync(result?.Error, cancellationToken);
+            if (string.Equals(result?.Error, "denied", StringComparison.OrdinalIgnoreCase))
+            {
+                await DismissPromptAsync(cancellationToken);
+            }
+
+            return null;
+        }
+
+        if (!DateTimeOffset.TryParse(result.Timestamp, out var capturedOn))
+        {
+            capturedOn = DateTimeOffset.UtcNow;
+        }
+
+        return new TestCatchLocation(
+            result.Latitude,
+            result.Longitude,
+            result.Accuracy,
+            capturedOn,
+            LocationDefaults.DeviceGps,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion);
+    }
+
+    private static LocationPromptStatus ToPromptStatus(string permission, bool dismissed)
+    {
+        return permission switch
+        {
+            "granted" => new LocationPromptStatus(false, false, true),
+            "denied" => UnavailablePrompt,
+            "unavailable" => UnavailablePrompt,
+            _ => dismissed
+                ? UnavailablePrompt
+                : new LocationPromptStatus(true, false, false)
+        };
+    }
+
+    private static bool IsBoundedFailure(Exception exception, CancellationToken cancellationToken)
+    {
+        return exception is TimeoutException ||
+               (exception is OperationCanceledException && !cancellationToken.IsCancellationRequested) ||
+               exception.Message.Contains("timed out", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task LogCaptureOutcomeAsync(string? error, CancellationToken cancellationToken)

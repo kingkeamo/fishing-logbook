@@ -2,7 +2,8 @@ import {
     closeDatabase,
     getStorageEstimate,
     openDatabase,
-    runTransaction
+    runTransaction,
+    withTimeout
 } from './indexed-db.js';
 
 export const DIAGNOSTIC_DATABASE_NAME = 'FishingLogBookDiagnostics';
@@ -114,6 +115,112 @@ export async function getDiagnosticQueueCount() {
         request.onsuccess = () => succeed(request.result || 0);
         request.onerror = () => fail(request.error);
     });
+}
+
+export async function inspectExistingDiagnosticDatabase() {
+    const exists = await productionDatabaseExists();
+    if (!exists) {
+        return { exists: false, hasStore: false, count: 0 };
+    }
+
+    const db = await openExistingDatabase();
+    try {
+        const hasStore = db.objectStoreNames.contains(storeName);
+        if (!hasStore) {
+            return { exists: true, hasStore: false, count: 0 };
+        }
+
+        const count = await withTimeout(new Promise((resolve, reject) => {
+            const transaction = db.transaction(storeName, 'readonly');
+            const request = transaction.objectStore(storeName).count();
+            request.onsuccess = () => resolve(request.result || 0);
+            request.onerror = () => reject(request.error);
+            transaction.onabort = () => reject(transaction.error || new Error('diagnostic transaction aborted'));
+        }), openTimeoutMs, 'diagnostic inspect count');
+        return { exists: true, hasStore: true, count };
+    } finally {
+        db.close();
+    }
+}
+
+async function productionDatabaseExists() {
+    if (typeof indexedDB.databases === 'function') {
+        try {
+            const databases = await indexedDB.databases();
+            if (Array.isArray(databases) && databases.some((item) => item.name === databaseName)) {
+                return true;
+            }
+        } catch {
+        }
+    }
+
+    return existsByOpenAbort();
+}
+
+function existsByOpenAbort() {
+    return withTimeout(new Promise((resolve, reject) => {
+        let createdFromEmpty = false;
+        const request = indexedDB.open(databaseName);
+        request.onupgradeneeded = (event) => {
+            if (event.oldVersion === 0) {
+                createdFromEmpty = true;
+                event.target.transaction.abort();
+            }
+        };
+        request.onsuccess = () => {
+            const db = request.result;
+            db.close();
+            if (createdFromEmpty) {
+                indexedDB.deleteDatabase(databaseName);
+                resolve(false);
+                return;
+            }
+
+            resolve(true);
+        };
+        request.onerror = () => {
+            if (createdFromEmpty) {
+                resolve(false);
+                return;
+            }
+
+            reject(request.error);
+        };
+    }), openTimeoutMs, 'diagnostic exists');
+}
+
+function openExistingDatabase() {
+    return withTimeout(new Promise((resolve, reject) => {
+        let createdFromEmpty = false;
+        const request = indexedDB.open(databaseName);
+        request.onupgradeneeded = (event) => {
+            if (event.oldVersion === 0) {
+                createdFromEmpty = true;
+                event.target.transaction.abort();
+            }
+        };
+        request.onsuccess = () => {
+            const db = request.result;
+            if (createdFromEmpty) {
+                db.close();
+                indexedDB.deleteDatabase(databaseName);
+                reject(new Error('not-initialised'));
+                return;
+            }
+
+            db.onversionchange = () => db.close();
+            db.onclose = () => { };
+            resolve(db);
+        };
+        request.onerror = () => {
+            if (createdFromEmpty || (request.error && request.error.name === 'AbortError')) {
+                reject(new Error('not-initialised'));
+                return;
+            }
+
+            reject(request.error);
+        };
+    }), openTimeoutMs, 'diagnostic inspect open');
 }
 
 export { getStorageEstimate };
