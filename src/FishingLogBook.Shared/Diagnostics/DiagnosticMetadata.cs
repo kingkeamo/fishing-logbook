@@ -94,6 +94,24 @@ public static class DiagnosticMetadata
         return true;
     }
 
+    public static string SafeErrorMessage(string? message, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return string.Empty;
+        }
+
+        foreach (var fragment in ForbiddenFragments)
+        {
+            if (message.Contains(fragment, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+        }
+
+        return Truncate(message, maxLength);
+    }
+
     public static string Truncate(string value, int maxLength)
     {
         if (string.IsNullOrEmpty(value) || value.Length <= maxLength)

@@ -25,27 +25,22 @@ public sealed class IndexedDbDiagnosticEventStore : IDiagnosticEventStore
         _config = config;
     }
 
-    public async Task EnqueueAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken)
+    public Task EnqueueAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken)
     {
-        var module = await GetModuleAsync(cancellationToken);
-        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutSource.CancelAfter(_config.OperationTimeout);
-        await module.InvokeVoidAsync(
-            "putDiagnosticEvent",
-            timeoutSource.Token,
-            JsonSerializer.Serialize(diagnosticEvent, JsonOptions),
-            _config.MaxQueueSize);
+        return WithTimeoutAsync(
+            (module, token) => module.InvokeVoidAsync(
+                "putDiagnosticEvent",
+                token,
+                JsonSerializer.Serialize(diagnosticEvent, JsonOptions),
+                _config.MaxQueueSize).AsTask(),
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<DiagnosticEvent>> GetPendingAsync(int maxCount, CancellationToken cancellationToken)
     {
-        var module = await GetModuleAsync(cancellationToken);
-        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutSource.CancelAfter(_config.OperationTimeout);
-        var items = await module.InvokeAsync<string[]>(
-            "getPendingDiagnosticEvents",
-            timeoutSource.Token,
-            maxCount);
+        var items = await WithTimeoutAsync(
+            (module, token) => module.InvokeAsync<string[]>("getPendingDiagnosticEvents", token, maxCount).AsTask(),
+            cancellationToken);
         return (items ?? [])
             .Select(json => JsonSerializer.Deserialize<DiagnosticEvent>(json, JsonOptions))
             .Where(item => item is not null)
@@ -53,37 +48,55 @@ public sealed class IndexedDbDiagnosticEventStore : IDiagnosticEventStore
             .ToArray();
     }
 
-    public async Task RemoveAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
+    public Task RemoveAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
     {
-        var module = await GetModuleAsync(cancellationToken);
-        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutSource.CancelAfter(_config.OperationTimeout);
-        await module.InvokeVoidAsync(
-            "deleteDiagnosticEvents",
-            timeoutSource.Token,
-            JsonSerializer.Serialize(ids.Select(id => id.ToString("D")).ToArray()));
+        return WithTimeoutAsync(
+            (module, token) => module.InvokeVoidAsync(
+                "deleteDiagnosticEvents",
+                token,
+                JsonSerializer.Serialize(ids.Select(id => id.ToString("D")).ToArray())).AsTask(),
+            cancellationToken);
     }
 
-    public async Task<int> GetCountAsync(CancellationToken cancellationToken)
+    public Task<int> GetCountAsync(CancellationToken cancellationToken)
     {
-        var module = await GetModuleAsync(cancellationToken);
-        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutSource.CancelAfter(_config.OperationTimeout);
-        return await module.InvokeAsync<int>("getDiagnosticQueueCount", timeoutSource.Token);
+        return WithTimeoutAsync(
+            (module, token) => module.InvokeAsync<int>("getDiagnosticQueueCount", token).AsTask(),
+            cancellationToken);
     }
 
-    public async Task SaveAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken)
+    public Task SaveAsync(DiagnosticEvent diagnosticEvent, CancellationToken cancellationToken)
     {
-        await EnqueueAsync(diagnosticEvent, cancellationToken);
+        return EnqueueAsync(diagnosticEvent, cancellationToken);
     }
 
     public async Task<StorageEstimate> GetStorageEstimateAsync(CancellationToken cancellationToken)
     {
-        var module = await GetModuleAsync(cancellationToken);
+        var estimate = await WithTimeoutAsync(
+            (module, token) => module.InvokeAsync<StorageEstimate?>("getStorageEstimate", token).AsTask(),
+            cancellationToken);
+        return estimate ?? new StorageEstimate();
+    }
+
+    private async Task WithTimeoutAsync(
+        Func<IJSObjectReference, CancellationToken, Task> action,
+        CancellationToken cancellationToken)
+    {
+        await WithTimeoutAsync(async (module, token) =>
+        {
+            await action(module, token);
+            return 0;
+        }, cancellationToken);
+    }
+
+    private async Task<T> WithTimeoutAsync<T>(
+        Func<IJSObjectReference, CancellationToken, Task<T>> action,
+        CancellationToken cancellationToken)
+    {
         using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutSource.CancelAfter(_config.OperationTimeout);
-        var estimate = await module.InvokeAsync<StorageEstimate?>("getStorageEstimate", timeoutSource.Token);
-        return estimate ?? new StorageEstimate();
+        var module = await GetModuleAsync(timeoutSource.Token);
+        return await action(module, timeoutSource.Token);
     }
 
     private async Task<IJSObjectReference> GetModuleAsync(CancellationToken cancellationToken)
@@ -96,8 +109,10 @@ public sealed class IndexedDbDiagnosticEventStore : IDiagnosticEventStore
         await _moduleLock.WaitAsync(cancellationToken);
         try
         {
-            _module ??= await _jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationToken, ModulePath);
-            return _module;
+            return _module ??= await _jsRuntime.InvokeAsync<IJSObjectReference>(
+                "import",
+                cancellationToken,
+                ModulePath);
         }
         finally
         {

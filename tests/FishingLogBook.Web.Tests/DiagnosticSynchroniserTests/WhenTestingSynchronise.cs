@@ -151,12 +151,57 @@ public class WhenTestingSynchronise
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldRecordTheQueueCountOperation_WhenCountIsCanceled()
+    {
+        // Arrange
+        var store = Substitute.For<IDiagnosticEventStore>();
+        store.GetCountAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("queue count canceled"));
+        var status = new DiagnosticStatus();
+        var sut = CreateSut(store, Substitute.For<IDiagnosticClient>(), online: true, status: status);
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+
+        // Assert
+        status.QueueCountAvailable.Should().BeFalse();
+        status.LastOperation.Should().Be(DiagnosticOperations.QueueCount);
+        status.LastError.Should().Contain(DiagnosticOperations.QueueCount);
+        status.LastError.Should().Contain(nameof(TaskCanceledException));
+    }
+
+    [Fact]
+    public async Task ItShouldRecordTheUploadOperation_WhenHttpUploadIsCanceled()
+    {
+        // Arrange
+        var store = new MemoryDiagnosticEventStore();
+        store.Items.Add(CreateEvent());
+        var client = Substitute.For<IDiagnosticClient>();
+        client.UploadBatchAsync(
+                Arg.Any<IReadOnlyList<FishingLogBook.Shared.Dtos.ClientDiagnosticEventDto>>(),
+                Arg.Any<CancellationToken>())
+            .ThrowsAsync(new TaskCanceledException("upload canceled"));
+        var status = new DiagnosticStatus();
+        var sut = CreateSut(store, client, online: true, status: status);
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+
+        // Assert
+        status.LastOperation.Should().BeOneOf(DiagnosticOperations.Upload, DiagnosticOperations.FailedEventSave, DiagnosticOperations.QueueCount);
+        status.LastError.Should().Contain(nameof(TaskCanceledException));
+        status.LastError.Should().Contain(DiagnosticOperations.Upload);
+        store.Items.Should().ContainSingle();
+    }
+
     private static DiagnosticSynchroniser CreateSut(
-        MemoryDiagnosticEventStore store,
+        IDiagnosticEventStore store,
         IDiagnosticClient client,
         bool online,
         int maxAttempts = 5,
-        int maxBatchSize = 50)
+        int maxBatchSize = 50,
+        DiagnosticStatus? status = null)
     {
         var network = Substitute.For<INetworkStatus>();
         network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(online);
@@ -164,7 +209,7 @@ public class WhenTestingSynchronise
             store,
             client,
             network,
-            new DiagnosticStatus(),
+            status ?? new DiagnosticStatus(),
             new DiagnosticsClientConfig { MaxBatchSize = maxBatchSize, MaxUploadAttempts = maxAttempts });
     }
 
