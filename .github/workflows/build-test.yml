@@ -31,6 +31,47 @@ jobs:
       - name: Test
         run: dotnet test FishingLogBook.sln --configuration Release --no-build --verbosity normal
 
+  javascript-test:
+    name: JavaScript unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Test JavaScript
+        run: npm test
+
+  javascript-browser-test:
+    name: JavaScript browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: Test JavaScript browsers
+        run: npm run test:browser
+
   terraform-validate:
     name: Validate Terraform (validation only, never apply)
     runs-on: ubuntu-latest
