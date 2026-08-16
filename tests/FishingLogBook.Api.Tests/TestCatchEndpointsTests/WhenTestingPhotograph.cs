@@ -22,7 +22,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         // Arrange
         _factory.ObjectStorage.ClearReceivedCalls();
         _factory.ObjectStorage.IsConfigured.Returns(false);
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var catchId = Guid.Parse("1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f809");
         var request = new PhotographUploadRequestDto(Guid.NewGuid(), "image/jpeg");
 
@@ -60,7 +60,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         _factory.ObjectStorage
             .CreateUploadUrlAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new Uri("https://storage.test/upload"));
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var request = new PhotographUploadRequestDto(photographId, "image/jpeg");
 
         // Act
@@ -93,7 +93,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
             .GetByIdAsync(catchId, Arg.Any<CancellationToken>())
             .Returns(record);
         _factory.TestCatchRepository.ClearReceivedCalls();
-        var client = _factory.CreateClient();
+        var client = _factory.CreateAuthenticatedClient();
         var request = new RecordPhotographDto(photographId, objectKey, "image/jpeg");
 
         // Act

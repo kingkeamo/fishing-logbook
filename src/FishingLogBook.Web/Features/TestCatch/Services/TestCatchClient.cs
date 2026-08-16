@@ -1,28 +1,31 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.TestCatch.Models;
 
 namespace FishingLogBook.Web.Features.TestCatch.Services;
 
 public sealed class TestCatchClient : ITestCatchClient
 {
-    private readonly HttpClient _httpClient;
+    private readonly HttpClient _apiClient;
+    private readonly HttpClient _anonymousClient;
 
-    public TestCatchClient(HttpClient httpClient)
+    public TestCatchClient(IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClient;
+        _apiClient = httpClientFactory.CreateClient(HttpClientNames.AuthorizedApi);
+        _anonymousClient = httpClientFactory.CreateClient(HttpClientNames.Anonymous);
     }
 
     public async Task UpsertAsync(TestCatchDto testCatch, CancellationToken cancellationToken)
     {
-        using var response = await _httpClient.PostAsJsonAsync("api/test-catches", testCatch, cancellationToken);
+        using var response = await _apiClient.PostAsJsonAsync("api/test-catches", testCatch, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task<IReadOnlyList<TestCatchDto>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var catches = await _httpClient.GetFromJsonAsync<IReadOnlyList<TestCatchDto>>(
+        var catches = await _apiClient.GetFromJsonAsync<IReadOnlyList<TestCatchDto>>(
             "api/test-catches",
             cancellationToken);
 
@@ -34,7 +37,7 @@ public sealed class TestCatchClient : ITestCatchClient
         PhotographUploadRequestDto request,
         CancellationToken cancellationToken)
     {
-        using var response = await _httpClient.PostAsJsonAsync(
+        using var response = await _apiClient.PostAsJsonAsync(
             $"api/test-catches/{testCatchId:D}/photographs/upload-url",
             request,
             cancellationToken);
@@ -51,7 +54,7 @@ public sealed class TestCatchClient : ITestCatchClient
     {
         using var content = new ByteArrayContent(bytes);
         content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-        using var response = await _httpClient.PutAsync(uploadUrl, content, cancellationToken);
+        using var response = await _anonymousClient.PutAsync(uploadUrl, content, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -60,7 +63,7 @@ public sealed class TestCatchClient : ITestCatchClient
         RecordPhotographDto request,
         CancellationToken cancellationToken)
     {
-        using var response = await _httpClient.PostAsJsonAsync(
+        using var response = await _apiClient.PostAsJsonAsync(
             $"api/test-catches/{testCatchId:D}/photographs",
             request,
             cancellationToken);

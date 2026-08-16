@@ -1,4 +1,5 @@
 using System.Reflection;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Configuration;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,13 @@ public class BaseDependencyInjectionTest
         services.AddFishingLogBookWeb(
             new ApiConfig { BaseUrl = "https://example.test/" },
             new DiagnosticsClientConfig(),
+            new AuthConfig
+            {
+                Authority = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool",
+                ClientId = "test-pwa-client",
+                ApiScope = AuthConstants.ApiScope,
+                ApiResource = AuthConstants.DevApiResourceUri
+            },
             new Uri("https://example.test/"));
 
         return services.BuildServiceProvider(new ServiceProviderOptions

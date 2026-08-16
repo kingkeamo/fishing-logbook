@@ -7,11 +7,31 @@
 
 environment = "dev"
 
+# Dev Cognito lives in eu-west-2. Do not rely on the variable default.
+aws_region = "eu-west-2"
+
+# Must be a URL. Cognito resource binding only accepts custom scopes that belong
+# to this identifier, and the Blazor OIDC resource parameter uses the same value.
+cognito_api_resource_identifier = "https://fishing-logbook-dev-api.fly.dev"
+
 # cloudflare_account_id = "<from dash.cloudflare.com → account ID>"
 # r2_location           = "enam"
 
-# cognito_callback_urls = ["https://<your-dev-web-domain>/authentication/login-callback"]
-# cognito_logout_urls   = ["https://<your-dev-web-domain>/"]
+# Dev callback/logout URLs default to local HTTPS/HTTP plus the Cloudflare Pages origin.
+# Override only if those application URLs change. Do not add wildcards or unrelated domains.
+# cognito_callback_urls = [
+#   "https://localhost:7005/authentication/login-callback",
+#   "http://localhost:5019/authentication/login-callback",
+#   "https://fishing-logbook-dev.pages.dev/authentication/login-callback",
+# ]
+# cognito_logout_urls = [
+#   "https://localhost:7005/authentication/logout-callback",
+#   "https://localhost:7005/",
+#   "http://localhost:5019/authentication/logout-callback",
+#   "http://localhost:5019/",
+#   "https://fishing-logbook-dev.pages.dev/authentication/logout-callback",
+#   "https://fishing-logbook-dev.pages.dev/",
+# ]
 
 # neon_org_id     = "<neon-organisation-id>"
 # neon_region     = "aws-us-east-1"

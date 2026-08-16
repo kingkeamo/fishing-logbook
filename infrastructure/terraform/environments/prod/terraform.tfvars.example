@@ -10,11 +10,17 @@
 
 environment = "prod"
 
+# cognito_api_resource_identifier = "https://<production-api-host>"
+
 # cloudflare_account_id = "<from dash.cloudflare.com → account ID>"
 # r2_location           = "enam"
 
+# Production callback URLs are required before apply. Do not guess the production domain.
 # cognito_callback_urls = ["https://<your-prod-web-domain>/authentication/login-callback"]
-# cognito_logout_urls   = ["https://<your-prod-web-domain>/"]
+# cognito_logout_urls = [
+#   "https://<your-prod-web-domain>/authentication/logout-callback",
+#   "https://<your-prod-web-domain>/",
+# ]
 
 # neon_org_id     = "<neon-organisation-id>"
 # neon_region     = "aws-us-east-1"

@@ -44,4 +44,10 @@ public static class DiagnosticEventNames
 
     public const string LocationPermissionDenied = "LocationPermissionDenied";
     public const string LocationCaptureFailed = "LocationCaptureFailed";
+
+    public const string AuthStarted = "AuthStarted";
+    public const string AuthSucceeded = "AuthSucceeded";
+    public const string AuthFailed = "AuthFailed";
+    public const string TokenUnavailable = "TokenUnavailable";
+    public const string ApiUnauthorized = "ApiUnauthorized";
 }

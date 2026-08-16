@@ -55,7 +55,8 @@ Never attempt to solve an application problem by provisioning additional infrast
 - Add resources **deliberately, one at a time, only when explicitly approved.** Neon
   currently defines `neon_project`; R2 defines `cloudflare_r2_bucket` (photos); Pages
   defines `cloudflare_pages_project`; Grafana Cloud looks up an existing stack and
-  defines a Loki `logs:write` access policy. Cognito and Fly remain skeletons.
+  defines a Loki `logs:write` access policy. Cognito defines the user pool, public PWA
+  app client, hosted-UI domain, and API resource server. Fly remains a skeleton.
 
 ## Stack (who does what)
 

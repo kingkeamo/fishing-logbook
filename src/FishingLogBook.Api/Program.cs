@@ -1,7 +1,10 @@
+using FishingLogBook.Api.Authentication;
+using FishingLogBook.Api.Configuration;
 using FishingLogBook.Api.Endpoints;
 using FishingLogBook.Api.Logging;
 using FishingLogBook.Api.Middleware;
 using FishingLogBook.DependencyInjection;
+using FishingLogBook.Shared.Constants;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,22 +17,34 @@ const string webClientCorsPolicy = "WebClient";
 builder.Services.AddFishingLogBook(builder.Configuration);
 builder.Services.AddOpenApi();
 
+var authConfig = builder.Configuration.GetSection(AuthConfig.SectionName).Get<AuthConfig>() ?? new AuthConfig();
+if (string.IsNullOrWhiteSpace(authConfig.ApiScope))
+{
+    authConfig.ApiScope = AuthConstants.ApiScope;
+}
+
+if (string.IsNullOrWhiteSpace(authConfig.ApiResource))
+{
+    authConfig.ApiResource = AuthConstants.DevApiResourceUri;
+}
+
+builder.Services.AddFishingLogBookJwtBearer(authConfig);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(webClientCorsPolicy, policy =>
     {
         var allowedOrigins = builder.Configuration
             .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() ?? Array.Empty<string>();
+            .Get<string[]>() ?? [];
 
-        if (allowedOrigins.Length > 0)
+        if (allowedOrigins.Length == 0)
         {
-            policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+            policy.SetIsOriginAllowed(_ => false).AllowAnyHeader().AllowAnyMethod();
+            return;
         }
-        else
-        {
-            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-        }
+
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
     });
 });
 
@@ -52,6 +67,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(webClientCorsPolicy);
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapSystemEndpoints();
 app.MapTestCatchEndpoints();

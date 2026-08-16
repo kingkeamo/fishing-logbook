@@ -1,4 +1,8 @@
+using System.Net.Http.Headers;
+using FishingLogBook.Api.Configuration;
+using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Application.Contracts;
+using FishingLogBook.Shared.Constants;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -17,20 +21,43 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
 
     public IObjectStorage ObjectStorage { get; } = Substitute.For<IObjectStorage>();
 
+    public HttpClient CreateAuthenticatedClient(string? accessToken = null)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", accessToken ?? TestJwt.CreateAccessToken());
+        return client;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Production");
 
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            var values = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Postgres"] = string.Empty
-            });
+            };
+            foreach (var pair in TestAuthentication.Configuration)
+            {
+                values[pair.Key] = pair.Value;
+            }
+
+            configuration.AddInMemoryCollection(values);
         });
 
         builder.ConfigureTestServices(services =>
         {
+            services.RemoveAll<AuthConfig>();
+            services.AddSingleton(new AuthConfig
+            {
+                Authority = TestJwt.Issuer,
+                ClientId = TestJwt.ClientId,
+                ApiScope = AuthConstants.ApiScope,
+                ApiResource = AuthConstants.DevApiResourceUri
+            });
+            TestAuthentication.ConfigureJwtBearer(services);
             services.RemoveAll<ISystemRepository>();
             services.AddScoped(_ => SystemRepository);
             services.RemoveAll<ITestCatchRepository>();

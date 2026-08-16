@@ -49,6 +49,32 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Apply public Auth configuration
+        env:
+          AUTH_AUTHORITY: ${{ vars.AUTH_AUTHORITY }}
+          AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
+          AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
+          AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("src/FishingLogBook.Web/wwwroot/appsettings.Production.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          existing = data.get("Auth") or {}
+          scope = os.environ.get("AUTH_API_SCOPE") or existing.get("ApiScope") or "https://fishing-logbook-dev-api.fly.dev/access"
+          resource = os.environ.get("AUTH_API_RESOURCE") or existing.get("ApiResource") or "https://fishing-logbook-dev-api.fly.dev"
+          data["Auth"] = {
+              "Authority": os.environ.get("AUTH_AUTHORITY") or existing.get("Authority") or "",
+              "ClientId": os.environ.get("AUTH_CLIENT_ID") or existing.get("ClientId") or "",
+              "ApiScope": scope,
+              "ApiResource": resource,
+          }
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
+
       - name: Publish Web
         run: dotnet publish src/FishingLogBook.Web --configuration Release -o artifacts/web
 

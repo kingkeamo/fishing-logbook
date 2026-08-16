@@ -9,6 +9,7 @@ using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
 using FishingLogBook.Web.Features.TestCatch.Services;
 using FishingLogBook.Web.Localization;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -21,22 +22,25 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         ApiConfig apiConfig,
         DiagnosticsClientConfig diagnosticsConfig,
+        AuthConfig authConfig,
         Uri apiBaseAddress)
     {
         services.AddSingleton(apiConfig);
         services.AddSingleton(diagnosticsConfig);
+        services.AddSingleton(authConfig);
         services.AddScoped<CorrelationContext>();
-        services.AddScoped(sp =>
+        services.AddTransient<CorrelationDelegatingHandler>();
+        services.AddTransient(sp => CreateApiAuthorizationMessageHandler(sp, authConfig, apiBaseAddress));
+        RegisterHttpClients(services, apiBaseAddress);
+        services.AddHttpClient<ISystemStatusClient, SystemStatusClient>(client =>
         {
-            var handler = new CorrelationDelegatingHandler(sp.GetRequiredService<CorrelationContext>())
-            {
-                InnerHandler = new HttpClientHandler()
-            };
-            return new HttpClient(handler) { BaseAddress = apiBaseAddress };
-        });
-        services.AddScoped<ISystemStatusClient, SystemStatusClient>();
+            client.BaseAddress = apiBaseAddress;
+        }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
+        services.AddHttpClient<IDiagnosticClient, DiagnosticClient>(client =>
+        {
+            client.BaseAddress = apiBaseAddress;
+        }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
         services.AddScoped<ITestCatchClient, TestCatchClient>();
-        services.AddScoped<IDiagnosticClient, DiagnosticClient>();
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();
@@ -53,7 +57,61 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICultureService, CultureService>();
         services.AddMudServices();
         services.AddTransient<MudLocalizer, FishingLogBookMudLocalizer>();
+        services.AddOidcAuthentication(options => ConfigureOidc(options, authConfig));
 
         return services;
+    }
+
+    private static void RegisterHttpClients(IServiceCollection services, Uri apiBaseAddress)
+    {
+        services.AddHttpClient(HttpClientNames.AuthorizedApi, client =>
+        {
+            client.BaseAddress = apiBaseAddress;
+        })
+            .AddHttpMessageHandler<AuthorizationMessageHandler>()
+            .AddHttpMessageHandler<CorrelationDelegatingHandler>();
+
+        services.AddHttpClient(HttpClientNames.Anonymous, client =>
+        {
+            client.BaseAddress = apiBaseAddress;
+        }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
+    }
+
+    private static AuthorizationMessageHandler CreateApiAuthorizationMessageHandler(
+        IServiceProvider services,
+        AuthConfig authConfig,
+        Uri apiBaseAddress)
+    {
+        var handler = new AuthorizationMessageHandler(
+            services.GetRequiredService<IAccessTokenProvider>(),
+            services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>());
+        var authorizedUrl = apiBaseAddress.ToString().TrimEnd('/');
+        var scopes = string.IsNullOrWhiteSpace(authConfig.ApiScope)
+            ? Array.Empty<string>()
+            : [authConfig.ApiScope];
+        handler.ConfigureHandler([authorizedUrl], scopes);
+        return handler;
+    }
+
+    private static void ConfigureOidc(
+        Microsoft.AspNetCore.Components.WebAssembly.Authentication.RemoteAuthenticationOptions<OidcProviderOptions> options,
+        AuthConfig authConfig)
+    {
+        options.ProviderOptions.Authority = authConfig.Authority;
+        options.ProviderOptions.ClientId = authConfig.ClientId;
+        options.ProviderOptions.ResponseType = "code";
+        options.ProviderOptions.DefaultScopes.Clear();
+        options.ProviderOptions.DefaultScopes.Add("openid");
+        options.ProviderOptions.DefaultScopes.Add("profile");
+        options.ProviderOptions.DefaultScopes.Add("email");
+        if (!string.IsNullOrWhiteSpace(authConfig.ApiScope))
+        {
+            options.ProviderOptions.DefaultScopes.Add(authConfig.ApiScope);
+        }
+
+        if (!string.IsNullOrWhiteSpace(authConfig.ApiResource))
+        {
+            options.ProviderOptions.AdditionalProviderParameters["resource"] = authConfig.ApiResource;
+        }
     }
 }
