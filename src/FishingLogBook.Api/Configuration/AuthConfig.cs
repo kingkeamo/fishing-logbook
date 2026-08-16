@@ -40,5 +40,17 @@ public sealed class AuthConfig
             throw new InvalidOperationException(
                 "Auth configuration is incomplete. Missing or empty: " + string.Join(", ", missing) + ".");
         }
+
+        if (!IsAbsoluteHttpsUri(Authority))
+        {
+            throw new InvalidOperationException("Auth:Authority must be an absolute HTTPS URI.");
+        }
+    }
+
+    private static bool IsAbsoluteHttpsUri(string value)
+    {
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(uri.Host);
     }
 }

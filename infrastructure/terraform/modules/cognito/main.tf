@@ -1,5 +1,5 @@
-# Amazon Cognito user pool, public PWA app client, hosted-UI domain, and API resource
-# server for one environment.
+# Amazon Cognito user pool, resource server, public PWA app client, hosted-UI domain,
+# and managed-login branding for one environment.
 #
 # The PWA is a public browser client: generate_secret is false. OAuth is Authorization
 # Code only (no implicit, no client_credentials). PKCE S256 is enforced by the Blazor

@@ -42,7 +42,7 @@ public static class AuthenticationExtensions
         };
 
         options.Authority = authConfig.Authority;
-        options.RequireHttpsMetadata = authConfig.Authority.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        options.RequireHttpsMetadata = true;
         options.MetadataAddress = $"{authConfig.Authority.TrimEnd('/')}/.well-known/openid-configuration";
     }
 

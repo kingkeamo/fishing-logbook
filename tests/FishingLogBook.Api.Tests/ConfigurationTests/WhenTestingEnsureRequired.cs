@@ -39,6 +39,25 @@ public class WhenTestingEnsureRequired
         act.Should().NotThrow();
     }
 
+    [Theory]
+    [InlineData("http://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool")]
+    [InlineData("http://127.0.0.1/us-east-1_testpool")]
+    [InlineData("cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool")]
+    [InlineData("https://")]
+    public void ItShouldThrowWhenAuthorityIsNotAnAbsoluteHttpsUri(string authority)
+    {
+        // Arrange
+        var authConfig = CreateCompleteAuthConfig();
+        authConfig.Authority = authority;
+
+        // Act
+        var act = authConfig.EnsureRequired;
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .Which.Message.Should().ContainAll("Auth:Authority", "HTTPS");
+    }
+
     private static AuthConfig CreateCompleteAuthConfig()
     {
         return new AuthConfig

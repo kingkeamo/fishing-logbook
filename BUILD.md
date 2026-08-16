@@ -694,8 +694,8 @@ Blazor assemblies
 # 25. Authentication Infrastructure
 
 Terraform defines Amazon Cognito in `infrastructure/terraform/modules/cognito/`. Each
-environment has its own user pool, public PWA app client, hosted-UI domain, and API
-resource server. Apply is **manual only** — see `infrastructure/README.md`.
+environment has its own user pool, resource server, public PWA app client, hosted-UI
+domain, and managed-login branding. Apply is **manual only** — see `infrastructure/README.md`.
 
 ## Flow
 

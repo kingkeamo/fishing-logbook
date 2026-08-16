@@ -224,8 +224,8 @@ Do not apply Grafana in prod until you want a separate Loki write token for prod
 ## Amazon Cognito (authentication)
 
 Cognito is the only AWS application service this project uses. Terraform owns the user
-pool, public PWA app client (`generate_secret = false`), hosted-UI domain, and API
-resource server. There is no client secret to output or store.
+pool, resource server, public PWA app client (`generate_secret = false`), hosted-UI
+domain, and managed-login branding. There is no client secret to output or store.
 
 The PWA uses Authorization Code + PKCE S256 via
 `Microsoft.AspNetCore.Components.WebAssembly.Authentication`. FishingLogBook does not
@@ -247,9 +247,9 @@ Password policy: minimum 12 characters, upper + lower + number required, symbols
 required. Length over extra complexity.
 
 **Do not apply until you have reviewed `terraform plan`.** Expected new resources in
-Dev: user pool, resource server, app client, user-pool domain (4). Abort if the plan
-shows destroy/replace of Neon, R2, Pages, or Grafana. Prod must not be applied until
-real production callback/logout HTTPS URLs exist.
+Dev: user pool, resource server, public PWA app client, user-pool domain, managed-login
+branding (5). Abort if the plan shows destroy/replace of Neon, R2, Pages, or Grafana.
+Prod must not be applied until real production callback/logout HTTPS URLs exist.
 
 After a reviewed apply, copy **public** outputs:
 
