@@ -22,9 +22,9 @@
             </MudText>
         }
         <MudText id="diagnostics-probe-production-stage">
-            @Loc["Diagnostics_ProductionProbe"]: @(_productionProbe?.LastCompletedStage ?? Loc["Diagnostics_None"])
+            @Loc["Diagnostics_ProductionProbe"]: @ProductionProbeLabel
         </MudText>
-        @if (_productionProbe?.FailedStage is not null)
+        @if (!_productionNotInitialised && _productionProbe?.FailedStage is not null)
         {
             <MudText id="diagnostics-probe-production-error">
                 @Loc["Diagnostics_ProductionProbeFailed"]: @_productionProbe.FailedStage @(_productionProbe.Error)

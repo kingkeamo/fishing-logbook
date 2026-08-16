@@ -249,4 +249,7 @@
   <data name="Diagnostics_RetryProbe" xml:space="preserve">
     <value>Retry diagnostic probe</value>
   </data>
+  <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
+    <value>Production diagnostic database not initialised</value>
+  </data>
 </root>

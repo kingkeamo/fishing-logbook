@@ -15,10 +15,7 @@ public class WhenTestingProbe : BaseDiagnosticsInspectorTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var probe = Substitute.For<IDiagnosticIndexedDbProbe>();
-        probe.RunAsync(
-                BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
-                true,
-                Arg.Any<CancellationToken>())
+        probe.RunIsolatedAsync(Arg.Any<CancellationToken>())
             .Returns(new DiagnosticProbeResult
             {
                 DatabaseName = BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
@@ -26,17 +23,15 @@ public class WhenTestingProbe : BaseDiagnosticsInspectorTest
                 FailedStage = BrowserDiagnosticIndexedDbProbe.StageWriting,
                 Error = "TimeoutException"
             });
-        probe.RunAsync(
-                BrowserDiagnosticIndexedDbProbe.ProductionDatabaseName,
-                false,
-                Arg.Any<CancellationToken>())
-            .Returns(new DiagnosticProbeResult
+        var store = CreateStore();
+        store.InspectExistingAsync(Arg.Any<CancellationToken>())
+            .Returns(new DiagnosticDatabaseInspection
             {
-                DatabaseName = BrowserDiagnosticIndexedDbProbe.ProductionDatabaseName,
-                LastCompletedStage = BrowserDiagnosticIndexedDbProbe.StageCountReturned,
+                Exists = true,
+                HasStore = true,
                 Count = 2
             });
-        await using var context = CreateContext(CreateStore(), probe: probe);
+        await using var context = CreateContext(store, probe: probe);
 
         // Act
         var cut = context.Render<DiagnosticsInspector>();
@@ -53,13 +48,8 @@ public class WhenTestingProbe : BaseDiagnosticsInspectorTest
             cut.Find("#retry-diagnostics-probe-button").TextContent.Should()
                 .Contain("Retry diagnostic probe");
         });
-        await probe.Received(1).RunAsync(
-            BrowserDiagnosticIndexedDbProbe.IsolatedDatabaseName,
-            true,
-            Arg.Any<CancellationToken>());
-        await probe.Received(1).RunAsync(
-            BrowserDiagnosticIndexedDbProbe.ProductionDatabaseName,
-            false,
-            Arg.Any<CancellationToken>());
+        await probe.Received(1).RunIsolatedAsync(Arg.Any<CancellationToken>());
+        await store.Received().InspectExistingAsync(Arg.Any<CancellationToken>());
+        await store.DidNotReceive().EnqueueAsync(Arg.Any<DiagnosticEvent>(), Arg.Any<CancellationToken>());
     }
 }

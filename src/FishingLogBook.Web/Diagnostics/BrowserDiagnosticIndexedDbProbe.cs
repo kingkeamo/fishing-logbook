@@ -8,8 +8,6 @@ public sealed class BrowserDiagnosticIndexedDbProbe : IDiagnosticIndexedDbProbe
 {
     public const string IsolatedDatabaseName = "FishingLogBookDiagnosticsTest";
     public const string IsolatedStoreName = "probeEvents";
-    public const string ProductionDatabaseName = "FishingLogBookDiagnostics";
-    public const string ProductionStoreName = "diagnosticEvents";
 
     public const string StageStartingImport = "DIAG-01 starting module import";
     public const string StageModuleImported = "DIAG-02 module imported";
@@ -31,13 +29,9 @@ public sealed class BrowserDiagnosticIndexedDbProbe : IDiagnosticIndexedDbProbe
         _config = config;
     }
 
-    public async Task<DiagnosticProbeResult> RunAsync(
-        string databaseName,
-        bool writeTestRecord,
-        CancellationToken cancellationToken)
+    public async Task<DiagnosticProbeResult> RunIsolatedAsync(CancellationToken cancellationToken)
     {
-        var result = new DiagnosticProbeResult { DatabaseName = databaseName };
-        var storeName = StoreNameFor(databaseName);
+        var result = new DiagnosticProbeResult { DatabaseName = IsolatedDatabaseName };
         var timeoutMs = (int)_config.OperationTimeout.TotalMilliseconds;
         var inProgress = StageStartingImport;
         try
@@ -50,18 +44,15 @@ public sealed class BrowserDiagnosticIndexedDbProbe : IDiagnosticIndexedDbProbe
             result.LastCompletedStage = StageModuleImported;
 
             inProgress = StageOpeningDatabase;
-            await module.InvokeVoidAsync("openProbeDatabase", token, databaseName, storeName, timeoutMs);
+            await module.InvokeVoidAsync("openProbeDatabase", token, timeoutMs);
             result.LastCompletedStage = StageDatabaseOpened;
 
-            if (writeTestRecord)
-            {
-                inProgress = StageWriting;
-                await module.InvokeVoidAsync("writeProbeRecord", token, databaseName, storeName, timeoutMs);
-                result.LastCompletedStage = StageWriteCompleted;
-            }
+            inProgress = StageWriting;
+            await module.InvokeVoidAsync("writeProbeRecord", token, timeoutMs);
+            result.LastCompletedStage = StageWriteCompleted;
 
             inProgress = StageReadingCount;
-            result.Count = await module.InvokeAsync<int>("countProbeRecords", token, databaseName, storeName, timeoutMs);
+            result.Count = await module.InvokeAsync<int>("countProbeRecords", token, timeoutMs);
             result.LastCompletedStage = StageCountReturned;
             return result;
         }
@@ -71,11 +62,6 @@ public sealed class BrowserDiagnosticIndexedDbProbe : IDiagnosticIndexedDbProbe
             result.Error = FormatError(exception);
             return result;
         }
-    }
-
-    private static string StoreNameFor(string databaseName)
-    {
-        return databaseName == ProductionDatabaseName ? ProductionStoreName : IsolatedStoreName;
     }
 
     private static string FormatError(Exception exception)
