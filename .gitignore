@@ -55,6 +55,14 @@ prod.tfplan
 # Node (in case tooling is added later)
 node_modules/
 
+# Playwright / Vitest
+playwright-report/
+blob-report/
+playwright/.cache/
+test-results/
+coverage/
+artifacts/javascript-tests/
+
 # OS files
 .DS_Store
 Thumbs.db

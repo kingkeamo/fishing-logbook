@@ -20,68 +20,8 @@
         if (location.href.endsWith('?')) {
             location.replace(location.pathname || '/');
         }
-        window.fishingLogBookCulture = {
-            get: () => {
-                try { return localStorage.getItem('fishinglogbook-culture'); }
-                catch { return null; }
-            },
-            set: (value) => {
-                try { localStorage.setItem('fishinglogbook-culture', value); } catch { /* ignore */ }
-                document.documentElement.lang = value;
-            },
-            browser: () => navigator.language || 'en-GB',
-            reload: () => {
-                location.replace(`${location.origin}${location.pathname || '/'}`);
-            }
-        };
-        window.fishingLogBookNetwork = {
-            isOnline: () => navigator.onLine,
-            onOnline: (helper) => {
-                window.addEventListener('online', () => {
-                    helper.invokeMethodAsync('OnBrowserOnline');
-                });
-            }
-        };
-        window.fishingLogBookDiagnostics = {
-            getSessionId: () => {
-                try { return localStorage.getItem('flb-anonymous-session-id'); }
-                catch { return null; }
-            },
-            setSessionId: (value) => {
-                try { localStorage.setItem('flb-anonymous-session-id', value); } catch { /* ignore */ }
-            },
-            getPlatform: () => {
-                const platform = navigator.userAgentData?.platform || navigator.platform || '';
-                const browser = navigator.userAgent || '';
-                return `${platform} ${browser}`.trim().slice(0, 120);
-            },
-            console: (level, eventName, message) => {
-                const line = `[FLB] ${eventName}: ${message}`;
-                if (level === 'Error' || level === 'Critical') {
-                    console.error(line);
-                } else if (level === 'Warning') {
-                    console.warn(line);
-                } else {
-                    console.debug(line);
-                }
-            },
-            setLastError: (json) => {
-                try { localStorage.setItem('flb-last-error', json); } catch { }
-            },
-            getLastError: () => {
-                try { return localStorage.getItem('flb-last-error'); } catch { return null; }
-            }
-        };
-        navigator.serviceWorker?.addEventListener('message', (event) => {
-            if (event.data?.type === 'ServiceWorkerError') {
-                console.error('[FLB] ServiceWorkerError', event.data.message);
-            }
-        });
-        const storedCulture = window.fishingLogBookCulture.get();
-        if (storedCulture) {
-            document.documentElement.lang = storedCulture;
-        }
     </script>
+    <script type="module" src="js/bootstrap/app.js"></script>
 </head>
 
 <body>
@@ -100,20 +40,9 @@
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script>
-        (async () => {
-            const epoch = '20260814-cache-first-unredirected';
-            try {
-                if (localStorage.getItem('flb-sw-epoch') !== epoch) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(registrations.map(registration => registration.unregister()));
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(key => caches.delete(key)));
-                    localStorage.setItem('flb-sw-epoch', epoch);
-                }
-            } catch { /* ignore */ }
-            navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });
-        })();
+    <script type="module">
+        import { registerServiceWorker } from './js/bootstrap/service-worker-registration.js';
+        registerServiceWorker();
     </script>
 </body>
 

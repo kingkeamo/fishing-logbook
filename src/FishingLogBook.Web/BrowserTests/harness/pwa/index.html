@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>FishingLogBook shell</title>
+</head>
+<body>
+    <p id="shell">FishingLogBook app shell</p>
+    <p id="sw-status">registering</p>
+    <script>
+        navigator.serviceWorker.register('./service-worker.js', { scope: './' }).then((registration) => {
+            return navigator.serviceWorker.ready.then(() => {
+                document.getElementById('sw-status').textContent = registration.active
+                    ? 'active'
+                    : 'registered';
+            });
+        }).catch((error) => {
+            document.getElementById('sw-status').textContent = String(error);
+        });
+    </script>
+</body>
+</html>

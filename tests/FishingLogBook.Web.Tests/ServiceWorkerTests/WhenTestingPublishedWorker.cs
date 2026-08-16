@@ -43,7 +43,24 @@ public class WhenTestingPublishedWorker : BaseServiceWorkerTest
 
         // Act
         // Assert
+        var registration = ReadWwwRootFile("js/bootstrap/service-worker-registration.js");
+
         indexHtml.Should().NotContain("fonts.googleapis.com");
-        indexHtml.Should().Contain("service-worker.js");
+        indexHtml.Should().Contain("service-worker-registration.js");
+        registration.Should().Contain("service-worker.js");
+    }
+
+    [Fact]
+    public void ItShouldExcludeJavaScriptUnitTestsFromPublishedContent()
+    {
+        // Arrange
+        var project = ReadWebProjectFile();
+        var script = ReadWwwRootFile("service-worker.published.js");
+
+        // Act
+        // Assert
+        project.Should().Contain("wwwroot\\**\\*.test.js");
+        project.Should().Contain("CopyToPublishDirectory=\"Never\"");
+        script.Should().Contain("/\\.test\\.js$/");
     }
 }

@@ -27,6 +27,7 @@ public class WhenTestingDelete
                 "FishingLogBook.Web",
                 "wwwroot",
                 "js",
+                "storage",
                 "diagnostic-store.js");
             if (File.Exists(candidate))
             {
@@ -36,6 +37,6 @@ public class WhenTestingDelete
             directory = directory.Parent;
         }
 
-        throw new FileNotFoundException("Could not find wwwroot file 'js/diagnostic-store.js'.");
+        throw new FileNotFoundException("Could not find wwwroot file 'js/storage/diagnostic-store.js'.");
     }
 }

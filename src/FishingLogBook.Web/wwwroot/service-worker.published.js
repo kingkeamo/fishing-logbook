@@ -14,7 +14,7 @@ self.addEventListener('unhandledrejection', event => notifyServiceWorkerError(St
 const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
 const offlineAssetsInclude = [ /\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.woff2$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.svg$/, /\.blat$/, /\.dat$/, /\.webmanifest$/ ];
-const offlineAssetsExclude = [ /^service-worker\.js$/, /\/_redirects$/, /\/_headers$/ ];
+const offlineAssetsExclude = [ /^service-worker\.js$/, /\/_redirects$/, /\/_headers$/, /\.test\.js$/ ];
 
 const base = '/';
 const baseUrl = new URL(base, self.origin);

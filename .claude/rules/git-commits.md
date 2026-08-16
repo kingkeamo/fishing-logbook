@@ -1,8 +1,19 @@
 # Git commits and branches
 
+## Creating a branch
+
+Always start from the latest GitHub `main`. A local `main` checkout is not enough and is often stale.
+
+1. `git fetch origin main`
+2. Create the branch from `origin/main`, not from the current checkout or local `main`:
+   `git checkout -b <prefix>/<n>-… origin/main`
+3. Do not branch from another feature, fix, or hotfix branch unless the user explicitly asks.
+
+A PR that conflicts with `main` when you were the only author usually means this step was skipped.
+
 ## Branch names
 
-Create the branch from `main`. Prefix from the GitHub issue type, then the issue number:
+Create the branch from `origin/main`. Prefix from the GitHub issue type, then the issue number:
 
 | Issue | Prefix | Example |
 |---|---|---|

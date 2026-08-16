@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>FishingLogBook JS harness</title>
+</head>
+<body>
+    <p id="status">loading</p>
+    <script type="module">
+        import { getAllTestCatches, putTestCatch } from '../../wwwroot/js/storage/catch-store.js';
+        import { getTestCatchPhotograph, putTestCatchPhotograph } from '../../wwwroot/js/storage/photo-store.js';
+        import { putDiagnosticEvent } from '../../wwwroot/js/storage/diagnostic-store.js';
+
+        window.harness = {
+            async putAndGetCatch() {
+                await putTestCatch(JSON.stringify({ id: 'harness-catch', notes: 'persisted' }));
+                const items = await getAllTestCatches();
+                return items.map((item) => JSON.parse(item));
+            },
+            async readCatches() {
+                const items = await getAllTestCatches();
+                return items.map((item) => JSON.parse(item));
+            },
+            async putAndGetPhoto() {
+                await putTestCatchPhotograph('harness-photo', new Uint8Array([7, 8, 9]), 'image/jpeg');
+                return getTestCatchPhotograph('harness-photo');
+            },
+            async writeIsolatedRecords() {
+                await putTestCatch(JSON.stringify({ id: 'catch-only', notes: 'catch-db' }));
+                await putDiagnosticEvent(JSON.stringify({
+                    id: 'diag-only',
+                    timestampUtc: '2026-01-01T00:00:00.000Z'
+                }), 10);
+                return {
+                    catchStores: await storeNames('FishingLogBook'),
+                    diagnosticStores: await storeNames('FishingLogBookDiagnostics'),
+                    catches: await window.harness.readCatches()
+                };
+            }
+        };
+
+        function storeNames(databaseName) {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(databaseName);
+                request.onsuccess = () => {
+                    const db = request.result;
+                    const names = [...db.objectStoreNames];
+                    db.close();
+                    resolve(names.sort());
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        document.getElementById('status').textContent = 'ready';
+    </script>
+</body>
+</html>
