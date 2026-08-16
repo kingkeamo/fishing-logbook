@@ -8,37 +8,7 @@ namespace FishingLogBook.Application.Tests.TestCatches.TestCatchServiceTests;
 public class WhenTestingUpsert : BaseTestCatchServiceTest
 {
     [Fact]
-    public async Task ItShouldPassTheRetryPayloadToTheRepository()
-    {
-        // Arrange
-        var testCatch = new TestCatchDto(
-            Guid.Parse("4e2a1c90-8b33-4f6d-9a17-5c0e8d2b1a44"),
-            "Pike",
-            DateTimeOffset.Parse("2026-08-14T12:00:00Z"),
-            "First attempt");
-
-        // Act
-        await Sut.UpsertAsync(testCatch, CancellationToken.None);
-        var retried = testCatch with { Notes = "Retry after timeout" };
-        await Sut.UpsertAsync(retried, CancellationToken.None);
-
-        // Assert
-        await MockTestCatchRepository.Received(1).UpsertAsync(
-            Arg.Is<TestCatchRecord>(record =>
-                record.Id == testCatch.Id &&
-                record.SpeciesName == "Pike" &&
-                record.Notes == "First attempt"),
-            Arg.Any<CancellationToken>());
-        await MockTestCatchRepository.Received(1).UpsertAsync(
-            Arg.Is<TestCatchRecord>(record =>
-                record.Id == testCatch.Id &&
-                record.SpeciesName == "Pike" &&
-                record.Notes == "Retry after timeout"),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldClearLocation_WhenUpsertedWithoutLocation()
+    public async Task ItShouldClearLocationWhenUpsertedWithoutLocation()
     {
         // Arrange
         var id = Guid.Parse("7c3e1a90-2b44-4f6d-8a17-5c0e8d2b1a55");
@@ -91,31 +61,37 @@ public class WhenTestingUpsert : BaseTestCatchServiceTest
     }
 
     [Fact]
-    public async Task ItShouldReturnTheCatch_WhenUpserted()
+    public async Task ItShouldPassTheRetryPayloadToTheRepository()
     {
         // Arrange
         var testCatch = new TestCatchDto(
-            Guid.NewGuid(),
-            "Perch",
-            DateTimeOffset.Parse("2026-08-14T13:00:00Z"),
-            null);
+            Guid.Parse("4e2a1c90-8b33-4f6d-9a17-5c0e8d2b1a44"),
+            "Pike",
+            DateTimeOffset.Parse("2026-08-14T12:00:00Z"),
+            "First attempt");
 
         // Act
-        var saved = await Sut.UpsertAsync(testCatch, CancellationToken.None);
+        await Sut.UpsertAsync(testCatch, CancellationToken.None);
+        var retried = testCatch with { Notes = "Retry after timeout" };
+        await Sut.UpsertAsync(retried, CancellationToken.None);
 
         // Assert
-        saved.Should().Be(testCatch);
         await MockTestCatchRepository.Received(1).UpsertAsync(
             Arg.Is<TestCatchRecord>(record =>
                 record.Id == testCatch.Id &&
-                record.SpeciesName == "Perch" &&
-                record.Notes == null &&
-                record.Latitude == null),
+                record.SpeciesName == "Pike" &&
+                record.Notes == "First attempt"),
+            Arg.Any<CancellationToken>());
+        await MockTestCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<TestCatchRecord>(record =>
+                record.Id == testCatch.Id &&
+                record.SpeciesName == "Pike" &&
+                record.Notes == "Retry after timeout"),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldPersistLocation_WhenUpserted()
+    public async Task ItShouldPersistLocationWhenUpserted()
     {
         // Arrange
         var location = new CatchLocationDto(
@@ -168,5 +144,29 @@ public class WhenTestingUpsert : BaseTestCatchServiceTest
                 record.LocationVisibility == LocationDefaults.Private),
             Arg.Any<CancellationToken>());
         await MockTestCatchRepository.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnTheCatchWhenUpserted()
+    {
+        // Arrange
+        var testCatch = new TestCatchDto(
+            Guid.NewGuid(),
+            "Perch",
+            DateTimeOffset.Parse("2026-08-14T13:00:00Z"),
+            null);
+
+        // Act
+        var saved = await Sut.UpsertAsync(testCatch, CancellationToken.None);
+
+        // Assert
+        saved.Should().Be(testCatch);
+        await MockTestCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<TestCatchRecord>(record =>
+                record.Id == testCatch.Id &&
+                record.SpeciesName == "Perch" &&
+                record.Notes == null &&
+                record.Latitude == null),
+            Arg.Any<CancellationToken>());
     }
 }

@@ -43,7 +43,7 @@ different project's test project.
 | `FishingLogBook.Tests.Common` | Shared test builders/fixtures — **no tests** (plain class library) | Domain, Shared |
 | `FishingLogBook.Shared.Tests` | DTO / contract serialisation | Shared, Tests.Common |
 | `FishingLogBook.Application.Tests` | CQRS handlers + FluentValidation validators | Application, Tests.Common |
-| `FishingLogBook.Infrastructure.Tests` | Unit tests at the project root by SUT; database-backed tests under `Integration/{Feature}/` | Infrastructure, Tests.Common |
+| `FishingLogBook.Infrastructure.Tests` | Unit tests at normal SUT/feature paths; live-infrastructure tests under `Integration/{Feature}/` (Testcontainers in CI) | Infrastructure, Tests.Common |
 | `FishingLogBook.Db.Migrations.Tests` | Migration ordering (`FilenameOnlyScriptComparer`) and engine helpers | Db.Migrations, Tests.Common |
 | `FishingLogBook.Api.Tests` | API endpoints via `WebApplicationFactory<Program>` (repositories mocked — no live DB in CI) | Api, Shared, Application, Tests.Common |
 
@@ -75,11 +75,11 @@ Assert more than "no exception":
 
 | Layer | Minimum assertions |
 |-------|-------------------|
-| CQRS handlers | Outcome (`IsSuccess` / `IsFailure`, `ErrorMessage`, returned data) **and** `Received()` / `DidNotReceive()` with `Arg.Is<>` on meaningful inputs |
-| Application services | FluentResults outcome **and** `Received()` / `DidNotReceive()` with `Arg.Is<>` on meaningful inputs |
+| CQRS handlers | Outcome (`IsSuccess` / `IsFailure`, `ErrorMessage`, returned data) **and** `Received(n)` / `DidNotReceive()` with `Arg.Is<>` on meaningful inputs |
+| Application services | FluentResults outcome **and** `Received(n)` / `DidNotReceive()` with `Arg.Is<>` on meaningful inputs |
 | Validators | `ShouldHaveValidationErrorFor` / `ShouldNotHaveAnyValidationErrors` for the rule under test |
-| API endpoints (integration) | HTTP status **and** response body **and**, when repositories are substituted, meaningful `Received()` / `DidNotReceive()` on those dependencies |
-| Infrastructure unit tests | Observable result **and** `Received()` / `DidNotReceive()` when collaborators are substituted |
+| API endpoints (integration) | HTTP status **and** response body **and**, when repositories are substituted, meaningful `Received(n)` / `DidNotReceive()` on those dependencies |
+| Infrastructure unit tests | Observable result **and** `Received(n)` / `DidNotReceive()` when collaborators are substituted |
 | Web / bUnit | See **`testing-blazor.md`** |
 
 **Anti-patterns (insufficient):** `result.IsSuccess.Should().BeTrue()` only; `Received(Arg.Any<T>())` when the SUT passes specific values; `Received()` without a call count; a success test with no `Received(n)` verification; inferring a dependency was not called only because the return value looks correct.
@@ -396,7 +396,7 @@ Every test method uses exactly these section comments — no other comments:
 - Call `await Sut.Handle(command, CancellationToken.None)`.
 - Assert `result.IsFailure` / `IsSuccess`, `ErrorMessage`, `ValidationErrors`, and success
   data.
-- **Every test** must verify mocks with `Received()` / `DidNotReceive()` and `Arg.Is<T>(...)`
+- **Every test** must verify mocks with `Received(n)` / `DidNotReceive()` and `Arg.Is<T>(...)`
   for meaningful inputs (see **Dependency verification**). When the handler calls
   `.Adapt<TArgs>()`, `Arg.Is<TArgs>` on the adapted fields is what proves Mapster copied
   the command — do not replace that with `Arg.Any<TArgs>()`.
@@ -425,7 +425,7 @@ var config = new TypeAdapterConfig();
 Mapper = new Mapper(config);
 ```
 
-- Assert FluentResults `IsSuccess` / `IsFailed` **and** `Received()` / `DidNotReceive()`
+- Assert FluentResults `IsSuccess` / `IsFailed` **and** `Received(n)` / `DidNotReceive()`
   with `Arg.Is<>` on meaningful inputs (see **Dependency verification**).
 
 ## Validator tests (Application.Tests)
@@ -470,10 +470,19 @@ authentication follow-up; do not imply that Cognito always supplies Email.
 
 API tests mock repositories and must not require live PostgreSQL in CI.
 
+Normal Infrastructure **unit** tests live at ordinary SUT/feature paths at the
+project root (`{Sut}Tests/`). They do not start Docker or PostgreSQL.
+
+Tests that require real external infrastructure live under
+`Integration/{Feature}/`. Use the word **Integration**, not Sandbox.
+
 When an issue requires proving uniqueness, transactions, or concurrency, add those
-tests in `FishingLogBook.Infrastructure.Tests/Integration/` against a real database
-(Testcontainers PostgreSQL is acceptable). Do not mock away the behaviour that must
-be trusted.
+tests in `FishingLogBook.Infrastructure.Tests/Integration/` against a real
+PostgreSQL started by **Testcontainers**. These are automated CI tests on the
+GitHub-hosted Ubuntu runner (`ubuntu-latest` / Docker socket). They do **not**
+need Neon, a shared CI database, or database connection secrets. Do not add a
+workflow Postgres service unless a later issue actually requires one. Do not mock
+away the behaviour that must be trusted.
 
 ```text
 FishingLogBook.Infrastructure.Tests/
@@ -494,7 +503,7 @@ Postgres fixtures live only under `Integration/TestSupport/`. Do not put live-da
 repository tests next to unit tests at the project root.
 
 Where an Infrastructure **unit** test has mocked collaborators, apply **Dependency
-verification**: assert meaningful `Received()` / `DidNotReceive()` and `Arg.Is<>`.
+verification**: assert meaningful `Received(n)` / `DidNotReceive()` and `Arg.Is<>`.
 Do **not** force interaction assertions into true integration tests where no
 dependency is mocked and the observable persisted/external state is the behaviour
 under test.

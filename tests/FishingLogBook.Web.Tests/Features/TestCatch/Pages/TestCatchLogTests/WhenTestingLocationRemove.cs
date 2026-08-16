@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingLocationRemove : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldClearLocation_WhenRemoveIsClicked()
+    public async Task ItShouldClearLocationWhenRemoveIsClicked()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

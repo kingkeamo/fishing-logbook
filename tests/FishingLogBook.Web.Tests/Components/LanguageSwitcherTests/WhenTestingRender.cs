@@ -25,7 +25,7 @@ public class WhenTestingRender : BaseLanguageSwitcherTest
     }
 
     [Fact]
-    public async Task ItShouldShowFrenchLanguageControl_WhenUiCultureIsFrench()
+    public async Task ItShouldShowFrenchLanguageControlWhenUiCultureIsFrench()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);

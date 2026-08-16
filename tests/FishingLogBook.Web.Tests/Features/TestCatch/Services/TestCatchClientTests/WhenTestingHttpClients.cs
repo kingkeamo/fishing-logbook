@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Services.TestCatchClientTe
 public class WhenTestingHttpClients
 {
     [Fact]
-    public async Task ItShouldCallTheAuthorizedApiClient_WhenListingCatches()
+    public async Task ItShouldCallTheAuthorizedApiClientWhenListingCatches()
     {
         // Arrange
         var apiHandler = new RecordingHandler("""[]""");
@@ -30,7 +30,7 @@ public class WhenTestingHttpClients
     }
 
     [Fact]
-    public async Task ItShouldNotAttachABearerToken_WhenUploadingToObjectStorage()
+    public async Task ItShouldNotAttachABearerTokenWhenUploadingToObjectStorage()
     {
         // Arrange
         var apiHandler = new RecordingHandler("""ok""");

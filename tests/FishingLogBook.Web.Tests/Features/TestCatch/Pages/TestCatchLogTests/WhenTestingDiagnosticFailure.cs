@@ -16,7 +16,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingDiagnosticFailure : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldStillSaveTheCatch_WhenDiagnosticLoggingThrows()
+    public async Task ItShouldStillSaveTheCatchWhenDiagnosticLoggingThrows()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -61,7 +61,7 @@ public class WhenTestingDiagnosticFailure : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldReleaseBusyState_WhenLocalReadFails()
+    public async Task ItShouldReleaseBusyStateWhenLocalReadFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

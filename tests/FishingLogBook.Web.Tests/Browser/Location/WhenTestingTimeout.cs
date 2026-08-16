@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Features.Diagnostics.Models;
@@ -16,7 +17,7 @@ namespace FishingLogBook.Web.Tests.Browser.Location;
 public class WhenTestingTimeout
 {
     [Fact]
-    public async Task ItShouldReturnASafeStatus_WhenPermissionQueryNeverCompletes()
+    public async Task ItShouldReturnASafeStatusWhenPermissionQueryNeverCompletes()
     {
         // Arrange
         var js = new FakeLocationJsRuntime { HangPermission = true };
@@ -32,7 +33,7 @@ public class WhenTestingTimeout
     }
 
     [Fact]
-    public async Task ItShouldReturnNull_WhenGetCurrentNeverCompletes()
+    public async Task ItShouldReturnNullWhenGetCurrentNeverCompletes()
     {
         // Arrange
         var diagnostics = Substitute.For<IDiagnosticLogger>();
@@ -49,9 +50,9 @@ public class WhenTestingTimeout
         // Assert
         location.Should().BeNull();
         await diagnostics.Received(1).LogAsync(
-            Arg.Any<FishingLogBook.Shared.Diagnostics.DiagnosticLevel>(),
-            Arg.Any<string>(),
-            Arg.Any<string>(),
+            DiagnosticLevel.Warning,
+            DiagnosticEventNames.LocationCaptureFailed,
+            "Location capture failed.",
             Arg.Any<IReadOnlyDictionary<string, string>?>(),
             Arg.Any<Exception?>(),
             Arg.Any<CancellationToken>());

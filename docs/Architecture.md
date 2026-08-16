@@ -648,6 +648,12 @@ Automatically resize infrastructure
 
 Cloud infrastructure must already exist before application deployment workflows execute.
 
+Repository database integration tests run in the same GitHub Actions `build-test`
+workflow via Testcontainers PostgreSQL (`postgres:16-alpine` on `ubuntu-latest`).
+They are automated CI tests, not a sandbox. They do **not** use Neon, a shared CI
+database, or database connection secrets. Do not add a workflow database service
+unless a later issue actually requires one.
+
 ---
 
 ## Initial Cost Expectations

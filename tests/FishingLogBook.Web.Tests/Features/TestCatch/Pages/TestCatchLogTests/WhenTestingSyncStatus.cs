@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingSyncStatus : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldShowRetry_WhenSynchronisationFailed()
+    public async Task ItShouldShowRetryWhenSynchronisationFailed()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingReopen : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldShowSavedCatch_WhenPageIsCreatedAgain()
+    public async Task ItShouldShowSavedCatchWhenPageIsCreatedAgain()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -43,7 +43,7 @@ public class WhenTestingReopen : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldShowFrenchLocalStatus_WhenUiCultureIsFrench()
+    public async Task ItShouldShowFrenchLocalStatusWhenUiCultureIsFrench()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);

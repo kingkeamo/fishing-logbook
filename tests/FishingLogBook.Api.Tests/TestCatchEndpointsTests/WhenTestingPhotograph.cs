@@ -17,10 +17,11 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldRejectUploadUrl_WhenObjectStorageIsNotConfigured()
+    public async Task ItShouldRejectUploadUrlWhenObjectStorageIsNotConfigured()
     {
         // Arrange
         _factory.ObjectStorage.ClearReceivedCalls();
+        _factory.TestCatchRepository.ClearReceivedCalls();
         _factory.ObjectStorage.IsConfigured.Returns(false);
         var client = _factory.CreateAuthenticatedClient();
         var catchId = Guid.Parse("1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f809");
@@ -38,10 +39,47 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
             Arg.Any<string>(),
             Arg.Any<TimeSpan>(),
             Arg.Any<CancellationToken>());
+        await _factory.TestCatchRepository.DidNotReceive()
+            .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldReturnUploadUrl_WhenObjectStorageIsConfigured()
+    public async Task ItShouldKeepASinglePhotographWhenMetadataIsPostedTwice()
+    {
+        // Arrange
+        var catchId = Guid.Parse("11223344-5566-7788-99aa-bbccddeeff00");
+        var photographId = Guid.Parse("ffeeddcc-bbaa-9988-7766-554433221100");
+        var objectKey = $"test-catches/{catchId:D}/{photographId:D}";
+        var record = new TestCatchRecord
+        {
+            Id = catchId,
+            SpeciesName = "Rudd",
+            CaughtOn = DateTimeOffset.Parse("2026-08-14T18:00:00Z")
+        };
+        _factory.TestCatchRepository
+            .GetByIdAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(record);
+        _factory.TestCatchRepository.ClearReceivedCalls();
+        var client = _factory.CreateAuthenticatedClient();
+        var request = new RecordPhotographDto(photographId, objectKey, "image/jpeg");
+
+        // Act
+        var first = await client.PostAsJsonAsync($"/api/test-catches/{catchId:D}/photographs", request);
+        var second = await client.PostAsJsonAsync($"/api/test-catches/{catchId:D}/photographs", request);
+
+        // Assert
+        first.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        second.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await _factory.TestCatchRepository.Received(2).UpsertPhotographAsync(
+            catchId,
+            photographId,
+            objectKey,
+            "image/jpeg",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnUploadUrlWhenObjectStorageIsConfigured()
     {
         // Arrange
         var catchId = Guid.Parse("9f8e7d6c-5b4a-3928-1706-54e3d2c1b0a9");
@@ -78,42 +116,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         await _factory.ObjectStorage.Received(1).CreateUploadUrlAsync(
             $"test-catches/{catchId:D}/{photographId:D}",
             "image/jpeg",
-            Arg.Any<TimeSpan>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldKeepASinglePhotograph_WhenMetadataIsPostedTwice()
-    {
-        // Arrange
-        var catchId = Guid.Parse("11223344-5566-7788-99aa-bbccddeeff00");
-        var photographId = Guid.Parse("ffeeddcc-bbaa-9988-7766-554433221100");
-        var objectKey = $"test-catches/{catchId:D}/{photographId:D}";
-        var record = new TestCatchRecord
-        {
-            Id = catchId,
-            SpeciesName = "Rudd",
-            CaughtOn = DateTimeOffset.Parse("2026-08-14T18:00:00Z")
-        };
-        _factory.TestCatchRepository
-            .GetByIdAsync(catchId, Arg.Any<CancellationToken>())
-            .Returns(record);
-        _factory.TestCatchRepository.ClearReceivedCalls();
-        var client = _factory.CreateAuthenticatedClient();
-        var request = new RecordPhotographDto(photographId, objectKey, "image/jpeg");
-
-        // Act
-        var first = await client.PostAsJsonAsync($"/api/test-catches/{catchId:D}/photographs", request);
-        var second = await client.PostAsJsonAsync($"/api/test-catches/{catchId:D}/photographs", request);
-
-        // Assert
-        first.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        second.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        await _factory.TestCatchRepository.Received(2).UpsertPhotographAsync(
-            catchId,
-            photographId,
-            objectKey,
-            "image/jpeg",
+            TimeSpan.FromMinutes(15),
             Arg.Any<CancellationToken>());
     }
 }

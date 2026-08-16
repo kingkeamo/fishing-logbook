@@ -16,28 +16,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
     }
 
     [Fact]
-    public async Task ItShouldReturnHealthy_WhenRecordExists()
-    {
-        // Arrange
-        Factory.SystemRepository.ClearReceivedCalls();
-        Factory.SystemRepository
-            .GetSystemTestRecordAsync(Arg.Any<CancellationToken>())
-            .Returns(new SystemTestRecordBuilder().WithName("FishingLogBook database online").Build());
-        var client = Factory.CreateClient();
-
-        // Act
-        var response = await client.GetAsync("/api/system/database");
-        var body = await response.Content.ReadFromJsonAsync<DatabaseTestDto>();
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        body!.Status.Should().Be("Healthy");
-        body.Name.Should().Be("FishingLogBook database online");
-        await Factory.SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldReturnServiceUnavailableWithDegraded_WhenNoRecordExists()
+    public async Task ItShouldReturnServiceUnavailableWithDegradedWhenNoRecordExists()
     {
         // Arrange
         Factory.SystemRepository.ClearReceivedCalls();
@@ -57,7 +36,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
     }
 
     [Fact]
-    public async Task ItShouldReturnServiceUnavailableWithUnhealthy_WhenRepositoryThrows()
+    public async Task ItShouldReturnServiceUnavailableWithUnhealthyWhenRepositoryThrows()
     {
         // Arrange
         Factory.SystemRepository.ClearReceivedCalls();
@@ -73,6 +52,27 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
         body!.Status.Should().Be("Unhealthy");
+        await Factory.SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnHealthyWhenRecordExists()
+    {
+        // Arrange
+        Factory.SystemRepository.ClearReceivedCalls();
+        Factory.SystemRepository
+            .GetSystemTestRecordAsync(Arg.Any<CancellationToken>())
+            .Returns(new SystemTestRecordBuilder().WithName("FishingLogBook database online").Build());
+        var client = Factory.CreateClient();
+
+        // Act
+        var response = await client.GetAsync("/api/system/database");
+        var body = await response.Content.ReadFromJsonAsync<DatabaseTestDto>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body!.Status.Should().Be("Healthy");
+        body.Name.Should().Be("FishingLogBook database online");
         await Factory.SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
     }
 }

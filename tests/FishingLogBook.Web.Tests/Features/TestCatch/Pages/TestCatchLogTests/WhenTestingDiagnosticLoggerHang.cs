@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingDiagnosticLoggerHang : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldLoadExistingCatches_WhenDiagnosticLoggingNeverCompletes()
+    public async Task ItShouldLoadExistingCatchesWhenDiagnosticLoggingNeverCompletes()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -45,7 +45,7 @@ public class WhenTestingDiagnosticLoggerHang : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldSaveTheCatch_WhenDiagnosticLoggingNeverCompletes()
+    public async Task ItShouldSaveTheCatchWhenDiagnosticLoggingNeverCompletes()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

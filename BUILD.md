@@ -246,6 +246,11 @@ Tests use xUnit + NSubstitute + **AwesomeAssertions** (the Apache-2.0 fork of
 FluentAssertions) + bUnit, and follow the `WhenTesting` naming convention documented in
 `.claude/rules/testing-csharp.md`.
 
+Infrastructure unit tests live at ordinary SUT paths. Tests that need a real database
+live under `FishingLogBook.Infrastructure.Tests/Integration/{Feature}/` and run in
+normal GitHub Actions CI via Testcontainers PostgreSQL. They do not use Neon, a shared
+CI database, or database connection secrets.
+
 ---
 
 # 8. Project Dependency Rules

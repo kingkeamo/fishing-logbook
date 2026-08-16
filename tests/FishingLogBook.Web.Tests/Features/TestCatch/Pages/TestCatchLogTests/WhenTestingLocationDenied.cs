@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingLocationDenied : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldSaveCatchWithoutLocation_WhenPermissionIsDenied()
+    public async Task ItShouldSaveCatchWithoutLocationWhenPermissionIsDenied()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

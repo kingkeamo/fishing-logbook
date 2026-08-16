@@ -8,7 +8,44 @@ namespace FishingLogBook.Application.Tests.TestCatches.TestCatchServiceTests;
 public class WhenTestingPhotograph : BaseTestCatchServiceTest
 {
     [Fact]
-    public async Task ItShouldKeepASinglePhotograph_WhenTheSameCatchPhotographIsRecordedTwice()
+    public async Task ItShouldOmitPhotographUrlWhenObjectStorageIsNotConfigured()
+    {
+        // Arrange
+        var catchId = Guid.Parse("3f6a9c81-4d20-4e15-b8a7-2c1d0e9f5648");
+        var photographId = Guid.Parse("9d2e7b50-1c84-4a36-9f0d-8b5c3a1e7260");
+        var objectKey = $"test-catches/{catchId:D}/{photographId:D}";
+        MockObjectStorage.IsConfigured.Returns(false);
+        MockTestCatchRepository
+            .GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<TestCatchRecord>>(
+            [
+                new TestCatchRecord
+                {
+                    Id = catchId,
+                    SpeciesName = "Roach",
+                    CaughtOn = DateTimeOffset.Parse("2026-08-14T16:00:00Z"),
+                    PhotographId = photographId,
+                    PhotographObjectKey = objectKey,
+                    PhotographContentType = "image/jpeg"
+                }
+            ]));
+
+        // Act
+        var listed = await Sut.ListAsync(CancellationToken.None);
+
+        // Assert
+        listed.Should().ContainSingle();
+        listed[0].PhotographId.Should().Be(photographId);
+        listed[0].PhotographUrl.Should().BeNull();
+        await MockTestCatchRepository.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
+            Arg.Any<string>(),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepASinglePhotographWhenTheSameCatchPhotographIsRecordedTwice()
     {
         // Arrange
         var catchId = Guid.Parse("7a1c3e90-2b44-4d18-9f05-6c8e0a2d1b77");
@@ -41,7 +78,7 @@ public class WhenTestingPhotograph : BaseTestCatchServiceTest
     }
 
     [Fact]
-    public async Task ItShouldCreateAnUploadUrl_WhenTheCatchExists()
+    public async Task ItShouldCreateAnUploadUrlWhenTheCatchExists()
     {
         // Arrange
         var catchId = Guid.Parse("0c9e4a12-8d70-4b31-a5c3-7e1f2d8b6a40");
@@ -78,43 +115,6 @@ public class WhenTestingPhotograph : BaseTestCatchServiceTest
             objectKey,
             "image/jpeg",
             TimeSpan.FromMinutes(15),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldOmitPhotographUrl_WhenObjectStorageIsNotConfigured()
-    {
-        // Arrange
-        var catchId = Guid.Parse("3f6a9c81-4d20-4e15-b8a7-2c1d0e9f5648");
-        var photographId = Guid.Parse("9d2e7b50-1c84-4a36-9f0d-8b5c3a1e7260");
-        var objectKey = $"test-catches/{catchId:D}/{photographId:D}";
-        MockObjectStorage.IsConfigured.Returns(false);
-        MockTestCatchRepository
-            .GetAllAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<TestCatchRecord>>(
-            [
-                new TestCatchRecord
-                {
-                    Id = catchId,
-                    SpeciesName = "Roach",
-                    CaughtOn = DateTimeOffset.Parse("2026-08-14T16:00:00Z"),
-                    PhotographId = photographId,
-                    PhotographObjectKey = objectKey,
-                    PhotographContentType = "image/jpeg"
-                }
-            ]));
-
-        // Act
-        var listed = await Sut.ListAsync(CancellationToken.None);
-
-        // Assert
-        listed.Should().ContainSingle();
-        listed[0].PhotographId.Should().Be(photographId);
-        listed[0].PhotographUrl.Should().BeNull();
-        await MockTestCatchRepository.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
-        await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
-            Arg.Any<string>(),
-            Arg.Any<TimeSpan>(),
             Arg.Any<CancellationToken>());
     }
 }

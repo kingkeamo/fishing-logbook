@@ -182,9 +182,16 @@ FishingLogBook.Infrastructure.Tests/
             {Repository}Tests/
 ```
 
-Example: `Integration/Users/UserIdentityRepositoryTests/`. Testcontainers PostgreSQL is
-acceptable. Do not place live-database repository tests next to unit tests at the project
-root. Folder and naming conventions are in **`testing-csharp.md`**.
+Example: `Integration/Users/UserIdentityRepositoryTests/`. Use the word **Integration**,
+not Sandbox.
+
+These tests run in normal GitHub Actions CI via Testcontainers PostgreSQL on the
+hosted Ubuntu runner. They do **not** use Neon, a shared CI database, or database
+connection secrets. Do not add a workflow Postgres service unless a later issue
+actually requires one.
+
+Do not place live-database repository tests next to unit tests at the project root.
+Folder and naming conventions are in **`testing-csharp.md`**.
 
 ## Before writing
 

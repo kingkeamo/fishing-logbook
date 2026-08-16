@@ -8,7 +8,7 @@ namespace FishingLogBook.Web.Tests.Layouts.MainLayoutTests;
 public class WhenTestingAuthentication : BaseMainLayoutTest
 {
     [Fact]
-    public async Task ItShouldShowSignIn_WhenUnauthenticated()
+    public async Task ItShouldShowSignInWhenUnauthenticated()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -23,7 +23,7 @@ public class WhenTestingAuthentication : BaseMainLayoutTest
     }
 
     [Fact]
-    public async Task ItShouldShowSignOut_WhenAuthenticated()
+    public async Task ItShouldShowSignOutWhenAuthenticated()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

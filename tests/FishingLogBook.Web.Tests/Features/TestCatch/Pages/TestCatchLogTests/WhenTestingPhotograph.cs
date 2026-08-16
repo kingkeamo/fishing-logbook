@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingPhotograph : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldShowPhotograph_WhenReopened()
+    public async Task ItShouldShowPhotographWhenReopened()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -50,7 +50,7 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldShowPhotographRetry_WhenUploadFailed()
+    public async Task ItShouldShowPhotographRetryWhenUploadFailed()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -88,7 +88,7 @@ public class WhenTestingPhotograph : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldShowRemotePhotograph_WhenOpenedOnAnotherSession()
+    public async Task ItShouldShowRemotePhotographWhenOpenedOnAnotherSession()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

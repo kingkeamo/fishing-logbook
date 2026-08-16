@@ -153,6 +153,9 @@ public class WhenTestingResolve : BaseUserIdentityServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("FishingLogBook UserId cannot be empty.");
+        await MockUserIdentityRepository.Received(1).FindUserIdAsync(
+            LookupFor(subject),
+            Arg.Any<CancellationToken>());
         await MockUserIdentityRepository.DidNotReceive().CreateAsync(
             Arg.Any<User>(),
             Arg.Any<UserIdentity>(),
@@ -249,6 +252,13 @@ public class WhenTestingResolve : BaseUserIdentityServiceTest
         await MockUserIdentityRepository.DidNotReceive().FindUserIdAsync(
             Arg.Is<FindUserIdentityArgs>(args => args.Subject == Email),
             Arg.Any<CancellationToken>());
+        await MockUserIdentityRepository.DidNotReceive().CreateAsync(
+            Arg.Any<User>(),
+            Arg.Any<UserIdentity>(),
+            Arg.Any<CancellationToken>());
+        await MockUserIdentityRepository.Received(1).UpdateEmailAsync(
+            Arg.Is<User>(user => user.Id == userId && user.Email == Email),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -271,9 +281,15 @@ public class WhenTestingResolve : BaseUserIdentityServiceTest
         // Assert
         first.Value.Should().Be(userId);
         second.Value.Should().Be(userId);
+        await MockUserIdentityRepository.Received(2).FindUserIdAsync(
+            LookupFor(subject),
+            Arg.Any<CancellationToken>());
         await MockUserIdentityRepository.DidNotReceive().CreateAsync(
             Arg.Any<User>(),
             Arg.Any<UserIdentity>(),
+            Arg.Any<CancellationToken>());
+        await MockUserIdentityRepository.Received(2).UpdateEmailAsync(
+            Arg.Is<User>(user => user.Id == userId && user.Email == Email),
             Arg.Any<CancellationToken>());
     }
 
@@ -310,6 +326,9 @@ public class WhenTestingResolve : BaseUserIdentityServiceTest
         await MockUserIdentityRepository.Received(1).CreateAsync(
             UserWithEmail(sharedEmail),
             IdentityFor(subjectB),
+            Arg.Any<CancellationToken>());
+        await MockUserIdentityRepository.DidNotReceive().UpdateEmailAsync(
+            Arg.Any<User>(),
             Arg.Any<CancellationToken>());
     }
 

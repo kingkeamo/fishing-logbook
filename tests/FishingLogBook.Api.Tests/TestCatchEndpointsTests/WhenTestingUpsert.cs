@@ -17,7 +17,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldReturnTheSameRecord_WhenPostedTwiceWithTheSameId()
+    public async Task ItShouldReturnTheSameRecordWhenPostedTwiceWithTheSameId()
     {
         // Arrange
         var record = new TestCatchRecord
@@ -54,7 +54,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldRejectTheCatch_WhenSpeciesIsMissing()
+    public async Task ItShouldRejectTheCatchWhenSpeciesIsMissing()
     {
         // Arrange
         _factory.TestCatchRepository.ClearReceivedCalls();
@@ -71,7 +71,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldAcceptLocation_WhenPostedWithTheCatch()
+    public async Task ItShouldAcceptLocationWhenPostedWithTheCatch()
     {
         // Arrange
         var location = new CatchLocationDto(

@@ -60,7 +60,7 @@ public class WhenTestingLoadFailure : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldReloadLocalCatches_WhenRetryIsClicked()
+    public async Task ItShouldReloadLocalCatchesWhenRetryIsClicked()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -94,7 +94,7 @@ public class WhenTestingLoadFailure : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldKeepPreviouslyLoadedCatches_WhenALaterReadFails()
+    public async Task ItShouldKeepPreviouslyLoadedCatchesWhenALaterReadFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -125,7 +125,7 @@ public class WhenTestingLoadFailure : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldStillShowCatches_WhenPhotographReadFails()
+    public async Task ItShouldStillShowCatchesWhenPhotographReadFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

@@ -26,19 +26,6 @@ public class WhenTestingEnsureRequired
             .Which.Message.Should().Contain(configurationKey);
     }
 
-    [Fact]
-    public void ItShouldNotThrowWhenAllRequiredValuesArePresent()
-    {
-        // Arrange
-        var authConfig = CreateCompleteAuthConfig();
-
-        // Act
-        var act = authConfig.EnsureRequired;
-
-        // Assert
-        act.Should().NotThrow();
-    }
-
     [Theory]
     [InlineData("http://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool")]
     [InlineData("http://127.0.0.1/us-east-1_testpool")]
@@ -56,6 +43,19 @@ public class WhenTestingEnsureRequired
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .Which.Message.Should().ContainAll("Auth:Authority", "HTTPS");
+    }
+
+    [Fact]
+    public void ItShouldNotThrowWhenAllRequiredValuesArePresent()
+    {
+        // Arrange
+        var authConfig = CreateCompleteAuthConfig();
+
+        // Act
+        var act = authConfig.EnsureRequired;
+
+        // Assert
+        act.Should().NotThrow();
     }
 
     private static AuthConfig CreateCompleteAuthConfig()

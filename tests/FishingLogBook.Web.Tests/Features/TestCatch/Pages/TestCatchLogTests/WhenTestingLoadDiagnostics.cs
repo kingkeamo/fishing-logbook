@@ -16,7 +16,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingLoadDiagnostics : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldLogWarningLoadStartedAndCompleted_WhenPageLoads()
+    public async Task ItShouldLogWarningLoadStartedAndCompletedWhenPageLoads()
     {
         // Arrange
         var store = Substitute.For<ITestCatchStore>();
@@ -51,7 +51,7 @@ public class WhenTestingLoadDiagnostics : BaseTestCatchLogTest
     }
 
     [Fact]
-    public async Task ItShouldNotLogLoadCompleted_WhenLocalReadFails()
+    public async Task ItShouldNotLogLoadCompletedWhenLocalReadFails()
     {
         // Arrange
         var store = Substitute.For<ITestCatchStore>();

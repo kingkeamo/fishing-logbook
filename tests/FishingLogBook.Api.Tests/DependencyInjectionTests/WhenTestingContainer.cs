@@ -65,7 +65,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
     }
 
     [Fact]
-    public void ItShouldResolveDbConnectionFactory_WhenTestHostProvidesConnectionString()
+    public void ItShouldResolveDbConnectionFactoryWhenTestHostProvidesConnectionString()
     {
         // Arrange
         using var scope = Factory.Services.CreateScope();

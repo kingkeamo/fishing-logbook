@@ -165,7 +165,7 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 ## Infrastructure layer (`FishingLogBook.Infrastructure`)
 
 - Dapper repositories in `Persistence/`; connection via `IDbConnectionFactory`.
-- DbUp migrator in `Migrations/`.
+- DbUp migrations live in `FishingLogBook.Db.Migrations`, not in Infrastructure.
 - Parameterised SQL only — never string-concatenate values.
 - This layer contains no DI registration of its own (see the composition root below).
 

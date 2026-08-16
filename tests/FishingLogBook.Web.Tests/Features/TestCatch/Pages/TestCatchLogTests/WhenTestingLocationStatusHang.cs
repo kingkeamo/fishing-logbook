@@ -12,7 +12,7 @@ namespace FishingLogBook.Web.Tests.Features.TestCatch.Pages.TestCatchLogTests;
 public class WhenTestingLocationStatusHang : BaseTestCatchLogTest
 {
     [Fact]
-    public async Task ItShouldLoadExistingCatches_WhenLocationStatusNeverCompletes()
+    public async Task ItShouldLoadExistingCatchesWhenLocationStatusNeverCompletes()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);

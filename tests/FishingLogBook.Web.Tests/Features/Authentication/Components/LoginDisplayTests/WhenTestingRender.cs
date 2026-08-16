@@ -11,7 +11,7 @@ namespace FishingLogBook.Web.Tests.Features.Authentication.Components.LoginDispl
 public class WhenTestingRender : BaseLoginDisplayTest
 {
     [Fact]
-    public async Task ItShouldShowSignIn_WhenUnauthenticated()
+    public async Task ItShouldShowSignInWhenUnauthenticated()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -27,7 +27,7 @@ public class WhenTestingRender : BaseLoginDisplayTest
     }
 
     [Fact]
-    public async Task ItShouldShowFrenchSignIn_WhenUnauthenticated()
+    public async Task ItShouldShowFrenchSignInWhenUnauthenticated()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
@@ -42,7 +42,7 @@ public class WhenTestingRender : BaseLoginDisplayTest
     }
 
     [Fact]
-    public async Task ItShouldShowSignOut_WhenAuthenticated()
+    public async Task ItShouldShowSignOutWhenAuthenticated()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -104,7 +104,7 @@ public class WhenTestingRender : BaseLoginDisplayTest
     }
 
     [Fact]
-    public async Task ItShouldNavigateToLogin_WhenSignInIsClicked()
+    public async Task ItShouldNavigateToLoginWhenSignInIsClicked()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -120,7 +120,7 @@ public class WhenTestingRender : BaseLoginDisplayTest
     }
 
     [Fact]
-    public async Task ItShouldNavigateToLogout_WhenSignOutIsClicked()
+    public async Task ItShouldNavigateToLogoutWhenSignOutIsClicked()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
