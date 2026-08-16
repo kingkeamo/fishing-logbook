@@ -13,9 +13,70 @@ Production Blazor patterns are in **`blazor.md`**. Server-side C# test rules are
 ## AI feature definition of done (mandatory)
 
 When you add or change production code under `src/FishingLogBook.Web/` (`.razor`,
-`.razor.cs`, `Services/`, `Models/`, `Configuration/`), you must **in the same task** add
-or update tests in `tests/FishingLogBook.Web.Tests/`. Application/Api tests do not replace
-Web tests for code in `FishingLogBook.Web`.
+`.razor.cs`, `Features/`, `Browser/`, `Components/`, `Layouts/`, `Configuration/`),
+you must **in the same task** add or update tests in `tests/FishingLogBook.Web.Tests/`.
+Application/Api tests do not replace Web tests for code in `FishingLogBook.Web`.
+
+## Tests mirror production (mandatory)
+
+`FishingLogBook.Web.Tests` follows the same feature-first layout as `FishingLogBook.Web`.
+
+**Do not** create new top-level `SomethingTests` directories. Place tests under the
+matching production feature (or shared) path.
+
+Canonical ownership map:
+
+```text
+FishingLogBook.Web.Tests/
+    Features/
+        Catch/
+            Pages/
+                CatchLogTests.cs
+            Offline/
+                CatchStoreTests.cs
+                CatchSynchroniserTests.cs
+
+        Diagnostics/
+            Pages/
+            Services/
+            Storage/
+            TestSupport/          → Diagnostics-only fakes (e.g. MemoryDiagnosticEventStore)
+
+        SystemStatus/
+            Pages/
+
+    Components/
+        LanguageSwitcherTests/
+    Browser/
+        Location/
+    Layouts/
+        MainLayoutTests/
+    Localization/
+        CultureMatcherTests/
+    DependencyInjection/
+    TestSupport/                  → genuinely shared fixtures (e.g. TestCulture)
+```
+
+This repository keeps the `WhenTesting` convention, so a leaf folder is `{Thing}Tests/`
+containing `Base{Thing}Test` plus `WhenTesting{Behaviour}` files — not a single flattened
+`CatchLogTests.cs` unless the suite is truly one class.
+
+Use `{Thing}Tests` as the **leaf folder name** (not `{Thing}`) so the test namespace does
+not hide the production type (`CS0118`). Example:
+
+```text
+Features/Catch/Pages/CatchLogTests/
+    BaseCatchLogTest.cs
+    WhenTestingSave.cs
+```
+
+Namespace: `FishingLogBook.Web.Tests.Features.Catch.Pages.CatchLogTests`.
+
+If the feature folder itself shares a type name (e.g. `Features/SystemStatus` vs page
+`SystemStatus`), use a using alias for the component type.
+
+Feature-specific fakes/builders belong with that feature's tests. Only genuinely shared
+infrastructure belongs in the project-level `TestSupport/` folder.
 
 ## Production code — ask before changing (mandatory)
 
@@ -34,7 +95,7 @@ that would break if the UI logic changed:
 
 ## DI container tests
 
-Keep a `DependencyInjectionTests/` suite that builds `AddFishingLogBookWeb` with
+Keep a `DependencyInjection/` suite that builds `AddFishingLogBookWeb` with
 `ValidateOnBuild` / `ValidateScopes`, stubs framework services (`IJSRuntime`,
 `NavigationManager`), then `GetRequiredService`s every `[Inject]` property on
 `IComponent` types in `FishingLogBook.Web`. Register new Web services in
@@ -57,7 +118,7 @@ MudBlazor registers services that are **`IAsyncDisposable`-only** (e.g.
   asynchronously:
 
 ```csharp
-// SystemStatusTests/BaseSystemStatusTest.cs
+// Features/SystemStatus/Pages/SystemStatusTests/BaseSystemStatusTest.cs
 public class BaseSystemStatusTest
 {
     protected static BunitContext CreateContext(ISystemStatusClient client)
@@ -70,7 +131,7 @@ public class BaseSystemStatusTest
     }
 }
 
-// SystemStatusTests/WhenTestingHealthyRender.cs
+// Features/SystemStatus/Pages/SystemStatusTests/WhenTestingHealthyRender.cs
 public class WhenTestingHealthyRender : BaseSystemStatusTest
 {
     [Fact]
@@ -101,8 +162,12 @@ public class WhenTestingHealthyRender : BaseSystemStatusTest
 
 ## Naming & AAA (WhenTesting convention)
 
-- Folder `{Component}Tests/` with a `Base{Component}Test` (holds `CreateContext`) and one
-  `WhenTesting{Behaviour}` class per behaviour, inheriting the base.
+- Place tests under the matching production feature path. The leaf folder is
+  `{Component}Tests/` (or `{Service}Tests/`) with a `Base{Component}Test` (holds
+  `CreateContext`) and one `WhenTesting{Behaviour}` class per behaviour, inheriting the
+  base. Do not put that `{Thing}Tests/` folder at the test project root.
+- Test class names remain `ThingBeingTestedTests` for the folder/base, and
+  `WhenTesting{Behaviour}` for each behaviour. Do not add extra terminology suffixes.
 - Test methods: `ItShould{Outcome}` with **no underscores**. Put the condition in the
   `WhenTesting{Behaviour}` class name, not in the method name.
 - Every test uses exactly the `// Arrange` / `// Act` / `// Assert` section comments.
@@ -116,4 +181,5 @@ Verify the mocked client services, not only markup. Both success and failure pat
 ## Before writing new tests
 
 Read at least **5 existing tests** of the same type (page, component, service) in
-`FishingLogBook.Web.Tests` before adding new ones.
+`FishingLogBook.Web.Tests` before adding new ones. Match the production feature folder
+and `{Thing}Tests` leaf naming. Do not create a new top-level `SomethingTests` directory.

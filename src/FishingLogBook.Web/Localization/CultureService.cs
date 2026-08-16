@@ -1,5 +1,7 @@
 using System.Globalization;
-using FishingLogBook.Web.Diagnostics;
+using FishingLogBook.Web.Features.Diagnostics.Models;
+using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Diagnostics.Storage;
 using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Localization;
