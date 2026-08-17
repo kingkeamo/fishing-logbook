@@ -285,6 +285,21 @@
   <data name="Catch_RemovePhoto" xml:space="preserve">
     <value>Retirer la photo</value>
   </data>
+  <data name="Catch_PhotoPosition" xml:space="preserve">
+    <value>Photo {0} sur {1}</value>
+  </data>
+  <data name="Catch_PreviousPhoto" xml:space="preserve">
+    <value>Photo précédente</value>
+  </data>
+  <data name="Catch_NextPhoto" xml:space="preserve">
+    <value>Photo suivante</value>
+  </data>
+  <data name="Catch_RecordAnother" xml:space="preserve">
+    <value>Enregistrer une autre prise</value>
+  </data>
+  <data name="Catch_ViewCatches" xml:space="preserve">
+    <value>Voir les prises</value>
+  </data>
   <data name="Catch_Save" xml:space="preserve">
     <value>Enregistrer</value>
   </data>

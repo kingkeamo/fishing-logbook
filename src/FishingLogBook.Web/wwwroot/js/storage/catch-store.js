@@ -260,8 +260,7 @@ export async function getAllCatchesWithPhotographs() {
 
                 succeed(catches.map((item) => ({
                     json: JSON.stringify(item),
-                    photographs: photographs
-                        .filter((photograph) => photograph.catchId === item.id)
+                    photographs: orderPhotographs(item, photographs)
                         .map((photograph) => ({
                             id: photograph.id,
                             catchId: photograph.catchId,
@@ -272,6 +271,26 @@ export async function getAllCatchesWithPhotographs() {
             };
         };
     });
+}
+
+function orderPhotographs(catchRecord, photographs) {
+    const related = photographs.filter((photograph) => photograph.catchId === catchRecord.id);
+    const byId = new Map(related.map((photograph) => [photograph.id, photograph]));
+    const ordered = [];
+    const metadataPhotographs = Array.isArray(catchRecord.photographs) ? catchRecord.photographs : [];
+    for (const metadata of metadataPhotographs) {
+        const photograph = byId.get(metadata.id);
+        if (photograph) {
+            ordered.push(photograph);
+            byId.delete(metadata.id);
+        }
+    }
+
+    for (const photograph of byId.values()) {
+        ordered.push(photograph);
+    }
+
+    return ordered;
 }
 
 function toUint8Array(bytes) {

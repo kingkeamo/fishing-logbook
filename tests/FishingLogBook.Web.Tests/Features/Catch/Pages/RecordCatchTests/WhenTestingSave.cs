@@ -40,6 +40,7 @@ public class WhenTestingSave : BaseRecordCatchTest
 
         // Assert
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeTrue();
+        cut.FindAll("#catch-photo-carousel").Should().BeEmpty();
         cut.FindAll("#catch-species").Should().BeEmpty();
         cut.FindAll("#catch-weight").Should().BeEmpty();
         cut.FindAll("#catch-length").Should().BeEmpty();
@@ -65,37 +66,6 @@ public class WhenTestingSave : BaseRecordCatchTest
     }
 
     [Fact]
-    public async Task ItShouldPreviewAndAllowRemovingAPhotograph()
-    {
-        // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var store = Substitute.For<ICatchStore>();
-        await using var context = CreateContext(store);
-        var cut = context.Render<RecordCatch>();
-
-        // Act
-        cut.FindComponents<InputFile>()[0].UploadFiles(
-            InputFileContent.CreateFromBinary([0xFF, 0xD8, 0xFF], "catch.jpg", contentType: "image/jpeg"));
-
-        // Assert
-        cut.WaitForAssertion(() =>
-        {
-            cut.Find("#catch-photo-preview-list").Should().NotBeNull();
-            cut.Find("#catch-caught-on").TextContent.Should().NotBeNullOrWhiteSpace();
-            cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse();
-        });
-        cut.FindAll("#catch-caught-on input").Should().BeEmpty();
-        cut.FindAll("input[type='datetime-local']").Should().BeEmpty();
-        cut.FindAll("#catch-species").Should().BeEmpty();
-        cut.FindAll("#test-catch-location-explainer").Should().BeEmpty();
-        var removeButton = cut.FindAll("button").First(button => button.Id?.StartsWith("catch-photo-remove-") == true);
-        await removeButton.ClickAsync();
-        cut.FindAll("#catch-photo-preview-list").Should().BeEmpty();
-        cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeTrue();
-        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task ItShouldNotShowSuccessWhenLocalSaveFails()
     {
         // Arrange
@@ -105,15 +75,16 @@ public class WhenTestingSave : BaseRecordCatchTest
             .ThrowsAsync(new InvalidOperationException("Photograph persistence failed."));
         await using var context = CreateContext(store);
         var cut = context.Render<RecordCatch>();
-        cut.FindComponents<InputFile>()[0].UploadFiles(
-            InputFileContent.CreateFromBinary([0xFF, 0xD8, 0xFF], "catch.jpg", contentType: "image/jpeg"));
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
 
         // Act
         await cut.Find("#save-catch-button").ClickAsync();
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#catch-save-failed").TextContent.Should().Contain("could not be saved"));
-        cut.FindAll("#catch-photo-preview-list").Should().NotBeEmpty();
+        cut.Find("#catch-photo-carousel").Should().NotBeNull();
+        cut.FindAll("#catch-saved").Should().BeEmpty();
+        cut.Find("#save-catch-button").Should().NotBeNull();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Id != Guid.Empty
@@ -121,6 +92,49 @@ public class WhenTestingSave : BaseRecordCatchTest
                 && catchRecord.Photographs[0].Id != Guid.Empty
                 && catchRecord.SpeciesName == null),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheSavedCatchVisibleAndReadOnly()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        await using var context = CreateContext(store);
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+        var photographId = VisiblePhotographId(cut);
+        var caughtOn = cut.Find("#catch-caught-on").TextContent;
+
+        // Act
+        await cut.Find("#save-catch-button").ClickAsync();
+
+        // Assert
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.Photographs.Count == 1
+                && catchRecord.Photographs[0].Id == photographId
+                && catchRecord.Photographs[0].CatchId == catchRecord.Id
+                && catchRecord.SpeciesName == null
+                && catchRecord.CaughtOn != default),
+            Arg.Any<CancellationToken>());
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-saved").TextContent.Should().Contain("Catch saved on this device");
+            cut.Find("#catch-photo-carousel").Should().NotBeNull();
+            VisiblePhotographId(cut).Should().Be(photographId);
+            cut.Find("#catch-caught-on").TextContent.Should().Be(caughtOn);
+            cut.Find("#catch-record-another").Should().NotBeNull();
+            cut.Find("#catch-view-catches").Should().NotBeNull();
+            cut.Find("#catch-view-catches").GetAttribute("href").Should().Be("/catches");
+        });
+        cut.FindAll("#save-catch-button").Should().BeEmpty();
+        cut.FindAll("#catch-photo-remove").Should().BeEmpty();
+        cut.FindAll("#catch-take-photo").Should().BeEmpty();
+        cut.FindAll("#catch-choose-photo").Should().BeEmpty();
+        cut.FindComponents<InputFile>().Should().BeEmpty();
     }
 
     [Fact]
@@ -134,8 +148,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         await using var context = CreateContext(store);
         var cut = context.Render<RecordCatch>();
         cut.Find("#save-catch-button").TextContent.Should().Contain("Enregistrer");
-        cut.FindComponents<InputFile>()[0].UploadFiles(
-            InputFileContent.CreateFromBinary([0xFF, 0xD8, 0xFF], "prise.jpg", contentType: "image/jpeg"));
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("prise.jpg", 0xFF, 0xD8, 0xFF));
 
         // Act
         await cut.Find("#save-catch-button").ClickAsync();
@@ -148,7 +161,41 @@ public class WhenTestingSave : BaseRecordCatchTest
                 && catchRecord.SpeciesName == null
                 && catchRecord.CaughtOn != default),
             Arg.Any<CancellationToken>());
-        cut.WaitForAssertion(() => cut.FindAll("#catch-photo-preview-list").Should().BeEmpty());
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-saved").TextContent.Should().Contain("Prise enregistrée sur cet appareil");
+            cut.Find("#catch-photo-carousel").Should().NotBeNull();
+            cut.Find("#catch-record-another").TextContent.Should().Contain("Enregistrer une autre prise");
+            cut.Find("#catch-view-catches").TextContent.Should().Contain("Voir les prises");
+        });
+        cut.FindAll("#save-catch-button").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldClearTheSavedCatchWhenRecordingAnother()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        await using var context = CreateContext(store);
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+        await cut.Find("#save-catch-button").ClickAsync();
+        cut.WaitForAssertion(() => cut.Find("#catch-record-another").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#catch-record-another").ClickAsync();
+
+        // Assert
+        cut.FindAll("#catch-photo-carousel").Should().BeEmpty();
+        cut.FindAll("#catch-caught-on").Should().BeEmpty();
+        cut.FindAll("#catch-saved").Should().BeEmpty();
+        cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("#catch-take-photo").Should().NotBeNull();
+        cut.Find("#catch-choose-photo").Should().NotBeNull();
+        await store.Received(1).SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -167,12 +214,11 @@ public class WhenTestingSave : BaseRecordCatchTest
         var cut = context.Render<RecordCatch>();
 
         // Act
-        cut.FindComponents<InputFile>()[0].UploadFiles(
-            InputFileContent.CreateFromBinary([0xFF, 0xD8, 0xFF], "first.jpg", contentType: "image/jpeg"));
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("first.jpg", 0xFF, 0xD8, 0xFF));
         await cut.Find("#save-catch-button").ClickAsync();
-        cut.WaitForAssertion(() => cut.FindAll("#catch-photo-preview-list").Should().BeEmpty());
-        cut.FindComponents<InputFile>()[0].UploadFiles(
-            InputFileContent.CreateFromBinary([0xFF, 0xD8, 0xFF], "second.jpg", contentType: "image/jpeg"));
+        cut.WaitForAssertion(() => cut.Find("#catch-record-another").Should().NotBeNull());
+        await cut.Find("#catch-record-another").ClickAsync();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("second.jpg", 0xFF, 0xD8, 0xFE));
         await cut.Find("#save-catch-button").ClickAsync();
 
         // Assert

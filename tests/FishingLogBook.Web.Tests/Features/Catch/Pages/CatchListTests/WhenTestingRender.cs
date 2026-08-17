@@ -58,6 +58,51 @@ public class WhenTestingRender : BaseCatchListTest
     }
 
     [Fact]
+    public async Task ItShouldUseTheFirstOrderedPhotographAsTheThumbnail()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var firstPhotographId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var stored = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [
+                new CatchPhotographModel(
+                    firstPhotographId,
+                    catchId,
+                    PhotographContentTypeConstants.Jpeg,
+                    [1, 2, 3]),
+                new CatchPhotographModel(
+                    Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    catchId,
+                    PhotographContentTypeConstants.Png,
+                    [4, 5, 6]),
+                new CatchPhotographModel(
+                    Guid.Parse("00000000-0000-0000-0000-000000000003"),
+                    catchId,
+                    PhotographContentTypeConstants.Webp,
+                    [7, 8, 9])
+            ]);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find($"#catch-thumb-{catchId:D}").GetAttribute("src")
+                .Should()
+                .Be($"data:image/jpeg;base64,{Convert.ToBase64String(new byte[] { 1, 2, 3 })}");
+        });
+        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldShowTheFrenchFallbackLabel()
     {
         // Arrange

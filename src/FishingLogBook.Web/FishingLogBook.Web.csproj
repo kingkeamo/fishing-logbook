@@ -35,4 +35,8 @@
     <ProjectReference Include="..\FishingLogBook.Shared\FishingLogBook.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FishingLogBook.Web.Tests" />
+  </ItemGroup>
+
 </Project>

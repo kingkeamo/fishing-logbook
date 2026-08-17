@@ -32,7 +32,29 @@ internal static class CatchJson
     {
         var metadata = JsonSerializer.Deserialize<CatchMetadata>(json, Options)
             ?? throw new InvalidOperationException("Catch metadata could not be read.");
-        return new CatchModel(metadata.Id, metadata.CaughtOn, photographs, metadata.SpeciesName);
+        return new CatchModel(
+            metadata.Id,
+            metadata.CaughtOn,
+            OrderPhotographs(metadata.Photographs, photographs),
+            metadata.SpeciesName);
+    }
+
+    private static IReadOnlyList<CatchPhotographModel> OrderPhotographs(
+        IReadOnlyList<CatchPhotographMetadata> metadataPhotographs,
+        IReadOnlyList<CatchPhotographModel> photographs)
+    {
+        var byId = photographs.ToDictionary(photograph => photograph.Id);
+        var ordered = new List<CatchPhotographModel>(photographs.Count);
+        foreach (var metadata in metadataPhotographs)
+        {
+            if (byId.Remove(metadata.Id, out var photograph))
+            {
+                ordered.Add(photograph);
+            }
+        }
+
+        ordered.AddRange(byId.Values);
+        return ordered;
     }
 
     private sealed record CatchMetadata(

@@ -279,6 +279,46 @@ describe('Production Catch store', () => {
         expect(items[0].photographs[0].bytesBase64).toBe(btoa(String.fromCharCode(1, 2, 3)));
     });
 
+    it('reads three photographs in metadata order after reopen', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photoA = '11111111-1111-1111-1111-111111111111';
+        const photoB = '22222222-2222-2222-2222-222222222222';
+        const photoC = '00000000-0000-0000-0000-000000000003';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                caughtOn: '2026-08-17T08:00:00+00:00',
+                photographs: [
+                    { id: photoA, catchId, contentType: 'image/jpeg' },
+                    { id: photoB, catchId, contentType: 'image/png' },
+                    { id: photoC, catchId, contentType: 'image/webp' }
+                ]
+            }),
+            [
+                { id: photoC, catchId, contentType: 'image/webp', bytes: new Uint8Array([3, 3, 3]) },
+                { id: photoA, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1, 1, 1]) },
+                { id: photoB, catchId, contentType: 'image/png', bytes: new Uint8Array([2, 2, 2]) }
+            ]
+        );
+
+        const firstRead = await getAllCatchesWithPhotographs();
+        const reopened = await getAllCatchesWithPhotographs();
+
+        expect(JSON.parse(firstRead[0].json).id).toBe(catchId);
+        expect(reopened[0].photographs.map((photograph) => photograph.id)).toEqual([photoA, photoB, photoC]);
+        expect(reopened[0].photographs.map((photograph) => photograph.catchId)).toEqual([catchId, catchId, catchId]);
+        expect(reopened[0].photographs.map((photograph) => photograph.contentType)).toEqual([
+            'image/jpeg',
+            'image/png',
+            'image/webp'
+        ]);
+        expect(reopened[0].photographs.map((photograph) => photograph.bytesBase64)).toEqual([
+            btoa(String.fromCharCode(1, 1, 1)),
+            btoa(String.fromCharCode(2, 2, 2)),
+            btoa(String.fromCharCode(3, 3, 3))
+        ]);
+    });
+
     it('keeps two separately saved catches on distinct ids', async () => {
         await putCatchWithPhotographs(
             JSON.stringify({ id: 'catch-a', caughtOn: '2026-08-17T08:00:00+00:00' }),

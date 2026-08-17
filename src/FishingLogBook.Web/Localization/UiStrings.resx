@@ -285,6 +285,21 @@
   <data name="Catch_RemovePhoto" xml:space="preserve">
     <value>Remove photo</value>
   </data>
+  <data name="Catch_PhotoPosition" xml:space="preserve">
+    <value>Photo {0} of {1}</value>
+  </data>
+  <data name="Catch_PreviousPhoto" xml:space="preserve">
+    <value>Previous photo</value>
+  </data>
+  <data name="Catch_NextPhoto" xml:space="preserve">
+    <value>Next photo</value>
+  </data>
+  <data name="Catch_RecordAnother" xml:space="preserve">
+    <value>Record another catch</value>
+  </data>
+  <data name="Catch_ViewCatches" xml:space="preserve">
+    <value>View catches</value>
+  </data>
   <data name="Catch_Save" xml:space="preserve">
     <value>Save</value>
   </data>
