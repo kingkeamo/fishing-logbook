@@ -31,7 +31,7 @@ public class WhenTestingUpdateLocationVisibility : BaseCatchClientTest
     }
 
     [Fact]
-    public async Task ItShouldIgnoreNotFound()
+    public async Task ItShouldTreatNotFoundAsAnUnsynchronisedLocalCatch()
     {
         // Arrange
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");

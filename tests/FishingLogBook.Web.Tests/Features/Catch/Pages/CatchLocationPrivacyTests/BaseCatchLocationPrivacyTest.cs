@@ -34,7 +34,7 @@ public class BaseCatchLocationPrivacyTest
             Location: location);
     }
 
-    protected static CatchModel LocatedCatch(Guid catchId)
+    protected static CatchModel LocatedCatch(Guid catchId, string visibility = LocationDefaults.Private)
     {
         return LocatedCatch(
             catchId,
@@ -44,8 +44,7 @@ public class BaseCatchLocationPrivacyTest
                 12,
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 LocationDefaults.DeviceGps,
-                LocationDefaults.Private,
+                visibility,
                 LocationDefaults.ConsentVersion));
     }
 }
-
