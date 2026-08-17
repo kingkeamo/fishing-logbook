@@ -44,5 +44,6 @@ public class WhenTestingGetById : BaseCatchRepositoryTest
         result.Value.Photographs.Should().ContainSingle();
         result.Value.Photographs[0].Id.Should().Be(catchRecord.Photographs[0].Id);
         result.Value.Photographs[0].CatchId.Should().Be(catchRecord.Id);
+        result.Value.Location.Should().BeNull();
     }
 }

@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
 using FishingLogBook.Web.Features.TestCatch.Pages.TestCatchLog;
@@ -22,7 +23,7 @@ public class WhenTestingLocationRemove : BaseTestCatchLogTest
             DateTimeOffset.Parse("2026-08-15T12:00:00Z"),
             null,
             SyncStatus.Synchronised,
-            Location: new TestCatchLocationModel(
+            Location: new CatchLocationModel(
                 53.2707,
                 -9.0568,
                 12,

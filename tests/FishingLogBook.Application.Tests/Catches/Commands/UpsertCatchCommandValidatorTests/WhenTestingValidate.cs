@@ -132,6 +132,110 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
         result.ShouldNotHaveAnyValidationErrors();
     }
 
+    [Theory]
+    [InlineData(91)]
+    [InlineData(-91)]
+    public void ItShouldHaveAValidationErrorWhenLatitudeIsOutOfRange(double latitude)
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { Latitude = latitude });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.Latitude);
+    }
+
+    [Theory]
+    [InlineData(181)]
+    [InlineData(-181)]
+    public void ItShouldHaveAValidationErrorWhenLongitudeIsOutOfRange(double longitude)
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { Longitude = longitude });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.Longitude);
+    }
+
+    [Fact]
+    public void ItShouldHaveAValidationErrorWhenLocationCapturedOnIsMissing()
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { CapturedOn = default });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.CapturedOn);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ItShouldHaveAValidationErrorWhenLocationSourceIsMissing(string source)
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { Source = source });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.Source);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ItShouldHaveAValidationErrorWhenLocationVisibilityIsMissing(string visibility)
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { Visibility = visibility });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.Visibility);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ItShouldHaveAValidationErrorWhenLocationConsentVersionIsMissing(string consentVersion)
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { ConsentVersion = consentVersion });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.ConsentVersion);
+    }
+
+    [Theory]
+    [InlineData(-90, -180)]
+    [InlineData(90, 180)]
+    [InlineData(0, 0)]
+    public void ItShouldAcceptBoundaryCoordinates(double latitude, double longitude)
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { Latitude = latitude, Longitude = longitude });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
     [Fact]
     public void ItShouldNotHaveValidationErrorsForAValidCommand()
     {
@@ -145,12 +249,38 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
         result.ShouldNotHaveAnyValidationErrors();
     }
 
+    [Fact]
+    public void ItShouldNotHaveValidationErrorsForAValidLocatedCommand()
+    {
+        // Arrange
+        var command = Command(location: ValidLocation());
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    private static CatchLocationDto ValidLocation()
+    {
+        return new CatchLocationDto(
+            53.2707,
+            -9.0568,
+            12,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            LocationDefaults.DeviceGps,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion);
+    }
+
     private static UpsertCatchCommand Command(
         Guid? userId = null,
         Guid? catchId = null,
         DateTimeOffset caughtOn = new(),
         bool useDefaultCaughtOn = false,
-        IReadOnlyList<CatchPhotographDto>? photographs = null)
+        IReadOnlyList<CatchPhotographDto>? photographs = null,
+        CatchLocationDto? location = null)
     {
         var resolvedCatchId = catchId ?? Guid.NewGuid();
         return new UpsertCatchCommand
@@ -164,7 +294,8 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
                 photographs ??
                 [
                     new CatchPhotographDto(Guid.NewGuid(), resolvedCatchId, PhotographContentTypeConstants.Jpeg)
-                ])
+                ],
+                location)
         };
     }
 }

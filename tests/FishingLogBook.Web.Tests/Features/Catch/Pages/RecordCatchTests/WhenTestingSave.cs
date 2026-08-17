@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
@@ -46,6 +47,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         cut.FindAll("#catch-length").Should().BeEmpty();
         cut.FindAll("#catch-notes").Should().BeEmpty();
         cut.FindAll("#catch-location").Should().BeEmpty();
+        cut.FindAll("#catch-location-status").Should().BeEmpty();
         cut.FindAll("#test-catch-location-explainer").Should().BeEmpty();
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
@@ -90,7 +92,8 @@ public class WhenTestingSave : BaseRecordCatchTest
                 catchRecord.Id != Guid.Empty
                 && catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id != Guid.Empty
-                && catchRecord.SpeciesName == null),
+                && catchRecord.SpeciesName == null
+                && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -118,7 +121,8 @@ public class WhenTestingSave : BaseRecordCatchTest
                 && catchRecord.Photographs[0].Id == photographId
                 && catchRecord.Photographs[0].CatchId == catchRecord.Id
                 && catchRecord.SpeciesName == null
-                && catchRecord.CaughtOn != default),
+                && catchRecord.CaughtOn != default
+                && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
         cut.WaitForAssertion(() =>
         {
@@ -134,6 +138,9 @@ public class WhenTestingSave : BaseRecordCatchTest
         cut.FindAll("#catch-photo-remove").Should().BeEmpty();
         cut.FindAll("#catch-take-photo").Should().BeEmpty();
         cut.FindAll("#catch-choose-photo").Should().BeEmpty();
+        cut.FindAll("#catch-location-saved").Should().BeEmpty();
+        cut.FindAll("#catch-location-status").Should().BeEmpty();
+        cut.FindAll("#catch-location").Should().BeEmpty();
         cut.FindComponents<InputFile>().Should().BeEmpty();
     }
 
@@ -250,6 +257,7 @@ public class WhenTestingSave : BaseRecordCatchTest
 
         // Assert
         injected.Should().Contain(typeof(ICatchStore));
+        injected.Should().Contain(typeof(ILocationService));
         injected.Should().NotContain(typeof(HttpClient));
         injected.Should().NotContain(type =>
             type.Name.Contains("Client", StringComparison.Ordinal)

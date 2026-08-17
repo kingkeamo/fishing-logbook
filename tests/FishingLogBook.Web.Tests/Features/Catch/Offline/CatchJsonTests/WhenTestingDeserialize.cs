@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 
@@ -45,5 +46,82 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
                 PhotographContentTypeConstants.Png,
                 PhotographContentTypeConstants.Webp);
         restored.Photographs.Should().OnlyContain(photograph => photograph.CatchId == catchId);
+    }
+
+    [Fact]
+    public void ItShouldReadLegacyMetadataWithoutALocationProperty()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var photographId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var json = """
+            {"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","caughtOn":"2026-08-17T08:00:00+00:00","speciesName":null,"photographs":[{"id":"11111111-1111-1111-1111-111111111111","catchId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","contentType":"image/jpeg"}]}
+            """;
+        var photographs = new[]
+        {
+            new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])
+        };
+
+        // Act
+        var restored = CatchJson.Deserialize(json, photographs);
+
+        // Assert
+        restored.Id.Should().Be(catchId);
+        restored.Location.Should().BeNull();
+        restored.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
+    }
+
+    [Fact]
+    public void ItShouldRoundTripANullLocation()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        var catchRecord = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])]);
+
+        // Act
+        var restored = CatchJson.Deserialize(
+            CatchJson.SerializeMetadata(catchRecord),
+            catchRecord.Photographs);
+
+        // Assert
+        restored.Location.Should().BeNull();
+        restored.Id.Should().Be(catchId);
+    }
+
+    [Fact]
+    public void ItShouldRoundTripCapturedLocationAndAccuracy()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        var location = new CatchLocationModel(
+            53.2707,
+            -9.0568,
+            12,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            LocationDefaults.DeviceGps,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion);
+        var catchRecord = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
+            Location: location);
+
+        // Act
+        var json = CatchJson.SerializeMetadata(catchRecord);
+        var restored = CatchJson.Deserialize(json, catchRecord.Photographs);
+
+        // Assert
+        json.Should().Contain("\"latitude\":53.2707");
+        json.Should().Contain("\"accuracyMetres\":12");
+        restored.Location.Should().Be(location);
+        restored.Location!.Visibility.Should().Be(LocationDefaults.Private);
+        restored.Location.Source.Should().Be(LocationDefaults.DeviceGps);
+        restored.Location.ConsentVersion.Should().Be(LocationDefaults.ConsentVersion);
     }
 }

@@ -74,15 +74,45 @@ public sealed class CatchRepository : ICatchRepository
         CancellationToken cancellationToken)
     {
         const string sql = """
-            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn")
-            VALUES (@Id, @UserId, @CaughtOn)
+            INSERT INTO "Catch" (
+                "Id",
+                "UserId",
+                "CaughtOn",
+                "Latitude",
+                "Longitude",
+                "LocationAccuracyMetres",
+                "LocationCapturedOn",
+                "LocationSource",
+                "LocationVisibility",
+                "LocationConsentVersion")
+            VALUES (
+                @Id,
+                @UserId,
+                @CaughtOn,
+                @Latitude,
+                @Longitude,
+                @LocationAccuracyMetres,
+                @LocationCapturedOn,
+                @LocationSource,
+                @LocationVisibility,
+                @LocationConsentVersion)
             ON CONFLICT ("Id") DO UPDATE SET
-                "CaughtOn" = EXCLUDED."CaughtOn"
+                "CaughtOn" = EXCLUDED."CaughtOn",
+                "Latitude" = COALESCE(EXCLUDED."Latitude", "Catch"."Latitude"),
+                "Longitude" = COALESCE(EXCLUDED."Longitude", "Catch"."Longitude"),
+                "LocationAccuracyMetres" = CASE
+                    WHEN EXCLUDED."Latitude" IS NOT NULL THEN EXCLUDED."LocationAccuracyMetres"
+                    ELSE "Catch"."LocationAccuracyMetres"
+                END,
+                "LocationCapturedOn" = COALESCE(EXCLUDED."LocationCapturedOn", "Catch"."LocationCapturedOn"),
+                "LocationSource" = COALESCE(EXCLUDED."LocationSource", "Catch"."LocationSource"),
+                "LocationVisibility" = COALESCE(EXCLUDED."LocationVisibility", "Catch"."LocationVisibility"),
+                "LocationConsentVersion" = COALESCE(EXCLUDED."LocationConsentVersion", "Catch"."LocationConsentVersion")
             WHERE "Catch"."UserId" = EXCLUDED."UserId";
             """;
         await connection.ExecuteAsync(new CommandDefinition(
             sql,
-            new { catchRecord.Id, catchRecord.UserId, catchRecord.CaughtOn },
+            ToRow(catchRecord),
             transaction,
             cancellationToken: cancellationToken));
     }
@@ -121,7 +151,17 @@ public sealed class CatchRepository : ICatchRepository
         CancellationToken cancellationToken)
     {
         const string catchSql = """
-            SELECT "Id", "UserId", "CaughtOn"
+            SELECT
+                "Id",
+                "UserId",
+                "CaughtOn",
+                "Latitude",
+                "Longitude",
+                "LocationAccuracyMetres",
+                "LocationCapturedOn",
+                "LocationSource",
+                "LocationVisibility",
+                "LocationConsentVersion"
             FROM "Catch"
             WHERE "Id" = @Id;
             """;
@@ -152,8 +192,43 @@ public sealed class CatchRepository : ICatchRepository
             Id = catchRow.Id,
             UserId = catchRow.UserId,
             CaughtOn = catchRow.CaughtOn,
+            Location = ToLocation(catchRow),
             Photographs = photographs.ToArray()
         };
+    }
+
+    private static object ToRow(Catch catchRecord)
+    {
+        return new
+        {
+            catchRecord.Id,
+            catchRecord.UserId,
+            catchRecord.CaughtOn,
+            Latitude = catchRecord.Location?.Latitude,
+            Longitude = catchRecord.Location?.Longitude,
+            LocationAccuracyMetres = catchRecord.Location?.AccuracyMetres,
+            LocationCapturedOn = catchRecord.Location?.CapturedOn,
+            LocationSource = catchRecord.Location?.Source,
+            LocationVisibility = catchRecord.Location?.Visibility,
+            LocationConsentVersion = catchRecord.Location?.ConsentVersion
+        };
+    }
+
+    private static CatchLocation? ToLocation(CatchRow catchRow)
+    {
+        if (catchRow.Latitude is null || catchRow.Longitude is null)
+        {
+            return null;
+        }
+
+        return CatchLocation.TryCreate(
+            catchRow.Latitude.Value,
+            catchRow.Longitude.Value,
+            catchRow.LocationAccuracyMetres,
+            catchRow.LocationCapturedOn ?? default,
+            catchRow.LocationSource,
+            catchRow.LocationVisibility,
+            catchRow.LocationConsentVersion);
     }
 
     private sealed class CatchRow
@@ -163,5 +238,19 @@ public sealed class CatchRepository : ICatchRepository
         public Guid UserId { get; init; }
 
         public DateTimeOffset CaughtOn { get; init; }
+
+        public double? Latitude { get; init; }
+
+        public double? Longitude { get; init; }
+
+        public double? LocationAccuracyMetres { get; init; }
+
+        public DateTimeOffset? LocationCapturedOn { get; init; }
+
+        public string? LocationSource { get; init; }
+
+        public string? LocationVisibility { get; init; }
+
+        public string? LocationConsentVersion { get; init; }
     }
 }

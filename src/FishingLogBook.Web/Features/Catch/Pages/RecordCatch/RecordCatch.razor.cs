@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Localization;
@@ -22,12 +23,24 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private bool _isSaved;
     private bool _saveFailed;
     private bool _unsupportedFormat;
+    private bool _locationCaptureStarted;
+    private bool _locationSaved;
+    private LocationPromptStatus _locationPrompt = new(false, false, false);
+    private CatchLocationModel? _capturedLocation;
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
 
     [Inject]
+    private ILocationService LocationService { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshLocationPromptAsync();
+    }
 
     private bool CanSave
     {
@@ -104,6 +117,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         }
 
         _unsupportedFormat = rejectedUnsupported;
+        TryStartOpportunisticCapture();
     }
 
     private async Task AddPhotographAsync(IBrowserFile file)
@@ -203,10 +217,12 @@ public partial class RecordCatch : ComponentBase, IDisposable
                     photograph.ContentType,
                     photograph.Bytes))
                 .ToArray();
+            var location = _capturedLocation;
             await CatchStore.SaveAsync(
-                new CatchModel(catchId, _caughtOn ?? DateTimeOffset.Now, photographs),
+                new CatchModel(catchId, _caughtOn ?? DateTimeOffset.Now, photographs, Location: location),
                 _cancellationTokenSource.Token);
             _isSaved = true;
+            _locationSaved = location is not null;
         }
         catch (Exception)
         {
@@ -226,6 +242,89 @@ public partial class RecordCatch : ComponentBase, IDisposable
         _isSaved = false;
         _saveFailed = false;
         _unsupportedFormat = false;
+        _capturedLocation = null;
+        _locationCaptureStarted = false;
+        _locationSaved = false;
+    }
+
+    private async Task AllowLocationAsync()
+    {
+        if (_photographs.Count > 0)
+        {
+            if (!_locationCaptureStarted)
+            {
+                _locationCaptureStarted = true;
+                _ = CaptureLocationInBackgroundAsync(userRequested: true);
+            }
+        }
+        else
+        {
+            try
+            {
+                await LocationService.TryCaptureAsync(true, _cancellationTokenSource.Token);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        await RefreshLocationPromptAsync();
+    }
+
+    private async Task DismissLocationAsync()
+    {
+        try
+        {
+            await LocationService.DismissPromptAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception)
+        {
+        }
+
+        await RefreshLocationPromptAsync();
+    }
+
+    private void TryStartOpportunisticCapture()
+    {
+        if (_isSaved || _locationCaptureStarted || _photographs.Count == 0 || !_locationPrompt.WillCaptureOnSave)
+        {
+            return;
+        }
+
+        _locationCaptureStarted = true;
+        _ = CaptureLocationInBackgroundAsync(userRequested: false);
+    }
+
+    private async Task CaptureLocationInBackgroundAsync(bool userRequested)
+    {
+        try
+        {
+            var location = await LocationService.TryCaptureAsync(
+                userRequested,
+                _cancellationTokenSource.Token);
+            if (location is not null
+                && CatchLocationConstants.AreCoordinatesValid(location.Latitude, location.Longitude))
+            {
+                _capturedLocation = location;
+            }
+        }
+        catch (Exception)
+        {
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshLocationPromptAsync()
+    {
+        try
+        {
+            _locationPrompt = await LocationService.GetPromptStatusAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception)
+        {
+            _locationPrompt = new LocationPromptStatus(false, true, false);
+        }
     }
 
     public void Dispose()

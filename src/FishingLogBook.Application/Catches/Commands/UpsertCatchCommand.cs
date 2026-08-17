@@ -74,5 +74,20 @@ public sealed class UpsertCatchCommandValidator : AbstractValidator<UpsertCatchC
         RuleForEach(command => command.Catch.Photographs)
             .Must((command, photograph) => photograph.CatchId == command.Catch.Id)
             .WithMessage("Each photograph must belong to the catch.");
+        When(command => command.Catch.Location is not null, () =>
+        {
+            RuleFor(command => command.Catch.Location!.Latitude)
+                .InclusiveBetween(CatchLocationConstants.MinLatitude, CatchLocationConstants.MaxLatitude);
+            RuleFor(command => command.Catch.Location!.Longitude)
+                .InclusiveBetween(CatchLocationConstants.MinLongitude, CatchLocationConstants.MaxLongitude);
+            RuleFor(command => command.Catch.Location!.CapturedOn)
+                .NotEqual(default(DateTimeOffset));
+            RuleFor(command => command.Catch.Location!.Source)
+                .NotEmpty();
+            RuleFor(command => command.Catch.Location!.Visibility)
+                .NotEmpty();
+            RuleFor(command => command.Catch.Location!.ConsentVersion)
+                .NotEmpty();
+        });
     }
 }

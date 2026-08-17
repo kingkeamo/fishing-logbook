@@ -2,6 +2,7 @@ using FishingLogBook.Domain.Catches;
 using FishingLogBook.Infrastructure.Persistence;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Tests.Common.Builders;
 
 namespace FishingLogBook.Infrastructure.Tests.Integration.Catches.CatchRepositoryTests;
@@ -60,6 +61,33 @@ public abstract class BaseCatchRepositoryTest
             UserId = userId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Photographs = photos
+        };
+    }
+
+    protected static CatchLocation SampleLocation(
+        double latitude = 53.2707,
+        double longitude = -9.0568,
+        double? accuracyMetres = 12)
+    {
+        return CatchLocation.TryCreate(
+            latitude,
+            longitude,
+            accuracyMetres,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            LocationDefaults.DeviceGps,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion)!;
+    }
+
+    protected static Catch WithLocation(Catch catchRecord, CatchLocation location)
+    {
+        return new Catch
+        {
+            Id = catchRecord.Id,
+            UserId = catchRecord.UserId,
+            CaughtOn = catchRecord.CaughtOn,
+            Location = location,
+            Photographs = catchRecord.Photographs
         };
     }
 }

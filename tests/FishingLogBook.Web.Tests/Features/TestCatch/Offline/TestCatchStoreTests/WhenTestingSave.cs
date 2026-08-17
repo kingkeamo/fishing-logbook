@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
 
@@ -52,7 +53,7 @@ public class WhenTestingSave : BaseTestCatchStoreTest
     public async Task ItShouldStillContainLocation_WhenNewStoreReadsSamePersistence()
     {
         // Arrange
-        var location = new TestCatchLocationModel(
+        var location = new CatchLocationModel(
             53.2707,
             -9.0568,
             12,

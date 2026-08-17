@@ -2,6 +2,7 @@ using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
@@ -287,7 +288,7 @@ public partial class TestCatchLog : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task<TestCatchLocationModel?> TryCaptureLocationAsync()
+    private async Task<CatchLocationModel?> TryCaptureLocationAsync()
     {
         try
         {

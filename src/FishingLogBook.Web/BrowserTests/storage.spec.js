@@ -57,6 +57,7 @@ test.describe('Production Catch IndexedDB', () => {
         expect(JSON.parse(records[0].json).id).toBe('11111111-1111-1111-1111-111111111111');
         expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
         expect(records[0].photographs[0].bytesBase64).toBe(btoa(String.fromCharCode(1, 2, 3)));
+        expect(JSON.parse(records[0].json).location).toBeUndefined();
     });
 
     test('keeps Catch and photograph ids after close and reload', async ({ page }) => {
@@ -113,6 +114,40 @@ test.describe('Production Catch IndexedDB', () => {
 
         expect(result.threw).toBe(true);
         expect(result.items.map((item) => JSON.parse(item.json).id)).not.toContain('orphan-catch');
+    });
+
+    test('writes a Catch with location and keeps it after close and reload', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.putAndGetProductionCatchWithLocation());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.id).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.location).toEqual({
+            latitude: 53.2707,
+            longitude: -9.0568,
+            accuracyMetres: 12,
+            capturedOn: '2026-08-17T08:00:00+00:00',
+            source: 'DeviceGps',
+            visibility: 'Private',
+            consentVersion: '1'
+        });
+        expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
+    });
+
+    test('still reads a Catch stored without a location property', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.putLegacyProductionCatchWithoutLocation());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.id).toBe('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+        expect(catchRecord.location).toBeUndefined();
+        expect(records[0].photographs[0].id).toBe('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
     });
 });
 

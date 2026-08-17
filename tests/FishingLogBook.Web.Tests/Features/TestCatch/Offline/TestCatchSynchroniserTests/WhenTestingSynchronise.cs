@@ -3,6 +3,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
@@ -235,7 +236,7 @@ public class WhenTestingSynchronise
     public async Task ItShouldSendLocationWithTheCatch_WhenSynchronising()
     {
         // Arrange
-        var location = new TestCatchLocationModel(
+        var location = new CatchLocationModel(
             53.2707,
             -9.0568,
             12,

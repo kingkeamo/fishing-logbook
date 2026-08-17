@@ -315,6 +315,27 @@
   <data name="Catch_SaveFailed" xml:space="preserve">
     <value>La prise n'a pas pu être enregistrée. Réessayez.</value>
   </data>
+  <data name="Catch_LocationExplainer" xml:space="preserve">
+    <value>La localisation peut aider à se souvenir de l'endroit de la prise.</value>
+  </data>
+  <data name="Catch_LocationPrivacy" xml:space="preserve">
+    <value>Votre spot de pêche exact reste privé par défaut.</value>
+  </data>
+  <data name="Catch_LocationAllow" xml:space="preserve">
+    <value>Autoriser la localisation</value>
+  </data>
+  <data name="Catch_LocationNotNow" xml:space="preserve">
+    <value>Pas maintenant</value>
+  </data>
+  <data name="Catch_LocationTryAgain" xml:space="preserve">
+    <value>Réessayer la localisation</value>
+  </data>
+  <data name="Catch_LocationSaved" xml:space="preserve">
+    <value>Localisation enregistrée</value>
+  </data>
+  <data name="Catch_LocationOn" xml:space="preserve">
+    <value>Localisation activée</value>
+  </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Prises</value>
   </data>
