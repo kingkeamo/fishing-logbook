@@ -9,6 +9,7 @@ Before planning, coding, testing, committing, or touching infrastructure, read t
 
 | Work | Read |
 |------|------|
+| GitHub issues, PRs, reviews, commits, branches or pushes | `.claude/rules/github-operations.md` |
 | Planning or implementing a GitHub issue | `.claude/rules/product-workflow.md` |
 | After implementation and tests, before declaring complete or PR-ready | `.claude/rules/self-review.md` |
 | C# (API, Application, Domain, Infrastructure, Shared) | `.claude/rules/csharp.md` |

@@ -139,23 +139,6 @@ test.describe('Production Catch IndexedDB', () => {
         expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
     });
 
-    test('does not expose a legacy unowned Catch to the first signed-in user', async ({ page }) => {
-        await page.goto(`${harness}/index.html`);
-        await expect(page.locator('#status')).toHaveText('ready');
-        await page.evaluate(() => window.harness.putLegacyUnscopedProductionCatchWithLocation());
-
-        const firstSignedIn = await page.evaluate(() =>
-            window.harness.readProductionCatchesFor('22222222-2222-2222-2222-222222222222'));
-        const originalOwner = await page.evaluate(() => window.harness.readProductionCatches());
-        const payload = JSON.stringify({ firstSignedIn, originalOwner });
-
-        expect(firstSignedIn).toEqual([]);
-        expect(originalOwner).toEqual([]);
-        expect(payload).not.toContain('53.2707');
-        expect(payload).not.toContain('-9.0568');
-        expect(payload).not.toContain('dddddddd-dddd-dddd-dddd-dddddddddddd');
-    });
-
     test('still reads a Catch stored without a location property', async ({ page }) => {
         await page.goto(`${harness}/index.html`);
         await expect(page.locator('#status')).toHaveText('ready');
@@ -165,6 +148,20 @@ test.describe('Production Catch IndexedDB', () => {
         expect(catchRecord.id).toBe('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
         expect(catchRecord.location).toBeUndefined();
         expect(records[0].photographs[0].id).toBe('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+    });
+
+    test('does not let the first signed-in user read or adopt a legacy unscoped Catch', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const result = await page.evaluate(() => window.harness.putUnscopedProductionCatchThenReadAsFirstSigner());
+
+        expect(result.firstSignerView).toEqual([]);
+        expect(result.originalOwnerView).toEqual([]);
+        expect(JSON.stringify(result.firstSignerView)).not.toContain('53.2707');
+        expect(JSON.stringify(result.firstSignerView)).not.toContain('unscoped-photo');
+        expect(result.stored.userId).toBeUndefined();
+        expect(result.stored.location).toEqual({ latitude: 53.2707, longitude: -9.0568 });
     });
 });
 
