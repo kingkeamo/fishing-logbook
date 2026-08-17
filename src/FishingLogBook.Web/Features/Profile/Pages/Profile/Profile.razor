@@ -1,0 +1,126 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using FishingLogBook.Shared.Enums
+@attribute [Authorize]
+
+<PageTitle>@Loc["Profile_PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="profile-container pa-4">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4" Align="Align.Center">@Loc["Profile_Title"]</MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">@Loc["Profile_Subtitle"]</MudText>
+        </MudStack>
+
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="profile-load-failed">@Loc["Profile_LoadFailed"]</MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center" id="profile-loading" />
+        }
+        else
+        {
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="_displayName"
+                                  Label="@Loc["Profile_DisplayName"]"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true"
+                                  id="profile-display-name" />
+                    <MudSwitch @bind-Value="_showDisplayName"
+                               Color="Color.Primary"
+                               Label="@Loc["Profile_ShowDisplayName"]"
+                               id="profile-show-display-name" />
+
+                    <MudTextField @bind-Value="_homeRegion"
+                                  Label="@Loc["Profile_HomeRegion"]"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true"
+                                  id="profile-home-region" />
+                    <MudSwitch @bind-Value="_showHomeRegion"
+                               Color="Color.Primary"
+                               Label="@Loc["Profile_ShowHomeRegion"]"
+                               id="profile-show-home-region" />
+
+                    <MudSelect T="string"
+                               MultiSelection="true"
+                               @bind-SelectedValues="_selectedFishingTypes"
+                               Label="@Loc["Profile_FishingTypes"]"
+                               Variant="Variant.Outlined"
+                               id="profile-fishing-types">
+                        @foreach (var fishingType in Enum.GetNames<FishingTypeEnum>())
+                        {
+                            <MudSelectItem Value="@fishingType">@fishingType</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudSwitch @bind-Value="_showPreferredFishingTypes"
+                               Color="Color.Primary"
+                               Label="@Loc["Profile_ShowFishingTypes"]"
+                               id="profile-show-fishing-types" />
+
+                    <MudTextField @bind-Value="_preferredSpeciesText"
+                                  Label="@Loc["Profile_PreferredSpecies"]"
+                                  HelperText="@Loc["Profile_PreferredSpeciesHelp"]"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true"
+                                  id="profile-preferred-species" />
+                    <MudSwitch @bind-Value="_showPreferredSpecies"
+                               Color="Color.Primary"
+                               Label="@Loc["Profile_ShowPreferredSpecies"]"
+                               id="profile-show-preferred-species" />
+
+                    <div class="profile-photo-actions">
+                        <label for="profile-photo-input" class="profile-photo-picker" id="profile-choose-photo">
+                            @Loc["Profile_ChoosePhoto"]
+                        </label>
+                        <InputFile OnChange="OnPhotographSelected"
+                                   accept="image/jpeg,image/png,image/webp"
+                                   class="profile-photo-input"
+                                   id="profile-photo-input" />
+                    </div>
+                    @if (_photographUrl is not null)
+                    {
+                        <img src="@_photographUrl"
+                             alt="@Loc["Profile_PhotographAlt"]"
+                             class="profile-photo-preview"
+                             id="profile-photo-preview" />
+                    }
+                    <MudSwitch @bind-Value="_showPhotograph"
+                               Color="Color.Primary"
+                               Label="@Loc["Profile_ShowPhotograph"]"
+                               id="profile-show-photograph" />
+
+                    <MudText Typo="Typo.caption" id="profile-privacy-caption">@Loc["Profile_LocationPrivacy"]</MudText>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               Disabled="@_isSaving"
+                               OnClick="SaveAsync"
+                               id="profile-save-button">
+                        @if (_isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small"
+                                                 Indeterminate="true"
+                                                 Color="Color.Inherit"
+                                                 Class="me-2"
+                                                 id="profile-save-spinner" />
+                            @Loc["Profile_Saving"]
+                        }
+                        else
+                        {
+                            @Loc["Profile_Save"]
+                        }
+                    </MudButton>
+                    @if (_saveFailed)
+                    {
+                        <MudAlert Severity="Severity.Error" id="profile-save-failed">@Loc["Profile_SaveFailed"]</MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+</MudContainer>

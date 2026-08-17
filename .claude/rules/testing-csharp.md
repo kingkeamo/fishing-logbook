@@ -541,7 +541,8 @@ project in the same task**.
 | `FishingLogBook.Shared` | `FishingLogBook.Shared.Tests` |
 | `FishingLogBook.Web` | `FishingLogBook.Web.Tests` — see **`testing-blazor.md`** |
 
-Before marking complete: run targeted `dotnet test` for every test project you changed.
+Before marking complete: run targeted `dotnet test` for every test project you changed,
+then complete **`self-review.md`** (green tests do not skip that step).
 
 ## Before writing new tests
 

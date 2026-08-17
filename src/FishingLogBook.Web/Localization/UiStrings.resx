@@ -252,6 +252,81 @@
   <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
     <value>Production diagnostic database not initialised</value>
   </data>
+  <data name="Nav_Menu" xml:space="preserve">
+    <value>Open menu</value>
+  </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Profile_Nav" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Profile_PageTitle" xml:space="preserve">
+    <value>FishingLogBook - Profile</value>
+  </data>
+  <data name="Profile_PublicPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Angler profile</value>
+  </data>
+  <data name="Profile_Title" xml:space="preserve">
+    <value>Your profile</value>
+  </data>
+  <data name="Profile_PublicTitle" xml:space="preserve">
+    <value>Angler profile</value>
+  </data>
+  <data name="Profile_Subtitle" xml:space="preserve">
+    <value>Choose what other anglers can see.</value>
+  </data>
+  <data name="Profile_DisplayName" xml:space="preserve">
+    <value>Display name</value>
+  </data>
+  <data name="Profile_ShowDisplayName" xml:space="preserve">
+    <value>Show display name to other anglers</value>
+  </data>
+  <data name="Profile_HomeRegion" xml:space="preserve">
+    <value>Home region</value>
+  </data>
+  <data name="Profile_ShowHomeRegion" xml:space="preserve">
+    <value>Show home region to other anglers</value>
+  </data>
+  <data name="Profile_FishingTypes" xml:space="preserve">
+    <value>Preferred fishing types</value>
+  </data>
+  <data name="Profile_ShowFishingTypes" xml:space="preserve">
+    <value>Show preferred fishing types to other anglers</value>
+  </data>
+  <data name="Profile_PreferredSpecies" xml:space="preserve">
+    <value>Preferred species</value>
+  </data>
+  <data name="Profile_PreferredSpeciesHelp" xml:space="preserve">
+    <value>Separate species with commas</value>
+  </data>
+  <data name="Profile_ShowPreferredSpecies" xml:space="preserve">
+    <value>Show preferred species to other anglers</value>
+  </data>
+  <data name="Profile_ChoosePhoto" xml:space="preserve">
+    <value>Choose profile photograph</value>
+  </data>
+  <data name="Profile_PhotographAlt" xml:space="preserve">
+    <value>Profile photograph</value>
+  </data>
+  <data name="Profile_ShowPhotograph" xml:space="preserve">
+    <value>Show profile photograph to other anglers</value>
+  </data>
+  <data name="Profile_LocationPrivacy" xml:space="preserve">
+    <value>Enabling device location or joining a club does not share your precise coordinates.</value>
+  </data>
+  <data name="Profile_Save" xml:space="preserve">
+    <value>Save profile</value>
+  </data>
+  <data name="Profile_Saving" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="Profile_LoadFailed" xml:space="preserve">
+    <value>Unable to load profile.</value>
+  </data>
+  <data name="Profile_SaveFailed" xml:space="preserve">
+    <value>Unable to save profile.</value>
+  </data>
   <data name="Auth_SignIn" xml:space="preserve">
     <value>Sign in</value>
   </data>

@@ -10,6 +10,7 @@ Before planning, coding, testing, committing, or touching infrastructure, read t
 | Work | Read |
 |------|------|
 | Planning or implementing a GitHub issue | `.claude/rules/product-workflow.md` |
+| After implementation and tests, before declaring complete or PR-ready | `.claude/rules/self-review.md` |
 | C# (API, Application, Domain, Infrastructure, Shared) | `.claude/rules/csharp.md` |
 | CQRS / application services | `.claude/rules/cqrs.md` |
 | Blazor WASM / MudBlazor / PWA | `.claude/rules/blazor.md` |

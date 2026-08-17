@@ -5,6 +5,7 @@ using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
+using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
@@ -43,6 +44,7 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = apiBaseAddress;
         }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
         services.AddScoped<ITestCatchClient, TestCatchClient>();
+        services.AddScoped<IProfileClient, ProfileClient>();
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();

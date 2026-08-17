@@ -30,6 +30,12 @@ public class BaseDependencyInjectionTest : IClassFixture<DependencyInjectionApiF
 
     private static bool IsContainerService(Type type)
     {
+        if (type.IsGenericParameter ||
+            type.ContainsGenericParameters)
+        {
+            return false;
+        }
+
         if (type == typeof(CancellationToken) ||
             type == typeof(HttpContext) ||
             type == typeof(HttpRequest) ||

@@ -94,8 +94,10 @@ or resolves the mapping and stores Email; later requests reuse that UserId and r
 Email when the authenticated claim changes.
 The API derives the current user from the validated access token; it does not trust a
 client-supplied UserId or email. Offline device-generated ids are for synchronisation
-idempotency, not ownership. Future profile work may add FirstName, LastName, and
-DisplayName.
+idempotency, not ownership. Display name, profile photograph, home region, preferred
+fishing types and species, and visibility flags live on the angler `Profile`, not on
+`User`. Home region is general text. Precise device coordinates belong to Catch
+records, not the angler profile.
 
 ### Offline client storage
 
