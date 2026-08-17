@@ -6,6 +6,7 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Catches;
+using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Domain.Users;
 using FishingLogBook.Tests.Common.TestSupport;
@@ -20,7 +21,7 @@ using NSubstitute;
 
 namespace FishingLogBook.Api.Tests;
 
-public sealed class SystemApiFactory : WebApplicationFactory<Program>
+public class SystemApiFactory : WebApplicationFactory<Program>
 {
     private readonly ConcurrentDictionary<string, Guid> _userIds = new(StringComparer.Ordinal);
 
@@ -35,6 +36,9 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
     public IProfileRepository ProfileRepository { get; } = Substitute.For<IProfileRepository>();
 
     public ICatchRepository CatchRepository { get; } = Substitute.For<ICatchRepository>();
+
+    public IUserPlatformCapabilityRepository UserPlatformCapabilityRepository { get; } =
+        Substitute.For<IUserPlatformCapabilityRepository>();
 
     public bool MappingFailed { get; set; }
 
@@ -66,6 +70,18 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
         CatchRepository
             .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
+        UserPlatformCapabilityRepository
+            .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(false));
+        UserPlatformCapabilityRepository
+            .GetForUserAsync(Arg.Any<FindUserPlatformCapabilitiesArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<PlatformCapabilityEnum>>([]));
+        UserPlatformCapabilityRepository
+            .GrantAsync(Arg.Any<UserPlatformCapability>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok());
+        UserPlatformCapabilityRepository
+            .RevokeAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok());
     }
 
     public HttpClient CreateAuthenticatedClient(string? accessToken = null)
@@ -117,7 +133,14 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(ProfileRepository);
             services.RemoveAll<ICatchRepository>();
             services.AddSingleton(CatchRepository);
+            services.RemoveAll<IUserPlatformCapabilityRepository>();
+            services.AddSingleton(UserPlatformCapabilityRepository);
+            ConfigureAdditionalTestServices(services);
         });
+    }
+
+    protected virtual void ConfigureAdditionalTestServices(IServiceCollection services)
+    {
     }
 
     private Result<Guid?> ResolveFind(string subject)

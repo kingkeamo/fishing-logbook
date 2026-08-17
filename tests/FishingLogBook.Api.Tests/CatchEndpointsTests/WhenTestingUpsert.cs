@@ -2,7 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using FishingLogBook.Api.Tests.TestSupport;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Catches;
+using FishingLogBook.Domain.Enums;
+using FishingLogBook.Domain.Users;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
@@ -237,6 +240,80 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
                 && item.Location.Source == LocationDefaults.DeviceGps
                 && item.Location.Visibility == LocationDefaults.Private
                 && item.Location.ConsentVersion == LocationDefaults.ConsentVersion),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldUpsertWhenTheUserHasNoPlatformCapabilities()
+    {
+        // Arrange
+        var dto = ValidDto();
+        ResetCatchRepository();
+        _factory.UserPlatformCapabilityRepository.ClearReceivedCalls();
+        _factory.UserPlatformCapabilityRepository
+            .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(false));
+        _factory.UserPlatformCapabilityRepository
+            .GetForUserAsync(Arg.Any<FindUserPlatformCapabilitiesArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<PlatformCapabilityEnum>>([]));
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/catches", dto);
+        var body = await response.Content.ReadFromJsonAsync<CatchDto>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        current.Should().NotBeNull();
+        body.Should().NotBeNull();
+        body!.UserId.Should().Be(current!.UserId);
+        await _factory.CatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(item => item.Id == dto.Id && item.UserId == current.UserId),
+            Arg.Any<CancellationToken>());
+        await _factory.UserPlatformCapabilityRepository.DidNotReceive().HasAsync(
+            Arg.Any<FindUserPlatformCapabilityArgs>(),
+            Arg.Any<CancellationToken>());
+        await _factory.UserPlatformCapabilityRepository.DidNotReceive().GrantAsync(
+            Arg.Any<UserPlatformCapability>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldUpsertWhenTheUserHasGuide()
+    {
+        // Arrange
+        var dto = ValidDto();
+        ResetCatchRepository();
+        _factory.UserPlatformCapabilityRepository.ClearReceivedCalls();
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        current.Should().NotBeNull();
+        _factory.UserPlatformCapabilityRepository
+            .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var args = call.ArgAt<FindUserPlatformCapabilityArgs>(0);
+                return Result.Ok(
+                    args.UserId == current!.UserId && args.Capability == PlatformCapabilityEnum.Guide);
+            });
+        _factory.UserPlatformCapabilityRepository
+            .GetForUserAsync(Arg.Any<FindUserPlatformCapabilitiesArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<PlatformCapabilityEnum>>([PlatformCapabilityEnum.Guide]));
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/catches", dto);
+        var body = await response.Content.ReadFromJsonAsync<CatchDto>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().NotBeNull();
+        body!.UserId.Should().Be(current!.UserId);
+        await _factory.CatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(item => item.Id == dto.Id && item.UserId == current.UserId),
+            Arg.Any<CancellationToken>());
+        await _factory.UserPlatformCapabilityRepository.DidNotReceive().HasAsync(
+            Arg.Any<FindUserPlatformCapabilityArgs>(),
             Arg.Any<CancellationToken>());
     }
 
