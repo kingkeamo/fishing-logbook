@@ -5,6 +5,7 @@ using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Domain.Users;
 using FishingLogBook.Tests.Common.TestSupport;
@@ -33,6 +34,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
 
     public IProfileRepository ProfileRepository { get; } = Substitute.For<IProfileRepository>();
 
+    public ICatchRepository CatchRepository { get; } = Substitute.For<ICatchRepository>();
+
     public bool MappingFailed { get; set; }
 
     public SystemApiFactory()
@@ -60,6 +63,9 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
                 Arg.Any<RecordProfilePhotographArgs>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(new Profile { UserId = call.ArgAt<RecordProfilePhotographArgs>(0).UserId }));
+        CatchRepository
+            .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
     }
 
     public HttpClient CreateAuthenticatedClient(string? accessToken = null)
@@ -109,6 +115,8 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(UserIdentityRepository);
             services.RemoveAll<IProfileRepository>();
             services.AddSingleton(ProfileRepository);
+            services.RemoveAll<ICatchRepository>();
+            services.AddSingleton(CatchRepository);
         });
     }
 

@@ -258,6 +258,63 @@
   <data name="Nav_Home" xml:space="preserve">
     <value>Home</value>
   </data>
+  <data name="Catch_RecordNav" xml:space="preserve">
+    <value>Record catch</value>
+  </data>
+  <data name="Catch_LogbookNav" xml:space="preserve">
+    <value>Catches</value>
+  </data>
+  <data name="Catch_RecordPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Record catch</value>
+  </data>
+  <data name="Catch_RecordTitle" xml:space="preserve">
+    <value>Record catch</value>
+  </data>
+  <data name="Catch_RecordSubtitle" xml:space="preserve">
+    <value>Photograph, then save on this device</value>
+  </data>
+  <data name="Catch_TakePhoto" xml:space="preserve">
+    <value>Take photo</value>
+  </data>
+  <data name="Catch_ChoosePhoto" xml:space="preserve">
+    <value>Choose photo</value>
+  </data>
+  <data name="Catch_PhotographAlt" xml:space="preserve">
+    <value>Catch photograph</value>
+  </data>
+  <data name="Catch_RemovePhoto" xml:space="preserve">
+    <value>Remove photo</value>
+  </data>
+  <data name="Catch_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Catch_Saving" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="Catch_Saved" xml:space="preserve">
+    <value>Catch saved on this device</value>
+  </data>
+  <data name="Catch_SaveFailed" xml:space="preserve">
+    <value>The catch could not be saved. Try again.</value>
+  </data>
+  <data name="Catch_LogbookPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Catches</value>
+  </data>
+  <data name="Catch_LogbookTitle" xml:space="preserve">
+    <value>Catches</value>
+  </data>
+  <data name="Catch_LogbookSubtitle" xml:space="preserve">
+    <value>Saved on this device</value>
+  </data>
+  <data name="Catch_LogbookEmpty" xml:space="preserve">
+    <value>No catches saved on this device yet</value>
+  </data>
+  <data name="Catch_LoadFailed" xml:space="preserve">
+    <value>Catches could not be loaded.</value>
+  </data>
+  <data name="Catch_UnknownSpecies" xml:space="preserve">
+    <value>Catch</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profile</value>
   </data>

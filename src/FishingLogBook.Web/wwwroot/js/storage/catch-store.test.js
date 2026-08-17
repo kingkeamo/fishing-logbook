@@ -3,8 +3,12 @@ import {
     CATCH_DATABASE_NAME,
     CATCH_STORE_NAME,
     PHOTO_STORE_NAME,
+    PRODUCTION_CATCH_STORE_NAME,
+    PRODUCTION_PHOTO_STORE_NAME,
+    getAllCatchesWithPhotographs,
     getAllTestCatches,
     openCatchDatabase,
+    putCatchWithPhotographs,
     putTestCatch
 } from './catch-store.js';
 import * as indexedDb from './indexed-db.js';
@@ -65,7 +69,12 @@ describe('Catch store', () => {
         });
 
         expect([...upgraded.objectStoreNames].sort()).toEqual(
-            [PHOTO_STORE_NAME, CATCH_STORE_NAME].sort()
+            [
+                PHOTO_STORE_NAME,
+                CATCH_STORE_NAME,
+                PRODUCTION_CATCH_STORE_NAME,
+                PRODUCTION_PHOTO_STORE_NAME
+            ].sort()
         );
         upgraded.close();
 
@@ -99,7 +108,7 @@ describe('Catch store', () => {
         const first = await openCatchDatabase();
 
         const upgraded = await new Promise((resolve, reject) => {
-            const request = indexedDB.open(CATCH_DATABASE_NAME, 3);
+            const request = indexedDB.open(CATCH_DATABASE_NAME, 4);
             request.onupgradeneeded = () => { };
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
@@ -243,5 +252,129 @@ describe('Catch store', () => {
             vi.restoreAllMocks();
             vi.useRealTimers();
         }
+    });
+});
+
+describe('Production Catch store', () => {
+    it('puts and reads a Catch with photograph bytes and stable ids', async () => {
+        const catchId = '11111111-1111-1111-1111-111111111111';
+        const photographId = '22222222-2222-2222-2222-222222222222';
+        await putCatchWithPhotographs(
+            JSON.stringify({ id: catchId, caughtOn: '2026-08-17T08:00:00+00:00' }),
+            [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1, 2, 3])
+            }]
+        );
+
+        const items = await getAllCatchesWithPhotographs();
+
+        expect(items).toHaveLength(1);
+        expect(JSON.parse(items[0].json).id).toBe(catchId);
+        expect(items[0].photographs).toHaveLength(1);
+        expect(items[0].photographs[0].id).toBe(photographId);
+        expect(items[0].photographs[0].catchId).toBe(catchId);
+        expect(items[0].photographs[0].bytesBase64).toBe(btoa(String.fromCharCode(1, 2, 3)));
+    });
+
+    it('keeps two separately saved catches on distinct ids', async () => {
+        await putCatchWithPhotographs(
+            JSON.stringify({ id: 'catch-a', caughtOn: '2026-08-17T08:00:00+00:00' }),
+            [{ id: 'photo-a', catchId: 'catch-a', contentType: 'image/jpeg', bytes: new Uint8Array([1]) }]
+        );
+        await putCatchWithPhotographs(
+            JSON.stringify({ id: 'catch-b', caughtOn: '2026-08-17T09:00:00+00:00' }),
+            [{ id: 'photo-b', catchId: 'catch-b', contentType: 'image/png', bytes: new Uint8Array([2]) }]
+        );
+
+        const items = await getAllCatchesWithPhotographs();
+        const ids = items.map((item) => JSON.parse(item.json).id).sort();
+        const photoIds = items.flatMap((item) => item.photographs.map((photograph) => photograph.id)).sort();
+
+        expect(ids).toEqual(['catch-a', 'catch-b']);
+        expect(photoIds).toEqual(['photo-a', 'photo-b']);
+    });
+
+    it('does not persist a Catch when a photograph has no id', async () => {
+        await expect(putCatchWithPhotographs(
+            JSON.stringify({ id: 'orphan-catch', caughtOn: '2026-08-17T08:00:00+00:00' }),
+            [{ catchId: 'orphan-catch', contentType: 'image/jpeg', bytes: new Uint8Array([9]) }]
+        )).rejects.toBeTruthy();
+
+        const items = await getAllCatchesWithPhotographs();
+        const ids = items.map((item) => JSON.parse(item.json).id);
+
+        expect(ids).not.toContain('orphan-catch');
+    });
+
+    it('rejects a Catch with zero photographs', async () => {
+        await expect(putCatchWithPhotographs(
+            JSON.stringify({ id: 'empty-photos', caughtOn: '2026-08-17T08:00:00+00:00' }),
+            []
+        )).rejects.toThrow('Catch requires at least one photograph');
+
+        const items = await getAllCatchesWithPhotographs();
+        const ids = items.map((item) => JSON.parse(item.json).id);
+        expect(ids).not.toContain('empty-photos');
+    });
+
+    it('does not persist a Catch when photograph put fails after the Catch write starts', async () => {
+        vi.spyOn(indexedDb, 'openDatabase').mockResolvedValue({
+            close() { },
+            transaction() {
+                const transaction = {
+                    objectStore(name) {
+                        if (name === PRODUCTION_CATCH_STORE_NAME) {
+                            return {
+                                put() {
+                                    const request = { onsuccess: null, onerror: null };
+                                    queueMicrotask(() => request.onsuccess?.());
+                                    return request;
+                                }
+                            };
+                        }
+
+                        return {
+                            put() {
+                                const request = {
+                                    onsuccess: null,
+                                    onerror: null,
+                                    error: Object.assign(new Error('photo failed'), { name: 'UnknownError' })
+                                };
+                                queueMicrotask(() => request.onerror?.());
+                                return request;
+                            }
+                        };
+                    },
+                    oncomplete: null,
+                    onabort: null,
+                    onerror: null,
+                    abort() {
+                        queueMicrotask(() => transaction.onabort?.());
+                    }
+                };
+                return transaction;
+            }
+        });
+
+        try {
+            await expect(putCatchWithPhotographs(
+                JSON.stringify({ id: 'partial-catch', caughtOn: '2026-08-17T08:00:00+00:00' }),
+                [{
+                    id: 'photo-1',
+                    catchId: 'partial-catch',
+                    contentType: 'image/jpeg',
+                    bytes: new Uint8Array([1])
+                }]
+            )).rejects.toBeTruthy();
+        } finally {
+            vi.restoreAllMocks();
+        }
+
+        const items = await getAllCatchesWithPhotographs();
+        const ids = items.map((item) => JSON.parse(item.json).id);
+        expect(ids).not.toContain('partial-catch');
     });
 });

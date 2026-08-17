@@ -1,0 +1,7 @@
+.catch-list-thumbnail {
+    width: 4.5rem;
+    height: 4.5rem;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+}

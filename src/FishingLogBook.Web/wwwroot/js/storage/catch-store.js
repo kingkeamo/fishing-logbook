@@ -2,6 +2,7 @@ import {
     closeDatabase,
     elapsedSince,
     openDatabase,
+    runMultiStoreTransaction,
     runTransaction
 } from './indexed-db.js';
 import { emit, emitStorageEstimate, emitTimedOut } from './offline-diagnostics.js';
@@ -9,7 +10,9 @@ import { emit, emitStorageEstimate, emitTimedOut } from './offline-diagnostics.j
 export const CATCH_DATABASE_NAME = 'FishingLogBook';
 export const CATCH_STORE_NAME = 'testCatches';
 export const PHOTO_STORE_NAME = 'testCatchPhotographs';
-export const CATCH_DATABASE_VERSION = 2;
+export const PRODUCTION_CATCH_STORE_NAME = 'catches';
+export const PRODUCTION_PHOTO_STORE_NAME = 'catchPhotographs';
+export const CATCH_DATABASE_VERSION = 3;
 export const openTimeoutMs = 8000;
 
 const databaseName = CATCH_DATABASE_NAME;
@@ -31,6 +34,12 @@ export function openCatchDatabase() {
             }
             if (!db.objectStoreNames.contains(photographStoreName)) {
                 db.createObjectStore(photographStoreName, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)) {
+                db.createObjectStore(PRODUCTION_CATCH_STORE_NAME, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(PRODUCTION_PHOTO_STORE_NAME)) {
+                db.createObjectStore(PRODUCTION_PHOTO_STORE_NAME, { keyPath: 'id' });
             }
         },
         onOpened: () => {
@@ -132,4 +141,162 @@ export async function getAllTestCatches() {
         };
         request.onerror = () => fail(request.error);
     });
+}
+
+function runProductionCatchTransaction(mode, operationName, execute) {
+    const started = performance.now();
+    const storeNames = [PRODUCTION_CATCH_STORE_NAME, PRODUCTION_PHOTO_STORE_NAME];
+    return openCatchDatabase().then((db) => runMultiStoreTransaction(db, {
+        storeNames,
+        mode,
+        timeoutMs: openTimeoutMs,
+        timeoutLabel: `IndexedDB ${operationName}`,
+        execute,
+        closeWhenDone: true,
+        onStarted: () => emit('OfflineDbTransactionStarted', {
+            storeName: storeNames.join(','),
+            operation: operationName,
+            elapsedMilliseconds: elapsedSince(started)
+        }),
+        onCompleted: () => emit('OfflineDbTransactionCompleted', {
+            storeName: storeNames.join(','),
+            operation: operationName,
+            elapsedMilliseconds: elapsedSince(started)
+        }),
+        onAborted: (error) => emit('OfflineDbTransactionAborted', {
+            storeName: storeNames.join(','),
+            operation: operationName,
+            elapsedMilliseconds: elapsedSince(started),
+            errorType: error?.name
+        }),
+        onError: (error) => emit('OfflineDbTransactionError', {
+            storeName: storeNames.join(','),
+            operation: operationName,
+            elapsedMilliseconds: elapsedSince(started),
+            errorType: error?.name
+        }),
+        onRequestSucceeded: () => emit('OfflineDbRequestSucceeded', {
+            storeName: storeNames.join(','),
+            operation: operationName,
+            elapsedMilliseconds: elapsedSince(started)
+        }),
+        onClosed: () => emit('OfflineDbClosed', {
+            operation: operationName,
+            elapsedMilliseconds: elapsedSince(started)
+        }),
+        onTimedOut: (error) => emitTimedOut(mode, storeNames.join(','), started, error)
+    }));
+}
+
+export async function putCatchWithPhotographs(json, photographs) {
+    const catchRecord = JSON.parse(json);
+    const photos = Array.isArray(photographs) ? photographs : [];
+    if (!catchRecord?.id) {
+        throw new Error('Catch id is required');
+    }
+
+    if (photos.length === 0) {
+        throw new Error('Catch requires at least one photograph');
+    }
+
+    await runProductionCatchTransaction('readwrite', 'write', (transaction, succeed, fail) => {
+        for (const photograph of photos) {
+            if (!photograph?.id) {
+                fail(new Error('Photograph id is required'));
+                return;
+            }
+        }
+
+        const catchStore = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME);
+        const photoStore = transaction.objectStore(PRODUCTION_PHOTO_STORE_NAME);
+        const catchRequest = catchStore.put(catchRecord);
+        catchRequest.onerror = () => fail(catchRequest.error);
+        catchRequest.onsuccess = () => {
+            let remaining = photos.length;
+            for (const photograph of photos) {
+                const request = photoStore.put({
+                    id: photograph.id,
+                    catchId: photograph.catchId,
+                    contentType: photograph.contentType,
+                    bytes: toStoredBytes(photograph.bytes)
+                });
+                request.onerror = () => fail(request.error);
+                request.onsuccess = () => {
+                    remaining -= 1;
+                    if (remaining === 0) {
+                        succeed();
+                    }
+                };
+            }
+        };
+    });
+}
+
+export async function getAllCatchesWithPhotographs() {
+    return runProductionCatchTransaction('readonly', 'read', (transaction, succeed, fail) => {
+        const catchStore = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME);
+        const photoStore = transaction.objectStore(PRODUCTION_PHOTO_STORE_NAME);
+        const catches = [];
+        const catchRequest = catchStore.openCursor();
+        catchRequest.onerror = () => fail(catchRequest.error);
+        catchRequest.onsuccess = () => {
+            const cursor = catchRequest.result;
+            if (cursor) {
+                catches.push(cursor.value);
+                cursor.continue();
+                return;
+            }
+
+            const photographs = [];
+            const photoRequest = photoStore.openCursor();
+            photoRequest.onerror = () => fail(photoRequest.error);
+            photoRequest.onsuccess = () => {
+                const photoCursor = photoRequest.result;
+                if (photoCursor) {
+                    photographs.push(photoCursor.value);
+                    photoCursor.continue();
+                    return;
+                }
+
+                succeed(catches.map((item) => ({
+                    json: JSON.stringify(item),
+                    photographs: photographs
+                        .filter((photograph) => photograph.catchId === item.id)
+                        .map((photograph) => ({
+                            id: photograph.id,
+                            catchId: photograph.catchId,
+                            contentType: photograph.contentType,
+                            bytesBase64: uint8ToBase64(toUint8Array(photograph.bytes))
+                        }))
+                })));
+            };
+        };
+    });
+}
+
+function toUint8Array(bytes) {
+    if (bytes instanceof Uint8Array) {
+        return bytes;
+    }
+
+    if (!bytes) {
+        return new Uint8Array();
+    }
+
+    return new Uint8Array(bytes);
+}
+
+function toStoredBytes(bytes) {
+    const view = toUint8Array(bytes);
+    return view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
+}
+
+function uint8ToBase64(bytes) {
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    }
+
+    return btoa(binary);
 }

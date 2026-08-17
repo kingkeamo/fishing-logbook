@@ -1,0 +1,92 @@
+@page "/catches/record"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@attribute [Authorize]
+
+<PageTitle>@Loc["Catch_RecordPageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="record-catch-container pa-4">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4" Align="Align.Center">@Loc["Catch_RecordTitle"]</MudText>
+            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">@Loc["Catch_RecordSubtitle"]</MudText>
+        </MudStack>
+
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudStack Spacing="3">
+                <div class="record-catch-photo-actions">
+                    <label for="catch-photo-camera"
+                           class="record-catch-photo-picker"
+                           id="catch-take-photo">
+                        @Loc["Catch_TakePhoto"]
+                    </label>
+                    <label for="catch-photo-gallery"
+                           class="record-catch-photo-picker"
+                           id="catch-choose-photo">
+                        @Loc["Catch_ChoosePhoto"]
+                    </label>
+                    <InputFile OnChange="OnPhotographSelected"
+                               accept="image/*"
+                               capture="environment"
+                               class="record-catch-photo-input"
+                               id="catch-photo-camera" />
+                    <InputFile OnChange="OnPhotographSelected"
+                               accept="image/*"
+                               multiple
+                               class="record-catch-photo-input"
+                               id="catch-photo-gallery" />
+                </div>
+
+                @if (_photographs.Count > 0)
+                {
+                    <MudStack Spacing="2" id="catch-photo-preview-list">
+                        @foreach (var photograph in _photographs)
+                        {
+                            <MudPaper Outlined="true" Class="pa-2" id="@($"catch-photo-preview-{photograph.Id:D}")">
+                                <MudStack Spacing="2">
+                                    <img src="@photograph.PreviewUrl"
+                                         alt="@Loc["Catch_PhotographAlt"]"
+                                         class="record-catch-photo-preview"
+                                         id="@($"catch-photo-image-{photograph.Id:D}")" />
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Error"
+                                               FullWidth="true"
+                                               OnClick="@(() => RemovePhotograph(photograph.Id))"
+                                               id="@($"catch-photo-remove-{photograph.Id:D}")">
+                                        @Loc["Catch_RemovePhoto"]
+                                    </MudButton>
+                                </MudStack>
+                            </MudPaper>
+                        }
+                    </MudStack>
+                    <MudText Typo="Typo.body2" id="catch-caught-on">@CaughtOnDisplay</MudText>
+                }
+
+                @if (_saveFailed)
+                {
+                    <MudAlert Severity="Severity.Error" id="catch-save-failed">@Loc["Catch_SaveFailed"]</MudAlert>
+                }
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Disabled="@(!CanSave)"
+                           OnClick="SaveAsync"
+                           id="save-catch-button">
+                    @if (_isSaving)
+                    {
+                        <MudProgressCircular Size="Size.Small"
+                                             Indeterminate="true"
+                                             Class="ms-n1 mr-2"
+                                             id="save-catch-spinner" />
+                        @Loc["Catch_Saving"]
+                    }
+                    else
+                    {
+                        @Loc["Catch_Save"]
+                    }
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudStack>
+</MudContainer>
