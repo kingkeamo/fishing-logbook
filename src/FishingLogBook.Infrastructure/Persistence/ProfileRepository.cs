@@ -14,9 +14,7 @@ public sealed class ProfileRepository : IProfileRepository
         SELECT "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
                "HomeRegion", "PreferredFishingTypes", "PreferredSpecies",
                "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
-               "ShowPreferredFishingTypes", "ShowPreferredSpecies",
-               "Latitude", "Longitude", "LocationAccuracyMetres", "LocationCapturedOn",
-               "LocationSource", "LocationVisibility", "LocationConsentVersion"
+               "ShowPreferredFishingTypes", "ShowPreferredSpecies"
         FROM "Profile"
         """;
 
@@ -76,16 +74,12 @@ public sealed class ProfileRepository : IProfileRepository
                     "HomeRegion", "PreferredFishingTypes", "PreferredSpecies",
                     "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
                     "ShowPreferredFishingTypes", "ShowPreferredSpecies",
-                    "Latitude", "Longitude", "LocationAccuracyMetres", "LocationCapturedOn",
-                    "LocationSource", "LocationVisibility", "LocationConsentVersion",
                     "UpdatedOn")
                 VALUES (
                     @UserId, @DisplayName, @PhotographId, @PhotographObjectKey, @PhotographContentType,
                     @HomeRegion, @PreferredFishingTypes, @PreferredSpecies,
                     @ShowDisplayName, @ShowPhotograph, @ShowHomeRegion,
                     @ShowPreferredFishingTypes, @ShowPreferredSpecies,
-                    @Latitude, @Longitude, @LocationAccuracyMetres, @LocationCapturedOn,
-                    @LocationSource, @LocationVisibility, @LocationConsentVersion,
                     now())
                 ON CONFLICT ("UserId") DO UPDATE SET
                     "DisplayName" = EXCLUDED."DisplayName",
@@ -97,13 +91,6 @@ public sealed class ProfileRepository : IProfileRepository
                     "ShowHomeRegion" = EXCLUDED."ShowHomeRegion",
                     "ShowPreferredFishingTypes" = EXCLUDED."ShowPreferredFishingTypes",
                     "ShowPreferredSpecies" = EXCLUDED."ShowPreferredSpecies",
-                    "Latitude" = EXCLUDED."Latitude",
-                    "Longitude" = EXCLUDED."Longitude",
-                    "LocationAccuracyMetres" = EXCLUDED."LocationAccuracyMetres",
-                    "LocationCapturedOn" = EXCLUDED."LocationCapturedOn",
-                    "LocationSource" = EXCLUDED."LocationSource",
-                    "LocationVisibility" = EXCLUDED."LocationVisibility",
-                    "LocationConsentVersion" = EXCLUDED."LocationConsentVersion",
                     "UpdatedOn" = now();
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

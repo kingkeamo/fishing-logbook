@@ -19,42 +19,24 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldHidePrivateCoordinatesFromAnotherUser()
+    public async Task ItShouldRejectTheRequestWhenAuthorizationIsMissing()
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var profile = new ProfileBuilder()
-            .WithUserId(userId)
-            .WithDisplayName("Eamonn")
-            .ShowAll()
-            .WithLocation(new CatchLocationDto(
-                53.4,
-                -7.9,
-                8,
-                DateTimeOffset.Parse("2026-08-16T12:00:00Z"),
-                LocationDefaults.DeviceGps,
-                LocationDefaults.Private,
-                LocationDefaults.ConsentVersion))
-            .Build();
         _factory.ProfileRepository.ClearReceivedCalls();
-        _factory.ProfileRepository
-            .UserExistsAsync(userId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok(true));
-        _factory.ProfileRepository
-            .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Profile?>(profile));
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateClient();
 
         // Act
         var response = await client.GetAsync($"/api/profiles/{userId:D}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<PublicProfileDto>();
-        body.Should().NotBeNull();
-        body!.DisplayName.Should().Be("Eamonn");
-        body.Location.Should().BeNull();
-        await _factory.ProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        await _factory.ProfileRepository.DidNotReceive().UserExistsAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+        await _factory.ProfileRepository.DidNotReceive().GetByUserIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -73,28 +55,79 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await _factory.ProfileRepository.Received(1).UserExistsAsync(userId, Arg.Any<CancellationToken>());
         await _factory.ProfileRepository.DidNotReceive().GetByUserIdAsync(
             userId,
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldIncludePreciseCoordinatesWhenVisibilityIsPublic()
+    public async Task ItShouldReturnServiceUnavailableWhenTheRepositoryFails()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .UserExistsAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<bool>("Failed to load angler profile."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.GetAsync($"/api/profiles/{userId:D}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.ProfileRepository.Received(1).UserExistsAsync(userId, Arg.Any<CancellationToken>());
+        await _factory.ProfileRepository.DidNotReceive().GetByUserIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnADefaultPublicProfileWhenTheUserHasNoProfileRow()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .UserExistsAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(true));
+        _factory.ProfileRepository
+            .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.GetAsync($"/api/profiles/{userId:D}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<PublicProfileDto>();
+        body.Should().NotBeNull();
+        body!.UserId.Should().Be(userId);
+        body.DisplayName.Should().BeNull();
+        body.HomeRegion.Should().BeNull();
+        body.PreferredFishingTypes.Should().BeEmpty();
+        typeof(PublicProfileDto).GetProperty("Location").Should().BeNull();
+        await _factory.ProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
+        await _factory.ProfileRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Profile>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnVisibilityFilteredFieldsForAnotherUser()
     {
         // Arrange
         var userId = Guid.NewGuid();
         var profile = new ProfileBuilder()
             .WithUserId(userId)
             .WithDisplayName("Eamonn")
+            .WithHomeRegion("Westmeath")
+            .WithFishingTypes("Fly")
+            .WithSpecies("Pike")
             .ShowAll()
-            .WithLocation(new CatchLocationDto(
-                53.4,
-                -7.9,
-                8,
-                DateTimeOffset.Parse("2026-08-16T12:00:00Z"),
-                LocationDefaults.DeviceGps,
-                LocationDefaults.Public,
-                LocationDefaults.ConsentVersion))
+            .HideSpecies()
             .Build();
         _factory.ProfileRepository.ClearReceivedCalls();
         _factory.ProfileRepository
@@ -112,9 +145,13 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<PublicProfileDto>();
         body.Should().NotBeNull();
-        body!.Location.Should().NotBeNull();
-        body.Location!.Latitude.Should().Be(53.4);
-        body.Location.Longitude.Should().Be(-7.9);
+        body!.UserId.Should().Be(userId);
+        body.DisplayName.Should().Be("Eamonn");
+        body.HomeRegion.Should().Be("Westmeath");
+        body.PreferredFishingTypes.Should().Equal("Fly");
+        body.PreferredSpecies.Should().BeEmpty();
+        typeof(PublicProfileDto).GetProperty("Latitude").Should().BeNull();
+        typeof(PublicProfileDto).GetProperty("Longitude").Should().BeNull();
         await _factory.ProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
     }
 }

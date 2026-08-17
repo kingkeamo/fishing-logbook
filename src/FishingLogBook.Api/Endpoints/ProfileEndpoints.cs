@@ -68,7 +68,7 @@ public static class ProfileEndpoints
         }
 
         var response = await mediator.Send(
-            new GetOwnProfileCommand { UserId = currentUser.UserId },
+            new GetOwnProfileQuery { UserId = currentUser.UserId },
             cancellationToken);
         return ToDataResult(response.IsFailure, response.ErrorMessage, response.Profile, StatusCodes.Status503ServiceUnavailable);
     }

@@ -1,4 +1,3 @@
-using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Common.Mappings;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
@@ -19,9 +18,7 @@ public class BaseUpdateOwnProfileCommandTest
         Sut = new UpdateOwnProfileHandler(MockProfileService);
     }
 
-    protected static UpdateOwnProfileCommand Command(
-        Guid userId,
-        CatchLocationDto? location = null)
+    protected static UpdateOwnProfileCommand Command(Guid userId)
     {
         return new UpdateOwnProfileCommand
         {
@@ -35,20 +32,25 @@ public class BaseUpdateOwnProfileCommandTest
                 false,
                 true,
                 true,
-                false,
-                location)
+                false)
         };
     }
 
-    protected static CatchLocationDto PrivateLocation()
+    protected static ProfileDto OwnProfile(Guid userId)
     {
-        return new CatchLocationDto(
-            53.4,
-            -7.9,
-            12,
-            DateTimeOffset.Parse("2026-08-16T12:00:00Z"),
-            LocationDefaults.DeviceGps,
-            LocationDefaults.Private,
-            LocationDefaults.ConsentVersion);
+        return new ProfileDto(
+            userId,
+            "Eamonn",
+            null,
+            null,
+            null,
+            "Westmeath",
+            ["Coarse"],
+            ["Pike"],
+            true,
+            false,
+            true,
+            true,
+            false);
     }
 }

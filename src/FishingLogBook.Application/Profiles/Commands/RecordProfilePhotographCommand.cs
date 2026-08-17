@@ -1,6 +1,7 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
 using Mapster;
@@ -63,8 +64,7 @@ public sealed class RecordProfilePhotographCommandValidator : AbstractValidator<
         RuleFor(command => command.Photograph.ObjectKey)
             .Must(value => !string.IsNullOrWhiteSpace(value));
         RuleFor(command => command.Photograph.ContentType)
-            .Must(value => !string.IsNullOrWhiteSpace(value)
-                && value.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Photograph content type must be an image.");
+            .Must(PhotographContentTypeConstants.IsAllowed)
+            .WithMessage("Photograph content type must be image/jpeg, image/png, or image/webp.");
     }
 }

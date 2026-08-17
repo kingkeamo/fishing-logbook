@@ -27,18 +27,4 @@ public sealed class Profile
     public bool ShowPreferredFishingTypes { get; init; }
 
     public bool ShowPreferredSpecies { get; init; }
-
-    public double? Latitude { get; init; }
-
-    public double? Longitude { get; init; }
-
-    public double? LocationAccuracyMetres { get; init; }
-
-    public DateTimeOffset? LocationCapturedOn { get; init; }
-
-    public string? LocationSource { get; init; }
-
-    public string? LocationVisibility { get; init; }
-
-    public string? LocationConsentVersion { get; init; }
 }

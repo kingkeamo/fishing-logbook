@@ -19,8 +19,7 @@ public sealed class ProfileMappingRegistration : IRegister
             .Map(dest => dest.ShowPhotograph, src => src.Profile.ShowPhotograph)
             .Map(dest => dest.ShowHomeRegion, src => src.Profile.ShowHomeRegion)
             .Map(dest => dest.ShowPreferredFishingTypes, src => src.Profile.ShowPreferredFishingTypes)
-            .Map(dest => dest.ShowPreferredSpecies, src => src.Profile.ShowPreferredSpecies)
-            .Map(dest => dest.Location, src => src.Profile.Location);
+            .Map(dest => dest.ShowPreferredSpecies, src => src.Profile.ShowPreferredSpecies);
 
         config.NewConfig<RecordProfilePhotographCommand, RecordProfilePhotographArgs>()
             .Map(dest => dest.UserId, src => src.UserId)

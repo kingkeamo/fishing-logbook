@@ -13,5 +13,4 @@ public sealed record ProfileDto(
     bool ShowPhotograph,
     bool ShowHomeRegion,
     bool ShowPreferredFishingTypes,
-    bool ShowPreferredSpecies,
-    CatchLocationDto? Location = null);
+    bool ShowPreferredSpecies);

@@ -80,7 +80,7 @@ public class WhenTestingWebSerialization : BaseSerializationTest
     }
 
     [Fact]
-    public void ItShouldRoundTripProfileDtoLocationUsingWebDefaults()
+    public void ItShouldRoundTripProfileDtoWithoutPreciseCoordinates()
     {
         // Arrange
         var original = new ProfileDto(
@@ -96,34 +96,23 @@ public class WhenTestingWebSerialization : BaseSerializationTest
             false,
             true,
             true,
-            false,
-            new CatchLocationDto(
-                53.4,
-                -7.9,
-                12,
-                DateTimeOffset.Parse("2026-08-16T12:00:00Z"),
-                LocationDefaults.DeviceGps,
-                LocationDefaults.Public,
-                LocationDefaults.ConsentVersion));
+            false);
 
         // Act
         var json = JsonSerializer.Serialize(original, WebOptions);
         var deserialized = JsonSerializer.Deserialize<ProfileDto>(json, WebOptions);
 
         // Assert
-        json.Should().Contain("\"latitude\":53.4");
-        json.Should().Contain("\"visibility\":\"Public\"");
-        deserialized.Should().NotBeNull();
-        deserialized!.DisplayName.Should().Be("Eamonn");
-        deserialized.HomeRegion.Should().Be("Westmeath");
-        deserialized.PreferredFishingTypes.Should().Equal("Coarse");
-        deserialized.Location.Should().NotBeNull();
-        deserialized.Location!.Visibility.Should().Be(LocationDefaults.Public);
-        deserialized.Location.Latitude.Should().Be(53.4);
+        json.Should().NotContain("latitude");
+        json.Should().NotContain("longitude");
+        json.Should().Contain("\"homeRegion\":\"Westmeath\"");
+        typeof(ProfileDto).GetProperty("Location").Should().BeNull();
+        typeof(ProfileDto).GetProperty("Latitude").Should().BeNull();
+        deserialized.Should().BeEquivalentTo(original);
     }
 
     [Fact]
-    public void ItShouldRoundTripPublicProfileDtoWithoutCoordinatesWhenLocationIsOmitted()
+    public void ItShouldRoundTripPublicProfileDtoWithoutPreciseCoordinates()
     {
         // Arrange
         var original = new PublicProfileDto(
@@ -140,10 +129,35 @@ public class WhenTestingWebSerialization : BaseSerializationTest
 
         // Assert
         json.Should().NotContain("latitude");
-        deserialized.Should().NotBeNull();
-        deserialized!.DisplayName.Should().Be("Eamonn");
-        deserialized.HomeRegion.Should().Be("Westmeath");
-        deserialized.PreferredFishingTypes.Should().Equal("Fly");
-        deserialized.Location.Should().BeNull();
+        json.Should().NotContain("longitude");
+        typeof(PublicProfileDto).GetProperty("Location").Should().BeNull();
+        typeof(PublicProfileDto).GetProperty("Latitude").Should().BeNull();
+        deserialized.Should().BeEquivalentTo(original);
+    }
+
+    [Fact]
+    public void ItShouldRoundTripUpdateProfileDtoWithoutPreciseCoordinates()
+    {
+        // Arrange
+        var original = new UpdateProfileDto(
+            "Eamonn",
+            "Westmeath",
+            ["Coarse"],
+            ["Pike"],
+            true,
+            false,
+            true,
+            true,
+            false);
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<UpdateProfileDto>(json, WebOptions);
+
+        // Assert
+        json.Should().NotContain("latitude");
+        json.Should().NotContain("userId");
+        typeof(UpdateProfileDto).GetProperty("Location").Should().BeNull();
+        deserialized.Should().BeEquivalentTo(original);
     }
 }

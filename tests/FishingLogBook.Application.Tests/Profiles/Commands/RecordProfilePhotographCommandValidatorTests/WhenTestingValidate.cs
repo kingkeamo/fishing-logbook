@@ -1,4 +1,5 @@
 using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation.TestHelper;
 
@@ -10,7 +11,7 @@ public class WhenTestingValidate : BaseRecordProfilePhotographCommandValidatorTe
     public void ItShouldHaveAValidationErrorWhenUserIdIsEmpty()
     {
         // Arrange
-        var command = Command(Guid.Empty, Guid.NewGuid(), "profiles/key", "image/jpeg");
+        var command = Command(Guid.Empty, Guid.NewGuid(), "profiles/key", PhotographContentTypeConstants.Jpeg);
 
         // Act
         var result = Sut.TestValidate(command);
@@ -20,10 +21,23 @@ public class WhenTestingValidate : BaseRecordProfilePhotographCommandValidatorTe
     }
 
     [Fact]
+    public void ItShouldHaveAValidationErrorWhenPhotographIdIsEmpty()
+    {
+        // Arrange
+        var command = Command(Guid.NewGuid(), Guid.Empty, "profiles/key", PhotographContentTypeConstants.Jpeg);
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Photograph.PhotographId);
+    }
+
+    [Fact]
     public void ItShouldHaveAValidationErrorWhenObjectKeyIsMissing()
     {
         // Arrange
-        var command = Command(Guid.NewGuid(), Guid.NewGuid(), "  ", "image/jpeg");
+        var command = Command(Guid.NewGuid(), Guid.NewGuid(), "  ", PhotographContentTypeConstants.Jpeg);
 
         // Act
         var result = Sut.TestValidate(command);
@@ -32,25 +46,46 @@ public class WhenTestingValidate : BaseRecordProfilePhotographCommandValidatorTe
         result.ShouldHaveValidationErrorFor(c => c.Photograph.ObjectKey);
     }
 
-    [Fact]
-    public void ItShouldHaveAValidationErrorWhenContentTypeIsNotAnImage()
+    [Theory]
+    [InlineData("application/pdf")]
+    [InlineData("text/plain")]
+    [InlineData("image/gif")]
+    [InlineData("image/heic")]
+    [InlineData("")]
+    public void ItShouldHaveAValidationErrorWhenContentTypeIsNotAllowed(string contentType)
     {
         // Arrange
-        var command = Command(Guid.NewGuid(), Guid.NewGuid(), "profiles/key", "text/plain");
+        var command = Command(Guid.NewGuid(), Guid.NewGuid(), "profiles/key", contentType);
 
         // Act
         var result = Sut.TestValidate(command);
 
         // Assert
         result.ShouldHaveValidationErrorFor(c => c.Photograph.ContentType)
-            .WithErrorMessage("Photograph content type must be an image.");
+            .WithErrorMessage("Photograph content type must be image/jpeg, image/png, or image/webp.");
+    }
+
+    [Theory]
+    [InlineData(PhotographContentTypeConstants.Jpeg)]
+    [InlineData(PhotographContentTypeConstants.Png)]
+    [InlineData(PhotographContentTypeConstants.Webp)]
+    public void ItShouldAcceptEveryAllowedContentType(string contentType)
+    {
+        // Arrange
+        var command = Command(Guid.NewGuid(), Guid.NewGuid(), "profiles/key", contentType);
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
     public void ItShouldNotHaveValidationErrorsForAValidCommand()
     {
         // Arrange
-        var command = Command(Guid.NewGuid(), Guid.NewGuid(), "profiles/key", "image/png");
+        var command = Command(Guid.NewGuid(), Guid.NewGuid(), "profiles/key", PhotographContentTypeConstants.Png);
 
         // Act
         var result = Sut.TestValidate(command);

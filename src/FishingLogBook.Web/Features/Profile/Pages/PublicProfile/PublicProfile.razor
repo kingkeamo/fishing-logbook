@@ -42,10 +42,6 @@
                     {
                         <MudText id="public-profile-preferred-species">@string.Join(", ", _profile.PreferredSpecies)</MudText>
                     }
-                    @if (_profile.Location is not null)
-                    {
-                        <MudText id="public-profile-location">@Loc["Profile_PreciseLocationShared"]</MudText>
-                    }
                 </MudStack>
             </MudPaper>
         }

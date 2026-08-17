@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Profiles.Commands;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using NSubstitute;
@@ -14,7 +13,7 @@ public class WhenTestingHandle : BaseUpdateOwnProfileCommandTest
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var command = Command(userId, PrivateLocation());
+        var command = Command(userId);
         MockProfileService
             .UpdateOwnAsync(Arg.Any<UpdateProfileArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Fail<ProfileDto>("Failed to load angler profile."));
@@ -31,8 +30,13 @@ public class WhenTestingHandle : BaseUpdateOwnProfileCommandTest
                 args.UserId == userId
                 && args.DisplayName == "Eamonn"
                 && args.HomeRegion == "Westmeath"
-                && args.Location != null
-                && args.Location.Visibility == LocationDefaults.Private),
+                && args.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
+                && args.PreferredSpecies.SequenceEqual(new[] { "Pike" })
+                && args.ShowDisplayName
+                && !args.ShowPhotograph
+                && args.ShowHomeRegion
+                && args.ShowPreferredFishingTypes
+                && !args.ShowPreferredSpecies),
             Arg.Any<CancellationToken>());
     }
 
@@ -41,23 +45,8 @@ public class WhenTestingHandle : BaseUpdateOwnProfileCommandTest
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var location = PrivateLocation();
-        var command = Command(userId, location);
-        var saved = new ProfileDto(
-            userId,
-            "Eamonn",
-            null,
-            null,
-            null,
-            "Westmeath",
-            ["Coarse"],
-            ["Pike"],
-            true,
-            false,
-            true,
-            true,
-            false,
-            location);
+        var command = Command(userId);
+        var saved = OwnProfile(userId);
         MockProfileService
             .UpdateOwnAsync(Arg.Any<UpdateProfileArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(saved));
@@ -72,11 +61,9 @@ public class WhenTestingHandle : BaseUpdateOwnProfileCommandTest
             Arg.Is<UpdateProfileArgs>(args =>
                 args.UserId == userId
                 && args.DisplayName == "Eamonn"
+                && args.HomeRegion == "Westmeath"
                 && args.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
-                && args.PreferredSpecies.SequenceEqual(new[] { "Pike" })
-                && args.Location != null
-                && args.Location.Latitude == 53.4
-                && args.Location.Visibility == LocationDefaults.Private),
+                && args.PreferredSpecies.SequenceEqual(new[] { "Pike" })),
             Arg.Any<CancellationToken>());
     }
 }

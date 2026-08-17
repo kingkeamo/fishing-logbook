@@ -274,7 +274,7 @@
     <value>Angler profile</value>
   </data>
   <data name="Profile_Subtitle" xml:space="preserve">
-    <value>Choose what other anglers can see. Precise location stays private unless you share it.</value>
+    <value>Choose what other anglers can see.</value>
   </data>
   <data name="Profile_DisplayName" xml:space="preserve">
     <value>Display name</value>
@@ -312,38 +312,8 @@
   <data name="Profile_ShowPhotograph" xml:space="preserve">
     <value>Show profile photograph to other anglers</value>
   </data>
-  <data name="Profile_LocationTitle" xml:space="preserve">
-    <value>Home location</value>
-  </data>
-  <data name="Profile_LocationExplainer" xml:space="preserve">
-    <value>FishingLogBook can store a precise home location for you. Capturing it does not make it public.</value>
-  </data>
-  <data name="Profile_LocationAllow" xml:space="preserve">
-    <value>Allow location</value>
-  </data>
-  <data name="Profile_LocationNotNow" xml:space="preserve">
-    <value>Not now</value>
-  </data>
-  <data name="Profile_LocationSaved" xml:space="preserve">
-    <value>Location saved</value>
-  </data>
-  <data name="Profile_LocationRemove" xml:space="preserve">
-    <value>Remove</value>
-  </data>
-  <data name="Profile_LocationOff" xml:space="preserve">
-    <value>Device location is off</value>
-  </data>
-  <data name="Profile_LocationTryAgain" xml:space="preserve">
-    <value>Try location again</value>
-  </data>
-  <data name="Profile_SharePreciseLocation" xml:space="preserve">
-    <value>Share precise location with other anglers</value>
-  </data>
   <data name="Profile_LocationPrivacy" xml:space="preserve">
     <value>Enabling device location or joining a club does not share your precise coordinates.</value>
-  </data>
-  <data name="Profile_PreciseLocationShared" xml:space="preserve">
-    <value>Precise location is shared</value>
   </data>
   <data name="Profile_Save" xml:space="preserve">
     <value>Save profile</value>

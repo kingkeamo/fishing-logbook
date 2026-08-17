@@ -6,5 +6,4 @@ public sealed record PublicProfileDto(
     string? PhotographUrl,
     string? HomeRegion,
     IReadOnlyList<string> PreferredFishingTypes,
-    IReadOnlyList<string> PreferredSpecies,
-    CatchLocationDto? Location = null);
+    IReadOnlyList<string> PreferredSpecies);

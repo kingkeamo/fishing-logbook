@@ -26,7 +26,7 @@ public sealed class ProfileService : IProfileService
 
     public bool IsObjectStorageConfigured => _objectStorage.IsConfigured;
 
-    public async Task<Result<ProfileDto>> GetOrCreateOwnAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<Result<ProfileDto>> GetOwnAsync(Guid userId, CancellationToken cancellationToken)
     {
         var existing = await _profileRepository.GetByUserIdAsync(userId, cancellationToken);
         if (existing.IsFailed)
@@ -34,18 +34,8 @@ public sealed class ProfileService : IProfileService
             return Result.Fail<ProfileDto>(existing.Errors);
         }
 
-        if (existing.Value is Profile profile)
-        {
-            return Result.Ok(await ToOwnDtoAsync(profile, cancellationToken));
-        }
-
-        var created = await _profileRepository.UpsertAsync(CreateDefault(userId), cancellationToken);
-        if (created.IsFailed)
-        {
-            return Result.Fail<ProfileDto>(created.Errors);
-        }
-
-        return Result.Ok(await ToOwnDtoAsync(created.Value, cancellationToken));
+        var profile = existing.Value ?? CreateDefault(userId);
+        return Result.Ok(await ToOwnDtoAsync(profile, cancellationToken));
     }
 
     public async Task<Result<ProfileDto>> UpdateOwnAsync(UpdateProfileArgs args, CancellationToken cancellationToken)
@@ -94,10 +84,10 @@ public sealed class ProfileService : IProfileService
         PhotographUploadRequestDto request,
         CancellationToken cancellationToken)
     {
-        var own = await GetOrCreateOwnAsync(userId, cancellationToken);
-        if (own.IsFailed)
+        var ensured = await EnsureOwnProfileAsync(userId, cancellationToken);
+        if (ensured.IsFailed)
         {
-            return Result.Fail<PhotographUploadDto>(own.Errors);
+            return Result.Fail<PhotographUploadDto>(ensured.Errors);
         }
 
         var objectKey = ObjectKey(userId, request.PhotographId);
@@ -132,6 +122,22 @@ public sealed class ProfileService : IProfileService
         return Result.Ok(await ToOwnDtoAsync(updated.Value, cancellationToken));
     }
 
+    private async Task<Result<Profile>> EnsureOwnProfileAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var existing = await _profileRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (existing.IsFailed)
+        {
+            return Result.Fail<Profile>(existing.Errors);
+        }
+
+        if (existing.Value is Profile profile)
+        {
+            return Result.Ok(profile);
+        }
+
+        return await _profileRepository.UpsertAsync(CreateDefault(userId), cancellationToken);
+    }
+
     private async Task<ProfileDto> ToOwnDtoAsync(Profile profile, CancellationToken cancellationToken)
     {
         return new ProfileDto(
@@ -147,8 +153,7 @@ public sealed class ProfileService : IProfileService
             profile.ShowPhotograph,
             profile.ShowHomeRegion,
             profile.ShowPreferredFishingTypes,
-            profile.ShowPreferredSpecies,
-            ToLocation(profile));
+            profile.ShowPreferredSpecies);
     }
 
     private async Task<PublicProfileDto> ToPublicDtoAsync(Profile profile, CancellationToken cancellationToken)
@@ -162,8 +167,7 @@ public sealed class ProfileService : IProfileService
             photographUrl,
             profile.ShowHomeRegion ? profile.HomeRegion : null,
             profile.ShowPreferredFishingTypes ? profile.PreferredFishingTypes : [],
-            profile.ShowPreferredSpecies ? profile.PreferredSpecies : [],
-            ToPublicLocation(profile));
+            profile.ShowPreferredSpecies ? profile.PreferredSpecies : []);
     }
 
     private async Task<string?> CreateDownloadUrlAsync(string? objectKey, CancellationToken cancellationToken)
@@ -184,7 +188,6 @@ public sealed class ProfileService : IProfileService
 
     private static Profile ApplyUpdate(Profile current, UpdateProfileArgs args)
     {
-        var location = args.Location;
         return new Profile
         {
             UserId = args.UserId,
@@ -199,52 +202,8 @@ public sealed class ProfileService : IProfileService
             ShowPhotograph = args.ShowPhotograph,
             ShowHomeRegion = args.ShowHomeRegion,
             ShowPreferredFishingTypes = args.ShowPreferredFishingTypes,
-            ShowPreferredSpecies = args.ShowPreferredSpecies,
-            Latitude = location?.Latitude,
-            Longitude = location?.Longitude,
-            LocationAccuracyMetres = location?.AccuracyMetres,
-            LocationCapturedOn = location?.CapturedOn,
-            LocationSource = location?.Source,
-            LocationVisibility = location is null
-                ? null
-                : string.IsNullOrWhiteSpace(location.Visibility)
-                    ? LocationDefaults.Private
-                    : location.Visibility,
-            LocationConsentVersion = location?.ConsentVersion
+            ShowPreferredSpecies = args.ShowPreferredSpecies
         };
-    }
-
-    private static CatchLocationDto? ToLocation(Profile profile)
-    {
-        if (profile.Latitude is null || profile.Longitude is null || profile.LocationCapturedOn is null)
-        {
-            return null;
-        }
-
-        return new CatchLocationDto(
-            profile.Latitude.Value,
-            profile.Longitude.Value,
-            profile.LocationAccuracyMetres,
-            profile.LocationCapturedOn.Value,
-            profile.LocationSource ?? LocationDefaults.DeviceGps,
-            profile.LocationVisibility ?? LocationDefaults.Private,
-            profile.LocationConsentVersion ?? LocationDefaults.ConsentVersion);
-    }
-
-    private static CatchLocationDto? ToPublicLocation(Profile profile)
-    {
-        var location = ToLocation(profile);
-        if (location is null)
-        {
-            return null;
-        }
-
-        if (!string.Equals(location.Visibility, LocationDefaults.Public, StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        return location;
     }
 
     private static string ObjectKey(Guid userId, Guid photographId)

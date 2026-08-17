@@ -44,8 +44,7 @@ Authorization: Bearer <access-token>
   "showPhotograph": false,
   "showHomeRegion": true,
   "showPreferredFishingTypes": true,
-  "showPreferredSpecies": false,
-  "location": null
+  "showPreferredSpecies": false
 }
 
 ###

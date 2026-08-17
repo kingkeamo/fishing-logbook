@@ -1,4 +1,5 @@
 using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation.TestHelper;
 
@@ -10,7 +11,7 @@ public class WhenTestingValidate : BaseCreateProfilePhotographUploadCommandValid
     public void ItShouldHaveAValidationErrorWhenUserIdIsEmpty()
     {
         // Arrange
-        var command = ValidCommand(Guid.Empty, Guid.NewGuid(), "image/jpeg");
+        var command = ValidCommand(Guid.Empty, Guid.NewGuid(), PhotographContentTypeConstants.Jpeg);
 
         // Act
         var result = Sut.TestValidate(command);
@@ -23,7 +24,7 @@ public class WhenTestingValidate : BaseCreateProfilePhotographUploadCommandValid
     public void ItShouldHaveAValidationErrorWhenPhotographIdIsEmpty()
     {
         // Arrange
-        var command = ValidCommand(Guid.NewGuid(), Guid.Empty, "image/jpeg");
+        var command = ValidCommand(Guid.NewGuid(), Guid.Empty, PhotographContentTypeConstants.Jpeg);
 
         // Act
         var result = Sut.TestValidate(command);
@@ -32,25 +33,47 @@ public class WhenTestingValidate : BaseCreateProfilePhotographUploadCommandValid
         result.ShouldHaveValidationErrorFor(c => c.Request.PhotographId);
     }
 
-    [Fact]
-    public void ItShouldHaveAValidationErrorWhenContentTypeIsNotAnImage()
+    [Theory]
+    [InlineData("application/pdf")]
+    [InlineData("text/plain")]
+    [InlineData("image/gif")]
+    [InlineData("image/heic")]
+    [InlineData("image/")]
+    [InlineData("")]
+    public void ItShouldHaveAValidationErrorWhenContentTypeIsNotAllowed(string contentType)
     {
         // Arrange
-        var command = ValidCommand(Guid.NewGuid(), Guid.NewGuid(), "application/pdf");
+        var command = ValidCommand(Guid.NewGuid(), Guid.NewGuid(), contentType);
 
         // Act
         var result = Sut.TestValidate(command);
 
         // Assert
         result.ShouldHaveValidationErrorFor(c => c.Request.ContentType)
-            .WithErrorMessage("Photograph content type must be an image.");
+            .WithErrorMessage("Photograph content type must be image/jpeg, image/png, or image/webp.");
+    }
+
+    [Theory]
+    [InlineData(PhotographContentTypeConstants.Jpeg)]
+    [InlineData(PhotographContentTypeConstants.Png)]
+    [InlineData(PhotographContentTypeConstants.Webp)]
+    public void ItShouldAcceptEveryAllowedContentType(string contentType)
+    {
+        // Arrange
+        var command = ValidCommand(Guid.NewGuid(), Guid.NewGuid(), contentType);
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
     public void ItShouldNotHaveValidationErrorsForAValidCommand()
     {
         // Arrange
-        var command = ValidCommand(Guid.NewGuid(), Guid.NewGuid(), "image/jpeg");
+        var command = ValidCommand(Guid.NewGuid(), Guid.NewGuid(), PhotographContentTypeConstants.Jpeg);
 
         // Act
         var result = Sut.TestValidate(command);

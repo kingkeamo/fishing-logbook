@@ -1,7 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using FishingLogBook.Shared.Dtos;
-using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
@@ -12,17 +10,14 @@ namespace FishingLogBook.Web.Tests.Features.Profile.Pages.ProfileTests;
 public class WhenTestingRender : BaseProfileTest
 {
     [Fact]
-    public async Task ItShouldShowEnglishProfileCopyAndADisabledShareSwitch()
+    public async Task ItShouldShowEnglishProfileCopyWithoutPreciseLocationControls()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var profileClient = Substitute.For<IProfileClient>();
         profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
             .Returns(EmptyProfile());
-        var locationService = Substitute.For<ILocationService>();
-        locationService.GetPromptStatusAsync(Arg.Any<CancellationToken>())
-            .Returns(new LocationPromptStatus(true, false, false));
-        await using var context = CreateContext(profileClient, locationService);
+        await using var context = CreateContext(profileClient);
 
         // Act
         var cut = context.Render<ProfilePage>();
@@ -31,13 +26,20 @@ public class WhenTestingRender : BaseProfileTest
         cut.WaitForAssertion(() =>
         {
             cut.Markup.Should().Contain("Your profile");
-            cut.Find("#profile-location-explainer").TextContent.Should()
-                .Contain("Capturing it does not make it public");
-            cut.Markup.Should().Contain("Share precise location with other anglers");
-            cut.Find("#profile-share-location").HasAttribute("disabled").Should().BeTrue();
+            cut.Markup.Should().Contain("Choose what other anglers can see.");
+            cut.Find("#profile-display-name").Should().NotBeNull();
+            cut.Find("#profile-home-region").Should().NotBeNull();
+            cut.Find("#profile-fishing-types").Should().NotBeNull();
+            cut.Find("#profile-preferred-species").Should().NotBeNull();
+            cut.Find("#profile-show-display-name").Should().NotBeNull();
+            cut.Find("#profile-show-photograph").Should().NotBeNull();
+            cut.Find("#profile-location-privacy").TextContent.Should()
+                .Contain("Enabling device location or joining a club does not share your precise coordinates.");
+            cut.FindAll("#profile-location-allow").Should().BeEmpty();
+            cut.FindAll("#profile-share-location").Should().BeEmpty();
+            cut.Markup.Should().NotContain("Share precise location");
         });
         await profileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
-        await locationService.DidNotReceive().TryCaptureAsync(true, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -48,10 +50,7 @@ public class WhenTestingRender : BaseProfileTest
         var profileClient = Substitute.For<IProfileClient>();
         profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
             .Returns(EmptyProfile());
-        var locationService = Substitute.For<ILocationService>();
-        locationService.GetPromptStatusAsync(Arg.Any<CancellationToken>())
-            .Returns(new LocationPromptStatus(true, false, false));
-        await using var context = CreateContext(profileClient, locationService);
+        await using var context = CreateContext(profileClient);
 
         // Act
         var cut = context.Render<ProfilePage>();
@@ -60,8 +59,10 @@ public class WhenTestingRender : BaseProfileTest
         cut.WaitForAssertion(() =>
         {
             cut.Markup.Should().Contain("Votre profil");
-            cut.Find("#profile-location-allow").TextContent.Should().Contain("Autoriser la localisation");
+            cut.Markup.Should().Contain("Choisissez ce que les autres pêcheurs peuvent voir.");
             cut.Find("#profile-save-button").TextContent.Should().Contain("Enregistrer le profil");
+            cut.Find("#profile-location-privacy").TextContent.Should()
+                .Contain("Activer la localisation");
         });
         await profileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
     }

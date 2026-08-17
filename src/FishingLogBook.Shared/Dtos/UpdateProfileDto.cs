@@ -9,5 +9,4 @@ public sealed record UpdateProfileDto(
     bool ShowPhotograph,
     bool ShowHomeRegion,
     bool ShowPreferredFishingTypes,
-    bool ShowPreferredSpecies,
-    CatchLocationDto? Location = null);
+    bool ShowPreferredSpecies);

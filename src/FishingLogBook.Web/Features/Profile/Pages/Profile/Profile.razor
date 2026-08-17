@@ -77,7 +77,7 @@
                             @Loc["Profile_ChoosePhoto"]
                         </label>
                         <InputFile OnChange="OnPhotographSelected"
-                                   accept="image/*"
+                                   accept="image/jpeg,image/png,image/webp"
                                    class="profile-photo-input"
                                    id="profile-photo-input" />
                     </div>
@@ -93,63 +93,6 @@
                                Label="@Loc["Profile_ShowPhotograph"]"
                                id="profile-show-photograph" />
 
-                    @if (_location is not null)
-                    {
-                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" id="profile-location-saved">
-                            <span class="profile-location-pill">@Loc["Profile_LocationSaved"]</span>
-                            <MudButton Variant="Variant.Text"
-                                       Color="Color.Error"
-                                       Size="Size.Small"
-                                       OnClick="RemoveLocation"
-                                       id="profile-location-remove">
-                                @Loc["Profile_LocationRemove"]
-                            </MudButton>
-                        </MudStack>
-                    }
-                    else if (_locationPrompt.ShowExplainer)
-                    {
-                        <MudPaper Class="pa-3" Outlined="true" id="profile-location-explainer">
-                            <MudStack Spacing="2">
-                                <MudText Typo="Typo.subtitle2">@Loc["Profile_LocationTitle"]</MudText>
-                                <MudText Typo="Typo.body2">@Loc["Profile_LocationExplainer"]</MudText>
-                                <MudStack Spacing="2">
-                                    <MudButton Variant="Variant.Filled"
-                                               Color="Color.Primary"
-                                               FullWidth="true"
-                                               OnClick="AllowLocationAsync"
-                                               id="profile-location-allow">
-                                        @Loc["Profile_LocationAllow"]
-                                    </MudButton>
-                                    <MudButton Variant="Variant.Outlined"
-                                               Color="Color.Primary"
-                                               FullWidth="true"
-                                               OnClick="DismissLocationAsync"
-                                               id="profile-location-not-now">
-                                        @Loc["Profile_LocationNotNow"]
-                                    </MudButton>
-                                </MudStack>
-                            </MudStack>
-                        </MudPaper>
-                    }
-                    else if (_locationPrompt.ShowEnableLater)
-                    {
-                        <MudStack Spacing="1" id="profile-location-enable">
-                            <MudText Typo="Typo.caption">@Loc["Profile_LocationOff"]</MudText>
-                            <MudButton Variant="Variant.Text"
-                                       Color="Color.Primary"
-                                       Size="Size.Small"
-                                       OnClick="AllowLocationAsync"
-                                       id="profile-location-try-again">
-                                @Loc["Profile_LocationTryAgain"]
-                            </MudButton>
-                        </MudStack>
-                    }
-
-                    <MudSwitch @bind-Value="SharePreciseLocation"
-                               Disabled="@(_location is null)"
-                               Color="Color.Primary"
-                               Label="@Loc["Profile_SharePreciseLocation"]"
-                               id="profile-share-location" />
                     <MudText Typo="Typo.caption" id="profile-location-privacy">@Loc["Profile_LocationPrivacy"]</MudText>
 
                     <MudButton Variant="Variant.Filled"

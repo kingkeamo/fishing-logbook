@@ -1,9 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Dtos;
-using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Profile.Services;
-using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 using ProfilePage = FishingLogBook.Web.Features.Profile.Pages.Profile.Profile;
@@ -13,12 +11,133 @@ namespace FishingLogBook.Web.Tests.Features.Profile.Pages.ProfileTests;
 public class WhenTestingSave : BaseProfileTest
 {
     [Fact]
-    public async Task ItShouldSaveDisplayNameHomeRegionPreferencesAndPrivateLocation()
+    public async Task ItShouldShowLoadFailureAndNotRenderASuccessfulForm()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns<ProfileDto>(_ => throw new HttpRequestException("Unable to load profile."));
+        await using var context = CreateContext(profileClient);
+
+        // Act
+        var cut = context.Render<ProfilePage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#profile-load-failed").TextContent.Should().Contain("Unable to load profile.");
+            cut.FindAll("#profile-save-button").Should().BeEmpty();
+            cut.FindAll("#profile-display-name").Should().BeEmpty();
+        });
+        await profileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
+        await profileClient.DidNotReceive().UpdateOwnAsync(
+            Arg.Any<UpdateProfileDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowSaveFailureWhenUpdateFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns(EmptyProfile());
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns<ProfileDto>(_ => throw new HttpRequestException("Unable to save profile."));
+        await using var context = CreateContext(profileClient);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#profile-save-failed").TextContent.Should().Contain("Unable to save profile."));
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Any<UpdateProfileDto>(),
+            Arg.Any<CancellationToken>());
+        await profileClient.DidNotReceive().CreatePhotographUploadAsync(
+            Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotIssueADuplicateUpdateWhileSaveIsInProgress()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var userId = Guid.NewGuid();
-        var capturedOn = DateTimeOffset.Parse("2026-08-16T12:00:00Z");
+        var saveStarted = new TaskCompletionSource();
+        var saveContinue = new TaskCompletionSource<ProfileDto>();
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns(EmptyProfile(userId));
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(async _ =>
+            {
+                saveStarted.TrySetResult();
+                return await saveContinue.Task;
+            });
+        await using var context = CreateContext(profileClient);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        var firstClick = cut.Find("#profile-save-button").ClickAsync();
+        await saveStarted.Task;
+        await cut.Find("#profile-save-button").ClickAsync();
+        saveContinue.SetResult(EmptyProfile(userId));
+        await firstClick;
+
+        // Assert
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Any<UpdateProfileDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSendToggledVisibilityFlags()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns(EmptyProfile(userId));
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
+        await using var context = CreateContext(profileClient);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        cut.Find("#profile-show-home-region").Change(true);
+        cut.Find("#profile-show-fishing-types").Change(true);
+        cut.Find("#profile-show-preferred-species").Change(true);
+        cut.Find("#profile-show-photograph").Change(true);
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Is<UpdateProfileDto>(profile =>
+                profile.ShowDisplayName
+                && profile.ShowHomeRegion
+                && profile.ShowPreferredFishingTypes
+                && profile.ShowPreferredSpecies
+                && profile.ShowPhotograph),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSaveDisplayNameHomeRegionPreferencesAndVisibility()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
         var profileClient = Substitute.For<IProfileClient>();
         profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
             .Returns(new ProfileDto(
@@ -37,19 +156,7 @@ public class WhenTestingSave : BaseProfileTest
                 false));
         profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
             .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
-        var locationService = Substitute.For<ILocationService>();
-        locationService.GetPromptStatusAsync(Arg.Any<CancellationToken>())
-            .Returns(new LocationPromptStatus(true, false, false));
-        locationService.TryCaptureAsync(true, Arg.Any<CancellationToken>())
-            .Returns(new TestCatchLocationModel(
-                53.4,
-                -7.9,
-                12,
-                capturedOn,
-                LocationDefaults.DeviceGps,
-                LocationDefaults.Private,
-                LocationDefaults.ConsentVersion));
-        await using var context = CreateContext(profileClient, locationService);
+        await using var context = CreateContext(profileClient);
         var cut = context.Render<ProfilePage>();
         cut.WaitForAssertion(() => cut.Find("#profile-display-name"));
 
@@ -57,45 +164,25 @@ public class WhenTestingSave : BaseProfileTest
         cut.Find("#profile-display-name").Input("Eamonn");
         cut.Find("#profile-home-region").Input("Westmeath");
         cut.Find("#profile-preferred-species").Input("Pike, Tench");
-        await cut.Find("#profile-location-allow").ClickAsync();
         await cut.Find("#profile-save-button").ClickAsync();
 
         // Assert
         cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
         await profileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
-        await locationService.Received(1).TryCaptureAsync(true, Arg.Any<CancellationToken>());
         await profileClient.Received(1).UpdateOwnAsync(
             Arg.Is<UpdateProfileDto>(profile =>
                 profile.DisplayName == "Eamonn"
                 && profile.HomeRegion == "Westmeath"
                 && profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })
                 && profile.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
-                && profile.Location != null
-                && profile.Location.Latitude == 53.4
-                && profile.Location.Longitude == -7.9
-                && profile.Location.Visibility == LocationDefaults.Private),
+                && profile.ShowDisplayName
+                && !profile.ShowPhotograph
+                && !profile.ShowHomeRegion
+                && !profile.ShowPreferredFishingTypes
+                && !profile.ShowPreferredSpecies),
             Arg.Any<CancellationToken>());
         await profileClient.DidNotReceive().CreatePhotographUploadAsync(
             Arg.Any<PhotographUploadRequestDto>(),
             Arg.Any<CancellationToken>());
-    }
-
-    private static ProfileDto ToSaved(Guid userId, UpdateProfileDto update)
-    {
-        return new ProfileDto(
-            userId,
-            update.DisplayName,
-            null,
-            null,
-            null,
-            update.HomeRegion,
-            update.PreferredFishingTypes,
-            update.PreferredSpecies,
-            update.ShowDisplayName,
-            update.ShowPhotograph,
-            update.ShowHomeRegion,
-            update.ShowPreferredFishingTypes,
-            update.ShowPreferredSpecies,
-            update.Location);
     }
 }

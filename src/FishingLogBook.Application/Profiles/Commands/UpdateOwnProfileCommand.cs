@@ -81,20 +81,10 @@ public sealed class UpdateOwnProfileCommandValidator : AbstractValidator<UpdateO
         RuleForEach(command => command.Profile.PreferredSpecies)
             .Must(value => !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 50)
             .WithMessage("Preferred species must be 50 characters or fewer.");
-        RuleFor(command => command.Profile.Location!.Visibility)
-            .Must(BeKnownVisibility)
-            .When(command => command.Profile.Location is not null)
-            .WithMessage("Location visibility is not recognised.");
     }
 
     private static bool BeKnownFishingType(string value)
     {
         return Enum.TryParse<FishingTypeEnum>(value, ignoreCase: true, out _);
-    }
-
-    private static bool BeKnownVisibility(string value)
-    {
-        return string.Equals(value, LocationDefaults.Private, StringComparison.Ordinal)
-            || string.Equals(value, LocationDefaults.Public, StringComparison.Ordinal);
     }
 }

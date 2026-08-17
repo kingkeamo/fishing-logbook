@@ -6,7 +6,7 @@ namespace FishingLogBook.Application.Contracts.Services;
 
 public interface IProfileService
 {
-    Task<Result<ProfileDto>> GetOrCreateOwnAsync(Guid userId, CancellationToken cancellationToken);
+    Task<Result<ProfileDto>> GetOwnAsync(Guid userId, CancellationToken cancellationToken);
 
     Task<Result<ProfileDto>> UpdateOwnAsync(UpdateProfileArgs args, CancellationToken cancellationToken);
 

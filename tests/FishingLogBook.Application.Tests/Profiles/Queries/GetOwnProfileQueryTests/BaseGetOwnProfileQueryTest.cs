@@ -1,16 +1,16 @@
 using FishingLogBook.Application.Contracts.Services;
-using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Application.Profiles.Queries;
 using FishingLogBook.Shared.Dtos;
 using NSubstitute;
 
-namespace FishingLogBook.Application.Tests.Profiles.Commands.GetOwnProfileCommandTests;
+namespace FishingLogBook.Application.Tests.Profiles.Queries.GetOwnProfileQueryTests;
 
-public class BaseGetOwnProfileCommandTest
+public class BaseGetOwnProfileQueryTest
 {
     protected readonly IProfileService MockProfileService = Substitute.For<IProfileService>();
     protected readonly GetOwnProfileHandler Sut;
 
-    protected BaseGetOwnProfileCommandTest()
+    protected BaseGetOwnProfileQueryTest()
     {
         Sut = new GetOwnProfileHandler(MockProfileService);
     }

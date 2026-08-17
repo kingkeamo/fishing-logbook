@@ -1,5 +1,4 @@
 using FishingLogBook.Domain.Profiles;
-using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Tests.Common.Builders;
 
@@ -7,6 +6,9 @@ public sealed class ProfileBuilder
 {
     private Guid _userId = Guid.NewGuid();
     private string? _displayName;
+    private Guid? _photographId;
+    private string? _photographObjectKey;
+    private string? _photographContentType;
     private string? _homeRegion;
     private string[] _fishingTypes = [];
     private string[] _species = [];
@@ -15,7 +17,6 @@ public sealed class ProfileBuilder
     private bool _showHomeRegion;
     private bool _showPreferredFishingTypes;
     private bool _showPreferredSpecies;
-    private CatchLocationDto? _location;
 
     public ProfileBuilder WithUserId(Guid userId)
     {
@@ -26,6 +27,14 @@ public sealed class ProfileBuilder
     public ProfileBuilder WithDisplayName(string? displayName)
     {
         _displayName = displayName;
+        return this;
+    }
+
+    public ProfileBuilder WithPhotograph(Guid photographId, string objectKey, string contentType)
+    {
+        _photographId = photographId;
+        _photographObjectKey = objectKey;
+        _photographContentType = contentType;
         return this;
     }
 
@@ -67,9 +76,33 @@ public sealed class ProfileBuilder
         return this;
     }
 
-    public ProfileBuilder WithLocation(CatchLocationDto location)
+    public ProfileBuilder HideDisplayName()
     {
-        _location = location;
+        _showDisplayName = false;
+        return this;
+    }
+
+    public ProfileBuilder HidePhotograph()
+    {
+        _showPhotograph = false;
+        return this;
+    }
+
+    public ProfileBuilder HideHomeRegion()
+    {
+        _showHomeRegion = false;
+        return this;
+    }
+
+    public ProfileBuilder HideFishingTypes()
+    {
+        _showPreferredFishingTypes = false;
+        return this;
+    }
+
+    public ProfileBuilder HideSpecies()
+    {
+        _showPreferredSpecies = false;
         return this;
     }
 
@@ -79,6 +112,9 @@ public sealed class ProfileBuilder
         {
             UserId = _userId,
             DisplayName = _displayName,
+            PhotographId = _photographId,
+            PhotographObjectKey = _photographObjectKey,
+            PhotographContentType = _photographContentType,
             HomeRegion = _homeRegion,
             PreferredFishingTypes = _fishingTypes,
             PreferredSpecies = _species,
@@ -86,14 +122,7 @@ public sealed class ProfileBuilder
             ShowPhotograph = _showPhotograph,
             ShowHomeRegion = _showHomeRegion,
             ShowPreferredFishingTypes = _showPreferredFishingTypes,
-            ShowPreferredSpecies = _showPreferredSpecies,
-            Latitude = _location?.Latitude,
-            Longitude = _location?.Longitude,
-            LocationAccuracyMetres = _location?.AccuracyMetres,
-            LocationCapturedOn = _location?.CapturedOn,
-            LocationSource = _location?.Source,
-            LocationVisibility = _location?.Visibility,
-            LocationConsentVersion = _location?.ConsentVersion
+            ShowPreferredSpecies = _showPreferredSpecies
         };
     }
 }

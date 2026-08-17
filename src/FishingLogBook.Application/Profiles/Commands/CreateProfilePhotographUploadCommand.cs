@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
 using MediatR;
@@ -69,8 +70,7 @@ public sealed class CreateProfilePhotographUploadCommandValidator
         RuleFor(command => command.Request.PhotographId)
             .NotEmpty();
         RuleFor(command => command.Request.ContentType)
-            .Must(value => !string.IsNullOrWhiteSpace(value)
-                && value.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Photograph content type must be an image.");
+            .Must(PhotographContentTypeConstants.IsAllowed)
+            .WithMessage("Photograph content type must be image/jpeg, image/png, or image/webp.");
     }
 }

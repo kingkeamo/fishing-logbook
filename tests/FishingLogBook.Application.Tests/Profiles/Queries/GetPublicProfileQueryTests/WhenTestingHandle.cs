@@ -45,7 +45,8 @@ public class WhenTestingHandle : BaseGetPublicProfileQueryTest
         // Assert
         response.IsSuccess.Should().BeTrue();
         response.Profile.Should().Be(profile);
-        response.Profile!.Location.Should().BeNull();
+        typeof(PublicProfileDto).GetProperty("Location").Should().BeNull();
+        typeof(PublicProfileDto).GetProperty("Latitude").Should().BeNull();
         await MockProfileService.Received(1).GetPublicAsync(userId, Arg.Any<CancellationToken>());
     }
 }

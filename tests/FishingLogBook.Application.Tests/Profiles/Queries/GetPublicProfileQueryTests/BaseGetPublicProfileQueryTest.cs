@@ -15,7 +15,7 @@ public class BaseGetPublicProfileQueryTest
         Sut = new GetPublicProfileHandler(MockProfileService);
     }
 
-    protected static PublicProfileDto PublicProfile(Guid userId, CatchLocationDto? location = null)
+    protected static PublicProfileDto PublicProfile(Guid userId)
     {
         return new PublicProfileDto(
             userId,
@@ -23,7 +23,6 @@ public class BaseGetPublicProfileQueryTest
             null,
             "Westmeath",
             ["Fly"],
-            ["Pike"],
-            location);
+            ["Pike"]);
     }
 }

@@ -1,8 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using AwesomeAssertions;
+using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Dtos;
+using FluentResults;
 using NSubstitute;
 
 namespace FishingLogBook.Api.Tests.ProfileEndpointsTests;
@@ -22,19 +26,9 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
         // Arrange
         _factory.ProfileRepository.ClearReceivedCalls();
         var client = _factory.CreateClient();
-        var request = new UpdateProfileDto(
-            "Eamonn",
-            null,
-            [],
-            [],
-            true,
-            false,
-            false,
-            false,
-            false);
 
         // Act
-        var response = await client.PutAsJsonAsync("/api/profiles/me", request);
+        var response = await client.PutAsJsonAsync("/api/profiles/me", ValidRequest());
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -44,65 +38,11 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldSaveProfileFieldsIncludingPrivateLocation()
-    {
-        // Arrange
-        _factory.ProfileRepository.ClearReceivedCalls();
-        var capturedOn = DateTimeOffset.Parse("2026-08-16T12:00:00Z");
-        var request = new UpdateProfileDto(
-            "Eamonn",
-            "Westmeath",
-            ["Coarse"],
-            ["Pike"],
-            true,
-            false,
-            true,
-            true,
-            false,
-            new CatchLocationDto(
-                53.4,
-                -7.9,
-                10,
-                capturedOn,
-                LocationDefaults.DeviceGps,
-                LocationDefaults.Private,
-                LocationDefaults.ConsentVersion));
-        var client = _factory.CreateAuthenticatedClient();
-
-        // Act
-        var response = await client.PutAsJsonAsync("/api/profiles/me", request);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadFromJsonAsync<ProfileDto>();
-        body.Should().NotBeNull();
-        body!.DisplayName.Should().Be("Eamonn");
-        body.HomeRegion.Should().Be("Westmeath");
-        body.Location!.Visibility.Should().Be(LocationDefaults.Private);
-        await _factory.ProfileRepository.Received(1).UpsertAsync(
-            Arg.Is<Profile>(profile =>
-                profile.DisplayName == "Eamonn"
-                && profile.HomeRegion == "Westmeath"
-                && profile.Latitude == 53.4
-                && profile.LocationVisibility == LocationDefaults.Private),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task ItShouldRejectAnUnknownFishingType()
     {
         // Arrange
         _factory.ProfileRepository.ClearReceivedCalls();
-        var request = new UpdateProfileDto(
-            "Eamonn",
-            null,
-            ["NotAType"],
-            [],
-            true,
-            false,
-            false,
-            false,
-            false);
+        var request = ValidRequest() with { PreferredFishingTypes = ["NotAType"] };
         var client = _factory.CreateAuthenticatedClient();
 
         // Act
@@ -116,43 +56,109 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldSavePublicLocationWhenTheUserChoseToShare()
+    public async Task ItShouldIgnoreAClientSuppliedUserIdAndUpdateTheAuthenticatedUser()
     {
         // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        var otherUserId = Guid.NewGuid();
         _factory.ProfileRepository.ClearReceivedCalls();
-        var capturedOn = DateTimeOffset.Parse("2026-08-16T12:00:00Z");
-        var request = new UpdateProfileDto(
-            "Eamonn",
-            "Westmeath",
-            ["Fly"],
-            ["Pike"],
-            true,
-            false,
-            true,
-            true,
-            false,
-            new CatchLocationDto(
-                53.4,
-                -7.9,
-                10,
-                capturedOn,
-                LocationDefaults.DeviceGps,
-                LocationDefaults.Public,
-                LocationDefaults.ConsentVersion));
-        var client = _factory.CreateAuthenticatedClient();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        var payload = JsonSerializer.Serialize(new
+        {
+            userId = otherUserId,
+            displayName = "Eamonn",
+            homeRegion = "Westmeath",
+            preferredFishingTypes = new[] { "Coarse" },
+            preferredSpecies = new[] { "Pike" },
+            showDisplayName = true,
+            showPhotograph = false,
+            showHomeRegion = true,
+            showPreferredFishingTypes = true,
+            showPreferredSpecies = false
+        });
 
         // Act
-        var response = await client.PutAsJsonAsync("/api/profiles/me", request);
+        var response = await client.PutAsync(
+            "/api/profiles/me",
+            new StringContent(payload, Encoding.UTF8, "application/json"));
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<ProfileDto>();
         body.Should().NotBeNull();
-        body!.Location!.Visibility.Should().Be(LocationDefaults.Public);
+        body!.UserId.Should().Be(own!.UserId);
+        body.UserId.Should().NotBe(otherUserId);
+        body.DisplayName.Should().Be("Eamonn");
         await _factory.ProfileRepository.Received(1).UpsertAsync(
             Arg.Is<Profile>(profile =>
-                profile.LocationVisibility == LocationDefaults.Public
-                && profile.Latitude == 53.4),
+                profile.UserId == own.UserId
+                && profile.DisplayName == "Eamonn"
+                && profile.HomeRegion == "Westmeath"
+                && profile.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
+                && profile.PreferredSpecies.SequenceEqual(new[] { "Pike" })
+                && profile.ShowDisplayName
+                && !profile.ShowPhotograph
+                && profile.ShowHomeRegion
+                && profile.ShowPreferredFishingTypes
+                && !profile.ShowPreferredSpecies),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSaveTheCurrentUsersProfileFields()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        _factory.ProfileRepository.ClearReceivedCalls();
+
+        // Act
+        var response = await client.PutAsJsonAsync("/api/profiles/me", ValidRequest());
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<ProfileDto>();
+        body.Should().NotBeNull();
+        body!.UserId.Should().Be(own!.UserId);
+        body.DisplayName.Should().Be("Eamonn");
+        body.HomeRegion.Should().Be("Westmeath");
+        body.PreferredFishingTypes.Should().Equal("Coarse");
+        body.PreferredSpecies.Should().Equal("Pike");
+        typeof(ProfileDto).GetProperty("Latitude").Should().BeNull();
+        await _factory.ProfileRepository.Received(1).GetByUserIdAsync(
+            own.UserId,
+            Arg.Any<CancellationToken>());
+        await _factory.ProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == own.UserId
+                && profile.DisplayName == "Eamonn"
+                && profile.HomeRegion == "Westmeath"),
+            Arg.Any<CancellationToken>());
+    }
+
+    private static UpdateProfileDto ValidRequest()
+    {
+        return new UpdateProfileDto(
+            "Eamonn",
+            "Westmeath",
+            ["Coarse"],
+            ["Pike"],
+            true,
+            false,
+            true,
+            true,
+            false);
     }
 }

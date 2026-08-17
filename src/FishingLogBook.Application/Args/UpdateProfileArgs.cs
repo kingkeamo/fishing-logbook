@@ -1,5 +1,3 @@
-using FishingLogBook.Shared.Dtos;
-
 namespace FishingLogBook.Application.Args;
 
 public sealed class UpdateProfileArgs
@@ -23,6 +21,4 @@ public sealed class UpdateProfileArgs
     public bool ShowPreferredFishingTypes { get; init; }
 
     public bool ShowPreferredSpecies { get; init; }
-
-    public CatchLocationDto? Location { get; init; }
 }
