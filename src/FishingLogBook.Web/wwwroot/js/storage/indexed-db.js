@@ -143,6 +143,92 @@ export function runTransaction(db, options) {
     });
 }
 
+export function executeMultiStoreTransaction(db, {
+    storeNames,
+    mode,
+    abortMessage = 'IndexedDB transaction aborted',
+    execute,
+    closeWhenDone = true,
+    onStarted,
+    onCompleted,
+    onAborted,
+    onError,
+    onRequestSucceeded,
+    onClosed
+}) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeNames, mode);
+        onStarted?.();
+
+        let result;
+        let settled = false;
+
+        const finishClose = () => {
+            if (!closeWhenDone) {
+                return;
+            }
+
+            closeDatabase(db);
+            onClosed?.();
+        };
+
+        const settle = (action) => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            action();
+        };
+
+        transaction.oncomplete = () => {
+            onCompleted?.();
+            finishClose();
+            settle(() => {
+                resolve(result);
+            });
+        };
+        transaction.onabort = () => {
+            onAborted?.(transaction.error);
+            finishClose();
+            settle(() => reject(transaction.error || new Error(abortMessage)));
+        };
+        transaction.onerror = () => {
+            onError?.(transaction.error);
+            finishClose();
+            settle(() => reject(transaction.error));
+        };
+
+        execute(transaction, (value) => {
+            result = value;
+            onRequestSucceeded?.();
+        }, (error) => {
+            onError?.(error);
+            try {
+                transaction.abort();
+            } catch {
+                // Already aborted.
+            }
+            settle(() => reject(error || new Error('IndexedDB request failed')));
+        });
+    });
+}
+
+export function runMultiStoreTransaction(db, options) {
+    return withTimeout(
+        executeMultiStoreTransaction(db, options),
+        options.timeoutMs,
+        options.timeoutLabel
+    ).catch((error) => {
+        options.onTimedOut?.(error);
+        if (options.closeWhenDone !== false) {
+            closeDatabase(db);
+        }
+
+        throw error;
+    });
+}
+
 export async function getStorageEstimate() {
     if (!navigator.storage || typeof navigator.storage.estimate !== 'function') {
         return { quota: null, usage: null };

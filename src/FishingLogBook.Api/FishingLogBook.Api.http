@@ -78,4 +78,23 @@ Authorization: Bearer <access-token>
   "contentType": "image/jpeg"
 }
 
+### Catches (requires a Cognito access token; never commit real tokens)
+
+POST {{FishingLogBook.Api_HostAddress}}/api/catches
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "caughtOn": "2026-08-17T08:00:00Z",
+  "photographs": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "catchId": "00000000-0000-0000-0000-000000000000",
+      "contentType": "image/jpeg"
+    }
+  ]
+}
+
 ###

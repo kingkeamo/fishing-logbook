@@ -6,6 +6,8 @@ import {
     CATCH_DATABASE_NAME,
     CATCH_STORE_NAME,
     PHOTO_STORE_NAME,
+    PRODUCTION_CATCH_STORE_NAME,
+    PRODUCTION_PHOTO_STORE_NAME,
     getAllTestCatches,
     putTestCatch
 } from './catch-store.js';
@@ -57,6 +59,8 @@ describe('schema safety', () => {
         expect(diagnosticDb.name).toBe(DIAGNOSTIC_DATABASE_NAME);
         expect(catchDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(PHOTO_STORE_NAME)).toBe(true);
+        expect(catchDb.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)).toBe(true);
+        expect(catchDb.objectStoreNames.contains(PRODUCTION_PHOTO_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(true);
@@ -75,7 +79,12 @@ describe('schema safety', () => {
             request.onerror = () => reject(request.error);
         });
 
-        expect([...db.objectStoreNames].sort()).toEqual([PHOTO_STORE_NAME, CATCH_STORE_NAME].sort());
+        expect([...db.objectStoreNames].sort()).toEqual([
+            PHOTO_STORE_NAME,
+            CATCH_STORE_NAME,
+            PRODUCTION_CATCH_STORE_NAME,
+            PRODUCTION_PHOTO_STORE_NAME
+        ].sort());
         db.close();
     });
 });

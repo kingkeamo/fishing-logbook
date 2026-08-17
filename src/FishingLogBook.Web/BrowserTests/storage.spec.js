@@ -40,9 +40,79 @@ test.describe('Catch and diagnostic IndexedDB', () => {
 
         const result = await page.evaluate(() => window.harness.writeIsolatedRecords());
 
-        expect(result.catchStores).toEqual(['testCatchPhotographs', 'testCatches']);
+        expect(result.catchStores).toEqual(['catchPhotographs', 'catches', 'testCatchPhotographs', 'testCatches']);
         expect(result.diagnosticStores).toEqual(['diagnosticEvents']);
         expect(result.catches).toEqual([{ id: 'catch-only', notes: 'catch-db' }]);
+    });
+});
+
+test.describe('Production Catch IndexedDB', () => {
+    test('writes a Catch and photograph with stable ids', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.putAndGetProductionCatch());
+
+        expect(records).toHaveLength(1);
+        expect(JSON.parse(records[0].json).id).toBe('11111111-1111-1111-1111-111111111111');
+        expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
+        expect(records[0].photographs[0].bytesBase64).toBe(btoa(String.fromCharCode(1, 2, 3)));
+    });
+
+    test('keeps Catch and photograph ids after close and reload', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.putAndGetProductionCatch());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        expect(JSON.parse(records[0].json).id).toBe('11111111-1111-1111-1111-111111111111');
+        expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
+    });
+
+    test('keeps three photographs and capture order after close and reload', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.putAndGetProductionCatchWithThreePhotographs());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.id).toBe('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+        expect(records[0].photographs.map((photograph) => photograph.id)).toEqual([
+            '11111111-1111-1111-1111-111111111111',
+            '22222222-2222-2222-2222-222222222222',
+            '00000000-0000-0000-0000-000000000003'
+        ]);
+        expect(records[0].photographs.map((photograph) => photograph.catchId)).toEqual([
+            catchRecord.id,
+            catchRecord.id,
+            catchRecord.id
+        ]);
+        expect(records[0].photographs.map((photograph) => photograph.contentType)).toEqual([
+            'image/jpeg',
+            'image/png',
+            'image/webp'
+        ]);
+        expect(records[0].photographs.map((photograph) => photograph.bytesBase64)).toEqual([
+            btoa(String.fromCharCode(1, 1, 1)),
+            btoa(String.fromCharCode(2, 2, 2)),
+            btoa(String.fromCharCode(3, 3, 3))
+        ]);
+    });
+
+    test('does not keep a Catch when photograph persistence fails', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const result = await page.evaluate(() => window.harness.putProductionCatchWithoutPhotographId());
+
+        expect(result.threw).toBe(true);
+        expect(result.items.map((item) => JSON.parse(item.json).id)).not.toContain('orphan-catch');
     });
 });
 

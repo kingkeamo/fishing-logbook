@@ -22,7 +22,9 @@ public class WhenTestingMenu : BaseMainLayoutTest
         cut.Find("#app-menu-button").GetAttribute("aria-label").Should().Be("Open menu");
         cut.Find("#profile-nav-link").TextContent.Should().Contain("Profile");
         cut.Find("#profile-nav-link").GetAttribute("href").Should().Be("/profile");
-        cut.Find("#test-catch-nav-button").GetAttribute("href").Should().Be("/test-catch");
+        cut.Find("#record-catch-nav-link").GetAttribute("href").Should().Be("/catches/record");
+        cut.Find("#catch-logbook-nav-link").GetAttribute("href").Should().Be("/catches");
+        cut.FindAll("#test-catch-nav-button").Should().BeEmpty();
         cut.Find("#diagnostics-nav-button").GetAttribute("href").Should().Be("/diagnostics");
         cut.Find("#home-nav-link").GetAttribute("href").Should().Be("/");
     }
@@ -39,6 +41,8 @@ public class WhenTestingMenu : BaseMainLayoutTest
 
         // Assert
         cut.Find("#profile-nav-link").TextContent.Should().Contain("Profil");
+        cut.Find("#record-catch-nav-link").TextContent.Should().Contain("Enregistrer une prise");
+        cut.Find("#catch-logbook-nav-link").TextContent.Should().Contain("Prises");
         cut.Find("#app-menu-button").GetAttribute("aria-label").Should().Be("Ouvrir le menu");
     }
 }

@@ -258,6 +258,81 @@
   <data name="Nav_Home" xml:space="preserve">
     <value>Accueil</value>
   </data>
+  <data name="Catch_RecordNav" xml:space="preserve">
+    <value>Enregistrer une prise</value>
+  </data>
+  <data name="Catch_LogbookNav" xml:space="preserve">
+    <value>Prises</value>
+  </data>
+  <data name="Catch_RecordPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Enregistrer une prise</value>
+  </data>
+  <data name="Catch_RecordTitle" xml:space="preserve">
+    <value>Enregistrer une prise</value>
+  </data>
+  <data name="Catch_RecordSubtitle" xml:space="preserve">
+    <value>Photographiez, puis enregistrez sur cet appareil</value>
+  </data>
+  <data name="Catch_TakePhoto" xml:space="preserve">
+    <value>Prendre une photo</value>
+  </data>
+  <data name="Catch_ChoosePhoto" xml:space="preserve">
+    <value>Choisir une photo</value>
+  </data>
+  <data name="Catch_PhotographAlt" xml:space="preserve">
+    <value>Photographie de la prise</value>
+  </data>
+  <data name="Catch_PhotoUnsupported" xml:space="preserve">
+    <value>Ce format de photo n'est pas pris en charge. Utilisez JPEG, PNG ou WebP.</value>
+  </data>
+  <data name="Catch_RemovePhoto" xml:space="preserve">
+    <value>Retirer la photo</value>
+  </data>
+  <data name="Catch_PhotoPosition" xml:space="preserve">
+    <value>Photo {0} sur {1}</value>
+  </data>
+  <data name="Catch_PreviousPhoto" xml:space="preserve">
+    <value>Photo précédente</value>
+  </data>
+  <data name="Catch_NextPhoto" xml:space="preserve">
+    <value>Photo suivante</value>
+  </data>
+  <data name="Catch_RecordAnother" xml:space="preserve">
+    <value>Enregistrer une autre prise</value>
+  </data>
+  <data name="Catch_ViewCatches" xml:space="preserve">
+    <value>Voir les prises</value>
+  </data>
+  <data name="Catch_Save" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="Catch_Saving" xml:space="preserve">
+    <value>Enregistrement</value>
+  </data>
+  <data name="Catch_Saved" xml:space="preserve">
+    <value>Prise enregistrée sur cet appareil</value>
+  </data>
+  <data name="Catch_SaveFailed" xml:space="preserve">
+    <value>La prise n'a pas pu être enregistrée. Réessayez.</value>
+  </data>
+  <data name="Catch_LogbookPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Prises</value>
+  </data>
+  <data name="Catch_LogbookTitle" xml:space="preserve">
+    <value>Prises</value>
+  </data>
+  <data name="Catch_LogbookSubtitle" xml:space="preserve">
+    <value>Enregistrées sur cet appareil</value>
+  </data>
+  <data name="Catch_LogbookEmpty" xml:space="preserve">
+    <value>Aucune prise enregistrée sur cet appareil</value>
+  </data>
+  <data name="Catch_LoadFailed" xml:space="preserve">
+    <value>Les prises n'ont pas pu être chargées.</value>
+  </data>
+  <data name="Catch_UnknownSpecies" xml:space="preserve">
+    <value>Prise</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profil</value>
   </data>
