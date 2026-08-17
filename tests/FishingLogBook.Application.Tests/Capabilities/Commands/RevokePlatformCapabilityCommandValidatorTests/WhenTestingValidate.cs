@@ -7,19 +7,6 @@ namespace FishingLogBook.Application.Tests.Capabilities.Commands.RevokePlatformC
 public class WhenTestingValidate : BaseRevokePlatformCapabilityCommandValidatorTest
 {
     [Fact]
-    public void ItShouldHaveAValidationErrorWhenActorUserIdIsEmpty()
-    {
-        // Arrange
-        var command = Command(actorUserId: Guid.Empty);
-
-        // Act
-        var result = Sut.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(c => c.ActorUserId);
-    }
-
-    [Fact]
     public void ItShouldHaveAValidationErrorWhenTargetUserIdIsEmpty()
     {
         // Arrange
@@ -59,13 +46,11 @@ public class WhenTestingValidate : BaseRevokePlatformCapabilityCommandValidatorT
     }
 
     private static RevokePlatformCapabilityCommand Command(
-        Guid? actorUserId = null,
         Guid? targetUserId = null,
         PlatformCapabilityEnum capability = PlatformCapabilityEnum.FishingVenueManager)
     {
         return new RevokePlatformCapabilityCommand
         {
-            ActorUserId = actorUserId ?? Guid.Parse("11111111-1111-1111-1111-111111111111"),
             TargetUserId = targetUserId ?? Guid.Parse("22222222-2222-2222-2222-222222222222"),
             Capability = capability
         };

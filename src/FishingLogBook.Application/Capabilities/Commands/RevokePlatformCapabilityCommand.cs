@@ -10,8 +10,6 @@ namespace FishingLogBook.Application.Capabilities.Commands;
 
 public sealed class RevokePlatformCapabilityCommand : IRequest<RevokePlatformCapabilityResponse>
 {
-    public Guid ActorUserId { get; init; }
-
     public Guid TargetUserId { get; init; }
 
     public PlatformCapabilityEnum Capability { get; init; }
@@ -50,8 +48,6 @@ public sealed class RevokePlatformCapabilityCommandValidator : AbstractValidator
 {
     public RevokePlatformCapabilityCommandValidator()
     {
-        RuleFor(command => command.ActorUserId)
-            .NotEmpty();
         RuleFor(command => command.TargetUserId)
             .NotEmpty();
         RuleFor(command => command.Capability)

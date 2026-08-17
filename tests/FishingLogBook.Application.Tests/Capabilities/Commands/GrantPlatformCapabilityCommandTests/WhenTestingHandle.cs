@@ -34,14 +34,13 @@ public class WhenTestingHandle : BaseGrantPlatformCapabilityCommandTest
         response.Error.Should().BeOfType<MissingPlatformCapabilityError>();
         await MockPlatformCapabilityService.Received(1).GrantAsync(
             Arg.Is<GrantPlatformCapabilityArgs>(args =>
-                args.ActorUserId == command.ActorUserId
-                && args.TargetUserId == command.TargetUserId
+                args.TargetUserId == command.TargetUserId
                 && args.Capability == command.Capability),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldSucceedWhenTheServiceGrants()
+    public async Task ItShouldMapOnlyTargetUserIdAndCapability()
     {
         // Arrange
         var command = ValidCommand();
@@ -54,10 +53,11 @@ public class WhenTestingHandle : BaseGrantPlatformCapabilityCommandTest
 
         // Assert
         response.IsSuccess.Should().BeTrue();
+        typeof(GrantPlatformCapabilityCommand).GetProperty("ActorUserId").Should().BeNull();
+        typeof(GrantPlatformCapabilityArgs).GetProperty("ActorUserId").Should().BeNull();
         await MockPlatformCapabilityService.Received(1).GrantAsync(
             Arg.Is<GrantPlatformCapabilityArgs>(args =>
-                args.ActorUserId == command.ActorUserId
-                && args.TargetUserId == command.TargetUserId
+                args.TargetUserId == command.TargetUserId
                 && args.Capability == PlatformCapabilityEnum.Guide),
             Arg.Any<CancellationToken>());
     }
@@ -66,7 +66,6 @@ public class WhenTestingHandle : BaseGrantPlatformCapabilityCommandTest
     {
         return new GrantPlatformCapabilityCommand
         {
-            ActorUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             TargetUserId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
             Capability = PlatformCapabilityEnum.Guide
         };

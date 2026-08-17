@@ -8,7 +8,7 @@ public static class PlatformCapabilityHttp
 {
     public static IResult From(ICurrentUser currentUser, ValidatedResponse response)
     {
-        if (!currentUser.IsResolved)
+        if (!currentUser.IsResolved || response.Error is CurrentUserUnresolvedError)
         {
             return Results.Unauthorized();
         }

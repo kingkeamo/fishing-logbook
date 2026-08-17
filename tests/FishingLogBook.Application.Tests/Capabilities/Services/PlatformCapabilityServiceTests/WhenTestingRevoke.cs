@@ -11,7 +11,29 @@ namespace FishingLogBook.Application.Tests.Capabilities.Services.PlatformCapabil
 public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
 {
     [Fact]
-    public async Task ItShouldFailWhenTheActorLacksAdministrator()
+    public async Task ItShouldFailWhenTheCurrentUserIsNotResolved()
+    {
+        // Arrange
+        MockCurrentUser.IsResolved.Returns(false);
+        MockCurrentUser.UserId.Returns(Guid.Parse("99999999-9999-9999-9999-999999999999"));
+        var args = RevokeArgs();
+
+        // Act
+        var result = await Sut.RevokeAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<CurrentUserUnresolvedError>();
+        await MockUserPlatformCapabilityRepository.DidNotReceive().HasAsync(
+            Arg.Any<FindUserPlatformCapabilityArgs>(),
+            Arg.Any<CancellationToken>());
+        await MockUserPlatformCapabilityRepository.DidNotReceive().RevokeAsync(
+            Arg.Any<FindUserPlatformCapabilityArgs>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldFailWhenTheCurrentUserLacksAdministrator()
     {
         // Arrange
         var args = RevokeArgs();
@@ -27,8 +49,11 @@ public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
         result.Errors[0].Should().BeOfType<MissingPlatformCapabilityError>();
         await MockUserPlatformCapabilityRepository.Received(1).HasAsync(
             Arg.Is<FindUserPlatformCapabilityArgs>(lookup =>
-                lookup.UserId == args.ActorUserId
+                lookup.UserId == CurrentUserId
                 && lookup.Capability == PlatformCapabilityEnum.Administrator),
+            Arg.Any<CancellationToken>());
+        await MockUserPlatformCapabilityRepository.DidNotReceive().HasAsync(
+            Arg.Is<FindUserPlatformCapabilityArgs>(lookup => lookup.UserId == args.TargetUserId),
             Arg.Any<CancellationToken>());
         await MockUserPlatformCapabilityRepository.DidNotReceive().RevokeAsync(
             Arg.Any<FindUserPlatformCapabilityArgs>(),
@@ -39,11 +64,42 @@ public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
     }
 
     [Fact]
+    public async Task ItShouldNotAuthorizeUsingTheTargetUserId()
+    {
+        // Arrange
+        var args = RevokeArgs();
+        MockUserPlatformCapabilityRepository
+            .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var lookup = call.ArgAt<FindUserPlatformCapabilityArgs>(0);
+                return Result.Ok(
+                    lookup.UserId == args.TargetUserId
+                    && lookup.Capability == PlatformCapabilityEnum.Administrator);
+            });
+
+        // Act
+        var result = await Sut.RevokeAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<MissingPlatformCapabilityError>();
+        await MockUserPlatformCapabilityRepository.Received(1).HasAsync(
+            Arg.Is<FindUserPlatformCapabilityArgs>(lookup =>
+                lookup.UserId == CurrentUserId
+                && lookup.Capability == PlatformCapabilityEnum.Administrator),
+            Arg.Any<CancellationToken>());
+        await MockUserPlatformCapabilityRepository.DidNotReceive().RevokeAsync(
+            Arg.Any<FindUserPlatformCapabilityArgs>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldReturnFailureWhenRevokePersistenceFails()
     {
         // Arrange
         var args = RevokeArgs();
-        GivenActorIsAdministrator(args.ActorUserId);
+        GivenCurrentUserIsAdministrator();
         MockUserPlatformCapabilityRepository
             .RevokeAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Fail("Failed to persist platform capability."));
@@ -65,7 +121,7 @@ public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
     {
         // Arrange
         var args = RevokeArgs();
-        GivenActorIsAdministrator(args.ActorUserId);
+        GivenCurrentUserIsAdministrator();
         MockUserPlatformCapabilityRepository
             .RevokeAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
@@ -75,9 +131,14 @@ public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
+        await MockUserPlatformCapabilityRepository.Received(1).HasAsync(
+            Arg.Is<FindUserPlatformCapabilityArgs>(lookup =>
+                lookup.UserId == CurrentUserId
+                && lookup.Capability == PlatformCapabilityEnum.Administrator),
+            Arg.Any<CancellationToken>());
         await MockUserPlatformCapabilityRepository.Received(1).RevokeAsync(
             Arg.Is<FindUserPlatformCapabilityArgs>(lookup =>
-                lookup.UserId == args.TargetUserId
+                lookup.UserId == TargetUserId
                 && lookup.Capability == PlatformCapabilityEnum.Guide),
             Arg.Any<CancellationToken>());
         await MockUserPlatformCapabilityRepository.DidNotReceive().RevokeAsync(
@@ -89,7 +150,7 @@ public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
             Arg.Any<CancellationToken>());
     }
 
-    private void GivenActorIsAdministrator(Guid actorUserId)
+    private void GivenCurrentUserIsAdministrator()
     {
         MockUserPlatformCapabilityRepository
             .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
@@ -97,7 +158,7 @@ public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
             {
                 var lookup = call.ArgAt<FindUserPlatformCapabilityArgs>(0);
                 return Result.Ok(
-                    lookup.UserId == actorUserId
+                    lookup.UserId == CurrentUserId
                     && lookup.Capability == PlatformCapabilityEnum.Administrator);
             });
     }
@@ -106,8 +167,7 @@ public class WhenTestingRevoke : BasePlatformCapabilityServiceTest
     {
         return new RevokePlatformCapabilityArgs
         {
-            ActorUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            TargetUserId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            TargetUserId = TargetUserId,
             Capability = PlatformCapabilityEnum.Guide
         };
     }

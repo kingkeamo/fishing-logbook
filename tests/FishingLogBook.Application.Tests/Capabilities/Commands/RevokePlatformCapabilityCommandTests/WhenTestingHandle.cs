@@ -34,14 +34,13 @@ public class WhenTestingHandle : BaseRevokePlatformCapabilityCommandTest
         response.Error.Should().BeOfType<MissingPlatformCapabilityError>();
         await MockPlatformCapabilityService.Received(1).RevokeAsync(
             Arg.Is<RevokePlatformCapabilityArgs>(args =>
-                args.ActorUserId == command.ActorUserId
-                && args.TargetUserId == command.TargetUserId
+                args.TargetUserId == command.TargetUserId
                 && args.Capability == command.Capability),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldSucceedWhenTheServiceRevokes()
+    public async Task ItShouldMapOnlyTargetUserIdAndCapability()
     {
         // Arrange
         var command = ValidCommand();
@@ -54,10 +53,11 @@ public class WhenTestingHandle : BaseRevokePlatformCapabilityCommandTest
 
         // Assert
         response.IsSuccess.Should().BeTrue();
+        typeof(RevokePlatformCapabilityCommand).GetProperty("ActorUserId").Should().BeNull();
+        typeof(RevokePlatformCapabilityArgs).GetProperty("ActorUserId").Should().BeNull();
         await MockPlatformCapabilityService.Received(1).RevokeAsync(
             Arg.Is<RevokePlatformCapabilityArgs>(args =>
-                args.ActorUserId == command.ActorUserId
-                && args.TargetUserId == command.TargetUserId
+                args.TargetUserId == command.TargetUserId
                 && args.Capability == PlatformCapabilityEnum.CompetitionOrganiser),
             Arg.Any<CancellationToken>());
     }
@@ -66,7 +66,6 @@ public class WhenTestingHandle : BaseRevokePlatformCapabilityCommandTest
     {
         return new RevokePlatformCapabilityCommand
         {
-            ActorUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             TargetUserId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
             Capability = PlatformCapabilityEnum.CompetitionOrganiser
         };

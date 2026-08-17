@@ -7,19 +7,6 @@ namespace FishingLogBook.Application.Tests.Capabilities.Commands.GrantPlatformCa
 public class WhenTestingValidate : BaseGrantPlatformCapabilityCommandValidatorTest
 {
     [Fact]
-    public void ItShouldHaveAValidationErrorWhenActorUserIdIsEmpty()
-    {
-        // Arrange
-        var command = Command(actorUserId: Guid.Empty);
-
-        // Act
-        var result = Sut.TestValidate(command);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(c => c.ActorUserId);
-    }
-
-    [Fact]
     public void ItShouldHaveAValidationErrorWhenTargetUserIdIsEmpty()
     {
         // Arrange
@@ -59,13 +46,11 @@ public class WhenTestingValidate : BaseGrantPlatformCapabilityCommandValidatorTe
     }
 
     private static GrantPlatformCapabilityCommand Command(
-        Guid? actorUserId = null,
         Guid? targetUserId = null,
         PlatformCapabilityEnum capability = PlatformCapabilityEnum.Guide)
     {
         return new GrantPlatformCapabilityCommand
         {
-            ActorUserId = actorUserId ?? Guid.Parse("11111111-1111-1111-1111-111111111111"),
             TargetUserId = targetUserId ?? Guid.Parse("22222222-2222-2222-2222-222222222222"),
             Capability = capability
         };

@@ -10,8 +10,6 @@ namespace FishingLogBook.Application.Capabilities.Commands;
 
 public sealed class GrantPlatformCapabilityCommand : IRequest<GrantPlatformCapabilityResponse>
 {
-    public Guid ActorUserId { get; init; }
-
     public Guid TargetUserId { get; init; }
 
     public PlatformCapabilityEnum Capability { get; init; }
@@ -50,8 +48,6 @@ public sealed class GrantPlatformCapabilityCommandValidator : AbstractValidator<
 {
     public GrantPlatformCapabilityCommandValidator()
     {
-        RuleFor(command => command.ActorUserId)
-            .NotEmpty();
         RuleFor(command => command.TargetUserId)
             .NotEmpty();
         RuleFor(command => command.Capability)

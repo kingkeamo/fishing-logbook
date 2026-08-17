@@ -56,7 +56,6 @@ internal sealed class TestGrantPlatformCapabilityStartupFilter : IStartupFilter
         var response = await mediator.Send(
             new GrantPlatformCapabilityCommand
             {
-                ActorUserId = currentUser.UserId,
                 TargetUserId = body.TargetUserId,
                 Capability = body.Capability
             },

@@ -11,10 +11,14 @@ namespace FishingLogBook.Application.Capabilities.Services;
 public sealed class PlatformCapabilityService : IPlatformCapabilityService
 {
     private readonly IUserPlatformCapabilityRepository _userPlatformCapabilityRepository;
+    private readonly ICurrentUser _currentUser;
 
-    public PlatformCapabilityService(IUserPlatformCapabilityRepository userPlatformCapabilityRepository)
+    public PlatformCapabilityService(
+        IUserPlatformCapabilityRepository userPlatformCapabilityRepository,
+        ICurrentUser currentUser)
     {
         _userPlatformCapabilityRepository = userPlatformCapabilityRepository;
+        _currentUser = currentUser;
     }
 
     public Task<Result<bool>> HasAsync(
@@ -45,7 +49,7 @@ public sealed class PlatformCapabilityService : IPlatformCapabilityService
 
     public async Task<Result> GrantAsync(GrantPlatformCapabilityArgs args, CancellationToken cancellationToken)
     {
-        var authorised = await RequireAdministratorAsync(args.ActorUserId, cancellationToken);
+        var authorised = await RequireAdministratorAsync(cancellationToken);
         if (authorised.IsFailed)
         {
             return authorised;
@@ -62,7 +66,7 @@ public sealed class PlatformCapabilityService : IPlatformCapabilityService
 
     public async Task<Result> RevokeAsync(RevokePlatformCapabilityArgs args, CancellationToken cancellationToken)
     {
-        var authorised = await RequireAdministratorAsync(args.ActorUserId, cancellationToken);
+        var authorised = await RequireAdministratorAsync(cancellationToken);
         if (authorised.IsFailed)
         {
             return authorised;
@@ -77,10 +81,15 @@ public sealed class PlatformCapabilityService : IPlatformCapabilityService
             cancellationToken);
     }
 
-    private async Task<Result> RequireAdministratorAsync(Guid actorUserId, CancellationToken cancellationToken)
+    private async Task<Result> RequireAdministratorAsync(CancellationToken cancellationToken)
     {
+        if (!_currentUser.IsResolved)
+        {
+            return Result.Fail(new CurrentUserUnresolvedError());
+        }
+
         var hasAdministrator = await HasAsync(
-            actorUserId,
+            _currentUser.UserId,
             PlatformCapabilityEnum.Administrator,
             cancellationToken);
         if (hasAdministrator.IsFailed)
