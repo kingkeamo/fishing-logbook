@@ -399,6 +399,9 @@
   <data name="Catch_LocationPrivacySaveFailed" xml:space="preserve">
     <value>La confidentialité n'a pas pu être enregistrée. Réessayez.</value>
   </data>
+  <data name="Catch_LocationPrivacySavedPendingSync" xml:space="preserve">
+    <value>Confidentialité enregistrée sur cet appareil. Elle sera mise à jour lorsque la synchronisation sera disponible.</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profil</value>
   </data>

@@ -79,6 +79,13 @@
                     @Loc["Catch_LocationPrivacySaved"]
                 </MudAlert>
             }
+
+            @if (_savedPendingSync)
+            {
+                <MudAlert Severity="Severity.Info" id="catch-location-privacy-saved-pending">
+                    @Loc["Catch_LocationPrivacySavedPendingSync"]
+                </MudAlert>
+            }
         }
     </MudStack>
 </MudContainer>

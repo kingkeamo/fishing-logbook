@@ -23,11 +23,16 @@ public sealed class CatchClient : ICatchClient
             $"api/catches/{catchId:D}/location-visibility",
             new UpdateCatchLocationVisibilityDto(visibility),
             cancellationToken);
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        if (IsUnsynchronisedCatch(response))
         {
             return;
         }
 
         response.EnsureSuccessStatusCode();
+    }
+
+    private static bool IsUnsynchronisedCatch(HttpResponseMessage response)
+    {
+        return response.StatusCode == HttpStatusCode.NotFound;
     }
 }
