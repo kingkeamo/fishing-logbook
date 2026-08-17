@@ -19,6 +19,7 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
     private bool _missingLocation;
     private bool _saveFailed;
     private bool _saved;
+    private bool _savedPendingSync;
 
     [Parameter]
     public Guid CatchId { get; set; }
@@ -69,6 +70,7 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
     {
         _visibility = visibility;
         _saved = false;
+        _savedPendingSync = false;
         _saveFailed = false;
     }
 
@@ -82,27 +84,58 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
         _isSaving = true;
         _saveFailed = false;
         _saved = false;
+        _savedPendingSync = false;
         try
         {
-            var updated = _catch with
+            if (!await TryPersistLocalVisibilityAsync())
             {
-                Location = _catch.Location with { Visibility = _visibility }
+                return;
+            }
+
+            await PropagateVisibilityAsync();
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task<bool> TryPersistLocalVisibilityAsync()
+    {
+        try
+        {
+            var updated = _catch! with
+            {
+                Location = _catch.Location! with { Visibility = _visibility }
             };
             await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
             _catch = updated;
+            return true;
+        }
+        catch (Exception)
+        {
+            _saveFailed = true;
+            return false;
+        }
+    }
+
+    private async Task PropagateVisibilityAsync()
+    {
+        try
+        {
             await CatchClient.UpdateLocationVisibilityAsync(
                 CatchId,
                 _visibility,
                 _cancellationTokenSource.Token);
             _saved = true;
         }
-        catch (Exception)
+        catch (HttpRequestException)
         {
-            _saveFailed = true;
+            _savedPendingSync = true;
         }
-        finally
+        catch (TaskCanceledException)
         {
-            _isSaving = false;
+            _savedPendingSync = true;
         }
     }
 
