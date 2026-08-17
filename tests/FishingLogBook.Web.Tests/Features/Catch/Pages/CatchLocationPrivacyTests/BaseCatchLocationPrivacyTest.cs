@@ -48,4 +48,3 @@ public class BaseCatchLocationPrivacyTest
                 LocationDefaults.ConsentVersion));
     }
 }
-
