@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
@@ -48,6 +49,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
+        result.HasError<ProfileNotFoundError>().Should().BeTrue();
         result.Errors[0].Message.Should().Be("Angler profile was not found.");
         await MockProfileRepository.Received(1).UserExistsAsync(userId, Arg.Any<CancellationToken>());
         await MockProfileRepository.DidNotReceive().GetByUserIdAsync(

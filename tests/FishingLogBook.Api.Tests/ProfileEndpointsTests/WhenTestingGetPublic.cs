@@ -62,6 +62,31 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldNotMapAGenericFailureMessageToNotFound()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .UserExistsAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(true));
+        _factory.ProfileRepository
+            .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Profile?>("Angler profile was not found."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.GetAsync($"/api/profiles/{userId:D}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.ProfileRepository.Received(1).UserExistsAsync(userId, Arg.Any<CancellationToken>());
+        await _factory.ProfileRepository.Received(1).GetByUserIdAsync(
+            userId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldReturnServiceUnavailableWhenTheRepositoryFails()
     {
         // Arrange

@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
@@ -35,10 +36,8 @@ public sealed class CreateProfilePhotographUploadHandler
     {
         if (!_profileService.IsObjectStorageConfigured)
         {
-            return new CreateProfilePhotographUploadResponse
-            {
-                ErrorMessage = "Object storage is not configured."
-            };
+            return ValidatedResponse.FromError<CreateProfilePhotographUploadResponse>(
+                new ObjectStorageNotConfiguredError());
         }
 
         var result = await _profileService.CreatePhotographUploadAsync(
@@ -47,10 +46,7 @@ public sealed class CreateProfilePhotographUploadHandler
             cancellationToken);
         if (result.IsFailed)
         {
-            return new CreateProfilePhotographUploadResponse
-            {
-                ErrorMessage = result.Errors[0].Message
-            };
+            return ValidatedResponse.FromError<CreateProfilePhotographUploadResponse>(result.Errors[0]);
         }
 
         return new CreateProfilePhotographUploadResponse

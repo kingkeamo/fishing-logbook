@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using NSubstitute;
@@ -19,13 +20,14 @@ public class WhenTestingHandle : BaseRecordProfilePhotographCommandTest
         var command = Command(userId, photographId, objectKey);
         MockProfileService
             .RecordPhotographAsync(Arg.Any<RecordProfilePhotographArgs>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<ProfileDto>("Photograph object key does not match the profile."));
+            .Returns(Result.Fail<ProfileDto>(new PhotographObjectKeyMismatchError()));
 
         // Act
         var response = await Sut.Handle(command, CancellationToken.None);
 
         // Assert
         response.IsFailure.Should().BeTrue();
+        response.Error.Should().BeOfType<PhotographObjectKeyMismatchError>();
         response.ErrorMessage.Should().Be("Photograph object key does not match the profile.");
         response.Profile.Should().BeNull();
         await MockProfileService.Received(1).RecordPhotographAsync(

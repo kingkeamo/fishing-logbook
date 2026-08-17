@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using AwesomeAssertions;
 using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
@@ -274,7 +275,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
                     && actual.ObjectKey == objectKey
                     && actual.ContentType == PhotographContentTypeConstants.Png),
                 Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<Profile>("Angler profile was not found."));
+            .Returns(Result.Fail<Profile>(new ProfileNotFoundError()));
         var request = new RecordPhotographDto(photographId, objectKey, PhotographContentTypeConstants.Png);
 
         // Act

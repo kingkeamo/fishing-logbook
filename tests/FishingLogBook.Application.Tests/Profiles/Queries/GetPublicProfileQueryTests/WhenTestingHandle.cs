@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Application.Profiles.Queries;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
@@ -16,13 +17,14 @@ public class WhenTestingHandle : BaseGetPublicProfileQueryTest
         var query = new GetPublicProfileQuery { UserId = userId };
         MockProfileService
             .GetPublicAsync(userId, Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<PublicProfileDto>("Angler profile was not found."));
+            .Returns(Result.Fail<PublicProfileDto>(new ProfileNotFoundError()));
 
         // Act
         var response = await Sut.Handle(query, CancellationToken.None);
 
         // Assert
         response.IsFailure.Should().BeTrue();
+        response.Error.Should().BeOfType<ProfileNotFoundError>();
         response.ErrorMessage.Should().Be("Angler profile was not found.");
         response.Profile.Should().BeNull();
         await MockProfileService.Received(1).GetPublicAsync(userId, Arg.Any<CancellationToken>());

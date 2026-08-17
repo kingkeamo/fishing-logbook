@@ -32,10 +32,7 @@ public sealed class GetPublicProfileHandler : IRequestHandler<GetPublicProfileQu
         var result = await _profileService.GetPublicAsync(query.UserId, cancellationToken);
         if (result.IsFailed)
         {
-            return new GetPublicProfileResponse
-            {
-                ErrorMessage = result.Errors[0].Message
-            };
+            return ValidatedResponse.FromError<GetPublicProfileResponse>(result.Errors[0]);
         }
 
         return new GetPublicProfileResponse

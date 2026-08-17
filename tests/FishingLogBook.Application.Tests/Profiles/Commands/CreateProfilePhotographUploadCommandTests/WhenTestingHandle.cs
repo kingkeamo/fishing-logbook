@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using NSubstitute;
@@ -22,6 +23,7 @@ public class WhenTestingHandle : BaseCreateProfilePhotographUploadCommandTest
 
         // Assert
         response.IsFailure.Should().BeTrue();
+        response.Error.Should().BeOfType<ObjectStorageNotConfiguredError>();
         response.ErrorMessage.Should().Be("Object storage is not configured.");
         response.Upload.Should().BeNull();
         await MockProfileService.DidNotReceive().CreatePhotographUploadAsync(

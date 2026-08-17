@@ -1,6 +1,7 @@
 using Dapper;
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FluentResults;
 
@@ -9,7 +10,6 @@ namespace FishingLogBook.Infrastructure.Persistence;
 public sealed class ProfileRepository : IProfileRepository
 {
     private const string FailedMessage = "Failed to load angler profile.";
-    private const string NotFoundMessage = "Angler profile was not found.";
 
     private const string SelectSql = """
         SELECT "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
@@ -125,7 +125,7 @@ public sealed class ProfileRepository : IProfileRepository
                 cancellationToken: cancellationToken));
             if (updated == 0)
             {
-                return Result.Fail<Profile>(NotFoundMessage);
+                return Result.Fail<Profile>(new ProfileNotFoundError());
             }
 
             return await RequireByUserIdAsync(connection, args.UserId, cancellationToken);
@@ -151,7 +151,7 @@ public sealed class ProfileRepository : IProfileRepository
             cancellationToken: cancellationToken));
         if (profile is null)
         {
-            return Result.Fail<Profile>(NotFoundMessage);
+            return Result.Fail<Profile>(new ProfileNotFoundError());
         }
 
         return Result.Ok(profile);

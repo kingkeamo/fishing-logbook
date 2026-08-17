@@ -40,10 +40,7 @@ public sealed class RecordProfilePhotographHandler
             cancellationToken);
         if (result.IsFailed)
         {
-            return new RecordProfilePhotographResponse
-            {
-                ErrorMessage = result.Errors[0].Message
-            };
+            return ValidatedResponse.FromError<RecordProfilePhotographResponse>(result.Errors[0]);
         }
 
         return new RecordProfilePhotographResponse

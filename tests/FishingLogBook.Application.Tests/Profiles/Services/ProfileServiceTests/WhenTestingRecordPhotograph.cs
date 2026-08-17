@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Tests.Common.Builders;
@@ -30,6 +31,7 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
+        result.HasError<PhotographObjectKeyMismatchError>().Should().BeTrue();
         result.Errors[0].Message.Should().Be("Photograph object key does not match the profile.");
         await MockProfileRepository.DidNotReceive().UpdatePhotographAsync(
             Arg.Any<RecordProfilePhotographArgs>(),
@@ -56,13 +58,14 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
                     && actual.ObjectKey == objectKey
                     && actual.ContentType == PhotographContentTypeConstants.Jpeg),
                 Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<Profile>("Angler profile was not found."));
+            .Returns(Result.Fail<Profile>(new ProfileNotFoundError()));
 
         // Act
         var result = await Sut.RecordPhotographAsync(args, CancellationToken.None);
 
         // Assert
         result.IsFailed.Should().BeTrue();
+        result.HasError<ProfileNotFoundError>().Should().BeTrue();
         result.Errors[0].Message.Should().Be("Angler profile was not found.");
         await MockProfileRepository.Received(1).UpdatePhotographAsync(
             Arg.Is<RecordProfilePhotographArgs>(actual =>

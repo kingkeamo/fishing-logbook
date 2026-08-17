@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Tests.Common.Builders;
@@ -35,6 +36,7 @@ public class WhenTestingUpdatePhotograph : BaseProfileRepositoryTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
+        result.HasError<ProfileNotFoundError>().Should().BeTrue();
         result.Errors[0].Message.Should().Be("Angler profile was not found.");
         var loaded = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
         loaded.Value.Should().BeNull();

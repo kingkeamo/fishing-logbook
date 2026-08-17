@@ -2,6 +2,7 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
@@ -10,8 +11,6 @@ namespace FishingLogBook.Application.Profiles.Services;
 
 public sealed class ProfileService : IProfileService
 {
-    private const string NotFoundMessage = "Angler profile was not found.";
-    private const string ObjectKeyMismatchMessage = "Photograph object key does not match the profile.";
     private static readonly TimeSpan DownloadLifetime = TimeSpan.FromHours(1);
     private static readonly TimeSpan UploadLifetime = TimeSpan.FromMinutes(15);
 
@@ -66,7 +65,7 @@ public sealed class ProfileService : IProfileService
 
         if (!exists.Value)
         {
-            return Result.Fail<PublicProfileDto>(NotFoundMessage);
+            return Result.Fail<PublicProfileDto>(new ProfileNotFoundError());
         }
 
         var existing = await _profileRepository.GetByUserIdAsync(userId, cancellationToken);
@@ -105,7 +104,7 @@ public sealed class ProfileService : IProfileService
     {
         if (!string.Equals(args.ObjectKey, ObjectKey(args.UserId, args.PhotographId), StringComparison.Ordinal))
         {
-            return Result.Fail<ProfileDto>(ObjectKeyMismatchMessage);
+            return Result.Fail<ProfileDto>(new PhotographObjectKeyMismatchError());
         }
 
         var updated = await _profileRepository.UpdatePhotographAsync(args, cancellationToken);

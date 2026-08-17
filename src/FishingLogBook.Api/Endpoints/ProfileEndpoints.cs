@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Application.Profiles.Queries;
 using FishingLogBook.Shared.Dtos;
 using MediatR;
@@ -113,8 +114,7 @@ public static class ProfileEndpoints
         var response = await mediator.Send(
             new GetPublicProfileQuery { UserId = userId },
             cancellationToken);
-        if (response.IsFailure
-            && string.Equals(response.ErrorMessage, "Angler profile was not found.", StringComparison.Ordinal))
+        if (response.Error is ProfileNotFoundError)
         {
             return Results.NotFound();
         }
@@ -145,8 +145,7 @@ public static class ProfileEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.IsFailure
-            && string.Equals(response.ErrorMessage, "Object storage is not configured.", StringComparison.Ordinal))
+        if (response.Error is ObjectStorageNotConfiguredError)
         {
             return Results.Problem(
                 title: response.ErrorMessage,
@@ -179,9 +178,7 @@ public static class ProfileEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.IsFailure
-            && (string.Equals(response.ErrorMessage, "Photograph object key does not match the profile.", StringComparison.Ordinal)
-                || string.Equals(response.ErrorMessage, "Angler profile was not found.", StringComparison.Ordinal)))
+        if (response.Error is PhotographObjectKeyMismatchError or ProfileNotFoundError)
         {
             return Results.BadRequest(response);
         }
