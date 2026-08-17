@@ -13,7 +13,10 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Pages.CatchLocationPrivacyTest
 
 public class BaseCatchLocationPrivacyTest
 {
-    protected static BunitContext CreateContext(ICatchStore store, ICatchClient? client = null)
+    protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+    protected static BunitContext CreateContext(ICatchStore store, ICatchClient? client = null, ILocalCatchOwnerService? owner = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -21,8 +24,16 @@ public class BaseCatchLocationPrivacyTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(client ?? Substitute.For<ICatchClient>());
+        context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static ILocalCatchOwnerService SignedInOwner()
+    {
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OwnerUserId);
+        return owner;
     }
 
     protected static CatchModel LocatedCatch(Guid catchId, CatchLocationModel? location)
@@ -31,7 +42,8 @@ public class BaseCatchLocationPrivacyTest
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])],
-            Location: location);
+            Location: location,
+            UserId: OwnerUserId);
     }
 
     protected static CatchModel LocatedCatch(Guid catchId, string visibility = LocationDefaults.Private)

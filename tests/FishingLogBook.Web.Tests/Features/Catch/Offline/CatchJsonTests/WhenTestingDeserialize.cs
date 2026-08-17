@@ -46,6 +46,7 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
                 PhotographContentTypeConstants.Png,
                 PhotographContentTypeConstants.Webp);
         restored.Photographs.Should().OnlyContain(photograph => photograph.CatchId == catchId);
+        restored.UserId.Should().Be(Guid.Empty);
     }
 
     [Fact]
@@ -68,7 +69,31 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         // Assert
         restored.Id.Should().Be(catchId);
         restored.Location.Should().BeNull();
+        restored.UserId.Should().Be(Guid.Empty);
         restored.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
+    }
+
+    [Fact]
+    public void ItShouldRoundTripTheOwnerUserId()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var photographId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var catchRecord = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
+            UserId: userId);
+
+        // Act
+        var json = CatchJson.SerializeMetadata(catchRecord);
+        var restored = CatchJson.Deserialize(json, catchRecord.Photographs);
+
+        // Assert
+        json.Should().Contain("\"userId\":\"11111111-1111-1111-1111-111111111111\"");
+        restored.UserId.Should().Be(userId);
+        restored.Id.Should().Be(catchId);
     }
 
     [Fact]

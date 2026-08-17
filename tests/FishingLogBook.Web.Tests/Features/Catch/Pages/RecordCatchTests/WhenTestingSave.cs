@@ -4,6 +4,7 @@ using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -88,7 +89,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         cut.FindAll("#catch-saved").Should().BeEmpty();
         cut.Find("#save-catch-button").Should().NotBeNull();
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Id != Guid.Empty
                 && catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id != Guid.Empty
@@ -116,7 +117,7 @@ public class WhenTestingSave : BaseRecordCatchTest
 
         // Assert
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id == photographId
                 && catchRecord.Photographs[0].CatchId == catchRecord.Id
@@ -162,7 +163,7 @@ public class WhenTestingSave : BaseRecordCatchTest
 
         // Assert
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Bytes != null
                 && catchRecord.SpeciesName == null
@@ -235,7 +236,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         saved[0].Photographs[0].Id.Should().NotBe(saved[0].Id);
         saved.Should().OnlyContain(catchRecord => catchRecord.SpeciesName == null);
         await store.Received(2).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Id != Guid.Empty
                 && catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Bytes != null),
@@ -258,9 +259,33 @@ public class WhenTestingSave : BaseRecordCatchTest
         // Assert
         injected.Should().Contain(typeof(ICatchStore));
         injected.Should().Contain(typeof(ILocationService));
+        injected.Should().Contain(typeof(ILocalCatchOwnerService));
         injected.Should().NotContain(typeof(HttpClient));
         injected.Should().NotContain(type =>
             type.Name.Contains("Client", StringComparison.Ordinal)
             || type.Name.Contains("Synchroniser", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ItShouldNotSaveWhenTheOwnerCannotBeResolved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("The current user is not signed in."));
+        await using var context = CreateContext(store, owner: owner);
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+
+        // Act
+        await cut.Find("#save-catch-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-save-failed").TextContent.Should().Contain("could not be saved"));
+        cut.FindAll("#catch-saved").Should().BeEmpty();
+        await owner.Received(1).GetUserIdAsync(Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 }

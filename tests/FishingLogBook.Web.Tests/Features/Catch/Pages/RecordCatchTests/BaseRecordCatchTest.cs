@@ -5,6 +5,7 @@ using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +16,13 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Pages.RecordCatchTests;
 
 public class BaseRecordCatchTest
 {
-    protected static BunitContext CreateContext(ICatchStore store, ILocationService? location = null)
+    protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+    protected static BunitContext CreateContext(
+        ICatchStore store,
+        ILocationService? location = null,
+        ILocalCatchOwnerService? owner = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -23,8 +30,16 @@ public class BaseRecordCatchTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(location ?? QuietLocation());
+        context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static ILocalCatchOwnerService SignedInOwner()
+    {
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OwnerUserId);
+        return owner;
     }
 
     protected static ILocationService QuietLocation()

@@ -256,6 +256,9 @@ describe('Catch store', () => {
 });
 
 describe('Production Catch store', () => {
+    const ownerUserId = '11111111-1111-1111-1111-111111111111';
+    const otherUserId = '22222222-2222-2222-2222-222222222222';
+
     it('puts and reads a Catch with photograph bytes and stable ids', async () => {
         const catchId = '11111111-1111-1111-1111-111111111111';
         const photographId = '22222222-2222-2222-2222-222222222222';
@@ -269,7 +272,7 @@ describe('Production Catch store', () => {
             }]
         );
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
 
         expect(items).toHaveLength(1);
         expect(JSON.parse(items[0].json).id).toBe(catchId);
@@ -301,8 +304,8 @@ describe('Production Catch store', () => {
             ]
         );
 
-        const firstRead = await getAllCatchesWithPhotographs();
-        const reopened = await getAllCatchesWithPhotographs();
+        const firstRead = await getAllCatchesWithPhotographs(ownerUserId);
+        const reopened = await getAllCatchesWithPhotographs(ownerUserId);
 
         expect(JSON.parse(firstRead[0].json).id).toBe(catchId);
         expect(reopened[0].photographs.map((photograph) => photograph.id)).toEqual([photoA, photoB, photoC]);
@@ -329,7 +332,7 @@ describe('Production Catch store', () => {
             [{ id: 'photo-b', catchId: 'catch-b', contentType: 'image/png', bytes: new Uint8Array([2]) }]
         );
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id).sort();
         const photoIds = items.flatMap((item) => item.photographs.map((photograph) => photograph.id)).sort();
 
@@ -343,7 +346,7 @@ describe('Production Catch store', () => {
             [{ catchId: 'orphan-catch', contentType: 'image/jpeg', bytes: new Uint8Array([9]) }]
         )).rejects.toBeTruthy();
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id);
 
         expect(ids).not.toContain('orphan-catch');
@@ -355,7 +358,7 @@ describe('Production Catch store', () => {
             []
         )).rejects.toThrow('Catch requires at least one photograph');
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id);
         expect(ids).not.toContain('empty-photos');
     });
@@ -413,8 +416,86 @@ describe('Production Catch store', () => {
             vi.restoreAllMocks();
         }
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id);
         expect(ids).not.toContain('partial-catch');
+    });
+
+    it('does not return another user’s Catch or photograph bytes', async () => {
+        const ownerCatchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const otherCatchId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: ownerCatchId,
+                userId: ownerUserId,
+                caughtOn: '2026-08-17T08:00:00+00:00'
+            }),
+            [{
+                id: 'owner-photo',
+                catchId: ownerCatchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1, 2, 3])
+            }]
+        );
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: otherCatchId,
+                userId: otherUserId,
+                caughtOn: '2026-08-17T09:00:00+00:00',
+                location: { latitude: 53.2707, longitude: -9.0568 }
+            }),
+            [{
+                id: 'other-photo',
+                catchId: otherCatchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([9, 9, 9])
+            }]
+        );
+
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const otherView = await getAllCatchesWithPhotographs(otherUserId);
+
+        expect(ownerView.map((item) => JSON.parse(item.json).id)).toEqual([ownerCatchId]);
+        expect(ownerView[0].photographs.map((photograph) => photograph.id)).toEqual(['owner-photo']);
+        expect(JSON.stringify(ownerView)).not.toContain('53.2707');
+        expect(JSON.stringify(ownerView)).not.toContain('other-photo');
+        expect(otherView.map((item) => JSON.parse(item.json).id)).toEqual([otherCatchId]);
+        expect(otherView[0].photographs.map((photograph) => photograph.id)).toEqual(['other-photo']);
+        expect(JSON.stringify(otherView)).not.toContain('owner-photo');
+    });
+
+    it('does not expose unscoped Catches to a later user once another owner has records', async () => {
+        const unscopedId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        await putCatchWithPhotographs(
+            JSON.stringify({ id: unscopedId, caughtOn: '2026-08-17T08:00:00+00:00' }),
+            [{
+                id: 'unscoped-photo',
+                catchId: unscopedId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([4])
+            }]
+        );
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+                userId: ownerUserId,
+                caughtOn: '2026-08-17T09:00:00+00:00'
+            }),
+            [{
+                id: 'owner-photo',
+                catchId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([5])
+            }]
+        );
+
+        const otherView = await getAllCatchesWithPhotographs(otherUserId);
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+
+        expect(otherView).toEqual([]);
+        expect(ownerView.map((item) => JSON.parse(item.json).id).sort()).toEqual([
+            'cccccccc-cccc-cccc-cccc-cccccccccccc',
+            'dddddddd-dddd-dddd-dddd-dddddddddddd'
+        ].sort());
     });
 });

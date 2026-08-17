@@ -232,7 +232,7 @@ export async function putCatchWithPhotographs(json, photographs) {
     });
 }
 
-export async function getAllCatchesWithPhotographs() {
+export async function getAllCatchesWithPhotographs(ownerUserId) {
     return runProductionCatchTransaction('readonly', 'read', (transaction, succeed, fail) => {
         const catchStore = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME);
         const photoStore = transaction.objectStore(PRODUCTION_PHOTO_STORE_NAME);
@@ -247,18 +247,22 @@ export async function getAllCatchesWithPhotographs() {
                 return;
             }
 
+            const visible = visibleCatchesForOwner(catches, ownerUserId);
+            const visibleIds = new Set(visible.map((item) => item.id));
             const photographs = [];
             const photoRequest = photoStore.openCursor();
             photoRequest.onerror = () => fail(photoRequest.error);
             photoRequest.onsuccess = () => {
                 const photoCursor = photoRequest.result;
                 if (photoCursor) {
-                    photographs.push(photoCursor.value);
+                    if (visibleIds.has(photoCursor.value.catchId)) {
+                        photographs.push(photoCursor.value);
+                    }
                     photoCursor.continue();
                     return;
                 }
 
-                succeed(catches.map((item) => ({
+                succeed(visible.map((item) => ({
                     json: JSON.stringify(item),
                     photographs: orderPhotographs(item, photographs)
                         .map((photograph) => ({
@@ -271,6 +275,34 @@ export async function getAllCatchesWithPhotographs() {
             };
         };
     });
+}
+
+function visibleCatchesForOwner(catches, ownerUserId) {
+    const owner = normalisedUserId(ownerUserId);
+    if (!owner) {
+        return [];
+    }
+
+    const hasForeignOwner = catches.some((item) => {
+        const userId = normalisedUserId(item?.userId);
+        return userId && userId !== owner;
+    });
+    return catches.filter((item) => {
+        const userId = normalisedUserId(item?.userId);
+        if (userId === owner) {
+            return true;
+        }
+
+        return !userId && !hasForeignOwner;
+    });
+}
+
+function normalisedUserId(value) {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    return value.trim().toLowerCase();
 }
 
 function orderPhotographs(catchRecord, photographs) {

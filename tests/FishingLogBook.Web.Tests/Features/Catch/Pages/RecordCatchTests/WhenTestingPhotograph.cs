@@ -61,7 +61,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id == photographId
                 && catchRecord.Photographs[0].ContentType == PhotographContentTypeConstants.Jpeg
@@ -100,7 +100,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         jpegId.Should().NotBe(pngId);
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 2
                 && catchRecord.Photographs[0].Id == jpegId
                 && catchRecord.Photographs[1].Id == pngId
@@ -231,7 +231,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         firstId.Should().NotBe(secondId);
         cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 2 of 2");
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 2
                 && catchRecord.Photographs[0].Id == firstId
                 && catchRecord.Photographs[1].Id == secondId
@@ -278,7 +278,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 1 of 3");
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 3
                 && catchRecord.Photographs[0].Id == firstId
                 && catchRecord.Photographs[1].Id == secondId
@@ -368,7 +368,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         remainingVisible.Should().NotBe(photoB);
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 2
                 && catchRecord.Photographs.Select(photograph => photograph.Id).Contains(photoA)
                 && catchRecord.Photographs.Select(photograph => photograph.Id).Contains(photoC)
