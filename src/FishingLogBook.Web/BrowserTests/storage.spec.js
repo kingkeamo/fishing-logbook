@@ -149,6 +149,20 @@ test.describe('Production Catch IndexedDB', () => {
         expect(catchRecord.location).toBeUndefined();
         expect(records[0].photographs[0].id).toBe('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
     });
+
+    test('does not let the first signed-in user read or adopt a legacy unscoped Catch', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const result = await page.evaluate(() => window.harness.putUnscopedProductionCatchThenReadAsFirstSigner());
+
+        expect(result.firstSignerView).toEqual([]);
+        expect(result.originalOwnerView).toEqual([]);
+        expect(JSON.stringify(result.firstSignerView)).not.toContain('53.2707');
+        expect(JSON.stringify(result.firstSignerView)).not.toContain('unscoped-photo');
+        expect(result.stored.userId).toBeUndefined();
+        expect(result.stored.location).toEqual({ latitude: 53.2707, longitude: -9.0568 });
+    });
 });
 
 test.describe('service worker application shell', () => {

@@ -283,18 +283,7 @@ function visibleCatchesForOwner(catches, ownerUserId) {
         return [];
     }
 
-    const hasForeignOwner = catches.some((item) => {
-        const userId = normalisedUserId(item?.userId);
-        return userId && userId !== owner;
-    });
-    return catches.filter((item) => {
-        const userId = normalisedUserId(item?.userId);
-        if (userId === owner) {
-            return true;
-        }
-
-        return !userId && !hasForeignOwner;
-    });
+    return catches.filter((item) => normalisedUserId(item?.userId) === owner);
 }
 
 function normalisedUserId(value) {
