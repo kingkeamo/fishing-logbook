@@ -9,11 +9,15 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Services.CatchClientTests;
 
 public class BaseCatchClientTest
 {
-    protected static CatchClient CreateClient(RecordingHandler apiHandler)
+    protected static CatchClient CreateClient(
+        RecordingHandler apiHandler,
+        RecordingHandler? anonymousHandler = null)
     {
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient(HttpClientNames.AuthorizedApi)
             .Returns(new HttpClient(apiHandler) { BaseAddress = new Uri("https://api.test/") });
+        factory.CreateClient(HttpClientNames.Anonymous)
+            .Returns(new HttpClient(anonymousHandler ?? new RecordingHandler(HttpStatusCode.OK)));
         return new CatchClient(factory);
     }
 

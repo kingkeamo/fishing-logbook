@@ -34,6 +34,34 @@ describe('network', () => {
         expect(helper.invokeMethodAsync).toHaveBeenCalledWith('OnBrowserOnline');
     });
 
+    it('invokes the helper when the page resumes or becomes visible', () => {
+        const windowHandlers = {};
+        const documentHandlers = {};
+        const helper = { invokeMethodAsync: vi.fn() };
+        const targetWindow = {
+            navigator: { onLine: true },
+            document: {
+                visibilityState: 'hidden',
+                addEventListener(name, callback) {
+                    documentHandlers[name] = callback;
+                }
+            },
+            addEventListener(name, callback) {
+                windowHandlers[name] = callback;
+            }
+        };
+        const api = createNetworkApi(targetWindow);
+
+        api.onUsable(helper);
+        windowHandlers.pageshow();
+        targetWindow.document.visibilityState = 'visible';
+        documentHandlers.visibilitychange();
+
+        expect(helper.invokeMethodAsync).toHaveBeenCalledTimes(2);
+        expect(helper.invokeMethodAsync).toHaveBeenNthCalledWith(1, 'OnBrowserUsable');
+        expect(helper.invokeMethodAsync).toHaveBeenNthCalledWith(2, 'OnBrowserUsable');
+    });
+
     it('installs the network API on the window', () => {
         const targetWindow = {
             navigator: { onLine: true },

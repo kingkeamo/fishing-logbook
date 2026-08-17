@@ -114,6 +114,15 @@
   <data name="SyncStatus_FailedToSynchronise" xml:space="preserve">
     <value>Échec de la synchronisation</value>
   </data>
+  <data name="Catch_SyncRetry" xml:space="preserve">
+    <value>Réessayer</value>
+  </data>
+  <data name="Catch_SyncNow" xml:space="preserve">
+    <value>Synchroniser maintenant</value>
+  </data>
+  <data name="Catch_SyncFailureReassurance" xml:space="preserve">
+    <value>Votre prise reste enregistrée sur cet appareil.</value>
+  </data>
   <data name="TestCatch_Retry" xml:space="preserve">
     <value>Réessayer la synchronisation</value>
   </data>

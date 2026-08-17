@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -116,7 +117,13 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
         {
             var updated = _catch! with
             {
-                Location = _catch.Location! with { Visibility = _visibility }
+                Location = _catch.Location! with { Visibility = _visibility },
+                SyncStatus = _catch.SyncStatus == SyncStatus.Synchronised
+                    ? SyncStatus.WaitingToSynchronise
+                    : _catch.SyncStatus,
+                MetadataSyncStatus = _catch.MetadataSyncStatus == SyncStatus.Synchronised
+                    ? SyncStatus.WaitingToSynchronise
+                    : _catch.MetadataSyncStatus
             };
             await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
             _catch = updated;

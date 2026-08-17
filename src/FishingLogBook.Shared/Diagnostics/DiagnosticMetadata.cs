@@ -16,6 +16,8 @@ public static class DiagnosticMetadata
     public const string TimeoutMilliseconds = "timeoutMilliseconds";
     public const string ErrorType = "errorType";
     public const string Result = "result";
+    public const string CatchId = "catchId";
+    public const string PhotographId = "photographId";
 
     private static readonly HashSet<string> AllowedKeys = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -32,7 +34,9 @@ public static class DiagnosticMetadata
         UsageBytes,
         TimeoutMilliseconds,
         ErrorType,
-        Result
+        Result,
+        CatchId,
+        PhotographId
     };
 
     private static readonly string[] ForbiddenFragments =
@@ -81,6 +85,12 @@ public static class DiagnosticMetadata
         if (string.IsNullOrWhiteSpace(key) || !AllowedKeys.Contains(key))
         {
             return false;
+        }
+
+        if (string.Equals(key, CatchId, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, PhotographId, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
         }
 
         foreach (var fragment in ForbiddenFragments)

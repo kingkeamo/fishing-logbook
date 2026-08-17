@@ -1,19 +1,74 @@
+using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace FishingLogBook.Web.Layouts.MainLayout;
 
-public partial class MainLayout : LayoutComponentBase
+public partial class MainLayout : LayoutComponentBase, IDisposable
 {
     private readonly MudTheme _theme = new();
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     private bool _isDarkMode;
     private bool _drawerOpen;
+    private DotNetObjectReference<MainLayout>? _dotNetReference;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    [Inject]
+    private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+
+    [Inject]
+    private IDiagnosticSynchroniser DiagnosticSynchroniser { get; set; } = default!;
+
+    [Inject]
+    private ILoggingService Logging { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _dotNetReference = DotNetObjectReference.Create(this);
+        await JsRuntime.InvokeVoidAsync(
+            "fishingLogBookNetwork.onOnline",
+            _dotNetReference);
+        await JsRuntime.InvokeVoidAsync(
+            "fishingLogBookNetwork.onUsable",
+            _dotNetReference);
+        _ = SynchroniseAsync();
+    }
+
+    [JSInvokable]
+    public Task OnBrowserOnline()
+    {
+        return SynchroniseAsync();
+    }
+
+    [JSInvokable]
+    public Task OnBrowserUsable()
+    {
+        return SynchroniseAsync();
+    }
 
     private string ThemeToggleIcon
     {
@@ -39,5 +94,53 @@ public partial class MainLayout : LayoutComponentBase
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task SynchroniseAsync()
+    {
+        try
+        {
+            await CatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "production catch synchronisation",
+                exception,
+                _cancellationTokenSource.Token);
+        }
+
+        try
+        {
+            await DiagnosticSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "diagnostic synchronisation",
+                exception,
+                _cancellationTokenSource.Token);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _ = SynchroniseAsync();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        _cancellationTokenSource.Cancel();
+        _dotNetReference?.Dispose();
+        _cancellationTokenSource.Dispose();
     }
 }

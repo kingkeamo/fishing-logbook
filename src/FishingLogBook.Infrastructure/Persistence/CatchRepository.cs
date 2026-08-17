@@ -33,6 +33,34 @@ public sealed class CatchRepository : ICatchRepository
         }
     }
 
+    public async Task<Result<CatchPhotograph?>> GetPhotographAsync(
+        GetCatchPhotographArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            const string sql = """
+                SELECT p."Id", p."CatchId", p."ContentType"
+                FROM "CatchPhotograph" p
+                INNER JOIN "Catch" c ON c."Id" = p."CatchId"
+                WHERE p."Id" = @PhotographId
+                  AND p."CatchId" = @CatchId
+                  AND c."UserId" = @UserId;
+                """;
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            var photograph = await connection.QuerySingleOrDefaultAsync<CatchPhotograph>(
+                new CommandDefinition(
+                    sql,
+                    args,
+                    cancellationToken: cancellationToken));
+            return Result.Ok(photograph);
+        }
+        catch (Exception)
+        {
+            return Result.Fail<CatchPhotograph?>(FailedMessage);
+        }
+    }
+
     public async Task<Result<Catch>> UpsertAsync(Catch catchRecord, CancellationToken cancellationToken)
     {
         try

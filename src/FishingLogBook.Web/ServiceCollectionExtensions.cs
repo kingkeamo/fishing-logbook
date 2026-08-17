@@ -54,6 +54,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITestCatchPhotoStore, IndexedDbTestCatchPhotoStore>();
         services.AddScoped<ITestCatchSynchroniser, TestCatchSynchroniser>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
+        services.AddScoped<ICatchSynchroniser, CatchSynchroniser>();
         services.AddScoped<ICatchClient, CatchClient>();
         services.AddScoped<ICurrentUserClient, CurrentUserClient>();
         services.AddScoped<ILocalCatchOwnerService, LocalCatchOwnerService>();

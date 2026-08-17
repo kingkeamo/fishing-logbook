@@ -1,0 +1,82 @@
+using AwesomeAssertions;
+using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Catches.Errors;
+using FishingLogBook.Domain.Catches;
+using FishingLogBook.Shared.Dtos;
+using FluentResults;
+using NSubstitute;
+
+namespace FishingLogBook.Application.Tests.Catches.Services.CatchPhotographServiceTests;
+
+public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
+{
+    [Fact]
+    public async Task ItShouldDeriveTheSameObjectKeyForRepeatedRequests()
+    {
+        // Arrange
+        var sut = CreateSut();
+        var args = new CreateCatchPhotographUploadArgs
+        {
+            CatchId = CatchId,
+            Request = new PhotographUploadRequestDto(PhotographId, "image/jpeg")
+        };
+
+        // Act
+        var first = await sut.CreateUploadAsync(args, CancellationToken.None);
+        var second = await sut.CreateUploadAsync(args, CancellationToken.None);
+
+        // Assert
+        first.IsSuccess.Should().BeTrue();
+        second.IsSuccess.Should().BeTrue();
+        first.Value.ObjectKey.Should().Be(
+            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}");
+        second.Value.ObjectKey.Should().Be(first.Value.ObjectKey);
+        await MockCatchRepository.Received(2).GetPhotographAsync(
+            Arg.Is<GetCatchPhotographArgs>(query =>
+                query.UserId == UserId
+                && query.CatchId == CatchId
+                && query.PhotographId == PhotographId),
+            Arg.Any<CancellationToken>());
+        await MockObjectStorage.Received(2).CreateUploadUrlAsync(
+            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
+            "image/jpeg",
+            TimeSpan.FromMinutes(15),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAPhotographThatIsNotOwnedByTheCurrentUser()
+    {
+        // Arrange
+        MockCatchRepository.GetPhotographAsync(
+                Arg.Any<GetCatchPhotographArgs>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchPhotograph?>(null));
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CreateUploadAsync(
+            new CreateCatchPhotographUploadArgs
+            {
+                CatchId = CatchId,
+                Request = new PhotographUploadRequestDto(PhotographId, "image/jpeg")
+            },
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().BeOfType<CatchPhotographNotFoundError>();
+        await MockCatchRepository.Received(1).GetPhotographAsync(
+            Arg.Is<GetCatchPhotographArgs>(query =>
+                query.UserId == UserId
+                && query.CatchId == CatchId
+                && query.PhotographId == PhotographId),
+            Arg.Any<CancellationToken>());
+        await MockObjectStorage.DidNotReceive().CreateUploadUrlAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+    }
+}

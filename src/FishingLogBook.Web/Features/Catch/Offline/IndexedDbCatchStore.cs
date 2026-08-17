@@ -104,6 +104,43 @@ public sealed class IndexedDbCatchStore : ICatchStore
         return LocalCatchVisibility.ForOwner(loaded, ownerUserId);
     }
 
+    public async Task<CatchModel?> GetAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        CancellationToken cancellationToken)
+    {
+        var catches = await GetAllAsync(ownerUserId, cancellationToken);
+        return catches.SingleOrDefault(catchRecord => catchRecord.Id == catchId);
+    }
+
+    public async Task UpdateSyncStateAsync(
+        CatchModel catchRecord,
+        CancellationToken cancellationToken)
+    {
+        if (catchRecord.UserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch requires an owner.");
+        }
+
+        var json = CatchJson.SerializeMetadata(catchRecord);
+        await OfflineOperation.ExecuteAsync(
+            "write",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                await module.InvokeVoidAsync("updateCatchMetadata", token, json);
+            },
+            cancellationToken,
+            _logging);
+    }
+
     private static CatchModel ToModel(StoredCatchRecord record)
     {
         var photographs = record.Photographs

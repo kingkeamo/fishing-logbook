@@ -1,3 +1,5 @@
+using FishingLogBook.Web.Common;
+
 namespace FishingLogBook.Web.Features.Catch.Models;
 
 public sealed record CatchModel(
@@ -6,4 +8,6 @@ public sealed record CatchModel(
     IReadOnlyList<CatchPhotographModel> Photographs,
     string? SpeciesName = null,
     CatchLocationModel? Location = null,
-    Guid UserId = default);
+    Guid UserId = default,
+    SyncStatus SyncStatus = SyncStatus.SavedLocally,
+    SyncStatus MetadataSyncStatus = SyncStatus.SavedLocally);

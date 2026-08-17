@@ -115,3 +115,28 @@ Authorization: Bearer <access-token>
 }
 
 ###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/catches/00000000-0000-0000-0000-000000000000/photographs/upload-url
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "photographId": "11111111-1111-1111-1111-111111111111",
+  "contentType": "image/jpeg"
+}
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/catches/00000000-0000-0000-0000-000000000000/photographs
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "photographId": "11111111-1111-1111-1111-111111111111",
+  "objectKey": "catches/22222222-2222-2222-2222-222222222222/00000000-0000-0000-0000-000000000000/11111111-1111-1111-1111-111111111111",
+  "contentType": "image/jpeg"
+}
+
+###

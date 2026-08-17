@@ -5,6 +5,16 @@ export function createNetworkApi(targetWindow) {
             targetWindow.addEventListener('online', () => {
                 helper.invokeMethodAsync('OnBrowserOnline');
             });
+        },
+        onUsable: (helper) => {
+            targetWindow.addEventListener('pageshow', () => {
+                helper.invokeMethodAsync('OnBrowserUsable');
+            });
+            targetWindow.document?.addEventListener('visibilitychange', () => {
+                if (targetWindow.document.visibilityState === 'visible') {
+                    helper.invokeMethodAsync('OnBrowserUsable');
+                }
+            });
         }
     };
 }

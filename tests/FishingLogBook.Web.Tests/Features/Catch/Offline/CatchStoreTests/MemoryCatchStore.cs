@@ -77,4 +77,44 @@ public sealed class MemoryCatchStore : ICatchStore
             .ToArray();
         return Task.FromResult(LocalCatchVisibility.ForOwner(items, ownerUserId));
     }
+
+    public async Task<CatchModel?> GetAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        CancellationToken cancellationToken)
+    {
+        var catches = await GetAllAsync(ownerUserId, cancellationToken);
+        return catches.SingleOrDefault(catchRecord => catchRecord.Id == catchId);
+    }
+
+    public Task UpdateSyncStateAsync(
+        CatchModel catchRecord,
+        CancellationToken cancellationToken)
+    {
+        if (!_catches.TryGetValue(catchRecord.Id, out var existing)
+            || existing.UserId != catchRecord.UserId)
+        {
+            throw new InvalidOperationException("Owned Catch was not found.");
+        }
+
+        var incomingPhotographs = catchRecord.Photographs.ToDictionary(
+            photograph => photograph.Id);
+        _catches[catchRecord.Id] = existing with
+        {
+            SyncStatus = catchRecord.SyncStatus,
+            MetadataSyncStatus = catchRecord.MetadataSyncStatus,
+            Photographs = existing.Photographs
+                .Select(photograph => incomingPhotographs.TryGetValue(
+                    photograph.Id,
+                    out var incoming)
+                    ? photograph with
+                    {
+                        SyncStatus = incoming.SyncStatus,
+                        ObjectKey = incoming.ObjectKey
+                    }
+                    : photograph)
+                .ToArray()
+        };
+        return Task.CompletedTask;
+    }
 }

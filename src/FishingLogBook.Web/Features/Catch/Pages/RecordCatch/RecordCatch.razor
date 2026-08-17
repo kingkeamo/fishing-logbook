@@ -126,6 +126,9 @@
                 @if (_isSaved)
                 {
                     <MudAlert Severity="Severity.Success" id="catch-saved">@Loc["Catch_Saved"]</MudAlert>
+                    <MudText Typo="Typo.caption" id="catch-sync-saved-locally">
+                        @Loc["SyncStatus_SavedLocally"]
+                    </MudText>
                     @if (_locationSaved)
                     {
                         <MudText Typo="Typo.caption" id="catch-location-saved">@Loc["Catch_LocationSaved"]</MudText>

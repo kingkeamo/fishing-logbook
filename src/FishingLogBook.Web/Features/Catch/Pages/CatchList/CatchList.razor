@@ -53,6 +53,34 @@
                                 <MudText Typo="Typo.caption" id="@($"catch-time-{catchRecord.Id:D}")">
                                     @catchRecord.CaughtOn.ToString("g")
                                 </MudText>
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center"
+                                          id="@($"catch-sync-status-{catchRecord.Id:D}")">
+                                    <MudIcon Icon="@SyncStatusIcon(catchRecord.SyncStatus)"
+                                             Size="Size.Small" />
+                                    <MudText Typo="Typo.caption">
+                                        @Loc[SyncStatusKey(catchRecord.SyncStatus)]
+                                    </MudText>
+                                </MudStack>
+                                @if (catchRecord.SyncStatus == SyncStatus.FailedToSynchronise)
+                                {
+                                    <MudText Typo="Typo.caption"
+                                             id="@($"catch-sync-reassurance-{catchRecord.Id:D}")">
+                                        @Loc["Catch_SyncFailureReassurance"]
+                                    </MudText>
+                                }
+                                @if (catchRecord.SyncStatus is not SyncStatus.Synchronised
+                                     and not SyncStatus.Synchronising)
+                                {
+                                    <MudButton Variant="Variant.Outlined"
+                                               Color="Color.Primary"
+                                               Disabled="@_retrying.Contains(catchRecord.Id)"
+                                               OnClick="@(() => RetryAsync(catchRecord.Id))"
+                                               id="@($"catch-sync-retry-{catchRecord.Id:D}")">
+                                        @(catchRecord.SyncStatus == SyncStatus.FailedToSynchronise
+                                            ? Loc["Catch_SyncRetry"]
+                                            : Loc["Catch_SyncNow"])
+                                    </MudButton>
+                                }
                                 @if (catchRecord.Location is not null)
                                 {
                                     <MudButton Variant="Variant.Text"
