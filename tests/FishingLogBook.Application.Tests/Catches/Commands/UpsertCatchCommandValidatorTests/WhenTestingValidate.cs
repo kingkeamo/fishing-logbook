@@ -190,6 +190,20 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
         result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.Source);
     }
 
+    [Fact]
+    public void ItShouldHaveAValidationErrorWhenLocationVisibilityIsUnknown()
+    {
+        // Arrange
+        var command = Command(location: ValidLocation() with { Visibility = "FriendsOnly" });
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location!.Visibility)
+            .WithErrorMessage("Location visibility is not supported.");
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]

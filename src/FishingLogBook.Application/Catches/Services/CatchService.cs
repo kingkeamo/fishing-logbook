@@ -1,4 +1,5 @@
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Capabilities.Errors;
 using FishingLogBook.Application.Catches.Errors;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
@@ -12,10 +13,17 @@ namespace FishingLogBook.Application.Catches.Services;
 public sealed class CatchService : ICatchService
 {
     private readonly ICatchRepository _catchRepository;
+    private readonly ICurrentUser _currentUser;
+    private readonly ICatchLocationPrivacyService _catchLocationPrivacyService;
 
-    public CatchService(ICatchRepository catchRepository)
+    public CatchService(
+        ICatchRepository catchRepository,
+        ICurrentUser currentUser,
+        ICatchLocationPrivacyService catchLocationPrivacyService)
     {
         _catchRepository = catchRepository;
+        _currentUser = currentUser;
+        _catchLocationPrivacyService = catchLocationPrivacyService;
     }
 
     public async Task<Result<CatchDto>> UpsertAsync(UpsertCatchArgs args, CancellationToken cancellationToken)
@@ -62,6 +70,76 @@ public sealed class CatchService : ICatchService
         }
 
         return Result.Ok(saved.Value.Adapt<CatchDto>());
+    }
+
+    public async Task<Result<CatchViewDto>> GetViewAsync(GetCatchArgs args, CancellationToken cancellationToken)
+    {
+        var loaded = await LoadForCurrentUserAsync(args.CatchId, cancellationToken);
+        if (loaded.IsFailed)
+        {
+            return Result.Fail<CatchViewDto>(loaded.Errors);
+        }
+
+        var exposure = await _catchLocationPrivacyService.GetExposureAsync(
+            loaded.Value,
+            _currentUser.UserId,
+            cancellationToken);
+        return Result.Ok(new CatchViewDto(
+            loaded.Value.Id,
+            loaded.Value.UserId,
+            loaded.Value.CaughtOn,
+            exposure));
+    }
+
+    public async Task<Result> UpdateLocationVisibilityAsync(
+        UpdateCatchLocationVisibilityArgs args,
+        CancellationToken cancellationToken)
+    {
+        var loaded = await LoadForCurrentUserAsync(args.CatchId, cancellationToken);
+        if (loaded.IsFailed)
+        {
+            return loaded.ToResult();
+        }
+
+        if (loaded.Value.UserId != _currentUser.UserId)
+        {
+            return Result.Fail(new CatchNotOwnedError());
+        }
+
+        if (loaded.Value.Location is null)
+        {
+            return Result.Fail(new CatchHasNoLocationError());
+        }
+
+        return await _catchRepository.UpdateLocationVisibilityAsync(
+            new PersistCatchLocationVisibilityArgs
+            {
+                CatchId = args.CatchId,
+                UserId = _currentUser.UserId,
+                Visibility = args.Visibility
+            },
+            cancellationToken);
+    }
+
+    private async Task<Result<Catch>> LoadForCurrentUserAsync(Guid catchId, CancellationToken cancellationToken)
+    {
+        if (!_currentUser.IsResolved)
+        {
+            return Result.Fail<Catch>(new CurrentUserUnresolvedError());
+        }
+
+        var loaded = await _catchRepository.GetByIdAsync(catchId, cancellationToken);
+        if (loaded.IsFailed)
+        {
+            return Result.Fail<Catch>(loaded.Errors);
+        }
+
+        if (loaded.Value is null)
+        {
+            return Result.Fail<Catch>(new CatchNotFoundError());
+        }
+
+        return Result.Ok(loaded.Value);
     }
 
     private static CatchLocation? ToLocation(CatchLocationDto? location)

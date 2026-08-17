@@ -3,6 +3,7 @@ using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
@@ -52,6 +53,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITestCatchPhotoStore, IndexedDbTestCatchPhotoStore>();
         services.AddScoped<ITestCatchSynchroniser, TestCatchSynchroniser>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
+        services.AddScoped<ICatchClient, CatchClient>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();

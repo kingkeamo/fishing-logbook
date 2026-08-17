@@ -1,3 +1,5 @@
+using FishingLogBook.Domain.Enums;
+
 namespace FishingLogBook.Domain.Catches;
 
 public sealed class CatchLocation
@@ -25,10 +27,12 @@ public sealed class CatchLocation
         string? visibility,
         string? consentVersion)
     {
+        var trimmedVisibility = visibility?.Trim();
         if (!AreCoordinatesValid(latitude, longitude)
             || capturedOn == default
             || string.IsNullOrWhiteSpace(source)
-            || string.IsNullOrWhiteSpace(visibility)
+            || string.IsNullOrWhiteSpace(trimmedVisibility)
+            || !Enum.TryParse<LocationVisibilityEnum>(trimmedVisibility, ignoreCase: false, out _)
             || string.IsNullOrWhiteSpace(consentVersion))
         {
             return null;
@@ -41,7 +45,7 @@ public sealed class CatchLocation
             AccuracyMetres = accuracyMetres,
             CapturedOn = capturedOn,
             Source = source.Trim(),
-            Visibility = visibility.Trim(),
+            Visibility = trimmedVisibility!,
             ConsentVersion = consentVersion.Trim()
         };
     }

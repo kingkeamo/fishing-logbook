@@ -354,6 +354,51 @@
   <data name="Catch_UnknownSpecies" xml:space="preserve">
     <value>Catch</value>
   </data>
+  <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
+    <value>Location privacy</value>
+  </data>
+  <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Location privacy</value>
+  </data>
+  <data name="Catch_LocationPrivacyTitle" xml:space="preserve">
+    <value>Location privacy</value>
+  </data>
+  <data name="Catch_LocationPrivacySubtitle" xml:space="preserve">
+    <value>Choose what other anglers can see of this fishing spot.</value>
+  </data>
+  <data name="Catch_LocationPrivacyLoadFailed" xml:space="preserve">
+    <value>This catch could not be loaded.</value>
+  </data>
+  <data name="Catch_LocationPrivacyNoLocation" xml:space="preserve">
+    <value>This catch has no saved location.</value>
+  </data>
+  <data name="Catch_LocationVisibilityPrivate" xml:space="preserve">
+    <value>Only me</value>
+  </data>
+  <data name="Catch_LocationVisibilityApproximate" xml:space="preserve">
+    <value>Approximate area</value>
+  </data>
+  <data name="Catch_LocationVisibilityFishingVenueOnly" xml:space="preserve">
+    <value>Fishing venue only</value>
+  </data>
+  <data name="Catch_LocationVisibilityPublic" xml:space="preserve">
+    <value>Public exact location</value>
+  </data>
+  <data name="Catch_LocationVisibilityPublicWarning" xml:space="preserve">
+    <value>Anyone who can view this catch may see the exact fishing spot.</value>
+  </data>
+  <data name="Catch_LocationPrivacySave" xml:space="preserve">
+    <value>Save location privacy</value>
+  </data>
+  <data name="Catch_LocationPrivacySaving" xml:space="preserve">
+    <value>Saving</value>
+  </data>
+  <data name="Catch_LocationPrivacySaved" xml:space="preserve">
+    <value>Location privacy saved</value>
+  </data>
+  <data name="Catch_LocationPrivacySaveFailed" xml:space="preserve">
+    <value>Location privacy could not be saved. Try again.</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profile</value>
   </data>

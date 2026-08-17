@@ -1,5 +1,6 @@
 using System.Text.Json;
 using AwesomeAssertions;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Shared.Tests.Serialization;
@@ -127,6 +128,83 @@ public class WhenTestingWebSerialization : BaseSerializationTest
         // Assert
         deserialized.Should().BeEquivalentTo(original);
         deserialized!.Location.Should().BeNull();
+    }
+
+    [Fact]
+    public void ItShouldOmitNullExactCoordinatesFromCatchLocationExposureDto()
+    {
+        // Arrange
+        var original = new CatchLocationExposureDto
+        {
+            Visibility = LocationDefaults.Private,
+            Mode = LocationDefaults.ExposureNone
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<CatchLocationExposureDto>(json, WebOptions);
+
+        // Assert
+        json.Should().NotContain("\"latitude\":");
+        json.Should().NotContain("\"longitude\":");
+        json.Should().NotContain("53.2707");
+        json.Should().Contain("\"mode\":\"None\"");
+        deserialized.Should().NotBeNull();
+        deserialized!.Latitude.Should().BeNull();
+        deserialized.Mode.Should().Be(LocationDefaults.ExposureNone);
+    }
+
+    [Fact]
+    public void ItShouldSerializeApproximateCoordinatesWithoutExactFields()
+    {
+        // Arrange
+        var original = new CatchLocationExposureDto
+        {
+            Visibility = LocationDefaults.Approximate,
+            Mode = LocationDefaults.ExposureApproximate,
+            ApproximateLatitude = 53.275,
+            ApproximateLongitude = -9.075,
+            ApproximateCellSizeMetres = CatchLocationConstants.ApproximateCellSizeMetres
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<CatchLocationExposureDto>(json, WebOptions);
+
+        // Assert
+        json.Should().NotContain("\"latitude\":");
+        json.Should().NotContain("\"longitude\":");
+        json.Should().Contain("\"approximateLatitude\":53.275");
+        json.Should().Contain("\"approximateLongitude\":-9.075");
+        deserialized.Should().NotBeNull();
+        deserialized!.ApproximateLatitude.Should().Be(53.275);
+        deserialized.Latitude.Should().BeNull();
+    }
+
+    [Fact]
+    public void ItShouldRoundTripCatchViewDtoUsingWebDefaults()
+    {
+        // Arrange
+        var original = new CatchViewDto(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            new CatchLocationExposureDto
+            {
+                Visibility = LocationDefaults.Public,
+                Mode = LocationDefaults.ExposureExact,
+                Latitude = 53.2707,
+                Longitude = -9.0568
+            });
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<CatchViewDto>(json, WebOptions);
+
+        // Assert
+        json.Should().Contain("\"latitude\":53.2707");
+        deserialized.Should().BeEquivalentTo(original);
+        deserialized!.Location!.Latitude.Should().Be(53.2707);
     }
 
     [Fact]

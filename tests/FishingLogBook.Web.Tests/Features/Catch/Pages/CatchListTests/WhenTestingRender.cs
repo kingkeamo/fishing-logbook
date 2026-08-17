@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.CatchList;
@@ -162,6 +163,104 @@ public class WhenTestingRender : BaseCatchListTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#catch-list-load-failed").TextContent.Should().Contain("could not be loaded"));
+        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheLocationPrivacyLinkWhenTheCatchHasALocation()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var stored = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])],
+            Location: new CatchLocationModel(
+                53.2707,
+                -9.0568,
+                12,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion));
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            var link = cut.Find($"#catch-location-privacy-{catchId:D}");
+            link.TextContent.Should().Contain("Location privacy");
+            link.GetAttribute("href").Should().Be($"/catches/{catchId:D}/location-privacy");
+        });
+        cut.Markup.Should().NotContain("53.2707");
+        cut.Markup.Should().NotContain("-9.0568");
+        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldOmitTheLocationPrivacyLinkWhenTheCatchHasNoLocation()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var stored = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])]);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find($"#catch-row-{catchId:D}").Should().NotBeNull());
+        cut.FindAll($"#catch-location-privacy-{catchId:D}").Should().BeEmpty();
+        cut.Markup.Should().NotContain("/location-privacy");
+        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheFrenchLocationPrivacyLink()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.French);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var stored = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])],
+            Location: new CatchLocationModel(
+                53.2707,
+                -9.0568,
+                12,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion));
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#catch-location-privacy-{catchId:D}").TextContent
+                .Should()
+                .Contain("Confidentialité de la localisation"));
+        cut.Markup.Should().NotContain("53.2707");
         await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
     }
 }

@@ -70,6 +70,12 @@ public class SystemApiFactory : WebApplicationFactory<Program>
         CatchRepository
             .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
+        CatchRepository
+            .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(null));
+        CatchRepository
+            .UpdateLocationVisibilityAsync(Arg.Any<PersistCatchLocationVisibilityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok());
         UserPlatformCapabilityRepository
             .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(false));

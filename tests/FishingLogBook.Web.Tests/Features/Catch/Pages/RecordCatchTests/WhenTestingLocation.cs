@@ -407,6 +407,9 @@ public class WhenTestingLocation : BaseRecordCatchTest
         });
         cut.FindAll("#catch-location").Should().BeEmpty();
         cut.FindAll("#catch-location-status").Should().BeEmpty();
+        cut.FindAll("#catch-location-privacy-options").Should().BeEmpty();
+        cut.FindAll("#catch-location-privacy-save").Should().BeEmpty();
+        cut.Markup.Should().NotContain("/location-privacy");
         cut.Find("#catch-location-saved").TextContent.Should().NotContain("53.2707");
         await location.Received(1).TryCaptureAsync(false, Arg.Any<CancellationToken>());
     }

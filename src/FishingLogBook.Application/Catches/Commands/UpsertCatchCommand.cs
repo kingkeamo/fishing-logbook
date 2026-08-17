@@ -85,7 +85,8 @@ public sealed class UpsertCatchCommandValidator : AbstractValidator<UpsertCatchC
             RuleFor(command => command.Catch.Location!.Source)
                 .NotEmpty();
             RuleFor(command => command.Catch.Location!.Visibility)
-                .NotEmpty();
+                .Must(LocationDefaults.IsKnownVisibility)
+                .WithMessage("Location visibility is not supported.");
             RuleFor(command => command.Catch.Location!.ConsentVersion)
                 .NotEmpty();
         });
