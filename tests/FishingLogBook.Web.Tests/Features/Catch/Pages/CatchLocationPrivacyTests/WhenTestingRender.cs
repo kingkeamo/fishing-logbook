@@ -36,7 +36,7 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId, location: null)]));
         var client = Substitute.For<ICatchClient>();
         await using var context = CreateContext(store, client);
@@ -50,7 +50,7 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
                 .Should()
                 .Contain("This catch has no saved location"));
         cut.FindAll("#catch-location-privacy-options").Should().BeEmpty();
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
         await client.DidNotReceive().UpdateLocationVisibilityAsync(
             Arg.Any<Guid>(),
             Arg.Any<string>(),
@@ -64,7 +64,7 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
         await using var context = CreateContext(store);
 
@@ -88,7 +88,7 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
         cut.FindAll("#catch-location-privacy-public-warning").Should().BeEmpty();
         cut.Markup.Should().NotContain("53.2707");
         cut.Markup.Should().NotContain("-9.0568");
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
         using var culture = TestCulture.Use(CultureNames.French);
         var catchId = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
         await using var context = CreateContext(store);
 
@@ -117,7 +117,7 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
             options.Should().Contain("Site de pêche uniquement");
             options.Should().Contain("Position exacte publique");
         });
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("IndexedDB failed."));
         await using var context = CreateContext(store);
 
@@ -139,6 +139,43 @@ public class WhenTestingRender : BaseCatchLocationPrivacyTest
             cut.Find("#catch-location-privacy-load-failed").TextContent
                 .Should()
                 .Contain("This catch could not be loaded"));
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotLoadAnotherUsersCatchOrCoordinates()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OtherUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([]));
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OtherUserId);
+        var client = Substitute.For<ICatchClient>();
+        await using var context = CreateContext(store, client, owner);
+
+        // Act
+        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-location-privacy-load-failed").TextContent
+                .Should()
+                .Contain("This catch could not be loaded"));
+        cut.FindAll("#catch-location-privacy-options").Should().BeEmpty();
+        cut.FindAll("#catch-location-privacy-no-location").Should().BeEmpty();
+        cut.Markup.Should().NotContain("53.2707");
+        cut.Markup.Should().NotContain("-9.0568");
+        await owner.Received(1).GetUserIdAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OtherUserId, Arg.Any<CancellationToken>());
+        await store.DidNotReceive().GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await client.DidNotReceive().UpdateLocationVisibilityAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
     }
 }

@@ -5,6 +5,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.CatchList;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
@@ -40,7 +41,7 @@ public class WhenTestingRender : BaseCatchListTest
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])]);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
         await using var context = CreateContext(store);
 
@@ -55,7 +56,7 @@ public class WhenTestingRender : BaseCatchListTest
             cut.Find($"#catch-thumb-{catchId:D}").GetAttribute("src").Should().StartWith("data:image/jpeg;base64,");
             cut.Find($"#catch-time-{catchId:D}").TextContent.Should().NotBeNullOrWhiteSpace();
         });
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -86,7 +87,7 @@ public class WhenTestingRender : BaseCatchListTest
                     [7, 8, 9])
             ]);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
         await using var context = CreateContext(store);
 
@@ -100,7 +101,7 @@ public class WhenTestingRender : BaseCatchListTest
                 .Should()
                 .Be($"data:image/jpeg;base64,{Convert.ToBase64String(new byte[] { 1, 2, 3 })}");
         });
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -114,7 +115,7 @@ public class WhenTestingRender : BaseCatchListTest
             DateTimeOffset.UtcNow,
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])]);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
         await using var context = CreateContext(store);
 
@@ -125,7 +126,7 @@ public class WhenTestingRender : BaseCatchListTest
         cut.WaitForAssertion(() =>
             cut.Find($"#catch-label-{catchId:D}").TextContent.Should().Contain("Prise"));
         cut.FindAll("#catch-list-empty").Should().BeEmpty();
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -134,7 +135,7 @@ public class WhenTestingRender : BaseCatchListTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([]));
         await using var context = CreateContext(store);
 
@@ -144,7 +145,7 @@ public class WhenTestingRender : BaseCatchListTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#catch-list-empty").TextContent.Should().Contain("No catches saved"));
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -153,7 +154,7 @@ public class WhenTestingRender : BaseCatchListTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("IndexedDB failed."));
         await using var context = CreateContext(store);
 
@@ -163,7 +164,7 @@ public class WhenTestingRender : BaseCatchListTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#catch-list-load-failed").TextContent.Should().Contain("could not be loaded"));
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -185,7 +186,7 @@ public class WhenTestingRender : BaseCatchListTest
                 LocationDefaults.Private,
                 LocationDefaults.ConsentVersion));
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
         await using var context = CreateContext(store);
 
@@ -201,7 +202,7 @@ public class WhenTestingRender : BaseCatchListTest
         });
         cut.Markup.Should().NotContain("53.2707");
         cut.Markup.Should().NotContain("-9.0568");
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -215,7 +216,7 @@ public class WhenTestingRender : BaseCatchListTest
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])]);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
         await using var context = CreateContext(store);
 
@@ -226,7 +227,7 @@ public class WhenTestingRender : BaseCatchListTest
         cut.WaitForAssertion(() => cut.Find($"#catch-row-{catchId:D}").Should().NotBeNull());
         cut.FindAll($"#catch-location-privacy-{catchId:D}").Should().BeEmpty();
         cut.Markup.Should().NotContain("/location-privacy");
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -248,7 +249,7 @@ public class WhenTestingRender : BaseCatchListTest
                 LocationDefaults.Private,
                 LocationDefaults.ConsentVersion));
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(Arg.Any<CancellationToken>())
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
         await using var context = CreateContext(store);
 
@@ -261,6 +262,69 @@ public class WhenTestingRender : BaseCatchListTest
                 .Should()
                 .Contain("Confidentialité de la localisation"));
         cut.Markup.Should().NotContain("53.2707");
-        await store.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotShowAnotherUsersCatchAfterAccountSwitch()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var ownerCatchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var stored = new CatchModel(
+            ownerCatchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(Guid.NewGuid(), ownerCatchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])],
+            Location: new CatchLocationModel(
+                53.2707,
+                -9.0568,
+                12,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion),
+            UserId: OwnerUserId);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
+        store.GetAllAsync(OtherUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([]));
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OtherUserId);
+        await using var context = CreateContext(store, owner);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-list-empty").TextContent.Should().Contain("No catches saved"));
+        cut.FindAll($"#catch-row-{ownerCatchId:D}").Should().BeEmpty();
+        cut.Markup.Should().NotContain("53.2707");
+        cut.Markup.Should().NotContain("/location-privacy");
+        await owner.Received(1).GetUserIdAsync(Arg.Any<CancellationToken>());
+        await store.Received(1).GetAllAsync(OtherUserId, Arg.Any<CancellationToken>());
+        await store.DidNotReceive().GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowLoadFailedCopyWhenTheOwnerCannotBeResolved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("The current user is not signed in."));
+        await using var context = CreateContext(store, owner);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-list-load-failed").TextContent.Should().Contain("could not be loaded"));
+        await owner.Received(1).GetUserIdAsync(Arg.Any<CancellationToken>());
+        await store.DidNotReceive().GetAllAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 }

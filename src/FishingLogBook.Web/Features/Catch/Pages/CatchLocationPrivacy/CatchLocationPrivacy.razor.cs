@@ -31,6 +31,9 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
     private ICatchClient CatchClient { get; set; } = default!;
 
     [Inject]
+    private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -45,9 +48,16 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
         _missingLocation = false;
         try
         {
-            var saved = await CatchStore.GetAllAsync(_cancellationTokenSource.Token);
+            var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
+            var saved = await CatchStore.GetAllAsync(ownerUserId, _cancellationTokenSource.Token);
             _catch = saved.FirstOrDefault(catchRecord => catchRecord.Id == CatchId);
-            if (_catch?.Location is null)
+            if (_catch is null)
+            {
+                _loadFailed = true;
+                return;
+            }
+
+            if (_catch.Location is null)
             {
                 _missingLocation = true;
                 return;

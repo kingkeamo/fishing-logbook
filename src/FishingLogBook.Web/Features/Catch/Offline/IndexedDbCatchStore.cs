@@ -32,6 +32,11 @@ public sealed class IndexedDbCatchStore : ICatchStore
 
     public async Task SaveAsync(CatchModel catchRecord, CancellationToken cancellationToken)
     {
+        if (catchRecord.UserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch requires an owner.");
+        }
+
         if (catchRecord.Photographs.Count == 0
             || catchRecord.Photographs.Any(photograph => photograph.Bytes is not { Length: > 0 }))
         {
@@ -67,9 +72,16 @@ public sealed class IndexedDbCatchStore : ICatchStore
             _logging);
     }
 
-    public async Task<IReadOnlyList<CatchModel>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CatchModel>> GetAllAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
     {
-        return await OfflineOperation.ExecuteAsync(
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        var loaded = await OfflineOperation.ExecuteAsync(
             "read",
             StoreName,
             DiagnosticEventNames.OfflineDbReadStarted,
@@ -83,13 +95,36 @@ public sealed class IndexedDbCatchStore : ICatchStore
                 var module = await GetModuleAsync(token);
                 var records = await module.InvokeAsync<StoredCatchRecord[]>(
                     "getAllCatchesWithPhotographs",
-                    token);
-                return (IReadOnlyList<CatchModel>)(records ?? [])
-                    .Select(ToModel)
-                    .ToArray();
+                    token,
+                    ownerUserId.ToString("D"));
+                return (IReadOnlyList<CatchModel>)(records ?? []).Select(ToModel).ToArray();
             },
             cancellationToken,
             _logging);
+        return await AdoptUnscopedAsync(loaded, ownerUserId, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<CatchModel>> AdoptUnscopedAsync(
+        IReadOnlyList<CatchModel> loaded,
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        var visible = LocalCatchVisibility.ForOwner(loaded, ownerUserId);
+        var adopted = new List<CatchModel>(visible.Count);
+        foreach (var catchRecord in visible)
+        {
+            if (catchRecord.UserId != Guid.Empty)
+            {
+                adopted.Add(catchRecord);
+                continue;
+            }
+
+            var owned = catchRecord with { UserId = ownerUserId };
+            await SaveAsync(owned, cancellationToken);
+            adopted.Add(owned);
+        }
+
+        return adopted;
     }
 
     private static CatchModel ToModel(StoredCatchRecord record)

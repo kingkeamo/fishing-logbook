@@ -6,5 +6,5 @@ public interface ICatchStore
 {
     Task SaveAsync(CatchModel catchRecord, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<CatchModel>> GetAllAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<CatchModel>> GetAllAsync(Guid ownerUserId, CancellationToken cancellationToken);
 }

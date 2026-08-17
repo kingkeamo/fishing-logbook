@@ -11,6 +11,7 @@ using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Offline;
 using FishingLogBook.Web.Features.TestCatch.Services;
+using FishingLogBook.Web.Features.Users.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +55,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITestCatchSynchroniser, TestCatchSynchroniser>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
         services.AddScoped<ICatchClient, CatchClient>();
+        services.AddScoped<ICurrentUserClient, CurrentUserClient>();
+        services.AddScoped<ILocalCatchOwnerService, LocalCatchOwnerService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();

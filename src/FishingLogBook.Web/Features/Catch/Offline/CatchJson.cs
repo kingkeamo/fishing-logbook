@@ -25,7 +25,8 @@ internal static class CatchJson
                     photograph.CatchId,
                     photograph.ContentType))
                 .ToArray(),
-            catchRecord.Location);
+            catchRecord.Location,
+            catchRecord.UserId);
         return JsonSerializer.Serialize(metadata, Options);
     }
 
@@ -38,7 +39,8 @@ internal static class CatchJson
             metadata.CaughtOn,
             OrderPhotographs(metadata.Photographs, photographs),
             metadata.SpeciesName,
-            metadata.Location);
+            metadata.Location,
+            metadata.UserId);
     }
 
     private static IReadOnlyList<CatchPhotographModel> OrderPhotographs(
@@ -64,7 +66,8 @@ internal static class CatchJson
         DateTimeOffset CaughtOn,
         string? SpeciesName,
         IReadOnlyList<CatchPhotographMetadata> Photographs,
-        CatchLocationModel? Location = null);
+        CatchLocationModel? Location = null,
+        Guid UserId = default);
 
     private sealed record CatchPhotographMetadata(
         Guid Id,

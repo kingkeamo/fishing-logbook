@@ -11,14 +11,32 @@ public class WhenTestingSave : BaseCatchStoreTest
     public async Task ItShouldRejectACatchWithoutPhotographs()
     {
         // Arrange
-        var catchRecord = new CatchModel(Guid.NewGuid(), DateTimeOffset.UtcNow, []);
+        var catchRecord = new CatchModel(Guid.NewGuid(), DateTimeOffset.UtcNow, [], UserId: OwnerUserId);
 
         // Act
         var act = () => Sut.SaveAsync(catchRecord, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>();
-        (await Sut.GetAllAsync(CancellationToken.None)).Should().BeEmpty();
+        (await Sut.GetAllAsync(OwnerUserId, CancellationToken.None)).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldRejectACatchWithoutAnOwner()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var catchRecord = new CatchModel(
+            catchId,
+            DateTimeOffset.UtcNow,
+            [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])]);
+
+        // Act
+        var act = () => Sut.SaveAsync(catchRecord, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        (await Sut.GetAllAsync(OwnerUserId, CancellationToken.None)).Should().BeEmpty();
     }
 
     [Fact]
@@ -31,14 +49,15 @@ public class WhenTestingSave : BaseCatchStoreTest
         var catchRecord = new CatchModel(
             catchId,
             DateTimeOffset.UtcNow,
-            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])]);
+            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])],
+            UserId: OwnerUserId);
 
         // Act
         var act = () => Sut.SaveAsync(catchRecord, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>();
-        (await Sut.GetAllAsync(CancellationToken.None)).Should().BeEmpty();
+        (await Sut.GetAllAsync(OwnerUserId, CancellationToken.None)).Should().BeEmpty();
     }
 
     [Fact]
@@ -50,12 +69,13 @@ public class WhenTestingSave : BaseCatchStoreTest
         var catchRecord = new CatchModel(
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
-            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Png, [9, 8, 7])]);
+            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Png, [9, 8, 7])],
+            UserId: OwnerUserId);
         await Sut.SaveAsync(catchRecord, CancellationToken.None);
         var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
 
         // Act
-        var saved = await reopened.GetAllAsync(CancellationToken.None);
+        var saved = await reopened.GetAllAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
         saved.Should().ContainSingle();
@@ -64,6 +84,7 @@ public class WhenTestingSave : BaseCatchStoreTest
         saved[0].Photographs[0].Id.Should().Be(photographId);
         saved[0].Photographs[0].Bytes.Should().Equal(9, 8, 7);
         saved[0].SpeciesName.Should().BeNull();
+        saved[0].UserId.Should().Be(OwnerUserId);
     }
 
     [Fact]
@@ -78,7 +99,8 @@ public class WhenTestingSave : BaseCatchStoreTest
             new CatchModel(
                 firstId,
                 DateTimeOffset.UtcNow,
-                [new CatchPhotographModel(firstPhoto, firstId, PhotographContentTypeConstants.Jpeg, [1])]),
+                [new CatchPhotographModel(firstPhoto, firstId, PhotographContentTypeConstants.Jpeg, [1])],
+                UserId: OwnerUserId),
             CancellationToken.None);
 
         // Act
@@ -86,9 +108,10 @@ public class WhenTestingSave : BaseCatchStoreTest
             new CatchModel(
                 secondId,
                 DateTimeOffset.UtcNow,
-                [new CatchPhotographModel(secondPhoto, secondId, PhotographContentTypeConstants.Jpeg, [2])]),
+                [new CatchPhotographModel(secondPhoto, secondId, PhotographContentTypeConstants.Jpeg, [2])],
+                UserId: OwnerUserId),
             CancellationToken.None);
-        var saved = await Sut.GetAllAsync(CancellationToken.None);
+        var saved = await Sut.GetAllAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
         saved.Should().HaveCount(2);
@@ -116,12 +139,13 @@ public class WhenTestingSave : BaseCatchStoreTest
                     new CatchPhotographModel(photoA, catchId, PhotographContentTypeConstants.Jpeg, [10]),
                     new CatchPhotographModel(photoB, catchId, PhotographContentTypeConstants.Png, [20]),
                     new CatchPhotographModel(photoC, catchId, PhotographContentTypeConstants.Webp, [30])
-                ]),
+                ],
+                UserId: OwnerUserId),
             CancellationToken.None);
         var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
 
         // Act
-        var saved = await reopened.GetAllAsync(CancellationToken.None);
+        var saved = await reopened.GetAllAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
         saved.Should().ContainSingle();
@@ -144,12 +168,13 @@ public class WhenTestingSave : BaseCatchStoreTest
             new CatchModel(
                 catchId,
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
-                [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])]),
+                [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
+                UserId: OwnerUserId),
             CancellationToken.None);
         var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
 
         // Act
-        var saved = await reopened.GetAllAsync(CancellationToken.None);
+        var saved = await reopened.GetAllAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
         saved.Should().ContainSingle();
@@ -176,12 +201,13 @@ public class WhenTestingSave : BaseCatchStoreTest
                 catchId,
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
-                Location: location),
+                Location: location,
+                UserId: OwnerUserId),
             CancellationToken.None);
         var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
 
         // Act
-        var saved = await reopened.GetAllAsync(CancellationToken.None);
+        var saved = await reopened.GetAllAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
         saved.Should().ContainSingle();
@@ -218,7 +244,8 @@ public class WhenTestingSave : BaseCatchStoreTest
                 firstId,
                 DateTimeOffset.UtcNow,
                 [new CatchPhotographModel(Guid.NewGuid(), firstId, PhotographContentTypeConstants.Jpeg, [1])],
-                Location: firstLocation),
+                Location: firstLocation,
+                UserId: OwnerUserId),
             CancellationToken.None);
 
         // Act
@@ -227,9 +254,10 @@ public class WhenTestingSave : BaseCatchStoreTest
                 secondId,
                 DateTimeOffset.UtcNow,
                 [new CatchPhotographModel(Guid.NewGuid(), secondId, PhotographContentTypeConstants.Jpeg, [2])],
-                Location: secondLocation),
+                Location: secondLocation,
+                UserId: OwnerUserId),
             CancellationToken.None);
-        var saved = await Sut.GetAllAsync(CancellationToken.None);
+        var saved = await Sut.GetAllAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
         saved.Should().HaveCount(2);
