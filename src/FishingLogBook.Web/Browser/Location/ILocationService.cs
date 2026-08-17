@@ -1,4 +1,4 @@
-using FishingLogBook.Web.Features.TestCatch.Models;
+using FishingLogBook.Web.Features.Catch.Models;
 
 namespace FishingLogBook.Web.Browser.Location;
 
@@ -8,7 +8,7 @@ public interface ILocationService
 
     Task DismissPromptAsync(CancellationToken cancellationToken);
 
-    Task<TestCatchLocationModel?> TryCaptureAsync(bool userRequested, CancellationToken cancellationToken);
+    Task<CatchLocationModel?> TryCaptureAsync(bool userRequested, CancellationToken cancellationToken);
 }
 
 public sealed record LocationPromptStatus(

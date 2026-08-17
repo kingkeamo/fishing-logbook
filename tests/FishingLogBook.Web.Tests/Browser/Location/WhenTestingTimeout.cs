@@ -1,14 +1,9 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Web.Browser.Location;
-using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
-using FishingLogBook.Web.Features.SystemStatus.Services;
-using FishingLogBook.Web.Features.TestCatch.Models;
-using FishingLogBook.Web.Features.TestCatch.Offline;
-using FishingLogBook.Web.Features.TestCatch.Services;
 using Microsoft.JSInterop;
 using NSubstitute;
 

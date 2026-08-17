@@ -4,4 +4,5 @@ public sealed record CatchModel(
     Guid Id,
     DateTimeOffset CaughtOn,
     IReadOnlyList<CatchPhotographModel> Photographs,
-    string? SpeciesName = null);
+    string? SpeciesName = null,
+    CatchLocationModel? Location = null);

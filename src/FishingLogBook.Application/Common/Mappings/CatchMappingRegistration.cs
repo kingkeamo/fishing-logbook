@@ -15,6 +15,15 @@ public sealed class CatchMappingRegistration : IRegister
         config.NewConfig<UpsertCatchCommand, UpsertCatchArgs>();
         config.NewConfig<CatchPhotograph, CatchPhotographDto>()
             .MapWith(source => new CatchPhotographDto(source.Id, source.CatchId, source.ContentType));
+        config.NewConfig<CatchLocation, CatchLocationDto>()
+            .MapWith(source => new CatchLocationDto(
+                source.Latitude,
+                source.Longitude,
+                source.AccuracyMetres,
+                source.CapturedOn,
+                source.Source,
+                source.Visibility,
+                source.ConsentVersion));
         config.NewConfig<Catch, CatchDto>()
             .MapWith(source => new CatchDto(
                 source.Id,
@@ -24,7 +33,17 @@ public sealed class CatchMappingRegistration : IRegister
                         photograph.Id,
                         photograph.CatchId,
                         photograph.ContentType))
-                    .ToList())
+                    .ToList(),
+                source.Location == null
+                    ? null
+                    : new CatchLocationDto(
+                        source.Location.Latitude,
+                        source.Location.Longitude,
+                        source.Location.AccuracyMetres,
+                        source.Location.CapturedOn,
+                        source.Location.Source,
+                        source.Location.Visibility,
+                        source.Location.ConsentVersion))
             {
                 UserId = source.UserId
             });

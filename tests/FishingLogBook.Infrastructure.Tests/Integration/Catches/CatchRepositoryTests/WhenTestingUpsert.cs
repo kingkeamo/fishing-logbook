@@ -4,6 +4,7 @@ using FishingLogBook.Application.Catches.Errors;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using Npgsql;
 
 namespace FishingLogBook.Infrastructure.Tests.Integration.Catches.CatchRepositoryTests;
@@ -79,6 +80,217 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value!.Id.Should().Be(original.Id);
         loaded.Value.CaughtOn.Should().Be(updated.CaughtOn);
         loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
+        loaded.Value.Location.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldRoundTripACatchWithNoLocationColumns()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var catchRecord = NewCatch(userId);
+
+        // Act
+        var result = await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+        var loaded = await Sut.GetByIdAsync(catchRecord.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Location.Should().BeNull();
+        loaded.Value.Should().NotBeNull();
+        loaded.Value!.Location.Should().BeNull();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var row = await connection.QuerySingleAsync(
+            """
+            SELECT
+                "Latitude",
+                "Longitude",
+                "LocationAccuracyMetres",
+                "LocationCapturedOn",
+                "LocationSource",
+                "LocationVisibility",
+                "LocationConsentVersion"
+            FROM "Catch"
+            WHERE "Id" = @Id;
+            """,
+            new { catchRecord.Id });
+        ((object?)row.Latitude).Should().BeNull();
+        ((object?)row.Longitude).Should().BeNull();
+        ((object?)row.LocationAccuracyMetres).Should().BeNull();
+        ((object?)row.LocationCapturedOn).Should().BeNull();
+        ((object?)row.LocationSource).Should().BeNull();
+        ((object?)row.LocationVisibility).Should().BeNull();
+        ((object?)row.LocationConsentVersion).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldRoundTripALocatedCatchWithPrivateDeviceGpsDefaults()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var location = SampleLocation();
+        var catchRecord = WithLocation(NewCatch(userId), location);
+
+        // Act
+        var result = await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+        var loaded = await Sut.GetByIdAsync(catchRecord.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        loaded.Value.Should().NotBeNull();
+        loaded.Value!.Location.Should().NotBeNull();
+        loaded.Value.Location!.Latitude.Should().Be(location.Latitude);
+        loaded.Value.Location.Longitude.Should().Be(location.Longitude);
+        loaded.Value.Location.AccuracyMetres.Should().Be(location.AccuracyMetres);
+        loaded.Value.Location.CapturedOn.Should().Be(location.CapturedOn);
+        loaded.Value.Location.Source.Should().Be(LocationDefaults.DeviceGps);
+        loaded.Value.Location.Visibility.Should().Be(LocationDefaults.Private);
+        loaded.Value.Location.ConsentVersion.Should().Be(LocationDefaults.ConsentVersion);
+    }
+
+    [Fact]
+    public async Task ItShouldRoundTripLocationWhenAccuracyIsMissing()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var location = SampleLocation(accuracyMetres: null);
+        var catchRecord = WithLocation(NewCatch(userId), location);
+
+        // Act
+        var result = await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Location.Should().NotBeNull();
+        result.Value.Location!.AccuracyMetres.Should().BeNull();
+        result.Value.Location.Latitude.Should().Be(53.2707);
+        result.Value.Location.Source.Should().Be(LocationDefaults.DeviceGps);
+    }
+
+    [Fact]
+    public async Task ItShouldKeepExistingLocationWhenLaterUpsertOmitsIt()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var location = SampleLocation();
+        var original = WithLocation(NewCatch(userId), location);
+        await Sut.UpsertAsync(original, CancellationToken.None);
+        var updatedCaughtOn = DateTimeOffset.Parse("2026-08-17T12:00:00Z");
+        var updated = new Catch
+        {
+            Id = original.Id,
+            UserId = userId,
+            CaughtOn = updatedCaughtOn,
+            Photographs = original.Photographs
+        };
+
+        // Act
+        var result = await Sut.UpsertAsync(updated, CancellationToken.None);
+        var loaded = await Sut.GetByIdAsync(original.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        loaded.Value.Should().NotBeNull();
+        loaded.Value!.CaughtOn.Should().Be(updatedCaughtOn);
+        loaded.Value.Location.Should().NotBeNull();
+        loaded.Value.Location!.Latitude.Should().Be(location.Latitude);
+        loaded.Value.Location.Longitude.Should().Be(location.Longitude);
+        loaded.Value.Location.AccuracyMetres.Should().Be(location.AccuracyMetres);
+        loaded.Value.Location.Visibility.Should().Be(LocationDefaults.Private);
+        loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
+    }
+
+    [Fact]
+    public async Task ItShouldRejectHalfCoordinates()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var act = () => connection.ExecuteAsync(
+            """
+            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn", "Latitude")
+            VALUES (@Id, @UserId, @CaughtOn, @Latitude);
+            """,
+            new
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CaughtOn = DateTimeOffset.UtcNow,
+                Latitude = 53.2707
+            });
+
+        // Act
+        // Assert
+        var exception = await act.Should().ThrowAsync<PostgresException>();
+        exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
+    }
+
+    [Fact]
+    public async Task ItShouldRejectLocationMetadataWithoutCoordinates()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var act = () => connection.ExecuteAsync(
+            """
+            INSERT INTO "Catch" (
+                "Id",
+                "UserId",
+                "CaughtOn",
+                "LocationCapturedOn",
+                "LocationSource",
+                "LocationVisibility",
+                "LocationConsentVersion")
+            VALUES (
+                @Id,
+                @UserId,
+                @CaughtOn,
+                @LocationCapturedOn,
+                @LocationSource,
+                @LocationVisibility,
+                @LocationConsentVersion);
+            """,
+            new
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CaughtOn = DateTimeOffset.UtcNow,
+                LocationCapturedOn = DateTimeOffset.UtcNow,
+                LocationSource = LocationDefaults.DeviceGps,
+                LocationVisibility = LocationDefaults.Private,
+                LocationConsentVersion = LocationDefaults.ConsentVersion
+            });
+
+        // Act
+        // Assert
+        var exception = await act.Should().ThrowAsync<PostgresException>();
+        exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
+    }
+
+    [Fact]
+    public async Task ItShouldRejectCoordinatesMissingRequiredLocationMetadata()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var act = () => connection.ExecuteAsync(
+            """
+            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn", "Latitude", "Longitude")
+            VALUES (@Id, @UserId, @CaughtOn, @Latitude, @Longitude);
+            """,
+            new
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CaughtOn = DateTimeOffset.UtcNow,
+                Latitude = 53.2707,
+                Longitude = -9.0568
+            });
+
+        // Act
+        // Assert
+        var exception = await act.Should().ThrowAsync<PostgresException>();
+        exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
     }
 
     [Fact]

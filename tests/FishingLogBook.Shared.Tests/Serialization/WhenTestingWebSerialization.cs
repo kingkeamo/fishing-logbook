@@ -80,6 +80,56 @@ public class WhenTestingWebSerialization : BaseSerializationTest
     }
 
     [Fact]
+    public void ItShouldRoundTripCatchDtoLocationUsingWebDefaults()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var original = new CatchDto(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")],
+            new CatchLocationDto(
+                53.2707,
+                -9.0568,
+                12,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion));
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<CatchDto>(json, WebOptions);
+
+        // Assert
+        json.Should().Contain("\"latitude\":53.2707");
+        deserialized.Should().BeEquivalentTo(original);
+        deserialized!.Location.Should().NotBeNull();
+        deserialized.Location!.Visibility.Should().Be(LocationDefaults.Private);
+        deserialized.Location.Source.Should().Be(LocationDefaults.DeviceGps);
+        deserialized.Location.ConsentVersion.Should().Be(LocationDefaults.ConsentVersion);
+    }
+
+    [Fact]
+    public void ItShouldRoundTripCatchDtoWithoutLocationUsingWebDefaults()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var original = new CatchDto(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")]);
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<CatchDto>(json, WebOptions);
+
+        // Assert
+        deserialized.Should().BeEquivalentTo(original);
+        deserialized!.Location.Should().BeNull();
+    }
+
+    [Fact]
     public void ItShouldRoundTripProfileDtoWithoutPreciseCoordinates()
     {
         // Arrange

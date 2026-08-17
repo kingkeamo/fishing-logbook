@@ -1,4 +1,5 @@
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 
 namespace FishingLogBook.Web.Features.TestCatch.Models;
 
@@ -9,4 +10,4 @@ public sealed record TestCatchModel(
     string? Notes,
     SyncStatus SyncStatus,
     TestCatchPhotographModel? Photograph = null,
-    TestCatchLocationModel? Location = null);
+    CatchLocationModel? Location = null);

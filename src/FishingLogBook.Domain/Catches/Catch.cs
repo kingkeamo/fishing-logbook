@@ -8,5 +8,7 @@ public sealed class Catch
 
     public DateTimeOffset CaughtOn { get; init; }
 
+    public CatchLocation? Location { get; init; }
+
     public IReadOnlyList<CatchPhotograph> Photographs { get; init; } = [];
 }

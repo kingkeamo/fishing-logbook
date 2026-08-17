@@ -1,10 +1,10 @@
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
-using FishingLogBook.Web.Features.TestCatch.Models;
-using FishingLogBook.Web.Features.TestCatch.Offline;
 using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Browser.Location;
@@ -51,7 +51,7 @@ public sealed class LocationService : ILocationService
         await module.InvokeVoidAsync("setPromptDismissed", cancellationToken);
     }
 
-    public async Task<TestCatchLocationModel?> TryCaptureAsync(bool userRequested, CancellationToken cancellationToken)
+    public async Task<CatchLocationModel?> TryCaptureAsync(bool userRequested, CancellationToken cancellationToken)
     {
         try
         {
@@ -76,7 +76,7 @@ public sealed class LocationService : ILocationService
         }
     }
 
-    private async Task<TestCatchLocationModel?> CaptureAsync(bool userRequested, CancellationToken cancellationToken)
+    private async Task<CatchLocationModel?> CaptureAsync(bool userRequested, CancellationToken cancellationToken)
     {
         var status = await GetPromptStatusAsync(cancellationToken);
         if (!userRequested && !status.WillCaptureOnSave)
@@ -106,7 +106,13 @@ public sealed class LocationService : ILocationService
             capturedOn = DateTimeOffset.UtcNow;
         }
 
-        return new TestCatchLocationModel(
+        if (!CatchLocationConstants.AreCoordinatesValid(result.Latitude, result.Longitude))
+        {
+            await LogCaptureOutcomeAsync("unavailable", cancellationToken);
+            return null;
+        }
+
+        return new CatchLocationModel(
             result.Latitude,
             result.Longitude,
             result.Accuracy,

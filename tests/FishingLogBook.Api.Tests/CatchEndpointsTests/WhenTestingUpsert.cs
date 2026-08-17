@@ -154,8 +154,89 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         body.CaughtOn.Should().Be(dto.CaughtOn);
         body.UserId.Should().Be(current!.UserId);
         body.Photographs.Should().ContainSingle();
+        body.Location.Should().BeNull();
         await _factory.CatchRepository.Received(1).UpsertAsync(
-            Arg.Is<Catch>(item => item.Id == dto.Id && item.Photographs.Count == 1),
+            Arg.Is<Catch>(item => item.Id == dto.Id && item.Photographs.Count == 1 && item.Location == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAnInvalidLocation()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var dto = new CatchDto(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographDto(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)],
+            new CatchLocationDto(
+                91,
+                -9.0568,
+                12,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion));
+        ResetCatchRepository();
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/catches", dto);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await _factory.CatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistOwnerLocationAsPrivateDeviceGps()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        var capturedOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z");
+        var location = new CatchLocationDto(
+            53.2707,
+            -9.0568,
+            12,
+            capturedOn,
+            LocationDefaults.DeviceGps,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion);
+        var dto = new CatchDto(
+            catchId,
+            capturedOn,
+            [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Jpeg)],
+            location);
+        ResetCatchRepository();
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/catches", dto);
+        var body = await response.Content.ReadFromJsonAsync<CatchDto>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().NotBeNull();
+        body!.UserId.Should().Be(current!.UserId);
+        body.Location.Should().Be(location);
+        body.Location!.Visibility.Should().Be(LocationDefaults.Private);
+        body.Location.Source.Should().Be(LocationDefaults.DeviceGps);
+        body.Location.ConsentVersion.Should().Be(LocationDefaults.ConsentVersion);
+        await _factory.CatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(item =>
+                item.Id == catchId
+                && item.UserId == current.UserId
+                && item.Location != null
+                && item.Location.Latitude == 53.2707
+                && item.Location.Longitude == -9.0568
+                && item.Location.AccuracyMetres == 12
+                && item.Location.Source == LocationDefaults.DeviceGps
+                && item.Location.Visibility == LocationDefaults.Private
+                && item.Location.ConsentVersion == LocationDefaults.ConsentVersion),
             Arg.Any<CancellationToken>());
     }
 

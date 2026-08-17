@@ -1,6 +1,7 @@
 using Bunit;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
@@ -69,7 +70,7 @@ public class BaseTestCatchLogTest
         location.GetPromptStatusAsync(Arg.Any<CancellationToken>())
             .Returns(_ => Hang<LocationPromptStatus>());
         location.TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(_ => Hang<TestCatchLocationModel?>());
+            .Returns(_ => Hang<CatchLocationModel?>());
         return location;
     }
 
@@ -93,11 +94,11 @@ public class BaseTestCatchLogTest
         location.GetPromptStatusAsync(Arg.Any<CancellationToken>())
             .Returns(new LocationPromptStatus(false, true, false));
         location.TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns((TestCatchLocationModel?)null);
+            .Returns((CatchLocationModel?)null);
         return location;
     }
 
-    protected static ILocationService GrantedLocation(TestCatchLocationModel captured)
+    protected static ILocationService GrantedLocation(CatchLocationModel captured)
     {
         var location = Substitute.For<ILocationService>();
         location.GetPromptStatusAsync(Arg.Any<CancellationToken>())

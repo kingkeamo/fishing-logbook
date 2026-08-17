@@ -3,6 +3,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
@@ -255,7 +256,7 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
             cancellationToken);
     }
 
-    private static CatchLocationDto? ToRemoteLocation(TestCatchLocationModel? location)
+    private static CatchLocationDto? ToRemoteLocation(CatchLocationModel? location)
     {
         if (location is null)
         {
@@ -272,14 +273,14 @@ public sealed class TestCatchSynchroniser : ITestCatchSynchroniser
             location.ConsentVersion);
     }
 
-    private static TestCatchLocationModel? FromRemoteLocation(CatchLocationDto? location)
+    private static CatchLocationModel? FromRemoteLocation(CatchLocationDto? location)
     {
         if (location is null)
         {
             return null;
         }
 
-        return new TestCatchLocationModel(
+        return new CatchLocationModel(
             location.Latitude,
             location.Longitude,
             location.AccuracyMetres,

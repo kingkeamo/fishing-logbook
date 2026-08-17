@@ -40,6 +40,45 @@
                     </div>
                 }
 
+                @if (!_isSaved && _locationPrompt.ShowExplainer)
+                {
+                    <MudStack Spacing="2" id="catch-location-explainer">
+                        <MudText Typo="Typo.body2">@Loc["Catch_LocationExplainer"]</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_LocationPrivacy"]</MudText>
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       OnClick="AllowLocationAsync"
+                                       id="catch-location-allow">
+                                @Loc["Catch_LocationAllow"]
+                            </MudButton>
+                            <MudButton Variant="Variant.Text"
+                                       Color="Color.Default"
+                                       OnClick="DismissLocationAsync"
+                                       id="catch-location-not-now">
+                                @Loc["Catch_LocationNotNow"]
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+                }
+                else if (!_isSaved && _locationPrompt.WillCaptureOnSave)
+                {
+                    <MudText Typo="Typo.caption"
+                             Color="Color.Success"
+                             id="catch-location-status">
+                        @Loc["Catch_LocationOn"]
+                    </MudText>
+                }
+                else if (!_isSaved && _locationPrompt.ShowEnableLater)
+                {
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Primary"
+                               OnClick="AllowLocationAsync"
+                               id="catch-location-try-again">
+                        @Loc["Catch_LocationTryAgain"]
+                    </MudButton>
+                }
+
                 @if (_unsupportedFormat && !_isSaved)
                 {
                     <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
@@ -87,6 +126,10 @@
                 @if (_isSaved)
                 {
                     <MudAlert Severity="Severity.Success" id="catch-saved">@Loc["Catch_Saved"]</MudAlert>
+                    @if (_locationSaved)
+                    {
+                        <MudText Typo="Typo.caption" id="catch-location-saved">@Loc["Catch_LocationSaved"]</MudText>
+                    }
                 }
 
                 @if (_saveFailed)

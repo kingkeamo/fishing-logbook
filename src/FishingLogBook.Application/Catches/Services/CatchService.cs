@@ -33,11 +33,18 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchDto>(new CatchPhotographIdentityError());
         }
 
+        var location = ToLocation(args.Catch.Location);
+        if (args.Catch.Location is not null && location is null)
+        {
+            return Result.Fail<CatchDto>(new CatchLocationInvalidError());
+        }
+
         var catchRecord = new Catch
         {
             Id = args.Catch.Id,
             UserId = args.UserId,
             CaughtOn = args.Catch.CaughtOn,
+            Location = location,
             Photographs = photographs
                 .Select(photograph => new CatchPhotograph
                 {
@@ -55,5 +62,22 @@ public sealed class CatchService : ICatchService
         }
 
         return Result.Ok(saved.Value.Adapt<CatchDto>());
+    }
+
+    private static CatchLocation? ToLocation(CatchLocationDto? location)
+    {
+        if (location is null)
+        {
+            return null;
+        }
+
+        return CatchLocation.TryCreate(
+            location.Latitude,
+            location.Longitude,
+            location.AccuracyMetres,
+            location.CapturedOn,
+            location.Source,
+            location.Visibility,
+            location.ConsentVersion);
     }
 }

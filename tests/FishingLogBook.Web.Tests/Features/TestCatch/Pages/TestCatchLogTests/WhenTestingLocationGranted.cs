@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
@@ -20,7 +21,7 @@ public class WhenTestingLocationGranted : BaseTestCatchLogTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var captured = new TestCatchLocationModel(
+        var captured = new CatchLocationModel(
             53.2707,
             -9.0568,
             12,

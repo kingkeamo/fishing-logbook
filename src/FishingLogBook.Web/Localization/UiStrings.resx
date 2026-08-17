@@ -315,6 +315,27 @@
   <data name="Catch_SaveFailed" xml:space="preserve">
     <value>The catch could not be saved. Try again.</value>
   </data>
+  <data name="Catch_LocationExplainer" xml:space="preserve">
+    <value>Location can help remember where a catch was made.</value>
+  </data>
+  <data name="Catch_LocationPrivacy" xml:space="preserve">
+    <value>Your exact fishing spot stays private by default.</value>
+  </data>
+  <data name="Catch_LocationAllow" xml:space="preserve">
+    <value>Allow location</value>
+  </data>
+  <data name="Catch_LocationNotNow" xml:space="preserve">
+    <value>Not now</value>
+  </data>
+  <data name="Catch_LocationTryAgain" xml:space="preserve">
+    <value>Try location again</value>
+  </data>
+  <data name="Catch_LocationSaved" xml:space="preserve">
+    <value>Location saved</value>
+  </data>
+  <data name="Catch_LocationOn" xml:space="preserve">
+    <value>Location on</value>
+  </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Catches</value>
   </data>

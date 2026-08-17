@@ -1,6 +1,6 @@
-namespace FishingLogBook.Web.Features.TestCatch.Models;
+namespace FishingLogBook.Web.Features.Catch.Models;
 
-public sealed record TestCatchLocationModel(
+public sealed record CatchLocationModel(
     double Latitude,
     double Longitude,
     double? AccuracyMetres,
