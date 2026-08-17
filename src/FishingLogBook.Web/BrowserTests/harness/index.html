@@ -45,6 +45,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [{
                             id: photographId,
@@ -69,6 +70,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [
                             { id: photoA, catchId, contentType: 'image/jpeg' },
@@ -90,6 +92,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [{
                             id: photographId,
@@ -121,6 +124,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [{
                             id: photographId,
@@ -139,6 +143,39 @@
             },
             async readProductionCatches() {
                 return getAllCatchesWithPhotographs(ownerUserId);
+            },
+            async readProductionCatchesFor(userId) {
+                return getAllCatchesWithPhotographs(userId);
+            },
+            async putLegacyUnscopedProductionCatchWithLocation() {
+                const catchId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+                const photographId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+                await putCatchWithPhotographs(
+                    JSON.stringify({
+                        id: catchId,
+                        caughtOn: '2026-08-17T08:00:00+00:00',
+                        photographs: [{
+                            id: photographId,
+                            catchId,
+                            contentType: 'image/jpeg'
+                        }],
+                        location: {
+                            latitude: 53.2707,
+                            longitude: -9.0568,
+                            accuracyMetres: 12,
+                            capturedOn: '2026-08-17T08:00:00+00:00',
+                            source: 'DeviceGps',
+                            visibility: 'Private',
+                            consentVersion: '1'
+                        }
+                    }),
+                    [{
+                        id: photographId,
+                        catchId,
+                        contentType: 'image/jpeg',
+                        bytes: new Uint8Array([4, 5, 6])
+                    }]
+                );
             },
             async putProductionCatchWithoutPhotographId() {
                 try {

@@ -81,35 +81,40 @@ public class WhenTestingGetAll : BaseCatchStoreTest
     }
 
     [Fact]
-    public async Task ItShouldAdoptUnscopedCatchesForTheFirstOwner()
+    public async Task ItShouldNotExposeOrAdoptALegacyUnownedCatchWhenAnotherUserSignsInFirst()
     {
         // Arrange
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var photographId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var location = new CatchLocationModel(
+            53.2707,
+            -9.0568,
+            12,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            LocationDefaults.DeviceGps,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion);
         BackingCatches[catchId] = new CatchModel(
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
-            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, null)]);
+            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, null)],
+            Location: location);
         BackingPhotographs[photographId] = [4, 5, 6];
 
         // Act
-        var ownerView = await Sut.GetAllAsync(OwnerUserId, CancellationToken.None);
-        var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
-        var afterReopen = await reopened.GetAllAsync(OwnerUserId, CancellationToken.None);
-        var otherView = await reopened.GetAllAsync(OtherUserId, CancellationToken.None);
+        var firstSignedIn = await Sut.GetAllAsync(OtherUserId, CancellationToken.None);
+        var originalOwner = await Sut.GetAllAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        ownerView.Should().ContainSingle();
-        ownerView[0].Id.Should().Be(catchId);
-        ownerView[0].UserId.Should().Be(OwnerUserId);
-        ownerView[0].Photographs[0].Bytes.Should().Equal(4, 5, 6);
-        afterReopen.Should().ContainSingle();
-        afterReopen[0].UserId.Should().Be(OwnerUserId);
-        otherView.Should().BeEmpty();
+        firstSignedIn.Should().BeEmpty();
+        originalOwner.Should().BeEmpty();
+        BackingCatches[catchId].UserId.Should().Be(Guid.Empty);
+        BackingCatches[catchId].Location.Should().Be(location);
+        BackingPhotographs[photographId].Should().Equal(4, 5, 6);
     }
 
     [Fact]
-    public async Task ItShouldNotAdoptUnscopedCatchesWhenAnotherOwnerAlreadyHasRecords()
+    public async Task ItShouldNotExposeALegacyUnownedCatchAlongsideOwnedRecords()
     {
         // Arrange
         var unscopedId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
@@ -138,8 +143,10 @@ public class WhenTestingGetAll : BaseCatchStoreTest
 
         // Assert
         otherView.Should().BeEmpty();
-        ownerView.Select(catchRecord => catchRecord.Id).Should().BeEquivalentTo([ownerCatchId, unscopedId]);
-        ownerView.Should().OnlyContain(catchRecord => catchRecord.UserId == OwnerUserId);
+        ownerView.Should().ContainSingle();
+        ownerView[0].Id.Should().Be(ownerCatchId);
+        ownerView[0].UserId.Should().Be(OwnerUserId);
+        BackingCatches[unscopedId].UserId.Should().Be(Guid.Empty);
     }
 
     [Fact]

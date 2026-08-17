@@ -8,20 +8,13 @@ internal static class LocalCatchVisibility
         IReadOnlyList<CatchModel> records,
         Guid ownerUserId)
     {
-        var hasForeignOwner = records.Any(record =>
-            record.UserId != Guid.Empty && record.UserId != ownerUserId);
-        return records
-            .Where(record => IsVisibleTo(record, ownerUserId, hasForeignOwner))
-            .ToArray();
-    }
-
-    private static bool IsVisibleTo(CatchModel record, Guid ownerUserId, bool hasForeignOwner)
-    {
-        if (record.UserId == ownerUserId)
+        if (ownerUserId == Guid.Empty)
         {
-            return true;
+            return [];
         }
 
-        return record.UserId == Guid.Empty && !hasForeignOwner;
+        return records
+            .Where(record => record.UserId == ownerUserId)
+            .ToArray();
     }
 }
