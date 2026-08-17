@@ -55,7 +55,7 @@ public sealed class MemoryCatchStore : ICatchStore
         return Task.CompletedTask;
     }
 
-    public async Task<IReadOnlyList<CatchModel>> GetAllAsync(
+    public Task<IReadOnlyList<CatchModel>> GetAllAsync(
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
@@ -75,21 +75,6 @@ public sealed class MemoryCatchStore : ICatchStore
                     .ToArray()
             })
             .ToArray();
-        var visible = LocalCatchVisibility.ForOwner(items, ownerUserId);
-        var adopted = new List<CatchModel>(visible.Count);
-        foreach (var catchRecord in visible)
-        {
-            if (catchRecord.UserId != Guid.Empty)
-            {
-                adopted.Add(catchRecord);
-                continue;
-            }
-
-            var owned = catchRecord with { UserId = ownerUserId };
-            await SaveAsync(owned, cancellationToken);
-            adopted.Add(owned);
-        }
-
-        return adopted;
+        return Task.FromResult(LocalCatchVisibility.ForOwner(items, ownerUserId));
     }
 }

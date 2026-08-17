@@ -101,30 +101,7 @@ public sealed class IndexedDbCatchStore : ICatchStore
             },
             cancellationToken,
             _logging);
-        return await AdoptUnscopedAsync(loaded, ownerUserId, cancellationToken);
-    }
-
-    private async Task<IReadOnlyList<CatchModel>> AdoptUnscopedAsync(
-        IReadOnlyList<CatchModel> loaded,
-        Guid ownerUserId,
-        CancellationToken cancellationToken)
-    {
-        var visible = LocalCatchVisibility.ForOwner(loaded, ownerUserId);
-        var adopted = new List<CatchModel>(visible.Count);
-        foreach (var catchRecord in visible)
-        {
-            if (catchRecord.UserId != Guid.Empty)
-            {
-                adopted.Add(catchRecord);
-                continue;
-            }
-
-            var owned = catchRecord with { UserId = ownerUserId };
-            await SaveAsync(owned, cancellationToken);
-            adopted.Add(owned);
-        }
-
-        return adopted;
+        return LocalCatchVisibility.ForOwner(loaded, ownerUserId);
     }
 
     private static CatchModel ToModel(StoredCatchRecord record)

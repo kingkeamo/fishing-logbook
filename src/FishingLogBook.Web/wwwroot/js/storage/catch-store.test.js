@@ -263,7 +263,7 @@ describe('Production Catch store', () => {
         const catchId = '11111111-1111-1111-1111-111111111111';
         const photographId = '22222222-2222-2222-2222-222222222222';
         await putCatchWithPhotographs(
-            JSON.stringify({ id: catchId, caughtOn: '2026-08-17T08:00:00+00:00' }),
+            JSON.stringify({ id: catchId, userId: ownerUserId, caughtOn: '2026-08-17T08:00:00+00:00' }),
             [{
                 id: photographId,
                 catchId,
@@ -290,6 +290,7 @@ describe('Production Catch store', () => {
         await putCatchWithPhotographs(
             JSON.stringify({
                 id: catchId,
+                userId: ownerUserId,
                 caughtOn: '2026-08-17T08:00:00+00:00',
                 photographs: [
                     { id: photoA, catchId, contentType: 'image/jpeg' },
@@ -324,11 +325,11 @@ describe('Production Catch store', () => {
 
     it('keeps two separately saved catches on distinct ids', async () => {
         await putCatchWithPhotographs(
-            JSON.stringify({ id: 'catch-a', caughtOn: '2026-08-17T08:00:00+00:00' }),
+            JSON.stringify({ id: 'catch-a', userId: ownerUserId, caughtOn: '2026-08-17T08:00:00+00:00' }),
             [{ id: 'photo-a', catchId: 'catch-a', contentType: 'image/jpeg', bytes: new Uint8Array([1]) }]
         );
         await putCatchWithPhotographs(
-            JSON.stringify({ id: 'catch-b', caughtOn: '2026-08-17T09:00:00+00:00' }),
+            JSON.stringify({ id: 'catch-b', userId: ownerUserId, caughtOn: '2026-08-17T09:00:00+00:00' }),
             [{ id: 'photo-b', catchId: 'catch-b', contentType: 'image/png', bytes: new Uint8Array([2]) }]
         );
 
@@ -464,7 +465,35 @@ describe('Production Catch store', () => {
         expect(JSON.stringify(otherView)).not.toContain('owner-photo');
     });
 
-    it('does not expose unscoped Catches to a later user once another owner has records', async () => {
+    it('does not let the first signed-in user read or adopt a legacy unscoped Catch', async () => {
+        const unscopedId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: unscopedId,
+                caughtOn: '2026-08-17T08:00:00+00:00',
+                location: { latitude: 53.2707, longitude: -9.0568 }
+            }),
+            [{
+                id: 'unscoped-photo',
+                catchId: unscopedId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([4, 5, 6])
+            }]
+        );
+
+        const firstSignerView = await getAllCatchesWithPhotographs(otherUserId);
+        const originalOwnerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = await readRawProductionCatch(unscopedId);
+
+        expect(firstSignerView).toEqual([]);
+        expect(originalOwnerView).toEqual([]);
+        expect(JSON.stringify(firstSignerView)).not.toContain('53.2707');
+        expect(JSON.stringify(firstSignerView)).not.toContain('unscoped-photo');
+        expect(stored.userId).toBeUndefined();
+        expect(stored.location).toEqual({ latitude: 53.2707, longitude: -9.0568 });
+    });
+
+    it('does not expose unscoped Catches alongside owned records', async () => {
         const unscopedId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
         await putCatchWithPhotographs(
             JSON.stringify({ id: unscopedId, caughtOn: '2026-08-17T08:00:00+00:00' }),
@@ -491,11 +520,47 @@ describe('Production Catch store', () => {
 
         const otherView = await getAllCatchesWithPhotographs(otherUserId);
         const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = await readRawProductionCatch(unscopedId);
 
         expect(otherView).toEqual([]);
-        expect(ownerView.map((item) => JSON.parse(item.json).id).sort()).toEqual([
-            'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        expect(ownerView.map((item) => JSON.parse(item.json).id)).toEqual([
             'dddddddd-dddd-dddd-dddd-dddddddddddd'
-        ].sort());
+        ]);
+        expect(JSON.stringify(ownerView)).not.toContain('unscoped-photo');
+        expect(stored.userId).toBeUndefined();
+    });
+
+    it('does not treat an empty user id as an owner', async () => {
+        const unscopedId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: unscopedId,
+                userId: '00000000-0000-0000-0000-000000000000',
+                caughtOn: '2026-08-17T08:00:00+00:00'
+            }),
+            [{
+                id: 'empty-owner-photo',
+                catchId: unscopedId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([7])
+            }]
+        );
+
+        const firstSignedIn = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = await readRawProductionCatch(unscopedId);
+
+        expect(firstSignedIn).toEqual([]);
+        expect(JSON.stringify(firstSignedIn)).not.toContain('empty-owner-photo');
+        expect(stored.userId).toBe('00000000-0000-0000-0000-000000000000');
     });
 });
+
+function readRawProductionCatch(id) {
+    return openCatchDatabase().then((db) => new Promise((resolve, reject) => {
+        const transaction = db.transaction(PRODUCTION_CATCH_STORE_NAME, 'readonly');
+        const request = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME).get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        transaction.oncomplete = () => db.close();
+    }));
+}
