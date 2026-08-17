@@ -5,4 +5,5 @@ public sealed record CatchModel(
     DateTimeOffset CaughtOn,
     IReadOnlyList<CatchPhotographModel> Photographs,
     string? SpeciesName = null,
-    CatchLocationModel? Location = null);
+    CatchLocationModel? Location = null,
+    Guid UserId = default);

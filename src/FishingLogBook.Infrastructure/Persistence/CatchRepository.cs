@@ -1,4 +1,5 @@
 using Dapper;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Catches.Errors;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
@@ -64,6 +65,39 @@ public sealed class CatchRepository : ICatchRepository
         catch (Exception)
         {
             return Result.Fail<Catch>(FailedMessage);
+        }
+    }
+
+    public async Task<Result> UpdateLocationVisibilityAsync(
+        PersistCatchLocationVisibilityArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            const string sql = """
+                UPDATE "Catch"
+                SET "LocationVisibility" = @Visibility
+                WHERE "Id" = @CatchId
+                  AND "UserId" = @UserId
+                  AND "Latitude" IS NOT NULL;
+                """;
+            var updated = await connection.ExecuteAsync(new CommandDefinition(
+                sql,
+                new
+                {
+                    args.CatchId,
+                    args.UserId,
+                    args.Visibility
+                },
+                cancellationToken: cancellationToken));
+            return updated == 1
+                ? Result.Ok()
+                : Result.Fail("Failed to save the catch.");
+        }
+        catch (Exception)
+        {
+            return Result.Fail("Failed to save the catch.");
         }
     }
 

@@ -7,4 +7,10 @@ namespace FishingLogBook.Application.Contracts.Services;
 public interface ICatchService
 {
     Task<Result<CatchDto>> UpsertAsync(UpsertCatchArgs args, CancellationToken cancellationToken);
+
+    Task<Result<CatchViewDto>> GetViewAsync(GetCatchArgs args, CancellationToken cancellationToken);
+
+    Task<Result> UpdateLocationVisibilityAsync(
+        UpdateCatchLocationVisibilityArgs args,
+        CancellationToken cancellationToken);
 }

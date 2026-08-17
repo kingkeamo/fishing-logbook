@@ -11,6 +11,8 @@
         import { getTestCatchPhotograph, putTestCatchPhotograph } from '../../wwwroot/js/storage/photo-store.js';
         import { putDiagnosticEvent } from '../../wwwroot/js/storage/diagnostic-store.js';
 
+        const ownerUserId = '11111111-1111-1111-1111-111111111111';
+
         window.harness = {
             async putAndGetCatch() {
                 await putTestCatch(JSON.stringify({ id: 'harness-catch', notes: 'persisted' }));
@@ -43,6 +45,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [{
                             id: photographId,
@@ -57,7 +60,7 @@
                         bytes: new Uint8Array([1, 2, 3])
                     }]
                 );
-                return getAllCatchesWithPhotographs();
+                return getAllCatchesWithPhotographs(ownerUserId);
             },
             async putAndGetProductionCatchWithThreePhotographs() {
                 const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -67,6 +70,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [
                             { id: photoA, catchId, contentType: 'image/jpeg' },
@@ -80,7 +84,7 @@
                         { id: photoB, catchId, contentType: 'image/png', bytes: new Uint8Array([2, 2, 2]) }
                     ]
                 );
-                return getAllCatchesWithPhotographs();
+                return getAllCatchesWithPhotographs(ownerUserId);
             },
             async putAndGetProductionCatchWithLocation() {
                 const catchId = '11111111-1111-1111-1111-111111111111';
@@ -88,6 +92,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [{
                             id: photographId,
@@ -111,7 +116,7 @@
                         bytes: new Uint8Array([1, 2, 3])
                     }]
                 );
-                return getAllCatchesWithPhotographs();
+                return getAllCatchesWithPhotographs(ownerUserId);
             },
             async putLegacyProductionCatchWithoutLocation() {
                 const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -119,6 +124,7 @@
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
+                        userId: ownerUserId,
                         caughtOn: '2026-08-17T08:00:00+00:00',
                         photographs: [{
                             id: photographId,
@@ -133,10 +139,41 @@
                         bytes: new Uint8Array([4, 5, 6])
                     }]
                 );
-                return getAllCatchesWithPhotographs();
+                return getAllCatchesWithPhotographs(ownerUserId);
             },
             async readProductionCatches() {
-                return getAllCatchesWithPhotographs();
+                return getAllCatchesWithPhotographs(ownerUserId);
+            },
+            async putUnscopedProductionCatchThenReadAsFirstSigner() {
+                const catchId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+                const photographId = 'unscoped-photo';
+                const firstSignerUserId = '22222222-2222-2222-2222-222222222222';
+                await putCatchWithPhotographs(
+                    JSON.stringify({
+                        id: catchId,
+                        caughtOn: '2026-08-17T08:00:00+00:00',
+                        photographs: [{
+                            id: photographId,
+                            catchId,
+                            contentType: 'image/jpeg'
+                        }],
+                        location: {
+                            latitude: 53.2707,
+                            longitude: -9.0568
+                        }
+                    }),
+                    [{
+                        id: photographId,
+                        catchId,
+                        contentType: 'image/jpeg',
+                        bytes: new Uint8Array([4, 5, 6])
+                    }]
+                );
+                return {
+                    firstSignerView: await getAllCatchesWithPhotographs(firstSignerUserId),
+                    originalOwnerView: await getAllCatchesWithPhotographs(ownerUserId),
+                    stored: await readRawProductionCatch(catchId)
+                };
             },
             async putProductionCatchWithoutPhotographId() {
                 try {
@@ -151,9 +188,9 @@
                             bytes: new Uint8Array([9])
                         }]
                     );
-                    return { threw: false, items: await getAllCatchesWithPhotographs() };
+                    return { threw: false, items: await getAllCatchesWithPhotographs(ownerUserId) };
                 } catch {
-                    return { threw: true, items: await getAllCatchesWithPhotographs() };
+                    return { threw: true, items: await getAllCatchesWithPhotographs(ownerUserId) };
                 }
             }
         };
@@ -166,6 +203,21 @@
                     const names = [...db.objectStoreNames];
                     db.close();
                     resolve(names.sort());
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        function readRawProductionCatch(id) {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('FishingLogBook');
+                request.onsuccess = () => {
+                    const db = request.result;
+                    const transaction = db.transaction('catches', 'readonly');
+                    const getRequest = transaction.objectStore('catches').get(id);
+                    getRequest.onsuccess = () => resolve(getRequest.result);
+                    getRequest.onerror = () => reject(getRequest.error);
+                    transaction.oncomplete = () => db.close();
                 };
                 request.onerror = () => reject(request.error);
             });

@@ -53,6 +53,15 @@
                                 <MudText Typo="Typo.caption" id="@($"catch-time-{catchRecord.Id:D}")">
                                     @catchRecord.CaughtOn.ToString("g")
                                 </MudText>
+                                @if (catchRecord.Location is not null)
+                                {
+                                    <MudButton Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               Href="@($"/catches/{catchRecord.Id:D}/location-privacy")"
+                                               id="@($"catch-location-privacy-{catchRecord.Id:D}")">
+                                        @Loc["Catch_ManageLocationPrivacy"]
+                                    </MudButton>
+                                }
                             </MudStack>
                         </MudStack>
                     </MudPaper>

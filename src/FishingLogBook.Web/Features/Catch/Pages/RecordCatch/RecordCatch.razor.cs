@@ -2,6 +2,7 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -30,6 +31,9 @@ public partial class RecordCatch : ComponentBase, IDisposable
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
+
+    [Inject]
+    private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
 
     [Inject]
     private ILocationService LocationService { get; set; } = default!;
@@ -209,6 +213,11 @@ public partial class RecordCatch : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
         try
         {
+            var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
+            if (ownerUserId == Guid.Empty)
+            {
+                throw new InvalidOperationException("The current user could not be resolved.");
+            }
             var catchId = Guid.NewGuid();
             var photographs = _photographs
                 .Select(photograph => new CatchPhotographModel(
@@ -219,7 +228,12 @@ public partial class RecordCatch : ComponentBase, IDisposable
                 .ToArray();
             var location = _capturedLocation;
             await CatchStore.SaveAsync(
-                new CatchModel(catchId, _caughtOn ?? DateTimeOffset.Now, photographs, Location: location),
+                new CatchModel(
+                    catchId,
+                    _caughtOn ?? DateTimeOffset.Now,
+                    photographs,
+                    Location: location,
+                    UserId: ownerUserId),
                 _cancellationTokenSource.Token);
             _isSaved = true;
             _locationSaved = location is not null;

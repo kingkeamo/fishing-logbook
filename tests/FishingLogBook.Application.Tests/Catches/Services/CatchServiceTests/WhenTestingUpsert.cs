@@ -139,6 +139,30 @@ public class WhenTestingUpsert : BaseCatchServiceTest
     }
 
     [Fact]
+    public async Task ItShouldFailWhenLocationVisibilityIsUnknown()
+    {
+        // Arrange
+        var args = Args(location: new CatchLocationDto(
+            53.2707,
+            -9.0568,
+            12,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            LocationDefaults.DeviceGps,
+            "FriendsOnly",
+            LocationDefaults.ConsentVersion));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<CatchLocationInvalidError>();
+        await MockCatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldFailWhenLocationIsInvalid()
     {
         // Arrange

@@ -354,6 +354,54 @@
   <data name="Catch_UnknownSpecies" xml:space="preserve">
     <value>Prise</value>
   </data>
+  <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
+    <value>Confidentialité de la localisation</value>
+  </data>
+  <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Confidentialité de la localisation</value>
+  </data>
+  <data name="Catch_LocationPrivacyTitle" xml:space="preserve">
+    <value>Confidentialité de la localisation</value>
+  </data>
+  <data name="Catch_LocationPrivacySubtitle" xml:space="preserve">
+    <value>Choisissez ce que les autres pêcheurs peuvent voir de ce spot.</value>
+  </data>
+  <data name="Catch_LocationPrivacyLoadFailed" xml:space="preserve">
+    <value>Cette prise n'a pas pu être chargée.</value>
+  </data>
+  <data name="Catch_LocationPrivacyNoLocation" xml:space="preserve">
+    <value>Cette prise n'a pas de localisation enregistrée.</value>
+  </data>
+  <data name="Catch_LocationVisibilityPrivate" xml:space="preserve">
+    <value>Moi uniquement</value>
+  </data>
+  <data name="Catch_LocationVisibilityApproximate" xml:space="preserve">
+    <value>Zone approximative</value>
+  </data>
+  <data name="Catch_LocationVisibilityFishingVenueOnly" xml:space="preserve">
+    <value>Site de pêche uniquement</value>
+  </data>
+  <data name="Catch_LocationVisibilityPublic" xml:space="preserve">
+    <value>Position exacte publique</value>
+  </data>
+  <data name="Catch_LocationVisibilityPublicWarning" xml:space="preserve">
+    <value>Toute personne pouvant voir cette prise pourra voir le spot de pêche exact.</value>
+  </data>
+  <data name="Catch_LocationPrivacySave" xml:space="preserve">
+    <value>Enregistrer la confidentialité</value>
+  </data>
+  <data name="Catch_LocationPrivacySaving" xml:space="preserve">
+    <value>Enregistrement</value>
+  </data>
+  <data name="Catch_LocationPrivacySaved" xml:space="preserve">
+    <value>Confidentialité de la localisation enregistrée</value>
+  </data>
+  <data name="Catch_LocationPrivacySaveFailed" xml:space="preserve">
+    <value>La confidentialité n'a pas pu être enregistrée. Réessayez.</value>
+  </data>
+  <data name="Catch_LocationPrivacySavedPendingSync" xml:space="preserve">
+    <value>Confidentialité enregistrée sur cet appareil. Elle sera mise à jour lorsque la synchronisation sera disponible.</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profil</value>
   </data>

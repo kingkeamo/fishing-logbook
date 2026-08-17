@@ -67,7 +67,8 @@ public abstract class BaseCatchRepositoryTest
     protected static CatchLocation SampleLocation(
         double latitude = 53.2707,
         double longitude = -9.0568,
-        double? accuracyMetres = 12)
+        double? accuracyMetres = 12,
+        string visibility = LocationDefaults.Private)
     {
         return CatchLocation.TryCreate(
             latitude,
@@ -75,7 +76,7 @@ public abstract class BaseCatchRepositoryTest
             accuracyMetres,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             LocationDefaults.DeviceGps,
-            LocationDefaults.Private,
+            visibility,
             LocationDefaults.ConsentVersion)!;
     }
 

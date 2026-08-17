@@ -25,6 +25,11 @@ public sealed class MemoryCatchStore : ICatchStore
 
     public Task SaveAsync(CatchModel catchRecord, CancellationToken cancellationToken)
     {
+        if (catchRecord.UserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch requires an owner.");
+        }
+
         if (catchRecord.Photographs.Count == 0
             || catchRecord.Photographs.Any(photograph => photograph.Bytes is not { Length: > 0 }))
         {
@@ -50,8 +55,15 @@ public sealed class MemoryCatchStore : ICatchStore
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<CatchModel>> GetAllAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<CatchModel>> GetAllAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
     {
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
         IReadOnlyList<CatchModel> items = _catches.Values
             .Select(catchRecord => catchRecord with
             {
@@ -63,6 +75,6 @@ public sealed class MemoryCatchStore : ICatchStore
                     .ToArray()
             })
             .ToArray();
-        return Task.FromResult(items);
+        return Task.FromResult(LocalCatchVisibility.ForOwner(items, ownerUserId));
     }
 }

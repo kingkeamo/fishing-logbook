@@ -256,11 +256,14 @@ describe('Catch store', () => {
 });
 
 describe('Production Catch store', () => {
+    const ownerUserId = '11111111-1111-1111-1111-111111111111';
+    const otherUserId = '22222222-2222-2222-2222-222222222222';
+
     it('puts and reads a Catch with photograph bytes and stable ids', async () => {
         const catchId = '11111111-1111-1111-1111-111111111111';
         const photographId = '22222222-2222-2222-2222-222222222222';
         await putCatchWithPhotographs(
-            JSON.stringify({ id: catchId, caughtOn: '2026-08-17T08:00:00+00:00' }),
+            JSON.stringify({ id: catchId, userId: ownerUserId, caughtOn: '2026-08-17T08:00:00+00:00' }),
             [{
                 id: photographId,
                 catchId,
@@ -269,7 +272,7 @@ describe('Production Catch store', () => {
             }]
         );
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
 
         expect(items).toHaveLength(1);
         expect(JSON.parse(items[0].json).id).toBe(catchId);
@@ -287,6 +290,7 @@ describe('Production Catch store', () => {
         await putCatchWithPhotographs(
             JSON.stringify({
                 id: catchId,
+                userId: ownerUserId,
                 caughtOn: '2026-08-17T08:00:00+00:00',
                 photographs: [
                     { id: photoA, catchId, contentType: 'image/jpeg' },
@@ -301,8 +305,8 @@ describe('Production Catch store', () => {
             ]
         );
 
-        const firstRead = await getAllCatchesWithPhotographs();
-        const reopened = await getAllCatchesWithPhotographs();
+        const firstRead = await getAllCatchesWithPhotographs(ownerUserId);
+        const reopened = await getAllCatchesWithPhotographs(ownerUserId);
 
         expect(JSON.parse(firstRead[0].json).id).toBe(catchId);
         expect(reopened[0].photographs.map((photograph) => photograph.id)).toEqual([photoA, photoB, photoC]);
@@ -321,15 +325,15 @@ describe('Production Catch store', () => {
 
     it('keeps two separately saved catches on distinct ids', async () => {
         await putCatchWithPhotographs(
-            JSON.stringify({ id: 'catch-a', caughtOn: '2026-08-17T08:00:00+00:00' }),
+            JSON.stringify({ id: 'catch-a', userId: ownerUserId, caughtOn: '2026-08-17T08:00:00+00:00' }),
             [{ id: 'photo-a', catchId: 'catch-a', contentType: 'image/jpeg', bytes: new Uint8Array([1]) }]
         );
         await putCatchWithPhotographs(
-            JSON.stringify({ id: 'catch-b', caughtOn: '2026-08-17T09:00:00+00:00' }),
+            JSON.stringify({ id: 'catch-b', userId: ownerUserId, caughtOn: '2026-08-17T09:00:00+00:00' }),
             [{ id: 'photo-b', catchId: 'catch-b', contentType: 'image/png', bytes: new Uint8Array([2]) }]
         );
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id).sort();
         const photoIds = items.flatMap((item) => item.photographs.map((photograph) => photograph.id)).sort();
 
@@ -343,7 +347,7 @@ describe('Production Catch store', () => {
             [{ catchId: 'orphan-catch', contentType: 'image/jpeg', bytes: new Uint8Array([9]) }]
         )).rejects.toBeTruthy();
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id);
 
         expect(ids).not.toContain('orphan-catch');
@@ -355,7 +359,7 @@ describe('Production Catch store', () => {
             []
         )).rejects.toThrow('Catch requires at least one photograph');
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id);
         expect(ids).not.toContain('empty-photos');
     });
@@ -413,8 +417,150 @@ describe('Production Catch store', () => {
             vi.restoreAllMocks();
         }
 
-        const items = await getAllCatchesWithPhotographs();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
         const ids = items.map((item) => JSON.parse(item.json).id);
         expect(ids).not.toContain('partial-catch');
     });
+
+    it('does not return another user’s Catch or photograph bytes', async () => {
+        const ownerCatchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const otherCatchId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: ownerCatchId,
+                userId: ownerUserId,
+                caughtOn: '2026-08-17T08:00:00+00:00'
+            }),
+            [{
+                id: 'owner-photo',
+                catchId: ownerCatchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1, 2, 3])
+            }]
+        );
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: otherCatchId,
+                userId: otherUserId,
+                caughtOn: '2026-08-17T09:00:00+00:00',
+                location: { latitude: 53.2707, longitude: -9.0568 }
+            }),
+            [{
+                id: 'other-photo',
+                catchId: otherCatchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([9, 9, 9])
+            }]
+        );
+
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const otherView = await getAllCatchesWithPhotographs(otherUserId);
+
+        expect(ownerView.map((item) => JSON.parse(item.json).id)).toEqual([ownerCatchId]);
+        expect(ownerView[0].photographs.map((photograph) => photograph.id)).toEqual(['owner-photo']);
+        expect(JSON.stringify(ownerView)).not.toContain('53.2707');
+        expect(JSON.stringify(ownerView)).not.toContain('other-photo');
+        expect(otherView.map((item) => JSON.parse(item.json).id)).toEqual([otherCatchId]);
+        expect(otherView[0].photographs.map((photograph) => photograph.id)).toEqual(['other-photo']);
+        expect(JSON.stringify(otherView)).not.toContain('owner-photo');
+    });
+
+    it('does not let the first signed-in user read or adopt a legacy unscoped Catch', async () => {
+        const unscopedId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: unscopedId,
+                caughtOn: '2026-08-17T08:00:00+00:00',
+                location: { latitude: 53.2707, longitude: -9.0568 }
+            }),
+            [{
+                id: 'unscoped-photo',
+                catchId: unscopedId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([4, 5, 6])
+            }]
+        );
+
+        const firstSignerView = await getAllCatchesWithPhotographs(otherUserId);
+        const originalOwnerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = await readRawProductionCatch(unscopedId);
+
+        expect(firstSignerView).toEqual([]);
+        expect(originalOwnerView).toEqual([]);
+        expect(JSON.stringify(firstSignerView)).not.toContain('53.2707');
+        expect(JSON.stringify(firstSignerView)).not.toContain('unscoped-photo');
+        expect(stored.userId).toBeUndefined();
+        expect(stored.location).toEqual({ latitude: 53.2707, longitude: -9.0568 });
+    });
+
+    it('does not expose unscoped Catches alongside owned records', async () => {
+        const unscopedId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        await putCatchWithPhotographs(
+            JSON.stringify({ id: unscopedId, caughtOn: '2026-08-17T08:00:00+00:00' }),
+            [{
+                id: 'unscoped-photo',
+                catchId: unscopedId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([4])
+            }]
+        );
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+                userId: ownerUserId,
+                caughtOn: '2026-08-17T09:00:00+00:00'
+            }),
+            [{
+                id: 'owner-photo',
+                catchId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([5])
+            }]
+        );
+
+        const otherView = await getAllCatchesWithPhotographs(otherUserId);
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = await readRawProductionCatch(unscopedId);
+
+        expect(otherView).toEqual([]);
+        expect(ownerView.map((item) => JSON.parse(item.json).id)).toEqual([
+            'dddddddd-dddd-dddd-dddd-dddddddddddd'
+        ]);
+        expect(JSON.stringify(ownerView)).not.toContain('unscoped-photo');
+        expect(stored.userId).toBeUndefined();
+    });
+
+    it('does not treat an empty user id as an owner', async () => {
+        const unscopedId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: unscopedId,
+                userId: '00000000-0000-0000-0000-000000000000',
+                caughtOn: '2026-08-17T08:00:00+00:00'
+            }),
+            [{
+                id: 'empty-owner-photo',
+                catchId: unscopedId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([7])
+            }]
+        );
+
+        const firstSignedIn = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = await readRawProductionCatch(unscopedId);
+
+        expect(firstSignedIn).toEqual([]);
+        expect(JSON.stringify(firstSignedIn)).not.toContain('empty-owner-photo');
+        expect(stored.userId).toBe('00000000-0000-0000-0000-000000000000');
+    });
 });
+
+function readRawProductionCatch(id) {
+    return openCatchDatabase().then((db) => new Promise((resolve, reject) => {
+        const transaction = db.transaction(PRODUCTION_CATCH_STORE_NAME, 'readonly');
+        const request = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME).get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        transaction.oncomplete = () => db.close();
+    }));
+}

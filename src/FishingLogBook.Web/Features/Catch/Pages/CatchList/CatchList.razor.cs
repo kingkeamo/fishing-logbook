@@ -1,5 +1,6 @@
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -17,6 +18,9 @@ public partial class CatchList : ComponentBase, IDisposable
     private ICatchStore CatchStore { get; set; } = default!;
 
     [Inject]
+    private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -30,7 +34,8 @@ public partial class CatchList : ComponentBase, IDisposable
         _loadFailed = false;
         try
         {
-            var saved = await CatchStore.GetAllAsync(_cancellationTokenSource.Token);
+            var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
+            var saved = await CatchStore.GetAllAsync(ownerUserId, _cancellationTokenSource.Token);
             _catches = saved
                 .OrderByDescending(catchRecord => catchRecord.CaughtOn)
                 .ToArray();
