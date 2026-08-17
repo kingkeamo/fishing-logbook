@@ -40,6 +40,11 @@
                     </div>
                 }
 
+                @if (_unsupportedFormat && !_isSaved)
+                {
+                    <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
+                }
+
                 @if (_photographs.Count > 0 && CurrentPhotograph is { } current)
                 {
                     <div class="record-catch-carousel"

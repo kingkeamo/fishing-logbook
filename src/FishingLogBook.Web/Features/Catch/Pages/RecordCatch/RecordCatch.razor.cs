@@ -21,6 +21,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private bool _isSaving;
     private bool _isSaved;
     private bool _saveFailed;
+    private bool _unsupportedFormat;
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
@@ -90,10 +91,19 @@ public partial class RecordCatch : ComponentBase, IDisposable
             return;
         }
 
+        var rejectedUnsupported = false;
         foreach (var file in args.GetMultipleFiles(10))
         {
+            if (!PhotographContentTypeConstants.IsAllowed(file.ContentType))
+            {
+                rejectedUnsupported = true;
+                continue;
+            }
+
             await AddPhotographAsync(file);
         }
+
+        _unsupportedFormat = rejectedUnsupported;
     }
 
     private async Task AddPhotographAsync(IBrowserFile file)
@@ -102,9 +112,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, _cancellationTokenSource.Token);
         var bytes = buffer.ToArray();
-        var contentType = PhotographContentTypeConstants.IsAllowed(file.ContentType)
-            ? file.ContentType
-            : PhotographContentTypeConstants.Jpeg;
+        var contentType = file.ContentType;
         _caughtOn ??= DateTimeOffset.Now;
         _photographs.Add(new PendingPhotograph(
             Guid.NewGuid(),
@@ -217,6 +225,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         _carouselIndex = 0;
         _isSaved = false;
         _saveFailed = false;
+        _unsupportedFormat = false;
     }
 
     public void Dispose()
