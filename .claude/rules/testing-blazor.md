@@ -16,6 +16,26 @@ When you add or change production code under `src/FishingLogBook.Web/` (`.razor`
 `.razor.cs`, `Features/`, `Browser/`, `Components/`, `Layouts/`, `Configuration/`),
 you must **in the same task** add or update tests in `tests/FishingLogBook.Web.Tests/`.
 Application/Api tests do not replace Web tests for code in `FishingLogBook.Web`.
+Before marking the work complete, follow **`self-review.md`**.
+
+## Playwright browser tests (cross-layer)
+
+bUnit tests in `FishingLogBook.Web.Tests` mock `I*Client` and prove component behaviour.
+Playwright tests in `src/FishingLogBook.Web/BrowserTests/` prove browser-level JS/PWA
+behaviour that bUnit cannot (IndexedDB, service worker, offline shell).
+
+Assess whether additional browser coverage is warranted for each user-facing feature.
+It is warranted when it provides material confidence beyond lower layers **and** can
+be implemented without contaminating production architecture or disproportionate
+test-host complexity.
+
+Do **not** add test-only authentication, compile symbols, or dual-host hacks to
+`src/FishingLogBook.Web` to force authenticated Blazor Playwright onto a product ticket.
+
+If browser coverage is omitted, the **`self-review.md`** report must state remaining
+browser risk, compensating lower-level tests, why Playwright is not appropriate now,
+and whether a testing-infrastructure follow-up is warranted. Follow
+**`self-review.md` → Browser / Playwright**.
 
 ## Tests mirror production (mandatory)
 

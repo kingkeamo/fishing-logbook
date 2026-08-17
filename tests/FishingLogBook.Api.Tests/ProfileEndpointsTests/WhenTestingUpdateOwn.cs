@@ -56,6 +56,69 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturnServiceUnavailableWhenTheProfileCannotBeLoaded()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(own!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Profile?>("Failed to load angler profile."));
+
+        // Act
+        var response = await client.PutAsJsonAsync("/api/profiles/me", ValidRequest());
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.ProfileRepository.Received(1).GetByUserIdAsync(
+            own.UserId,
+            Arg.Any<CancellationToken>());
+        await _factory.ProfileRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Profile>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnServiceUnavailableWhenTheProfileCannotBeSaved()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(own!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        _factory.ProfileRepository
+            .UpsertAsync(Arg.Is<Profile>(profile => profile.UserId == own.UserId), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Profile>("Failed to save angler profile."));
+
+        // Act
+        var response = await client.PutAsJsonAsync("/api/profiles/me", ValidRequest());
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.ProfileRepository.Received(1).GetByUserIdAsync(
+            own.UserId,
+            Arg.Any<CancellationToken>());
+        await _factory.ProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile => profile.UserId == own.UserId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldIgnoreAClientSuppliedUserIdAndUpdateTheAuthenticatedUser()
     {
         // Arrange

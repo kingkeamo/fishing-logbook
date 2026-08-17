@@ -1,3 +1,4 @@
+using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Profiles;
 using FluentResults;
 
@@ -12,9 +13,6 @@ public interface IProfileRepository
     Task<Result<Profile>> UpsertAsync(Profile profile, CancellationToken cancellationToken);
 
     Task<Result<Profile>> UpdatePhotographAsync(
-        Guid userId,
-        Guid photographId,
-        string objectKey,
-        string contentType,
+        RecordProfilePhotographArgs args,
         CancellationToken cancellationToken);
 }

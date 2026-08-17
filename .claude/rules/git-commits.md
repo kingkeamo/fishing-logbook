@@ -47,3 +47,8 @@ FLB#8 | use cached app shell only when the network fetch fails
 
 Co-authored-by: Cursor <cursoragent@cursor.com>
 ```
+
+## Pull requests
+
+Do not treat a PR as ready for review until **`self-review.md`** is complete, including
+fixes and final validation. Green CI does not replace that review.

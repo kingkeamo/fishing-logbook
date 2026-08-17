@@ -37,6 +37,75 @@ public class WhenTestingSave : BaseProfileTest
     }
 
     [Fact]
+    public async Task ItShouldShowFrenchLoadFailureCopy()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.French);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns<ProfileDto>(_ => throw new HttpRequestException("Unable to load profile."));
+        await using var context = CreateContext(profileClient);
+
+        // Act
+        var cut = context.Render<ProfilePage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#profile-load-failed").TextContent.Should().Contain("Impossible de charger le profil."));
+        await profileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSaveTheLoadedProfileWithoutChangingFields()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns(new ProfileDto(
+                userId,
+                "Eamonn",
+                null,
+                null,
+                null,
+                "Westmeath",
+                ["Fly"],
+                ["Pike", "Tench"],
+                true,
+                true,
+                true,
+                true,
+                false));
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
+        await using var context = CreateContext(profileClient);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Is<UpdateProfileDto>(profile =>
+                profile.DisplayName == "Eamonn"
+                && profile.HomeRegion == "Westmeath"
+                && profile.PreferredFishingTypes.SequenceEqual(new[] { "Fly" })
+                && profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })
+                && profile.ShowDisplayName
+                && profile.ShowPhotograph
+                && profile.ShowHomeRegion
+                && profile.ShowPreferredFishingTypes
+                && !profile.ShowPreferredSpecies),
+            Arg.Any<CancellationToken>());
+        await profileClient.DidNotReceive().CreatePhotographUploadAsync(
+            Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldShowSaveFailureWhenUpdateFails()
     {
         // Arrange

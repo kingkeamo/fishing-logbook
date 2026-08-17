@@ -108,12 +108,7 @@ public sealed class ProfileService : IProfileService
             return Result.Fail<ProfileDto>(ObjectKeyMismatchMessage);
         }
 
-        var updated = await _profileRepository.UpdatePhotographAsync(
-            args.UserId,
-            args.PhotographId,
-            args.ObjectKey,
-            args.ContentType,
-            cancellationToken);
+        var updated = await _profileRepository.UpdatePhotographAsync(args, cancellationToken);
         if (updated.IsFailed)
         {
             return Result.Fail<ProfileDto>(updated.Errors);

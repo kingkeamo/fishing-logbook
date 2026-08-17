@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using FishingLogBook.Api.Tests.TestSupport;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
@@ -119,6 +120,39 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturnServiceUnavailableWhenTheProfileCannotBeLoadedForUpload()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        _factory.ObjectStorage.ClearReceivedCalls();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ObjectStorage.IsConfigured.Returns(true);
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        _factory.ObjectStorage.ClearReceivedCalls();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(own!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Profile?>("Failed to load angler profile."));
+        var request = new PhotographUploadRequestDto(Guid.NewGuid(), PhotographContentTypeConstants.Jpeg);
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/profiles/me/photograph/upload-url", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.ProfileRepository.Received(1).GetByUserIdAsync(
+            own.UserId,
+            Arg.Any<CancellationToken>());
+        await _factory.ObjectStorage.DidNotReceive().CreateUploadUrlAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldCreateAnUploadUrlForTheAuthenticatedUsersObjectKey()
     {
         // Arrange
@@ -177,10 +211,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         await _factory.ProfileRepository.DidNotReceive().UpdatePhotographAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<Guid>(),
-            Arg.Any<string>(),
-            Arg.Any<string>(),
+            Arg.Any<RecordProfilePhotographArgs>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -201,10 +232,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await _factory.ProfileRepository.DidNotReceive().UpdatePhotographAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<Guid>(),
-            Arg.Any<string>(),
-            Arg.Any<string>(),
+            Arg.Any<RecordProfilePhotographArgs>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -222,15 +250,12 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await _factory.ProfileRepository.DidNotReceive().UpdatePhotographAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<Guid>(),
-            Arg.Any<string>(),
-            Arg.Any<string>(),
+            Arg.Any<RecordProfilePhotographArgs>(),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldReturnBadRequestWhenTheRepositoryUpdateFails()
+    public async Task ItShouldReturnBadRequestWhenTheProfileRowDoesNotExist()
     {
         // Arrange
         var subject = Guid.NewGuid().ToString("N");
@@ -243,10 +268,11 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         _factory.ProfileRepository.ClearReceivedCalls();
         _factory.ProfileRepository
             .UpdatePhotographAsync(
-                own.UserId,
-                photographId,
-                objectKey,
-                PhotographContentTypeConstants.Png,
+                Arg.Is<RecordProfilePhotographArgs>(actual =>
+                    actual.UserId == own.UserId
+                    && actual.PhotographId == photographId
+                    && actual.ObjectKey == objectKey
+                    && actual.ContentType == PhotographContentTypeConstants.Png),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Fail<Profile>("Angler profile was not found."));
         var request = new RecordPhotographDto(photographId, objectKey, PhotographContentTypeConstants.Png);
@@ -257,10 +283,48 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await _factory.ProfileRepository.Received(1).UpdatePhotographAsync(
-            own.UserId,
-            photographId,
-            objectKey,
-            PhotographContentTypeConstants.Png,
+            Arg.Is<RecordProfilePhotographArgs>(actual =>
+                actual.UserId == own.UserId
+                && actual.PhotographId == photographId
+                && actual.ObjectKey == objectKey
+                && actual.ContentType == PhotographContentTypeConstants.Png),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnServiceUnavailableWhenRecordingThePhotographFails()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        _factory.ProfileRepository.ClearReceivedCalls();
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        var photographId = Guid.NewGuid();
+        var objectKey = $"profiles/{own!.UserId:D}/{photographId:D}";
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .UpdatePhotographAsync(
+                Arg.Is<RecordProfilePhotographArgs>(actual =>
+                    actual.UserId == own.UserId
+                    && actual.PhotographId == photographId
+                    && actual.ObjectKey == objectKey
+                    && actual.ContentType == PhotographContentTypeConstants.Jpeg),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Profile>("Failed to load angler profile."));
+        var request = new RecordPhotographDto(photographId, objectKey, PhotographContentTypeConstants.Jpeg);
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/profiles/me/photograph", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.ProfileRepository.Received(1).UpdatePhotographAsync(
+            Arg.Is<RecordProfilePhotographArgs>(actual =>
+                actual.UserId == own.UserId
+                && actual.PhotographId == photographId
+                && actual.ObjectKey == objectKey
+                && actual.ContentType == PhotographContentTypeConstants.Jpeg),
             Arg.Any<CancellationToken>());
     }
 
@@ -279,10 +343,11 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         _factory.ProfileRepository.ClearReceivedCalls();
         _factory.ProfileRepository
             .UpdatePhotographAsync(
-                own.UserId,
-                photographId,
-                objectKey,
-                PhotographContentTypeConstants.Jpeg,
+                Arg.Is<RecordProfilePhotographArgs>(actual =>
+                    actual.UserId == own.UserId
+                    && actual.PhotographId == photographId
+                    && actual.ObjectKey == objectKey
+                    && actual.ContentType == PhotographContentTypeConstants.Jpeg),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Ok(new Profile
             {
@@ -306,10 +371,11 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         body!.UserId.Should().Be(own.UserId);
         body.PhotographId.Should().Be(photographId);
         await _factory.ProfileRepository.Received(1).UpdatePhotographAsync(
-            own.UserId,
-            photographId,
-            objectKey,
-            PhotographContentTypeConstants.Jpeg,
+            Arg.Is<RecordProfilePhotographArgs>(actual =>
+                actual.UserId == own.UserId
+                && actual.PhotographId == photographId
+                && actual.ObjectKey == objectKey
+                && actual.ContentType == PhotographContentTypeConstants.Jpeg),
             Arg.Any<CancellationToken>());
     }
 }

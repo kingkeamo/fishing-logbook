@@ -26,6 +26,10 @@ Home Screen PWA, or iOS IndexedDB.
 - Playwright WebKit offline navigation (`setOffline` causes an internal WebKit error)
 - The production `service-worker.published.js` asset manifest and Cloudflare redirect handling
   (those remain covered by .NET source tests and real-device checks)
+- Authenticated Blazor WASM / Profile UI. Production authentication is Cognito/OIDC.
+  A deterministic authenticated Playwright host needs architecture beyond a product
+  feature ticket and must not contaminate production Web auth. Profile confidence
+  comes from bUnit, API, Testcontainers, and ProfileClient tests.
 
 ## Commands
 

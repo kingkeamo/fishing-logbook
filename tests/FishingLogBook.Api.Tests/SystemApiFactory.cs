@@ -57,12 +57,9 @@ public sealed class SystemApiFactory : WebApplicationFactory<Program>
             .Returns(call => Result.Ok(call.ArgAt<Profile>(0)));
         ProfileRepository
             .UpdatePhotographAsync(
-                Arg.Any<Guid>(),
-                Arg.Any<Guid>(),
-                Arg.Any<string>(),
-                Arg.Any<string>(),
+                Arg.Any<RecordProfilePhotographArgs>(),
                 Arg.Any<CancellationToken>())
-            .Returns(call => Result.Ok(new Profile { UserId = call.ArgAt<Guid>(0) }));
+            .Returns(call => Result.Ok(new Profile { UserId = call.ArgAt<RecordProfilePhotographArgs>(0).UserId }));
     }
 
     public HttpClient CreateAuthenticatedClient(string? accessToken = null)

@@ -174,12 +174,19 @@ public static class ProfileEndpoints
                 Photograph = photograph
             },
             cancellationToken);
-        if (response.ValidationErrors is { Count: > 0 } || response.IsFailure)
+        if (response.ValidationErrors is { Count: > 0 })
         {
             return Results.BadRequest(response);
         }
 
-        return Results.Ok(response.Profile);
+        if (response.IsFailure
+            && (string.Equals(response.ErrorMessage, "Photograph object key does not match the profile.", StringComparison.Ordinal)
+                || string.Equals(response.ErrorMessage, "Angler profile was not found.", StringComparison.Ordinal)))
+        {
+            return Results.BadRequest(response);
+        }
+
+        return ToDataResult(response.IsFailure, response.ErrorMessage, response.Profile, StatusCodes.Status503ServiceUnavailable);
     }
 
     private static IResult ToDataResult<T>(

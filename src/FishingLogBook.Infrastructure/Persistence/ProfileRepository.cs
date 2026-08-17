@@ -1,4 +1,5 @@
 using Dapper;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Profiles;
 using FluentResults;
@@ -104,10 +105,7 @@ public sealed class ProfileRepository : IProfileRepository
     }
 
     public async Task<Result<Profile>> UpdatePhotographAsync(
-        Guid userId,
-        Guid photographId,
-        string objectKey,
-        string contentType,
+        RecordProfilePhotographArgs args,
         CancellationToken cancellationToken)
     {
         try
@@ -123,20 +121,14 @@ public sealed class ProfileRepository : IProfileRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var updated = await connection.ExecuteAsync(new CommandDefinition(
                 sql,
-                new
-                {
-                    UserId = userId,
-                    PhotographId = photographId,
-                    ObjectKey = objectKey,
-                    ContentType = contentType
-                },
+                args,
                 cancellationToken: cancellationToken));
             if (updated == 0)
             {
                 return Result.Fail<Profile>(NotFoundMessage);
             }
 
-            return await RequireByUserIdAsync(connection, userId, cancellationToken);
+            return await RequireByUserIdAsync(connection, args.UserId, cancellationToken);
         }
         catch (Exception)
         {

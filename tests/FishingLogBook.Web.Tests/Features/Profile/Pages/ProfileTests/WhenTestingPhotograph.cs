@@ -169,6 +169,7 @@ public class WhenTestingPhotograph : BaseProfileTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var userId = Guid.NewGuid();
+        Guid? photographId = null;
         var profileClient = Substitute.For<IProfileClient>();
         profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
             .Returns(EmptyProfile(userId));
@@ -178,6 +179,7 @@ public class WhenTestingPhotograph : BaseProfileTest
             .Returns(call =>
             {
                 var request = call.ArgAt<PhotographUploadRequestDto>(0);
+                photographId = request.PhotographId;
                 return new PhotographUploadDto(
                     $"profiles/{userId:D}/{request.PhotographId:D}",
                     "https://storage.test/upload");
@@ -195,8 +197,23 @@ public class WhenTestingPhotograph : BaseProfileTest
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#profile-save-failed"));
+        photographId.Should().NotBeNull();
+        var expectedKey = $"profiles/{userId:D}/{photographId:D}";
+        await profileClient.Received(1).CreatePhotographUploadAsync(
+            Arg.Is<PhotographUploadRequestDto>(request =>
+                request.PhotographId == photographId
+                && request.ContentType == PhotographContentTypeConstants.Jpeg),
+            Arg.Any<CancellationToken>());
+        await profileClient.Received(1).UploadPhotographAsync(
+            "https://storage.test/upload",
+            Arg.Is<byte[]>(bytes => bytes.SequenceEqual(new byte[] { 0xFF, 0xD8, 0xFF })),
+            PhotographContentTypeConstants.Jpeg,
+            Arg.Any<CancellationToken>());
         await profileClient.Received(1).RecordPhotographAsync(
-            Arg.Any<RecordPhotographDto>(),
+            Arg.Is<RecordPhotographDto>(request =>
+                request.PhotographId == photographId
+                && request.ObjectKey == expectedKey
+                && request.ContentType == PhotographContentTypeConstants.Jpeg),
             Arg.Any<CancellationToken>());
     }
 

@@ -32,10 +32,7 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("Photograph object key does not match the profile.");
         await MockProfileRepository.DidNotReceive().UpdatePhotographAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<Guid>(),
-            Arg.Any<string>(),
-            Arg.Any<string>(),
+            Arg.Any<RecordProfilePhotographArgs>(),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
             Arg.Any<string>(),
@@ -53,10 +50,11 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
         var args = ValidArgs(userId, photographId, objectKey);
         MockProfileRepository
             .UpdatePhotographAsync(
-                userId,
-                photographId,
-                objectKey,
-                PhotographContentTypeConstants.Jpeg,
+                Arg.Is<RecordProfilePhotographArgs>(actual =>
+                    actual.UserId == userId
+                    && actual.PhotographId == photographId
+                    && actual.ObjectKey == objectKey
+                    && actual.ContentType == PhotographContentTypeConstants.Jpeg),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Fail<Profile>("Angler profile was not found."));
 
@@ -67,10 +65,11 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("Angler profile was not found.");
         await MockProfileRepository.Received(1).UpdatePhotographAsync(
-            userId,
-            photographId,
-            objectKey,
-            PhotographContentTypeConstants.Jpeg,
+            Arg.Is<RecordProfilePhotographArgs>(actual =>
+                actual.UserId == userId
+                && actual.PhotographId == photographId
+                && actual.ObjectKey == objectKey
+                && actual.ContentType == PhotographContentTypeConstants.Jpeg),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
             Arg.Any<string>(),
@@ -89,10 +88,11 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
         MockObjectStorage.IsConfigured.Returns(false);
         MockProfileRepository
             .UpdatePhotographAsync(
-                userId,
-                photographId,
-                objectKey,
-                PhotographContentTypeConstants.Jpeg,
+                Arg.Is<RecordProfilePhotographArgs>(actual =>
+                    actual.UserId == userId
+                    && actual.PhotographId == photographId
+                    && actual.ObjectKey == objectKey
+                    && actual.ContentType == PhotographContentTypeConstants.Jpeg),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Ok(RecordedProfile(userId, photographId, objectKey)));
 
@@ -105,10 +105,11 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
         result.Value.PhotographUrl.Should().BeNull();
         result.Value.PhotographContentType.Should().Be(PhotographContentTypeConstants.Jpeg);
         await MockProfileRepository.Received(1).UpdatePhotographAsync(
-            userId,
-            photographId,
-            objectKey,
-            PhotographContentTypeConstants.Jpeg,
+            Arg.Is<RecordProfilePhotographArgs>(actual =>
+                actual.UserId == userId
+                && actual.PhotographId == photographId
+                && actual.ObjectKey == objectKey
+                && actual.ContentType == PhotographContentTypeConstants.Jpeg),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
             Arg.Any<string>(),
@@ -126,10 +127,11 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
         var args = ValidArgs(userId, photographId, objectKey);
         MockProfileRepository
             .UpdatePhotographAsync(
-                userId,
-                photographId,
-                objectKey,
-                PhotographContentTypeConstants.Jpeg,
+                Arg.Is<RecordProfilePhotographArgs>(actual =>
+                    actual.UserId == userId
+                    && actual.PhotographId == photographId
+                    && actual.ObjectKey == objectKey
+                    && actual.ContentType == PhotographContentTypeConstants.Jpeg),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Ok(RecordedProfile(userId, photographId, objectKey)));
         MockObjectStorage
@@ -146,10 +148,11 @@ public class WhenTestingRecordPhotograph : BaseProfileServiceTest
         result.Value.PhotographUrl.Should().Be("https://storage.test/download");
         result.Value.PhotographContentType.Should().Be(PhotographContentTypeConstants.Jpeg);
         await MockProfileRepository.Received(1).UpdatePhotographAsync(
-            userId,
-            photographId,
-            objectKey,
-            PhotographContentTypeConstants.Jpeg,
+            Arg.Is<RecordProfilePhotographArgs>(actual =>
+                actual.UserId == userId
+                && actual.PhotographId == photographId
+                && actual.ObjectKey == objectKey
+                && actual.ContentType == PhotographContentTypeConstants.Jpeg),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.Received(1).CreateDownloadUrlAsync(
             objectKey,

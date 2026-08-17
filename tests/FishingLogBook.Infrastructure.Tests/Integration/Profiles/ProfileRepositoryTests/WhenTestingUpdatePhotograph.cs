@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Tests.Common.Builders;
@@ -23,10 +24,13 @@ public class WhenTestingUpdatePhotograph : BaseProfileRepositoryTest
 
         // Act
         var result = await Sut.UpdatePhotographAsync(
-            userId,
-            photographId,
-            objectKey,
-            PhotographContentTypeConstants.Png,
+            new RecordProfilePhotographArgs
+            {
+                UserId = userId,
+                PhotographId = photographId,
+                ObjectKey = objectKey,
+                ContentType = PhotographContentTypeConstants.Png
+            },
             CancellationToken.None);
 
         // Assert
@@ -56,10 +60,13 @@ public class WhenTestingUpdatePhotograph : BaseProfileRepositoryTest
 
         // Act
         var result = await Sut.UpdatePhotographAsync(
-            userId,
-            photographId,
-            objectKey,
-            PhotographContentTypeConstants.Webp,
+            new RecordProfilePhotographArgs
+            {
+                UserId = userId,
+                PhotographId = photographId,
+                ObjectKey = objectKey,
+                ContentType = PhotographContentTypeConstants.Webp
+            },
             CancellationToken.None);
 
         // Assert

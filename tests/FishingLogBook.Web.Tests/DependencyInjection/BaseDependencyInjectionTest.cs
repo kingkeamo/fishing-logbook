@@ -17,11 +17,13 @@ public class BaseDependencyInjectionTest
         services.AddLogging();
         services.AddSingleton(Substitute.For<IJSRuntime>());
         services.AddSingleton<NavigationManager, TestNavigationManager>();
+        var resolvedAuth = authConfig ?? CreateCompleteAuthConfig();
+        var apiBaseAddress = new Uri("https://example.test/");
         services.AddFishingLogBookWeb(
             new ApiConfig { BaseUrl = "https://example.test/" },
             new DiagnosticsClientConfig(),
-            authConfig ?? CreateCompleteAuthConfig(),
-            new Uri("https://example.test/"));
+            resolvedAuth,
+            apiBaseAddress);
 
         return services.BuildServiceProvider(new ServiceProviderOptions
         {
