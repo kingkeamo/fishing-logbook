@@ -57,6 +57,8 @@ public class WhenTestingRender : BaseCatchListTest
             cut.Find($"#catch-time-{catchId:D}").TextContent.Should().NotBeNullOrWhiteSpace();
             cut.Find($"#catch-angler-{catchId:D}").TextContent.Should().Contain("Angler: You");
             cut.Find($"#catch-recorded-by-{catchId:D}").TextContent.Should().Contain("Recorded by: You");
+            cut.Find($"#catch-edit-{catchId:D}").TextContent.Should().Contain("Edit details");
+            cut.Find($"#catch-edit-{catchId:D}").GetAttribute("href").Should().Be($"/catches/{catchId:D}/edit");
         });
         await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
@@ -130,6 +132,7 @@ public class WhenTestingRender : BaseCatchListTest
             cut.Find($"#catch-label-{catchId:D}").TextContent.Should().Contain("Prise");
             cut.Find($"#catch-angler-{catchId:D}").TextContent.Should().Contain("Pêcheur : Vous");
             cut.Find($"#catch-recorded-by-{catchId:D}").TextContent.Should().Contain("Enregistré par : Vous");
+            cut.Find($"#catch-edit-{catchId:D}").TextContent.Should().Contain("Modifier les détails");
         });
         cut.FindAll("#catch-list-empty").Should().BeEmpty();
         await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
@@ -205,6 +208,12 @@ public class WhenTestingRender : BaseCatchListTest
             var link = cut.Find($"#catch-location-privacy-{catchId:D}");
             link.TextContent.Should().Contain("Location privacy");
             link.GetAttribute("href").Should().Be($"/catches/{catchId:D}/location-privacy");
+        });
+        cut.WaitForAssertion(() =>
+        {
+            var edit = cut.Find($"#catch-edit-{catchId:D}");
+            edit.TextContent.Should().Contain("Edit details");
+            edit.GetAttribute("href").Should().Be($"/catches/{catchId:D}/edit");
         });
         cut.Markup.Should().NotContain("53.2707");
         cut.Markup.Should().NotContain("-9.0568");

@@ -580,23 +580,46 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         {
             UserId = catchRecord.UserId,
             AnglerUserId = catchRecord.AnglerUserId,
-            RecordedByUserId = catchRecord.RecordedByUserId
+            RecordedByUserId = catchRecord.RecordedByUserId,
+            SpeciesName = catchRecord.SpeciesName,
+            Weight = catchRecord.Weight,
+            Length = catchRecord.Length,
+            Method = catchRecord.Method,
+            BaitOrLure = catchRecord.BaitOrLure,
+            Notes = catchRecord.Notes
         };
     }
 
     private static bool HasSameMetadata(CatchModel catchRecord, CatchDto sent)
     {
-        if (catchRecord.Id != sent.Id
-            || catchRecord.CaughtOn != sent.CaughtOn
-            || catchRecord.UserId != sent.UserId
-            || catchRecord.AnglerUserId != sent.AnglerUserId
-            || catchRecord.RecordedByUserId != sent.RecordedByUserId
-            || catchRecord.Photographs.Count != sent.Photographs.Count)
+        return catchRecord.Id == sent.Id
+            && catchRecord.CaughtOn == sent.CaughtOn
+            && catchRecord.UserId == sent.UserId
+            && catchRecord.AnglerUserId == sent.AnglerUserId
+            && catchRecord.RecordedByUserId == sent.RecordedByUserId
+            && HaveSameDetails(catchRecord, sent)
+            && HaveSamePhotographs(catchRecord, sent)
+            && HaveSameLocation(catchRecord, sent);
+    }
+
+    private static bool HaveSameDetails(CatchModel catchRecord, CatchDto sent)
+    {
+        return string.Equals(catchRecord.SpeciesName, sent.SpeciesName, StringComparison.Ordinal)
+            && catchRecord.Weight == sent.Weight
+            && catchRecord.Length == sent.Length
+            && string.Equals(catchRecord.Method, sent.Method, StringComparison.Ordinal)
+            && string.Equals(catchRecord.BaitOrLure, sent.BaitOrLure, StringComparison.Ordinal)
+            && string.Equals(catchRecord.Notes, sent.Notes, StringComparison.Ordinal);
+    }
+
+    private static bool HaveSamePhotographs(CatchModel catchRecord, CatchDto sent)
+    {
+        if (catchRecord.Photographs.Count != sent.Photographs.Count)
         {
             return false;
         }
 
-        var photographsMatch = catchRecord.Photographs.All(photograph =>
+        return catchRecord.Photographs.All(photograph =>
             sent.Photographs.Any(dto =>
                 dto.Id == photograph.Id
                 && dto.CatchId == photograph.CatchId
@@ -604,11 +627,10 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                     dto.ContentType,
                     photograph.ContentType,
                     StringComparison.OrdinalIgnoreCase)));
-        if (!photographsMatch)
-        {
-            return false;
-        }
+    }
 
+    private static bool HaveSameLocation(CatchModel catchRecord, CatchDto sent)
+    {
         if (catchRecord.Location is null || sent.Location is null)
         {
             return catchRecord.Location is null && sent.Location is null;

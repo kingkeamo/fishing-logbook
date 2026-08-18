@@ -33,7 +33,12 @@ internal static class CatchJson
             catchRecord.SyncStatus,
             catchRecord.MetadataSyncStatus,
             catchRecord.AnglerUserId,
-            catchRecord.RecordedByUserId);
+            catchRecord.RecordedByUserId,
+            catchRecord.Weight,
+            catchRecord.Length,
+            catchRecord.Method,
+            catchRecord.BaitOrLure,
+            catchRecord.Notes);
         return JsonSerializer.Serialize(metadata, Options);
     }
 
@@ -51,7 +56,12 @@ internal static class CatchJson
             metadata.SyncStatus,
             metadata.MetadataSyncStatus,
             metadata.AnglerUserId == Guid.Empty ? metadata.UserId : metadata.AnglerUserId,
-            metadata.RecordedByUserId == Guid.Empty ? metadata.UserId : metadata.RecordedByUserId);
+            metadata.RecordedByUserId == Guid.Empty ? metadata.UserId : metadata.RecordedByUserId,
+            metadata.Weight,
+            metadata.Length,
+            metadata.Method,
+            metadata.BaitOrLure,
+            metadata.Notes);
     }
 
     private static IReadOnlyList<CatchPhotographModel> OrderPhotographs(
@@ -86,7 +96,12 @@ internal static class CatchJson
         SyncStatus SyncStatus = SyncStatus.SavedLocally,
         SyncStatus MetadataSyncStatus = SyncStatus.SavedLocally,
         Guid AnglerUserId = default,
-        Guid RecordedByUserId = default);
+        Guid RecordedByUserId = default,
+        decimal? Weight = null,
+        decimal? Length = null,
+        string? Method = null,
+        string? BaitOrLure = null,
+        string? Notes = null);
 
     private sealed record CatchPhotographMetadata(
         Guid Id,

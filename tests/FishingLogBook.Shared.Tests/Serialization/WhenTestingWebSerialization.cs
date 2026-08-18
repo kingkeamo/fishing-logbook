@@ -136,6 +136,37 @@ public class WhenTestingWebSerialization : BaseSerializationTest
     }
 
     [Fact]
+    public void ItShouldRoundTripCatchDtoDetailsUsingWebDefaults()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var original = new CatchDto(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")])
+        {
+            UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            AnglerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            RecordedByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            SpeciesName = "Pike",
+            Weight = 2.5m,
+            Length = 64m,
+            Method = "Lure",
+            BaitOrLure = "Spinner",
+            Notes = "Weedline"
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var deserialized = JsonSerializer.Deserialize<CatchDto>(json, WebOptions);
+
+        // Assert
+        json.Should().Contain("\"speciesName\":\"Pike\"");
+        json.Should().Contain("\"weight\":2.5");
+        deserialized.Should().BeEquivalentTo(original);
+    }
+
+    [Fact]
     public void ItShouldOmitNullExactCoordinatesFromCatchLocationExposureDto()
     {
         // Arrange

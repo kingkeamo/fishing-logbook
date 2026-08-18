@@ -172,6 +172,69 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldRejectAnInvalidWeight()
+    {
+        // Arrange
+        var dto = ValidDto() with { Weight = 0 };
+        ResetCatchRepository();
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/catches", dto);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await _factory.CatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistOptionalDetails()
+    {
+        // Arrange
+        var dto = ValidDto() with
+        {
+            SpeciesName = "Pike",
+            Weight = 2.5m,
+            Length = 64m,
+            Method = "Lure",
+            BaitOrLure = "Spinner",
+            Notes = "Weedline"
+        };
+        ResetCatchRepository();
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/catches", dto);
+        var body = await response.Content.ReadFromJsonAsync<CatchDto>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().NotBeNull();
+        body!.Id.Should().Be(dto.Id);
+        body.SpeciesName.Should().Be("Pike");
+        body.Weight.Should().Be(2.5m);
+        body.Length.Should().Be(64m);
+        body.Method.Should().Be("Lure");
+        body.BaitOrLure.Should().Be("Spinner");
+        body.Notes.Should().Be("Weedline");
+        body.UserId.Should().Be(current!.UserId);
+        await _factory.CatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(item =>
+                item.Id == dto.Id
+                && item.UserId == current.UserId
+                && item.SpeciesName == "Pike"
+                && item.Weight == 2.5m
+                && item.Length == 64m
+                && item.Method == "Lure"
+                && item.BaitOrLure == "Spinner"
+                && item.Notes == "Weedline"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldRejectAnInvalidLocation()
     {
         // Arrange

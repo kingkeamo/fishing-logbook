@@ -87,6 +87,12 @@
                                             : Loc["Catch_SyncNow"])
                                     </MudButton>
                                 }
+                                <MudButton Variant="Variant.Text"
+                                           Color="Color.Primary"
+                                           Href="@($"/catches/{catchRecord.Id:D}/edit")"
+                                           id="@($"catch-edit-{catchRecord.Id:D}")">
+                                    @Loc["Catch_Edit"]
+                                </MudButton>
                                 @if (catchRecord.Location is not null)
                                 {
                                     <MudButton Variant="Variant.Text"

@@ -235,10 +235,124 @@ public class WhenTestingUpsert : BaseCatchServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldFailWhenWeightIsNotPositive()
+    {
+        // Arrange
+        var args = Args(weight: 0);
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<CatchDetailsInvalidError>();
+        await MockCatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldFailWhenCaughtOnIsInTheFuture()
+    {
+        // Arrange
+        var args = Args(caughtOn: DateTimeOffset.UtcNow.AddHours(1));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<CatchDetailsInvalidError>();
+        await MockCatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistOptionalDetailsWhenTheyAreSupplied()
+    {
+        // Arrange
+        var args = Args(
+            speciesName: "Pike",
+            weight: 2.5m,
+            length: 64m,
+            method: "Lure",
+            baitOrLure: "Spinner",
+            notes: "Weedline");
+        MockCatchRepository
+            .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.SpeciesName.Should().Be("Pike");
+        result.Value.Weight.Should().Be(2.5m);
+        result.Value.Length.Should().Be(64m);
+        result.Value.Method.Should().Be("Lure");
+        result.Value.BaitOrLure.Should().Be("Spinner");
+        result.Value.Notes.Should().Be("Weedline");
+        await MockCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(item =>
+                item.Id == args.Catch.Id
+                && item.UserId == args.UserId
+                && item.SpeciesName == "Pike"
+                && item.Weight == 2.5m
+                && item.Length == 64m
+                && item.Method == "Lure"
+                && item.BaitOrLure == "Spinner"
+                && item.Notes == "Weedline"
+                && item.AnglerUserId == args.UserId
+                && item.RecordedByUserId == args.UserId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistAPhotographOnlyCatchWithoutOptionalDetails()
+    {
+        // Arrange
+        var args = Args();
+        MockCatchRepository
+            .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.SpeciesName.Should().BeNull();
+        result.Value.Weight.Should().BeNull();
+        result.Value.Length.Should().BeNull();
+        result.Value.Method.Should().BeNull();
+        result.Value.BaitOrLure.Should().BeNull();
+        result.Value.Notes.Should().BeNull();
+        await MockCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(item =>
+                item.Id == args.Catch.Id
+                && item.SpeciesName == null
+                && item.Weight == null
+                && item.Length == null
+                && item.Method == null
+                && item.BaitOrLure == null
+                && item.Notes == null),
+            Arg.Any<CancellationToken>());
+    }
+
     private static UpsertCatchArgs Args(
         Guid? catchId = null,
         IReadOnlyList<CatchPhotographDto>? photographs = null,
-        CatchLocationDto? location = null)
+        CatchLocationDto? location = null,
+        DateTimeOffset? caughtOn = null,
+        string? speciesName = null,
+        decimal? weight = null,
+        decimal? length = null,
+        string? method = null,
+        string? baitOrLure = null,
+        string? notes = null)
     {
         var resolvedCatchId = catchId ?? Guid.NewGuid();
         return new UpsertCatchArgs
@@ -246,12 +360,20 @@ public class WhenTestingUpsert : BaseCatchServiceTest
             UserId = Guid.NewGuid(),
             Catch = new CatchDto(
                 resolvedCatchId,
-                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                caughtOn ?? DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 photographs ??
                 [
                     new CatchPhotographDto(Guid.NewGuid(), resolvedCatchId, PhotographContentTypeConstants.Jpeg)
                 ],
                 location)
+            {
+                SpeciesName = speciesName,
+                Weight = weight,
+                Length = length,
+                Method = method,
+                BaitOrLure = baitOrLure,
+                Notes = notes
+            }
         };
     }
 }

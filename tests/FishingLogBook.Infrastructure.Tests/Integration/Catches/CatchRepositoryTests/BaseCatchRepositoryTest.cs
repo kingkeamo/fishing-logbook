@@ -94,6 +94,12 @@ public abstract class BaseCatchRepositoryTest
             AnglerUserId = catchRecord.AnglerUserId,
             RecordedByUserId = catchRecord.RecordedByUserId,
             CaughtOn = catchRecord.CaughtOn,
+            SpeciesName = catchRecord.SpeciesName,
+            Weight = catchRecord.Weight,
+            Length = catchRecord.Length,
+            Method = catchRecord.Method,
+            BaitOrLure = catchRecord.BaitOrLure,
+            Notes = catchRecord.Notes,
             Location = location,
             Photographs = catchRecord.Photographs
         };

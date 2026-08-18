@@ -276,6 +276,84 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
         result.ShouldNotHaveAnyValidationErrors();
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(1000.001)]
+    public void ItShouldHaveAValidationErrorWhenWeightIsOutOfRange(double weight)
+    {
+        // Arrange
+        var command = Command(weight: (decimal)weight);
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Weight!.Value);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(1000.001)]
+    public void ItShouldHaveAValidationErrorWhenLengthIsOutOfRange(double length)
+    {
+        // Arrange
+        var command = Command(length: (decimal)length);
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Length!.Value);
+    }
+
+    [Fact]
+    public void ItShouldHaveAValidationErrorWhenCaughtOnIsInTheFuture()
+    {
+        // Arrange
+        var command = Command(caughtOn: DateTimeOffset.UtcNow.AddHours(1));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.CaughtOn)
+            .WithErrorMessage("Catch time cannot be in the future.");
+    }
+
+    [Fact]
+    public void ItShouldHaveAValidationErrorWhenSpeciesNameIsTooLong()
+    {
+        // Arrange
+        var command = Command(speciesName: new string('a', CatchDetailConstants.MaxSpeciesNameLength + 1));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.SpeciesName);
+    }
+
+    [Fact]
+    public void ItShouldAcceptBoundaryMeasurementsAndOptionalDetails()
+    {
+        // Arrange
+        var command = Command(
+            speciesName: new string('a', CatchDetailConstants.MaxSpeciesNameLength),
+            weight: CatchDetailConstants.MaxWeightKilograms,
+            length: CatchDetailConstants.MaxLengthCentimetres,
+            method: new string('m', CatchDetailConstants.MaxMethodLength),
+            baitOrLure: new string('b', CatchDetailConstants.MaxBaitOrLureLength),
+            notes: new string('n', CatchDetailConstants.MaxNotesLength));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
     private static CatchLocationDto ValidLocation()
     {
         return new CatchLocationDto(
@@ -294,7 +372,13 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
         DateTimeOffset caughtOn = new(),
         bool useDefaultCaughtOn = false,
         IReadOnlyList<CatchPhotographDto>? photographs = null,
-        CatchLocationDto? location = null)
+        CatchLocationDto? location = null,
+        string? speciesName = null,
+        decimal? weight = null,
+        decimal? length = null,
+        string? method = null,
+        string? baitOrLure = null,
+        string? notes = null)
     {
         var resolvedCatchId = catchId ?? Guid.NewGuid();
         return new UpsertCatchCommand
@@ -310,6 +394,14 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
                     new CatchPhotographDto(Guid.NewGuid(), resolvedCatchId, PhotographContentTypeConstants.Jpeg)
                 ],
                 location)
+            {
+                SpeciesName = speciesName,
+                Weight = weight,
+                Length = length,
+                Method = method,
+                BaitOrLure = baitOrLure,
+                Notes = notes
+            }
         };
     }
 }

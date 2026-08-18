@@ -1,0 +1,100 @@
+@page "/catches/{CatchId:guid}/edit"
+@using Microsoft.AspNetCore.Authorization
+@using FishingLogBook.Shared.Constants
+@attribute [Authorize]
+
+<PageTitle>@Loc["Catch_EditPageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudText Typo="Typo.h4" Align="Align.Center" id="catch-edit-title">
+            @Loc["Catch_EditTitle"]
+        </MudText>
+        <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">
+            @Loc["Catch_EditSubtitle"]
+        </MudText>
+
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="catch-edit-load-failed">
+                @Loc["Catch_EditLoadFailed"]
+            </MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center"
+                                 id="catch-edit-loading" />
+        }
+        else
+        {
+            <MudTextField @bind-Value="_speciesName"
+                          Label="@Loc["Catch_EditSpecies"]"
+                          MaxLength="@CatchDetailConstants.MaxSpeciesNameLength"
+                          Immediate="true"
+                          id="catch-edit-species" />
+            <MudTextField @bind-Value="_weightText"
+                          Label="@Loc["Catch_EditWeight"]"
+                          HelperText="@Loc["Catch_EditWeightUnit"]"
+                          Immediate="true"
+                          InputType="InputType.Number"
+                          id="catch-edit-weight" />
+            <MudTextField @bind-Value="_lengthText"
+                          Label="@Loc["Catch_EditLength"]"
+                          HelperText="@Loc["Catch_EditLengthUnit"]"
+                          Immediate="true"
+                          InputType="InputType.Number"
+                          id="catch-edit-length" />
+            <MudTextField @bind-Value="_method"
+                          Label="@Loc["Catch_EditMethod"]"
+                          MaxLength="@CatchDetailConstants.MaxMethodLength"
+                          Immediate="true"
+                          id="catch-edit-method" />
+            <MudTextField @bind-Value="_baitOrLure"
+                          Label="@Loc["Catch_EditBaitOrLure"]"
+                          MaxLength="@CatchDetailConstants.MaxBaitOrLureLength"
+                          Immediate="true"
+                          id="catch-edit-bait" />
+            <MudTextField @bind-Value="_notes"
+                          Label="@Loc["Catch_EditNotes"]"
+                          MaxLength="@CatchDetailConstants.MaxNotesLength"
+                          Immediate="true"
+                          Lines="4"
+                          id="catch-edit-notes" />
+            <MudTextField @bind-Value="_caughtOnLocal"
+                          Label="@Loc["Catch_EditCaughtOn"]"
+                          Immediate="true"
+                          InputType="InputType.DateTimeLocal"
+                          id="catch-edit-caught-on" />
+
+            @if (_validationMessage is not null)
+            {
+                <MudAlert Severity="Severity.Warning" id="catch-edit-validation">
+                    @_validationMessage
+                </MudAlert>
+            }
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Disabled="_isSaving"
+                       OnClick="SaveAsync"
+                       id="catch-edit-save">
+                @(_isSaving ? Loc["Catch_EditSaving"] : Loc["Catch_EditSave"])
+            </MudButton>
+
+            @if (_saveFailed)
+            {
+                <MudAlert Severity="Severity.Error" id="catch-edit-save-failed">
+                    @Loc["Catch_EditSaveFailed"]
+                </MudAlert>
+            }
+
+            @if (_saved)
+            {
+                <MudAlert Severity="Severity.Success" id="catch-edit-saved">
+                    @Loc["Catch_EditSaved"]
+                </MudAlert>
+            }
+        }
+    </MudStack>
+</MudContainer>

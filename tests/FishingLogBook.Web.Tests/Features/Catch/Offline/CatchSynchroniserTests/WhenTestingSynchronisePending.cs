@@ -405,4 +405,112 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
             "image/jpeg",
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldNotMarkMetadataSynchronisedWhenDetailsChangeDuringUpsert()
+    {
+        // Arrange
+        var original = CreateCatch();
+        var store = await CreateStoreAsync(original);
+        MockCatchClient.UpsertAsync(
+                Arg.Any<CatchDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns(async _ =>
+            {
+                var current = await store.GetAsync(
+                    OwnerUserId,
+                    CatchId,
+                    CancellationToken.None);
+                await store.SaveAsync(
+                    current! with
+                    {
+                        SpeciesName = "Perch",
+                        Weight = 0.8m,
+                        SyncStatus = SyncStatus.WaitingToSynchronise,
+                        MetadataSyncStatus = SyncStatus.WaitingToSynchronise
+                    },
+                    CancellationToken.None);
+            });
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+
+        // Assert
+        saved!.SpeciesName.Should().Be("Perch");
+        saved.Weight.Should().Be(0.8m);
+        saved.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+        saved.MetadataSyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+        await MockCatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(dto =>
+                dto.Id == CatchId
+                && dto.SpeciesName == "Pike"
+                && dto.CaughtOn == original.CaughtOn),
+            Arg.Any<CancellationToken>());
+        await MockCatchClient.DidNotReceive().CreatePhotographUploadAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotReuploadSynchronisedPhotographsWhenOnlyDetailsArePending()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            CreatePhotograph(PhotographAId, CatchId, SyncStatus.Synchronised) with
+            {
+                ObjectKey = "catches/a"
+            }
+        };
+        var catchRecord = CreateCatch(
+            metadataStatus: SyncStatus.WaitingToSynchronise,
+            photographs: photographs) with
+        {
+            SyncStatus = SyncStatus.WaitingToSynchronise,
+            SpeciesName = "Pike",
+            Weight = 2.5m,
+            Length = 64m,
+            Method = "Lure",
+            BaitOrLure = "Spinner",
+            Notes = "Weedline"
+        };
+        var store = await CreateStoreAsync(catchRecord);
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+
+        // Assert
+        saved!.MetadataSyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved.Photographs.Should().ContainSingle();
+        saved.Photographs[0].SyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved.Photographs[0].ObjectKey.Should().Be("catches/a");
+        saved.SpeciesName.Should().Be("Pike");
+        saved.Weight.Should().Be(2.5m);
+        await MockCatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(dto =>
+                dto.Id == CatchId
+                && dto.SpeciesName == "Pike"
+                && dto.Weight == 2.5m
+                && dto.Length == 64m
+                && dto.Method == "Lure"
+                && dto.BaitOrLure == "Spinner"
+                && dto.Notes == "Weedline"
+                && dto.CaughtOn == catchRecord.CaughtOn),
+            Arg.Any<CancellationToken>());
+        await MockCatchClient.DidNotReceive().CreatePhotographUploadAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+        await MockCatchClient.DidNotReceive().UploadPhotographAsync(
+            Arg.Any<string>(),
+            Arg.Any<byte[]>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
 }

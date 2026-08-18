@@ -257,4 +257,65 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         restored.Location.Source.Should().Be(LocationDefaults.DeviceGps);
         restored.Location.ConsentVersion.Should().Be(LocationDefaults.ConsentVersion);
     }
+
+    [Fact]
+    public void ItShouldReadLegacyMetadataWithoutDetailProperties()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var photographId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var json = """
+            {"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","caughtOn":"2026-08-17T08:00:00+00:00","speciesName":null,"photographs":[{"id":"11111111-1111-1111-1111-111111111111","catchId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","contentType":"image/jpeg"}],"userId":"11111111-1111-1111-1111-111111111111"}
+            """;
+        var photographs = new[]
+        {
+            new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])
+        };
+
+        // Act
+        var restored = CatchJson.Deserialize(json, photographs);
+
+        // Assert
+        restored.Id.Should().Be(catchId);
+        restored.Weight.Should().BeNull();
+        restored.Length.Should().BeNull();
+        restored.Method.Should().BeNull();
+        restored.BaitOrLure.Should().BeNull();
+        restored.Notes.Should().BeNull();
+        restored.SpeciesName.Should().BeNull();
+        restored.UserId.Should().Be(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+        restored.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
+    }
+
+    [Fact]
+    public void ItShouldRoundTripOptionalDetails()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var photographId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var catchRecord = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
+            "Pike",
+            UserId: userId,
+            AnglerUserId: userId,
+            RecordedByUserId: userId,
+            Weight: 2.5m,
+            Length: 64m,
+            Method: "Lure",
+            BaitOrLure: "Spinner",
+            Notes: "Weedline");
+
+        // Act
+        var json = CatchJson.SerializeMetadata(catchRecord);
+        var restored = CatchJson.Deserialize(json, catchRecord.Photographs);
+
+        // Assert
+        json.Should().Contain("\"weight\":2.5");
+        json.Should().Contain("\"length\":64");
+        json.Should().Contain("\"method\":\"Lure\"");
+        restored.Should().BeEquivalentTo(catchRecord);
+    }
 }
