@@ -244,16 +244,32 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     private async Task<DateTimeOffset?> TryParseCaughtOnAsync()
     {
-        var caughtOn = await Time.FromDateTimeLocalValueAsync(
+        var converted = await Time.FromDateTimeLocalValueAsync(
             _caughtOnLocal,
             _cancellationTokenSource.Token);
-        if (caughtOn is null
-            || !CatchDetailConstants.IsCaughtOnValid(caughtOn.Value, DateTimeOffset.UtcNow))
+        if (converted is null)
         {
             return null;
         }
 
-        return caughtOn.Value.ToUniversalTime();
+        var caughtOn = converted.Value.ToUniversalTime();
+        if (_catch is not null)
+        {
+            var originalLocal = await Time.ToDateTimeLocalValueAsync(
+                _catch.CaughtOn,
+                _cancellationTokenSource.Token);
+            if (string.Equals(originalLocal, _caughtOnLocal, StringComparison.Ordinal))
+            {
+                caughtOn = _catch.CaughtOn.ToUniversalTime();
+            }
+        }
+
+        if (!CatchDetailConstants.IsCaughtOnValid(caughtOn, DateTimeOffset.UtcNow))
+        {
+            return null;
+        }
+
+        return caughtOn;
     }
 
     private static bool TryParseMeasurement(string text, out decimal? value)

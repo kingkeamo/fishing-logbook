@@ -1,4 +1,4 @@
-const dateTimeLocalPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+const dateTimeLocalPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 
 function pad(value) {
     return String(value).padStart(2, '0');
@@ -41,9 +41,11 @@ export function fromDateTimeLocalValue(localValue, timeZoneOffsetMinutes) {
     const day = Number(match[3]);
     const hour = Number(match[4]);
     const minute = Number(match[5]);
+    const second = match[6] ? Number(match[6]) : 0;
     const offsetMinutes = timeZoneOffsetMinutes
-        ?? new Date(year, monthIndex, day, hour, minute).getTimezoneOffset();
-    const converted = new Date(Date.UTC(year, monthIndex, day, hour, minute) + (offsetMinutes * 60 * 1000));
+        ?? new Date(year, monthIndex, day, hour, minute, second).getTimezoneOffset();
+    const converted = new Date(
+        Date.UTC(year, monthIndex, day, hour, minute, second) + (offsetMinutes * 60 * 1000));
     if (Number.isNaN(converted.getTime())) {
         return null;
     }

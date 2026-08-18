@@ -151,9 +151,48 @@ public class WhenTestingSave : BaseCatchEditTest
             Arg.Any<CancellationToken>());
         await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await time.Received(1).FromDateTimeLocalValueAsync("2026-08-17T14:00", Arg.Any<CancellationToken>());
-        await time.Received(2).ToDateTimeLocalValueAsync(
+        await time.Received(3).ToDateTimeLocalValueAsync(
             Arg.Is<DateTimeOffset>(caughtOn => caughtOn == UtcPlusFourCaughtOn),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepSubMinuteCaughtOnWhenTheLocalDisplayIsUnchangedInUtcPlusFour()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var storedCaughtOn = DateTimeOffset.Parse("2026-08-17T10:00:31Z");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(
+                catchId,
+                SyncStatus.Synchronised,
+                SyncStatus.Synchronised,
+                caughtOn: storedCaughtOn));
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var synchroniser = QuietSynchroniser();
+        var time = PlusFourTime();
+        await using var context = CreateContext(store, synchroniser: synchroniser, time: time);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-caught-on").GetAttribute("value").Should().Be("2026-08-17T14:00"));
+
+        // Act
+        await cut.Find("#catch-edit-save").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-saved").TextContent.Should().Contain("Details saved on this device"));
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.Id == catchId
+                && catchRecord.CaughtOn == storedCaughtOn
+                && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised),
+            Arg.Any<CancellationToken>());
+        await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await time.Received(1).FromDateTimeLocalValueAsync("2026-08-17T14:00", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -195,7 +234,7 @@ public class WhenTestingSave : BaseCatchEditTest
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await time.Received(1).FromDateTimeLocalValueAsync("2026-08-17T15:00", Arg.Any<CancellationToken>());
-        await time.Received(1).ToDateTimeLocalValueAsync(
+        await time.Received(2).ToDateTimeLocalValueAsync(
             Arg.Is<DateTimeOffset>(caughtOn => caughtOn == UtcPlusFourCaughtOn),
             Arg.Any<CancellationToken>());
         await time.Received(1).ToDateTimeLocalValueAsync(

@@ -33,6 +33,11 @@ describe('time', () => {
         expect(fromDateTimeLocalValue(localValue, utcPlusFourOffsetMinutes)).toBe(utcIso);
     });
 
+    it('converts a UTC+04 local value with seconds to the matching UTC instant', () => {
+        expect(fromDateTimeLocalValue('2026-08-17T14:00:30', utcPlusFourOffsetMinutes))
+            .toBe('2026-08-17T10:00:30.000Z');
+    });
+
     it('shifts the calendar date when UTC+04 crosses midnight', () => {
         expect(toDateTimeLocalValue('2026-08-17T22:00:00.000Z', utcPlusFourOffsetMinutes))
             .toBe('2026-08-18T02:00');
