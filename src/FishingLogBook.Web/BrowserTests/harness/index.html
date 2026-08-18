@@ -62,6 +62,54 @@
                 );
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
+            async putAndGetProductionCatchWithProvenance() {
+                const catchId = '11111111-1111-1111-1111-111111111111';
+                const photographId = '22222222-2222-2222-2222-222222222222';
+                await putCatchWithPhotographs(
+                    JSON.stringify({
+                        id: catchId,
+                        userId: ownerUserId,
+                        anglerUserId: ownerUserId,
+                        recordedByUserId: ownerUserId,
+                        caughtOn: '2026-08-17T08:00:00+00:00',
+                        photographs: [{
+                            id: photographId,
+                            catchId,
+                            contentType: 'image/jpeg'
+                        }]
+                    }),
+                    [{
+                        id: photographId,
+                        catchId,
+                        contentType: 'image/jpeg',
+                        bytes: new Uint8Array([1, 2, 3])
+                    }]
+                );
+                return getAllCatchesWithPhotographs(ownerUserId);
+            },
+            async putLegacyProductionCatchWithoutProvenance() {
+                const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+                const photographId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+                await putCatchWithPhotographs(
+                    JSON.stringify({
+                        id: catchId,
+                        userId: ownerUserId,
+                        caughtOn: '2026-08-17T08:00:00+00:00',
+                        photographs: [{
+                            id: photographId,
+                            catchId,
+                            contentType: 'image/jpeg'
+                        }]
+                    }),
+                    [{
+                        id: photographId,
+                        catchId,
+                        contentType: 'image/jpeg',
+                        bytes: new Uint8Array([4, 5, 6])
+                    }]
+                );
+                return getAllCatchesWithPhotographs(ownerUserId);
+            },
             async putAndGetProductionCatchWithThreePhotographs() {
                 const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
                 const photoA = '11111111-1111-1111-1111-111111111111';

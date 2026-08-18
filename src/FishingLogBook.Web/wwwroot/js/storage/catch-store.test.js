@@ -283,6 +283,60 @@ describe('Production Catch store', () => {
         expect(items[0].photographs[0].bytesBase64).toBe(btoa(String.fromCharCode(1, 2, 3)));
     });
 
+    it('keeps owner and provenance ids after reopen', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                anglerUserId: ownerUserId,
+                recordedByUserId: ownerUserId,
+                caughtOn: '2026-08-17T08:00:00+00:00'
+            }),
+            [{
+                id: 'provenance-photo',
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1])
+            }]
+        );
+
+        const firstRead = await getAllCatchesWithPhotographs(ownerUserId);
+        const reopened = await getAllCatchesWithPhotographs(ownerUserId);
+        const catchRecord = JSON.parse(reopened[0].json);
+
+        expect(JSON.parse(firstRead[0].json).anglerUserId).toBe(ownerUserId);
+        expect(catchRecord.userId).toBe(ownerUserId);
+        expect(catchRecord.anglerUserId).toBe(ownerUserId);
+        expect(catchRecord.recordedByUserId).toBe(ownerUserId);
+        expect(catchRecord.anglerUserId).toBe(catchRecord.userId);
+        expect(catchRecord.recordedByUserId).toBe(catchRecord.userId);
+    });
+
+    it('still reads a Catch stored without provenance properties', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                caughtOn: '2026-08-17T08:00:00+00:00'
+            }),
+            [{
+                id: 'legacy-photo',
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1])
+            }]
+        );
+
+        const reopened = await getAllCatchesWithPhotographs(ownerUserId);
+        const catchRecord = JSON.parse(reopened[0].json);
+
+        expect(catchRecord.userId).toBe(ownerUserId);
+        expect(catchRecord.anglerUserId).toBeUndefined();
+        expect(catchRecord.recordedByUserId).toBeUndefined();
+    });
+
     it('reads three photographs in metadata order after reopen', async () => {
         const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
         const photoA = '11111111-1111-1111-1111-111111111111';

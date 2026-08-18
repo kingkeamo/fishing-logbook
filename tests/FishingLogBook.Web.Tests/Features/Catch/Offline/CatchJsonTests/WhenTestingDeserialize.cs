@@ -154,6 +154,57 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
     }
 
     [Fact]
+    public void ItShouldFallBackToTheOwnerWhenBrowserStorageReturnsPre18Json()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var photographId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        var json = """
+            {"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","userId":"11111111-1111-1111-1111-111111111111","caughtOn":"2026-08-17T08:00:00+00:00","photographs":[{"id":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","catchId":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","contentType":"image/jpeg"}]}
+            """;
+        var photographs = new[]
+        {
+            new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [4, 5, 6])
+        };
+
+        // Act
+        var restored = CatchJson.Deserialize(json, photographs);
+
+        // Assert
+        restored.UserId.Should().Be(userId);
+        restored.AnglerUserId.Should().Be(userId);
+        restored.RecordedByUserId.Should().Be(userId);
+        restored.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
+    }
+
+    [Fact]
+    public void ItShouldKeepProvenanceWhenBrowserStorageReturnsOwnedJson()
+    {
+        // Arrange
+        var catchId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var photographId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var json = """
+            {"id":"11111111-1111-1111-1111-111111111111","userId":"11111111-1111-1111-1111-111111111111","anglerUserId":"11111111-1111-1111-1111-111111111111","recordedByUserId":"11111111-1111-1111-1111-111111111111","caughtOn":"2026-08-17T08:00:00+00:00","photographs":[{"id":"22222222-2222-2222-2222-222222222222","catchId":"11111111-1111-1111-1111-111111111111","contentType":"image/jpeg"}]}
+            """;
+        var photographs = new[]
+        {
+            new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])
+        };
+
+        // Act
+        var restored = CatchJson.Deserialize(json, photographs);
+
+        // Assert
+        restored.UserId.Should().Be(userId);
+        restored.AnglerUserId.Should().Be(userId);
+        restored.RecordedByUserId.Should().Be(userId);
+        restored.AnglerUserId.Should().Be(restored.UserId);
+        restored.RecordedByUserId.Should().Be(restored.UserId);
+    }
+
+    [Fact]
     public void ItShouldRoundTripANullLocation()
     {
         // Arrange
