@@ -2,6 +2,7 @@ using FishingLogBook.Application.Common.Mappings;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using Mapster;
 using NSubstitute;
 
@@ -18,7 +19,10 @@ public class BaseUpdateOwnProfileCommandTest
         Sut = new UpdateOwnProfileHandler(MockProfileService);
     }
 
-    protected static UpdateOwnProfileCommand Command(Guid userId)
+    protected static UpdateOwnProfileCommand Command(
+        Guid userId,
+        WeightUnitEnum weightUnit = WeightUnitEnum.Kg,
+        LengthUnitEnum lengthUnit = LengthUnitEnum.Cm)
     {
         return new UpdateOwnProfileCommand
         {
@@ -32,7 +36,9 @@ public class BaseUpdateOwnProfileCommandTest
                 false,
                 true,
                 true,
-                false)
+                false,
+                weightUnit,
+                lengthUnit)
         };
     }
 

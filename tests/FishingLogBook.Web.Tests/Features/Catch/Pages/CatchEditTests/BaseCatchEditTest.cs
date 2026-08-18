@@ -2,12 +2,15 @@ using System.Globalization;
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -22,12 +25,20 @@ public class BaseCatchEditTest
     protected static readonly DateTimeOffset StoredCaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z");
     protected static readonly DateTimeOffset UtcPlusFourCaughtOn = DateTimeOffset.Parse("2026-08-17T10:00:00Z");
 
+    protected static readonly Guid FlyMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+    protected static readonly Guid SpinningMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
+    protected static readonly Guid BrownTroutSpeciesId = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+    protected static readonly Guid PikeSpeciesId = Guid.Parse("cccccccc-0000-0000-0000-000000000002");
+
     protected static BunitContext CreateContext(
         ICatchStore store,
         ILocalCatchOwnerService? owner = null,
         ICatchSynchroniser? synchroniser = null,
         ILoggingService? logging = null,
-        ITimeService? time = null)
+        ITimeService? time = null,
+        IProfileClient? profileClient = null,
+        IFishingPreferenceClient? fishingPreferenceClient = null,
+        IModalService? modalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -38,8 +49,88 @@ public class BaseCatchEditTest
         context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(time ?? UtcTime());
+        context.Services.AddSingleton(profileClient ?? QuietProfileClient());
+        context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
+        context.Services.AddSingleton(modalService ?? QuietModalService());
+        context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static IProfileClient QuietProfileClient(
+        WeightUnitEnum weightUnit = WeightUnitEnum.Kg,
+        LengthUnitEnum lengthUnit = LengthUnitEnum.Cm)
+    {
+        var client = Substitute.For<IProfileClient>();
+        client.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns(new ProfileDto(
+                OwnerUserId,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [],
+                [],
+                true,
+                false,
+                false,
+                false,
+                false,
+                weightUnit,
+                lengthUnit));
+        return client;
+    }
+
+    protected static IFishingPreferenceClient QuietFishingPreferenceClient(
+        FishingPreferencesDto? preferences = null,
+        FishingCatalogueDto? catalogue = null)
+    {
+        var client = Substitute.For<IFishingPreferenceClient>();
+        client.GetCatalogueAsync(Arg.Any<CancellationToken>())
+            .Returns(catalogue ?? new FishingCatalogueDto([], []));
+        client.GetPreferencesAsync(Arg.Any<CancellationToken>())
+            .Returns(preferences ?? new FishingPreferencesDto([]));
+        client.UpdatePreferencesAsync(Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>())
+            .Returns(preferences ?? new FishingPreferencesDto([]));
+        return client;
+    }
+
+    protected static IModalService QuietModalService()
+    {
+        return Substitute.For<IModalService>();
+    }
+
+    protected static FishingCatalogueDto SampleCatalogue()
+    {
+        return new FishingCatalogueDto(
+            [
+                new FishingMethodDto(FlyMethodId, "Fly", "Fly"),
+                new FishingMethodDto(SpinningMethodId, "Spinning", "Spinning")
+            ],
+            [
+                new SpeciesDto(BrownTroutSpeciesId, "BrownTrout", "Brown Trout"),
+                new SpeciesDto(PikeSpeciesId, "Pike", "Pike")
+            ]);
+    }
+
+    protected static FishingPreferencesDto SamplePreferences()
+    {
+        return new FishingPreferencesDto(
+        [
+            new FishingMethodPreferenceDto(
+                FlyMethodId,
+                "Fly",
+                "Fly",
+                true,
+                [new FishingSpeciesPreferenceDto(BrownTroutSpeciesId, "BrownTrout", "Brown Trout", true)]),
+            new FishingMethodPreferenceDto(
+                SpinningMethodId,
+                "Spinning",
+                "Spinning",
+                false,
+                [new FishingSpeciesPreferenceDto(PikeSpeciesId, "Pike", "Pike", true)])
+        ]);
     }
 
     protected static ILocalCatchOwnerService SignedInOwner()
@@ -82,7 +173,11 @@ public class BaseCatchEditTest
         SyncStatus photographStatus = SyncStatus.SavedLocally,
         string? objectKey = null,
         CatchLocationModel? location = null,
-        DateTimeOffset? caughtOn = null)
+        DateTimeOffset? caughtOn = null,
+        string? speciesName = null,
+        string? method = null,
+        decimal? weight = null,
+        decimal? length = null)
     {
         return new CatchModel(
             catchId,
@@ -96,12 +191,16 @@ public class BaseCatchEditTest
                     photographStatus,
                     objectKey)
             ],
+            SpeciesName: speciesName,
             Location: location,
             UserId: OwnerUserId,
             SyncStatus: syncStatus,
             MetadataSyncStatus: metadataStatus,
             AnglerUserId: OwnerUserId,
-            RecordedByUserId: OwnerUserId);
+            RecordedByUserId: OwnerUserId,
+            Weight: weight,
+            Length: length,
+            Method: method);
     }
 
     private static ITimeService OffsetTime(TimeSpan offset)

@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Domain.Enums;
 using FishingLogBook.Shared.Dtos;
 using Mapster;
 
@@ -15,6 +16,8 @@ public sealed class ProfileMappingRegistration : IRegister
             .Map(dest => dest.HomeRegion, src => src.Profile.HomeRegion)
             .Map(dest => dest.PreferredFishingTypes, src => src.Profile.PreferredFishingTypes)
             .Map(dest => dest.PreferredSpecies, src => src.Profile.PreferredSpecies)
+            .Map(dest => dest.PreferredWeightUnit, src => (WeightUnitEnum)src.Profile.PreferredWeightUnit)
+            .Map(dest => dest.PreferredLengthUnit, src => (LengthUnitEnum)src.Profile.PreferredLengthUnit)
             .Map(dest => dest.ShowDisplayName, src => src.Profile.ShowDisplayName)
             .Map(dest => dest.ShowPhotograph, src => src.Profile.ShowPhotograph)
             .Map(dest => dest.ShowHomeRegion, src => src.Profile.ShowHomeRegion)

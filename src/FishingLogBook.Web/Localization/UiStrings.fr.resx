@@ -390,14 +390,20 @@
   <data name="Catch_EditWeight" xml:space="preserve">
     <value>Poids</value>
   </data>
-  <data name="Catch_EditWeightUnit" xml:space="preserve">
-    <value>Kilogrammes</value>
+  <data name="Catch_WeightUnitShort_Kg" xml:space="preserve">
+    <value>kg</value>
+  </data>
+  <data name="Catch_WeightUnitShort_Lb" xml:space="preserve">
+    <value>lb</value>
   </data>
   <data name="Catch_EditLength" xml:space="preserve">
     <value>Longueur</value>
   </data>
-  <data name="Catch_EditLengthUnit" xml:space="preserve">
-    <value>Centimètres</value>
+  <data name="Catch_LengthUnitShort_Cm" xml:space="preserve">
+    <value>cm</value>
+  </data>
+  <data name="Catch_LengthUnitShort_In" xml:space="preserve">
+    <value>po</value>
   </data>
   <data name="Catch_EditMethod" xml:space="preserve">
     <value>Méthode de pêche</value>
@@ -427,10 +433,10 @@
     <value>Cette prise n'a pas pu être chargée.</value>
   </data>
   <data name="Catch_EditWeightInvalid" xml:space="preserve">
-    <value>Le poids doit être supérieur à 0 kg et d'au plus 1000 kg.</value>
+    <value>Le poids doit être supérieur à 0 {0} et d'au plus {1} {0}.</value>
   </data>
   <data name="Catch_EditLengthInvalid" xml:space="preserve">
-    <value>La longueur doit être supérieure à 0 cm et d'au plus 1000 cm.</value>
+    <value>La longueur doit être supérieure à 0 {0} et d'au plus {1} {0}.</value>
   </data>
   <data name="Catch_EditCaughtOnInvalid" xml:space="preserve">
     <value>Saisissez une heure de prise valide qui n'est pas dans le futur.</value>
@@ -525,17 +531,8 @@
   <data name="Profile_ShowHomeRegion" xml:space="preserve">
     <value>Afficher la région d’origine aux autres pêcheurs</value>
   </data>
-  <data name="Profile_FishingTypes" xml:space="preserve">
-    <value>Types de pêche préférés</value>
-  </data>
   <data name="Profile_ShowFishingTypes" xml:space="preserve">
     <value>Afficher les types de pêche préférés aux autres pêcheurs</value>
-  </data>
-  <data name="Profile_PreferredSpecies" xml:space="preserve">
-    <value>Espèces préférées</value>
-  </data>
-  <data name="Profile_PreferredSpeciesHelp" xml:space="preserve">
-    <value>Séparez les espèces par des virgules</value>
   </data>
   <data name="Profile_ShowPreferredSpecies" xml:space="preserve">
     <value>Afficher les espèces préférées aux autres pêcheurs</value>
@@ -564,6 +561,42 @@
   <data name="Profile_SaveFailed" xml:space="preserve">
     <value>Impossible d’enregistrer le profil.</value>
   </data>
+  <data name="Profile_FishingMethods" xml:space="preserve">
+    <value>Méthodes de pêche préférées</value>
+  </data>
+  <data name="Profile_FishingMethod_SetDefault" xml:space="preserve">
+    <value>Définir comme méthode par défaut :</value>
+  </data>
+  <data name="Profile_FishingMethod_Default" xml:space="preserve">
+    <value>Défaut</value>
+  </data>
+  <data name="Profile_FishingMethod_Species" xml:space="preserve">
+    <value>Espèces préférées pour {0}</value>
+  </data>
+  <data name="Profile_FishingSpecies_SetDefault" xml:space="preserve">
+    <value>Définir comme espèce par défaut :</value>
+  </data>
+  <data name="Profile_FishingSpecies_Remove" xml:space="preserve">
+    <value>Retirer {0}</value>
+  </data>
+  <data name="Profile_WeightUnit" xml:space="preserve">
+    <value>Unité de poids préférée</value>
+  </data>
+  <data name="Profile_WeightUnit_Kg" xml:space="preserve">
+    <value>Kilogrammes (kg)</value>
+  </data>
+  <data name="Profile_WeightUnit_Lb" xml:space="preserve">
+    <value>Livres (lb)</value>
+  </data>
+  <data name="Profile_LengthUnit" xml:space="preserve">
+    <value>Unité de longueur préférée</value>
+  </data>
+  <data name="Profile_LengthUnit_Cm" xml:space="preserve">
+    <value>Centimètres (cm)</value>
+  </data>
+  <data name="Profile_LengthUnit_In" xml:space="preserve">
+    <value>Pouces (in)</value>
+  </data>
   <data name="Auth_SignIn" xml:space="preserve">
     <value>Connexion</value>
   </data>
@@ -575,6 +608,18 @@
   </data>
   <data name="Modal_Cancel" xml:space="preserve">
     <value>Annuler</value>
+  </data>
+  <data name="Modal_Search" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="Modal_NoMatches" xml:space="preserve">
+    <value>Aucun résultat.</value>
+  </data>
+  <data name="Common_More" xml:space="preserve">
+    <value>Plus…</value>
+  </data>
+  <data name="Catch_CatalogueUnavailable" xml:space="preserve">
+    <value>Les suggestions sont indisponibles hors ligne. Vous pouvez toujours saisir une méthode et une espèce.</value>
   </data>
   <data name="App_UnhandledErrorTitle" xml:space="preserve">
     <value>Un problème est survenu</value>

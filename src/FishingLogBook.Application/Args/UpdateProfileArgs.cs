@@ -1,3 +1,5 @@
+using FishingLogBook.Domain.Enums;
+
 namespace FishingLogBook.Application.Args;
 
 public sealed class UpdateProfileArgs
@@ -11,6 +13,10 @@ public sealed class UpdateProfileArgs
     public IReadOnlyList<string> PreferredFishingTypes { get; init; } = [];
 
     public IReadOnlyList<string> PreferredSpecies { get; init; } = [];
+
+    public WeightUnitEnum PreferredWeightUnit { get; init; } = WeightUnitEnum.Kg;
+
+    public LengthUnitEnum PreferredLengthUnit { get; init; } = LengthUnitEnum.Cm;
 
     public bool ShowDisplayName { get; init; } = true;
 

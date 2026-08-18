@@ -7,6 +7,7 @@ using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -282,7 +283,10 @@ public class WhenTestingSave : BaseRecordCatchTest
         injected.Should().Contain(typeof(ICatchSynchroniser));
         injected.Should().Contain(typeof(ILoggingService));
         injected.Should().NotContain(typeof(HttpClient));
-        injected.Should().NotContain(type => type.Name.Contains("Client", StringComparison.Ordinal));
+        injected.Should().NotContain(typeof(ICatchClient));
+        injected.Should().NotContain(type =>
+            type.Name.Contains("Client", StringComparison.Ordinal)
+            && type != typeof(IFishingPreferenceClient));
     }
 
     [Fact]

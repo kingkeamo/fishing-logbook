@@ -65,6 +65,7 @@ app.MapDiagnosticEndpoints();
 app.MapUserEndpoints();
 app.MapProfileEndpoints();
 app.MapCatchEndpoints();
+app.MapFishingPreferenceEndpoints();
 
 app.Run();
 

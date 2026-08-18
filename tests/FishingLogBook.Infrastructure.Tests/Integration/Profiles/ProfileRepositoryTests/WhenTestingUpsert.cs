@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Dapper;
+using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
 using FishingLogBook.Shared.Constants;
@@ -100,6 +101,45 @@ public class WhenTestingUpsert : BaseProfileRepositoryTest
         var loaded = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
         loaded.Value!.PhotographId.Should().Be(photographId);
         loaded.Value.DisplayName.Should().Be("Eamonn");
+    }
+
+    [Fact]
+    public async Task ItShouldDefaultTheMeasurementUnitsToKilogramsAndCentimetres()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var profile = NewProfile(userId);
+
+        // Act
+        var result = await Sut.UpsertAsync(profile, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.PreferredWeightUnit.Should().Be(WeightUnitEnum.Kg);
+        result.Value.PreferredLengthUnit.Should().Be(LengthUnitEnum.Cm);
+    }
+
+    [Fact]
+    public async Task ItShouldPersistImperialMeasurementUnitsAcrossAReload()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var profile = new ProfileBuilder()
+            .WithUserId(userId)
+            .WithDisplayName("Eamonn")
+            .WithMeasurementUnits(WeightUnitEnum.Lb, LengthUnitEnum.In)
+            .Build();
+
+        // Act
+        var result = await Sut.UpsertAsync(profile, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.PreferredWeightUnit.Should().Be(WeightUnitEnum.Lb);
+        result.Value.PreferredLengthUnit.Should().Be(LengthUnitEnum.In);
+        var loaded = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
+        loaded.Value!.PreferredWeightUnit.Should().Be(WeightUnitEnum.Lb);
+        loaded.Value.PreferredLengthUnit.Should().Be(LengthUnitEnum.In);
     }
 
     [Fact]

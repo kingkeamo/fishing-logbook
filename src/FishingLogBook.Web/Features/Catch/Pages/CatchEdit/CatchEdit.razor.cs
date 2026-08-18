@@ -1,11 +1,15 @@
 using System.Globalization;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -14,6 +18,8 @@ namespace FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
 
 public partial class CatchEdit : ComponentBase, IDisposable
 {
+    private const int MaxChipOptions = 6;
+
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private CatchModel? _catch;
     private string _speciesName = string.Empty;
@@ -29,6 +35,12 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private bool _loadFailed;
     private bool _saveFailed;
     private bool _saved;
+    private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
+    private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
+    private bool _catalogueUnavailable;
+    private FishingPreferencesDto? _preferences;
+    private IReadOnlyList<FishingMethodDto> _catalogueMethods = [];
+    private IReadOnlyList<SpeciesDto> _catalogueSpecies = [];
 
     [Parameter]
     public Guid CatchId { get; set; }
@@ -51,6 +63,98 @@ public partial class CatchEdit : ComponentBase, IDisposable
     [Inject]
     private ITimeService Time { get; set; } = default!;
 
+    [Inject]
+    private IProfileClient ProfileClient { get; set; } = default!;
+
+    [Inject]
+    private IFishingPreferenceClient FishingPreferenceClient { get; set; } = default!;
+
+    [Inject]
+    private IMeasurementService Measurement { get; set; } = default!;
+
+    [Inject]
+    private IModalService ModalService { get; set; } = default!;
+
+    private string WeightUnitLabel
+    {
+        get
+        {
+            return _weightUnit == WeightUnitEnum.Lb
+                ? Loc["Catch_WeightUnitShort_Lb"]
+                : Loc["Catch_WeightUnitShort_Kg"];
+        }
+    }
+
+    private string LengthUnitLabel
+    {
+        get
+        {
+            return _lengthUnit == LengthUnitEnum.In
+                ? Loc["Catch_LengthUnitShort_In"]
+                : Loc["Catch_LengthUnitShort_Cm"];
+        }
+    }
+
+    private string WeightLabel
+    {
+        get
+        {
+            return $"{Loc["Catch_EditWeight"]} ({WeightUnitLabel})";
+        }
+    }
+
+    private string LengthLabel
+    {
+        get
+        {
+            return $"{Loc["Catch_EditLength"]} ({LengthUnitLabel})";
+        }
+    }
+
+    private string WeightInvalidMessage
+    {
+        get
+        {
+            return Loc["Catch_EditWeightInvalid", WeightUnitLabel, Measurement.MaxDisplayWeight(_weightUnit)];
+        }
+    }
+
+    private string LengthInvalidMessage
+    {
+        get
+        {
+            return Loc["Catch_EditLengthInvalid", LengthUnitLabel, Measurement.MaxDisplayLength(_lengthUnit)];
+        }
+    }
+
+    private IReadOnlyList<CatchChipOptionModel> MethodOptions
+    {
+        get
+        {
+            var preferred = _preferences?.Methods
+                .OrderByDescending(method => method.IsDefault)
+                .Select(method => new CatchChipOptionModel(method.Code, method.Name))
+                .ToArray() ?? [];
+            var options = preferred.Length > 0
+                ? preferred
+                : [.. _catalogueMethods.Select(method => new CatchChipOptionModel(method.Code, method.Name))];
+            return CatchChipOptionModel.BuildShortlist(options, _method, MaxChipOptions);
+        }
+    }
+
+    private IReadOnlyList<CatchChipOptionModel> SpeciesOptions
+    {
+        get
+        {
+            var methodPreference = FindMethodPreference(_method);
+            var preferred = methodPreference?.Species
+                .OrderByDescending(species => species.IsDefault)
+                .Select(species => new CatchChipOptionModel(species.Code, species.Name))
+                .ToArray() ?? [];
+            return CatchChipOptionModel.BuildShortlist(preferred, _speciesName, MaxChipOptions);
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
@@ -62,6 +166,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _loadFailed = false;
         try
         {
+            await LoadPreferencesAsync();
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
             _catch = await CatchStore.GetAsync(ownerUserId, CatchId, _cancellationTokenSource.Token);
             if (_catch is null)
@@ -85,6 +190,72 @@ public partial class CatchEdit : ComponentBase, IDisposable
         {
             _isLoading = false;
         }
+    }
+
+    private async Task LoadPreferencesAsync()
+    {
+        try
+        {
+            var profile = await ProfileClient.GetOwnAsync(_cancellationTokenSource.Token);
+            _weightUnit = profile.PreferredWeightUnit;
+            _lengthUnit = profile.PreferredLengthUnit;
+            var catalogue = await FishingPreferenceClient.GetCatalogueAsync(_cancellationTokenSource.Token);
+            _catalogueMethods = catalogue.Methods;
+            _catalogueSpecies = catalogue.AllSpecies;
+            _preferences = await FishingPreferenceClient.GetPreferencesAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception)
+        {
+            _catalogueUnavailable = true;
+        }
+    }
+
+    private FishingMethodPreferenceDto? FindMethodPreference(string methodName)
+    {
+        return _preferences?.Methods.FirstOrDefault(method =>
+            string.Equals(method.Name, methodName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void SelectMethod(string method)
+    {
+        _method = method;
+    }
+
+    private void SelectSpecies(string species)
+    {
+        _speciesName = species;
+    }
+
+    private async Task ChooseMethodAsync()
+    {
+        var chosen = await ChooseFromCatalogueAsync(
+            Loc["Catch_EditMethod"],
+            [.. _catalogueMethods.Select(method => new CatalogueOptionModel(method.Id, method.Code, method.Name))]);
+        if (chosen is not null)
+        {
+            SelectMethod(chosen.Name);
+        }
+    }
+
+    private async Task ChooseSpeciesAsync()
+    {
+        var chosen = await ChooseFromCatalogueAsync(
+            Loc["Catch_EditSpecies"],
+            [.. _catalogueSpecies.Select(species => new CatalogueOptionModel(species.Id, species.Code, species.Name))]);
+        if (chosen is not null)
+        {
+            SelectSpecies(chosen.Name);
+        }
+    }
+
+    private async Task<CatalogueOptionModel?> ChooseFromCatalogueAsync(
+        string title,
+        IReadOnlyList<CatalogueOptionModel> options)
+    {
+        var result = await ModalService.ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
+            new CataloguePickerModalModel(title, options),
+            _cancellationTokenSource.Token);
+        return result?.Option;
     }
 
     private async Task SaveAsync()
@@ -162,17 +333,29 @@ public partial class CatchEdit : ComponentBase, IDisposable
             return null;
         }
 
-        if (!TryParseMeasurement(_weightText, out var weight)
-            || !CatchDetailConstants.IsWeightValid(weight))
+        if (!TryParseMeasurement(_weightText, out var displayWeight))
         {
-            _validationMessage = Loc["Catch_EditWeightInvalid"];
+            _validationMessage = WeightInvalidMessage;
             return null;
         }
 
-        if (!TryParseMeasurement(_lengthText, out var length)
-            || !CatchDetailConstants.IsLengthValid(length))
+        var weight = Measurement.ToCanonicalWeight(displayWeight, _weightUnit, _catch?.Weight);
+        if (!CatchDetailConstants.IsWeightValid(weight))
         {
-            _validationMessage = Loc["Catch_EditLengthInvalid"];
+            _validationMessage = WeightInvalidMessage;
+            return null;
+        }
+
+        if (!TryParseMeasurement(_lengthText, out var displayLength))
+        {
+            _validationMessage = LengthInvalidMessage;
+            return null;
+        }
+
+        var length = Measurement.ToCanonicalLength(displayLength, _lengthUnit, _catch?.Length);
+        if (!CatchDetailConstants.IsLengthValid(length))
+        {
+            _validationMessage = LengthInvalidMessage;
             return null;
         }
 
@@ -225,8 +408,10 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private async Task<bool> BindFormAsync(CatchModel catchRecord)
     {
         _speciesName = catchRecord.SpeciesName ?? string.Empty;
-        _weightText = catchRecord.Weight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-        _lengthText = catchRecord.Length?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        var displayWeight = Measurement.ToDisplayWeight(catchRecord.Weight, _weightUnit);
+        var displayLength = Measurement.ToDisplayLength(catchRecord.Length, _lengthUnit);
+        _weightText = displayWeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        _lengthText = displayLength?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         _method = catchRecord.Method ?? string.Empty;
         _baitOrLure = catchRecord.BaitOrLure ?? string.Empty;
         _notes = catchRecord.Notes ?? string.Empty;

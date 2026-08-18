@@ -1,12 +1,15 @@
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Location;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,12 +23,20 @@ public class BaseRecordCatchTest
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
+    protected static readonly Guid FlyMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+    protected static readonly Guid SpinningMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
+    protected static readonly Guid BrownTroutSpeciesId = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+    protected static readonly Guid PikeSpeciesId = Guid.Parse("cccccccc-0000-0000-0000-000000000002");
+
     protected static BunitContext CreateContext(
         ICatchStore store,
         ILocationService? location = null,
         ILocalCatchOwnerService? owner = null,
         ICatchSynchroniser? synchroniser = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        IFishingPreferenceClient? fishingPreferenceClient = null,
+        ICatchSessionService? catchSession = null,
+        IModalService? modalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -36,6 +47,9 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
         context.Services.AddSingleton(logging ?? QuietLogging());
+        context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
+        context.Services.AddSingleton(catchSession ?? new CatchSessionService());
+        context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
@@ -48,6 +62,57 @@ public class BaseRecordCatchTest
         logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         return logging;
+    }
+
+    protected static IFishingPreferenceClient QuietFishingPreferenceClient(
+        FishingPreferencesDto? preferences = null,
+        FishingCatalogueDto? catalogue = null)
+    {
+        var client = Substitute.For<IFishingPreferenceClient>();
+        client.GetCatalogueAsync(Arg.Any<CancellationToken>())
+            .Returns(catalogue ?? new FishingCatalogueDto([], []));
+        client.GetPreferencesAsync(Arg.Any<CancellationToken>())
+            .Returns(preferences ?? new FishingPreferencesDto([]));
+        client.UpdatePreferencesAsync(Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>())
+            .Returns(preferences ?? new FishingPreferencesDto([]));
+        return client;
+    }
+
+    protected static IModalService QuietModalService()
+    {
+        return Substitute.For<IModalService>();
+    }
+
+    protected static FishingCatalogueDto SampleCatalogue()
+    {
+        return new FishingCatalogueDto(
+            [
+                new FishingMethodDto(FlyMethodId, "Fly", "Fly"),
+                new FishingMethodDto(SpinningMethodId, "Spinning", "Spinning")
+            ],
+            [
+                new SpeciesDto(BrownTroutSpeciesId, "BrownTrout", "Brown Trout"),
+                new SpeciesDto(PikeSpeciesId, "Pike", "Pike")
+            ]);
+    }
+
+    protected static FishingPreferencesDto SamplePreferences()
+    {
+        return new FishingPreferencesDto(
+        [
+            new FishingMethodPreferenceDto(
+                FlyMethodId,
+                "Fly",
+                "Fly",
+                true,
+                [new FishingSpeciesPreferenceDto(BrownTroutSpeciesId, "BrownTrout", "Brown Trout", true)]),
+            new FishingMethodPreferenceDto(
+                SpinningMethodId,
+                "Spinning",
+                "Spinning",
+                false,
+                [new FishingSpeciesPreferenceDto(PikeSpeciesId, "Pike", "Pike", true)])
+        ]);
     }
 
     protected static ICatchSynchroniser QuietSynchroniser()

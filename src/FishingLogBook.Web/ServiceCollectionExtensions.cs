@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
         services.AddScoped<ITestCatchClient, TestCatchClient>();
         services.AddScoped<IProfileClient, ProfileClient>();
+        services.AddScoped<IFishingPreferenceClient, FishingPreferenceClient>();
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<ITimeService, TimeService>();
@@ -61,6 +62,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatchClient, CatchClient>();
         services.AddScoped<ICurrentUserClient, CurrentUserClient>();
         services.AddScoped<ILocalCatchOwnerService, LocalCatchOwnerService>();
+        services.AddScoped<ICatchSessionService, CatchSessionService>();
+        services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();

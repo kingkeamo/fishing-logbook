@@ -1,6 +1,7 @@
 @page "/catches/record"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
+@using FishingLogBook.Shared.Constants
 @attribute [Authorize]
 
 <PageTitle>@Loc["Catch_RecordPageTitle"]</PageTitle>
@@ -14,6 +15,73 @@
 
         <MudPaper Class="pa-4" Elevation="2">
             <MudStack Spacing="3">
+                @if (_catalogueUnavailable)
+                {
+                    <MudText Typo="Typo.caption"
+                             Class="mud-text-secondary"
+                             id="record-catch-catalogue-unavailable">
+                        @Loc["Catch_CatalogueUnavailable"]
+                    </MudText>
+                }
+
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.caption">@Loc["Catch_EditMethod"]</MudText>
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap" id="record-catch-method-chips">
+                        @foreach (var method in MethodOptions)
+                        {
+                            var selected = string.Equals(method.Name, _selectedMethod, StringComparison.OrdinalIgnoreCase);
+                            <MudChip T="string"
+                                     Color="@(selected ? Color.Primary : Color.Default)"
+                                     Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                     OnClick="@(() => SelectMethod(method.Name))"
+                                     id="@($"record-catch-method-{method.Code}")">
+                                @method.Name
+                            </MudChip>
+                        }
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Text"
+                                   OnClick="ChooseMethodAsync"
+                                   id="record-catch-method-more">
+                            @Loc["Common_More"]
+                        </MudButton>
+                    </MudStack>
+                    <MudTextField @bind-Value="_selectedMethod"
+                                  Label="@Loc["Catch_EditMethod"]"
+                                  Immediate="true"
+                                  Variant="Variant.Outlined"
+                                  MaxLength="CatchDetailConstants.MaxMethodLength"
+                                  id="record-catch-method" />
+                </MudStack>
+
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.caption">@Loc["Catch_EditSpecies"]</MudText>
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap" id="record-catch-species-chips">
+                        @foreach (var species in SpeciesOptions)
+                        {
+                            var selected = string.Equals(species.Name, _selectedSpecies, StringComparison.OrdinalIgnoreCase);
+                            <MudChip T="string"
+                                     Color="@(selected ? Color.Primary : Color.Default)"
+                                     Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                     OnClick="@(() => SelectSpecies(species.Name))"
+                                     id="@($"record-catch-species-{species.Code}")">
+                                @species.Name
+                            </MudChip>
+                        }
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Text"
+                                   OnClick="ChooseSpeciesAsync"
+                                   id="record-catch-species-more">
+                            @Loc["Common_More"]
+                        </MudButton>
+                    </MudStack>
+                    <MudTextField @bind-Value="_selectedSpecies"
+                                  Label="@Loc["Catch_EditSpecies"]"
+                                  Immediate="true"
+                                  Variant="Variant.Outlined"
+                                  MaxLength="CatchDetailConstants.MaxSpeciesNameLength"
+                                  id="record-catch-species" />
+                </MudStack>
+
                 @if (!_isSaved)
                 {
                     <div class="record-catch-photo-actions">

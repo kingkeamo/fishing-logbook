@@ -1,6 +1,7 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FluentValidation;
@@ -70,17 +71,30 @@ public sealed class UpdateOwnProfileCommandValidator : AbstractValidator<UpdateO
         RuleFor(command => command.Profile)
             .NotNull();
         RuleFor(command => command.Profile.DisplayName)
-            .MaximumLength(100)
+            .MaximumLength(ProfileDetailConstants.MaxDisplayNameLength)
             .When(command => command.Profile.DisplayName is not null);
         RuleFor(command => command.Profile.HomeRegion)
-            .MaximumLength(200)
+            .MaximumLength(ProfileDetailConstants.MaxHomeRegionLength)
             .When(command => command.Profile.HomeRegion is not null);
         RuleForEach(command => command.Profile.PreferredFishingTypes)
             .Must(BeKnownFishingType)
             .WithMessage("Preferred fishing type is not recognised.");
         RuleForEach(command => command.Profile.PreferredSpecies)
-            .Must(value => !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 50)
-            .WithMessage("Preferred species must be 50 characters or fewer.");
+            .Must(BeAValidPreferredSpecies)
+            .WithMessage(
+                $"Preferred species must be {ProfileDetailConstants.MaxPreferredSpeciesNameLength} characters or fewer.");
+        RuleFor(command => command.Profile.PreferredWeightUnit)
+            .IsInEnum()
+            .WithMessage("Preferred weight unit is not recognised.");
+        RuleFor(command => command.Profile.PreferredLengthUnit)
+            .IsInEnum()
+            .WithMessage("Preferred length unit is not recognised.");
+    }
+
+    private static bool BeAValidPreferredSpecies(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && value.Trim().Length <= ProfileDetailConstants.MaxPreferredSpeciesNameLength;
     }
 
     private static bool BeKnownFishingType(string value)

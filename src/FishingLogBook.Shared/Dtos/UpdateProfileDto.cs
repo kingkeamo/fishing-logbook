@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Enums;
+
 namespace FishingLogBook.Shared.Dtos;
 
 public sealed record UpdateProfileDto(
@@ -9,4 +11,6 @@ public sealed record UpdateProfileDto(
     bool ShowPhotograph,
     bool ShowHomeRegion,
     bool ShowPreferredFishingTypes,
-    bool ShowPreferredSpecies);
+    bool ShowPreferredSpecies,
+    WeightUnitEnum PreferredWeightUnit = WeightUnitEnum.Kg,
+    LengthUnitEnum PreferredLengthUnit = LengthUnitEnum.Cm);

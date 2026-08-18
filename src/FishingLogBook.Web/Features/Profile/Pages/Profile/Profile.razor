@@ -1,6 +1,7 @@
 @page "/profile"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Forms
+@using FishingLogBook.Shared.Dtos
 @using FishingLogBook.Shared.Enums
 @attribute [Authorize]
 
@@ -45,32 +46,109 @@
                                Label="@Loc["Profile_ShowHomeRegion"]"
                                id="profile-show-home-region" />
 
-                    <MudSelect T="string"
-                               MultiSelection="true"
-                               @bind-SelectedValues="_selectedFishingTypes"
-                               Label="@Loc["Profile_FishingTypes"]"
-                               Variant="Variant.Outlined"
-                               id="profile-fishing-types">
-                        @foreach (var fishingType in Enum.GetNames<FishingTypeEnum>())
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.subtitle2">@Loc["Profile_FishingMethods"]</MudText>
+                        <MudStack Row="true" Spacing="1" Class="flex-wrap" id="profile-method-chips">
+                            @foreach (var method in _catalogueMethods)
+                            {
+                                var selected = IsMethodSelected(method.Id);
+                                <MudChip T="string"
+                                         Color="@(selected ? Color.Primary : Color.Default)"
+                                         Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                         OnClick="@(() => ToggleMethod(method))"
+                                         id="@($"profile-method-{method.Code}")">
+                                    @method.Name
+                                </MudChip>
+                            }
+                        </MudStack>
+                        @if (_selectedMethods.Count > 0)
                         {
-                            <MudSelectItem Value="@fishingType">@fishingType</MudSelectItem>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Profile_FishingMethod_SetDefault"]</MudText>
+                            <MudStack Row="true" Spacing="1" Class="flex-wrap" id="profile-method-default-chips">
+                                @foreach (var method in _selectedMethods)
+                                {
+                                    <MudChip T="string"
+                                             Color="@(method.IsDefault ? Color.Secondary : Color.Default)"
+                                             Variant="@(method.IsDefault ? Variant.Filled : Variant.Outlined)"
+                                             Icon="@(method.IsDefault ? Icons.Material.Filled.Star : null)"
+                                             OnClick="@(() => SetDefaultMethod(method.FishingMethodId))"
+                                             id="@($"profile-method-default-{method.Code}")">
+                                        @method.Name
+                                        @if (method.IsDefault)
+                                        {
+                                            <span class="profile-default-label">@Loc["Profile_FishingMethod_Default"]</span>
+                                        }
+                                    </MudChip>
+                                }
+                            </MudStack>
                         }
-                    </MudSelect>
+                    </MudStack>
+
+                    @foreach (var selectedMethod in _selectedMethods)
+                    {
+                        <MudStack Spacing="1" id="@($"profile-species-section-{selectedMethod.Code}")">
+                            <MudText Typo="Typo.subtitle2">@string.Format(Loc["Profile_FishingMethod_Species"], selectedMethod.Name)</MudText>
+                            @if (selectedMethod.Species.Count > 0)
+                            {
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Profile_FishingSpecies_SetDefault"]</MudText>
+                            }
+                            <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                                @foreach (var species in selectedMethod.Species)
+                                {
+                                    <MudChip T="string"
+                                             Color="@(species.IsDefault ? Color.Secondary : Color.Primary)"
+                                             Variant="Variant.Filled"
+                                             Icon="@(species.IsDefault ? Icons.Material.Filled.Star : null)"
+                                             OnClick="@(() => SetDefaultSpeciesForMethod(selectedMethod.FishingMethodId, species.SpeciesId))"
+                                             id="@($"profile-species-{selectedMethod.Code}-{species.Code}")">
+                                        @species.Name
+                                        @if (species.IsDefault)
+                                        {
+                                            <span class="profile-default-label">@Loc["Profile_FishingMethod_Default"]</span>
+                                        }
+                                    </MudChip>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                   Size="Size.Small"
+                                                   aria-label="@string.Format(Loc["Profile_FishingSpecies_Remove"], species.Name)"
+                                                   OnClick="@(() => RemoveSpeciesFromMethod(selectedMethod.FishingMethodId, species.SpeciesId))"
+                                                   id="@($"profile-species-remove-{selectedMethod.Code}-{species.Code}")" />
+                                }
+                                <MudButton Size="Size.Small"
+                                           Variant="Variant.Outlined"
+                                           StartIcon="@Icons.Material.Filled.Add"
+                                           OnClick="@(() => AddSpeciesToMethodAsync(selectedMethod.FishingMethodId))"
+                                           id="@($"profile-species-more-{selectedMethod.Code}")">
+                                    @Loc["Common_More"]
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+                    }
+
                     <MudSwitch @bind-Value="_showPreferredFishingTypes"
                                Color="Color.Primary"
                                Label="@Loc["Profile_ShowFishingTypes"]"
                                id="profile-show-fishing-types" />
-
-                    <MudTextField @bind-Value="_preferredSpeciesText"
-                                  Label="@Loc["Profile_PreferredSpecies"]"
-                                  HelperText="@Loc["Profile_PreferredSpeciesHelp"]"
-                                  Variant="Variant.Outlined"
-                                  Immediate="true"
-                                  id="profile-preferred-species" />
                     <MudSwitch @bind-Value="_showPreferredSpecies"
                                Color="Color.Primary"
                                Label="@Loc["Profile_ShowPreferredSpecies"]"
                                id="profile-show-preferred-species" />
+
+                    <MudSelect T="WeightUnitEnum"
+                               @bind-Value="_preferredWeightUnit"
+                               Label="@Loc["Profile_WeightUnit"]"
+                               Variant="Variant.Outlined"
+                               id="profile-weight-unit">
+                        <MudSelectItem Value="WeightUnitEnum.Kg">@Loc["Profile_WeightUnit_Kg"]</MudSelectItem>
+                        <MudSelectItem Value="WeightUnitEnum.Lb">@Loc["Profile_WeightUnit_Lb"]</MudSelectItem>
+                    </MudSelect>
+                    <MudSelect T="LengthUnitEnum"
+                               @bind-Value="_preferredLengthUnit"
+                               Label="@Loc["Profile_LengthUnit"]"
+                               Variant="Variant.Outlined"
+                               id="profile-length-unit">
+                        <MudSelectItem Value="LengthUnitEnum.Cm">@Loc["Profile_LengthUnit_Cm"]</MudSelectItem>
+                        <MudSelectItem Value="LengthUnitEnum.In">@Loc["Profile_LengthUnit_In"]</MudSelectItem>
+                    </MudSelect>
 
                     <div class="profile-photo-actions">
                         <label for="profile-photo-input" class="profile-photo-picker" id="profile-choose-photo">

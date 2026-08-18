@@ -5,6 +5,7 @@ using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Domain.Catalogue;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Profiles;
@@ -40,6 +41,20 @@ public class SystemApiFactory : WebApplicationFactory<Program>
     public IUserPlatformCapabilityRepository UserPlatformCapabilityRepository { get; } =
         Substitute.For<IUserPlatformCapabilityRepository>();
 
+    public IFishingCatalogueRepository FishingCatalogueRepository { get; } =
+        Substitute.For<IFishingCatalogueRepository>();
+
+    public IFishingPreferenceRepository FishingPreferenceRepository { get; } =
+        Substitute.For<IFishingPreferenceRepository>();
+
+    public static readonly Guid FlyMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+
+    public static readonly Guid SpinningMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
+
+    public static readonly Guid BrownTroutSpeciesId = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+
+    public static readonly Guid PikeSpeciesId = Guid.Parse("cccccccc-0000-0000-0000-000000000002");
+
     public bool MappingFailed { get; set; }
 
     public SystemApiFactory()
@@ -67,6 +82,8 @@ public class SystemApiFactory : WebApplicationFactory<Program>
                 Arg.Any<RecordProfilePhotographArgs>(),
                 Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(new Profile { UserId = call.ArgAt<RecordProfilePhotographArgs>(0).UserId }));
+        ResetFishingCatalogue();
+        ResetFishingPreferences();
         CatchRepository
             .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
@@ -87,6 +104,41 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             .Returns(Result.Ok());
         UserPlatformCapabilityRepository
             .RevokeAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok());
+    }
+
+    public void ResetFishingCatalogue()
+    {
+        FishingCatalogueRepository
+            .GetAllMethodsAsync(Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<FishingMethod>>(
+            [
+                new FishingMethod { Id = FlyMethodId, Code = "Fly", Name = "Fly" },
+                new FishingMethod { Id = SpinningMethodId, Code = "Spinning", Name = "Spinning" }
+            ]));
+        FishingCatalogueRepository
+            .GetAllSpeciesAsync(Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<Species>>(
+            [
+                new Species { Id = BrownTroutSpeciesId, Code = "BrownTrout", Name = "Brown Trout" },
+                new Species { Id = PikeSpeciesId, Code = "Pike", Name = "Pike" }
+            ]));
+    }
+
+    public void ResetFishingPreferences()
+    {
+        FishingPreferenceRepository
+            .GetMethodPreferencesAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<UserFishingMethodPreference>>([]));
+        FishingPreferenceRepository
+            .GetSpeciesPreferencesAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<UserFishingSpeciesPreference>>([]));
+        FishingPreferenceRepository
+            .ReplacePreferencesAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<IReadOnlyList<UserFishingMethodPreference>>(),
+                Arg.Any<IReadOnlyList<UserFishingSpeciesPreference>>(),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
     }
 
@@ -139,6 +191,10 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(ProfileRepository);
             services.RemoveAll<ICatchRepository>();
             services.AddSingleton(CatchRepository);
+            services.RemoveAll<IFishingCatalogueRepository>();
+            services.AddSingleton(FishingCatalogueRepository);
+            services.RemoveAll<IFishingPreferenceRepository>();
+            services.AddSingleton(FishingPreferenceRepository);
             services.RemoveAll<IUserPlatformCapabilityRepository>();
             services.AddSingleton(UserPlatformCapabilityRepository);
             ConfigureAdditionalTestServices(services);

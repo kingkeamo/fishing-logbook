@@ -6,6 +6,7 @@ using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Diagnostics;
+using FishingLogBook.Application.FishingPreferences.Services;
 using FishingLogBook.Application.Profiles.Services;
 using FishingLogBook.Application.SystemStatus;
 using FishingLogBook.Application.TestCatches;
@@ -54,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatchPhotographService, CatchPhotographService>();
         services.AddScoped<ICatchLocationPrivacyService, CatchLocationPrivacyService>();
         services.AddScoped<IPlatformCapabilityService, PlatformCapabilityService>();
+        services.AddScoped<IFishingPreferenceService, FishingPreferenceService>();
 
         return services;
     }
@@ -79,6 +81,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<ICatchRepository, CatchRepository>();
         services.AddScoped<IUserPlatformCapabilityRepository, UserPlatformCapabilityRepository>();
+        services.AddScoped<IFishingCatalogueRepository, FishingCatalogueRepository>();
+        services.AddScoped<IFishingPreferenceRepository, FishingPreferenceRepository>();
         services.Configure<ObjectStorageConfig>(configuration.GetSection(ObjectStorageConfig.SectionName));
         services.Configure<DiagnosticsConfig>(configuration.GetSection(DiagnosticsConfig.SectionName));
         services.AddSingleton<IObjectStorage, S3CompatibleObjectStorage>();

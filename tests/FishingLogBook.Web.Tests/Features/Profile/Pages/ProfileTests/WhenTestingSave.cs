@@ -225,14 +225,14 @@ public class WhenTestingSave : BaseProfileTest
                 false));
         profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
             .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
-        await using var context = CreateContext(profileClient);
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(profileClient, preferenceClient);
         var cut = context.Render<ProfilePage>();
         cut.WaitForAssertion(() => cut.Find("#profile-display-name"));
 
         // Act
         cut.Find("#profile-display-name").Input("Eamonn");
         cut.Find("#profile-home-region").Input("Westmeath");
-        cut.Find("#profile-preferred-species").Input("Pike, Tench");
         await cut.Find("#profile-save-button").ClickAsync();
 
         // Assert
@@ -242,13 +242,22 @@ public class WhenTestingSave : BaseProfileTest
             Arg.Is<UpdateProfileDto>(profile =>
                 profile.DisplayName == "Eamonn"
                 && profile.HomeRegion == "Westmeath"
-                && profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })
+                && profile.PreferredSpecies.SequenceEqual(new[] { "Brown Trout" })
                 && profile.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
                 && profile.ShowDisplayName
                 && !profile.ShowPhotograph
                 && !profile.ShowHomeRegion
                 && !profile.ShowPreferredFishingTypes
                 && !profile.ShowPreferredSpecies),
+            Arg.Any<CancellationToken>());
+        await preferenceClient.Received(1).UpdatePreferencesAsync(
+            Arg.Is<UpdateFishingPreferencesDto>(update =>
+                update.Methods.Count == 1
+                && update.Methods[0].FishingMethodId == FlyMethodId
+                && update.Methods[0].IsDefault
+                && update.Methods[0].Species.Count == 1
+                && update.Methods[0].Species[0].SpeciesId == BrownTroutSpeciesId
+                && update.Methods[0].Species[0].IsDefault),
             Arg.Any<CancellationToken>());
         await profileClient.DidNotReceive().CreatePhotographUploadAsync(
             Arg.Any<PhotographUploadRequestDto>(),

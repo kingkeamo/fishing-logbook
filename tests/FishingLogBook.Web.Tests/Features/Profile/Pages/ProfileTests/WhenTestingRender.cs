@@ -78,7 +78,6 @@ public class WhenTestingRender : BaseProfileTest
         {
             cut.Find("#profile-display-name").GetAttribute("value").Should().Be("Eamonn");
             cut.Find("#profile-home-region").GetAttribute("value").Should().Be("Westmeath");
-            cut.Find("#profile-preferred-species").GetAttribute("value").Should().Be("Pike, Tench");
             cut.Find("#profile-photo-preview").GetAttribute("src").Should().Be("https://storage.test/photo");
             cut.FindAll("#profile-loading").Should().BeEmpty();
             cut.FindAll("#profile-load-failed").Should().BeEmpty();
@@ -106,8 +105,10 @@ public class WhenTestingRender : BaseProfileTest
             cut.Markup.Should().Contain("Choose what other anglers can see.");
             cut.Find("#profile-display-name").Should().NotBeNull();
             cut.Find("#profile-home-region").Should().NotBeNull();
-            cut.Find("#profile-fishing-types").Should().NotBeNull();
-            cut.Find("#profile-preferred-species").Should().NotBeNull();
+            cut.Find("#profile-weight-unit").Should().NotBeNull();
+            cut.Find("#profile-length-unit").Should().NotBeNull();
+            cut.Find("#profile-show-fishing-types").Should().NotBeNull();
+            cut.Find("#profile-show-preferred-species").Should().NotBeNull();
             cut.Find("#profile-show-display-name").Should().NotBeNull();
             cut.Find("#profile-show-photograph").Should().NotBeNull();
             cut.Find("#profile-privacy-caption").TextContent.Should()

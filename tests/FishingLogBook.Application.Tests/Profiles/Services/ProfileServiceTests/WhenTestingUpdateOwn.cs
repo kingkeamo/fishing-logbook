@@ -3,9 +3,12 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Tests.Common.Builders;
 using FluentResults;
 using NSubstitute;
+using DomainLengthUnitEnum = FishingLogBook.Domain.Enums.LengthUnitEnum;
+using DomainWeightUnitEnum = FishingLogBook.Domain.Enums.WeightUnitEnum;
 
 namespace FishingLogBook.Application.Tests.Profiles.Services.ProfileServiceTests;
 
@@ -177,6 +180,40 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
                 && profile.ShowPreferredFishingTypes
                 && !profile.ShowPreferredSpecies
                 && profile.PhotographId == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistAndReturnThePreferredMeasurementUnits()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var args = new UpdateProfileArgs
+        {
+            UserId = userId,
+            DisplayName = "Eamonn",
+            PreferredWeightUnit = DomainWeightUnitEnum.Lb,
+            PreferredLengthUnit = DomainLengthUnitEnum.In
+        };
+        MockProfileRepository
+            .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        MockProfileRepository
+            .UpsertAsync(Arg.Any<Profile>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Profile>(0)));
+
+        // Act
+        var result = await Sut.UpdateOwnAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.PreferredWeightUnit.Should().Be(WeightUnitEnum.Lb);
+        result.Value.PreferredLengthUnit.Should().Be(LengthUnitEnum.In);
+        await MockProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == userId
+                && profile.PreferredWeightUnit == DomainWeightUnitEnum.Lb
+                && profile.PreferredLengthUnit == DomainLengthUnitEnum.In),
             Arg.Any<CancellationToken>());
     }
 
