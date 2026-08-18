@@ -52,8 +52,9 @@ public sealed class CurrentUserMiddleware
                 return;
             }
         }
-        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (context.RequestAborted.IsCancellationRequested)
         {
+            _logger.LogDebug(exception, "Current user resolution was cancelled.");
             throw;
         }
         catch (Exception exception)

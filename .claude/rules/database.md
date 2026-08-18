@@ -129,7 +129,8 @@ null). They still must not drop the source column.
   concatenation for values.
 - Return **FluentResults** `Result`, `Result<T>` — not exceptions for expected failures
   (not found, constraint, connectivity wrapped as `Fail`). Do not leak Npgsql/Dapper
-  types across the boundary.
+  types across the boundary. When a `catch` converts an exception into `Result.Fail`,
+  log the original exception with `ILogger` first — see **`exception-logging.md`**.
 - SQL transactions (begin/commit/rollback) and unique-constraint recovery live here,
   not in CQRS handlers. Handlers orchestrate; they do not hold `NpgsqlTransaction`.
 - Filter/query/lookup methods accept `*Args` types from `Application/Args/`.

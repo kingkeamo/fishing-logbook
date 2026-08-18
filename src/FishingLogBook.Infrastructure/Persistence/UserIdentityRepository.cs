@@ -3,6 +3,7 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Users;
 using FluentResults;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace FishingLogBook.Infrastructure.Persistence;
@@ -12,10 +13,12 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
     private const string ResolveFailedMessage = "Failed to resolve FishingLogBook user.";
 
     private readonly IDbConnectionFactory _connectionFactory;
+    private readonly ILogger<UserIdentityRepository> _logger;
 
-    public UserIdentityRepository(IDbConnectionFactory connectionFactory)
+    public UserIdentityRepository(IDbConnectionFactory connectionFactory, ILogger<UserIdentityRepository> logger)
     {
         _connectionFactory = connectionFactory;
+        _logger = logger;
     }
 
     public async Task<Result<Guid?>> FindUserIdAsync(
@@ -28,8 +31,9 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
             var userId = await FindUserIdAsync(connection, args, transaction: null, cancellationToken);
             return Result.Ok(userId);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to find FishingLogBook user identity.");
             return Result.Fail<Guid?>(ResolveFailedMessage);
         }
     }
@@ -52,11 +56,13 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
             catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
             {
                 await transaction.RollbackAsync(cancellationToken);
+                _logger.LogWarning(exception, "User identity already exists; recovering the existing user.");
                 return await ExistingUserIdOrFailAsync(connection, user, identity, cancellationToken);
             }
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to create FishingLogBook user identity.");
             return Result.Fail<Guid>(ResolveFailedMessage);
         }
     }
@@ -69,8 +75,9 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
             await UpdateEmailAsync(connection, user, transaction: null, cancellationToken);
             return Result.Ok();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to update FishingLogBook user email.");
             return Result.Fail(ResolveFailedMessage);
         }
     }

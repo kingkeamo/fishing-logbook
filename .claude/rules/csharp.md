@@ -64,7 +64,8 @@ see **`database.md`**.
 - Inject interfaces from `Application/Contracts`, never concrete types from another layer.
   API endpoints inject `IMediator`, not repositories or handlers (see **`cqrs.md`**).
 - Use `ILogger<T>` for logging. Use `async`/`await` and pass `CancellationToken` through
-  database/API/service methods.
+  database/API/service methods. Every server-side `catch` must log the caught
+  exception — see **`exception-logging.md`**.
 - Prefer readable explicit code. Avoid unnecessary abstractions. Do **not** create a
   repository interface for every class unless it provides genuine value (testability,
   crossing a layer boundary).

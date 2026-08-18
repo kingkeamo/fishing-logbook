@@ -131,7 +131,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         await stream.CopyToAsync(buffer, _cancellationTokenSource.Token);
         var bytes = buffer.ToArray();
         var contentType = file.ContentType;
-        _caughtOn ??= DateTimeOffset.Now;
+        _caughtOn ??= DateTimeOffset.UtcNow;
         _photographs.Add(new PendingPhotograph(
             Guid.NewGuid(),
             contentType,
@@ -230,7 +230,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
             await CatchStore.SaveAsync(
                 new CatchModel(
                     catchId,
-                    _caughtOn ?? DateTimeOffset.Now,
+                    _caughtOn ?? DateTimeOffset.UtcNow,
                     photographs,
                     Location: location,
                     UserId: ownerUserId),

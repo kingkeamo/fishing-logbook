@@ -4,6 +4,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Users;
 using FluentResults;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace FishingLogBook.Infrastructure.Persistence;
@@ -13,10 +14,14 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
     private const string FailedMessage = "Failed to persist platform capability.";
 
     private readonly IDbConnectionFactory _connectionFactory;
+    private readonly ILogger<UserPlatformCapabilityRepository> _logger;
 
-    public UserPlatformCapabilityRepository(IDbConnectionFactory connectionFactory)
+    public UserPlatformCapabilityRepository(
+        IDbConnectionFactory connectionFactory,
+        ILogger<UserPlatformCapabilityRepository> logger)
     {
         _connectionFactory = connectionFactory;
+        _logger = logger;
     }
 
     public async Task<Result<bool>> HasAsync(
@@ -38,8 +43,9 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
                 cancellationToken: cancellationToken));
             return Result.Ok(exists);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to check platform capability for user {UserId}.", args.UserId);
             return Result.Fail<bool>(FailedMessage);
         }
     }
@@ -63,8 +69,9 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
             return Result.Ok<IReadOnlyList<PlatformCapabilityEnum>>(
                 codes.Select(ParseCapability).ToArray());
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to load platform capabilities for user {UserId}.", args.UserId);
             return Result.Fail<IReadOnlyList<PlatformCapabilityEnum>>(FailedMessage);
         }
     }
@@ -87,10 +94,12 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
         }
         catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.ForeignKeyViolation)
         {
+            _logger.LogWarning(exception, "Platform capability grant failed for user {UserId}.", association.UserId);
             return Result.Fail("Platform capability is invalid.");
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to grant platform capability for user {UserId}.", association.UserId);
             return Result.Fail(FailedMessage);
         }
     }
@@ -112,8 +121,9 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
                 cancellationToken: cancellationToken));
             return Result.Ok();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to revoke platform capability for user {UserId}.", args.UserId);
             return Result.Fail(FailedMessage);
         }
     }

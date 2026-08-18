@@ -94,6 +94,7 @@ public class WhenTestingSave : BaseRecordCatchTest
                 && catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id != Guid.Empty
                 && catchRecord.SpeciesName == null
+                && catchRecord.CaughtOn.Offset == TimeSpan.Zero
                 && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
     }
@@ -123,6 +124,7 @@ public class WhenTestingSave : BaseRecordCatchTest
                 && catchRecord.Photographs[0].CatchId == catchRecord.Id
                 && catchRecord.SpeciesName == null
                 && catchRecord.CaughtOn != default
+                && catchRecord.CaughtOn.Offset == TimeSpan.Zero
                 && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
         cut.WaitForAssertion(() =>
@@ -167,7 +169,8 @@ public class WhenTestingSave : BaseRecordCatchTest
                 catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Bytes != null
                 && catchRecord.SpeciesName == null
-                && catchRecord.CaughtOn != default),
+                && catchRecord.CaughtOn != default
+                && catchRecord.CaughtOn.Offset == TimeSpan.Zero),
             Arg.Any<CancellationToken>());
         cut.WaitForAssertion(() =>
         {

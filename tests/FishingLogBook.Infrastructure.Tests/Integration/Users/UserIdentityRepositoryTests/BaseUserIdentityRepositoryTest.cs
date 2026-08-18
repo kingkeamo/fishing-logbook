@@ -3,6 +3,7 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Users;
 using FishingLogBook.Infrastructure.Persistence;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
+using FishingLogBook.Infrastructure.Tests.TestSupport;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Tests.Common.Builders;
 
@@ -11,12 +12,13 @@ namespace FishingLogBook.Infrastructure.Tests.Integration.Users.UserIdentityRepo
 public abstract class BaseUserIdentityRepositoryTest
 {
     protected readonly UserIdentityRepository Sut;
+    protected readonly RecordingLogger<UserIdentityRepository> Logger = new();
     protected readonly NpgsqlConnectionFactory ConnectionFactory;
 
     protected BaseUserIdentityRepositoryTest(PostgresFixture fixture)
     {
         ConnectionFactory = new NpgsqlConnectionFactory(fixture.ConnectionString);
-        Sut = new UserIdentityRepository(ConnectionFactory);
+        Sut = new UserIdentityRepository(ConnectionFactory, Logger);
     }
 
     protected static string NewSubject()

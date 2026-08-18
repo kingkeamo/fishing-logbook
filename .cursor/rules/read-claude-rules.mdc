@@ -13,6 +13,7 @@ Before planning, coding, testing, committing, or touching infrastructure, read t
 | Planning or implementing a GitHub issue | `.claude/rules/product-workflow.md` |
 | After implementation and tests, before declaring complete or PR-ready | `.claude/rules/self-review.md` |
 | C# (API, Application, Domain, Infrastructure, Shared) | `.claude/rules/csharp.md` |
+| Server-side `catch` / exception logging | `.claude/rules/exception-logging.md` |
 | CQRS / application services | `.claude/rules/cqrs.md` |
 | Blazor WASM / MudBlazor / PWA | `.claude/rules/blazor.md` |
 | Tests (including `WhenTesting` naming) | `.claude/rules/testing-csharp.md` and `.claude/rules/testing-blazor.md` |
