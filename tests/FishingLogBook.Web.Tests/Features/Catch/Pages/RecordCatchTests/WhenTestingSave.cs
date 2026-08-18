@@ -6,6 +6,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -277,6 +278,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         injected.Should().Contain(typeof(ILocationService));
         injected.Should().Contain(typeof(ILocalCatchOwnerService));
         injected.Should().Contain(typeof(ICatchSynchroniser));
+        injected.Should().Contain(typeof(ILoggingService));
         injected.Should().NotContain(typeof(HttpClient));
         injected.Should().NotContain(type => type.Name.Contains("Client", StringComparison.Ordinal));
     }
@@ -317,7 +319,8 @@ public class WhenTestingSave : BaseRecordCatchTest
         var synchroniser = Substitute.For<ICatchSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException("The API is unavailable."));
-        await using var context = CreateContext(store, synchroniser: synchroniser);
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, synchroniser: synchroniser, logging: logging);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
 
@@ -335,6 +338,60 @@ public class WhenTestingSave : BaseRecordCatchTest
                 catchRecord.SyncStatus == SyncStatus.SavedLocally),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "production catch synchronisation",
+            Arg.Is<Exception>(exception =>
+                exception is HttpRequestException
+                && exception.Message == "The API is unavailable."),
+            Arg.Any<CancellationToken>());
+        await logging.DidNotReceive().LogErrorAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldLogUnexpectedSyncExceptionsWithoutFailingLocalSave()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("IndexedDB getAll failed."));
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, synchroniser: synchroniser, logging: logging);
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+
+        // Act
+        await cut.Find("#save-catch-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-saved").TextContent.Should().Contain("Catch saved on this device");
+            cut.FindAll("#catch-save-failed").Should().BeEmpty();
+            cut.FindAll("#save-catch-button").Should().BeEmpty();
+        });
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+                catchRecord.SyncStatus == SyncStatus.SavedLocally),
+            Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "production catch synchronisation",
+            Arg.Is<Exception>(exception =>
+                exception is InvalidOperationException
+                && exception.Message == "IndexedDB getAll failed."),
+            Arg.Any<CancellationToken>());
+        await logging.DidNotReceive().LogErrorAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        await synchroniser.DidNotReceive().RetryAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -388,7 +445,8 @@ public class WhenTestingSave : BaseRecordCatchTest
                 order.Add("sync");
                 return Task.CompletedTask;
             });
-        await using var context = CreateContext(store, synchroniser: synchroniser);
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, synchroniser: synchroniser, logging: logging);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
 
@@ -408,6 +466,14 @@ public class WhenTestingSave : BaseRecordCatchTest
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await synchroniser.DidNotReceive().RetryAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await logging.DidNotReceive().LogErrorAsync(
+            Arg.Any<string>(),
+            Arg.Any<Exception>(),
+            Arg.Any<CancellationToken>());
+        await logging.DidNotReceive().LogErrorAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
     }
 
     private static Task Hang()

@@ -3,6 +3,7 @@ using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -37,6 +38,9 @@ public partial class RecordCatch : ComponentBase, IDisposable
 
     [Inject]
     private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+
+    [Inject]
+    private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
     private ILocationService LocationService { get; set; } = default!;
@@ -274,8 +278,12 @@ public partial class RecordCatch : ComponentBase, IDisposable
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            await Logging.LogErrorAsync(
+                "production catch synchronisation",
+                exception,
+                _cancellationTokenSource.Token);
         }
     }
 
