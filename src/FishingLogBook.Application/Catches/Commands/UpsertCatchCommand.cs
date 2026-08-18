@@ -58,7 +58,29 @@ public sealed class UpsertCatchCommandValidator : AbstractValidator<UpsertCatchC
         RuleFor(command => command.Catch.Id)
             .NotEmpty();
         RuleFor(command => command.Catch.CaughtOn)
-            .NotEqual(default(DateTimeOffset));
+            .NotEqual(default(DateTimeOffset))
+            .Must(caughtOn => CatchDetailConstants.IsCaughtOnValid(caughtOn, DateTimeOffset.UtcNow))
+            .WithMessage("Catch time cannot be in the future.");
+        RuleFor(command => command.Catch.SpeciesName)
+            .MaximumLength(CatchDetailConstants.MaxSpeciesNameLength);
+        RuleFor(command => command.Catch.Method)
+            .MaximumLength(CatchDetailConstants.MaxMethodLength);
+        RuleFor(command => command.Catch.BaitOrLure)
+            .MaximumLength(CatchDetailConstants.MaxBaitOrLureLength);
+        RuleFor(command => command.Catch.Notes)
+            .MaximumLength(CatchDetailConstants.MaxNotesLength);
+        When(command => command.Catch.Weight.HasValue, () =>
+        {
+            RuleFor(command => command.Catch.Weight!.Value)
+                .GreaterThan(0)
+                .LessThanOrEqualTo(CatchDetailConstants.MaxWeightKilograms);
+        });
+        When(command => command.Catch.Length.HasValue, () =>
+        {
+            RuleFor(command => command.Catch.Length!.Value)
+                .GreaterThan(0)
+                .LessThanOrEqualTo(CatchDetailConstants.MaxLengthCentimetres);
+        });
         RuleFor(command => command.Catch.Photographs)
             .NotEmpty()
             .WithMessage("A catch requires at least one photograph.");
