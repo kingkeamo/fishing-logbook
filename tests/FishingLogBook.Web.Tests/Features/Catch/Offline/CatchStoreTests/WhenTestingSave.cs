@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Offline.CatchStoreTests;
@@ -268,5 +269,71 @@ public class WhenTestingSave : BaseCatchStoreTest
         saved.Single(item => item.Id == firstId).Location.Should().Be(firstLocation);
         saved.Single(item => item.Id == secondId).Location.Should().Be(secondLocation);
         firstLocation.Should().NotBe(secondLocation);
+    }
+
+    [Fact]
+    public async Task ItShouldKeepOptionalDetailsAfterReopenOnTheSameCatchId()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var photographId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        var photograph = new CatchPhotographModel(
+            photographId,
+            catchId,
+            PhotographContentTypeConstants.Jpeg,
+            [1, 2, 3],
+            SyncStatus.Synchronised,
+            "catches/photo");
+        await Sut.SaveAsync(
+            new CatchModel(
+                catchId,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                [photograph],
+                UserId: OwnerUserId,
+                SyncStatus: SyncStatus.Synchronised,
+                MetadataSyncStatus: SyncStatus.Synchronised,
+                AnglerUserId: OwnerUserId,
+                RecordedByUserId: OwnerUserId),
+            CancellationToken.None);
+        await Sut.SaveAsync(
+            new CatchModel(
+                catchId,
+                DateTimeOffset.Parse("2026-08-17T09:15:00Z"),
+                [photograph],
+                "Pike",
+                UserId: OwnerUserId,
+                SyncStatus: SyncStatus.WaitingToSynchronise,
+                MetadataSyncStatus: SyncStatus.WaitingToSynchronise,
+                AnglerUserId: OwnerUserId,
+                RecordedByUserId: OwnerUserId,
+                Weight: 2.5m,
+                Length: 64m,
+                Method: "Lure",
+                BaitOrLure: "Spinner",
+                Notes: "Weedline"),
+            CancellationToken.None);
+        var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
+
+        // Act
+        var saved = await reopened.GetAsync(OwnerUserId, catchId, CancellationToken.None);
+
+        // Assert
+        saved.Should().NotBeNull();
+        saved!.Id.Should().Be(catchId);
+        saved.SpeciesName.Should().Be("Pike");
+        saved.Weight.Should().Be(2.5m);
+        saved.Length.Should().Be(64m);
+        saved.Method.Should().Be("Lure");
+        saved.BaitOrLure.Should().Be("Spinner");
+        saved.Notes.Should().Be("Weedline");
+        saved.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-17T09:15:00Z"));
+        saved.Photographs.Should().ContainSingle();
+        saved.Photographs[0].Id.Should().Be(photographId);
+        saved.Photographs[0].SyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved.Photographs[0].ObjectKey.Should().Be("catches/photo");
+        saved.UserId.Should().Be(OwnerUserId);
+        saved.AnglerUserId.Should().Be(OwnerUserId);
+        saved.RecordedByUserId.Should().Be(OwnerUserId);
+        saved.MetadataSyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
     }
 }

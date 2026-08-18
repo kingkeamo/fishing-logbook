@@ -65,7 +65,13 @@ public class WhenTestingGetView : BaseCatchServiceTest
             UserId = ownerUserId,
             AnglerUserId = ownerUserId,
             RecordedByUserId = ownerUserId,
-            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            SpeciesName = "Pike",
+            Weight = 2.5m,
+            Length = 64m,
+            Method = "Lure",
+            BaitOrLure = "Spinner",
+            Notes = "Weedline"
         };
         MockCatchRepository
             .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
@@ -88,6 +94,12 @@ public class WhenTestingGetView : BaseCatchServiceTest
         result.Value.UserId.Should().Be(ownerUserId);
         result.Value.AnglerUserId.Should().Be(ownerUserId);
         result.Value.RecordedByUserId.Should().Be(ownerUserId);
+        result.Value.SpeciesName.Should().Be("Pike");
+        result.Value.Weight.Should().Be(2.5m);
+        result.Value.Length.Should().Be(64m);
+        result.Value.Method.Should().Be("Lure");
+        result.Value.BaitOrLure.Should().Be("Spinner");
+        result.Value.Notes.Should().Be("Weedline");
         result.Value.Location!.Mode.Should().Be(LocationDefaults.ExposureNone);
         await MockCatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
         await MockCatchLocationPrivacyService.Received(1).GetExposureAsync(

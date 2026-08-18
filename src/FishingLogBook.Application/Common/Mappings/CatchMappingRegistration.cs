@@ -55,7 +55,13 @@ public sealed class CatchMappingRegistration : IRegister
             {
                 UserId = source.UserId,
                 AnglerUserId = source.AnglerUserId,
-                RecordedByUserId = source.RecordedByUserId
+                RecordedByUserId = source.RecordedByUserId,
+                SpeciesName = source.SpeciesName,
+                Weight = source.Weight,
+                Length = source.Length,
+                Method = source.Method,
+                BaitOrLure = source.BaitOrLure,
+                Notes = source.Notes
             });
     }
 }

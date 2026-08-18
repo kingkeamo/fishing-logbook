@@ -372,6 +372,72 @@
   <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
     <value>Confidentialité de la localisation</value>
   </data>
+  <data name="Catch_Edit" xml:space="preserve">
+    <value>Modifier les détails</value>
+  </data>
+  <data name="Catch_EditPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Modifier la prise</value>
+  </data>
+  <data name="Catch_EditTitle" xml:space="preserve">
+    <value>Modifier la prise</value>
+  </data>
+  <data name="Catch_EditSubtitle" xml:space="preserve">
+    <value>Ajoutez des détails facultatifs. Une prise enregistrée avec une photo peut rester telle quelle.</value>
+  </data>
+  <data name="Catch_EditSpecies" xml:space="preserve">
+    <value>Espèce</value>
+  </data>
+  <data name="Catch_EditWeight" xml:space="preserve">
+    <value>Poids</value>
+  </data>
+  <data name="Catch_EditWeightUnit" xml:space="preserve">
+    <value>Kilogrammes</value>
+  </data>
+  <data name="Catch_EditLength" xml:space="preserve">
+    <value>Longueur</value>
+  </data>
+  <data name="Catch_EditLengthUnit" xml:space="preserve">
+    <value>Centimètres</value>
+  </data>
+  <data name="Catch_EditMethod" xml:space="preserve">
+    <value>Méthode de pêche</value>
+  </data>
+  <data name="Catch_EditBaitOrLure" xml:space="preserve">
+    <value>Appât ou leurre</value>
+  </data>
+  <data name="Catch_EditNotes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Catch_EditCaughtOn" xml:space="preserve">
+    <value>Date et heure de la prise</value>
+  </data>
+  <data name="Catch_EditSave" xml:space="preserve">
+    <value>Enregistrer les détails</value>
+  </data>
+  <data name="Catch_EditSaving" xml:space="preserve">
+    <value>Enregistrement</value>
+  </data>
+  <data name="Catch_EditSaved" xml:space="preserve">
+    <value>Détails enregistrés sur cet appareil</value>
+  </data>
+  <data name="Catch_EditSaveFailed" xml:space="preserve">
+    <value>Les détails n'ont pas pu être enregistrés. Réessayez.</value>
+  </data>
+  <data name="Catch_EditLoadFailed" xml:space="preserve">
+    <value>Cette prise n'a pas pu être chargée.</value>
+  </data>
+  <data name="Catch_EditWeightInvalid" xml:space="preserve">
+    <value>Le poids doit être supérieur à 0 kg et d'au plus 1000 kg.</value>
+  </data>
+  <data name="Catch_EditLengthInvalid" xml:space="preserve">
+    <value>La longueur doit être supérieure à 0 cm et d'au plus 1000 cm.</value>
+  </data>
+  <data name="Catch_EditCaughtOnInvalid" xml:space="preserve">
+    <value>Saisissez une heure de prise valide qui n'est pas dans le futur.</value>
+  </data>
+  <data name="Catch_EditTextTooLong" xml:space="preserve">
+    <value>L'un des champs texte est trop long.</value>
+  </data>
   <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
     <value>FishingLogBook - Confidentialité de la localisation</value>
   </data>

@@ -86,7 +86,10 @@ public sealed class CatchRepository : ICatchRepository
                 }
 
                 await UpsertCatchRowAsync(connection, transaction, catchRecord, cancellationToken);
-                await ReplacePhotographsAsync(connection, transaction, catchRecord, cancellationToken);
+                if (existing is null || !HaveSamePhotographs(existing, catchRecord))
+                {
+                    await ReplacePhotographsAsync(connection, transaction, catchRecord, cancellationToken);
+                }
                 await transaction.CommitAsync(cancellationToken);
                 var saved = await LoadAsync(connection, transaction: null, catchRecord.Id, cancellationToken);
                 return saved is null
@@ -153,6 +156,12 @@ public sealed class CatchRepository : ICatchRepository
                 "AnglerUserId",
                 "RecordedByUserId",
                 "CaughtOn",
+                "SpeciesName",
+                "Weight",
+                "Length",
+                "Method",
+                "BaitOrLure",
+                "Notes",
                 "Latitude",
                 "Longitude",
                 "LocationAccuracyMetres",
@@ -166,6 +175,12 @@ public sealed class CatchRepository : ICatchRepository
                 @AnglerUserId,
                 @RecordedByUserId,
                 @CaughtOn,
+                @SpeciesName,
+                @Weight,
+                @Length,
+                @Method,
+                @BaitOrLure,
+                @Notes,
                 @Latitude,
                 @Longitude,
                 @LocationAccuracyMetres,
@@ -175,6 +190,12 @@ public sealed class CatchRepository : ICatchRepository
                 @LocationConsentVersion)
             ON CONFLICT ("Id") DO UPDATE SET
                 "CaughtOn" = EXCLUDED."CaughtOn",
+                "SpeciesName" = EXCLUDED."SpeciesName",
+                "Weight" = EXCLUDED."Weight",
+                "Length" = EXCLUDED."Length",
+                "Method" = EXCLUDED."Method",
+                "BaitOrLure" = EXCLUDED."BaitOrLure",
+                "Notes" = EXCLUDED."Notes",
                 "Latitude" = COALESCE(EXCLUDED."Latitude", "Catch"."Latitude"),
                 "Longitude" = COALESCE(EXCLUDED."Longitude", "Catch"."Longitude"),
                 "LocationAccuracyMetres" = CASE
@@ -234,6 +255,12 @@ public sealed class CatchRepository : ICatchRepository
                 COALESCE("AnglerUserId", "UserId") AS "AnglerUserId",
                 COALESCE("RecordedByUserId", "UserId") AS "RecordedByUserId",
                 "CaughtOn",
+                "SpeciesName",
+                "Weight",
+                "Length",
+                "Method",
+                "BaitOrLure",
+                "Notes",
                 "Latitude",
                 "Longitude",
                 "LocationAccuracyMetres",
@@ -273,6 +300,12 @@ public sealed class CatchRepository : ICatchRepository
             AnglerUserId = catchRow.AnglerUserId,
             RecordedByUserId = catchRow.RecordedByUserId,
             CaughtOn = catchRow.CaughtOn,
+            SpeciesName = catchRow.SpeciesName,
+            Weight = catchRow.Weight,
+            Length = catchRow.Length,
+            Method = catchRow.Method,
+            BaitOrLure = catchRow.BaitOrLure,
+            Notes = catchRow.Notes,
             Location = ToLocation(catchRow),
             Photographs = photographs.ToArray()
         };
@@ -287,6 +320,12 @@ public sealed class CatchRepository : ICatchRepository
             catchRecord.AnglerUserId,
             catchRecord.RecordedByUserId,
             CaughtOn = catchRecord.CaughtOn.ToUniversalTime(),
+            catchRecord.SpeciesName,
+            catchRecord.Weight,
+            catchRecord.Length,
+            catchRecord.Method,
+            catchRecord.BaitOrLure,
+            catchRecord.Notes,
             Latitude = catchRecord.Location?.Latitude,
             Longitude = catchRecord.Location?.Longitude,
             LocationAccuracyMetres = catchRecord.Location?.AccuracyMetres,
@@ -295,6 +334,34 @@ public sealed class CatchRepository : ICatchRepository
             LocationVisibility = catchRecord.Location?.Visibility,
             LocationConsentVersion = catchRecord.Location?.ConsentVersion
         };
+    }
+
+    private static bool HaveSamePhotographs(Catch existing, Catch incoming)
+    {
+        if (existing.Photographs.Count != incoming.Photographs.Count)
+        {
+            return false;
+        }
+
+        var incomingById = incoming.Photographs.ToDictionary(photograph => photograph.Id);
+        foreach (var photograph in existing.Photographs)
+        {
+            if (!incomingById.TryGetValue(photograph.Id, out var match))
+            {
+                return false;
+            }
+
+            if (match.CatchId != photograph.CatchId
+                || !string.Equals(
+                    match.ContentType,
+                    photograph.ContentType,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static CatchLocation? ToLocation(CatchRow catchRow)
@@ -325,6 +392,18 @@ public sealed class CatchRepository : ICatchRepository
         public Guid RecordedByUserId { get; init; }
 
         public DateTimeOffset CaughtOn { get; init; }
+
+        public string? SpeciesName { get; init; }
+
+        public decimal? Weight { get; init; }
+
+        public decimal? Length { get; init; }
+
+        public string? Method { get; init; }
+
+        public string? BaitOrLure { get; init; }
+
+        public string? Notes { get; init; }
 
         public double? Latitude { get; init; }
 

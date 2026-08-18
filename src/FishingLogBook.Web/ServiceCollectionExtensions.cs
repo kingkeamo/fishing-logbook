@@ -1,5 +1,6 @@
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -49,6 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProfileClient, ProfileClient>();
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
+        services.AddScoped<ITimeService, TimeService>();
         services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();
         services.AddScoped<ITestCatchStore, TestCatchStore>();
         services.AddScoped<ITestCatchPhotoStore, IndexedDbTestCatchPhotoStore>();

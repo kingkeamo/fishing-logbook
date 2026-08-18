@@ -214,6 +214,50 @@ test.describe('Production Catch IndexedDB', () => {
         expect(result.stored.userId).toBeUndefined();
         expect(result.stored.location).toEqual({ latitude: 53.2707, longitude: -9.0568 });
     });
+
+    test('still reads a Catch stored without detail properties', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.putAndGetProductionCatch());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.id).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.weight).toBeUndefined();
+        expect(catchRecord.length).toBeUndefined();
+        expect(catchRecord.method).toBeUndefined();
+        expect(catchRecord.baitOrLure).toBeUndefined();
+        expect(catchRecord.notes).toBeUndefined();
+        expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
+    });
+
+    test('updates catch details on the same id after close and reload', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.putAndEditProductionCatchDetails());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.id).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.speciesName).toBe('Pike');
+        expect(catchRecord.weight).toBe(2.5);
+        expect(catchRecord.length).toBe(64);
+        expect(catchRecord.method).toBe('Lure');
+        expect(catchRecord.baitOrLure).toBe('Spinner');
+        expect(catchRecord.notes).toBe('Weedline');
+        expect(catchRecord.caughtOn).toBe('2026-08-17T09:15:00+00:00');
+        expect(catchRecord.userId).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.anglerUserId).toBe(catchRecord.userId);
+        expect(catchRecord.recordedByUserId).toBe(catchRecord.userId);
+        expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
+        expect(records[0].photographs[0].bytesBase64).toBe(btoa(String.fromCharCode(1, 2, 3)));
+    });
 });
 
 test.describe('service worker application shell', () => {

@@ -485,6 +485,114 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
     }
 
     [Fact]
+    public async Task ItShouldRoundTripOptionalDetailsOnTheSameCatchId()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var original = NewCatch(userId);
+        await Sut.UpsertAsync(original, CancellationToken.None);
+        var updated = new Catch
+        {
+            Id = original.Id,
+            UserId = userId,
+            AnglerUserId = Guid.NewGuid(),
+            RecordedByUserId = Guid.NewGuid(),
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T12:30:00Z"),
+            SpeciesName = "Pike",
+            Weight = 2.5m,
+            Length = 64m,
+            Method = "Lure",
+            BaitOrLure = "Spinner",
+            Notes = "Weedline",
+            Photographs = original.Photographs
+        };
+
+        // Act
+        var result = await Sut.UpsertAsync(updated, CancellationToken.None);
+        var loaded = await Sut.GetByIdAsync(original.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(original.Id);
+        loaded.Value.Should().NotBeNull();
+        loaded.Value!.Id.Should().Be(original.Id);
+        loaded.Value.SpeciesName.Should().Be("Pike");
+        loaded.Value.Weight.Should().Be(2.5m);
+        loaded.Value.Length.Should().Be(64m);
+        loaded.Value.Method.Should().Be("Lure");
+        loaded.Value.BaitOrLure.Should().Be("Spinner");
+        loaded.Value.Notes.Should().Be("Weedline");
+        loaded.Value.CaughtOn.Should().Be(updated.CaughtOn);
+        loaded.Value.UserId.Should().Be(userId);
+        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.RecordedByUserId.Should().Be(userId);
+        loaded.Value.Photographs.Select(photograph => photograph.Id)
+            .Should()
+            .Equal(original.Photographs.Select(photograph => photograph.Id));
+    }
+
+    [Fact]
+    public async Task ItShouldKeepLocationWhenOnlyDetailsAreUpdated()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var location = SampleLocation();
+        var original = WithLocation(NewCatch(userId), location);
+        await Sut.UpsertAsync(original, CancellationToken.None);
+        var updated = new Catch
+        {
+            Id = original.Id,
+            UserId = userId,
+            CaughtOn = original.CaughtOn,
+            SpeciesName = "Perch",
+            Weight = 0.8m,
+            Photographs = original.Photographs
+        };
+
+        // Act
+        var result = await Sut.UpsertAsync(updated, CancellationToken.None);
+        var loaded = await Sut.GetByIdAsync(original.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        loaded.Value.Should().NotBeNull();
+        loaded.Value!.SpeciesName.Should().Be("Perch");
+        loaded.Value.Weight.Should().Be(0.8m);
+        loaded.Value.Location.Should().NotBeNull();
+        loaded.Value.Location!.Latitude.Should().Be(location.Latitude);
+        loaded.Value.Location.Longitude.Should().Be(location.Longitude);
+        loaded.Value.Location.Visibility.Should().Be(LocationDefaults.Private);
+        loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
+        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.RecordedByUserId.Should().Be(userId);
+    }
+
+    [Fact]
+    public async Task ItShouldRejectANonPositiveWeight()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var act = () => connection.ExecuteAsync(
+            """
+            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn", "Weight")
+            VALUES (@Id, @UserId, @CaughtOn, @Weight);
+            """,
+            new
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CaughtOn = DateTimeOffset.UtcNow,
+                Weight = 0m
+            });
+
+        // Act
+        // Assert
+        var exception = await act.Should().ThrowAsync<PostgresException>();
+        exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
+    }
+
+    [Fact]
     public async Task ItShouldResolveMissingProvenanceColumnsToTheOwnerUserId()
     {
         // Arrange
