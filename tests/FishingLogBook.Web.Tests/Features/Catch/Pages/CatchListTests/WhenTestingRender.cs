@@ -55,6 +55,8 @@ public class WhenTestingRender : BaseCatchListTest
             cut.Find($"#catch-label-{catchId:D}").TextContent.Should().Contain("Catch");
             cut.Find($"#catch-thumb-{catchId:D}").GetAttribute("src").Should().StartWith("data:image/jpeg;base64,");
             cut.Find($"#catch-time-{catchId:D}").TextContent.Should().NotBeNullOrWhiteSpace();
+            cut.Find($"#catch-angler-{catchId:D}").TextContent.Should().Contain("Angler: You");
+            cut.Find($"#catch-recorded-by-{catchId:D}").TextContent.Should().Contain("Recorded by: You");
         });
         await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
@@ -124,7 +126,11 @@ public class WhenTestingRender : BaseCatchListTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find($"#catch-label-{catchId:D}").TextContent.Should().Contain("Prise"));
+        {
+            cut.Find($"#catch-label-{catchId:D}").TextContent.Should().Contain("Prise");
+            cut.Find($"#catch-angler-{catchId:D}").TextContent.Should().Contain("Pêcheur : Vous");
+            cut.Find($"#catch-recorded-by-{catchId:D}").TextContent.Should().Contain("Enregistré par : Vous");
+        });
         cut.FindAll("#catch-list-empty").Should().BeEmpty();
         await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }

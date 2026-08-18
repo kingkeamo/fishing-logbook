@@ -54,6 +54,9 @@ public class WhenTestingRetry : BaseCatchSynchroniserTest
         saved.Location.Should().Be(catchRecord.Location);
         saved.Photographs.Should().OnlyContain(
             photograph => photograph.SyncStatus == SyncStatus.Synchronised);
+        saved.UserId.Should().Be(OwnerUserId);
+        saved.AnglerUserId.Should().Be(OwnerUserId);
+        saved.RecordedByUserId.Should().Be(OwnerUserId);
         await MockCatchClient.DidNotReceive()
             .UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>());
         await MockCatchClient.Received(1).CreatePhotographUploadAsync(

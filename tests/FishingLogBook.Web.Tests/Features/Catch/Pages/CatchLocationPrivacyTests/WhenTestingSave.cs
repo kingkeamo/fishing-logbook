@@ -343,7 +343,10 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
                 && catchRecord.Location.Latitude == 53.2707
                 && catchRecord.Location.Longitude == -9.0568
                 && catchRecord.Location.AccuracyMetres == 12
-                && catchRecord.Location.Source == LocationDefaults.DeviceGps),
+                && catchRecord.Location.Source == LocationDefaults.DeviceGps
+                && catchRecord.UserId == OwnerUserId
+                && catchRecord.AnglerUserId == OwnerUserId
+                && catchRecord.RecordedByUserId == OwnerUserId),
             Arg.Any<CancellationToken>());
         await client.Received(1).UpdateLocationVisibilityAsync(
             catchId,

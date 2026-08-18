@@ -49,6 +49,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         result.IsSuccess.Should().BeTrue();
         result.Value.Id.Should().Be(catchId);
         result.Value.UserId.Should().Be(userId);
+        result.Value.AnglerUserId.Should().Be(userId);
+        result.Value.RecordedByUserId.Should().Be(userId);
         result.Value.Photographs.Should().HaveCount(2);
         result.Value.Photographs.Select(photograph => photograph.Id)
             .Should()
@@ -80,6 +82,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value.Should().NotBeNull();
         loaded.Value!.Id.Should().Be(original.Id);
         loaded.Value.CaughtOn.Should().Be(updated.CaughtOn);
+        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.RecordedByUserId.Should().Be(userId);
         loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
         loaded.Value.Location.Should().BeNull();
     }
@@ -97,6 +101,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
             {
                 Id = catchId,
                 UserId = userId,
+                AnglerUserId = userId,
+                RecordedByUserId = userId,
                 CaughtOn = caughtOn,
                 Photographs =
                 [
@@ -243,6 +249,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value.Location.Longitude.Should().Be(location.Longitude);
         loaded.Value.Location.AccuracyMetres.Should().Be(location.AccuracyMetres);
         loaded.Value.Location.Visibility.Should().Be(LocationDefaults.Private);
+        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.RecordedByUserId.Should().Be(userId);
         loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
     }
 
@@ -364,6 +372,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         result.Errors[0].Should().BeOfType<CatchOwnershipConflictError>();
         loaded.Value.Should().NotBeNull();
         loaded.Value!.UserId.Should().Be(ownerId);
+        loaded.Value.AnglerUserId.Should().Be(ownerId);
+        loaded.Value.RecordedByUserId.Should().Be(ownerId);
     }
 
     [Fact]
@@ -439,5 +449,76 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         // Assert
         result.IsFailed.Should().BeTrue();
         loaded.Value.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldKeepEstablishedProvenanceWhenTheSameCatchIsUpsertedAgain()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var otherUserId = await CreateUserAsync();
+        var original = NewCatch(userId);
+        await Sut.UpsertAsync(original, CancellationToken.None);
+        var retried = new Catch
+        {
+            Id = original.Id,
+            UserId = userId,
+            AnglerUserId = otherUserId,
+            RecordedByUserId = otherUserId,
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T12:00:00Z"),
+            Photographs = original.Photographs
+        };
+
+        // Act
+        var result = await Sut.UpsertAsync(retried, CancellationToken.None);
+        var loaded = await Sut.GetByIdAsync(original.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.AnglerUserId.Should().Be(userId);
+        result.Value.RecordedByUserId.Should().Be(userId);
+        loaded.Value.Should().NotBeNull();
+        loaded.Value!.UserId.Should().Be(userId);
+        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.RecordedByUserId.Should().Be(userId);
+        loaded.Value.CaughtOn.Should().Be(retried.CaughtOn);
+    }
+
+    [Fact]
+    public async Task ItShouldResolveMissingProvenanceColumnsToTheOwnerUserId()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var catchId = Guid.NewGuid();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn")
+            VALUES (@Id, @UserId, @CaughtOn);
+            """,
+            new
+            {
+                Id = catchId,
+                UserId = userId,
+                CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
+            });
+        await connection.ExecuteAsync(
+            """
+            UPDATE "Catch"
+            SET "AnglerUserId" = NULL,
+                "RecordedByUserId" = NULL
+            WHERE "Id" = @Id;
+            """,
+            new { Id = catchId });
+
+        // Act
+        var result = await Sut.GetByIdAsync(catchId, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.UserId.Should().Be(userId);
+        result.Value.AnglerUserId.Should().Be(userId);
+        result.Value.RecordedByUserId.Should().Be(userId);
     }
 }

@@ -6,6 +6,10 @@ public sealed class Catch
 
     public Guid UserId { get; init; }
 
+    public Guid AnglerUserId { get; init; }
+
+    public Guid RecordedByUserId { get; init; }
+
     public DateTimeOffset CaughtOn { get; init; }
 
     public CatchLocation? Location { get; init; }

@@ -363,6 +363,12 @@
   <data name="Catch_UnknownSpecies" xml:space="preserve">
     <value>Prise</value>
   </data>
+  <data name="Catch_AnglerYou" xml:space="preserve">
+    <value>Pêcheur : Vous</value>
+  </data>
+  <data name="Catch_RecordedByYou" xml:space="preserve">
+    <value>Enregistré par : Vous</value>
+  </data>
   <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
     <value>Confidentialité de la localisation</value>
   </data>

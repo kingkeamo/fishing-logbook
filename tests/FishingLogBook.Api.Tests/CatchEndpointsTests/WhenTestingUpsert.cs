@@ -69,7 +69,9 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Jpeg)])
         {
-            UserId = clientOwner
+            UserId = clientOwner,
+            AnglerUserId = clientOwner,
+            RecordedByUserId = clientOwner
         };
         ResetCatchRepository();
         var client = _factory.CreateAuthenticatedClient();
@@ -84,12 +86,18 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
         body!.UserId.Should().Be(current!.UserId);
+        body.AnglerUserId.Should().Be(current.UserId);
+        body.RecordedByUserId.Should().Be(current.UserId);
         body.UserId.Should().NotBe(clientOwner);
+        body.AnglerUserId.Should().NotBe(clientOwner);
+        body.RecordedByUserId.Should().NotBe(clientOwner);
         body.Id.Should().Be(catchId);
         body.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
         await _factory.CatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
                 item.UserId == current.UserId
+                && item.AnglerUserId == current.UserId
+                && item.RecordedByUserId == current.UserId
                 && item.Id == catchId
                 && item.Photographs[0].Id == photographId),
             Arg.Any<CancellationToken>());

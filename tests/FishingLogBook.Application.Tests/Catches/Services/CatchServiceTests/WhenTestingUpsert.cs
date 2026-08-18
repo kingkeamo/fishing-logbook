@@ -112,7 +112,9 @@ public class WhenTestingUpsert : BaseCatchServiceTest
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Png)])
             {
-                UserId = clientUserId
+                UserId = clientUserId,
+                AnglerUserId = clientUserId,
+                RecordedByUserId = clientUserId
             }
         };
         MockCatchRepository
@@ -125,11 +127,17 @@ public class WhenTestingUpsert : BaseCatchServiceTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.UserId.Should().Be(authenticatedUserId);
+        result.Value.AnglerUserId.Should().Be(authenticatedUserId);
+        result.Value.RecordedByUserId.Should().Be(authenticatedUserId);
         result.Value.UserId.Should().NotBe(clientUserId);
+        result.Value.AnglerUserId.Should().NotBe(clientUserId);
+        result.Value.RecordedByUserId.Should().NotBe(clientUserId);
         result.Value.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
                 item.UserId == authenticatedUserId
+                && item.AnglerUserId == authenticatedUserId
+                && item.RecordedByUserId == authenticatedUserId
                 && item.Id == catchId
                 && item.Photographs.Count == 1
                 && item.Photographs[0].Id == photographId
@@ -221,7 +229,9 @@ public class WhenTestingUpsert : BaseCatchServiceTest
                 && item.Location.CapturedOn == capturedOn
                 && item.Location.Source == LocationDefaults.DeviceGps
                 && item.Location.Visibility == LocationDefaults.Private
-                && item.Location.ConsentVersion == LocationDefaults.ConsentVersion),
+                && item.Location.ConsentVersion == LocationDefaults.ConsentVersion
+                && item.AnglerUserId == args.UserId
+                && item.RecordedByUserId == args.UserId),
             Arg.Any<CancellationToken>());
     }
 

@@ -66,6 +66,9 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         await MockCatchClient.Received(1).UpsertAsync(
             Arg.Is<CatchDto>(dto =>
                 dto.Id == CatchId
+                && dto.UserId == OwnerUserId
+                && dto.AnglerUserId == OwnerUserId
+                && dto.RecordedByUserId == OwnerUserId
                 && dto.Location != null
                 && dto.Location.Latitude == 53.2707
                 && dto.Location.Longitude == -9.0568
@@ -387,7 +390,9 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         await MockCatchClient.Received(1).UpsertAsync(
             Arg.Is<CatchDto>(dto =>
                 dto.Id == CatchId
-                && dto.UserId == Guid.Empty
+                && dto.UserId == OwnerUserId
+                && dto.AnglerUserId == OwnerUserId
+                && dto.RecordedByUserId == OwnerUserId
                 && dto.Photographs.Count == 3
                 && dto.Location != null
                 && dto.Location.Latitude == expected.Location!.Latitude

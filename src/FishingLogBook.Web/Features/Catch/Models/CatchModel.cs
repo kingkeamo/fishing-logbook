@@ -10,4 +10,6 @@ public sealed record CatchModel(
     CatchLocationModel? Location = null,
     Guid UserId = default,
     SyncStatus SyncStatus = SyncStatus.SavedLocally,
-    SyncStatus MetadataSyncStatus = SyncStatus.SavedLocally);
+    SyncStatus MetadataSyncStatus = SyncStatus.SavedLocally,
+    Guid AnglerUserId = default,
+    Guid RecordedByUserId = default);

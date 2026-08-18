@@ -53,7 +53,9 @@ public sealed class CatchMappingRegistration : IRegister
                         source.Location.Visibility,
                         source.Location.ConsentVersion))
             {
-                UserId = source.UserId
+                UserId = source.UserId,
+                AnglerUserId = source.AnglerUserId,
+                RecordedByUserId = source.RecordedByUserId
             });
     }
 }

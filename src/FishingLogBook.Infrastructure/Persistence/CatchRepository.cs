@@ -150,6 +150,8 @@ public sealed class CatchRepository : ICatchRepository
             INSERT INTO "Catch" (
                 "Id",
                 "UserId",
+                "AnglerUserId",
+                "RecordedByUserId",
                 "CaughtOn",
                 "Latitude",
                 "Longitude",
@@ -161,6 +163,8 @@ public sealed class CatchRepository : ICatchRepository
             VALUES (
                 @Id,
                 @UserId,
+                @AnglerUserId,
+                @RecordedByUserId,
                 @CaughtOn,
                 @Latitude,
                 @Longitude,
@@ -227,6 +231,8 @@ public sealed class CatchRepository : ICatchRepository
             SELECT
                 "Id",
                 "UserId",
+                COALESCE("AnglerUserId", "UserId") AS "AnglerUserId",
+                COALESCE("RecordedByUserId", "UserId") AS "RecordedByUserId",
                 "CaughtOn",
                 "Latitude",
                 "Longitude",
@@ -264,6 +270,8 @@ public sealed class CatchRepository : ICatchRepository
         {
             Id = catchRow.Id,
             UserId = catchRow.UserId,
+            AnglerUserId = catchRow.AnglerUserId,
+            RecordedByUserId = catchRow.RecordedByUserId,
             CaughtOn = catchRow.CaughtOn,
             Location = ToLocation(catchRow),
             Photographs = photographs.ToArray()
@@ -276,6 +284,8 @@ public sealed class CatchRepository : ICatchRepository
         {
             catchRecord.Id,
             catchRecord.UserId,
+            catchRecord.AnglerUserId,
+            catchRecord.RecordedByUserId,
             CaughtOn = catchRecord.CaughtOn.ToUniversalTime(),
             Latitude = catchRecord.Location?.Latitude,
             Longitude = catchRecord.Location?.Longitude,
@@ -309,6 +319,10 @@ public sealed class CatchRepository : ICatchRepository
         public Guid Id { get; init; }
 
         public Guid UserId { get; init; }
+
+        public Guid AnglerUserId { get; init; }
+
+        public Guid RecordedByUserId { get; init; }
 
         public DateTimeOffset CaughtOn { get; init; }
 

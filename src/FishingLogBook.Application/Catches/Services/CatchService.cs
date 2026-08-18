@@ -51,6 +51,8 @@ public sealed class CatchService : ICatchService
         {
             Id = args.Catch.Id,
             UserId = args.UserId,
+            AnglerUserId = args.UserId,
+            RecordedByUserId = args.UserId,
             CaughtOn = args.Catch.CaughtOn,
             Location = location,
             Photographs = photographs
@@ -88,7 +90,11 @@ public sealed class CatchService : ICatchService
             loaded.Value.Id,
             loaded.Value.UserId,
             loaded.Value.CaughtOn,
-            exposure));
+            exposure)
+        {
+            AnglerUserId = loaded.Value.AnglerUserId,
+            RecordedByUserId = loaded.Value.RecordedByUserId
+        });
     }
 
     public async Task<Result> UpdateLocationVisibilityAsync(

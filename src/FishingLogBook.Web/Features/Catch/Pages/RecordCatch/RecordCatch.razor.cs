@@ -241,7 +241,9 @@ public partial class RecordCatch : ComponentBase, IDisposable
                     _caughtOn ?? DateTimeOffset.UtcNow,
                     photographs,
                     Location: location,
-                    UserId: ownerUserId),
+                    UserId: ownerUserId,
+                    AnglerUserId: ownerUserId,
+                    RecordedByUserId: ownerUserId),
                 _cancellationTokenSource.Token);
             _isSaved = true;
             _locationSaved = location is not null;
