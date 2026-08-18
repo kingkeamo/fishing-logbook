@@ -1,4 +1,6 @@
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -24,6 +26,9 @@ public partial class CatchList : ComponentBase, IDisposable
 
     [Inject]
     private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+
+    [Inject]
+    private IModalService ModalService { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
@@ -67,6 +72,17 @@ public partial class CatchList : ComponentBase, IDisposable
     private static string ThumbnailUrl(CatchPhotographModel photograph)
     {
         return $"data:{photograph.ContentType};base64,{Convert.ToBase64String(photograph.Bytes!)}";
+    }
+
+    private async Task OpenLocationPrivacyAsync(Guid catchId)
+    {
+        var result = await ModalService.ShowAsync<LocationPrivacyModal, LocationPrivacyModalModel, LocationPrivacyModalResult>(
+            new LocationPrivacyModalModel(catchId),
+            _cancellationTokenSource.Token);
+        if (result?.Saved == true)
+        {
+            await LoadAsync();
+        }
     }
 
     private async Task RetryAsync(Guid catchId)

@@ -2,6 +2,8 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.CatchList;
@@ -59,6 +61,7 @@ public class WhenTestingRender : BaseCatchListTest
             cut.Find($"#catch-recorded-by-{catchId:D}").TextContent.Should().Contain("Recorded by: You");
             cut.Find($"#catch-edit-{catchId:D}").TextContent.Should().Contain("Edit details");
             cut.Find($"#catch-edit-{catchId:D}").GetAttribute("href").Should().Be($"/catches/{catchId:D}/edit");
+            cut.Find($"#catch-edit-{catchId:D}").ClassList.Should().Contain("mud-button-outlined-primary");
         });
         await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
@@ -177,7 +180,7 @@ public class WhenTestingRender : BaseCatchListTest
     }
 
     [Fact]
-    public async Task ItShouldShowTheLocationPrivacyLinkWhenTheCatchHasALocation()
+    public async Task ItShouldOpenLocationPrivacyThroughTheModalServiceWithoutNavigating()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -197,26 +200,72 @@ public class WhenTestingRender : BaseCatchListTest
         var store = Substitute.For<ICatchStore>();
         store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
-        await using var context = CreateContext(store);
+        var modalService = Substitute.For<IModalService>();
+        modalService.ShowAsync<LocationPrivacyModal, LocationPrivacyModalModel, LocationPrivacyModalResult>(
+                Arg.Any<LocationPrivacyModalModel>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new LocationPrivacyModalResult(true));
+        await using var context = CreateContext(store, modalService: modalService);
 
         // Act
         var cut = context.Render<CatchList>();
+        cut.WaitForAssertion(() => cut.Find($"#catch-location-privacy-{catchId:D}").Should().NotBeNull());
+        var privacy = cut.Find($"#catch-location-privacy-{catchId:D}");
+        privacy.TextContent.Should().Contain("Location privacy");
+        privacy.GetAttribute("href").Should().BeNull();
+        privacy.ClassList.Should().Contain("mud-button-outlined-primary");
+        await privacy.ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() =>
-        {
-            var link = cut.Find($"#catch-location-privacy-{catchId:D}");
-            link.TextContent.Should().Contain("Location privacy");
-            link.GetAttribute("href").Should().Be($"/catches/{catchId:D}/location-privacy");
-        });
-        cut.WaitForAssertion(() =>
-        {
-            var edit = cut.Find($"#catch-edit-{catchId:D}");
-            edit.TextContent.Should().Contain("Edit details");
-            edit.GetAttribute("href").Should().Be($"/catches/{catchId:D}/edit");
-        });
+        cut.Find($"#catch-row-{catchId:D}").Should().NotBeNull();
+        cut.Markup.Should().NotContain("/location-privacy");
         cut.Markup.Should().NotContain("53.2707");
         cut.Markup.Should().NotContain("-9.0568");
+        await modalService.Received(1).ShowAsync<LocationPrivacyModal, LocationPrivacyModalModel, LocationPrivacyModalResult>(
+            Arg.Is<LocationPrivacyModalModel>(model => model.CatchId == catchId),
+            Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldStayOnTheCatchListWhenLocationPrivacyIsCancelled()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var stored = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])],
+            Location: new CatchLocationModel(
+                53.2707,
+                -9.0568,
+                12,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion));
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([stored]));
+        var modalService = Substitute.For<IModalService>();
+        modalService.ShowAsync<LocationPrivacyModal, LocationPrivacyModalModel, LocationPrivacyModalResult>(
+                Arg.Any<LocationPrivacyModalModel>(),
+                Arg.Any<CancellationToken>())
+            .Returns((LocationPrivacyModalResult?)null);
+        await using var context = CreateContext(store, modalService: modalService);
+        var cut = context.Render<CatchList>();
+        cut.WaitForAssertion(() => cut.Find($"#catch-location-privacy-{catchId:D}").Should().NotBeNull());
+
+        // Act
+        await cut.Find($"#catch-location-privacy-{catchId:D}").ClickAsync();
+
+        // Assert
+        cut.Find($"#catch-row-{catchId:D}").Should().NotBeNull();
+        cut.Markup.Should().NotContain("/location-privacy");
+        await modalService.Received(1).ShowAsync<LocationPrivacyModal, LocationPrivacyModalModel, LocationPrivacyModalResult>(
+            Arg.Is<LocationPrivacyModalModel>(model => model.CatchId == catchId),
+            Arg.Any<CancellationToken>());
         await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 

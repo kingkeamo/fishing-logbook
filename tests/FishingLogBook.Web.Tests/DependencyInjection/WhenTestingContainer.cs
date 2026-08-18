@@ -2,13 +2,13 @@ using AwesomeAssertions;
 using FishingLogBook.Tests.Common.TestSupport;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
-using FishingLogBook.Web.Features.Diagnostics.Storage;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Models;
@@ -67,6 +67,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         injectedTypes.Should().Contain(typeof(ITimeService));
         injectedTypes.Should().Contain(typeof(ICatchClient));
         injectedTypes.Should().Contain(typeof(ICatchSynchroniser));
+        injectedTypes.Should().Contain(typeof(IModalService));
         injectedTypes.Should().Contain(typeof(IStringLocalizer<UiStrings>));
         resolve.Should().NotThrow();
     }

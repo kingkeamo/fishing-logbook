@@ -1,0 +1,20 @@
+@namespace FishingLogBook.Web.Common.Modals
+
+<MudDialog id="message-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="message-modal-title">@Model.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="@AlertSeverity" id="message-modal-message">
+            @Model.Message
+        </MudAlert>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="Close"
+                   id="message-modal-close">
+            @Model.CloseText
+        </MudButton>
+    </DialogActions>
+</MudDialog>

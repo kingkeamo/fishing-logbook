@@ -456,6 +456,60 @@ describe('Production Catch store', () => {
         );
     });
 
+    it('accepts the server location privacy once local sync has settled', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = '11111111-1111-1111-1111-111111111111';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                syncStatus: 3,
+                metadataSyncStatus: 3,
+                location: {
+                    latitude: 53.2707,
+                    longitude: -9.0568,
+                    visibility: 'Private'
+                },
+                photographs: [{
+                    id: photographId,
+                    catchId,
+                    contentType: 'image/jpeg',
+                    syncStatus: 3
+                }]
+            }),
+            [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1])
+            }]
+        );
+
+        await updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            syncStatus: 3,
+            metadataSyncStatus: 3,
+            location: {
+                latitude: 53.2707,
+                longitude: -9.0568,
+                visibility: 'Public'
+            },
+            photographs: [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                syncStatus: 3
+            }]
+        }));
+
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = JSON.parse(ownerView[0].json);
+        expect(stored.location.visibility).toBe('Public');
+        expect(stored.syncStatus).toBe(3);
+        expect(stored.photographs[0].syncStatus).toBe(3);
+    });
+
     it('does not let a stale sync transition overwrite newer location privacy', async () => {
         const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
         const photographId = '11111111-1111-1111-1111-111111111111';

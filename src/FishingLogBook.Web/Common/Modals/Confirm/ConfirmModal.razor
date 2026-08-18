@@ -1,0 +1,23 @@
+@namespace FishingLogBook.Web.Common.Modals
+
+<MudDialog id="confirm-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="confirm-modal-title">@Model.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText id="confirm-modal-message">@Model.Message</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   OnClick="Cancel"
+                   id="confirm-modal-cancel">
+            @Model.CancelText
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="@(Model.IsDestructive ? Color.Error : Color.Primary)"
+                   OnClick="Confirm"
+                   id="confirm-modal-confirm">
+            @Model.ConfirmText
+        </MudButton>
+    </DialogActions>
+</MudDialog>
