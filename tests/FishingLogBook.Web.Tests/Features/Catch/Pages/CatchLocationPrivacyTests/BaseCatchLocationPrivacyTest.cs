@@ -43,7 +43,9 @@ public class BaseCatchLocationPrivacyTest
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])],
             Location: location,
-            UserId: OwnerUserId);
+            UserId: OwnerUserId,
+            AnglerUserId: OwnerUserId,
+            RecordedByUserId: OwnerUserId);
     }
 
     protected static CatchModel LocatedCatch(Guid catchId, string visibility = LocationDefaults.Private)

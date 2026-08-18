@@ -143,6 +143,9 @@ public class WhenTestingUpdateLocationVisibility : BaseCatchRepositoryTest
         loaded.Value.Location.AccuracyMetres.Should().Be(location.AccuracyMetres);
         loaded.Value.Location.Source.Should().Be(LocationDefaults.DeviceGps);
         loaded.Value.Location.ConsentVersion.Should().Be(LocationDefaults.ConsentVersion);
+        loaded.Value.UserId.Should().Be(userId);
+        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.RecordedByUserId.Should().Be(userId);
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var row = await connection.QuerySingleAsync(
             """

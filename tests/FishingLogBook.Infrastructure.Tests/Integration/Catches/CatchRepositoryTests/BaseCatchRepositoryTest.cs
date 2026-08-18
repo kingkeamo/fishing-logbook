@@ -62,6 +62,8 @@ public abstract class BaseCatchRepositoryTest
         {
             Id = id,
             UserId = userId,
+            AnglerUserId = userId,
+            RecordedByUserId = userId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Photographs = photos
         };
@@ -89,6 +91,8 @@ public abstract class BaseCatchRepositoryTest
         {
             Id = catchRecord.Id,
             UserId = catchRecord.UserId,
+            AnglerUserId = catchRecord.AnglerUserId,
+            RecordedByUserId = catchRecord.RecordedByUserId,
             CaughtOn = catchRecord.CaughtOn,
             Location = location,
             Photographs = catchRecord.Photographs

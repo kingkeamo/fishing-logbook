@@ -576,13 +576,21 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                     catchRecord.Location.CapturedOn,
                     catchRecord.Location.Source,
                     catchRecord.Location.Visibility,
-                    catchRecord.Location.ConsentVersion));
+                    catchRecord.Location.ConsentVersion))
+        {
+            UserId = catchRecord.UserId,
+            AnglerUserId = catchRecord.AnglerUserId,
+            RecordedByUserId = catchRecord.RecordedByUserId
+        };
     }
 
     private static bool HasSameMetadata(CatchModel catchRecord, CatchDto sent)
     {
         if (catchRecord.Id != sent.Id
             || catchRecord.CaughtOn != sent.CaughtOn
+            || catchRecord.UserId != sent.UserId
+            || catchRecord.AnglerUserId != sent.AnglerUserId
+            || catchRecord.RecordedByUserId != sent.RecordedByUserId
             || catchRecord.Photographs.Count != sent.Photographs.Count)
         {
             return false;

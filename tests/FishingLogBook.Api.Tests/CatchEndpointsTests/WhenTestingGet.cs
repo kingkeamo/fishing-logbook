@@ -68,6 +68,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         {
             Id = Guid.NewGuid(),
             UserId = current!.UserId,
+            AnglerUserId = current.UserId,
+            RecordedByUserId = current.UserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
         };
         _factory.CatchRepository
@@ -84,7 +86,10 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         json.Should().NotContain("\"latitude\":");
         json.Should().NotContain("53.2707");
         body.Should().NotBeNull();
-        body!.Location.Should().BeNull();
+        body!.UserId.Should().Be(current.UserId);
+        body.AnglerUserId.Should().Be(current.UserId);
+        body.RecordedByUserId.Should().Be(current.UserId);
+        body.Location.Should().BeNull();
         await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
     }
 
@@ -312,6 +317,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         {
             Id = catchId,
             UserId = ownerUserId,
+            AnglerUserId = ownerUserId,
+            RecordedByUserId = ownerUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Location = CatchLocation.TryCreate(
                 53.2707,

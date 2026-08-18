@@ -93,7 +93,9 @@ public class BaseCatchSynchroniserTest
                 "1"),
             userId ?? OwnerUserId,
             catchStatus,
-            metadataStatus);
+            metadataStatus,
+            AnglerUserId: userId ?? OwnerUserId,
+            RecordedByUserId: userId ?? OwnerUserId);
     }
 
     protected static CatchPhotographModel CreatePhotograph(

@@ -53,6 +53,12 @@
                                 <MudText Typo="Typo.caption" id="@($"catch-time-{catchRecord.Id:D}")">
                                     @catchRecord.CaughtOn.ToString("g")
                                 </MudText>
+                                <MudText Typo="Typo.caption" id="@($"catch-angler-{catchRecord.Id:D}")">
+                                    @Loc["Catch_AnglerYou"]
+                                </MudText>
+                                <MudText Typo="Typo.caption" id="@($"catch-recorded-by-{catchRecord.Id:D}")">
+                                    @Loc["Catch_RecordedByYou"]
+                                </MudText>
                                 <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center"
                                           id="@($"catch-sync-status-{catchRecord.Id:D}")">
                                     <MudIcon Icon="@SyncStatusIcon(catchRecord.SyncStatus)"

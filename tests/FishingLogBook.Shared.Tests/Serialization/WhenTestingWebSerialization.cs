@@ -96,7 +96,12 @@ public class WhenTestingWebSerialization : BaseSerializationTest
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 LocationDefaults.DeviceGps,
                 LocationDefaults.Private,
-                LocationDefaults.ConsentVersion));
+                LocationDefaults.ConsentVersion))
+        {
+            UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            AnglerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            RecordedByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111")
+        };
 
         // Act
         var json = JsonSerializer.Serialize(original, WebOptions);
@@ -195,7 +200,11 @@ public class WhenTestingWebSerialization : BaseSerializationTest
                 Mode = LocationDefaults.ExposureExact,
                 Latitude = 53.2707,
                 Longitude = -9.0568
-            });
+            })
+        {
+            AnglerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            RecordedByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111")
+        };
 
         // Act
         var json = JsonSerializer.Serialize(original, WebOptions);

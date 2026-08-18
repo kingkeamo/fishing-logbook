@@ -63,6 +63,8 @@ public class WhenTestingGetView : BaseCatchServiceTest
         {
             Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             UserId = ownerUserId,
+            AnglerUserId = ownerUserId,
+            RecordedByUserId = ownerUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
         };
         MockCatchRepository
@@ -84,6 +86,8 @@ public class WhenTestingGetView : BaseCatchServiceTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.UserId.Should().Be(ownerUserId);
+        result.Value.AnglerUserId.Should().Be(ownerUserId);
+        result.Value.RecordedByUserId.Should().Be(ownerUserId);
         result.Value.Location!.Mode.Should().Be(LocationDefaults.ExposureNone);
         await MockCatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
         await MockCatchLocationPrivacyService.Received(1).GetExposureAsync(

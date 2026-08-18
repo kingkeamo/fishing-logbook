@@ -70,7 +70,9 @@ public class WhenTestingSave : BaseCatchStoreTest
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Png, [9, 8, 7])],
-            UserId: OwnerUserId);
+            UserId: OwnerUserId,
+            AnglerUserId: OwnerUserId,
+            RecordedByUserId: OwnerUserId);
         await Sut.SaveAsync(catchRecord, CancellationToken.None);
         var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
 
@@ -85,6 +87,8 @@ public class WhenTestingSave : BaseCatchStoreTest
         saved[0].Photographs[0].Bytes.Should().Equal(9, 8, 7);
         saved[0].SpeciesName.Should().BeNull();
         saved[0].UserId.Should().Be(OwnerUserId);
+        saved[0].AnglerUserId.Should().Be(OwnerUserId);
+        saved[0].RecordedByUserId.Should().Be(OwnerUserId);
     }
 
     [Fact]

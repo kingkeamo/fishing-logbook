@@ -128,6 +128,8 @@ public class WhenTestingSave : BaseRecordCatchTest
         // Assert
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+                catchRecord.AnglerUserId == OwnerUserId &&
+                catchRecord.RecordedByUserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id == photographId
                 && catchRecord.Photographs[0].CatchId == catchRecord.Id
@@ -462,6 +464,8 @@ public class WhenTestingSave : BaseRecordCatchTest
         });
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+                catchRecord.AnglerUserId == OwnerUserId &&
+                catchRecord.RecordedByUserId == OwnerUserId &&
                 catchRecord.SyncStatus == SyncStatus.SavedLocally),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());

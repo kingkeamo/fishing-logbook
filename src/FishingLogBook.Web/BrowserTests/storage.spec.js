@@ -73,6 +73,39 @@ test.describe('Production Catch IndexedDB', () => {
         expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
     });
 
+    test('keeps owner and provenance ids after close and reload', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.putAndGetProductionCatchWithProvenance());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.userId).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.anglerUserId).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.recordedByUserId).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.anglerUserId).toBe(catchRecord.userId);
+        expect(catchRecord.recordedByUserId).toBe(catchRecord.userId);
+    });
+
+    test('still reads a Catch stored without provenance properties', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.putLegacyProductionCatchWithoutProvenance());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.id).toBe('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+        expect(catchRecord.userId).toBe('11111111-1111-1111-1111-111111111111');
+        expect(catchRecord.anglerUserId).toBeUndefined();
+        expect(catchRecord.recordedByUserId).toBeUndefined();
+    });
+
     test('keeps sync transitions and photograph bytes after close and reload', async ({ page }) => {
         await page.goto(`${harness}/index.html`);
         await expect(page.locator('#status')).toHaveText('ready');

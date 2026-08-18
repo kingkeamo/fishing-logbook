@@ -7,4 +7,8 @@ public sealed record CatchDto(
     CatchLocationDto? Location = null)
 {
     public Guid UserId { get; init; }
+
+    public Guid AnglerUserId { get; init; }
+
+    public Guid RecordedByUserId { get; init; }
 }

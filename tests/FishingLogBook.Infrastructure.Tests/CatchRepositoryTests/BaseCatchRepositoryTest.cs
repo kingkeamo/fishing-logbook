@@ -3,8 +3,8 @@ using FishingLogBook.Domain.Catches;
 using FishingLogBook.Infrastructure.Persistence;
 using FishingLogBook.Infrastructure.Tests.TestSupport;
 using FishingLogBook.Shared.Constants;
-using NSubstitute;
 using Npgsql;
+using NSubstitute;
 
 namespace FishingLogBook.Infrastructure.Tests.CatchRepositoryTests;
 
