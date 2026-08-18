@@ -61,23 +61,30 @@ public class WhenTestingSyncStatus : BaseCatchListTest
     }
 
     [Fact]
-    public async Task ItShouldNotOfferManualSynchronisationWhileWaitingToSynchronise()
+    public async Task ItShouldOfferManualSynchronisationWhileWaitingToSynchronise()
     {
         // Arrange
         var catchId = Guid.NewGuid();
+        var catchRecord = CatchWithStatus(catchId, SyncStatus.WaitingToSynchronise);
         var store = Substitute.For<ICatchStore>();
         store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<CatchModel>>(
-                [CatchWithStatus(catchId, SyncStatus.WaitingToSynchronise)]);
-        await using var context = CreateContext(store);
+            .Returns<IReadOnlyList<CatchModel>>([catchRecord]);
+        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        await using var context = CreateContext(store, synchroniser: synchroniser);
 
         // Act
         var cut = context.Render<CatchList>();
+        await cut.Find($"#catch-sync-retry-{catchId:D}").ClickAsync(new());
 
         // Assert
         cut.Find($"#catch-sync-status-{catchId:D}").TextContent
             .Should().Contain("Waiting to synchronise");
-        cut.FindAll($"#catch-sync-retry-{catchId:D}").Should().BeEmpty();
+        await synchroniser.Received(1).RetryAsync(
+            catchId,
+            Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(
+            OwnerUserId,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

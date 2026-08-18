@@ -75,7 +75,8 @@
                                     </MudText>
                                 }
                                 @if (catchRecord.SyncStatus is SyncStatus.SavedLocally
-                                     or SyncStatus.FailedToSynchronise)
+                                    or SyncStatus.WaitingToSynchronise
+                                    or SyncStatus.FailedToSynchronise)
                                 {
                                     <MudButton Variant="Variant.Outlined"
                                                Color="Color.Primary"
