@@ -22,7 +22,8 @@ public class BaseRecordCatchTest
     protected static BunitContext CreateContext(
         ICatchStore store,
         ILocationService? location = null,
-        ILocalCatchOwnerService? owner = null)
+        ILocalCatchOwnerService? owner = null,
+        ICatchSynchroniser? synchroniser = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -31,8 +32,19 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(location ?? QuietLocation());
         context.Services.AddSingleton(owner ?? SignedInOwner());
+        context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static ICatchSynchroniser QuietSynchroniser()
+    {
+        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        synchroniser.RetryAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return synchroniser;
     }
 
     protected static ILocalCatchOwnerService SignedInOwner()

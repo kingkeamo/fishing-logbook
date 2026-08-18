@@ -36,6 +36,9 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
 
     [Inject]
+    private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+
+    [Inject]
     private ILocationService LocationService { get; set; } = default!;
 
     [Inject]
@@ -211,6 +214,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         _isSaving = true;
         _saveFailed = false;
         await InvokeAsync(StateHasChanged);
+        var saved = false;
         try
         {
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
@@ -237,6 +241,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
                 _cancellationTokenSource.Token);
             _isSaved = true;
             _locationSaved = location is not null;
+            saved = true;
         }
         catch (Exception)
         {
@@ -245,6 +250,32 @@ public partial class RecordCatch : ComponentBase, IDisposable
         finally
         {
             _isSaving = false;
+        }
+
+        if (!saved)
+        {
+            return;
+        }
+
+        TryToSynchronisePending();
+    }
+
+    private void TryToSynchronisePending()
+    {
+        _ = SafeSynchronisePendingAsync();
+    }
+
+    private async Task SafeSynchronisePendingAsync()
+    {
+        try
+        {
+            await CatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception)
+        {
         }
     }
 
