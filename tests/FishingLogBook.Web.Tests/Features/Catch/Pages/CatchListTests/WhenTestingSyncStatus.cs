@@ -61,6 +61,53 @@ public class WhenTestingSyncStatus : BaseCatchListTest
     }
 
     [Fact]
+    public async Task ItShouldOfferManualSynchronisationWhileWaitingToSynchronise()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var catchRecord = CatchWithStatus(catchId, SyncStatus.WaitingToSynchronise);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns<IReadOnlyList<CatchModel>>([catchRecord]);
+        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        await using var context = CreateContext(store, synchroniser: synchroniser);
+
+        // Act
+        var cut = context.Render<CatchList>();
+        await cut.Find($"#catch-sync-retry-{catchId:D}").ClickAsync(new());
+
+        // Assert
+        cut.Find($"#catch-sync-status-{catchId:D}").TextContent
+            .Should().Contain("Waiting to synchronise");
+        await synchroniser.Received(1).RetryAsync(
+            catchId,
+            Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(
+            OwnerUserId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotOfferManualSynchronisationWhileSynchronising()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns<IReadOnlyList<CatchModel>>(
+                [CatchWithStatus(catchId, SyncStatus.Synchronising)]);
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.Find($"#catch-sync-status-{catchId:D}").TextContent
+            .Should().Contain("Synchronising");
+        cut.FindAll($"#catch-sync-retry-{catchId:D}").Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ItShouldOfferManualSynchronisationForALocallySavedCatch()
     {
         // Arrange

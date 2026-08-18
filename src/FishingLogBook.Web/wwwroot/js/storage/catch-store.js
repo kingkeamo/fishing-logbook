@@ -263,10 +263,17 @@ export async function updateCatchMetadata(json) {
                     objectKey: incoming.objectKey
                 };
             });
+            const hasPendingLocalSyncState = (status) => typeof status === 'number' && status !== 3;
+            const location = hasPendingLocalSyncState(existing.syncStatus)
+                || hasPendingLocalSyncState(existing.metadataSyncStatus)
+                ? (existing.location ?? catchRecord.location)
+                : (catchRecord.location ?? existing.location);
+
             const updateRequest = store.put({
                 ...existing,
                 syncStatus: catchRecord.syncStatus,
                 metadataSyncStatus: catchRecord.metadataSyncStatus,
+                location,
                 photographs
             });
             updateRequest.onsuccess = () => succeed();

@@ -1,0 +1,24 @@
+@namespace FishingLogBook.Web.Components.AppErrorBoundary
+
+<LoggingErrorBoundary @ref="_errorBoundary">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <ErrorContent>
+        <MudContainer MaxWidth="MaxWidth.Small" Class="app-error-boundary-container pa-4">
+            <MudStack Spacing="3">
+                <MudAlert Severity="Severity.Error" Variant="Variant.Filled" id="app-error-boundary-alert">
+                    <MudText Typo="Typo.h6">@Loc["App_UnhandledErrorTitle"]</MudText>
+                    <MudText Typo="Typo.body2">@Loc["App_UnhandledErrorMessage"]</MudText>
+                </MudAlert>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           OnClick="Reload"
+                           id="app-error-boundary-reload">
+                    @Loc["Action_Reload"]
+                </MudButton>
+            </MudStack>
+        </MudContainer>
+    </ErrorContent>
+</LoggingErrorBoundary>

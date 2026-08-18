@@ -456,14 +456,26 @@
   <data name="Catch_LocationVisibilityPrivate" xml:space="preserve">
     <value>Moi uniquement</value>
   </data>
+  <data name="Catch_LocationVisibilityPrivateHelp" xml:space="preserve">
+    <value>Seul vous pouvez voir l'emplacement exact.</value>
+  </data>
   <data name="Catch_LocationVisibilityApproximate" xml:space="preserve">
     <value>Zone approximative</value>
+  </data>
+  <data name="Catch_LocationVisibilityApproximateHelp" xml:space="preserve">
+    <value>Les autres peuvent voir une zone générale, pas l'endroit exact.</value>
   </data>
   <data name="Catch_LocationVisibilityFishingVenueOnly" xml:space="preserve">
     <value>Site de pêche uniquement</value>
   </data>
+  <data name="Catch_LocationVisibilityFishingVenueOnlyHelp" xml:space="preserve">
+    <value>Les autres peuvent voir le site associé, pas les coordonnées précises.</value>
+  </data>
   <data name="Catch_LocationVisibilityPublic" xml:space="preserve">
     <value>Position exacte publique</value>
+  </data>
+  <data name="Catch_LocationVisibilityPublicHelp" xml:space="preserve">
+    <value>L'emplacement précis peut être visible publiquement.</value>
   </data>
   <data name="Catch_LocationVisibilityPublicWarning" xml:space="preserve">
     <value>Toute personne pouvant voir cette prise pourra voir le spot de pêche exact.</value>
@@ -475,7 +487,7 @@
     <value>Enregistrement</value>
   </data>
   <data name="Catch_LocationPrivacySaved" xml:space="preserve">
-    <value>Confidentialité de la localisation enregistrée</value>
+    <value>Confidentialité de la localisation enregistrée sur cet appareil</value>
   </data>
   <data name="Catch_LocationPrivacySaveFailed" xml:space="preserve">
     <value>La confidentialité n'a pas pu être enregistrée. Réessayez.</value>
@@ -560,5 +572,20 @@
   </data>
   <data name="Auth_SignOut" xml:space="preserve">
     <value>Déconnexion</value>
+  </data>
+  <data name="Modal_Cancel" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="App_UnhandledErrorTitle" xml:space="preserve">
+    <value>Un problème est survenu</value>
+  </data>
+  <data name="App_UnhandledErrorMessage" xml:space="preserve">
+    <value>L’application a rencontré une erreur inattendue. Rechargez pour continuer.</value>
+  </data>
+  <data name="App_UnhandledErrorSnackbar" xml:space="preserve">
+    <value>Un problème est survenu. Veuillez réessayer.</value>
+  </data>
+  <data name="Action_Reload" xml:space="preserve">
+    <value>Recharger</value>
   </data>
 </root>

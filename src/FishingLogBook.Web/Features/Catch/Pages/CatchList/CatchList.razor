@@ -74,8 +74,9 @@
                                         @Loc["Catch_SyncFailureReassurance"]
                                     </MudText>
                                 }
-                                @if (catchRecord.SyncStatus is not SyncStatus.Synchronised
-                                     and not SyncStatus.Synchronising)
+                                @if (catchRecord.SyncStatus is SyncStatus.SavedLocally
+                                    or SyncStatus.WaitingToSynchronise
+                                    or SyncStatus.FailedToSynchronise)
                                 {
                                     <MudButton Variant="Variant.Outlined"
                                                Color="Color.Primary"
@@ -87,7 +88,7 @@
                                             : Loc["Catch_SyncNow"])
                                     </MudButton>
                                 }
-                                <MudButton Variant="Variant.Text"
+                                <MudButton Variant="Variant.Outlined"
                                            Color="Color.Primary"
                                            Href="@($"/catches/{catchRecord.Id:D}/edit")"
                                            id="@($"catch-edit-{catchRecord.Id:D}")">
@@ -95,9 +96,9 @@
                                 </MudButton>
                                 @if (catchRecord.Location is not null)
                                 {
-                                    <MudButton Variant="Variant.Text"
+                                    <MudButton Variant="Variant.Outlined"
                                                Color="Color.Primary"
-                                               Href="@($"/catches/{catchRecord.Id:D}/location-privacy")"
+                                               OnClick="@(() => OpenLocationPrivacyAsync(catchRecord.Id))"
                                                id="@($"catch-location-privacy-{catchRecord.Id:D}")">
                                         @Loc["Catch_ManageLocationPrivacy"]
                                     </MudButton>

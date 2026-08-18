@@ -1,4 +1,5 @@
 using Bunit;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
@@ -16,7 +17,8 @@ public class BaseCatchListTest
     protected static BunitContext CreateContext(
         ICatchStore store,
         ILocalCatchOwnerService? owner = null,
-        ICatchSynchroniser? synchroniser = null)
+        ICatchSynchroniser? synchroniser = null,
+        IModalService? modalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -25,6 +27,7 @@ public class BaseCatchListTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddSingleton(synchroniser ?? Substitute.For<ICatchSynchroniser>());
+        context.Services.AddSingleton(modalService ?? Substitute.For<IModalService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }

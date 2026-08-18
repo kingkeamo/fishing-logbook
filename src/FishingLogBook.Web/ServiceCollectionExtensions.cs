@@ -1,6 +1,7 @@
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -70,6 +71,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICultureService, CultureService>();
         services.AddScoped<ISignedInUserDisplayService, SignedInUserDisplayService>();
         services.AddMudServices();
+        services.AddScoped<IModalService, ModalService>();
         services.AddTransient<MudLocalizer, FishingLogBookMudLocalizer>();
         services.AddOidcAuthentication(options => ConfigureOidc(options, authConfig));
 

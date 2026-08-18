@@ -1,22 +1,28 @@
+using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using MudBlazor.Services;
 using NSubstitute;
 
-namespace FishingLogBook.Web.Tests.Features.Catch.Pages.CatchLocationPrivacyTests;
+namespace FishingLogBook.Web.Tests.Features.Catch.Modals.LocationPrivacyModalTests;
 
-public class BaseCatchLocationPrivacyTest
+public class BaseLocationPrivacyModalTest
 {
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    protected static BunitContext CreateContext(ICatchStore store, ICatchClient? client = null, ILocalCatchOwnerService? owner = null)
+    protected static BunitContext CreateContext(
+        ICatchStore store,
+        ICatchClient? client = null,
+        ILocalCatchOwnerService? owner = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -27,6 +33,28 @@ public class BaseCatchLocationPrivacyTest
         context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static async Task<(IRenderedComponent<MudDialogProvider> Cut, IDialogReference Dialog)> ShowModalAsync(
+        BunitContext context,
+        Guid catchId)
+    {
+        var cut = context.Render<MudDialogProvider>();
+        var dialogs = context.Services.GetRequiredService<IDialogService>();
+        var parameters = new DialogParameters<LocationPrivacyModal>
+        {
+            { modal => modal.Model, new LocationPrivacyModalModel(catchId) }
+        };
+        var dialog = await dialogs.ShowAsync<LocationPrivacyModal>(
+            parameters,
+            new DialogOptions
+            {
+                CloseButton = true,
+                CloseOnEscapeKey = true,
+                FullWidth = true,
+                MaxWidth = MaxWidth.Small
+            });
+        return (cut, dialog);
     }
 
     protected static ILocalCatchOwnerService SignedInOwner()
@@ -60,5 +88,13 @@ public class BaseCatchLocationPrivacyTest
                 LocationDefaults.DeviceGps,
                 visibility,
                 LocationDefaults.ConsentVersion));
+    }
+
+    protected static async Task ShouldHaveClosedAsSaved(IDialogReference dialog)
+    {
+        var result = await dialog.Result;
+        result.Should().NotBeNull();
+        result!.Canceled.Should().BeFalse();
+        result.Data.Should().BeOfType<LocationPrivacyModalResult>().Which.Saved.Should().BeTrue();
     }
 }

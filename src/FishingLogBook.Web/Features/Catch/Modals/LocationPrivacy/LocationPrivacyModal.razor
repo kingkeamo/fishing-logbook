@@ -1,0 +1,112 @@
+@namespace FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy
+
+<MudDialog id="catch-location-privacy-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="catch-location-privacy-title">
+            @Loc["Catch_LocationPrivacyTitle"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+            <MudText Typo="Typo.subtitle1" Class="mud-text-secondary">
+                @Loc["Catch_LocationPrivacySubtitle"]
+            </MudText>
+
+            @if (_loadFailed)
+            {
+                <MudAlert Severity="Severity.Error" id="catch-location-privacy-load-failed">
+                    @Loc["Catch_LocationPrivacyLoadFailed"]
+                </MudAlert>
+            }
+            else if (_missingLocation)
+            {
+                <MudAlert Severity="Severity.Info" id="catch-location-privacy-no-location">
+                    @Loc["Catch_LocationPrivacyNoLocation"]
+                </MudAlert>
+            }
+            else if (_isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center"
+                                     id="catch-location-privacy-loading" />
+            }
+            else
+            {
+                <MudRadioGroup T="string" Value="_visibility" ValueChanged="OnVisibilityChanged"
+                               id="catch-location-privacy-options">
+                    <MudStack Spacing="3">
+                        <MudRadio T="string" Value="@LocationDefaults.Private" id="catch-location-privacy-private">
+                            <MudStack Spacing="0">
+                                <MudText>@Loc["Catch_LocationVisibilityPrivate"]</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @Loc["Catch_LocationVisibilityPrivateHelp"]
+                                </MudText>
+                            </MudStack>
+                        </MudRadio>
+                        <MudRadio T="string" Value="@LocationDefaults.Approximate" id="catch-location-privacy-approximate">
+                            <MudStack Spacing="0">
+                                <MudText>@Loc["Catch_LocationVisibilityApproximate"]</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @Loc["Catch_LocationVisibilityApproximateHelp"]
+                                </MudText>
+                            </MudStack>
+                        </MudRadio>
+                        <MudRadio T="string" Value="@LocationDefaults.FishingVenueOnly" id="catch-location-privacy-venue">
+                            <MudStack Spacing="0">
+                                <MudText>@Loc["Catch_LocationVisibilityFishingVenueOnly"]</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @Loc["Catch_LocationVisibilityFishingVenueOnlyHelp"]
+                                </MudText>
+                            </MudStack>
+                        </MudRadio>
+                        <MudRadio T="string" Value="@LocationDefaults.Public" id="catch-location-privacy-public">
+                            <MudStack Spacing="0">
+                                <MudText>@Loc["Catch_LocationVisibilityPublic"]</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @Loc["Catch_LocationVisibilityPublicHelp"]
+                                </MudText>
+                            </MudStack>
+                        </MudRadio>
+                    </MudStack>
+                </MudRadioGroup>
+
+                @if (_visibility == LocationDefaults.Public)
+                {
+                    <MudAlert Severity="Severity.Warning" id="catch-location-privacy-public-warning">
+                        @Loc["Catch_LocationVisibilityPublicWarning"]
+                    </MudAlert>
+                }
+
+                @if (_saveFailed)
+                {
+                    <MudAlert Severity="Severity.Error" id="catch-location-privacy-save-failed">
+                        @Loc["Catch_LocationPrivacySaveFailed"]
+                    </MudAlert>
+                }
+
+                @if (_savedOnDevice)
+                {
+                    <MudAlert Severity="Severity.Success" id="catch-location-privacy-saved">
+                        @Loc["Catch_LocationPrivacySaved"]
+                    </MudAlert>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   OnClick="Cancel"
+                   id="catch-location-privacy-cancel">
+            @Loc["Modal_Cancel"]
+        </MudButton>
+        @if (!_loadFailed && !_missingLocation && !_isLoading)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="_isSaving"
+                       OnClick="SaveAsync"
+                       id="catch-location-privacy-save">
+                @(_isSaving ? Loc["Catch_LocationPrivacySaving"] : Loc["Catch_LocationPrivacySave"])
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>

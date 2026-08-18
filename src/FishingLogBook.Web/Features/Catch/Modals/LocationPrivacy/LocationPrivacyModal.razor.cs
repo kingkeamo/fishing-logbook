@@ -6,11 +6,14 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
+using MudBlazor;
 
-namespace FishingLogBook.Web.Features.Catch.Pages.CatchLocationPrivacy;
+namespace FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 
-public partial class CatchLocationPrivacy : ComponentBase, IDisposable
+public partial class LocationPrivacyModal : ComponentBase, IDisposable
 {
+    private static readonly TimeSpan SavedFeedbackDelay = TimeSpan.FromMilliseconds(500);
+
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private CatchModel? _catch;
     private string _visibility = LocationDefaults.Private;
@@ -19,11 +22,15 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
     private bool _loadFailed;
     private bool _missingLocation;
     private bool _saveFailed;
-    private bool _saved;
-    private bool _savedPendingSync;
+    private bool _savedOnDevice;
+    private bool _restoreCatchSync;
+    private bool _restoreMetadataSync;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter]
-    public Guid CatchId { get; set; }
+    public LocationPrivacyModalModel Model { get; set; } = default!;
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
@@ -36,6 +43,8 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    private Guid CatchId => Model.CatchId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -80,9 +89,8 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
     private void OnVisibilityChanged(string visibility)
     {
         _visibility = visibility;
-        _saved = false;
-        _savedPendingSync = false;
         _saveFailed = false;
+        _savedOnDevice = false;
     }
 
     private async Task SaveAsync()
@@ -94,8 +102,7 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
 
         _isSaving = true;
         _saveFailed = false;
-        _saved = false;
-        _savedPendingSync = false;
+        _savedOnDevice = false;
         try
         {
             if (!await TryPersistLocalVisibilityAsync())
@@ -103,7 +110,15 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
                 return;
             }
 
+            _savedOnDevice = true;
+            await InvokeAsync(StateHasChanged);
             await PropagateVisibilityAsync();
+            await Task.Delay(SavedFeedbackDelay, _cancellationTokenSource.Token);
+            MudDialog.Close(DialogResult.Ok(new LocationPrivacyModalResult(true)));
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
         }
         finally
         {
@@ -125,6 +140,8 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
                     ? SyncStatus.WaitingToSynchronise
                     : _catch.MetadataSyncStatus
             };
+            _restoreCatchSync = _catch.SyncStatus == SyncStatus.Synchronised;
+            _restoreMetadataSync = _catch.MetadataSyncStatus == SyncStatus.Synchronised;
             await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
             _catch = updated;
             return true;
@@ -144,16 +161,37 @@ public partial class CatchLocationPrivacy : ComponentBase, IDisposable
                 CatchId,
                 _visibility,
                 _cancellationTokenSource.Token);
-            _saved = true;
+            await RestoreSynchronisedAfterSuccessfulPropagateAsync();
         }
         catch (HttpRequestException)
         {
-            _savedPendingSync = true;
+            return;
         }
         catch (TaskCanceledException)
         {
-            _savedPendingSync = true;
+            return;
         }
+    }
+
+    private async Task RestoreSynchronisedAfterSuccessfulPropagateAsync()
+    {
+        if (_catch is null || (!_restoreCatchSync && !_restoreMetadataSync))
+        {
+            return;
+        }
+
+        var restored = _catch with
+        {
+            SyncStatus = _restoreCatchSync ? SyncStatus.Synchronised : _catch.SyncStatus,
+            MetadataSyncStatus = _restoreMetadataSync ? SyncStatus.Synchronised : _catch.MetadataSyncStatus
+        };
+        await CatchStore.SaveAsync(restored, _cancellationTokenSource.Token);
+        _catch = restored;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
     }
 
     public void Dispose()

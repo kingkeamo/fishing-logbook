@@ -8,15 +8,14 @@ using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
-using FishingLogBook.Web.Features.Catch.Pages.CatchLocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
-namespace FishingLogBook.Web.Tests.Features.Catch.Pages.CatchLocationPrivacyTests;
+namespace FishingLogBook.Web.Tests.Features.Catch.Modals.LocationPrivacyModalTests;
 
-public class WhenTestingSave : BaseCatchLocationPrivacyTest
+public class WhenTestingSave : BaseLocationPrivacyModalTest
 {
     [Fact]
     public async Task ItShouldNotSaveWhenTheCatchHasNoLocation()
@@ -30,7 +29,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
                 [LocatedCatch(catchId, location: null)]));
         var client = Substitute.For<ICatchClient>();
         await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
         cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-no-location").Should().NotBeNull());
 
         // Act
@@ -42,6 +41,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             Arg.Any<Guid>(),
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
+        dialog.Result.IsCompleted.Should().BeFalse();
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
         var client = Substitute.For<ICatchClient>();
         await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
         cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
 
         // Act
@@ -71,10 +71,11 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             Arg.Any<Guid>(),
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
+        dialog.Result.IsCompleted.Should().BeFalse();
     }
 
     [Fact]
-    public async Task ItShouldShowSaveFailedWhenTheStoreFails()
+    public async Task ItShouldNotCloseWhenTheLocalSaveFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -87,7 +88,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             .ThrowsAsync(new InvalidOperationException("IndexedDB failed."));
         var client = Substitute.For<ICatchClient>();
         await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
         cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
         await cut.Find("#catch-location-privacy-public").ClickAsync();
 
@@ -99,8 +100,6 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             cut.Find("#catch-location-privacy-save-failed").TextContent
                 .Should()
                 .Contain("Location privacy could not be saved"));
-        cut.FindAll("#catch-location-privacy-saved").Should().BeEmpty();
-        cut.FindAll("#catch-location-privacy-saved-pending").Should().BeEmpty();
         original.Location!.Visibility.Should().Be(LocationDefaults.Private);
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -114,6 +113,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             Arg.Any<Guid>(),
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
+        dialog.Result.IsCompleted.Should().BeFalse();
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
         client.UpdateLocationVisibilityAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException());
         await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
         cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
         await cut.Find("#catch-location-privacy-public").ClickAsync();
 
@@ -140,11 +140,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-location-privacy-saved-pending").TextContent
-                .Should()
-                .Contain("Privacy saved on this device. It will update when synchronisation is available."));
-        cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty();
-        cut.FindAll("#catch-location-privacy-saved").Should().BeEmpty();
+            cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty());
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Id == catchId
@@ -160,45 +156,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             catchId,
             LocationDefaults.Public,
             Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldShowFrenchPendingSyncWhenTheServerIsUnavailable()
-    {
-        // Arrange
-        using var culture = TestCulture.Use(CultureNames.French);
-        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
-        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
-        var client = Substitute.For<ICatchClient>();
-        client.UpdateLocationVisibilityAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new HttpRequestException());
-        await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
-        cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-save").Should().NotBeNull());
-
-        // Act
-        await cut.Find("#catch-location-privacy-save").ClickAsync();
-
-        // Assert
-        cut.WaitForAssertion(() =>
-            cut.Find("#catch-location-privacy-saved-pending").TextContent
-                .Should()
-                .Contain("Confidentialité enregistrée sur cet appareil. Elle sera mise à jour lorsque la synchronisation sera disponible."));
-        cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty();
-        await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
-                catchRecord.Id == catchId
-                && catchRecord.Location != null
-                && catchRecord.Location.Visibility == LocationDefaults.Private),
-            Arg.Any<CancellationToken>());
-        await client.Received(1).UpdateLocationVisibilityAsync(
-            catchId,
-            LocationDefaults.Private,
-            Arg.Any<CancellationToken>());
+        await ShouldHaveClosedAsSaved(dialog);
     }
 
     [Fact]
@@ -215,7 +173,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
         var apiHandler = new UnsynchronisedCatchHandler();
         var client = CreateCatchClient(apiHandler);
         await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
         cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
         await cut.Find("#catch-location-privacy-public").ClickAsync();
 
@@ -224,9 +182,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-location-privacy-saved").TextContent.Should().Contain("Location privacy saved"));
-        cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty();
-        cut.FindAll("#catch-location-privacy-saved-pending").Should().BeEmpty();
+            cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty());
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Id == catchId
@@ -240,6 +196,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
         apiHandler.LastRequest.RequestUri!.PathAndQuery
             .Should()
             .Be($"/api/catches/{catchId:D}/location-visibility");
+        await ShouldHaveClosedAsSaved(dialog);
     }
 
     [Fact]
@@ -271,7 +228,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
         client.UpdateLocationVisibilityAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException());
         await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
         cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-private").Should().NotBeNull());
         await cut.Find("#catch-location-privacy-private").ClickAsync();
 
@@ -280,10 +237,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-location-privacy-saved-pending").TextContent
-                .Should()
-                .Contain("Privacy saved on this device"));
-        cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty();
+            cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty());
         cut.Markup.Should().NotContain("Location privacy could not be saved");
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -305,10 +259,41 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
             catchId,
             LocationDefaults.Private,
             Arg.Any<CancellationToken>());
+        await ShouldHaveClosedAsSaved(dialog);
     }
 
     [Fact]
-    public async Task ItShouldUpdateLocalVisibilityOnlyAndPatchTheServer()
+    public async Task ItShouldCloseWithoutSavingWhenCancelled()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        var client = Substitute.For<ICatchClient>();
+        await using var context = CreateContext(store, client);
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
+        cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
+        await cut.Find("#catch-location-privacy-public").ClickAsync();
+
+        // Act
+        await cut.Find("#catch-location-privacy-cancel").ClickAsync();
+
+        // Assert
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+        await client.DidNotReceive().UpdateLocationVisibilityAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        var result = await dialog.Result;
+        result.Should().NotBeNull();
+        result!.Canceled.Should().BeTrue();
+        cut.FindAll("#catch-location-privacy-options").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldUpdateLocalVisibilityOnlyAndCloseAsSaved()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -322,7 +307,7 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
         client.UpdateLocationVisibilityAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         await using var context = CreateContext(store, client);
-        var cut = context.Render<CatchLocationPrivacy>(parameters => parameters.Add(p => p.CatchId, catchId));
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
         cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
         await cut.Find("#catch-location-privacy-public").ClickAsync();
 
@@ -331,27 +316,125 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-location-privacy-saved").TextContent.Should().Contain("Location privacy saved"));
-        cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty();
-        cut.FindAll("#catch-location-privacy-saved-pending").Should().BeEmpty();
+            cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty());
         cut.Markup.Should().NotContain("53.2707");
+        Received.InOrder(() =>
+        {
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Public
+                    && catchRecord.Location.Latitude == 53.2707
+                    && catchRecord.Location.Longitude == -9.0568
+                    && catchRecord.Location.AccuracyMetres == 12
+                    && catchRecord.Location.Source == LocationDefaults.DeviceGps
+                    && catchRecord.UserId == OwnerUserId
+                    && catchRecord.AnglerUserId == OwnerUserId
+                    && catchRecord.RecordedByUserId == OwnerUserId),
+                Arg.Any<CancellationToken>());
+            client.UpdateLocationVisibilityAsync(
+                catchId,
+                LocationDefaults.Public,
+                Arg.Any<CancellationToken>());
+        });
+        await ShouldHaveClosedAsSaved(dialog);
+    }
+
+    [Fact]
+    public async Task ItShouldShowSavedOnDeviceBeforeClosing()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var client = Substitute.For<ICatchClient>();
+        client.UpdateLocationVisibilityAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        await using var context = CreateContext(store, client);
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
+        cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-save").Should().NotBeNull());
+
+        // Act
+        var saving = cut.Find("#catch-location-privacy-save").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-location-privacy-saved").TextContent
+                .Should()
+                .Contain("Location privacy saved on this device"));
+        await saving;
+        await ShouldHaveClosedAsSaved(dialog);
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Id == catchId
                 && catchRecord.Location != null
-                && catchRecord.Location.Visibility == LocationDefaults.Public
-                && catchRecord.Location.Latitude == 53.2707
-                && catchRecord.Location.Longitude == -9.0568
-                && catchRecord.Location.AccuracyMetres == 12
-                && catchRecord.Location.Source == LocationDefaults.DeviceGps
-                && catchRecord.UserId == OwnerUserId
-                && catchRecord.AnglerUserId == OwnerUserId
-                && catchRecord.RecordedByUserId == OwnerUserId),
+                && catchRecord.Location.Visibility == LocationDefaults.Private),
             Arg.Any<CancellationToken>());
         await client.Received(1).UpdateLocationVisibilityAsync(
             catchId,
-            LocationDefaults.Public,
+            LocationDefaults.Private,
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRestoreSynchronisedWhenTheServerAcceptsTheVisibility()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>(
+                [
+                    LocatedCatch(catchId, LocationDefaults.Private) with
+                    {
+                        SyncStatus = SyncStatus.Synchronised,
+                        MetadataSyncStatus = SyncStatus.Synchronised
+                    }
+                ]));
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var client = Substitute.For<ICatchClient>();
+        client.UpdateLocationVisibilityAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        await using var context = CreateContext(store, client);
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
+        cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
+        await cut.Find("#catch-location-privacy-public").ClickAsync();
+
+        // Act
+        await cut.Find("#catch-location-privacy-save").ClickAsync();
+
+        // Assert
+        Received.InOrder(() =>
+        {
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Public
+                    && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
+                    && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
+                Arg.Any<CancellationToken>());
+            client.UpdateLocationVisibilityAsync(
+                catchId,
+                LocationDefaults.Public,
+                Arg.Any<CancellationToken>());
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Public
+                    && catchRecord.SyncStatus == SyncStatus.Synchronised
+                    && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised),
+                Arg.Any<CancellationToken>());
+        });
+        await ShouldHaveClosedAsSaved(dialog);
     }
 
     private static CatchClient CreateCatchClient(UnsynchronisedCatchHandler apiHandler)
@@ -359,6 +442,8 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient(HttpClientNames.AuthorizedApi)
             .Returns(new HttpClient(apiHandler) { BaseAddress = new Uri("https://api.test/") });
+        factory.CreateClient(HttpClientNames.Anonymous)
+            .Returns(new HttpClient { BaseAddress = new Uri("https://api.test/") });
         return new CatchClient(factory);
     }
 
