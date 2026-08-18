@@ -1,5 +1,6 @@
 using System.Globalization;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -47,6 +48,9 @@ public partial class CatchEdit : ComponentBase, IDisposable
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
+    [Inject]
+    private ITimeService Time { get; set; } = default!;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
@@ -66,7 +70,11 @@ public partial class CatchEdit : ComponentBase, IDisposable
                 return;
             }
 
-            BindForm(_catch);
+            if (!await BindFormAsync(_catch))
+            {
+                _loadFailed = true;
+                _catch = null;
+            }
         }
         catch (Exception)
         {
@@ -92,16 +100,17 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _validationMessage = null;
         try
         {
-            if (!TryBuildUpdatedCatch(out var updated, out var metadataChanged))
+            var built = await TryBuildUpdatedCatchAsync();
+            if (built is null)
             {
                 return;
             }
 
-            await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
-            _catch = updated;
-            BindForm(updated);
+            await CatchStore.SaveAsync(built.Updated, _cancellationTokenSource.Token);
+            _catch = built.Updated;
+            await BindFormAsync(built.Updated);
             _saved = true;
-            if (metadataChanged)
+            if (built.MetadataChanged)
             {
                 TryToSynchronisePending();
             }
@@ -116,39 +125,24 @@ public partial class CatchEdit : ComponentBase, IDisposable
         }
     }
 
-    private bool TryBuildUpdatedCatch(out CatchModel updated, out bool metadataChanged)
+    private async Task<BuiltCatchEdit?> TryBuildUpdatedCatchAsync()
     {
-        updated = _catch!;
-        metadataChanged = false;
-        if (!TryReadEditedDetails(
-                out var speciesName,
-                out var weight,
-                out var length,
-                out var method,
-                out var baitOrLure,
-                out var notes,
-                out var caughtOn))
+        var details = await TryReadEditedDetailsAsync();
+        if (details is null)
         {
-            return false;
+            return null;
         }
 
-        metadataChanged = HasDetailsChanged(
-            speciesName,
-            weight,
-            length,
-            method,
-            baitOrLure,
-            notes,
-            caughtOn);
-        updated = _catch! with
+        var metadataChanged = HasDetailsChanged(details);
+        var updated = _catch! with
         {
-            SpeciesName = speciesName,
-            Weight = weight,
-            Length = length,
-            Method = method,
-            BaitOrLure = baitOrLure,
-            Notes = notes,
-            CaughtOn = caughtOn,
+            SpeciesName = details.SpeciesName,
+            Weight = details.Weight,
+            Length = details.Length,
+            Method = details.Method,
+            BaitOrLure = details.BaitOrLure,
+            Notes = details.Notes,
+            CaughtOn = details.CaughtOn,
             MetadataSyncStatus = metadataChanged
                 ? SyncStatus.WaitingToSynchronise
                 : _catch.MetadataSyncStatus,
@@ -156,77 +150,64 @@ public partial class CatchEdit : ComponentBase, IDisposable
                 ? PendingOverallStatus(_catch.SyncStatus)
                 : _catch.SyncStatus
         };
-        return true;
+        return new BuiltCatchEdit(updated, metadataChanged);
     }
 
-    private bool TryReadEditedDetails(
-        out string? speciesName,
-        out decimal? weight,
-        out decimal? length,
-        out string? method,
-        out string? baitOrLure,
-        out string? notes,
-        out DateTimeOffset caughtOn)
+    private async Task<EditedCatchDetails?> TryReadEditedDetailsAsync()
     {
-        speciesName = null;
-        weight = null;
-        length = null;
-        method = null;
-        baitOrLure = null;
-        notes = null;
-        caughtOn = default;
-        if (!TryParseCaughtOn(out caughtOn))
+        var caughtOn = await TryParseCaughtOnAsync();
+        if (caughtOn is null)
         {
             _validationMessage = Loc["Catch_EditCaughtOnInvalid"];
-            return false;
+            return null;
         }
 
-        if (!TryParseMeasurement(_weightText, out weight)
+        if (!TryParseMeasurement(_weightText, out var weight)
             || !CatchDetailConstants.IsWeightValid(weight))
         {
             _validationMessage = Loc["Catch_EditWeightInvalid"];
-            return false;
+            return null;
         }
 
-        if (!TryParseMeasurement(_lengthText, out length)
+        if (!TryParseMeasurement(_lengthText, out var length)
             || !CatchDetailConstants.IsLengthValid(length))
         {
             _validationMessage = Loc["Catch_EditLengthInvalid"];
-            return false;
+            return null;
         }
 
-        speciesName = TrimToNull(_speciesName);
-        method = TrimToNull(_method);
-        baitOrLure = TrimToNull(_baitOrLure);
-        notes = TrimToNull(_notes);
+        var speciesName = TrimToNull(_speciesName);
+        var method = TrimToNull(_method);
+        var baitOrLure = TrimToNull(_baitOrLure);
+        var notes = TrimToNull(_notes);
         if (!CatchDetailConstants.IsOptionalTextValid(speciesName, CatchDetailConstants.MaxSpeciesNameLength)
             || !CatchDetailConstants.IsOptionalTextValid(method, CatchDetailConstants.MaxMethodLength)
             || !CatchDetailConstants.IsOptionalTextValid(baitOrLure, CatchDetailConstants.MaxBaitOrLureLength)
             || !CatchDetailConstants.IsOptionalTextValid(notes, CatchDetailConstants.MaxNotesLength))
         {
             _validationMessage = Loc["Catch_EditTextTooLong"];
-            return false;
+            return null;
         }
 
-        return true;
+        return new EditedCatchDetails(
+            speciesName,
+            weight,
+            length,
+            method,
+            baitOrLure,
+            notes,
+            caughtOn.Value);
     }
 
-    private bool HasDetailsChanged(
-        string? speciesName,
-        decimal? weight,
-        decimal? length,
-        string? method,
-        string? baitOrLure,
-        string? notes,
-        DateTimeOffset caughtOn)
+    private bool HasDetailsChanged(EditedCatchDetails details)
     {
-        return !string.Equals(_catch!.SpeciesName, speciesName, StringComparison.Ordinal)
-            || _catch.Weight != weight
-            || _catch.Length != length
-            || !string.Equals(_catch.Method, method, StringComparison.Ordinal)
-            || !string.Equals(_catch.BaitOrLure, baitOrLure, StringComparison.Ordinal)
-            || !string.Equals(_catch.Notes, notes, StringComparison.Ordinal)
-            || _catch.CaughtOn != caughtOn;
+        return !string.Equals(_catch!.SpeciesName, details.SpeciesName, StringComparison.Ordinal)
+            || _catch.Weight != details.Weight
+            || _catch.Length != details.Length
+            || !string.Equals(_catch.Method, details.Method, StringComparison.Ordinal)
+            || !string.Equals(_catch.BaitOrLure, details.BaitOrLure, StringComparison.Ordinal)
+            || !string.Equals(_catch.Notes, details.Notes, StringComparison.Ordinal)
+            || _catch.CaughtOn != details.CaughtOn;
     }
 
     private static SyncStatus PendingOverallStatus(SyncStatus current)
@@ -241,7 +222,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
         return current;
     }
 
-    private void BindForm(CatchModel catchRecord)
+    private async Task<bool> BindFormAsync(CatchModel catchRecord)
     {
         _speciesName = catchRecord.SpeciesName ?? string.Empty;
         _weightText = catchRecord.Weight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
@@ -249,23 +230,30 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _method = catchRecord.Method ?? string.Empty;
         _baitOrLure = catchRecord.BaitOrLure ?? string.Empty;
         _notes = catchRecord.Notes ?? string.Empty;
-        _caughtOnLocal = catchRecord.CaughtOn.UtcDateTime.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
-    }
-
-    private bool TryParseCaughtOn(out DateTimeOffset caughtOn)
-    {
-        caughtOn = default;
-        if (!DateTime.TryParse(
-                _caughtOnLocal,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var parsed))
+        var localValue = await Time.ToDateTimeLocalValueAsync(
+            catchRecord.CaughtOn,
+            _cancellationTokenSource.Token);
+        if (string.IsNullOrWhiteSpace(localValue))
         {
             return false;
         }
 
-        caughtOn = new DateTimeOffset(DateTime.SpecifyKind(parsed, DateTimeKind.Utc));
-        return CatchDetailConstants.IsCaughtOnValid(caughtOn, DateTimeOffset.UtcNow);
+        _caughtOnLocal = localValue;
+        return true;
+    }
+
+    private async Task<DateTimeOffset?> TryParseCaughtOnAsync()
+    {
+        var caughtOn = await Time.FromDateTimeLocalValueAsync(
+            _caughtOnLocal,
+            _cancellationTokenSource.Token);
+        if (caughtOn is null
+            || !CatchDetailConstants.IsCaughtOnValid(caughtOn.Value, DateTimeOffset.UtcNow))
+        {
+            return null;
+        }
+
+        return caughtOn.Value.ToUniversalTime();
     }
 
     private static bool TryParseMeasurement(string text, out decimal? value)
@@ -327,4 +315,15 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }
+
+    private sealed record EditedCatchDetails(
+        string? SpeciesName,
+        decimal? Weight,
+        decimal? Length,
+        string? Method,
+        string? BaitOrLure,
+        string? Notes,
+        DateTimeOffset CaughtOn);
+
+    private sealed record BuiltCatchEdit(CatchModel Updated, bool MetadataChanged);
 }

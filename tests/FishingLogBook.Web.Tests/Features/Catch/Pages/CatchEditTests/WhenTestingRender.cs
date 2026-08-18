@@ -37,7 +37,8 @@ public class WhenTestingRender : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(catchId));
-        await using var context = CreateContext(store);
+        var time = UtcTime();
+        await using var context = CreateContext(store, time: time);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
@@ -52,10 +53,40 @@ public class WhenTestingRender : BaseCatchEditTest
             cut.Find("#catch-edit-method").Should().NotBeNull();
             cut.Find("#catch-edit-bait").Should().NotBeNull();
             cut.Find("#catch-edit-notes").Should().NotBeNull();
-            cut.Find("#catch-edit-caught-on").Should().NotBeNull();
+            cut.Find("#catch-edit-caught-on").GetAttribute("value").Should().Be("2026-08-17T08:00");
             cut.Find("#catch-edit-save").TextContent.Should().Contain("Save details");
         });
         await store.Received(1).GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>());
+        await time.Received(1).ToDateTimeLocalValueAsync(
+            Arg.Is<DateTimeOffset>(caughtOn => caughtOn == StoredCaughtOn),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowCaughtOnInDeviceLocalTimeWhenTheOffsetIsUtcPlusFour()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(catchId, caughtOn: UtcPlusFourCaughtOn));
+        var time = PlusFourTime();
+        await using var context = CreateContext(store, time: time);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-caught-on").GetAttribute("value").Should().Be("2026-08-17T14:00"));
+        await store.Received(1).GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>());
+        await time.Received(1).ToDateTimeLocalValueAsync(
+            Arg.Is<DateTimeOffset>(caughtOn => caughtOn == UtcPlusFourCaughtOn),
+            Arg.Any<CancellationToken>());
+        await time.DidNotReceive().FromDateTimeLocalValueAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
