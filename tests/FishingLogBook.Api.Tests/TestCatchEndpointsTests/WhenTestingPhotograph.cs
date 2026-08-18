@@ -119,4 +119,37 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
             TimeSpan.FromMinutes(15),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldRejectWhenThePhotographObjectKeyDoesNotMatch()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aabbccdd-eeff-0011-2233-445566778899");
+        var photographId = Guid.Parse("99887766-5544-3322-1100-ffeeddccbbaa");
+        var record = new TestCatchRecord
+        {
+            Id = catchId,
+            SpeciesName = "Roach",
+            CaughtOn = DateTimeOffset.Parse("2026-08-14T19:00:00Z")
+        };
+        _factory.TestCatchRepository
+            .GetByIdAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(record);
+        _factory.TestCatchRepository.ClearReceivedCalls();
+        var client = _factory.CreateAuthenticatedClient();
+        var request = new RecordPhotographDto(photographId, "wrong-key", "image/jpeg");
+
+        // Act
+        var response = await client.PostAsJsonAsync($"/api/test-catches/{catchId:D}/photographs", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await _factory.TestCatchRepository.Received(1).GetByIdAsync(catchId, Arg.Any<CancellationToken>());
+        await _factory.TestCatchRepository.DidNotReceive().UpsertPhotographAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
 }

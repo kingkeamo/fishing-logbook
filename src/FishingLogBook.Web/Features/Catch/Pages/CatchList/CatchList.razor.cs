@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -11,6 +12,7 @@ public partial class CatchList : ComponentBase, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private IReadOnlyList<CatchModel> _catches = [];
+    private readonly HashSet<Guid> _retrying = [];
     private bool _isLoading = true;
     private bool _loadFailed;
 
@@ -21,10 +23,14 @@ public partial class CatchList : ComponentBase, IDisposable
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
 
     [Inject]
+    private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
+        CatchSynchroniser.StateChanged += OnSyncStateChanged;
         await LoadAsync();
     }
 
@@ -63,8 +69,62 @@ public partial class CatchList : ComponentBase, IDisposable
         return $"data:{photograph.ContentType};base64,{Convert.ToBase64String(photograph.Bytes!)}";
     }
 
+    private async Task RetryAsync(Guid catchId)
+    {
+        if (!_retrying.Add(catchId))
+        {
+            return;
+        }
+
+        try
+        {
+            await CatchSynchroniser.RetryAsync(catchId, _cancellationTokenSource.Token);
+            await LoadAsync();
+        }
+        finally
+        {
+            _retrying.Remove(catchId);
+        }
+    }
+
+    private void OnSyncStateChanged(object? sender, EventArgs args)
+    {
+        _ = InvokeAsync(RefreshAfterSynchronisationAsync);
+    }
+
+    private async Task RefreshAfterSynchronisationAsync()
+    {
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private static string SyncStatusKey(SyncStatus syncStatus)
+    {
+        return syncStatus switch
+        {
+            SyncStatus.SavedLocally => "SyncStatus_SavedLocally",
+            SyncStatus.WaitingToSynchronise => "SyncStatus_WaitingToSynchronise",
+            SyncStatus.Synchronising => "SyncStatus_Synchronising",
+            SyncStatus.Synchronised => "SyncStatus_Synchronised",
+            SyncStatus.FailedToSynchronise => "SyncStatus_FailedToSynchronise",
+            _ => "SyncStatus_SavedLocally"
+        };
+    }
+
+    private static string SyncStatusIcon(SyncStatus syncStatus)
+    {
+        return syncStatus switch
+        {
+            SyncStatus.Synchronised => MudBlazor.Icons.Material.Filled.CheckCircle,
+            SyncStatus.FailedToSynchronise => MudBlazor.Icons.Material.Filled.SyncProblem,
+            SyncStatus.Synchronising => MudBlazor.Icons.Material.Filled.Sync,
+            _ => MudBlazor.Icons.Material.Filled.CloudQueue
+        };
+    }
+
     public void Dispose()
     {
+        CatchSynchroniser.StateChanged -= OnSyncStateChanged;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }

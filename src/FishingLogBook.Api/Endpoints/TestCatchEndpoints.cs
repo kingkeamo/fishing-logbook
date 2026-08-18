@@ -94,6 +94,7 @@ public static class TestCatchEndpoints
         Guid id,
         RecordPhotographDto request,
         TestCatchService testCatchService,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (id == Guid.Empty ||
@@ -109,8 +110,10 @@ public static class TestCatchEndpoints
             var recorded = await testCatchService.RecordPhotographAsync(id, request, cancellationToken);
             return recorded ? Results.NoContent() : Results.NotFound();
         }
-        catch (ArgumentException)
+        catch (ArgumentException exception)
         {
+            loggerFactory.CreateLogger("TestCatchPhotographEndpoint")
+                .LogWarning(exception, "Catch photograph could not be recorded.");
             return Results.BadRequest();
         }
     }

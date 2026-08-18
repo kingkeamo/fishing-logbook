@@ -4,6 +4,7 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -251,7 +252,19 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
         var store = Substitute.For<ICatchStore>();
         store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>(
-                [LocatedCatch(catchId, LocationDefaults.Public)]));
+                [
+                    LocatedCatch(catchId, LocationDefaults.Public) with
+                    {
+                        SyncStatus = SyncStatus.Synchronised,
+                        MetadataSyncStatus = SyncStatus.Synchronised,
+                        Photographs = LocatedCatch(catchId).Photographs
+                            .Select(photograph => photograph with
+                            {
+                                SyncStatus = SyncStatus.Synchronised
+                            })
+                            .ToArray()
+                    }
+                ]));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var client = Substitute.For<ICatchClient>();
@@ -282,7 +295,11 @@ public class WhenTestingSave : BaseCatchLocationPrivacyTest
                 && catchRecord.Location.AccuracyMetres == 12
                 && catchRecord.Location.CapturedOn == capturedOn
                 && catchRecord.Location.Source == LocationDefaults.DeviceGps
-                && catchRecord.Location.ConsentVersion == LocationDefaults.ConsentVersion),
+                && catchRecord.Location.ConsentVersion == LocationDefaults.ConsentVersion
+                && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
+                && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise
+                && catchRecord.Photographs.All(
+                    photograph => photograph.SyncStatus == SyncStatus.Synchronised)),
             Arg.Any<CancellationToken>());
         await client.Received(1).UpdateLocationVisibilityAsync(
             catchId,

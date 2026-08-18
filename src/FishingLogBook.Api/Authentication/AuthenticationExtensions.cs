@@ -111,6 +111,13 @@ public static class AuthenticationExtensions
 
     private sealed class AuthConfigStartupValidator : IValidateOptions<AuthConfig>
     {
+        private readonly ILogger<AuthConfigStartupValidator> _logger;
+
+        public AuthConfigStartupValidator(ILogger<AuthConfigStartupValidator> logger)
+        {
+            _logger = logger;
+        }
+
         public ValidateOptionsResult Validate(string? name, AuthConfig options)
         {
             try
@@ -120,6 +127,7 @@ public static class AuthenticationExtensions
             }
             catch (InvalidOperationException exception)
             {
+                _logger.LogError(exception, "Authentication configuration is invalid.");
                 return ValidateOptionsResult.Fail(exception.Message);
             }
         }

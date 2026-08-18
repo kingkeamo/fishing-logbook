@@ -9,7 +9,8 @@ import {
     getAllTestCatches,
     openCatchDatabase,
     putCatchWithPhotographs,
-    putTestCatch
+    putTestCatch,
+    updateCatchMetadata
 } from './catch-store.js';
 import * as indexedDb from './indexed-db.js';
 
@@ -321,6 +322,138 @@ describe('Production Catch store', () => {
             btoa(String.fromCharCode(2, 2, 2)),
             btoa(String.fromCharCode(3, 3, 3))
         ]);
+    });
+
+    it('persists sync transitions across reopen without replacing photograph bytes', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = '11111111-1111-1111-1111-111111111111';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                syncStatus: 0,
+                metadataSyncStatus: 0,
+                photographs: [{
+                    id: photographId,
+                    catchId,
+                    contentType: 'image/jpeg',
+                    syncStatus: 0
+                }]
+            }),
+            [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1, 2, 3])
+            }]
+        );
+
+        await updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            syncStatus: 4,
+            metadataSyncStatus: 3,
+            photographs: [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                syncStatus: 3,
+                objectKey: `catches/${ownerUserId}/${catchId}/${photographId}`
+            }]
+        }));
+
+        const firstRead = await getAllCatchesWithPhotographs(ownerUserId);
+        const reopened = await getAllCatchesWithPhotographs(ownerUserId);
+        const metadata = JSON.parse(reopened[0].json);
+
+        expect(JSON.parse(firstRead[0].json).syncStatus).toBe(4);
+        expect(metadata.metadataSyncStatus).toBe(3);
+        expect(metadata.photographs[0].syncStatus).toBe(3);
+        expect(metadata.photographs[0].objectKey).toBe(
+            `catches/${ownerUserId}/${catchId}/${photographId}`
+        );
+        expect(reopened[0].photographs[0].bytesBase64).toBe(
+            btoa(String.fromCharCode(1, 2, 3))
+        );
+    });
+
+    it('does not let another user overwrite sync state', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        await putCatchWithPhotographs(
+            JSON.stringify({ id: catchId, userId: ownerUserId, syncStatus: 0 }),
+            [{
+                id: 'photo-1',
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1])
+            }]
+        );
+
+        await expect(updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: otherUserId,
+            syncStatus: 3
+        }))).rejects.toThrow('Owned Catch was not found');
+
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        expect(JSON.parse(ownerView[0].json).syncStatus).toBe(0);
+        expect(ownerView[0].photographs[0].bytesBase64).toBe(
+            btoa(String.fromCharCode(1))
+        );
+    });
+
+    it('does not let a stale sync transition overwrite newer location privacy', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = '11111111-1111-1111-1111-111111111111';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                syncStatus: 1,
+                metadataSyncStatus: 1,
+                location: {
+                    latitude: 53.2707,
+                    longitude: -9.0568,
+                    visibility: 'Private'
+                },
+                photographs: [{
+                    id: photographId,
+                    catchId,
+                    contentType: 'image/jpeg',
+                    syncStatus: 1
+                }]
+            }),
+            [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1])
+            }]
+        );
+
+        await updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            syncStatus: 3,
+            metadataSyncStatus: 3,
+            location: {
+                latitude: 53.2707,
+                longitude: -9.0568,
+                visibility: 'Public'
+            },
+            photographs: [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                syncStatus: 3
+            }]
+        }));
+
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = JSON.parse(ownerView[0].json);
+        expect(stored.location.visibility).toBe('Private');
+        expect(stored.syncStatus).toBe(3);
+        expect(stored.photographs[0].syncStatus).toBe(3);
     });
 
     it('keeps two separately saved catches on distinct ids', async () => {

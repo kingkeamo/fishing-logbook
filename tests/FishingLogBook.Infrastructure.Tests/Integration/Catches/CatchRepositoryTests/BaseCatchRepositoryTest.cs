@@ -1,9 +1,11 @@
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Infrastructure.Persistence;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
+using FishingLogBook.Infrastructure.Tests.TestSupport;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Tests.Common.Builders;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FishingLogBook.Infrastructure.Tests.Integration.Catches.CatchRepositoryTests;
 
@@ -11,14 +13,15 @@ namespace FishingLogBook.Infrastructure.Tests.Integration.Catches.CatchRepositor
 public abstract class BaseCatchRepositoryTest
 {
     protected readonly CatchRepository Sut;
+    protected readonly RecordingLogger<CatchRepository> Logger = new();
     protected readonly UserIdentityRepository Users;
     protected readonly NpgsqlConnectionFactory ConnectionFactory;
 
     protected BaseCatchRepositoryTest(PostgresFixture fixture)
     {
         ConnectionFactory = new NpgsqlConnectionFactory(fixture.ConnectionString);
-        Sut = new CatchRepository(ConnectionFactory);
-        Users = new UserIdentityRepository(ConnectionFactory);
+        Sut = new CatchRepository(ConnectionFactory, Logger);
+        Users = new UserIdentityRepository(ConnectionFactory, NullLogger<UserIdentityRepository>.Instance);
     }
 
     protected async Task<Guid> CreateUserAsync()

@@ -114,6 +114,15 @@
   <data name="SyncStatus_FailedToSynchronise" xml:space="preserve">
     <value>Failed to synchronise</value>
   </data>
+  <data name="Catch_SyncRetry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="Catch_SyncNow" xml:space="preserve">
+    <value>Synchronise now</value>
+  </data>
+  <data name="Catch_SyncFailureReassurance" xml:space="preserve">
+    <value>Your catch is still saved on this device.</value>
+  </data>
   <data name="TestCatch_Retry" xml:space="preserve">
     <value>Retry synchronisation</value>
   </data>

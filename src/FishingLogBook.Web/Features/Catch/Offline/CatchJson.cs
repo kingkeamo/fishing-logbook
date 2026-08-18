@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 
 namespace FishingLogBook.Web.Features.Catch.Offline;
@@ -23,10 +24,14 @@ internal static class CatchJson
                 .Select(photograph => new CatchPhotographMetadata(
                     photograph.Id,
                     photograph.CatchId,
-                    photograph.ContentType))
+                    photograph.ContentType,
+                    photograph.SyncStatus,
+                    photograph.ObjectKey))
                 .ToArray(),
             catchRecord.Location,
-            catchRecord.UserId);
+            catchRecord.UserId,
+            catchRecord.SyncStatus,
+            catchRecord.MetadataSyncStatus);
         return JsonSerializer.Serialize(metadata, Options);
     }
 
@@ -40,7 +45,9 @@ internal static class CatchJson
             OrderPhotographs(metadata.Photographs, photographs),
             metadata.SpeciesName,
             metadata.Location,
-            metadata.UserId);
+            metadata.UserId,
+            metadata.SyncStatus,
+            metadata.MetadataSyncStatus);
     }
 
     private static IReadOnlyList<CatchPhotographModel> OrderPhotographs(
@@ -53,7 +60,11 @@ internal static class CatchJson
         {
             if (byId.Remove(metadata.Id, out var photograph))
             {
-                ordered.Add(photograph);
+                ordered.Add(photograph with
+                {
+                    SyncStatus = metadata.SyncStatus,
+                    ObjectKey = metadata.ObjectKey
+                });
             }
         }
 
@@ -67,10 +78,14 @@ internal static class CatchJson
         string? SpeciesName,
         IReadOnlyList<CatchPhotographMetadata> Photographs,
         CatchLocationModel? Location = null,
-        Guid UserId = default);
+        Guid UserId = default,
+        SyncStatus SyncStatus = SyncStatus.SavedLocally,
+        SyncStatus MetadataSyncStatus = SyncStatus.SavedLocally);
 
     private sealed record CatchPhotographMetadata(
         Guid Id,
         Guid CatchId,
-        string ContentType);
+        string ContentType,
+        SyncStatus SyncStatus = SyncStatus.SavedLocally,
+        string? ObjectKey = null);
 }

@@ -4,7 +4,9 @@ using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Users;
 using FishingLogBook.Infrastructure.Persistence;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
+using FishingLogBook.Infrastructure.Tests.TestSupport;
 using FishingLogBook.Tests.Common.Builders;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FishingLogBook.Infrastructure.Tests.Integration.Capabilities.UserPlatformCapabilityRepositoryTests;
 
@@ -12,14 +14,15 @@ namespace FishingLogBook.Infrastructure.Tests.Integration.Capabilities.UserPlatf
 public abstract class BaseUserPlatformCapabilityRepositoryTest
 {
     protected readonly UserPlatformCapabilityRepository Sut;
+    protected readonly RecordingLogger<UserPlatformCapabilityRepository> Logger = new();
     protected readonly UserIdentityRepository Users;
     protected readonly NpgsqlConnectionFactory ConnectionFactory;
 
     protected BaseUserPlatformCapabilityRepositoryTest(PostgresFixture fixture)
     {
         ConnectionFactory = new NpgsqlConnectionFactory(fixture.ConnectionString);
-        Sut = new UserPlatformCapabilityRepository(ConnectionFactory);
-        Users = new UserIdentityRepository(ConnectionFactory);
+        Sut = new UserPlatformCapabilityRepository(ConnectionFactory, Logger);
+        Users = new UserIdentityRepository(ConnectionFactory, NullLogger<UserIdentityRepository>.Instance);
     }
 
     protected async Task<Guid> CreateUserAsync()

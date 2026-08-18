@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Dapper;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace FishingLogBook.Infrastructure.Tests.Integration.Capabilities.UserPlatformCapabilityRepositoryTests;
@@ -28,6 +29,9 @@ public class WhenTestingGrant : BaseUserPlatformCapabilityRepositoryTest
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("Platform capability is invalid.");
         (await CountForUserAsync(missingUserId)).Should().Be(0);
+        Logger.Records.Should().ContainSingle();
+        Logger.Records[0].Level.Should().Be(LogLevel.Warning);
+        Logger.Records[0].Exception.Should().BeOfType<PostgresException>();
     }
 
     [Fact]

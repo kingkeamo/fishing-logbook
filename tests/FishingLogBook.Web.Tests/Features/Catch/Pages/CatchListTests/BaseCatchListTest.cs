@@ -13,7 +13,10 @@ public class BaseCatchListTest
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    protected static BunitContext CreateContext(ICatchStore store, ILocalCatchOwnerService? owner = null)
+    protected static BunitContext CreateContext(
+        ICatchStore store,
+        ILocalCatchOwnerService? owner = null,
+        ICatchSynchroniser? synchroniser = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -21,6 +24,7 @@ public class BaseCatchListTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(owner ?? SignedInOwner());
+        context.Services.AddSingleton(synchroniser ?? Substitute.For<ICatchSynchroniser>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }

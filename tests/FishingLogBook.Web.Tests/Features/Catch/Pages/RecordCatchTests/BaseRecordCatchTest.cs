@@ -6,6 +6,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,9 @@ public class BaseRecordCatchTest
     protected static BunitContext CreateContext(
         ICatchStore store,
         ILocationService? location = null,
-        ILocalCatchOwnerService? owner = null)
+        ILocalCatchOwnerService? owner = null,
+        ICatchSynchroniser? synchroniser = null,
+        ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -31,8 +34,30 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(location ?? QuietLocation());
         context.Services.AddSingleton(owner ?? SignedInOwner());
+        context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
+        context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static ILoggingService QuietLogging()
+    {
+        var logging = Substitute.For<ILoggingService>();
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return logging;
+    }
+
+    protected static ICatchSynchroniser QuietSynchroniser()
+    {
+        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        synchroniser.RetryAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return synchroniser;
     }
 
     protected static ILocalCatchOwnerService SignedInOwner()

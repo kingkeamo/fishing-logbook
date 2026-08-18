@@ -2,10 +2,12 @@
 
 Perform Git and GitHub operations directly in the parent agent.
 
-- Use the GitLens/GitKraken MCP tools directly for local status, checkout, add, commit,
-  fetch and push operations.
-- Use the project GitHub MCP tools directly for issues, pull requests, reviews, review
-  threads, comments, titles and body updates.
+- Use the GitLens/GitKraken MCP tools only for local status, checkout, add, commit and
+  history operations.
+- Use the project GitHub MCP directly for remote branches, file pushes, issues, pull
+  requests, reviews, review threads, comments, titles and body updates.
+- Do not use GitLens/GitKraken `git_push`; it invokes the repository's configured Git
+  transport and may incorrectly require SSH credentials.
 - Discover the exact MCP tool schema before invoking it.
 - Do not delegate Git or GitHub reads or writes to subagents.
 - Do not use `gh`, shell Git write commands, SSH, or browser automation when the

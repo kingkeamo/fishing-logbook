@@ -40,6 +40,16 @@ public static class DiagnosticEventNames
     public const string SyncFailed = "SyncFailed";
     public const string SyncRetry = "SyncRetry";
 
+    public const string CatchSyncStarted = "CatchSyncStarted";
+    public const string CatchMetadataSyncSucceeded = "CatchMetadataSyncSucceeded";
+    public const string CatchMetadataSyncFailed = "CatchMetadataSyncFailed";
+    public const string PhotographUploadStarted = "PhotographUploadStarted";
+    public const string PhotographUploadSucceeded = "PhotographUploadSucceeded";
+    public const string PhotographUploadFailed = "PhotographUploadFailed";
+    public const string CatchSyncCompleted = "CatchSyncCompleted";
+    public const string CatchSyncFailed = "CatchSyncFailed";
+    public const string AuthenticationUnavailable = "AuthenticationUnavailable";
+
     public const string ServiceWorkerError = "ServiceWorkerError";
 
     public const string LocationPermissionDenied = "LocationPermissionDenied";

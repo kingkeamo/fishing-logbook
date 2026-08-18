@@ -73,6 +73,24 @@ test.describe('Production Catch IndexedDB', () => {
         expect(records[0].photographs[0].id).toBe('22222222-2222-2222-2222-222222222222');
     });
 
+    test('keeps sync transitions and photograph bytes after close and reload', async ({ page }) => {
+        await page.goto(`${harness}/index.html`);
+        await expect(page.locator('#status')).toHaveText('ready');
+        await page.evaluate(() => window.harness.transitionProductionCatchSyncState());
+
+        await page.reload();
+        await expect(page.locator('#status')).toHaveText('ready');
+
+        const records = await page.evaluate(() => window.harness.readProductionCatches());
+        const catchRecord = JSON.parse(records[0].json);
+        expect(catchRecord.syncStatus).toBe(4);
+        expect(catchRecord.metadataSyncStatus).toBe(3);
+        expect(catchRecord.photographs[0].syncStatus).toBe(4);
+        expect(records[0].photographs[0].bytesBase64).toBe(
+            btoa(String.fromCharCode(1, 2, 3))
+        );
+    });
+
     test('keeps three photographs and capture order after close and reload', async ({ page }) => {
         await page.goto(`${harness}/index.html`);
         await expect(page.locator('#status')).toHaveText('ready');

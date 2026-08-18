@@ -3,6 +3,7 @@ using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -34,6 +35,12 @@ public partial class RecordCatch : ComponentBase, IDisposable
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
+
+    [Inject]
+    private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+
+    [Inject]
+    private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
     private ILocationService LocationService { get; set; } = default!;
@@ -131,7 +138,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         await stream.CopyToAsync(buffer, _cancellationTokenSource.Token);
         var bytes = buffer.ToArray();
         var contentType = file.ContentType;
-        _caughtOn ??= DateTimeOffset.Now;
+        _caughtOn ??= DateTimeOffset.UtcNow;
         _photographs.Add(new PendingPhotograph(
             Guid.NewGuid(),
             contentType,
@@ -211,6 +218,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         _isSaving = true;
         _saveFailed = false;
         await InvokeAsync(StateHasChanged);
+        var saved = false;
         try
         {
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
@@ -230,13 +238,14 @@ public partial class RecordCatch : ComponentBase, IDisposable
             await CatchStore.SaveAsync(
                 new CatchModel(
                     catchId,
-                    _caughtOn ?? DateTimeOffset.Now,
+                    _caughtOn ?? DateTimeOffset.UtcNow,
                     photographs,
                     Location: location,
                     UserId: ownerUserId),
                 _cancellationTokenSource.Token);
             _isSaved = true;
             _locationSaved = location is not null;
+            saved = true;
         }
         catch (Exception)
         {
@@ -245,6 +254,36 @@ public partial class RecordCatch : ComponentBase, IDisposable
         finally
         {
             _isSaving = false;
+        }
+
+        if (!saved)
+        {
+            return;
+        }
+
+        TryToSynchronisePending();
+    }
+
+    private void TryToSynchronisePending()
+    {
+        _ = SafeSynchronisePendingAsync();
+    }
+
+    private async Task SafeSynchronisePendingAsync()
+    {
+        try
+        {
+            await CatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "production catch synchronisation",
+                exception,
+                _cancellationTokenSource.Token);
         }
     }
 

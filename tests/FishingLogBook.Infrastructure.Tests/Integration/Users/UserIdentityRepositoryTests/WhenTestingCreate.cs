@@ -4,6 +4,7 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Users.Services;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
 using FishingLogBook.Shared.Constants;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 
@@ -87,6 +88,9 @@ public class WhenTestingCreate : BaseUserIdentityRepositoryTest
         (await CountUsersAsync()).Should().Be(usersAfterFirst);
         (await CountIdentitiesAsync()).Should().Be(identitiesAfterFirst);
         (await CountUsersWithoutIdentityAsync()).Should().Be(0);
+        Logger.Records.Should().ContainSingle();
+        Logger.Records[0].Level.Should().Be(LogLevel.Warning);
+        Logger.Records[0].Exception.Should().BeOfType<PostgresException>();
     }
 
     [Fact]

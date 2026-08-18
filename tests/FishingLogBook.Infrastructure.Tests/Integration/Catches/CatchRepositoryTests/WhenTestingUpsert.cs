@@ -5,6 +5,7 @@ using FishingLogBook.Domain.Catches;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace FishingLogBook.Infrastructure.Tests.Integration.Catches.CatchRepositoryTests;
@@ -81,6 +82,51 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value.CaughtOn.Should().Be(updated.CaughtOn);
         loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
         loaded.Value.Location.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldPersistACatchWhenTimestampsHaveANonUtcOffset()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var catchId = Guid.NewGuid();
+        var caughtOn = new DateTimeOffset(2026, 8, 17, 23, 24, 33, TimeSpan.FromHours(4));
+        var capturedOn = new DateTimeOffset(2026, 8, 17, 23, 24, 34, TimeSpan.FromHours(4));
+        var catchRecord = WithLocation(
+            new Catch
+            {
+                Id = catchId,
+                UserId = userId,
+                CaughtOn = caughtOn,
+                Photographs =
+                [
+                    new CatchPhotograph
+                    {
+                        Id = Guid.NewGuid(),
+                        CatchId = catchId,
+                        ContentType = PhotographContentTypeConstants.Jpeg
+                    }
+                ]
+            },
+            CatchLocation.TryCreate(
+                53.2707,
+                -9.0568,
+                12,
+                capturedOn,
+                LocationDefaults.DeviceGps,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion)!);
+
+        // Act
+        var result = await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.CaughtOn.Should().Be(caughtOn.ToUniversalTime());
+        result.Value.CaughtOn.Offset.Should().Be(TimeSpan.Zero);
+        result.Value.Location.Should().NotBeNull();
+        result.Value.Location!.CapturedOn.Should().Be(capturedOn.ToUniversalTime());
+        result.Value.Location.CapturedOn.Offset.Should().Be(TimeSpan.Zero);
     }
 
     [Fact]
@@ -334,6 +380,10 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("Failed to save the catch.");
         loaded.Value.Should().BeNull();
+        Logger.Records.Should().ContainSingle();
+        Logger.Records[0].Level.Should().Be(LogLevel.Error);
+        Logger.Records[0].Exception.Should().NotBeNull();
+        Logger.Records[0].Message.Should().Contain(catchRecord.Id.ToString("D"));
     }
 
     [Fact]

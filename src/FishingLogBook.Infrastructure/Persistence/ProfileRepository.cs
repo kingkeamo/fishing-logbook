@@ -4,6 +4,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FluentResults;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Infrastructure.Persistence;
 
@@ -20,10 +21,12 @@ public sealed class ProfileRepository : IProfileRepository
         """;
 
     private readonly IDbConnectionFactory _connectionFactory;
+    private readonly ILogger<ProfileRepository> _logger;
 
-    public ProfileRepository(IDbConnectionFactory connectionFactory)
+    public ProfileRepository(IDbConnectionFactory connectionFactory, ILogger<ProfileRepository> logger)
     {
         _connectionFactory = connectionFactory;
+        _logger = logger;
     }
 
     public async Task<Result<bool>> UserExistsAsync(Guid userId, CancellationToken cancellationToken)
@@ -38,8 +41,9 @@ public sealed class ProfileRepository : IProfileRepository
                 cancellationToken: cancellationToken));
             return Result.Ok(exists);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to check whether user {UserId} exists.", userId);
             return Result.Fail<bool>(FailedMessage);
         }
     }
@@ -59,8 +63,9 @@ public sealed class ProfileRepository : IProfileRepository
                 cancellationToken: cancellationToken));
             return Result.Ok(profile);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to load angler profile {UserId}.", userId);
             return Result.Fail<Profile?>(FailedMessage);
         }
     }
@@ -98,8 +103,9 @@ public sealed class ProfileRepository : IProfileRepository
             await connection.ExecuteAsync(new CommandDefinition(sql, profile, cancellationToken: cancellationToken));
             return await RequireByUserIdAsync(connection, profile.UserId, cancellationToken);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to save angler profile {UserId}.", profile.UserId);
             return Result.Fail<Profile>(FailedMessage);
         }
     }
@@ -130,8 +136,9 @@ public sealed class ProfileRepository : IProfileRepository
 
             return await RequireByUserIdAsync(connection, args.UserId, cancellationToken);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to update angler profile photograph {UserId}.", args.UserId);
             return Result.Fail<Profile>(FailedMessage);
         }
     }

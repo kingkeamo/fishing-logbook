@@ -5,6 +5,7 @@ using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Catches;
 using FluentResults;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace FishingLogBook.Infrastructure.Persistence;
@@ -14,10 +15,12 @@ public sealed class CatchRepository : ICatchRepository
     private const string FailedMessage = "Failed to save the catch.";
 
     private readonly IDbConnectionFactory _connectionFactory;
+    private readonly ILogger<CatchRepository> _logger;
 
-    public CatchRepository(IDbConnectionFactory connectionFactory)
+    public CatchRepository(IDbConnectionFactory connectionFactory, ILogger<CatchRepository> logger)
     {
         _connectionFactory = connectionFactory;
+        _logger = logger;
     }
 
     public async Task<Result<Catch?>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -27,9 +30,43 @@ public sealed class CatchRepository : ICatchRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             return Result.Ok(await LoadAsync(connection, transaction: null, id, cancellationToken));
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to load the catch {CatchId}.", id);
             return Result.Fail<Catch?>(FailedMessage);
+        }
+    }
+
+    public async Task<Result<CatchPhotograph?>> GetPhotographAsync(
+        GetCatchPhotographArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            const string sql = """
+                SELECT p."Id", p."CatchId", p."ContentType"
+                FROM "CatchPhotograph" p
+                INNER JOIN "Catch" c ON c."Id" = p."CatchId"
+                WHERE p."Id" = @PhotographId
+                  AND p."CatchId" = @CatchId
+                  AND c."UserId" = @UserId;
+                """;
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            var photograph = await connection.QuerySingleOrDefaultAsync<CatchPhotograph>(
+                new CommandDefinition(
+                    sql,
+                    args,
+                    cancellationToken: cancellationToken));
+            return Result.Ok(photograph);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to load catch photograph {PhotographId} for catch {CatchId}.",
+                args.PhotographId,
+                args.CatchId);
+            return Result.Fail<CatchPhotograph?>(FailedMessage);
         }
     }
 
@@ -62,8 +99,9 @@ public sealed class CatchRepository : ICatchRepository
                 throw;
             }
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to save the catch {CatchId}.", catchRecord.Id);
             return Result.Fail<Catch>(FailedMessage);
         }
     }
@@ -95,8 +133,9 @@ public sealed class CatchRepository : ICatchRepository
                 ? Result.Ok()
                 : Result.Fail("Failed to save the catch.");
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to update catch location visibility {CatchId}.", args.CatchId);
             return Result.Fail("Failed to save the catch.");
         }
     }
@@ -237,11 +276,11 @@ public sealed class CatchRepository : ICatchRepository
         {
             catchRecord.Id,
             catchRecord.UserId,
-            catchRecord.CaughtOn,
+            CaughtOn = catchRecord.CaughtOn.ToUniversalTime(),
             Latitude = catchRecord.Location?.Latitude,
             Longitude = catchRecord.Location?.Longitude,
             LocationAccuracyMetres = catchRecord.Location?.AccuracyMetres,
-            LocationCapturedOn = catchRecord.Location?.CapturedOn,
+            LocationCapturedOn = catchRecord.Location?.CapturedOn.ToUniversalTime(),
             LocationSource = catchRecord.Location?.Source,
             LocationVisibility = catchRecord.Location?.Visibility,
             LocationConsentVersion = catchRecord.Location?.ConsentVersion

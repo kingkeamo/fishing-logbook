@@ -232,6 +232,49 @@ export async function putCatchWithPhotographs(json, photographs) {
     });
 }
 
+export async function updateCatchMetadata(json) {
+    const catchRecord = JSON.parse(json);
+    if (!catchRecord?.id || !normalisedUserId(catchRecord.userId)) {
+        throw new Error('Owned Catch id is required');
+    }
+
+    await runCatchTransaction(PRODUCTION_CATCH_STORE_NAME, 'readwrite', 'sync-state-write', (store, succeed, fail) => {
+        const existingRequest = store.get(catchRecord.id);
+        existingRequest.onerror = () => fail(existingRequest.error);
+        existingRequest.onsuccess = () => {
+            const existing = existingRequest.result;
+            if (!existing || normalisedUserId(existing.userId) !== normalisedUserId(catchRecord.userId)) {
+                fail(new Error('Owned Catch was not found'));
+                return;
+            }
+
+            const incomingPhotographs = new Map(
+                (catchRecord.photographs || []).map((photograph) => [photograph.id, photograph])
+            );
+            const photographs = (existing.photographs || []).map((photograph) => {
+                const incoming = incomingPhotographs.get(photograph.id);
+                if (!incoming) {
+                    return photograph;
+                }
+
+                return {
+                    ...photograph,
+                    syncStatus: incoming.syncStatus,
+                    objectKey: incoming.objectKey
+                };
+            });
+            const updateRequest = store.put({
+                ...existing,
+                syncStatus: catchRecord.syncStatus,
+                metadataSyncStatus: catchRecord.metadataSyncStatus,
+                photographs
+            });
+            updateRequest.onsuccess = () => succeed();
+            updateRequest.onerror = () => fail(updateRequest.error);
+        };
+    });
+}
+
 export async function getAllCatchesWithPhotographs(ownerUserId) {
     return runProductionCatchTransaction('readonly', 'read', (transaction, succeed, fail) => {
         const catchStore = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME);

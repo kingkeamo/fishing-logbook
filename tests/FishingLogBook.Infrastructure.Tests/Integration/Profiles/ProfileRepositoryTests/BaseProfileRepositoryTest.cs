@@ -1,7 +1,9 @@
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Infrastructure.Persistence;
 using FishingLogBook.Infrastructure.Tests.Integration.TestSupport;
+using FishingLogBook.Infrastructure.Tests.TestSupport;
 using FishingLogBook.Tests.Common.Builders;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FishingLogBook.Infrastructure.Tests.Integration.Profiles.ProfileRepositoryTests;
 
@@ -9,14 +11,15 @@ namespace FishingLogBook.Infrastructure.Tests.Integration.Profiles.ProfileReposi
 public abstract class BaseProfileRepositoryTest
 {
     protected readonly ProfileRepository Sut;
+    protected readonly RecordingLogger<ProfileRepository> Logger = new();
     protected readonly UserIdentityRepository Users;
     protected readonly NpgsqlConnectionFactory ConnectionFactory;
 
     protected BaseProfileRepositoryTest(PostgresFixture fixture)
     {
         ConnectionFactory = new NpgsqlConnectionFactory(fixture.ConnectionString);
-        Sut = new ProfileRepository(ConnectionFactory);
-        Users = new UserIdentityRepository(ConnectionFactory);
+        Sut = new ProfileRepository(ConnectionFactory, Logger);
+        Users = new UserIdentityRepository(ConnectionFactory, NullLogger<UserIdentityRepository>.Instance);
     }
 
     protected async Task<Guid> CreateUserAsync()
