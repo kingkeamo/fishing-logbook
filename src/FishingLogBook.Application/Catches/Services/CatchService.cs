@@ -4,6 +4,7 @@ using FishingLogBook.Application.Catches.Errors;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Catches;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using Mapster;
@@ -47,6 +48,12 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchDto>(new CatchLocationInvalidError());
         }
 
+        var details = ValidateDetails(args.Catch);
+        if (details.IsFailed)
+        {
+            return Result.Fail<CatchDto>(details.Errors);
+        }
+
         var catchRecord = new Catch
         {
             Id = args.Catch.Id,
@@ -54,6 +61,12 @@ public sealed class CatchService : ICatchService
             AnglerUserId = args.UserId,
             RecordedByUserId = args.UserId,
             CaughtOn = args.Catch.CaughtOn,
+            SpeciesName = TrimToNull(args.Catch.SpeciesName),
+            Weight = args.Catch.Weight,
+            Length = args.Catch.Length,
+            Method = TrimToNull(args.Catch.Method),
+            BaitOrLure = TrimToNull(args.Catch.BaitOrLure),
+            Notes = TrimToNull(args.Catch.Notes),
             Location = location,
             Photographs = photographs
                 .Select(photograph => new CatchPhotograph
@@ -93,7 +106,13 @@ public sealed class CatchService : ICatchService
             exposure)
         {
             AnglerUserId = loaded.Value.AnglerUserId,
-            RecordedByUserId = loaded.Value.RecordedByUserId
+            RecordedByUserId = loaded.Value.RecordedByUserId,
+            SpeciesName = loaded.Value.SpeciesName,
+            Weight = loaded.Value.Weight,
+            Length = loaded.Value.Length,
+            Method = loaded.Value.Method,
+            BaitOrLure = loaded.Value.BaitOrLure,
+            Notes = loaded.Value.Notes
         });
     }
 
@@ -146,6 +165,35 @@ public sealed class CatchService : ICatchService
         }
 
         return Result.Ok(loaded.Value);
+    }
+
+    private static Result ValidateDetails(CatchDto catchDto)
+    {
+        if (!CatchDetailConstants.IsCaughtOnValid(catchDto.CaughtOn, DateTimeOffset.UtcNow)
+            || !CatchDetailConstants.IsWeightValid(catchDto.Weight)
+            || !CatchDetailConstants.IsLengthValid(catchDto.Length)
+            || !CatchDetailConstants.IsOptionalTextValid(
+                catchDto.SpeciesName,
+                CatchDetailConstants.MaxSpeciesNameLength)
+            || !CatchDetailConstants.IsOptionalTextValid(
+                catchDto.Method,
+                CatchDetailConstants.MaxMethodLength)
+            || !CatchDetailConstants.IsOptionalTextValid(
+                catchDto.BaitOrLure,
+                CatchDetailConstants.MaxBaitOrLureLength)
+            || !CatchDetailConstants.IsOptionalTextValid(
+                catchDto.Notes,
+                CatchDetailConstants.MaxNotesLength))
+        {
+            return Result.Fail(new CatchDetailsInvalidError());
+        }
+
+        return Result.Ok();
+    }
+
+    private static string? TrimToNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static CatchLocation? ToLocation(CatchLocationDto? location)
