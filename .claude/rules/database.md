@@ -136,6 +136,13 @@ null). They still must not drop the source column.
 - Filter/query/lookup methods accept `*Args` types from `Application/Args/`.
 - Do not create a partially initialised Domain entity merely to transport
   lookup/filter criteria.
+- Where a repository hand-copies a persistence row onto a Domain type (or a Domain type onto a
+  persistence/parameter type) beyond what Dapper's own column-name binding already does, inject
+  `IMapper` and map through it — see **`cqrs.md` → Mapster**, which applies solution-wide.
+  Repositories where Dapper binds the query result directly onto the Domain type (no separate row
+  class) need no mapper. Domain construction that enforces invariants (for example
+  `CatchLocation.TryCreate`) stays explicit, referenced from an `IRegister` conversion rather than
+  hand-copied at the call site.
 
 GOOD:
 

@@ -20,7 +20,7 @@ public abstract class BaseCatchRepositoryTest
     protected BaseCatchRepositoryTest(PostgresFixture fixture)
     {
         ConnectionFactory = new NpgsqlConnectionFactory(fixture.ConnectionString);
-        Sut = new CatchRepository(ConnectionFactory, Logger);
+        Sut = new CatchRepository(ConnectionFactory, Logger, TestMapper.Create());
         Users = new UserIdentityRepository(ConnectionFactory, NullLogger<UserIdentityRepository>.Instance);
     }
 

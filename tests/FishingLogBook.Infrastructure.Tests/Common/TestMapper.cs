@@ -1,4 +1,5 @@
 using FishingLogBook.Application.Common.Mappings;
+using FishingLogBook.Infrastructure.Persistence;
 using Mapster;
 using MapsterMapper;
 
@@ -9,7 +10,7 @@ public static class TestMapper
     public static IMapper Create()
     {
         var typeAdapterConfig = new TypeAdapterConfig();
-        typeAdapterConfig.Scan(typeof(CatchMappingRegistration).Assembly);
+        typeAdapterConfig.Scan(typeof(CatchMappingRegistration).Assembly, typeof(CatchRepository).Assembly);
         return new Mapper(typeAdapterConfig);
     }
 }

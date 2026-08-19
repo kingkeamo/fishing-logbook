@@ -16,7 +16,7 @@ public abstract class BaseCatchRepositoryTest
 
     protected BaseCatchRepositoryTest()
     {
-        Sut = new CatchRepository(MockConnectionFactory, Logger);
+        Sut = new CatchRepository(MockConnectionFactory, Logger, TestMapper.Create());
     }
 
     protected void FailOpenConnection(Exception exception)

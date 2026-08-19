@@ -5,6 +5,7 @@ using AwesomeAssertions;
 using FishingLogBook.Application.Catches.Services;
 using FishingLogBook.Application.Common.Mappings;
 using FishingLogBook.DependencyInjection;
+using FishingLogBook.Infrastructure.Persistence;
 using Mapster;
 using MapsterMapper;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,7 @@ public class WhenTestingMapsterConfiguration
     public static TheoryData<string> ProductionAssemblies =>
     [
         typeof(CatchService).Assembly.Location,
+        typeof(CatchRepository).Assembly.Location,
         typeof(FishingLogBook.DependencyInjection.ServiceCollectionExtensions).Assembly.Location
     ];
 

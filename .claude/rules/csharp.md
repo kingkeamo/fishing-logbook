@@ -168,6 +168,10 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 - Dapper repositories in `Persistence/`; connection via `IDbConnectionFactory`.
 - DbUp migrations live in `FishingLogBook.Db.Migrations`, not in Infrastructure.
 - Parameterised SQL only — never string-concatenate values.
+- A repository that hand-maps a persistence row onto a Domain type beyond Dapper's own
+  column-name binding injects `IMapper` (see **`cqrs.md` → Mapster**, solution-wide;
+  non-trivial `IRegister` config lives in `Persistence/Mappings/`, mirroring Application's
+  `Common/Mappings/`).
 - This layer contains no DI registration of its own (see the composition root below).
 
 ## Composition root (`FishingLogBook.DependencyInjection`)
