@@ -6,6 +6,8 @@ namespace FishingLogBook.Web.Features.Profile.Services;
 
 public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
 {
+    private static readonly TimeSpan ApiTimeout = TimeSpan.FromSeconds(10);
+
     private readonly IProfileClient _profileClient;
     private readonly IFishingPreferenceClient _fishingPreferenceClient;
     private readonly IAnglerPreferencesCache _cache;
@@ -39,25 +41,45 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
             return alreadyLoaded;
         }
 
+        var loaded = await LoadAsync(userId, cancellationToken);
+        if (loaded.CameFromCache)
+        {
+            _ = RefreshAsync(userId);
+        }
+
+        return loaded.Preferences;
+    }
+
+    public void Invalidate()
+    {
+        _remembered = null;
+        _rememberedUserId = Guid.Empty;
+    }
+
+    private async Task<LoadedPreferences> LoadAsync(Guid userId, CancellationToken cancellationToken)
+    {
         await _loadLock.WaitAsync(cancellationToken);
         try
         {
             if (TryGetRemembered(userId) is { } loadedWhileWaiting)
             {
-                return loadedWhileWaiting;
-            }
-
-            var fresh = await TryLoadFromApiAsync(cancellationToken);
-            if (fresh is not null)
-            {
-                await TryCacheAsync(userId, fresh, cancellationToken);
-                return Remember(userId, fresh);
+                return new LoadedPreferences(loadedWhileWaiting, false);
             }
 
             var cached = await TryLoadFromCacheAsync(userId, cancellationToken);
-            return cached is null
-                ? AnglerPreferencesModel.Empty
-                : Remember(userId, cached);
+            if (cached is not null)
+            {
+                return new LoadedPreferences(Remember(userId, cached), true);
+            }
+
+            var fresh = await TryLoadFromApiAsync(cancellationToken);
+            if (fresh is null)
+            {
+                return new LoadedPreferences(AnglerPreferencesModel.Empty, false);
+            }
+
+            await TryCacheAsync(userId, fresh, cancellationToken);
+            return new LoadedPreferences(Remember(userId, fresh), false);
         }
         finally
         {
@@ -65,10 +87,27 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
         }
     }
 
-    public void Invalidate()
+    private async Task RefreshAsync(Guid userId)
     {
-        _remembered = null;
-        _rememberedUserId = Guid.Empty;
+        await _loadLock.WaitAsync(CancellationToken.None);
+        try
+        {
+            var fresh = await TryLoadFromApiAsync(CancellationToken.None);
+            if (fresh is null)
+            {
+                return;
+            }
+
+            await TryCacheAsync(userId, fresh, CancellationToken.None);
+            if (_rememberedUserId == userId)
+            {
+                Remember(userId, fresh);
+            }
+        }
+        finally
+        {
+            _loadLock.Release();
+        }
     }
 
     private AnglerPreferencesModel? TryGetRemembered(Guid userId)
@@ -99,9 +138,11 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
 
     private async Task<AnglerPreferencesModel?> TryLoadFromApiAsync(CancellationToken cancellationToken)
     {
-        var profileTask = _profileClient.GetOwnAsync(cancellationToken);
-        var catalogueTask = _fishingPreferenceClient.GetCatalogueAsync(cancellationToken);
-        var preferencesTask = _fishingPreferenceClient.GetPreferencesAsync(cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(ApiTimeout);
+        var profileTask = _profileClient.GetOwnAsync(timeout.Token);
+        var catalogueTask = _fishingPreferenceClient.GetCatalogueAsync(timeout.Token);
+        var preferencesTask = _fishingPreferenceClient.GetPreferencesAsync(timeout.Token);
         try
         {
             await Task.WhenAll(profileTask, catalogueTask, preferencesTask);
@@ -111,6 +152,10 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
                 await preferencesTask,
                 profile.PreferredWeightUnit,
                 profile.PreferredLengthUnit);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception)
         {
@@ -145,4 +190,6 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
             return null;
         }
     }
+
+    private sealed record LoadedPreferences(AnglerPreferencesModel Preferences, bool CameFromCache);
 }

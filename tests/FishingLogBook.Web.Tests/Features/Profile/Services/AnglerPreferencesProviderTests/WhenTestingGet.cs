@@ -112,7 +112,7 @@ public class WhenTestingGet : BaseAnglerPreferencesProviderTest
         // Assert
         result.WeightUnit.Should().Be(WeightUnitEnum.Lb);
         result.Catalogue.Methods.Should().ContainSingle();
-        await MockCache.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await MockCache.Received(1).GetAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -139,6 +139,6 @@ public class WhenTestingGet : BaseAnglerPreferencesProviderTest
                 && preferences.Catalogue.Methods.Count == 1
                 && preferences.Preferences.Methods.Count == 1),
             Arg.Any<CancellationToken>());
-        await MockCache.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await MockCache.Received(1).GetAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 }
