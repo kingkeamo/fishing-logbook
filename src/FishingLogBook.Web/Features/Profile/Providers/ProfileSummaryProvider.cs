@@ -1,3 +1,4 @@
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -81,7 +82,7 @@ public sealed class ProfileSummaryProvider : IProfileSummaryProvider
         return summary;
     }
 
-    private async Task<Shared.Dtos.ProfileDto?> TryLoadAsync(CancellationToken cancellationToken)
+    private async Task<ProfileDto?> TryLoadAsync(CancellationToken cancellationToken)
     {
         try
         {

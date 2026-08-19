@@ -13,6 +13,49 @@ namespace FishingLogBook.Web.Tests.Features.Authentication.Components.UserMenuTe
 public class WhenTestingMenuActions : BaseUserMenuTest
 {
     [Fact]
+    public async Task ItShouldOpenTheMenuFromTheAvatarActivator()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        await using var context = CreateContext(profileSummary);
+        var (cut, popover) = RenderMenu(context);
+
+        // Act
+        await cut.Find("#user-menu-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            popover.Find("#user-menu-profile").TextContent.Should().Contain("Profile");
+            popover.Find("#user-menu-sign-out").TextContent.Should().Contain("Sign out");
+        });
+        await profileSummary.Received(1).GetAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldOpenTheMenuFromTheKeyboard()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        await using var context = CreateContext(profileSummary);
+        var (cut, popover) = RenderMenu(context);
+
+        // Act
+        await cut.Find(".mud-menu-activator")
+            .KeyDownAsync(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "Enter" });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            popover.Find("#user-menu-profile").TextContent.Should().Contain("Profile");
+            popover.Find("#user-menu-sign-out").TextContent.Should().Contain("Sign out");
+        });
+        await profileSummary.Received(1).GetAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldOfferProfileAndSignOutInTheMenu()
     {
         // Arrange

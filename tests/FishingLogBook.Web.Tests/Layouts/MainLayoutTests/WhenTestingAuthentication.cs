@@ -37,6 +37,7 @@ public class WhenTestingAuthentication : BaseMainLayoutTest
         cut.FindAll("#auth-sign-in-button").Should().BeEmpty();
         cut.FindAll("#auth-sign-out-button").Should().BeEmpty();
         cut.FindAll("#auth-current-user-email").Should().BeEmpty();
-        cut.Markup.Should().NotContain("tester@example.test");
+        cut.Find("#user-menu").TextContent.Should().NotContain(SignedInEmail);
+        cut.Find("#user-menu-button").GetAttribute("title").Should().Be(SignedInEmail);
     }
 }

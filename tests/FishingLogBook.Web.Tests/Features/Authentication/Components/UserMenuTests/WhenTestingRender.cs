@@ -32,6 +32,23 @@ public class WhenTestingRender : BaseUserMenuTest
     }
 
     [Fact]
+    public async Task ItShouldActivateTheMenuStraightFromTheAvatarButton()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        await using var context = CreateContext(profileSummary);
+
+        // Act
+        var cut = context.Render<UserMenu>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.FindAll("#user-menu > .mud-menu-activator > #user-menu-button").Should().HaveCount(1));
+        await profileSummary.Received(1).GetAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldFallBackToTheDefaultAvatarWhenThereIsNoPhotograph()
     {
         // Arrange
@@ -46,6 +63,7 @@ public class WhenTestingRender : BaseUserMenuTest
         cut.WaitForAssertion(() => cut.Find("#user-menu-default-avatar").Should().NotBeNull());
         cut.FindAll("#user-menu-photograph").Should().BeEmpty();
         cut.Find("#user-menu-button").GetAttribute("aria-label").Should().Be("Account menu");
+        cut.Find("#user-menu-button").GetAttribute("title").Should().Be(SignedInEmail);
         await profileSummary.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
@@ -104,6 +122,7 @@ public class WhenTestingRender : BaseUserMenuTest
             cut.Find("#user-menu-photograph").Should().NotBeNull();
             cut.Find("#user-menu-photograph img").GetAttribute("src")
                 .Should().Be("https://cdn.test/photo.jpg");
+            cut.Find("#user-menu-button").GetAttribute("title").Should().Be("Eamonn");
         });
         cut.FindAll("#user-menu-default-avatar").Should().BeEmpty();
         await profileSummary.Received(1).GetAsync(Arg.Any<CancellationToken>());

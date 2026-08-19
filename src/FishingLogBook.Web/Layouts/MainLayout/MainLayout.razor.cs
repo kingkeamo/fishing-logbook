@@ -19,7 +19,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private const Breakpoint NavigationBreakpoint = Breakpoint.Md;
 
     private bool _isDarkMode;
-    private bool _drawerOpen;
+    private bool _drawerOpen = true;
     private DotNetObjectReference<MainLayout>? _dotNetReference;
 
     [Inject]

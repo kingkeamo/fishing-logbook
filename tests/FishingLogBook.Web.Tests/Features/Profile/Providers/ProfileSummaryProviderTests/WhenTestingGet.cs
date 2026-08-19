@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Profile.Models;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -76,7 +77,7 @@ public class WhenTestingGet : BaseProfileSummaryProviderTest
     public async Task ItShouldDiscardAProfileLoadedForAnAccountThatSignedOutMidFlight()
     {
         // Arrange
-        var loading = new TaskCompletionSource<Shared.Dtos.ProfileDto>();
+        var loading = new TaskCompletionSource<ProfileDto>();
         MockProfileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(loading.Task);
         var pending = Sut.GetAsync(CancellationToken.None);
         MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OtherUserId);

@@ -46,20 +46,37 @@ public class WhenTestingResponsiveShell : BaseMainLayoutTest
     }
 
     [Fact]
+    public async Task ItShouldKeepTheDrawerClosedBelowTheBreakpoint()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext(isAuthenticated: true);
+
+        // Act
+        var cut = context.Render<MainLayout>();
+
+        // Assert
+        cut.FindComponent<MudDrawer>().Instance.GetState(x => x.Open).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ItShouldToggleTheDrawerFromTheNavigationButton()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         await using var context = CreateContext(isAuthenticated: true);
         var cut = context.Render<MainLayout>();
-        var openBefore = cut.FindComponent<MudDrawer>().Instance.GetState(x => x.Open);
+        var drawer = cut.FindComponent<MudDrawer>().Instance;
+        var openBefore = drawer.GetState(x => x.Open);
 
         // Act
         await cut.Find("#app-menu-button").ClickAsync();
+        var openAfterFirstClick = drawer.GetState(x => x.Open);
+        await cut.Find("#app-menu-button").ClickAsync();
 
         // Assert
-        openBefore.Should().BeFalse();
-        cut.FindComponent<MudDrawer>().Instance.GetState(x => x.Open).Should().BeTrue();
+        openAfterFirstClick.Should().Be(!openBefore);
+        drawer.GetState(x => x.Open).Should().Be(openBefore);
     }
 
     [Fact]

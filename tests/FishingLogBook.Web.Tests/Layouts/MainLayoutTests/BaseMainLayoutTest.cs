@@ -17,6 +17,8 @@ namespace FishingLogBook.Web.Tests.Layouts.MainLayoutTests;
 
 public class BaseMainLayoutTest
 {
+    protected const string SignedInEmail = "tester@example.test";
+
     protected static BunitContext CreateContext(
         bool isAuthenticated = false,
         ICatchSynchroniser? catchSynchroniser = null,
@@ -31,7 +33,8 @@ public class BaseMainLayoutTest
         var authorization = context.AddAuthorization();
         if (isAuthenticated)
         {
-            authorization.SetAuthorized("tester@example.test");
+            authorization.SetAuthorized(SignedInEmail);
+            authorization.SetClaims(new System.Security.Claims.Claim("email", SignedInEmail));
         }
         else
         {
