@@ -6,7 +6,7 @@ using FishingLogBook.Web.Features.Diagnostics.Storage;
 
 namespace FishingLogBook.Web.Tests.Features.Diagnostics.Services.OfflineOperationTests;
 
-public class WhenTestingTimeout
+public class WhenTestingTimeout : BaseOfflineOperationTest
 {
     [Fact]
     public async Task ItShouldEmitATimeoutDiagnostic_WhenTheOperationExceedsTheTimeout()
@@ -97,20 +97,6 @@ public class WhenTestingTimeout
         completed.Should().BeTrue();
     }
 
-    private static async Task WaitForEventAsync(RecordingDiagnosticLogger logger, string eventName)
-    {
-        for (var attempt = 0; attempt < 50; attempt++)
-        {
-            if (logger.Events.Exists(item => item.EventName == eventName))
-            {
-                return;
-            }
-
-            await Task.Delay(10);
-        }
-
-        logger.Events.Should().Contain(item => item.EventName == eventName);
-    }
 
     private sealed class HangingDiagnosticLogger : IDiagnosticLogger
     {
@@ -123,23 +109,6 @@ public class WhenTestingTimeout
             CancellationToken cancellationToken = default)
         {
             return new TaskCompletionSource().Task;
-        }
-    }
-
-    private sealed class RecordingDiagnosticLogger : IDiagnosticLogger
-    {
-        public List<(DiagnosticLevel Level, string EventName)> Events { get; } = [];
-
-        public Task LogAsync(
-            DiagnosticLevel level,
-            string eventName,
-            string message,
-            IReadOnlyDictionary<string, string>? metadata = null,
-            Exception? exception = null,
-            CancellationToken cancellationToken = default)
-        {
-            Events.Add((level, eventName));
-            return Task.CompletedTask;
         }
     }
 }

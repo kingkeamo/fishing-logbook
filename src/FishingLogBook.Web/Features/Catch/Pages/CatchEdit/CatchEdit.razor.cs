@@ -549,11 +549,12 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     private async Task SafeSynchronisePendingAsync()
     {
+        var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            await CatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+            await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
@@ -561,7 +562,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
             await Logging.LogErrorAsync(
                 "production catch synchronisation",
                 exception,
-                _cancellationTokenSource.Token);
+                CancellationToken.None);
         }
     }
 

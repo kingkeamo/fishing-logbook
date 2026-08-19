@@ -105,12 +105,28 @@ public partial class CatchList : ComponentBase, IDisposable
 
     private void OnSyncStateChanged(object? sender, EventArgs args)
     {
-        _ = InvokeAsync(RefreshAfterSynchronisationAsync);
+        if (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
+        try
+        {
+            _ = InvokeAsync(RefreshAfterSynchronisationAsync);
+        }
+        catch (ObjectDisposedException)
+        {
+        }
     }
 
     private async Task RefreshAfterSynchronisationAsync()
     {
         await LoadAsync();
+        if (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
         StateHasChanged();
     }
 

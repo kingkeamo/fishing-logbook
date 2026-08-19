@@ -33,10 +33,17 @@
         <div class="loading-progress-text"></div>
     </div>
 
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
-        <span class="dismiss">🗙</span>
+    <div id="blazor-error-ui" role="alert">
+        <div class="blazor-error-card">
+            <svg class="blazor-error-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a1 1 0 0 1 1 1v6a1 1 0 0 1-2 0V7a1 1 0 0 1 1-1zm0 12.5a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z" />
+            </svg>
+            <p class="blazor-error-title">Something went wrong</p>
+            <p class="blazor-error-message">We couldn't load this screen. Try again, or return home.</p>
+            <a href="." class="blazor-error-action blazor-error-action-primary reload">Try again</a>
+            <a href="/" class="blazor-error-action blazor-error-action-secondary">Go home</a>
+        </div>
+        <span class="dismiss" role="button" tabindex="0" aria-label="Dismiss">🗙</span>
     </div>
     <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>

@@ -98,11 +98,12 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
 
     private async Task SynchroniseAsync()
     {
+        var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            await CatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+            await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             return;
         }
@@ -111,14 +112,14 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
             await Logging.LogErrorAsync(
                 "production catch synchronisation",
                 exception,
-                _cancellationTokenSource.Token);
+                CancellationToken.None);
         }
 
         try
         {
-            await DiagnosticSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+            await DiagnosticSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
             return;
         }
@@ -127,7 +128,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
             await Logging.LogErrorAsync(
                 "diagnostic synchronisation",
                 exception,
-                _cancellationTokenSource.Token);
+                CancellationToken.None);
         }
     }
 

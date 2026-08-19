@@ -86,6 +86,11 @@ public static class OfflineOperation
                 cancellationToken);
             throw new TimeoutException($"{operation} timed out after {timeout.TotalMilliseconds:0}ms.", exception);
         }
+        catch (OperationCanceledException)
+        {
+            stopwatch.Stop();
+            throw;
+        }
         catch (Exception exception)
         {
             stopwatch.Stop();
@@ -176,11 +181,14 @@ public static class OfflineOperation
         {
             await diagnostics.LogAsync(level, eventName, message, metadata, exception, cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+        }
         catch (Exception loggingException)
         {
             if (logging is not null)
             {
-                await logging.LogErrorAsync("diagnostic log", loggingException, cancellationToken);
+                await logging.LogErrorAsync("diagnostic log", loggingException, CancellationToken.None);
             }
         }
     }

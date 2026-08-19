@@ -4,31 +4,71 @@ html, body {
 }
 
 #blazor-error-ui {
-    background: var(--mud-palette-surface, #ffffff);
+    background: var(--mud-palette-background, #ffffff);
     color: var(--mud-palette-text-primary, #1f1f1f);
-    border-bottom: 3px solid var(--mud-palette-error, #b32121);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
     display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    inset: 0;
+    padding: 1.5rem;
     position: fixed;
-    top: 0;
-    width: 100%;
+    overflow-y: auto;
     z-index: 2000;
 }
 
-#blazor-error-ui a {
-    color: var(--mud-palette-primary, #00695c);
-    font-weight: 600;
-    text-decoration: underline;
-}
+    #blazor-error-ui .blazor-error-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        max-width: 24rem;
+        margin: 15vh auto 0 auto;
+        text-align: center;
+    }
+
+    #blazor-error-ui .blazor-error-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        fill: var(--mud-palette-error, #b32121);
+    }
+
+    #blazor-error-ui .blazor-error-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 500;
+    }
+
+    #blazor-error-ui .blazor-error-message {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.875rem;
+        color: var(--mud-palette-text-secondary, #5c5c5c);
+    }
+
+    #blazor-error-ui .blazor-error-action {
+        box-sizing: border-box;
+        display: block;
+        width: 100%;
+        min-height: 2.75rem;
+        padding: 0.7rem 1rem;
+        border-radius: var(--mud-default-borderradius, 4px);
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    #blazor-error-ui .blazor-error-action-primary {
+        background: var(--mud-palette-primary, #00695c);
+        color: var(--mud-palette-primary-text, #ffffff);
+    }
+
+    #blazor-error-ui .blazor-error-action-secondary {
+        background: transparent;
+        color: var(--mud-palette-text-primary, #1f1f1f);
+    }
 
     #blazor-error-ui .dismiss {
         cursor: pointer;
         position: absolute;
-        right: 0.75rem;
-        top: 0.3rem;
+        right: 1rem;
+        top: 0.75rem;
     }
 
 .blazor-error-boundary {
