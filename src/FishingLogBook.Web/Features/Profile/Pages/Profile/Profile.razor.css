@@ -41,9 +41,3 @@
     white-space: nowrap;
     border: 0;
 }
-
-::deep .profile-default-label {
-    margin-inline-start: 0.25rem;
-    font-size: 0.75em;
-    text-transform: lowercase;
-}

@@ -47,6 +47,53 @@ public class WhenTestingPreferences : BaseProfileTest
     }
 
     [Fact]
+    public async Task ItShouldSeparateTheDefaultLabelFromTheMethodAndSpeciesName()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(EmptyProfile());
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(profileClient, preferenceClient);
+
+        // Act
+        var cut = context.Render<ProfilePage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#profile-method-default-Fly").TextContent.Should().Be("Fly Default");
+            cut.Find("#profile-species-Fly-BrownTrout").TextContent.Should().Be("Brown Trout Default");
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldNotLabelANonDefaultChip()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(EmptyProfile());
+        var preferences = new FishingPreferencesDto(
+        [
+            new FishingMethodPreferenceDto(FlyMethodId, "Fly", "Fly", true, []),
+            new FishingMethodPreferenceDto(SpinningMethodId, "Spinning", "Spinning", false, [])
+        ]);
+        var preferenceClient = QuietFishingPreferenceClient(preferences, SampleCatalogue());
+        await using var context = CreateContext(profileClient, preferenceClient);
+
+        // Act
+        var cut = context.Render<ProfilePage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#profile-method-default-Spinning").TextContent.Should().Be("Spinning");
+            cut.Find("#profile-method-default-Fly").TextContent.Should().Be("Fly Default");
+        });
+    }
+
+    [Fact]
     public async Task ItShouldMakeTheFirstSelectedMethodTheDefault()
     {
         // Arrange

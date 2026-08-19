@@ -83,3 +83,8 @@ html, body {
 .mud-button-outlined.mud-button-outlined-primary:focus-visible {
     border-color: var(--mud-palette-primary-darken);
 }
+
+.profile-default-label {
+    font-size: 0.75em;
+    text-transform: lowercase;
+}
