@@ -12,7 +12,8 @@ export const CATCH_STORE_NAME = 'testCatches';
 export const PHOTO_STORE_NAME = 'testCatchPhotographs';
 export const PRODUCTION_CATCH_STORE_NAME = 'catches';
 export const PRODUCTION_PHOTO_STORE_NAME = 'catchPhotographs';
-export const CATCH_DATABASE_VERSION = 3;
+export const FISHING_PREFERENCE_STORE_NAME = 'fishingPreferences';
+export const CATCH_DATABASE_VERSION = 4;
 export const openTimeoutMs = 8000;
 
 const databaseName = CATCH_DATABASE_NAME;
@@ -40,6 +41,9 @@ export function openCatchDatabase() {
             }
             if (!db.objectStoreNames.contains(PRODUCTION_PHOTO_STORE_NAME)) {
                 db.createObjectStore(PRODUCTION_PHOTO_STORE_NAME, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(FISHING_PREFERENCE_STORE_NAME)) {
+                db.createObjectStore(FISHING_PREFERENCE_STORE_NAME, { keyPath: 'userId' });
             }
         },
         onOpened: () => {
@@ -394,4 +398,56 @@ function uint8ToBase64(bytes) {
     }
 
     return btoa(binary);
+}
+
+export function putFishingPreferences(userId, json) {
+    if (!userId) {
+        return Promise.reject(new Error('A fishing preference cache entry requires an owner.'));
+    }
+
+    return runCatchTransaction(
+        FISHING_PREFERENCE_STORE_NAME,
+        'readwrite',
+        'writeFishingPreferences',
+        (store, succeed, fail) => {
+            const request = store.put({ userId, json });
+            request.onerror = () => fail(request.error);
+            request.onsuccess = () => succeed(undefined);
+        }).then(() => undefined);
+}
+
+export function getFishingPreferences(userId) {
+    if (!userId) {
+        return Promise.resolve(null);
+    }
+
+    return runCatchTransaction(
+        FISHING_PREFERENCE_STORE_NAME,
+        'readonly',
+        'readFishingPreferences',
+        (store, succeed, fail) => {
+            const request = store.get(userId);
+            request.onerror = () => fail(request.error);
+            request.onsuccess = () => {
+                const record = request.result;
+                if (!record || record.userId !== userId) {
+                    succeed(null);
+                    return;
+                }
+
+                succeed(record.json ?? null);
+            };
+        });
+}
+
+export function clearFishingPreferences() {
+    return runCatchTransaction(
+        FISHING_PREFERENCE_STORE_NAME,
+        'readwrite',
+        'clearFishingPreferences',
+        (store, succeed, fail) => {
+            const request = store.clear();
+            request.onerror = () => fail(request.error);
+            request.onsuccess = () => succeed(undefined);
+        }).then(() => undefined);
 }

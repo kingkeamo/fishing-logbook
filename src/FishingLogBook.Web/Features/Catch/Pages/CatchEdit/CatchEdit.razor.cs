@@ -38,6 +38,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _catalogueUnavailable;
+    private bool _speciesIsExplicit;
     private FishingPreferencesDto? _preferences;
     private IReadOnlyList<FishingMethodDto> _catalogueMethods = [];
     private IReadOnlyList<SpeciesDto> _catalogueSpecies = [];
@@ -64,10 +65,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private ITimeService Time { get; set; } = default!;
 
     [Inject]
-    private IProfileClient ProfileClient { get; set; } = default!;
-
-    [Inject]
-    private IFishingPreferenceClient FishingPreferenceClient { get; set; } = default!;
+    private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
 
     [Inject]
     private IMeasurementService Measurement { get; set; } = default!;
@@ -197,20 +195,13 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     private async Task LoadPreferencesAsync()
     {
-        try
-        {
-            var profile = await ProfileClient.GetOwnAsync(_cancellationTokenSource.Token);
-            _weightUnit = profile.PreferredWeightUnit;
-            _lengthUnit = profile.PreferredLengthUnit;
-            var catalogue = await FishingPreferenceClient.GetCatalogueAsync(_cancellationTokenSource.Token);
-            _catalogueMethods = catalogue.Methods;
-            _catalogueSpecies = catalogue.AllSpecies;
-            _preferences = await FishingPreferenceClient.GetPreferencesAsync(_cancellationTokenSource.Token);
-        }
-        catch (Exception)
-        {
-            _catalogueUnavailable = true;
-        }
+        var anglerPreferences = await AnglerPreferences.GetAsync(_cancellationTokenSource.Token);
+        _weightUnit = anglerPreferences.WeightUnit;
+        _lengthUnit = anglerPreferences.LengthUnit;
+        _catalogueMethods = anglerPreferences.Catalogue.Methods;
+        _catalogueSpecies = anglerPreferences.Catalogue.AllSpecies;
+        _preferences = anglerPreferences.Preferences;
+        _catalogueUnavailable = !anglerPreferences.HasCatalogue;
     }
 
     private void ApplyProfileDefaultsToEmptyFields()
@@ -240,12 +231,17 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private void SelectMethod(string method)
     {
         _method = method;
-        if (!string.IsNullOrWhiteSpace(_speciesName))
+        ApplyDefaultSpeciesForMethod();
+    }
+
+    private void ApplyDefaultSpeciesForMethod()
+    {
+        if (_speciesIsExplicit)
         {
             return;
         }
 
-        _speciesName = FindMethodPreference(method)?.Species
+        _speciesName = FindMethodPreference(_method)?.Species
             .FirstOrDefault(species => species.IsDefault)?.Name
             ?? string.Empty;
     }
@@ -253,6 +249,34 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private void SelectSpecies(string species)
     {
         _speciesName = species;
+        _speciesIsExplicit = true;
+    }
+
+    private string MethodInput
+    {
+        get
+        {
+            return _method;
+        }
+
+        set
+        {
+            SelectMethod(value);
+        }
+    }
+
+    private string SpeciesInput
+    {
+        get
+        {
+            return _speciesName;
+        }
+
+        set
+        {
+            _speciesName = value;
+            _speciesIsExplicit = !string.IsNullOrWhiteSpace(value);
+        }
     }
 
     private async Task ChooseMethodAsync()
@@ -437,6 +461,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private async Task<bool> BindFormAsync(CatchModel catchRecord)
     {
         _speciesName = catchRecord.SpeciesName ?? string.Empty;
+        _speciesIsExplicit = !string.IsNullOrWhiteSpace(catchRecord.SpeciesName);
         var displayWeight = Measurement.ToDisplayWeight(catchRecord.Weight, _weightUnit);
         var displayLength = Measurement.ToDisplayLength(catchRecord.Length, _lengthUnit);
         _weightText = displayWeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;

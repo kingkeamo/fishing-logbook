@@ -5,10 +5,8 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
-using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Pages.RecordCatchTests;
 
@@ -20,10 +18,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var preferenceClient = Substitute.For<IFishingPreferenceClient>();
-        preferenceClient.GetCatalogueAsync(Arg.Any<CancellationToken>())
-            .ThrowsAsync(new HttpRequestException("offline"));
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences();
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<RecordCatch>();
@@ -33,8 +29,7 @@ public class WhenTestingChips : BaseRecordCatchTest
             .Should().Contain("Suggestions are unavailable offline."));
         cut.Find("#record-catch-method-chips").QuerySelectorAll(".mud-chip").Should().BeEmpty();
         cut.Find("#record-catch-method").Should().NotBeNull();
-        await preferenceClient.Received(1).GetCatalogueAsync(Arg.Any<CancellationToken>());
-        await preferenceClient.DidNotReceive().GetPreferencesAsync(Arg.Any<CancellationToken>());
+        await preferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -43,8 +38,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<RecordCatch>();
@@ -57,7 +52,7 @@ public class WhenTestingChips : BaseRecordCatchTest
             cut.Find("#record-catch-method-Fly").ClassList.Should().Contain("mud-chip-filled");
             cut.Find("#record-catch-species-BrownTrout").ClassList.Should().Contain("mud-chip-filled");
         });
-        await preferenceClient.Received(1).GetPreferencesAsync(Arg.Any<CancellationToken>());
+        await preferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -66,8 +61,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<RecordCatch>();
         cut.WaitForAssertion(() => cut.Find("#record-catch-species-BrownTrout"));
 
@@ -91,7 +86,7 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
         var modalService = Substitute.For<IModalService>();
         modalService
             .ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
@@ -101,7 +96,7 @@ public class WhenTestingChips : BaseRecordCatchTest
                 new CatalogueOptionModel(PikeSpeciesId, "Pike", "Pike")));
         await using var context = CreateContext(
             store,
-            fishingPreferenceClient: preferenceClient,
+            anglerPreferences: preferences,
             modalService: modalService);
         var cut = context.Render<RecordCatch>();
         cut.WaitForAssertion(() => cut.Find("#record-catch-species-more"));
@@ -124,8 +119,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<RecordCatch>();
         cut.WaitForAssertion(() => cut.Find("#record-catch-method-Fly"));
 
@@ -146,8 +141,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<RecordCatch>();
         cut.WaitForAssertion(() => cut.Find("#record-catch-species-BrownTrout"));
         cut.Find("#record-catch-species").Input("Grayling");
@@ -170,8 +165,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<RecordCatch>();
         cut.WaitForAssertion(() => cut.Find("#record-catch-species-BrownTrout"));
         await cut.Find("#record-catch-species-BrownTrout").ClickAsync();
@@ -189,14 +184,93 @@ public class WhenTestingChips : BaseRecordCatchTest
     }
 
     [Fact]
+    public async Task ItShouldClearAnAutoDefaultedSpeciesWhenTheNewMethodHasNoDefaultSpecies()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var storedPreferences = new FishingPreferencesDto(
+        [
+            new FishingMethodPreferenceDto(
+                FlyMethodId,
+                "Fly",
+                "Fly",
+                true,
+                [new FishingSpeciesPreferenceDto(BrownTroutSpeciesId, "BrownTrout", "Brown Trout", true)]),
+            new FishingMethodPreferenceDto(SpinningMethodId, "Spinning", "Spinning", false, [])
+        ]);
+        var preferences = QuietAnglerPreferences(storedPreferences, SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
+        var cut = context.Render<RecordCatch>();
+        cut.WaitForAssertion(() =>
+            cut.Find("#record-catch-species").GetAttribute("value").Should().Be("Brown Trout"));
+
+        // Act
+        await cut.Find("#record-catch-method-Spinning").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#record-catch-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#record-catch-species").GetAttribute("value").Should().BeEmpty();
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldApplyTheDefaultSpeciesWhenAKnownMethodIsTyped()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
+        var cut = context.Render<RecordCatch>();
+        cut.WaitForAssertion(() =>
+            cut.Find("#record-catch-species").GetAttribute("value").Should().Be("Brown Trout"));
+
+        // Act
+        cut.Find("#record-catch-method").Input("Spinning");
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#record-catch-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#record-catch-species").GetAttribute("value").Should().Be("Pike");
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldKeepAnExplicitSpeciesWhenAKnownMethodIsTyped()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
+        var cut = context.Render<RecordCatch>();
+        cut.WaitForAssertion(() => cut.Find("#record-catch-species-BrownTrout"));
+        cut.Find("#record-catch-species").Input("Grayling");
+
+        // Act
+        cut.Find("#record-catch-method").Input("Spinning");
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#record-catch-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#record-catch-species").GetAttribute("value").Should().Be("Grayling");
+        });
+    }
+
+    [Fact]
     public async Task ItShouldUseProfileDefaultsForAFreshRecordCatchNotReachedByRecordAnotherCatch()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var first = context.Render<RecordCatch>();
         first.WaitForAssertion(() => first.Find("#record-catch-method-Fly"));
         await first.Find("#record-catch-method-Spinning").ClickAsync();
@@ -228,8 +302,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<RecordCatch>();
         cut.WaitForAssertion(() => cut.Find("#record-catch-method-Fly"));
         cut.FindComponents<Microsoft.AspNetCore.Components.Forms.InputFile>()[0]

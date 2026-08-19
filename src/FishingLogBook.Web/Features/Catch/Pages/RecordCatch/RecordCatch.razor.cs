@@ -63,7 +63,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private ILocationService LocationService { get; set; } = default!;
 
     [Inject]
-    private IFishingPreferenceClient FishingPreferenceClient { get; set; } = default!;
+    private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
@@ -80,17 +80,11 @@ public partial class RecordCatch : ComponentBase, IDisposable
 
     private async Task LoadCatalogueAsync()
     {
-        try
-        {
-            var catalogue = await FishingPreferenceClient.GetCatalogueAsync(_cancellationTokenSource.Token);
-            _catalogueMethods = catalogue.Methods;
-            _catalogueSpecies = catalogue.AllSpecies;
-            _preferences = await FishingPreferenceClient.GetPreferencesAsync(_cancellationTokenSource.Token);
-        }
-        catch (Exception)
-        {
-            _catalogueUnavailable = true;
-        }
+        var anglerPreferences = await AnglerPreferences.GetAsync(_cancellationTokenSource.Token);
+        _catalogueMethods = anglerPreferences.Catalogue.Methods;
+        _catalogueSpecies = anglerPreferences.Catalogue.AllSpecies;
+        _preferences = anglerPreferences.Preferences;
+        _catalogueUnavailable = !anglerPreferences.HasCatalogue;
     }
 
     private void ApplyProfileDefaults()
@@ -145,18 +139,20 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private void SelectMethod(string method)
     {
         _selectedMethod = method;
-        _methodIsExplicit = true;
+        _methodIsExplicit = !string.IsNullOrWhiteSpace(method);
+        ApplyDefaultSpeciesForMethod();
+    }
+
+    private void ApplyDefaultSpeciesForMethod()
+    {
         if (_speciesIsExplicit)
         {
             return;
         }
 
-        var methodPreference = FindMethodPreference(method);
-        var defaultSpecies = methodPreference?.Species.FirstOrDefault(species => species.IsDefault);
-        if (defaultSpecies is not null)
-        {
-            _selectedSpecies = defaultSpecies.Name;
-        }
+        _selectedSpecies = FindMethodPreference(_selectedMethod)?.Species
+            .FirstOrDefault(species => species.IsDefault)?.Name
+            ?? string.Empty;
     }
 
     private void SelectSpecies(string species)
@@ -174,8 +170,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
 
         set
         {
-            _selectedMethod = value;
-            _methodIsExplicit = !string.IsNullOrWhiteSpace(value);
+            SelectMethod(value);
         }
     }
 

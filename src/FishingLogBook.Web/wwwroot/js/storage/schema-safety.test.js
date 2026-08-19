@@ -8,6 +8,7 @@ import {
     PHOTO_STORE_NAME,
     PRODUCTION_CATCH_STORE_NAME,
     PRODUCTION_PHOTO_STORE_NAME,
+    FISHING_PREFERENCE_STORE_NAME,
     getAllTestCatches,
     putTestCatch
 } from './catch-store.js';
@@ -61,6 +62,7 @@ describe('schema safety', () => {
         expect(catchDb.objectStoreNames.contains(PHOTO_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(PRODUCTION_PHOTO_STORE_NAME)).toBe(true);
+        expect(catchDb.objectStoreNames.contains(FISHING_PREFERENCE_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(true);
@@ -83,7 +85,8 @@ describe('schema safety', () => {
             PHOTO_STORE_NAME,
             CATCH_STORE_NAME,
             PRODUCTION_CATCH_STORE_NAME,
-            PRODUCTION_PHOTO_STORE_NAME
+            PRODUCTION_PHOTO_STORE_NAME,
+            FISHING_PREFERENCE_STORE_NAME
         ].sort());
         db.close();
     });

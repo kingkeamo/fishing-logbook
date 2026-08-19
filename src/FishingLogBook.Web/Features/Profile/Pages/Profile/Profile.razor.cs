@@ -2,6 +2,8 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Features.Profile.Offline;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
@@ -13,6 +15,7 @@ namespace FishingLogBook.Web.Features.Profile.Pages.Profile;
 public partial class Profile : ComponentBase, IDisposable
 {
     private const long MaxPhotographBytes = 10 * 1024 * 1024;
+    private const int MaxMethodChips = 6;
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
@@ -43,6 +46,9 @@ public partial class Profile : ComponentBase, IDisposable
 
     [Inject]
     private IFishingPreferenceClient FishingPreferenceClient { get; set; } = default!;
+
+    [Inject]
+    private IAnglerPreferencesCache AnglerPreferencesCache { get; set; } = default!;
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
@@ -99,6 +105,7 @@ public partial class Profile : ComponentBase, IDisposable
                 BuildPreferencesUpdate(),
                 _cancellationTokenSource.Token);
             ApplyPreferences(preferences);
+            await CacheForOfflineUseAsync(saved, preferences);
         }
         catch (Exception)
         {
@@ -107,6 +114,24 @@ public partial class Profile : ComponentBase, IDisposable
         finally
         {
             _isSaving = false;
+        }
+    }
+
+    private async Task CacheForOfflineUseAsync(ProfileDto saved, FishingPreferencesDto preferences)
+    {
+        try
+        {
+            await AnglerPreferencesCache.SaveAsync(
+                saved.UserId,
+                new AnglerPreferencesModel(
+                    new FishingCatalogueDto(_catalogueMethods, _catalogueSpecies),
+                    preferences,
+                    saved.PreferredWeightUnit,
+                    saved.PreferredLengthUnit),
+                _cancellationTokenSource.Token);
+        }
+        catch (Exception)
+        {
         }
     }
 
@@ -227,6 +252,43 @@ public partial class Profile : ComponentBase, IDisposable
                         species.IsDefault))
                 ]))
         ]);
+    }
+
+    private IReadOnlyList<FishingMethodDto> MethodChips
+    {
+        get
+        {
+            var selected = _selectedMethods.Select(method => method.FishingMethodId).ToHashSet();
+            return
+            [
+                .. _catalogueMethods
+                    .OrderByDescending(method => selected.Contains(method.Id))
+                    .ThenBy(method => method.Name, StringComparer.CurrentCultureIgnoreCase)
+                    .Take(Math.Max(MaxMethodChips, selected.Count))
+            ];
+        }
+    }
+
+    private async Task AddMethodAsync()
+    {
+        var shown = MethodChips.Select(method => method.Id).ToHashSet();
+        var options = _catalogueMethods
+            .Where(method => !shown.Contains(method.Id))
+            .Select(method => new CatalogueOptionModel(method.Id, method.Code, method.Name))
+            .ToArray();
+        var result = await ModalService.ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
+            new CataloguePickerModalModel(Loc["Profile_FishingMethods"], options),
+            _cancellationTokenSource.Token);
+        if (result is null)
+        {
+            return;
+        }
+
+        var chosen = _catalogueMethods.FirstOrDefault(method => method.Id == result.Option.Id);
+        if (chosen is not null && !IsMethodSelected(chosen.Id))
+        {
+            ToggleMethod(chosen);
+        }
     }
 
     private void ToggleMethod(FishingMethodDto method)

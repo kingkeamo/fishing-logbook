@@ -57,7 +57,7 @@
                         @Loc["Common_More"]
                     </MudButton>
                 </MudStack>
-                <MudTextField @bind-Value="_method"
+                <MudTextField @bind-Value="MethodInput"
                               Label="@Loc["Catch_EditMethod"]"
                               MaxLength="@CatchDetailConstants.MaxMethodLength"
                               Immediate="true"
@@ -85,7 +85,7 @@
                         @Loc["Common_More"]
                     </MudButton>
                 </MudStack>
-                <MudTextField @bind-Value="_speciesName"
+                <MudTextField @bind-Value="SpeciesInput"
                               Label="@Loc["Catch_EditSpecies"]"
                               MaxLength="@CatchDetailConstants.MaxSpeciesNameLength"
                               Immediate="true"

@@ -2,6 +2,8 @@ using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Features.Profile.Offline;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +22,8 @@ public class BaseProfileTest
     protected static BunitContext CreateContext(
         IProfileClient profileClient,
         IFishingPreferenceClient? fishingPreferenceClient = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        IAnglerPreferencesCache? cache = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -29,6 +32,7 @@ public class BaseProfileTest
         context.Services.AddSingleton(profileClient);
         context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
         context.Services.AddSingleton(modalService ?? QuietModalService());
+        context.Services.AddSingleton(cache ?? Substitute.For<IAnglerPreferencesCache>());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         var authorization = context.AddAuthorization();

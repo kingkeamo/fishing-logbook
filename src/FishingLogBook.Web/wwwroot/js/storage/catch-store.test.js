@@ -1,16 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     CATCH_DATABASE_NAME,
+    CATCH_DATABASE_VERSION,
     CATCH_STORE_NAME,
     PHOTO_STORE_NAME,
     PRODUCTION_CATCH_STORE_NAME,
     PRODUCTION_PHOTO_STORE_NAME,
+    FISHING_PREFERENCE_STORE_NAME,
     getAllCatchesWithPhotographs,
     getAllTestCatches,
     openCatchDatabase,
     putCatchWithPhotographs,
     putTestCatch,
-    updateCatchMetadata
+    updateCatchMetadata,
+    putFishingPreferences,
+    getFishingPreferences,
+    clearFishingPreferences
 } from './catch-store.js';
 import * as indexedDb from './indexed-db.js';
 
@@ -74,7 +79,8 @@ describe('Catch store', () => {
                 PHOTO_STORE_NAME,
                 CATCH_STORE_NAME,
                 PRODUCTION_CATCH_STORE_NAME,
-                PRODUCTION_PHOTO_STORE_NAME
+                PRODUCTION_PHOTO_STORE_NAME,
+                FISHING_PREFERENCE_STORE_NAME
             ].sort()
         );
         upgraded.close();
@@ -109,7 +115,7 @@ describe('Catch store', () => {
         const first = await openCatchDatabase();
 
         const upgraded = await new Promise((resolve, reject) => {
-            const request = indexedDB.open(CATCH_DATABASE_NAME, 4);
+            const request = indexedDB.open(CATCH_DATABASE_NAME, CATCH_DATABASE_VERSION + 1);
             request.onupgradeneeded = () => { };
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
@@ -805,3 +811,69 @@ function readRawProductionCatch(id) {
         transaction.oncomplete = () => db.close();
     }));
 }
+
+describe('Fishing preference cache', () => {
+    const ownerId = '11111111-1111-1111-1111-111111111111';
+    const otherId = '22222222-2222-2222-2222-222222222222';
+
+    it('returns nothing when nothing has been cached', async () => {
+        const cached = await getFishingPreferences(ownerId);
+
+        expect(cached).toBeNull();
+    });
+
+    it('rejects a write without an owner', async () => {
+        await expect(putFishingPreferences('', '{}')).rejects.toBeTruthy();
+    });
+
+    it('returns nothing when no owner is supplied', async () => {
+        await putFishingPreferences(ownerId, JSON.stringify({ weightUnit: 1 }));
+
+        const cached = await getFishingPreferences('');
+
+        expect(cached).toBeNull();
+    });
+
+    it('reads back the cached preferences for the owner', async () => {
+        await putFishingPreferences(ownerId, JSON.stringify({ weightUnit: 1, lengthUnit: 1 }));
+
+        const cached = await getFishingPreferences(ownerId);
+
+        expect(JSON.parse(cached)).toMatchObject({ weightUnit: 1, lengthUnit: 1 });
+    });
+
+    it('replaces the cached preferences for the same owner', async () => {
+        await putFishingPreferences(ownerId, JSON.stringify({ weightUnit: 1 }));
+        await putFishingPreferences(ownerId, JSON.stringify({ weightUnit: 0 }));
+
+        const cached = await getFishingPreferences(ownerId);
+
+        expect(JSON.parse(cached)).toMatchObject({ weightUnit: 0 });
+    });
+
+    it('does not return another angler cached preferences', async () => {
+        await putFishingPreferences(ownerId, JSON.stringify({ weightUnit: 1 }));
+
+        const cached = await getFishingPreferences(otherId);
+
+        expect(cached).toBeNull();
+    });
+
+    it('keeps each angler cache separate', async () => {
+        await putFishingPreferences(ownerId, JSON.stringify({ weightUnit: 1 }));
+        await putFishingPreferences(otherId, JSON.stringify({ weightUnit: 0 }));
+
+        expect(JSON.parse(await getFishingPreferences(ownerId))).toMatchObject({ weightUnit: 1 });
+        expect(JSON.parse(await getFishingPreferences(otherId))).toMatchObject({ weightUnit: 0 });
+    });
+
+    it('forgets every angler when the cache is cleared', async () => {
+        await putFishingPreferences(ownerId, JSON.stringify({ weightUnit: 1 }));
+        await putFishingPreferences(otherId, JSON.stringify({ weightUnit: 0 }));
+
+        await clearFishingPreferences();
+
+        expect(await getFishingPreferences(ownerId)).toBeNull();
+        expect(await getFishingPreferences(otherId)).toBeNull();
+    });
+});

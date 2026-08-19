@@ -5,10 +5,8 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
-using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Pages.CatchEditTests;
 
@@ -24,10 +22,8 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, speciesName: "Pike", method: "Trotting"));
-        var preferenceClient = Substitute.For<IFishingPreferenceClient>();
-        preferenceClient.GetCatalogueAsync(Arg.Any<CancellationToken>())
-            .ThrowsAsync(new HttpRequestException("offline"));
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences();
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
@@ -50,8 +46,8 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, speciesName: "Pike", method: "Spinning"));
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
@@ -63,7 +59,7 @@ public class WhenTestingChips : BaseCatchEditTest
             cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Pike");
             cut.Find("#catch-edit-method-Spinning").ClassList.Should().Contain("mud-chip-filled");
         });
-        await preferenceClient.Received(1).GetPreferencesAsync(Arg.Any<CancellationToken>());
+        await preferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -74,8 +70,8 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId));
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
@@ -88,7 +84,7 @@ public class WhenTestingChips : BaseCatchEditTest
             cut.Find("#catch-edit-method-Fly").ClassList.Should().Contain("mud-chip-filled");
             cut.Find("#catch-edit-species-BrownTrout").ClassList.Should().Contain("mud-chip-filled");
         });
-        await preferenceClient.Received(1).GetPreferencesAsync(Arg.Any<CancellationToken>());
+        await preferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -99,8 +95,8 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, method: "Spinning"));
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
@@ -122,10 +118,10 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId));
-        var preferenceClient = QuietFishingPreferenceClient(
+        var preferences = QuietAnglerPreferences(
             new FishingLogBook.Shared.Dtos.FishingPreferencesDto([]),
             SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
@@ -146,8 +142,8 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, method: "Trotting"));
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Fly"));
 
@@ -163,6 +159,77 @@ public class WhenTestingChips : BaseCatchEditTest
     }
 
     [Fact]
+    public async Task ItShouldReplaceAnAutoDefaultedSpeciesWhenTheMethodChanges()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(EditedCatchId));
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Brown Trout"));
+
+        // Act
+        await cut.Find("#catch-edit-method-Spinning").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-edit-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Pike");
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldClearAnAutoDefaultedSpeciesWhenTheNewMethodHasNoDefaultSpecies()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(EditedCatchId));
+        var storedPreferences = new FishingLogBook.Shared.Dtos.FishingPreferencesDto(
+        [
+            new FishingLogBook.Shared.Dtos.FishingMethodPreferenceDto(
+                FlyMethodId,
+                "Fly",
+                "Fly",
+                true,
+                [
+                    new FishingLogBook.Shared.Dtos.FishingSpeciesPreferenceDto(
+                        BrownTroutSpeciesId,
+                        "BrownTrout",
+                        "Brown Trout",
+                        true)
+                ]),
+            new FishingLogBook.Shared.Dtos.FishingMethodPreferenceDto(
+                SpinningMethodId,
+                "Spinning",
+                "Spinning",
+                false,
+                [])
+        ]);
+        var preferences = QuietAnglerPreferences(storedPreferences, SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Brown Trout"));
+
+        // Act
+        await cut.Find("#catch-edit-method-Spinning").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-edit-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().BeEmpty();
+        });
+    }
+
+    [Fact]
     public async Task ItShouldKeepAnExistingSpeciesWhenTheMethodChanges()
     {
         // Arrange
@@ -170,8 +237,8 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, speciesName: "Grayling", method: "Fly"));
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Spinning"));
 
@@ -194,8 +261,8 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, speciesName: "Grayling", method: "Fly"));
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
@@ -218,8 +285,8 @@ public class WhenTestingChips : BaseCatchEditTest
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, method: "Fly"));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-species-BrownTrout"));
 
@@ -245,7 +312,7 @@ public class WhenTestingChips : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, method: "Fly"));
-        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
         var modalService = Substitute.For<IModalService>();
         modalService
             .ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
@@ -255,7 +322,7 @@ public class WhenTestingChips : BaseCatchEditTest
                 new CatalogueOptionModel(SpinningMethodId, "Spinning", "Spinning")));
         await using var context = CreateContext(
             store,
-            fishingPreferenceClient: preferenceClient,
+            anglerPreferences: preferences,
             modalService: modalService);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-method-more"));

@@ -45,8 +45,8 @@ public class WhenTestingUnits : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, weight: 2.041m, length: 46.36m));
-        var profileClient = QuietProfileClient(WeightUnitEnum.Lb, LengthUnitEnum.In);
-        await using var context = CreateContext(store, profileClient: profileClient);
+        var preferences = QuietAnglerPreferences(weightUnit: WeightUnitEnum.Lb, lengthUnit: LengthUnitEnum.In);
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
@@ -59,7 +59,7 @@ public class WhenTestingUnits : BaseCatchEditTest
             cut.Markup.Should().Contain("Weight (lb)");
             cut.Markup.Should().Contain("Length (in)");
         });
-        await profileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
+        await preferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -70,8 +70,8 @@ public class WhenTestingUnits : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, weight: 2.041m));
-        var profileClient = QuietProfileClient(WeightUnitEnum.Lb, LengthUnitEnum.In);
-        await using var context = CreateContext(store, profileClient: profileClient);
+        var preferences = QuietAnglerPreferences(weightUnit: WeightUnitEnum.Lb, lengthUnit: LengthUnitEnum.In);
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-weight"));
         cut.Find("#catch-edit-weight").Input("5000");
@@ -94,8 +94,8 @@ public class WhenTestingUnits : BaseCatchEditTest
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        var profileClient = QuietProfileClient(WeightUnitEnum.Lb, LengthUnitEnum.In);
-        await using var context = CreateContext(store, profileClient: profileClient);
+        var preferences = QuietAnglerPreferences(weightUnit: WeightUnitEnum.Lb, lengthUnit: LengthUnitEnum.In);
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-weight"));
         cut.Find("#catch-edit-weight").Input("4.50");
@@ -125,8 +125,8 @@ public class WhenTestingUnits : BaseCatchEditTest
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, weight: storedWeight, length: storedLength));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        var profileClient = QuietProfileClient(WeightUnitEnum.Lb, LengthUnitEnum.In);
-        await using var context = CreateContext(store, profileClient: profileClient);
+        var preferences = QuietAnglerPreferences(weightUnit: WeightUnitEnum.Lb, lengthUnit: LengthUnitEnum.In);
+        await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-weight"));
         cut.Find("#catch-edit-notes").Input("Great fight");
@@ -152,8 +152,8 @@ public class WhenTestingUnits : BaseCatchEditTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
             .Returns(StoredCatch(EditedCatchId, weight: 2.041m, length: 46.36m));
-        var profileClient = QuietProfileClient(WeightUnitEnum.Lb, LengthUnitEnum.In);
-        await using var context = CreateContext(store, profileClient: profileClient);
+        var preferences = QuietAnglerPreferences(weightUnit: WeightUnitEnum.Lb, lengthUnit: LengthUnitEnum.In);
+        await using var context = CreateContext(store, anglerPreferences: preferences);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));

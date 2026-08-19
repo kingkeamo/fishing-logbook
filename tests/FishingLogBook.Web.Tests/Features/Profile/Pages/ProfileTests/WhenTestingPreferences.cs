@@ -4,9 +4,12 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Features.Profile.Offline;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using ProfilePage = FishingLogBook.Web.Features.Profile.Pages.Profile.Profile;
 
 namespace FishingLogBook.Web.Tests.Features.Profile.Pages.ProfileTests;
@@ -127,6 +130,40 @@ public class WhenTestingPreferences : BaseProfileTest
         await modalService.Received(1)
             .ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
                 Arg.Is<CataloguePickerModalModel>(model => model.Options.Count == 2),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAddAMethodChosenFromTheFullCatalogue()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(EmptyProfile());
+        var preferenceClient = QuietFishingPreferenceClient(new FishingPreferencesDto([]), SampleCatalogue());
+        var modalService = Substitute.For<IModalService>();
+        modalService
+            .ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
+                Arg.Any<CataloguePickerModalModel>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new CataloguePickerModalResult(
+                new CatalogueOptionModel(SpinningMethodId, "Spinning", "Spinning")));
+        await using var context = CreateContext(profileClient, preferenceClient, modalService);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-method-more"));
+
+        // Act
+        await cut.Find("#profile-method-more").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#profile-method-Spinning").ClassList.Should().Contain("mud-chip-filled");
+            cut.Find("#profile-species-section-Spinning").Should().NotBeNull();
+        });
+        await modalService.Received(1)
+            .ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
+                Arg.Any<CataloguePickerModalModel>(),
                 Arg.Any<CancellationToken>());
     }
 
@@ -336,6 +373,69 @@ public class WhenTestingPreferences : BaseProfileTest
         profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
             .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
         return profileClient;
+    }
+
+    [Fact]
+    public async Task ItShouldCacheThePreferencesForOfflineUseWhenSaving()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(EmptyProfile(userId));
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        var cache = Substitute.For<IAnglerPreferencesCache>();
+        await using var context = CreateContext(profileClient, preferenceClient, cache: cache);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await cache.Received(1).SaveAsync(
+            userId,
+            Arg.Is<AnglerPreferencesModel>(preferences =>
+                preferences.Catalogue.Methods.Count == 2
+                && preferences.Preferences.Methods.Count == 1
+                && preferences.Preferences.Methods[0].IsDefault),
+            Arg.Any<CancellationToken>());
+        await cache.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldStillSaveWhenTheOfflineCacheWriteFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(EmptyProfile(userId));
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        var cache = Substitute.For<IAnglerPreferencesCache>();
+        cache.SaveAsync(Arg.Any<Guid>(), Arg.Any<AnglerPreferencesModel>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("quota exceeded"));
+        await using var context = CreateContext(profileClient, preferenceClient, cache: cache);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Any<UpdateProfileDto>(),
+            Arg.Any<CancellationToken>());
+        await cache.Received(1).SaveAsync(
+            userId,
+            Arg.Any<AnglerPreferencesModel>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

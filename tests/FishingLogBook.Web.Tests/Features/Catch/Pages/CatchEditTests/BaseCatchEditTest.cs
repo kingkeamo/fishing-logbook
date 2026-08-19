@@ -10,6 +10,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,8 +37,7 @@ public class BaseCatchEditTest
         ICatchSynchroniser? synchroniser = null,
         ILoggingService? logging = null,
         ITimeService? time = null,
-        IProfileClient? profileClient = null,
-        IFishingPreferenceClient? fishingPreferenceClient = null,
+        IAnglerPreferencesProvider? anglerPreferences = null,
         IModalService? modalService = null)
     {
         var context = new BunitContext();
@@ -49,51 +49,27 @@ public class BaseCatchEditTest
         context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(time ?? UtcTime());
-        context.Services.AddSingleton(profileClient ?? QuietProfileClient());
-        context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
+        context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
 
-    protected static IProfileClient QuietProfileClient(
+    protected static IAnglerPreferencesProvider QuietAnglerPreferences(
+        FishingPreferencesDto? preferences = null,
+        FishingCatalogueDto? catalogue = null,
         WeightUnitEnum weightUnit = WeightUnitEnum.Kg,
         LengthUnitEnum lengthUnit = LengthUnitEnum.Cm)
     {
-        var client = Substitute.For<IProfileClient>();
-        client.GetOwnAsync(Arg.Any<CancellationToken>())
-            .Returns(new ProfileDto(
-                OwnerUserId,
-                null,
-                null,
-                null,
-                null,
-                null,
-                [],
-                [],
-                true,
-                false,
-                false,
-                false,
-                false,
+        var provider = Substitute.For<IAnglerPreferencesProvider>();
+        provider.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(new AnglerPreferencesModel(
+                catalogue ?? new FishingCatalogueDto([], []),
+                preferences ?? new FishingPreferencesDto([]),
                 weightUnit,
                 lengthUnit));
-        return client;
-    }
-
-    protected static IFishingPreferenceClient QuietFishingPreferenceClient(
-        FishingPreferencesDto? preferences = null,
-        FishingCatalogueDto? catalogue = null)
-    {
-        var client = Substitute.For<IFishingPreferenceClient>();
-        client.GetCatalogueAsync(Arg.Any<CancellationToken>())
-            .Returns(catalogue ?? new FishingCatalogueDto([], []));
-        client.GetPreferencesAsync(Arg.Any<CancellationToken>())
-            .Returns(preferences ?? new FishingPreferencesDto([]));
-        client.UpdatePreferencesAsync(Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>())
-            .Returns(preferences ?? new FishingPreferencesDto([]));
-        return client;
+        return provider;
     }
 
     protected static IModalService QuietModalService()
