@@ -433,15 +433,17 @@ Sut = new CatchService(
 ## Mapster in tests (mandatory)
 
 Production owns its Mapster configuration through DI and must never touch
-`TypeAdapterConfig.GlobalSettings` (**`cqrs.md` → Mapster**). Tests follow the same rule.
+`TypeAdapterConfig.GlobalSettings` (**`cqrs.md` → Mapster**, solution-wide — Application and
+Infrastructure). Tests follow the same rule in every test project whose SUT takes `IMapper`,
+including `FishingLogBook.Infrastructure.Tests`.
 
 `TypeAdapterConfig.GlobalSettings` is **process-wide mutable state**, and xUnit runs test
 classes in parallel. Sharing it corrupts mappings two ways:
 
 1. **Race.** `Scan` calls `NewConfig`, which resets a rule before re-adding its `.Map`
    calls. Concurrent registration on the same static config intermittently yields mappings
-   with dropped properties. The tell is that properties mapped from a *nested* path come
-   back null while same-named top-level properties survive — so it reads like a product
+   with dropped properties. The tell is that properties mapped from a *nested*
+   path come back null while same-named top-level properties survive — so it reads like a product
    bug and gets "fixed" in the wrong place. It fails perhaps one run in four, and passes in
    isolation.
 2. **Order dependence.** A class that registers only its own `IRegister` leaves a *partial*
@@ -480,8 +482,10 @@ that cannot be removed — for example a suite that mutates `CultureInfo.Current
 container composition becomes safe. Give each container its own config.
 
 An architecture test (`Api.Tests/DependencyInjectionTests/WhenTestingMapsterConfiguration`)
-reads the compiled production assemblies and fails on any reference to the static Mapster
-entry points, and asserts two containers receive independent configurations. Keep it.
+reads the compiled production assemblies — Application, Infrastructure, and the composition
+root — and fails on any reference to the static Mapster entry points, and asserts two
+containers receive independent configurations. Add a newly covered production assembly to
+its `ProductionAssemblies` data when that assembly gains its first `IMapper` usage. Keep it.
 
 The same reasoning applies to any other shared static a test mutates: fix the sharing, do
 not serialise the suite around it.

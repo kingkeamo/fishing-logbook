@@ -128,9 +128,9 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
         }
     }
 
-    private static object ToParameters(Guid userId, PlatformCapabilityEnum capability)
+    private static UserPlatformCapabilityPersistenceParameters ToParameters(Guid userId, PlatformCapabilityEnum capability)
     {
-        return new
+        return new UserPlatformCapabilityPersistenceParameters
         {
             UserId = userId,
             CapabilityCode = capability.ToString()
@@ -140,5 +140,12 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
     private static PlatformCapabilityEnum ParseCapability(string code)
     {
         return Enum.Parse<PlatformCapabilityEnum>(code);
+    }
+
+    private sealed class UserPlatformCapabilityPersistenceParameters
+    {
+        public Guid UserId { get; init; }
+
+        public string CapabilityCode { get; init; } = string.Empty;
     }
 }

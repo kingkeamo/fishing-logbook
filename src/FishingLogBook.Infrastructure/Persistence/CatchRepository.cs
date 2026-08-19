@@ -5,6 +5,7 @@ using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Catches;
 using FluentResults;
+using MapsterMapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
@@ -16,11 +17,13 @@ public sealed class CatchRepository : ICatchRepository
 
     private readonly IDbConnectionFactory _connectionFactory;
     private readonly ILogger<CatchRepository> _logger;
+    private readonly IMapper _mapper;
 
-    public CatchRepository(IDbConnectionFactory connectionFactory, ILogger<CatchRepository> logger)
+    public CatchRepository(IDbConnectionFactory connectionFactory, ILogger<CatchRepository> logger, IMapper mapper)
     {
         _connectionFactory = connectionFactory;
         _logger = logger;
+        _mapper = mapper;
     }
 
     public async Task<Result<Catch?>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -210,7 +213,7 @@ public sealed class CatchRepository : ICatchRepository
             """;
         await connection.ExecuteAsync(new CommandDefinition(
             sql,
-            ToRow(catchRecord),
+            ToParameters(catchRecord),
             transaction,
             cancellationToken: cancellationToken));
     }
@@ -242,7 +245,7 @@ public sealed class CatchRepository : ICatchRepository
         }
     }
 
-    private static async Task<Catch?> LoadAsync(
+    private async Task<Catch?> LoadAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction? transaction,
         Guid id,
@@ -271,7 +274,7 @@ public sealed class CatchRepository : ICatchRepository
             FROM "Catch"
             WHERE "Id" = @Id;
             """;
-        var catchRow = await connection.QuerySingleOrDefaultAsync<CatchRow>(new CommandDefinition(
+        var catchRow = await connection.QuerySingleOrDefaultAsync<CatchPersistenceRow>(new CommandDefinition(
             catchSql,
             new { Id = id },
             transaction,
@@ -292,40 +295,26 @@ public sealed class CatchRepository : ICatchRepository
             new { CatchId = id },
             transaction,
             cancellationToken: cancellationToken));
+        catchRow.Photographs = photographs.ToArray();
 
-        return new Catch
-        {
-            Id = catchRow.Id,
-            UserId = catchRow.UserId,
-            AnglerUserId = catchRow.AnglerUserId,
-            RecordedByUserId = catchRow.RecordedByUserId,
-            CaughtOn = catchRow.CaughtOn,
-            SpeciesName = catchRow.SpeciesName,
-            Weight = catchRow.Weight,
-            Length = catchRow.Length,
-            Method = catchRow.Method,
-            BaitOrLure = catchRow.BaitOrLure,
-            Notes = catchRow.Notes,
-            Location = ToLocation(catchRow),
-            Photographs = photographs.ToArray()
-        };
+        return _mapper.Map<Catch>(catchRow);
     }
 
-    private static object ToRow(Catch catchRecord)
+    private static CatchPersistenceParameters ToParameters(Catch catchRecord)
     {
-        return new
+        return new CatchPersistenceParameters
         {
-            catchRecord.Id,
-            catchRecord.UserId,
-            catchRecord.AnglerUserId,
-            catchRecord.RecordedByUserId,
+            Id = catchRecord.Id,
+            UserId = catchRecord.UserId,
+            AnglerUserId = catchRecord.AnglerUserId,
+            RecordedByUserId = catchRecord.RecordedByUserId,
             CaughtOn = catchRecord.CaughtOn.ToUniversalTime(),
-            catchRecord.SpeciesName,
-            catchRecord.Weight,
-            catchRecord.Length,
-            catchRecord.Method,
-            catchRecord.BaitOrLure,
-            catchRecord.Notes,
+            SpeciesName = catchRecord.SpeciesName,
+            Weight = catchRecord.Weight,
+            Length = catchRecord.Length,
+            Method = catchRecord.Method,
+            BaitOrLure = catchRecord.BaitOrLure,
+            Notes = catchRecord.Notes,
             Latitude = catchRecord.Location?.Latitude,
             Longitude = catchRecord.Location?.Longitude,
             LocationAccuracyMetres = catchRecord.Location?.AccuracyMetres,
@@ -364,24 +353,48 @@ public sealed class CatchRepository : ICatchRepository
         return true;
     }
 
-    private static CatchLocation? ToLocation(CatchRow catchRow)
+    internal sealed class CatchPersistenceRow
     {
-        if (catchRow.Latitude is null || catchRow.Longitude is null)
-        {
-            return null;
-        }
+        public Guid Id { get; init; }
 
-        return CatchLocation.TryCreate(
-            catchRow.Latitude.Value,
-            catchRow.Longitude.Value,
-            catchRow.LocationAccuracyMetres,
-            catchRow.LocationCapturedOn ?? default,
-            catchRow.LocationSource,
-            catchRow.LocationVisibility,
-            catchRow.LocationConsentVersion);
+        public Guid UserId { get; init; }
+
+        public Guid AnglerUserId { get; init; }
+
+        public Guid RecordedByUserId { get; init; }
+
+        public DateTimeOffset CaughtOn { get; init; }
+
+        public string? SpeciesName { get; init; }
+
+        public decimal? Weight { get; init; }
+
+        public decimal? Length { get; init; }
+
+        public string? Method { get; init; }
+
+        public string? BaitOrLure { get; init; }
+
+        public string? Notes { get; init; }
+
+        public double? Latitude { get; init; }
+
+        public double? Longitude { get; init; }
+
+        public double? LocationAccuracyMetres { get; init; }
+
+        public DateTimeOffset? LocationCapturedOn { get; init; }
+
+        public string? LocationSource { get; init; }
+
+        public string? LocationVisibility { get; init; }
+
+        public string? LocationConsentVersion { get; init; }
+
+        public IReadOnlyList<CatchPhotograph> Photographs { get; set; } = [];
     }
 
-    private sealed class CatchRow
+    private sealed class CatchPersistenceParameters
     {
         public Guid Id { get; init; }
 

@@ -2,8 +2,10 @@
 paths:
   - "src/FishingLogBook.Api/**/*.cs"
   - "src/FishingLogBook.Application/**/*.cs"
+  - "src/FishingLogBook.Infrastructure/**/*.cs"
   - "src/FishingLogBook.DependencyInjection/**/*.cs"
   - "tests/FishingLogBook.Application.Tests/**/*.cs"
+  - "tests/FishingLogBook.Infrastructure.Tests/**/*.cs"
   - "tests/FishingLogBook.Api.Tests/**/*.cs"
 ---
 
@@ -108,6 +110,12 @@ Endpoint → IMediator.Send → Handler → I*Service → I*Repository
 
 ## Mapster (mandatory)
 
+This convention is **solution-wide**, not Application-only: it applies to every production
+project with an object-to-object adaptation responsibility, including `FishingLogBook.Infrastructure`
+repository persistence-model ↔ Domain mapping. Domain construction that carries ids, ownership,
+invariants or behaviour (for example `CatchLocation.TryCreate`) stays explicit wherever it lives —
+Infrastructure included.
+
 **Production code must have zero dependency on `TypeAdapterConfig.GlobalSettings`.**
 `GlobalSettings` is process-wide mutable state: any host that composes the container more
 than once in a process (every `WebApplicationFactory` test does) re-scans it, and `Scan`
@@ -120,8 +128,10 @@ That rules out the static entry points, which all read `GlobalSettings`:
 `source.BuildAdapter()`. An architecture test scans the compiled production assemblies for
 references to them; do not reintroduce them.
 
-A class that adapts one application model to another injects `IMapper` and maps through
-it — **consistently, including when today's mapping is trivial or convention-based**:
+A class that adapts one model to another — an Application handler/service mapping between
+application models, or an Infrastructure repository mapping a persistence row onto a Domain
+type — injects `IMapper` and maps through it — **consistently, including when today's mapping
+is trivial or convention-based**:
 
 ```csharp
 public UpdateOwnProfileHandler(IProfileService profileService, IMapper mapper)
@@ -152,11 +162,13 @@ construction behind a mapper merely for consistency.
   must be ignored or transformed. A `NewConfig` with no `.Map` adds nothing over the
   convention — delete it; the injected mapper still maps the pair.
 - Put `IRegister` types in `Application/Common/Mappings/` named `*MappingRegistration`.
-- Composition root — the config is a **new instance owned by the container**:
+  The Infrastructure equivalent is `Infrastructure/Persistence/Mappings/`, same naming.
+- Composition root — the config is a **new instance owned by the container**, scanning every
+  production assembly that contributes `IRegister` types (Application and Infrastructure):
 
 ```csharp
 var typeAdapterConfig = new TypeAdapterConfig();
-typeAdapterConfig.Scan(typeof(CatchMappingRegistration).Assembly);
+typeAdapterConfig.Scan(typeof(CatchMappingRegistration).Assembly, typeof(CatchRepository).Assembly);
 services.AddSingleton(typeAdapterConfig);
 services.AddSingleton<IMapper>(new Mapper(typeAdapterConfig));
 ```

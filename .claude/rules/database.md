@@ -136,6 +136,21 @@ null). They still must not drop the source column.
 - Filter/query/lookup methods accept `*Args` types from `Application/Args/`.
 - Do not create a partially initialised Domain entity merely to transport
   lookup/filter criteria.
+- Where a repository hand-copies a persistence row onto a Domain type (or a Domain type onto a
+  persistence/parameter type) beyond what Dapper's own column-name binding already does, inject
+  `IMapper` and map through it — see **`cqrs.md` → Mapster**, which applies solution-wide.
+  Repositories where Dapper binds the query result directly onto the Domain type (no separate row
+  class) need no mapper. Domain construction that enforces invariants (for example
+  `CatchLocation.TryCreate`) stays explicit, referenced from an `IRegister` conversion rather than
+  hand-copied at the call site.
+- A repository helper method that builds a substantial or reused set of Dapper SQL parameters
+  from a Domain object must not return `object` backed by an anonymous type — the compile-time
+  contract is lost once it leaves the method. Return a named internal `*PersistenceParameters`
+  type instead (nested in the repository, alongside any row-DTO it already has, e.g.
+  `CatchRepository.CatchPersistenceParameters`). This is persistence-boundary shaping (flattening
+  a nested Domain value object, normalising timestamps to UTC, casting enums), not object
+  adaptation, so build it explicitly rather than through Mapster. A small anonymous object created
+  directly at a single inline Dapper call site (not returned from a helper) is still fine.
 
 GOOD:
 
