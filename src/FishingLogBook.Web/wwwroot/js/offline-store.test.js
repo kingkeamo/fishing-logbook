@@ -1,29 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import {
-    getAllTestCatches,
+    getAllCatchesWithPhotographs,
     getStorageEstimate,
-    getTestCatchPhotograph,
-    putTestCatch,
-    putTestCatchPhotograph
+    putCatchWithPhotographs
 } from './offline-store.js';
 
 describe('offline-store JSInterop shim', () => {
     it('re-exports Catch persistence used by Blazor', async () => {
-        await putTestCatch(JSON.stringify({ id: 'catch-1', notes: 'shim' }));
+        const ownerUserId = '11111111-1111-1111-1111-111111111111';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: 'catch-1',
+                userId: ownerUserId,
+                notes: 'shim',
+                photographs: [{ id: 'photo-1' }]
+            }),
+            [{ id: 'photo-1', catchId: 'catch-1', contentType: 'image/jpeg', bytes: new Uint8Array([9, 8]) }]);
 
-        const items = await getAllTestCatches();
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
 
         expect(items).toHaveLength(1);
-        expect(JSON.parse(items[0])).toMatchObject({ id: 'catch-1', notes: 'shim' });
-    });
-
-    it('re-exports photograph persistence used by Blazor', async () => {
-        await putTestCatchPhotograph('photo-1', new Uint8Array([9, 8]), 'image/jpeg');
-
-        const stored = await getTestCatchPhotograph('photo-1');
-
-        expect(stored.contentType).toBe('image/jpeg');
-        expect(stored.bytesBase64).toBe(btoa(String.fromCharCode(9, 8)));
+        expect(JSON.parse(items[0].json)).toMatchObject({ id: 'catch-1', notes: 'shim' });
+        expect(items[0].photographs[0].contentType).toBe('image/jpeg');
     });
 
     it('re-exports storage estimate', async () => {

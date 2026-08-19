@@ -9,7 +9,6 @@ using FishingLogBook.Application.Diagnostics;
 using FishingLogBook.Application.FishingPreferences.Services;
 using FishingLogBook.Application.Profiles.Services;
 using FishingLogBook.Application.SystemStatus;
-using FishingLogBook.Application.TestCatches;
 using FishingLogBook.Application.Users;
 using FishingLogBook.Application.Users.Commands;
 using FishingLogBook.Application.Users.Services;
@@ -46,7 +45,6 @@ public static class ServiceCollectionExtensions
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
         services.AddFishingLogBookMappings();
         services.AddScoped<SystemStatusService>();
-        services.AddScoped<TestCatchService>();
         services.AddScoped<DiagnosticLogService>();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
@@ -77,7 +75,6 @@ public static class ServiceCollectionExtensions
             return new NpgsqlConnectionFactory(connectionString);
         });
         services.AddScoped<ISystemRepository, SystemRepository>();
-        services.AddScoped<ITestCatchRepository, TestCatchRepository>();
         services.AddScoped<IUserIdentityRepository, UserIdentityRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<ICatchRepository, CatchRepository>();

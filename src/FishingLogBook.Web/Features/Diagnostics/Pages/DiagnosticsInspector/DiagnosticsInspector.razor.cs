@@ -14,6 +14,11 @@ namespace FishingLogBook.Web.Features.Diagnostics.Pages.DiagnosticsInspector;
 
 public partial class DiagnosticsInspector : ComponentBase
 {
+    public const string StageOpeningDatabase = "DIAG-03 opening diagnostic IndexedDB";
+    public const string StageDatabaseOpened = "DIAG-04 database opened";
+    public const string StageReadingCount = "DIAG-07 reading diagnostic count";
+    public const string StageCountReturned = "DIAG-08 count returned";
+
     [Inject]
     private DiagnosticsClientConfig Config { get; set; } = default!;
 
@@ -25,9 +30,6 @@ public partial class DiagnosticsInspector : ComponentBase
 
     [Inject]
     private IDiagnosticSynchroniser Synchroniser { get; set; } = default!;
-
-    [Inject]
-    private IDiagnosticIndexedDbProbe Probe { get; set; } = default!;
 
     [Inject]
     private INetworkService NetworkStatus { get; set; } = default!;
@@ -48,7 +50,6 @@ public partial class DiagnosticsInspector : ComponentBase
     private string _quotaLabel = "-";
     private bool? _isOnline;
     private bool _isLoading;
-    private DiagnosticProbeResultModel? _isolatedProbe;
     private DiagnosticProbeResultModel? _productionProbe;
     private bool _productionNotInitialised;
 
@@ -117,7 +118,6 @@ public partial class DiagnosticsInspector : ComponentBase
 
     private async Task RunProbesAsync()
     {
-        _isolatedProbe = await Probe.RunIsolatedAsync(CancellationToken.None);
         try
         {
             var inspection = await Store.InspectExistingAsync(CancellationToken.None)
@@ -131,7 +131,7 @@ public partial class DiagnosticsInspector : ComponentBase
             _productionProbe = new DiagnosticProbeResultModel
             {
                 DatabaseName = IndexedDbDiagnosticEventStore.DatabaseName,
-                FailedStage = DiagnosticIndexedDbProbe.StageOpeningDatabase,
+                FailedStage = StageOpeningDatabase,
                 Error = exception.GetType().Name
             };
             TryToLogError("diagnostics production inspect", exception);
@@ -153,8 +153,8 @@ public partial class DiagnosticsInspector : ComponentBase
             return new DiagnosticProbeResultModel
             {
                 DatabaseName = IndexedDbDiagnosticEventStore.DatabaseName,
-                LastCompletedStage = DiagnosticIndexedDbProbe.StageDatabaseOpened,
-                FailedStage = DiagnosticIndexedDbProbe.StageReadingCount,
+                LastCompletedStage = StageDatabaseOpened,
+                FailedStage = StageReadingCount,
                 Error = "object store was not found"
             };
         }
@@ -162,7 +162,7 @@ public partial class DiagnosticsInspector : ComponentBase
         return new DiagnosticProbeResultModel
         {
             DatabaseName = IndexedDbDiagnosticEventStore.DatabaseName,
-            LastCompletedStage = DiagnosticIndexedDbProbe.StageCountReturned,
+            LastCompletedStage = StageCountReturned,
             Count = inspection.Count
         };
     }

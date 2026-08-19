@@ -72,33 +72,6 @@
   <data name="Language_French" xml:space="preserve">
     <value>Français</value>
   </data>
-  <data name="TestCatch_Nav" xml:space="preserve">
-    <value>Prise de test</value>
-  </data>
-  <data name="TestCatch_PageTitle" xml:space="preserve">
-    <value>FishingLogBook - Prise de test</value>
-  </data>
-  <data name="TestCatch_Title" xml:space="preserve">
-    <value>Prise de test</value>
-  </data>
-  <data name="TestCatch_Subtitle" xml:space="preserve">
-    <value>Enregistrée sur cet appareil jusqu'à la synchronisation</value>
-  </data>
-  <data name="TestCatch_Species" xml:space="preserve">
-    <value>Espèce</value>
-  </data>
-  <data name="TestCatch_Notes" xml:space="preserve">
-    <value>Notes</value>
-  </data>
-  <data name="TestCatch_Save" xml:space="preserve">
-    <value>Enregistrer la prise</value>
-  </data>
-  <data name="TestCatch_Saving" xml:space="preserve">
-    <value>Enregistrement de la prise</value>
-  </data>
-  <data name="TestCatch_Empty" xml:space="preserve">
-    <value>Aucune prise enregistrée</value>
-  </data>
   <data name="SyncStatus_SavedLocally" xml:space="preserve">
     <value>Enregistrée localement — pas encore synchronisée</value>
   </data>
@@ -122,75 +95,6 @@
   </data>
   <data name="Catch_SyncFailureReassurance" xml:space="preserve">
     <value>Votre prise reste enregistrée sur cet appareil.</value>
-  </data>
-  <data name="TestCatch_Retry" xml:space="preserve">
-    <value>Réessayer la synchronisation</value>
-  </data>
-  <data name="TestCatch_RetryPhotograph" xml:space="preserve">
-    <value>Réessayer le téléversement de la photo</value>
-  </data>
-  <data name="TestCatch_TakePhoto" xml:space="preserve">
-    <value>Prendre une photo</value>
-  </data>
-  <data name="TestCatch_ChoosePhoto" xml:space="preserve">
-    <value>Choisir une photo existante</value>
-  </data>
-  <data name="TestCatch_PhotographAlt" xml:space="preserve">
-    <value>Photo de la prise</value>
-  </data>
-  <data name="TestCatch_PhotoSavedLocally" xml:space="preserve">
-    <value>Photo enregistrée localement — pas encore téléversée</value>
-  </data>
-  <data name="TestCatch_PhotoWaiting" xml:space="preserve">
-    <value>Photo en attente de téléversement</value>
-  </data>
-  <data name="TestCatch_PhotoUploading" xml:space="preserve">
-    <value>Téléversement de la photo</value>
-  </data>
-  <data name="TestCatch_PhotoUploaded" xml:space="preserve">
-    <value>Photo téléversée</value>
-  </data>
-  <data name="TestCatch_PhotoFailed" xml:space="preserve">
-    <value>Échec du téléversement de la photo</value>
-  </data>
-  <data name="TestCatch_LoadFailed" xml:space="preserve">
-    <value>Impossible de charger les prises locales. Vos prises enregistrées sont toujours stockées sur cet appareil.</value>
-  </data>
-  <data name="TestCatch_RetryLoad" xml:space="preserve">
-    <value>Réessayer le chargement</value>
-  </data>
-  <data name="TestCatch_LocationTitle" xml:space="preserve">
-    <value>Enregistrer le lieu de la prise</value>
-  </data>
-  <data name="TestCatch_LocationExplainer" xml:space="preserve">
-    <value>Conservez un historique de l’endroit où vous avez pris ce poisson, pour vos cartes et votre historique. Votre position précise reste privée par défaut.</value>
-  </data>
-  <data name="TestCatch_LocationAllow" xml:space="preserve">
-    <value>Autoriser la localisation</value>
-  </data>
-  <data name="TestCatch_LocationNotNow" xml:space="preserve">
-    <value>Pas maintenant</value>
-  </data>
-  <data name="TestCatch_LocationWillCapture" xml:space="preserve">
-    <value>La localisation sera enregistrée avec cette prise.</value>
-  </data>
-  <data name="TestCatch_LocationOff" xml:space="preserve">
-    <value>La localisation est désactivée. Vous pourrez l’activer plus tard sans empêcher l’enregistrement.</value>
-  </data>
-  <data name="TestCatch_LocationTryAgain" xml:space="preserve">
-    <value>Réessayer la localisation</value>
-  </data>
-  <data name="TestCatch_LocationSaved" xml:space="preserve">
-    <value>Enregistrée</value>
-  </data>
-  <data name="TestCatch_LocationLabel" xml:space="preserve">
-    <value>Localisation</value>
-  </data>
-  <data name="TestCatch_LocationRemove" xml:space="preserve">
-    <value>Supprimer</value>
-  </data>
-  <data name="TestCatch_LocationMissing" xml:space="preserve">
-    <value>Pas de localisation</value>
   </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
@@ -242,12 +146,6 @@
   </data>
   <data name="Diagnostics_LastOperation" xml:space="preserve">
     <value>Dernière opération</value>
-  </data>
-  <data name="Diagnostics_IsolatedProbe" xml:space="preserve">
-    <value>Sonde isolée (FishingLogBookDiagnosticsTest)</value>
-  </data>
-  <data name="Diagnostics_IsolatedProbeFailed" xml:space="preserve">
-    <value>Échec de la sonde isolée à</value>
   </data>
   <data name="Diagnostics_ProductionProbe" xml:space="preserve">
     <value>Sonde de production (FishingLogBookDiagnostics)</value>

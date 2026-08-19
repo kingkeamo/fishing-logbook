@@ -2,7 +2,6 @@ using AwesomeAssertions;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.SystemStatus;
-using FishingLogBook.Application.TestCatches;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -44,7 +43,6 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
 
         // Assert
         injectedTypes.Should().Contain(typeof(SystemStatusService));
-        injectedTypes.Should().Contain(typeof(TestCatchService));
         injectedTypes.Should().Contain(typeof(ICurrentUser));
         resolve.Should().NotThrow();
     }

@@ -18,7 +18,7 @@ public class WhenTestingCancellation : BaseOfflineOperationTest
         // Act
         var operation = OfflineOperation.ExecuteAsync(
             "write",
-            "productionCatches",
+            "catches",
             DiagnosticEventNames.OfflineDbWriteStarted,
             DiagnosticEventNames.OfflineDbWriteCompleted,
             DiagnosticEventNames.OfflineDbWriteFailed,
@@ -54,7 +54,7 @@ public class WhenTestingCancellation : BaseOfflineOperationTest
         // Act
         var act = async () => await OfflineOperation.ExecuteAsync(
             "write",
-            "productionCatches",
+            "catches",
             DiagnosticEventNames.OfflineDbWriteStarted,
             DiagnosticEventNames.OfflineDbWriteCompleted,
             DiagnosticEventNames.OfflineDbWriteFailed,

@@ -14,15 +14,6 @@
         <MudText id="diagnostics-online">@Loc["Diagnostics_Online"]: @OnlineLabel</MudText>
         <MudText id="diagnostics-storage-usage">@Loc["Diagnostics_StorageUsage"]: @_usageLabel</MudText>
         <MudText id="diagnostics-storage-quota">@Loc["Diagnostics_StorageQuota"]: @_quotaLabel</MudText>
-        <MudText id="diagnostics-probe-isolated-stage">
-            @Loc["Diagnostics_IsolatedProbe"]: @(_isolatedProbe?.LastCompletedStage ?? Loc["Diagnostics_None"])
-        </MudText>
-        @if (_isolatedProbe?.FailedStage is not null)
-        {
-            <MudText id="diagnostics-probe-isolated-error">
-                @Loc["Diagnostics_IsolatedProbeFailed"]: @_isolatedProbe.FailedStage @(_isolatedProbe.Error)
-            </MudText>
-        }
         <MudText id="diagnostics-probe-production-stage">
             @Loc["Diagnostics_ProductionProbe"]: @ProductionProbeLabel
         </MudText>

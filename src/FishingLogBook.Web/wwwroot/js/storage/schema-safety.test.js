@@ -6,11 +6,9 @@ import {
     CATCH_DATABASE_NAME,
     CATCH_STORE_NAME,
     PHOTO_STORE_NAME,
-    PRODUCTION_CATCH_STORE_NAME,
-    PRODUCTION_PHOTO_STORE_NAME,
     CATCH_DATABASE_VERSION,
-    getAllTestCatches,
-    putTestCatch
+    getAllCatchesWithPhotographs,
+    putCatchWithPhotographs
 } from './catch-store.js';
 import {
     DIAGNOSTIC_DATABASE_NAME,
@@ -24,9 +22,16 @@ import {
 } from './preference-store.js';
 
 const storageDir = dirname(fileURLToPath(import.meta.url));
+const ownerUserId = '11111111-1111-1111-1111-111111111111';
 
 function readJs(fileName) {
     return readFileSync(resolve(storageDir, fileName), 'utf8');
+}
+
+function putCatch(id) {
+    return putCatchWithPhotographs(
+        JSON.stringify({ id, userId: ownerUserId, notes: 'keep' }),
+        [{ id: `${id}-photo`, catchId: id, contentType: 'image/jpeg', bytes: new Uint8Array([1]) }]);
 }
 
 describe('schema safety', () => {
@@ -37,8 +42,8 @@ describe('schema safety', () => {
 
         expect(catchSource).not.toContain('FishingLogBookDiagnostics');
         expect(catchSource).not.toContain('diagnosticEvents');
-        expect(diagnosticSource).not.toContain('testCatches');
-        expect(diagnosticSource).not.toContain('testCatchPhotographs');
+        expect(diagnosticSource).not.toContain(CATCH_STORE_NAME);
+        expect(diagnosticSource).not.toContain(PHOTO_STORE_NAME);
         expect(indexedDbSource).not.toContain('FishingLogBookDiagnostics');
         expect(indexedDbSource).not.toContain(CATCH_DATABASE_NAME);
     });
@@ -53,17 +58,16 @@ describe('schema safety', () => {
         expect(catchSource).not.toContain('fishingPreferences');
         expect(preferenceSource).not.toContain(`'${CATCH_DATABASE_NAME}'`);
         expect(preferenceSource).not.toContain(CATCH_STORE_NAME);
-        expect(preferenceSource).not.toContain(PRODUCTION_CATCH_STORE_NAME);
-        expect(preferenceSource).not.toContain(PRODUCTION_PHOTO_STORE_NAME);
+        expect(preferenceSource).not.toContain(PHOTO_STORE_NAME);
         expect(indexedDbSource).not.toContain(PREFERENCE_DATABASE_NAME);
     });
 
     it('keeps the released Catch database version unchanged', () => {
-        expect(CATCH_DATABASE_VERSION).toBe(3);
+        expect(CATCH_DATABASE_VERSION).toBe(4);
     });
 
     it('does not let the preference store modify the Catch schema', async () => {
-        await putTestCatch(JSON.stringify({ id: 'catch-1', notes: 'keep' }));
+        await putCatch('catch-1');
         await putFishingPreferences(
             '11111111-1111-1111-1111-111111111111',
             JSON.stringify({ weightUnit: 1 }));
@@ -80,25 +84,19 @@ describe('schema safety', () => {
         });
 
         expect(catchDb.version).toBe(CATCH_DATABASE_VERSION);
-        expect([...catchDb.objectStoreNames].sort()).toEqual([
-            PHOTO_STORE_NAME,
-            CATCH_STORE_NAME,
-            PRODUCTION_CATCH_STORE_NAME,
-            PRODUCTION_PHOTO_STORE_NAME
-        ].sort());
+        expect([...catchDb.objectStoreNames].sort()).toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME].sort());
         expect(catchDb.objectStoreNames.contains(PREFERENCE_STORE_NAME)).toBe(false);
         expect([...preferenceDb.objectStoreNames]).toEqual([PREFERENCE_STORE_NAME]);
         expect(preferenceDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
-        expect(preferenceDb.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)).toBe(false);
         catchDb.close();
         preferenceDb.close();
 
-        const catches = await getAllTestCatches();
-        expect(JSON.parse(catches[0]).notes).toBe('keep');
+        const catches = await getAllCatchesWithPhotographs(ownerUserId);
+        expect(JSON.parse(catches[0].json).notes).toBe('keep');
     });
 
     it('does not let the diagnostic store modify the Catch schema', async () => {
-        await putTestCatch(JSON.stringify({ id: 'catch-1', notes: 'keep' }));
+        await putCatch('catch-1');
         await putDiagnosticEvent(JSON.stringify({
             id: 'diag-1',
             timestampUtc: '2026-01-01T00:00:00.000Z'
@@ -119,32 +117,58 @@ describe('schema safety', () => {
         expect(diagnosticDb.name).toBe(DIAGNOSTIC_DATABASE_NAME);
         expect(catchDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(PHOTO_STORE_NAME)).toBe(true);
-        expect(catchDb.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)).toBe(true);
-        expect(catchDb.objectStoreNames.contains(PRODUCTION_PHOTO_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(true);
 
-        const catches = await getAllTestCatches();
-        expect(JSON.parse(catches[0]).notes).toBe('keep');
+        const catches = await getAllCatchesWithPhotographs(ownerUserId);
+        expect(JSON.parse(catches[0].json).notes).toBe('keep');
         catchDb.close();
         diagnosticDb.close();
     });
 
     it('creates a deterministic Catch schema on a fresh database', async () => {
-        await putTestCatch(JSON.stringify({ id: 'catch-1' }));
+        await putCatch('catch-1');
         const db = await new Promise((resolveOpen, reject) => {
             const request = indexedDB.open(CATCH_DATABASE_NAME);
             request.onsuccess = () => resolveOpen(request.result);
             request.onerror = () => reject(request.error);
         });
 
-        expect([...db.objectStoreNames].sort()).toEqual([
-            PHOTO_STORE_NAME,
-            CATCH_STORE_NAME,
-            PRODUCTION_CATCH_STORE_NAME,
-            PRODUCTION_PHOTO_STORE_NAME
-        ].sort());
+        expect([...db.objectStoreNames].sort()).toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME].sort());
         db.close();
+    });
+
+    it('removes the obsolete TestCatch stores when upgrading an existing v3 database', async () => {
+        const legacy = await new Promise((resolveOpen, reject) => {
+            const request = indexedDB.open(CATCH_DATABASE_NAME, 3);
+            request.onupgradeneeded = () => {
+                const db = request.result;
+                db.createObjectStore('testCatches', { keyPath: 'id' });
+                db.createObjectStore('testCatchPhotographs', { keyPath: 'id' });
+                db.createObjectStore(CATCH_STORE_NAME, { keyPath: 'id' });
+                db.createObjectStore(PHOTO_STORE_NAME, { keyPath: 'id' });
+            };
+            request.onsuccess = () => resolveOpen(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        legacy.close();
+
+        await putCatch('catch-1');
+
+        const upgraded = await new Promise((resolveOpen, reject) => {
+            const request = indexedDB.open(CATCH_DATABASE_NAME);
+            request.onsuccess = () => resolveOpen(request.result);
+            request.onerror = () => reject(request.error);
+        });
+
+        expect(upgraded.version).toBe(CATCH_DATABASE_VERSION);
+        expect([...upgraded.objectStoreNames].sort()).toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME].sort());
+        expect(upgraded.objectStoreNames.contains('testCatches')).toBe(false);
+        expect(upgraded.objectStoreNames.contains('testCatchPhotographs')).toBe(false);
+        upgraded.close();
+
+        const catches = await getAllCatchesWithPhotographs(ownerUserId);
+        expect(JSON.parse(catches[0].json).notes).toBe('keep');
     });
 });

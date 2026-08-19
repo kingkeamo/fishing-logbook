@@ -87,7 +87,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
 
         // Assert
         await logging.Received(1).LogErrorAsync(
-            "production catch synchronisation",
+            "catch synchronisation",
             Arg.Is<Exception>(exception => exception is TaskCanceledException),
             CancellationToken.None);
         await diagnosticSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
@@ -113,7 +113,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
 
         // Assert
         await logging.Received(1).LogErrorAsync(
-            "production catch synchronisation",
+            "catch synchronisation",
             Arg.Is<Exception>(exception => exception.Message == "boom"),
             CancellationToken.None);
         await diagnosticSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());

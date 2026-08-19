@@ -13,11 +13,6 @@ using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.SystemStatus.Clients;
-using FishingLogBook.Web.Features.TestCatch.Clients;
-using FishingLogBook.Web.Features.TestCatch.Models;
-using FishingLogBook.Web.Features.TestCatch.Offline;
-using FishingLogBook.Web.Features.TestCatch.Offline.Stores;
-using FishingLogBook.Web.Features.TestCatch.Offline.Synchronisers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,9 +56,6 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
 
         // Assert
         injectedTypes.Should().Contain(typeof(ISystemStatusClient));
-        injectedTypes.Should().Contain(typeof(ITestCatchStore));
-        injectedTypes.Should().Contain(typeof(ITestCatchPhotoStore));
-        injectedTypes.Should().Contain(typeof(ITestCatchSynchroniser));
         injectedTypes.Should().Contain(typeof(IProfileClient));
         injectedTypes.Should().Contain(typeof(ICultureService));
         injectedTypes.Should().Contain(typeof(ILoggingService));
@@ -92,7 +84,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         apiClient.BaseAddress.Should().Be(new Uri("https://example.test/"));
         anonymousClient.BaseAddress.Should().Be(new Uri("https://example.test/"));
         scope.ServiceProvider.GetRequiredService<IAccessTokenProvider>().Should().NotBeNull();
-        scope.ServiceProvider.GetRequiredService<ITestCatchClient>().Should().BeOfType<TestCatchClient>();
+        scope.ServiceProvider.GetRequiredService<ICatchClient>().Should().BeOfType<CatchClient>();
         var oidc = scope.ServiceProvider
             .GetRequiredService<IOptionsSnapshot<RemoteAuthenticationOptions<OidcProviderOptions>>>()
             .Value

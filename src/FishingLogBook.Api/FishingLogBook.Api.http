@@ -10,14 +10,6 @@ Accept: application/json
 GET {{FishingLogBook.Api_HostAddress}}/api/system/database
 Accept: application/json
 
-### TestCatch (requires a Cognito access token; never commit real tokens)
-
-GET {{FishingLogBook.Api_HostAddress}}/api/test-catches
-Accept: application/json
-Authorization: Bearer <access-token>
-
-###
-
 GET {{FishingLogBook.Api_HostAddress}}/api/users/current
 Accept: application/json
 Authorization: Bearer <access-token>
