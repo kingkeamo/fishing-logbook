@@ -35,7 +35,6 @@ public class BaseRecordCatchTest
         ICatchSynchroniser? synchroniser = null,
         ILoggingService? logging = null,
         IFishingPreferenceClient? fishingPreferenceClient = null,
-        ICatchSessionService? catchSession = null,
         IModalService? modalService = null)
     {
         var context = new BunitContext();
@@ -48,7 +47,6 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
-        context.Services.AddSingleton(catchSession ?? new CatchSessionService());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;

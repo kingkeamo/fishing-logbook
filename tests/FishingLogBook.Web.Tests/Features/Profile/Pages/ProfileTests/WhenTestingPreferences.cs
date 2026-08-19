@@ -191,6 +191,77 @@ public class WhenTestingPreferences : BaseProfileTest
     }
 
     [Fact]
+    public async Task ItShouldKeepLegacySpeciesWhenAMethodIsSelectedWithNoSpeciesYet()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = LegacyProfileClient(userId);
+        var preferenceClient = QuietFishingPreferenceClient(new FishingPreferencesDto([]), SampleCatalogue());
+        await using var context = CreateContext(profileClient, preferenceClient);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-method-Fly"));
+
+        // Act
+        await cut.Find("#profile-method-Fly").ClickAsync();
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Is<UpdateProfileDto>(profile =>
+                profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepLegacySpeciesAlongsideNewlyChosenChipSpecies()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = LegacyProfileClient(userId);
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(profileClient, preferenceClient);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-species-Fly-BrownTrout"));
+
+        // Act
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Is<UpdateProfileDto>(profile =>
+                profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench", "Brown Trout" })),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepLegacySpeciesAfterAChipSpeciesIsRemoved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = LegacyProfileClient(userId);
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(profileClient, preferenceClient);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-species-Fly-BrownTrout"));
+
+        // Act
+        await cut.Find("#profile-species-remove-Fly-BrownTrout").ClickAsync();
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Is<UpdateProfileDto>(profile =>
+                profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldSaveTheChosenMeasurementUnits()
     {
         // Arrange
@@ -242,6 +313,29 @@ public class WhenTestingPreferences : BaseProfileTest
         injected.Should().Contain(typeof(IFishingPreferenceClient));
         injected.Should().NotContain(typeof(FishingLogBook.Web.Features.Catch.Offline.ICatchStore));
         injected.Should().NotContain(typeof(FishingLogBook.Web.Features.Catch.Services.ICatchClient));
+    }
+
+    private static IProfileClient LegacyProfileClient(Guid userId)
+    {
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns(new ProfileDto(
+                userId,
+                "Eamonn",
+                null,
+                null,
+                null,
+                "Westmeath",
+                ["Coarse"],
+                ["Pike", "Tench"],
+                true,
+                false,
+                false,
+                true,
+                true));
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
+        return profileClient;
     }
 
     [Fact]

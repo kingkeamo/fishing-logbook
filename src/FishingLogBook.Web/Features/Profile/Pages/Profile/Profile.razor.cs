@@ -21,7 +21,7 @@ public partial class Profile : ComponentBase, IDisposable
     private WeightUnitEnum _preferredWeightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _preferredLengthUnit = LengthUnitEnum.Cm;
     private IReadOnlyCollection<string> _preferredFishingTypes = [];
-    private IReadOnlyCollection<string> _preferredSpecies = [];
+    private IReadOnlyCollection<string> _legacyPreferredSpecies = [];
     private bool _showDisplayName = true;
     private bool _showPhotograph;
     private bool _showHomeRegion;
@@ -62,6 +62,7 @@ public partial class Profile : ComponentBase, IDisposable
         try
         {
             var profile = await ProfileClient.GetOwnAsync(_cancellationTokenSource.Token);
+            _legacyPreferredSpecies = [.. profile.PreferredSpecies];
             var catalogue = await FishingPreferenceClient.GetCatalogueAsync(_cancellationTokenSource.Token);
             var preferences = await FishingPreferenceClient.GetPreferencesAsync(_cancellationTokenSource.Token);
 
@@ -157,7 +158,6 @@ public partial class Profile : ComponentBase, IDisposable
         _displayName = profile.DisplayName;
         _homeRegion = profile.HomeRegion;
         _preferredFishingTypes = [.. profile.PreferredFishingTypes];
-        _preferredSpecies = [.. profile.PreferredSpecies];
         _preferredWeightUnit = profile.PreferredWeightUnit;
         _preferredLengthUnit = profile.PreferredLengthUnit;
         _showDisplayName = profile.ShowDisplayName;
@@ -203,16 +203,12 @@ public partial class Profile : ComponentBase, IDisposable
 
     private string[] PreferredSpeciesNames()
     {
-        if (_selectedMethods.Count == 0)
-        {
-            return [.. _preferredSpecies];
-        }
-
         return
         [
-            .. _selectedMethods
-                .SelectMany(method => method.Species)
-                .Select(species => species.Name)
+            .. _legacyPreferredSpecies
+                .Concat(_selectedMethods
+                    .SelectMany(method => method.Species)
+                    .Select(species => species.Name))
                 .Where(name => name.Length <= ProfileDetailConstants.MaxPreferredSpeciesNameLength)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
         ];

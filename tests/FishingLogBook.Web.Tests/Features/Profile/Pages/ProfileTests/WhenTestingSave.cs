@@ -184,7 +184,6 @@ public class WhenTestingSave : BaseProfileTest
 
         // Act
         cut.Find("#profile-show-home-region").Change(true);
-        cut.Find("#profile-show-fishing-types").Change(true);
         cut.Find("#profile-show-preferred-species").Change(true);
         cut.Find("#profile-show-photograph").Change(true);
         await cut.Find("#profile-save-button").ClickAsync();
@@ -195,7 +194,7 @@ public class WhenTestingSave : BaseProfileTest
             Arg.Is<UpdateProfileDto>(profile =>
                 profile.ShowDisplayName
                 && profile.ShowHomeRegion
-                && profile.ShowPreferredFishingTypes
+                && !profile.ShowPreferredFishingTypes
                 && profile.ShowPreferredSpecies
                 && profile.ShowPhotograph),
             Arg.Any<CancellationToken>());

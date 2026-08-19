@@ -5,7 +5,6 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
-using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
@@ -142,18 +141,62 @@ public class WhenTestingChips : BaseRecordCatchTest
     }
 
     [Fact]
-    public async Task ItShouldCarryTheLastSelectionIntoANewRecordCatchInTheSameSession()
+    public async Task ItShouldPreserveAnExplicitlyChosenSpeciesWhenTheMethodChanges()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var cut = context.Render<RecordCatch>();
+        cut.WaitForAssertion(() => cut.Find("#record-catch-species-BrownTrout"));
+        cut.Find("#record-catch-species").Input("Grayling");
+
+        // Act
+        await cut.Find("#record-catch-method-Spinning").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#record-catch-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#record-catch-species").GetAttribute("value").Should().Be("Grayling");
+        });
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPreserveASpeciesTappedFromAChipWhenTheMethodChanges()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var cut = context.Render<RecordCatch>();
+        cut.WaitForAssertion(() => cut.Find("#record-catch-species-BrownTrout"));
+        await cut.Find("#record-catch-species-BrownTrout").ClickAsync();
+
+        // Act
+        await cut.Find("#record-catch-method-Spinning").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#record-catch-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#record-catch-species").GetAttribute("value").Should().Be("Brown Trout");
+        });
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldUseProfileDefaultsForAFreshRecordCatchNotReachedByRecordAnotherCatch()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        var session = new CatchSessionService();
         var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(
-            store,
-            fishingPreferenceClient: preferenceClient,
-            catchSession: session);
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
         var first = context.Render<RecordCatch>();
         first.WaitForAssertion(() => first.Find("#record-catch-method-Fly"));
         await first.Find("#record-catch-method-Spinning").ClickAsync();
@@ -168,17 +211,13 @@ public class WhenTestingChips : BaseRecordCatchTest
         // Assert
         second.WaitForAssertion(() =>
         {
-            second.Find("#record-catch-method").GetAttribute("value").Should().Be("Spinning");
-            second.Find("#record-catch-species").GetAttribute("value").Should().Be("Pike");
+            second.Find("#record-catch-method").GetAttribute("value").Should().Be("Fly");
+            second.Find("#record-catch-species").GetAttribute("value").Should().Be("Brown Trout");
         });
-        session.Method.Should().Be("Spinning");
-        session.SpeciesName.Should().Be("Pike");
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Method == "Spinning"
-                && catchRecord.SpeciesName == "Pike"
-                && catchRecord.Weight == null
-                && catchRecord.Length == null),
+                && catchRecord.SpeciesName == "Pike"),
             Arg.Any<CancellationToken>());
     }
 
@@ -189,12 +228,8 @@ public class WhenTestingChips : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        var session = new CatchSessionService();
         var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        await using var context = CreateContext(
-            store,
-            fishingPreferenceClient: preferenceClient,
-            catchSession: session);
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
         var cut = context.Render<RecordCatch>();
         cut.WaitForAssertion(() => cut.Find("#record-catch-method-Fly"));
         cut.FindComponents<Microsoft.AspNetCore.Components.Forms.InputFile>()[0]
@@ -211,6 +246,7 @@ public class WhenTestingChips : BaseRecordCatchTest
             cut.Find("#record-catch-method").GetAttribute("value").Should().Be("Fly");
             cut.Find("#record-catch-species").GetAttribute("value").Should().Be("Brown Trout");
             cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeTrue();
+            cut.FindAll("#catch-photo-carousel").Should().BeEmpty();
         });
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>

@@ -179,7 +179,10 @@ public partial class CatchEdit : ComponentBase, IDisposable
             {
                 _loadFailed = true;
                 _catch = null;
+                return;
             }
+
+            ApplyProfileDefaultsToEmptyFields();
         }
         catch (Exception)
         {
@@ -210,6 +213,24 @@ public partial class CatchEdit : ComponentBase, IDisposable
         }
     }
 
+    private void ApplyProfileDefaultsToEmptyFields()
+    {
+        if (string.IsNullOrWhiteSpace(_method))
+        {
+            _method = _preferences?.Methods.FirstOrDefault(method => method.IsDefault)?.Name
+                ?? string.Empty;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_speciesName))
+        {
+            return;
+        }
+
+        _speciesName = FindMethodPreference(_method)?.Species
+            .FirstOrDefault(species => species.IsDefault)?.Name
+            ?? string.Empty;
+    }
+
     private FishingMethodPreferenceDto? FindMethodPreference(string methodName)
     {
         return _preferences?.Methods.FirstOrDefault(method =>
@@ -219,6 +240,14 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private void SelectMethod(string method)
     {
         _method = method;
+        if (!string.IsNullOrWhiteSpace(_speciesName))
+        {
+            return;
+        }
+
+        _speciesName = FindMethodPreference(method)?.Species
+            .FirstOrDefault(species => species.IsDefault)?.Name
+            ?? string.Empty;
     }
 
     private void SelectSpecies(string species)

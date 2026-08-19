@@ -107,7 +107,8 @@ public class WhenTestingRender : BaseProfileTest
             cut.Find("#profile-home-region").Should().NotBeNull();
             cut.Find("#profile-weight-unit").Should().NotBeNull();
             cut.Find("#profile-length-unit").Should().NotBeNull();
-            cut.Find("#profile-show-fishing-types").Should().NotBeNull();
+            cut.FindAll("#profile-show-fishing-types").Should().BeEmpty();
+            cut.Markup.Should().NotContain("fishing types");
             cut.Find("#profile-show-preferred-species").Should().NotBeNull();
             cut.Find("#profile-show-display-name").Should().NotBeNull();
             cut.Find("#profile-show-photograph").Should().NotBeNull();

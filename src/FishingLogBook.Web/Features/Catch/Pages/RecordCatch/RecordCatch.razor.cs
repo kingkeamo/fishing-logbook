@@ -29,6 +29,11 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private double _pointerStartX;
     private string _selectedMethod = string.Empty;
     private string _selectedSpecies = string.Empty;
+    private bool _methodIsExplicit;
+    private bool _speciesIsExplicit;
+    private string? _carriedMethod;
+    private string? _carriedSpecies;
+    private bool _carriedSpeciesWasExplicit;
     private bool _isSaving;
     private bool _isSaved;
     private bool _saveFailed;
@@ -52,9 +57,6 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
 
     [Inject]
-    private ICatchSessionService CatchSession { get; set; } = default!;
-
-    [Inject]
     private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
@@ -72,7 +74,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         await LoadCatalogueAsync();
-        ApplyStartingSelection();
+        ApplyProfileDefaults();
         await RefreshLocationPromptAsync();
     }
 
@@ -91,18 +93,6 @@ public partial class RecordCatch : ComponentBase, IDisposable
         }
     }
 
-    private void ApplyStartingSelection()
-    {
-        if (CatchSession.Method is not null || CatchSession.SpeciesName is not null)
-        {
-            _selectedMethod = CatchSession.Method ?? string.Empty;
-            _selectedSpecies = CatchSession.SpeciesName ?? string.Empty;
-            return;
-        }
-
-        ApplyProfileDefaults();
-    }
-
     private void ApplyProfileDefaults()
     {
         var defaultMethod = _preferences?.Methods.FirstOrDefault(method => method.IsDefault);
@@ -112,8 +102,10 @@ public partial class RecordCatch : ComponentBase, IDisposable
         }
 
         _selectedMethod = defaultMethod.Name;
+        _methodIsExplicit = false;
         _selectedSpecies = defaultMethod.Species.FirstOrDefault(species => species.IsDefault)?.Name
             ?? string.Empty;
+        _speciesIsExplicit = false;
     }
 
     private IReadOnlyList<CatchChipOptionModel> MethodOptions
@@ -153,6 +145,12 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private void SelectMethod(string method)
     {
         _selectedMethod = method;
+        _methodIsExplicit = true;
+        if (_speciesIsExplicit)
+        {
+            return;
+        }
+
         var methodPreference = FindMethodPreference(method);
         var defaultSpecies = methodPreference?.Species.FirstOrDefault(species => species.IsDefault);
         if (defaultSpecies is not null)
@@ -164,6 +162,35 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private void SelectSpecies(string species)
     {
         _selectedSpecies = species;
+        _speciesIsExplicit = true;
+    }
+
+    private string MethodInput
+    {
+        get
+        {
+            return _selectedMethod;
+        }
+
+        set
+        {
+            _selectedMethod = value;
+            _methodIsExplicit = !string.IsNullOrWhiteSpace(value);
+        }
+    }
+
+    private string SpeciesInput
+    {
+        get
+        {
+            return _selectedSpecies;
+        }
+
+        set
+        {
+            _selectedSpecies = value;
+            _speciesIsExplicit = !string.IsNullOrWhiteSpace(value);
+        }
     }
 
     private async Task ChooseMethodAsync()
@@ -397,7 +424,9 @@ public partial class RecordCatch : ComponentBase, IDisposable
                     ownerUserId,
                     Method: method),
                 _cancellationTokenSource.Token);
-            CatchSession.Remember(method, species);
+            _carriedMethod = method;
+            _carriedSpecies = species;
+            _carriedSpeciesWasExplicit = _speciesIsExplicit;
             _isSaved = true;
             _locationSaved = location is not null;
             saved = true;
@@ -453,8 +482,10 @@ public partial class RecordCatch : ComponentBase, IDisposable
         _capturedLocation = null;
         _locationCaptureStarted = false;
         _locationSaved = false;
-        _selectedMethod = CatchSession.Method ?? string.Empty;
-        _selectedSpecies = CatchSession.SpeciesName ?? string.Empty;
+        _selectedMethod = _carriedMethod ?? string.Empty;
+        _methodIsExplicit = _carriedMethod is not null;
+        _selectedSpecies = _carriedSpecies ?? string.Empty;
+        _speciesIsExplicit = _carriedSpeciesWasExplicit;
     }
 
     private async Task AllowLocationAsync()

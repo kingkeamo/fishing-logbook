@@ -165,11 +165,11 @@ Authorization: Bearer <access-token>
 {
   "methods": [
     {
-      "fishingMethodId": "a7f1c2d0-0000-4000-8000-000000000001",
+      "fishingMethodId": "6cebaa41-de9c-4264-8034-03636b05f3c0",
       "isDefault": true,
       "species": [
-        { "speciesId": "b3e4a5c0-0000-4000-8000-000000000001", "isDefault": true },
-        { "speciesId": "b3e4a5c0-0000-4000-8000-000000000004", "isDefault": false }
+        { "speciesId": "51e3798c-3d4d-438a-86fc-1b1ada032a83", "isDefault": true },
+        { "speciesId": "628fcd12-1a16-43de-b5a5-6f8e344b33aa", "isDefault": false }
       ]
     }
   ]

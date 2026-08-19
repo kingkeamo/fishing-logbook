@@ -67,6 +67,126 @@ public class WhenTestingChips : BaseCatchEditTest
     }
 
     [Fact]
+    public async Task ItShouldSelectTheProfileDefaultsWhenBothStoredFieldsAreEmpty()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(EditedCatchId));
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-edit-method").GetAttribute("value").Should().Be("Fly");
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Brown Trout");
+            cut.Find("#catch-edit-method-Fly").ClassList.Should().Contain("mud-chip-filled");
+            cut.Find("#catch-edit-species-BrownTrout").ClassList.Should().Contain("mud-chip-filled");
+        });
+        await preferenceClient.Received(1).GetPreferencesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSelectTheDefaultSpeciesForAStoredMethodWhenOnlySpeciesIsEmpty()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(EditedCatchId, method: "Spinning"));
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-edit-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Pike");
+            cut.Find("#catch-edit-species-Pike").ClassList.Should().Contain("mud-chip-filled");
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldLeaveTheFieldsEmptyWhenTheAnglerHasNoProfileDefaults()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(EditedCatchId));
+        var preferenceClient = QuietFishingPreferenceClient(
+            new FishingLogBook.Shared.Dtos.FishingPreferencesDto([]),
+            SampleCatalogue());
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-edit-method").GetAttribute("value").Should().BeEmpty();
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().BeEmpty();
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldApplyTheDefaultSpeciesWhenTheMethodChangesAndSpeciesIsEmpty()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(EditedCatchId, method: "Trotting"));
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Fly"));
+
+        // Act
+        await cut.Find("#catch-edit-method-Spinning").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-edit-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Pike");
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldKeepAnExistingSpeciesWhenTheMethodChanges()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, EditedCatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(EditedCatchId, speciesName: "Grayling", method: "Fly"));
+        var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(store, fishingPreferenceClient: preferenceClient);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Spinning"));
+
+        // Act
+        await cut.Find("#catch-edit-method-Spinning").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-edit-method").GetAttribute("value").Should().Be("Spinning");
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Grayling");
+        });
+    }
+
+    [Fact]
     public async Task ItShouldStillShowASavedSpeciesThatIsNotInTheShortlist()
     {
         // Arrange
