@@ -5,4 +5,6 @@ namespace FishingLogBook.Web.Features.Profile.Services;
 public interface IAnglerPreferencesProvider
 {
     Task<AnglerPreferencesModel> GetAsync(CancellationToken cancellationToken);
+
+    void Invalidate();
 }

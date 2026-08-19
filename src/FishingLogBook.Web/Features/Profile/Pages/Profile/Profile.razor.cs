@@ -51,6 +51,9 @@ public partial class Profile : ComponentBase, IDisposable
     private IAnglerPreferencesCache AnglerPreferencesCache { get; set; } = default!;
 
     [Inject]
+    private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
+
+    [Inject]
     private IModalService ModalService { get; set; } = default!;
 
     [Inject]
@@ -67,10 +70,14 @@ public partial class Profile : ComponentBase, IDisposable
         _loadFailed = false;
         try
         {
-            var profile = await ProfileClient.GetOwnAsync(_cancellationTokenSource.Token);
+            var profileTask = ProfileClient.GetOwnAsync(_cancellationTokenSource.Token);
+            var catalogueTask = FishingPreferenceClient.GetCatalogueAsync(_cancellationTokenSource.Token);
+            var preferencesTask = FishingPreferenceClient.GetPreferencesAsync(_cancellationTokenSource.Token);
+            await Task.WhenAll(profileTask, catalogueTask, preferencesTask);
+            var profile = await profileTask;
+            var catalogue = await catalogueTask;
+            var preferences = await preferencesTask;
             _legacyPreferredSpecies = [.. profile.PreferredSpecies];
-            var catalogue = await FishingPreferenceClient.GetCatalogueAsync(_cancellationTokenSource.Token);
-            var preferences = await FishingPreferenceClient.GetPreferencesAsync(_cancellationTokenSource.Token);
 
             Apply(profile);
             _catalogueMethods = catalogue.Methods;
@@ -106,6 +113,7 @@ public partial class Profile : ComponentBase, IDisposable
                 _cancellationTokenSource.Token);
             ApplyPreferences(preferences);
             await CacheForOfflineUseAsync(saved, preferences);
+            AnglerPreferences.Invalidate();
         }
         catch (Exception)
         {

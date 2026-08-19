@@ -23,7 +23,8 @@ public class BaseProfileTest
         IProfileClient profileClient,
         IFishingPreferenceClient? fishingPreferenceClient = null,
         IModalService? modalService = null,
-        IAnglerPreferencesCache? cache = null)
+        IAnglerPreferencesCache? cache = null,
+        IAnglerPreferencesProvider? anglerPreferences = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -33,6 +34,8 @@ public class BaseProfileTest
         context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddSingleton(cache ?? Substitute.For<IAnglerPreferencesCache>());
+        context.Services.AddSingleton(
+            anglerPreferences ?? Substitute.For<IAnglerPreferencesProvider>());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         var authorization = context.AddAuthorization();

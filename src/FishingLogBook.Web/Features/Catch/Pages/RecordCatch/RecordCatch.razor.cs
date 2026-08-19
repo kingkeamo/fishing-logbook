@@ -76,9 +76,10 @@ public partial class RecordCatch : ComponentBase, IDisposable
     {
         try
         {
-            await LoadCatalogueAsync();
+            var catalogue = LoadCatalogueAsync();
+            var locationPrompt = RefreshLocationPromptAsync();
+            await Task.WhenAll(catalogue, locationPrompt);
             ApplyProfileDefaults();
-            await RefreshLocationPromptAsync();
         }
         finally
         {

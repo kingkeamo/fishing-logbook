@@ -10,6 +10,9 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
     private readonly IFishingPreferenceClient _fishingPreferenceClient;
     private readonly IAnglerPreferencesCache _cache;
     private readonly ILocalCatchOwnerService _localCatchOwner;
+    private readonly SemaphoreSlim _loadLock = new(1, 1);
+    private Guid _rememberedUserId;
+    private AnglerPreferencesModel? _remembered;
 
     public AnglerPreferencesProvider(
         IProfileClient profileClient,
@@ -31,14 +34,55 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
             return AnglerPreferencesModel.Empty;
         }
 
-        var fresh = await TryLoadFromApiAsync(cancellationToken);
-        if (fresh is not null)
+        if (TryGetRemembered(userId) is { } alreadyLoaded)
         {
-            await TryCacheAsync(userId, fresh, cancellationToken);
-            return fresh;
+            return alreadyLoaded;
         }
 
-        return await TryLoadFromCacheAsync(userId, cancellationToken) ?? AnglerPreferencesModel.Empty;
+        await _loadLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (TryGetRemembered(userId) is { } loadedWhileWaiting)
+            {
+                return loadedWhileWaiting;
+            }
+
+            var fresh = await TryLoadFromApiAsync(cancellationToken);
+            if (fresh is not null)
+            {
+                await TryCacheAsync(userId, fresh, cancellationToken);
+                return Remember(userId, fresh);
+            }
+
+            var cached = await TryLoadFromCacheAsync(userId, cancellationToken);
+            return cached is null
+                ? AnglerPreferencesModel.Empty
+                : Remember(userId, cached);
+        }
+        finally
+        {
+            _loadLock.Release();
+        }
+    }
+
+    public void Invalidate()
+    {
+        _remembered = null;
+        _rememberedUserId = Guid.Empty;
+    }
+
+    private AnglerPreferencesModel? TryGetRemembered(Guid userId)
+    {
+        return _remembered is not null && _rememberedUserId == userId
+            ? _remembered
+            : null;
+    }
+
+    private AnglerPreferencesModel Remember(Guid userId, AnglerPreferencesModel preferences)
+    {
+        _rememberedUserId = userId;
+        _remembered = preferences;
+        return preferences;
     }
 
     private async Task<Guid> ResolveOwnerAsync(CancellationToken cancellationToken)
@@ -55,14 +99,16 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
 
     private async Task<AnglerPreferencesModel?> TryLoadFromApiAsync(CancellationToken cancellationToken)
     {
+        var profileTask = _profileClient.GetOwnAsync(cancellationToken);
+        var catalogueTask = _fishingPreferenceClient.GetCatalogueAsync(cancellationToken);
+        var preferencesTask = _fishingPreferenceClient.GetPreferencesAsync(cancellationToken);
         try
         {
-            var profile = await _profileClient.GetOwnAsync(cancellationToken);
-            var catalogue = await _fishingPreferenceClient.GetCatalogueAsync(cancellationToken);
-            var preferences = await _fishingPreferenceClient.GetPreferencesAsync(cancellationToken);
+            await Task.WhenAll(profileTask, catalogueTask, preferencesTask);
+            var profile = await profileTask;
             return new AnglerPreferencesModel(
-                catalogue,
-                preferences,
+                await catalogueTask,
+                await preferencesTask,
                 profile.PreferredWeightUnit,
                 profile.PreferredLengthUnit);
         }
