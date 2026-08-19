@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.Forms;

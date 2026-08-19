@@ -1,6 +1,8 @@
 using Bunit;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Layouts.MainLayout;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;

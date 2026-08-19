@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using FishingLogBook.Web.Configuration;
-using FishingLogBook.Web.Features.Users.Services;
+using FishingLogBook.Web.Features.Users.Clients;
 using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Features.Users.Services.CurrentUserClientTests;

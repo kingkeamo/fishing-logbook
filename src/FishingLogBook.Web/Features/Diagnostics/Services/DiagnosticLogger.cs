@@ -5,8 +5,7 @@ using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
-using FishingLogBook.Web.Features.SystemStatus.Services;
-using FishingLogBook.Web.Features.TestCatch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Storage.Stores;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 

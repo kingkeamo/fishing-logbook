@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using FishingLogBook.Web.Features.Users.Services;
+using FishingLogBook.Web.Features.Users.Clients;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 

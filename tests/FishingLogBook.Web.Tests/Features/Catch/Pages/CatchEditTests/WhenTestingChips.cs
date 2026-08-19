@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
 using FishingLogBook.Web.Localization;
 using NSubstitute;

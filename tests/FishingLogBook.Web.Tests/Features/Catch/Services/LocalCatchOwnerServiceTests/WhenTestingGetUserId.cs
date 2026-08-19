@@ -1,6 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Dtos;
-using FishingLogBook.Web.Features.Users.Services;
+using FishingLogBook.Web.Features.Users.Clients;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 

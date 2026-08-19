@@ -3,9 +3,10 @@ using Bunit;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Profile.Models;
-using FishingLogBook.Web.Features.Profile.Services;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 

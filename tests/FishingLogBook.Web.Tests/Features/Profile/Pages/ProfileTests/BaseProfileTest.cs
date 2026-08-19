@@ -2,9 +2,11 @@ using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline;
-using FishingLogBook.Web.Features.Profile.Services;
+using FishingLogBook.Web.Features.Profile.Offline.Stores;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -23,7 +25,7 @@ public class BaseProfileTest
         IProfileClient profileClient,
         IFishingPreferenceClient? fishingPreferenceClient = null,
         IModalService? modalService = null,
-        IAnglerPreferencesCache? cache = null,
+        IAnglerPreferencesStore? cache = null,
         IAnglerPreferencesProvider? anglerPreferences = null)
     {
         var context = new BunitContext();
@@ -33,7 +35,7 @@ public class BaseProfileTest
         context.Services.AddSingleton(profileClient);
         context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
         context.Services.AddSingleton(modalService ?? QuietModalService());
-        context.Services.AddSingleton(cache ?? Substitute.For<IAnglerPreferencesCache>());
+        context.Services.AddSingleton(cache ?? Substitute.For<IAnglerPreferencesStore>());
         context.Services.AddSingleton(
             anglerPreferences ?? Substitute.For<IAnglerPreferencesProvider>());
         context.Services.AddSingleton(Substitute.For<ICultureService>());

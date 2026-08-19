@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Catch.Services;
-using FishingLogBook.Web.Features.Users.Services;
+using FishingLogBook.Web.Features.Users.Clients;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using NSubstitute;

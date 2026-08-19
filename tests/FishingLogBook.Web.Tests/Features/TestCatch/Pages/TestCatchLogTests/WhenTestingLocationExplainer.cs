@@ -2,11 +2,11 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
-using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
+using FishingLogBook.Web.Features.TestCatch.Offline.Stores;
+using FishingLogBook.Web.Features.TestCatch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.TestCatch.Pages.TestCatchLog;
-using FishingLogBook.Web.Features.TestCatch.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 

@@ -1,7 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Dtos;
-using FishingLogBook.Web.Features.Profile.Services;
+using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 
