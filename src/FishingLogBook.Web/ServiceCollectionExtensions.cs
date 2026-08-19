@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFishingPreferenceClient, FishingPreferenceClient>();
         services.AddScoped<IAnglerPreferencesStore, IndexedDbAnglerPreferencesStore>();
         services.AddScoped<IAnglerPreferencesProvider, AnglerPreferencesProvider>();
+        services.AddScoped<IProfileSummaryProvider, ProfileSummaryProvider>();
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<ITimeService, TimeService>();

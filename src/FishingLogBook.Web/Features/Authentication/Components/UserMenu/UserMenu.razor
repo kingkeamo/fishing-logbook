@@ -1,0 +1,54 @@
+<AuthorizeView>
+    <Authorized Context="authentication">
+        <MudMenu AnchorOrigin="Origin.BottomRight"
+                 TransformOrigin="Origin.TopRight"
+                 Dense="true"
+                 id="user-menu">
+            <ActivatorContent>
+                <MudTooltip Text="@SignedInLabel(authentication.User)">
+                    <MudIconButton aria-label="@Loc["Auth_UserMenu"]"
+                                   Color="Color.Inherit"
+                                   Class="user-menu-activator"
+                                   id="user-menu-button">
+                        @if (_summary.HasPhotograph)
+                        {
+                            <MudAvatar Size="Size.Small" id="user-menu-photograph">
+                                <MudImage Src="@_summary.PhotographUrl"
+                                          Alt="@Loc["Auth_UserAvatarAlt"]"
+                                          ObjectFit="ObjectFit.Cover" />
+                            </MudAvatar>
+                        }
+                        else
+                        {
+                            <MudAvatar Size="Size.Small" Color="Color.Secondary" id="user-menu-default-avatar">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" aria-hidden="true" />
+                            </MudAvatar>
+                        }
+                    </MudIconButton>
+                </MudTooltip>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.Person" id="user-menu-profile">
+                    @Loc["Profile_Nav"]
+                </MudMenuItem>
+                <MudMenuItem OnClick="BeginSignOut" Icon="@Icons.Material.Filled.Logout" id="user-menu-sign-out">
+                    @Loc["Auth_SignOut"]
+                </MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </Authorized>
+    <NotAuthorized>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Inherit"
+                   OnClick="BeginSignIn"
+                   id="auth-sign-in-button">
+            @Loc["Auth_SignIn"]
+        </MudButton>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Inherit"
+                   OnClick="BeginSignIn"
+                   id="auth-create-account-button">
+            @Loc["Auth_CreateAccount"]
+        </MudButton>
+    </NotAuthorized>
+</AuthorizeView>

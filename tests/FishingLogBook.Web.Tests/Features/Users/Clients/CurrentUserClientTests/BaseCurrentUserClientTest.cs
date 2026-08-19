@@ -4,7 +4,7 @@ using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Users.Clients;
 using NSubstitute;
 
-namespace FishingLogBook.Web.Tests.Features.Users.Services.CurrentUserClientTests;
+namespace FishingLogBook.Web.Tests.Features.Users.Clients.CurrentUserClientTests;
 
 public class BaseCurrentUserClientTest
 {

@@ -16,6 +16,8 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private readonly MudTheme _theme = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+    private const Breakpoint NavigationBreakpoint = Breakpoint.Md;
+
     private bool _isDarkMode;
     private bool _drawerOpen;
     private DotNetObjectReference<MainLayout>? _dotNetReference;

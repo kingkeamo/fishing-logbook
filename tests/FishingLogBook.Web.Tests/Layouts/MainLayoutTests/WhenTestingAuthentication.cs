@@ -23,7 +23,7 @@ public class WhenTestingAuthentication : BaseMainLayoutTest
     }
 
     [Fact]
-    public async Task ItShouldShowSignOutWhenAuthenticated()
+    public async Task ItShouldShowACompactUserMenuInsteadOfEmailAndSignOutWhenAuthenticated()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -33,7 +33,10 @@ public class WhenTestingAuthentication : BaseMainLayoutTest
         var cut = context.Render<MainLayout>();
 
         // Assert
-        cut.Find("#auth-sign-out-button").TextContent.Should().Contain("Sign out");
+        cut.Find("#user-menu-button").Should().NotBeNull();
         cut.FindAll("#auth-sign-in-button").Should().BeEmpty();
+        cut.FindAll("#auth-sign-out-button").Should().BeEmpty();
+        cut.FindAll("#auth-current-user-email").Should().BeEmpty();
+        cut.Markup.Should().NotContain("tester@example.test");
     }
 }

@@ -3,7 +3,7 @@ using System.Text.Json;
 using AwesomeAssertions;
 using FishingLogBook.Shared.Dtos;
 
-namespace FishingLogBook.Web.Tests.Features.Users.Services.CurrentUserClientTests;
+namespace FishingLogBook.Web.Tests.Features.Users.Clients.CurrentUserClientTests;
 
 public class WhenTestingGetCurrent : BaseCurrentUserClientTest
 {
