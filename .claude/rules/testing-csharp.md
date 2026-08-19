@@ -400,13 +400,12 @@ Every test method uses exactly these section comments — no other comments:
   for meaningful inputs (see **Dependency verification**). When the handler calls
   `.Adapt<TArgs>()`, `Arg.Is<TArgs>` on the adapted fields is what proves Mapster copied
   the command — do not replace that with `Arg.Any<TArgs>()`.
-- Matching property names Adapt by convention without scanning. If an `IRegister`
-  customizes the pair, register it on `TypeAdapterConfig.GlobalSettings` in the test
-  constructor before `Handle` — handlers call `source.Adapt<T>()`, which uses
-  GlobalSettings, not a local config:
+- Matching property names Adapt by convention without scanning. When the mapping needs an
+  `IRegister`, initialise it through the shared `MapsterTestConfig` helper — never register
+  per test class. See **Mapster and shared static configuration** below.
 
 ```csharp
-((IRegister)new UserMappingRegistration()).Register(TypeAdapterConfig.GlobalSettings);
+MapsterTestConfig.EnsureInitialised();
 ```
 
 - Build domain inputs with the shared builders from `FishingLogBook.Tests.Common`.
@@ -415,9 +414,13 @@ Every test method uses exactly these section comments — no other comments:
 
 ## Service tests (Application.Tests)
 
-- Extend `Base{Service}Test`. Construct the service with `Substitute.For<I*Repository>()`
-  and a Mapster `TypeAdapterConfig` when the service calls `.Adapt<T>()` or injects
-  `IMapper` (same as rah-portal):
+- Extend `Base{Service}Test`. Construct the service with `Substitute.For<I*Repository>()`.
+- The Mapster setup depends on **how the service maps**, and getting this wrong produces
+  tests that pass or fail depending on run order:
+  - Service calls the static `source.Adapt<T>()` → that uses `TypeAdapterConfig.GlobalSettings`.
+    A local config has no effect. Call `MapsterTestConfig.EnsureInitialised()`.
+  - Service injects `IMapper` → build it from an isolated config, or use
+    `MapsterTestConfig.CreateTestMapper()` where the project provides one.
 
 ```csharp
 var config = new TypeAdapterConfig();
@@ -427,6 +430,58 @@ Mapper = new Mapper(config);
 
 - Assert FluentResults `IsSuccess` / `IsFailed` **and** `Received(n)` / `DidNotReceive()`
   with `Arg.Is<>` on meaningful inputs (see **Dependency verification**).
+
+## Mapster and shared static configuration (mandatory)
+
+`TypeAdapterConfig.GlobalSettings` is **process-wide mutable state**, and xUnit runs test
+classes in parallel. Registering mappings per test class corrupts it two ways:
+
+1. **Race.** Concurrent `Register` / mapping compilation on the same static config
+   intermittently yields mappings with dropped properties. The symptom is a test that
+   fails perhaps one run in four, passes in isolation, and names a property as null that
+   the code plainly sets — so it reads like a product bug and gets "fixed" in the wrong place.
+2. **Order dependence.** A class that registers only its own `IRegister` leaves a *partial*
+   config behind. Whether another class then sees the mapping it needs depends on which
+   test ran first, and on a configuration that never matches production.
+
+Register **once per test assembly**, scanning the same assembly the composition root
+scans, behind a lock:
+
+```csharp
+public static class MapsterTestConfig
+{
+    private static readonly object InitialisationLock = new();
+
+    private static bool _initialised;
+
+    public static void EnsureInitialised()
+    {
+        lock (InitialisationLock)
+        {
+            if (_initialised)
+            {
+                return;
+            }
+
+            TypeAdapterConfig.GlobalSettings.Scan(typeof(UserMappingRegistration).Assembly);
+            _initialised = true;
+        }
+    }
+}
+```
+
+Put it in `{TestProject}/Common/MapsterTestConfig.cs`, expose the namespace as a global
+`<Using>` in the csproj, and call `EnsureInitialised()` from the `Base{Sut}Test`
+constructor. Scanning the assembly — rather than registering one `IRegister` — is what
+makes tests see the configuration production actually builds.
+
+**Do not** disable test parallelisation to hide this. That masks the race, slows the whole
+suite, and leaves the order dependence in place. `DisableTestParallelization` is only for
+projects with genuinely process-wide test state that cannot be removed — for example a
+suite that mutates `CultureInfo.CurrentCulture`.
+
+The same reasoning applies to any other shared static a test mutates: fix the sharing, do
+not serialise the suite around it.
 
 ## Validator tests (Application.Tests)
 
