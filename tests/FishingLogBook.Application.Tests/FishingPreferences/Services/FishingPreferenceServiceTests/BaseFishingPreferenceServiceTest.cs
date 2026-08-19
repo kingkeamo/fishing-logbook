@@ -25,7 +25,8 @@ public class BaseFishingPreferenceServiceTest
     {
         Sut = new FishingPreferenceService(
             MockFishingCatalogueRepository,
-            MockFishingPreferenceRepository);
+            MockFishingPreferenceRepository,
+            TestMapper.Create());
     }
 
     protected static IReadOnlyList<FishingMethod> CatalogueMethods()

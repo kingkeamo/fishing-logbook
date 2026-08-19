@@ -3,6 +3,7 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Catches.Commands;
@@ -22,10 +23,12 @@ public sealed class UpdateCatchLocationVisibilityHandler
     : IRequestHandler<UpdateCatchLocationVisibilityCommand, UpdateCatchLocationVisibilityResponse>
 {
     private readonly ICatchService _catchService;
+    private readonly IMapper _mapper;
 
-    public UpdateCatchLocationVisibilityHandler(ICatchService catchService)
+    public UpdateCatchLocationVisibilityHandler(ICatchService catchService, IMapper mapper)
     {
         _catchService = catchService;
+        _mapper = mapper;
     }
 
     public async Task<UpdateCatchLocationVisibilityResponse> Handle(
@@ -33,11 +36,7 @@ public sealed class UpdateCatchLocationVisibilityHandler
         CancellationToken cancellationToken)
     {
         var result = await _catchService.UpdateLocationVisibilityAsync(
-            new UpdateCatchLocationVisibilityArgs
-            {
-                CatchId = command.CatchId,
-                Visibility = command.Visibility
-            },
+            _mapper.Map<UpdateCatchLocationVisibilityArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

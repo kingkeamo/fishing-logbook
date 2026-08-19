@@ -11,6 +11,8 @@ public sealed class CatchMappingRegistration : IRegister
 {
     void IRegister.Register(TypeAdapterConfig config)
     {
+        config.NewConfig<CatchDto, CatchDto>()
+            .MapWith(source => source);
         config.NewConfig<RecordCatchPhotographCommand, RecordCatchPhotographArgs>()
             .Map(destination => destination.PhotographId, source => source.Photograph.PhotographId)
             .Map(destination => destination.ObjectKey, source => source.Photograph.ObjectKey)

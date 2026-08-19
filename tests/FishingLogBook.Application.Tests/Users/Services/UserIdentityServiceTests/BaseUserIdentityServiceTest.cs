@@ -19,7 +19,8 @@ public class BaseUserIdentityServiceTest
     {
         Sut = new UserIdentityService(
             MockUserIdentityRepository,
-            NullLogger<UserIdentityService>.Instance);
+            NullLogger<UserIdentityService>.Instance,
+            TestMapper.Create());
     }
 
     protected static ResolveUserIdentityArgs ArgsFor(string subject, string email = "eamonn@example.test")

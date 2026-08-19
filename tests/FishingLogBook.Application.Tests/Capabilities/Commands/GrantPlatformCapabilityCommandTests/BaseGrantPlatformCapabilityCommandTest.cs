@@ -13,6 +13,6 @@ public class BaseGrantPlatformCapabilityCommandTest
 
     protected BaseGrantPlatformCapabilityCommandTest()
     {
-        Sut = new GrantPlatformCapabilityHandler(MockPlatformCapabilityService);
+        Sut = new GrantPlatformCapabilityHandler(MockPlatformCapabilityService, TestMapper.Create());
     }
 }

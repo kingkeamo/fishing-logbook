@@ -13,6 +13,6 @@ public class BaseRevokePlatformCapabilityCommandTest
 
     protected BaseRevokePlatformCapabilityCommandTest()
     {
-        Sut = new RevokePlatformCapabilityHandler(MockPlatformCapabilityService);
+        Sut = new RevokePlatformCapabilityHandler(MockPlatformCapabilityService, TestMapper.Create());
     }
 }

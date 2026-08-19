@@ -400,7 +400,7 @@ Every test method uses exactly these section comments — no other comments:
   for meaningful inputs (see **Dependency verification**). When the handler maps its input,
   `Arg.Is<TArgs>` on the mapped fields is what proves the mapping copied the command — do
   not replace that with `Arg.Any<TArgs>()`.
-- A handler that maps through `IMapper` needs one in its constructor. Build an **isolated**
+- Handlers that adapt their input take `IMapper` in the constructor. Build an **isolated**
   mapper per test — never shared static configuration. See **Mapster in tests** below.
 
 ```csharp
@@ -467,7 +467,7 @@ Put it in `{TestProject}/Common/TestMapper.cs`, expose the namespace as a global
 in the csproj, and pass `TestMapper.Create()` where the SUT takes an `IMapper`. Nothing is
 shared, so no lock and no initialisation flag are needed.
 
-A suite whose SUT no longer maps anything needs no mapper at all — do not wire one in
+A suite whose SUT takes no `IMapper` needs no mapper at all — do not wire one in
 "just in case".
 
 **Do not** disable test parallelisation, put otherwise-independent tests into one

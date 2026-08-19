@@ -12,6 +12,6 @@ public class BaseGetCatchQueryTest
 
     protected BaseGetCatchQueryTest()
     {
-        Sut = new GetCatchHandler(MockCatchService);
+        Sut = new GetCatchHandler(MockCatchService, TestMapper.Create());
     }
 }

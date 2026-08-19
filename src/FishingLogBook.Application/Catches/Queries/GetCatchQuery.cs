@@ -3,6 +3,7 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Catches.Queries;
@@ -20,16 +21,18 @@ public sealed class GetCatchResponse : ValidatedResponse
 public sealed class GetCatchHandler : IRequestHandler<GetCatchQuery, GetCatchResponse>
 {
     private readonly ICatchService _catchService;
+    private readonly IMapper _mapper;
 
-    public GetCatchHandler(ICatchService catchService)
+    public GetCatchHandler(ICatchService catchService, IMapper mapper)
     {
         _catchService = catchService;
+        _mapper = mapper;
     }
 
     public async Task<GetCatchResponse> Handle(GetCatchQuery query, CancellationToken cancellationToken)
     {
         var result = await _catchService.GetViewAsync(
-            new GetCatchArgs { CatchId = query.CatchId },
+            _mapper.Map<GetCatchArgs>(query),
             cancellationToken);
         if (result.IsFailed)
         {

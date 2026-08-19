@@ -4,6 +4,7 @@ using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Catches.Commands;
@@ -23,10 +24,12 @@ public sealed class UpsertCatchResponse : ValidatedResponse
 public sealed class UpsertCatchHandler : IRequestHandler<UpsertCatchCommand, UpsertCatchResponse>
 {
     private readonly ICatchService _catchService;
+    private readonly IMapper _mapper;
 
-    public UpsertCatchHandler(ICatchService catchService)
+    public UpsertCatchHandler(ICatchService catchService, IMapper mapper)
     {
         _catchService = catchService;
+        _mapper = mapper;
     }
 
     public async Task<UpsertCatchResponse> Handle(
@@ -34,11 +37,7 @@ public sealed class UpsertCatchHandler : IRequestHandler<UpsertCatchCommand, Ups
         CancellationToken cancellationToken)
     {
         var result = await _catchService.UpsertAsync(
-            new UpsertCatchArgs
-            {
-                UserId = command.UserId,
-                Catch = command.Catch
-            },
+            _mapper.Map<UpsertCatchArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

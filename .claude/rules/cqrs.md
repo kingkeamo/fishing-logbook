@@ -98,11 +98,10 @@ Endpoint → IMediator.Send → Handler → I*Service → I*Repository
 - Services inject `I*Repository` (and other services). They return
   **FluentResults** `Result` / `Result<T>` — not exceptions for expected failures.
 - Repositories return FluentResults `Result` / `Result<T>` (see **`database.md`**).
-- Map through the **constructor-injected `IMapper`** where the mapping is genuinely
-  configured (nested paths, `MapWith`, renames, conversions). Where the mapping is a
-  trivial same-name copy, construct the target explicitly instead — that is clearer than
-  injecting a mapper for it. Domain construction (`new User`, `new UserIdentity`) stays
-  explicit when it represents behaviour.
+- Map through the **constructor-injected `IMapper`** at every application mapping
+  boundary (command/query → Args, Args → lookup Args, Domain → Shared DTO), including
+  mappings that are currently trivial. Domain construction (`new User`, `new UserIdentity`)
+  stays explicit when it represents behaviour.
 - Handlers do **not** manage SQL transactions. Begin/commit/rollback and unique-violation
   recovery belong in the application service/repository boundary (`database.md`). The
   handler is orchestration only.
@@ -121,10 +120,8 @@ That rules out the static entry points, which all read `GlobalSettings`:
 `source.BuildAdapter()`. An architecture test scans the compiled production assemblies for
 references to them; do not reintroduce them.
 
-Classify every mapping boundary:
-
-**Configured mapping** — nested paths, `MapWith`, renames, type conversions. Register it in
-an `IRegister` and map through a constructor-injected `IMapper`:
+A class that adapts one application model to another injects `IMapper` and maps through
+it — **consistently, including when today's mapping is trivial or convention-based**:
 
 ```csharp
 public UpdateOwnProfileHandler(IProfileService profileService, IMapper mapper)
@@ -134,22 +131,17 @@ var result = await _profileService.UpdateOwnAsync(
     cancellationToken);
 ```
 
-**Trivial mapping** — a same-name copy of a handful of properties. Construct the target
-explicitly. Do not register it, and do not inject `IMapper` just for it:
+Do not hand-construct a mapped object because the mapping currently has only a few
+matching properties, and do not reach for static `.Adapt<T>()` as a shortcut. Mapping
+through the injected mapper keeps the call site unchanged as the mapping grows.
 
-```csharp
-var result = await _userIdentityService.ResolveAsync(
-    new ResolveUserIdentityArgs
-    {
-        Provider = command.Provider,
-        Subject = command.Subject,
-        Email = command.Email
-    },
-    cancellationToken);
-```
+Where the mapping *is* the behaviour — building a Domain entity with ids, ownership links
+and invariants — construct it explicitly. That is domain construction, not adaptation.
 
-`Common/Mappings/` therefore holds **only** genuinely configured mappings. An `IRegister`
-whose `Register` body would be empty should not exist.
+**Convention mappings need no registration.** Matching property names map on demand, so
+`Common/Mappings/` holds only mappings that need configuring — nested paths, `MapWith`,
+renames, conversions. An `IRegister` whose `Register` body would be empty should not
+exist.
 
 Do **not** require Mapster for Domain object creation. `new User { ... }` and
 `new UserIdentity { ... }` are correct when that construction is application or
@@ -157,8 +149,8 @@ domain behaviour (ids, ownership links, required fields). Do not hide that
 construction behind a mapper merely for consistency.
 
 - Use `.Map(...)` only when names differ, nested objects need mapping, or a property
-  must be ignored or transformed. A `NewConfig` with no `.Map` is convention-only — prefer
-  explicit construction and delete the registration.
+  must be ignored or transformed. A `NewConfig` with no `.Map` adds nothing over the
+  convention — delete it; the injected mapper still maps the pair.
 - Put `IRegister` types in `Application/Common/Mappings/` named `*MappingRegistration`.
 - Composition root — the config is a **new instance owned by the container**:
 
@@ -247,10 +239,10 @@ application-safe values and then sends a command or query. For external identity
 resolution that means `Provider`, `Subject`, and authenticated `Email` (for Cognito,
 `Subject` is the validated `sub` claim and `Email` is the authenticated `email`
 claim). The handler maps those command fields with
-an explicitly constructed `ResolveUserIdentityArgs` and passes that object to
+`_mapper.Map<ResolveUserIdentityArgs>(command)` and passes that object to
 `IUserIdentityService`. Add later profile fields (FirstName, LastName, DisplayName)
 to the command and the args type — do not widen
-`ResolveAsync` with more primitives. Email is
+`ResolveAsync` with more primitives, and do not hand-map the new fields. Email is
 account data, not the identity lookup key. Application code must not parse JWT claims.
 
 ## Internal identity
@@ -284,5 +276,7 @@ Do not parse claims or resolve `Provider` + `Subject` again in every handler.
   any other static Mapster entry point in production code.
 - Do not add a static lock or `_registered` flag to make repeated container composition
   safe — give each container its own config instead.
+- Do not hand-construct an adapted object because the mapping is currently a small
+  same-name copy — inject `IMapper` and map through it.
 - Do not construct a partially initialised Domain entity to carry lookup/filter
   criteria — use `*Args`.

@@ -17,6 +17,6 @@ public class BaseCreateCatchPhotographUploadCommandTest
         ((IRegister)new CatchMappingRegistration()).Register(
             TypeAdapterConfig.GlobalSettings);
         MockCatchPhotographService.IsObjectStorageConfigured.Returns(true);
-        Sut = new CreateCatchPhotographUploadHandler(MockCatchPhotographService);
+        Sut = new CreateCatchPhotographUploadHandler(MockCatchPhotographService, TestMapper.Create());
     }
 }

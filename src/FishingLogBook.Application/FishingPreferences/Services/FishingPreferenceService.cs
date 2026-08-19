@@ -4,6 +4,7 @@ using FishingLogBook.Application.FishingPreferences.Errors;
 using FishingLogBook.Domain.Catalogue;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
+using MapsterMapper;
 
 namespace FishingLogBook.Application.FishingPreferences.Services;
 
@@ -14,13 +15,16 @@ public sealed class FishingPreferenceService : IFishingPreferenceService
 
     private readonly IFishingCatalogueRepository _fishingCatalogueRepository;
     private readonly IFishingPreferenceRepository _fishingPreferenceRepository;
+    private readonly IMapper _mapper;
 
     public FishingPreferenceService(
         IFishingCatalogueRepository fishingCatalogueRepository,
-        IFishingPreferenceRepository fishingPreferenceRepository)
+        IFishingPreferenceRepository fishingPreferenceRepository,
+        IMapper mapper)
     {
         _fishingCatalogueRepository = fishingCatalogueRepository;
         _fishingPreferenceRepository = fishingPreferenceRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<IReadOnlyList<FishingMethodDto>>> GetCatalogueMethodsAsync(
@@ -33,8 +37,7 @@ public sealed class FishingPreferenceService : IFishingPreferenceService
         }
 
         return Result.Ok<IReadOnlyList<FishingMethodDto>>(
-            [.. methods.Value.Select(method =>
-                new FishingMethodDto(method.Id, method.Code, method.Name))]);
+            [.. methods.Value.Select(_mapper.Map<FishingMethodDto>)]);
     }
 
     public async Task<Result<IReadOnlyList<SpeciesDto>>> GetCatalogueSpeciesAsync(
@@ -47,8 +50,7 @@ public sealed class FishingPreferenceService : IFishingPreferenceService
         }
 
         return Result.Ok<IReadOnlyList<SpeciesDto>>(
-            [.. species.Value.Select(item =>
-                new SpeciesDto(item.Id, item.Code, item.Name))]);
+            [.. species.Value.Select(_mapper.Map<SpeciesDto>)]);
     }
 
     public async Task<Result<FishingPreferencesDto>> GetPreferencesAsync(
