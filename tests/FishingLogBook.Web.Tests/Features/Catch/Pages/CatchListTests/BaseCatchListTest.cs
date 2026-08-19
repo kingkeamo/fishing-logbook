@@ -1,6 +1,8 @@
 using Bunit;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;

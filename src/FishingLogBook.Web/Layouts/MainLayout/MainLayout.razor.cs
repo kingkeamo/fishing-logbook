@@ -1,5 +1,7 @@
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
@@ -14,8 +16,10 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private readonly MudTheme _theme = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+    private const Breakpoint NavigationBreakpoint = Breakpoint.Md;
+
     private bool _isDarkMode;
-    private bool _drawerOpen;
+    private bool _drawerOpen = true;
     private DotNetObjectReference<MainLayout>? _dotNetReference;
 
     [Inject]

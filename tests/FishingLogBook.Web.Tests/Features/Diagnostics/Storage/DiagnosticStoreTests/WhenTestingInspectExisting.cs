@@ -3,6 +3,7 @@ using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
+using FishingLogBook.Web.Features.Diagnostics.Storage.Stores;
 using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Tests.Features.Diagnostics.Storage.DiagnosticStoreTests;

@@ -3,6 +3,7 @@ using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.TestCatch.Models;
 using FishingLogBook.Web.Features.TestCatch.Offline;
+using FishingLogBook.Web.Features.TestCatch.Offline.Stores;
 
 namespace FishingLogBook.Web.Tests.Features.TestCatch.Offline.TestCatchStoreTests;
 

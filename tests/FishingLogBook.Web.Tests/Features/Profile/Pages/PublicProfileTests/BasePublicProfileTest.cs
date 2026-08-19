@@ -1,7 +1,7 @@
 using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Shared.Dtos;
-using FishingLogBook.Web.Features.Profile.Services;
+using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;

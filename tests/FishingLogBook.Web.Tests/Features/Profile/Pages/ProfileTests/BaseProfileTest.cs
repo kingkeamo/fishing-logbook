@@ -2,9 +2,11 @@ using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline;
-using FishingLogBook.Web.Features.Profile.Services;
+using FishingLogBook.Web.Features.Profile.Offline.Stores;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -23,8 +25,9 @@ public class BaseProfileTest
         IProfileClient profileClient,
         IFishingPreferenceClient? fishingPreferenceClient = null,
         IModalService? modalService = null,
-        IAnglerPreferencesCache? cache = null,
-        IAnglerPreferencesProvider? anglerPreferences = null)
+        IAnglerPreferencesStore? cache = null,
+        IAnglerPreferencesProvider? anglerPreferences = null,
+        IProfileSummaryProvider? profileSummary = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -33,9 +36,10 @@ public class BaseProfileTest
         context.Services.AddSingleton(profileClient);
         context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
         context.Services.AddSingleton(modalService ?? QuietModalService());
-        context.Services.AddSingleton(cache ?? Substitute.For<IAnglerPreferencesCache>());
+        context.Services.AddSingleton(cache ?? Substitute.For<IAnglerPreferencesStore>());
         context.Services.AddSingleton(
             anglerPreferences ?? Substitute.For<IAnglerPreferencesProvider>());
+        context.Services.AddSingleton(profileSummary ?? Substitute.For<IProfileSummaryProvider>());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         var authorization = context.AddAuthorization();

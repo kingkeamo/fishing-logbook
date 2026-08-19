@@ -126,3 +126,16 @@ html, body {
     font-size: 0.75em;
     text-transform: lowercase;
 }
+
+.app-brand {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.app-brand-name {
+    white-space: nowrap;
+}

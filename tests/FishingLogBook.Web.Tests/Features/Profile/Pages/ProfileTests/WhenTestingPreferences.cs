@@ -4,9 +4,12 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Clients;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline;
-using FishingLogBook.Web.Features.Profile.Services;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -395,8 +398,8 @@ public class WhenTestingPreferences : BaseProfileTest
         // Assert
         injected.Should().Contain(typeof(IProfileClient));
         injected.Should().Contain(typeof(IFishingPreferenceClient));
-        injected.Should().NotContain(typeof(FishingLogBook.Web.Features.Catch.Offline.ICatchStore));
-        injected.Should().NotContain(typeof(FishingLogBook.Web.Features.Catch.Services.ICatchClient));
+        injected.Should().NotContain(typeof(FishingLogBook.Web.Features.Catch.Offline.Stores.ICatchStore));
+        injected.Should().NotContain(typeof(FishingLogBook.Web.Features.Catch.Clients.ICatchClient));
     }
 
     private static IProfileClient LegacyProfileClient(Guid userId)

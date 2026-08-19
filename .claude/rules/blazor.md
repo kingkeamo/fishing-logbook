@@ -33,13 +33,48 @@ code; tests use Arrange / Act / Assert only.
 feature, it must live under that feature.
 
 ```text
-Features/<Feature>/Pages/        → routable pages for that feature
-Features/<Feature>/Components/   → feature-owned reusable UI
-Features/<Feature>/Models/       → feature-owned UI/domain view models
-Features/<Feature>/Services/     → feature-owned API clients and application services
-Features/<Feature>/Offline/      → feature-owned IndexedDB/sync (when the feature has it)
-Features/<Feature>/Storage/      → feature-owned persistence that is not Catch offline
+Features/<Feature>/Pages/                    → routable pages for that feature
+Features/<Feature>/Components/               → feature-owned reusable UI
+Features/<Feature>/Models/                   → feature-owned UI/domain view models
+Features/<Feature>/Services/                 → feature-owned *Service only
+Features/<Feature>/Clients/                  → feature-owned *Client (API clients)
+Features/<Feature>/Providers/                → feature-owned *Provider
+Features/<Feature>/Http/                     → DelegatingHandlers and other HTTP pipeline types
+Features/<Feature>/Offline/Stores/           → feature-owned *Store (IndexedDB persistence)
+Features/<Feature>/Offline/Synchronisers/    → feature-owned *Synchroniser
+Features/<Feature>/Storage/Stores/           → *Store persistence that is not Catch offline
 ```
+
+**Role decides the folder, not just the name.** A class whose role suffix and folder
+disagree is misplaced — move it, do not rename it to fit. Create a role folder only when
+the feature actually has that role; do not create empty directories.
+
+| Suffix | Folder |
+|---|---|
+| `*Service` / `I*Service` | `Services/` |
+| `*Client` / `I*Client` | `Clients/` |
+| `*Provider` / `I*Provider` | `Providers/` |
+| `*Store` / `I*Store` | `Offline/Stores/` (or `Storage/Stores/`) |
+| `*Synchroniser` / `I*Synchroniser` | `Offline/Synchronisers/` |
+| `*Factory` / `I*Factory` | `Factories/` |
+| `DelegatingHandler` subclasses | `Http/` |
+| `*Model` | `Models/` |
+| `*Config` / `*Options` | root `Configuration/` |
+
+Additional rules:
+
+- **Namespaces must match the folder path.** No exceptions.
+- **One production type per file.**
+- Do not disguise a role: an HTTP message handler is not a service, and an IndexedDB
+  cache is a `*Store`.
+- Do not rename a class merely to earn a suffix. Classify its actual architectural role
+  first; if none of the roles above fit, leave the name and say why.
+- Do not create `Helpers/`, `Utils/`, `Managers/`, `Common Services/` or any other
+  dumping ground.
+- A type used by more than one unrelated feature is not feature-owned — move it to the
+  root `Common/` (for example `Common/Offline/OfflineOperation.cs`).
+- Razor pages, components and layouts keep their natural names and the three-file
+  convention. Do **not** give them role suffixes.
 
 **Do not** create global dumping-ground folders for feature-specific `Models`,
 `Services`, `Offline`, or `Components`.
@@ -231,6 +266,36 @@ abstractions live in `Browser/`.
 - Avoid inline `style="..."` on HTML elements; prefer scoped `.razor.css` or `app.css`.
   MudBlazor component parameters such as `Class`/`Style` are component API and may be used
   where appropriate.
+
+## Application shell (mandatory)
+
+`MainLayout` is the single owner of the authenticated shell: AppBar, navigation drawer,
+and the global content gutters. Pages must not decide whether navigation is expanded,
+whether a hamburger shows, how wide the outer gutters are, how the AppBar is laid out, or
+how the signed-in user is presented.
+
+```text
+MudLayout
+├── MudAppBar        → menu button, brand, spacer, language, theme, user menu
+├── MudDrawer        → responsive navigation
+└── MudMainContent
+    └── .app-shell-content   → global gutters
+        └── AppErrorBoundary → @Body
+```
+
+- Use MudBlazor's own responsive primitives. **Do not** add a bespoke
+  `window.innerWidth`/resize JS service for layout the framework already solves.
+- The drawer uses `DrawerVariant.Responsive` with `Breakpoint.Md`: collapsed and
+  hamburger-driven below it, persistent at and above it.
+- Hide chrome that is only needed at one size with MudBlazor's display utilities
+  (`d-md-none`, `d-none d-sm-flex`) rather than conditional rendering, so the contract
+  stays assertable in bUnit.
+- The AppErrorBoundary wraps `@Body` **only**. Never wrap the AppBar or drawer in it — a
+  page failure must leave navigation usable.
+- Pages own their *content* max-width (`MudContainer MaxWidth="…" Gutters="false"`) and
+  nothing else. A focused workflow stays narrow; a list screen may use more width.
+- The AppBar must never block on a network call. Load user/profile enrichment in
+  `OnAfterRenderAsync` and render a safe default first.
 
 ## JavaScript interop
 

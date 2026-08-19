@@ -2,9 +2,10 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline;
-using FishingLogBook.Web.Features.Profile.Services;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -49,6 +50,9 @@ public partial class Profile : ComponentBase, IDisposable
 
     [Inject]
     private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
+
+    [Inject]
+    private IProfileSummaryProvider ProfileSummary { get; set; } = default!;
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
@@ -105,6 +109,7 @@ public partial class Profile : ComponentBase, IDisposable
             var saved = await ProfileClient.UpdateOwnAsync(BuildUpdate(), _cancellationTokenSource.Token);
             saved = await SavePhotographAsync(saved);
             Apply(saved);
+            await ProfileSummary.RefreshAsync(_cancellationTokenSource.Token);
             var preferences = await FishingPreferenceClient.UpdatePreferencesAsync(
                 BuildPreferencesUpdate(),
                 _cancellationTokenSource.Token);

@@ -600,6 +600,12 @@
   <data name="Auth_SignOut" xml:space="preserve">
     <value>Sign out</value>
   </data>
+  <data name="Auth_UserMenu" xml:space="preserve">
+    <value>Account menu</value>
+  </data>
+  <data name="Auth_UserAvatarAlt" xml:space="preserve">
+    <value>Your profile photograph</value>
+  </data>
   <data name="Modal_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>

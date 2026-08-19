@@ -4,6 +4,8 @@ using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Pages.DiagnosticsInspector;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
+using FishingLogBook.Web.Features.Diagnostics.Storage.Stores;
+using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 

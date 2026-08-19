@@ -2,6 +2,7 @@ using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
+using FishingLogBook.Web.Features.Diagnostics.Storage.Stores;
 
 namespace FishingLogBook.Web.Tests.Features.Diagnostics.TestSupport;
 

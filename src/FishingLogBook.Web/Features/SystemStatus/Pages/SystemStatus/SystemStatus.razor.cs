@@ -1,8 +1,7 @@
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Features.SystemStatus.Clients;
 using FishingLogBook.Web.Features.SystemStatus.Models;
-using FishingLogBook.Web.Features.SystemStatus.Services;
-using FishingLogBook.Web.Features.TestCatch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;

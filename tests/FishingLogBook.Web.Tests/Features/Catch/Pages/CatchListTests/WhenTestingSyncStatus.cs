@@ -3,6 +3,8 @@ using Bunit;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Pages.CatchList;
 using FishingLogBook.Web.Localization;
 using NSubstitute;

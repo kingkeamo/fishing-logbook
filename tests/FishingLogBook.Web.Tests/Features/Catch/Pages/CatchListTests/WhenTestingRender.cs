@@ -6,6 +6,7 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.CatchList;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
