@@ -5,7 +5,6 @@ using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
-using Mapster;
 using MediatR;
 
 namespace FishingLogBook.Application.Catches.Commands;
@@ -43,7 +42,11 @@ public sealed class CreateCatchPhotographUploadHandler
         }
 
         var result = await _catchPhotographService.CreateUploadAsync(
-            command.Adapt<CreateCatchPhotographUploadArgs>(),
+            new CreateCatchPhotographUploadArgs
+            {
+                CatchId = command.CatchId,
+                Request = command.Request
+            },
             cancellationToken);
         if (result.IsFailed)
         {

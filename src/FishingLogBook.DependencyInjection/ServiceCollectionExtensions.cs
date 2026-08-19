@@ -62,8 +62,9 @@ public static class ServiceCollectionExtensions
 
     private static void AddFishingLogBookMappings(this IServiceCollection services)
     {
-        var typeAdapterConfig = TypeAdapterConfig.GlobalSettings;
-        typeAdapterConfig.Scan(typeof(UserMappingRegistration).Assembly);
+        var typeAdapterConfig = new TypeAdapterConfig();
+        typeAdapterConfig.Scan(typeof(CatchMappingRegistration).Assembly);
+        services.AddSingleton(typeAdapterConfig);
         services.AddSingleton<IMapper>(new Mapper(typeAdapterConfig));
     }
 

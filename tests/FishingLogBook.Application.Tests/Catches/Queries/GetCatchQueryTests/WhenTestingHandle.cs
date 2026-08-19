@@ -13,7 +13,6 @@ public class WhenTestingHandle : BaseGetCatchQueryTest
 {
     public WhenTestingHandle()
     {
-        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

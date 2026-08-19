@@ -3,7 +3,6 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using FluentValidation;
-using Mapster;
 using MediatR;
 
 namespace FishingLogBook.Application.Capabilities.Commands;
@@ -33,7 +32,11 @@ public sealed class GrantPlatformCapabilityHandler : IRequestHandler<GrantPlatfo
         CancellationToken cancellationToken)
     {
         var result = await _platformCapabilityService.GrantAsync(
-            command.Adapt<GrantPlatformCapabilityArgs>(),
+            new GrantPlatformCapabilityArgs
+            {
+                TargetUserId = command.TargetUserId,
+                Capability = command.Capability
+            },
             cancellationToken);
         if (result.IsFailed)
         {

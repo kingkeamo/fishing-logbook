@@ -1,9 +1,7 @@
-using FishingLogBook.Application.Common.Mappings;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
-using Mapster;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Profiles.Commands.UpdateOwnProfileCommandTests;
@@ -15,8 +13,7 @@ public class BaseUpdateOwnProfileCommandTest
 
     protected BaseUpdateOwnProfileCommandTest()
     {
-        MapsterTestConfig.EnsureInitialised();
-        Sut = new UpdateOwnProfileHandler(MockProfileService);
+        Sut = new UpdateOwnProfileHandler(MockProfileService, TestMapper.Create());
     }
 
     protected static UpdateOwnProfileCommand Command(

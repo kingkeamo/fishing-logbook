@@ -14,7 +14,6 @@ public class WhenTestingHandle : BaseUpsertCatchCommandTest
 {
     public WhenTestingHandle()
     {
-        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

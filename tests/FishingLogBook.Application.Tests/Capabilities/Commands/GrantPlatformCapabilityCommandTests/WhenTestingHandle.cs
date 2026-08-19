@@ -14,7 +14,6 @@ public class WhenTestingHandle : BaseGrantPlatformCapabilityCommandTest
 {
     public WhenTestingHandle()
     {
-        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

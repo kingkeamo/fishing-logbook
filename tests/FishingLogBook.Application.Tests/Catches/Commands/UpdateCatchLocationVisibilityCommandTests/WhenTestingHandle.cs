@@ -13,7 +13,6 @@ public class WhenTestingHandle : BaseUpdateCatchLocationVisibilityCommandTest
 {
     public WhenTestingHandle()
     {
-        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

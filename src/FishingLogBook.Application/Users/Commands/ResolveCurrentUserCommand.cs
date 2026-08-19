@@ -2,7 +2,6 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FluentValidation;
-using Mapster;
 using MediatR;
 
 namespace FishingLogBook.Application.Users.Commands;
@@ -35,7 +34,12 @@ public sealed class ResolveCurrentUserHandler : IRequestHandler<ResolveCurrentUs
         CancellationToken cancellationToken)
     {
         var result = await _userIdentityService.ResolveAsync(
-            command.Adapt<ResolveUserIdentityArgs>(),
+            new ResolveUserIdentityArgs
+            {
+                Provider = command.Provider,
+                Subject = command.Subject,
+                Email = command.Email
+            },
             cancellationToken);
         if (result.IsFailed)
         {

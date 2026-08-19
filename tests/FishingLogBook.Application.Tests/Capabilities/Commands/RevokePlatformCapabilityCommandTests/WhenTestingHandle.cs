@@ -14,7 +14,6 @@ public class WhenTestingHandle : BaseRevokePlatformCapabilityCommandTest
 {
     public WhenTestingHandle()
     {
-        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

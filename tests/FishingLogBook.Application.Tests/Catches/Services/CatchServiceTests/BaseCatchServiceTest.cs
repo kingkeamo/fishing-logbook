@@ -25,6 +25,7 @@ public class BaseCatchServiceTest
         Sut = new CatchService(
             MockCatchRepository,
             MockCurrentUser,
-            MockCatchLocationPrivacyService);
+            MockCatchLocationPrivacyService,
+            TestMapper.Create());
     }
 }

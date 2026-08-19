@@ -4,7 +4,6 @@ using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
-using Mapster;
 using MediatR;
 
 namespace FishingLogBook.Application.Catches.Commands;
@@ -35,7 +34,11 @@ public sealed class UpsertCatchHandler : IRequestHandler<UpsertCatchCommand, Ups
         CancellationToken cancellationToken)
     {
         var result = await _catchService.UpsertAsync(
-            command.Adapt<UpsertCatchArgs>(),
+            new UpsertCatchArgs
+            {
+                UserId = command.UserId,
+                Catch = command.Catch
+            },
             cancellationToken);
         if (result.IsFailed)
         {

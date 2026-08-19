@@ -4,7 +4,6 @@ using FishingLogBook.Application.FishingPreferences.Errors;
 using FishingLogBook.Domain.Catalogue;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
-using Mapster;
 
 namespace FishingLogBook.Application.FishingPreferences.Services;
 
@@ -34,7 +33,8 @@ public sealed class FishingPreferenceService : IFishingPreferenceService
         }
 
         return Result.Ok<IReadOnlyList<FishingMethodDto>>(
-            [.. methods.Value.Select(method => method.Adapt<FishingMethodDto>())]);
+            [.. methods.Value.Select(method =>
+                new FishingMethodDto(method.Id, method.Code, method.Name))]);
     }
 
     public async Task<Result<IReadOnlyList<SpeciesDto>>> GetCatalogueSpeciesAsync(
@@ -47,7 +47,8 @@ public sealed class FishingPreferenceService : IFishingPreferenceService
         }
 
         return Result.Ok<IReadOnlyList<SpeciesDto>>(
-            [.. species.Value.Select(item => item.Adapt<SpeciesDto>())]);
+            [.. species.Value.Select(item =>
+                new SpeciesDto(item.Id, item.Code, item.Name))]);
     }
 
     public async Task<Result<FishingPreferencesDto>> GetPreferencesAsync(

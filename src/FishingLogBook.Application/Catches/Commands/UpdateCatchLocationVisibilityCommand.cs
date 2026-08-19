@@ -3,7 +3,6 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
-using Mapster;
 using MediatR;
 
 namespace FishingLogBook.Application.Catches.Commands;
@@ -34,7 +33,11 @@ public sealed class UpdateCatchLocationVisibilityHandler
         CancellationToken cancellationToken)
     {
         var result = await _catchService.UpdateLocationVisibilityAsync(
-            command.Adapt<UpdateCatchLocationVisibilityArgs>(),
+            new UpdateCatchLocationVisibilityArgs
+            {
+                CatchId = command.CatchId,
+                Visibility = command.Visibility
+            },
             cancellationToken);
         if (result.IsFailed)
         {

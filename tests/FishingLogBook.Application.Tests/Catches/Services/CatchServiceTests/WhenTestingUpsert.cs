@@ -14,7 +14,6 @@ public class WhenTestingUpsert : BaseCatchServiceTest
 {
     public WhenTestingUpsert()
     {
-        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

@@ -5,7 +5,7 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FluentValidation;
-using Mapster;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Profiles.Commands;
@@ -34,10 +34,12 @@ public sealed class UpdateOwnProfileResponse : ValidatedResponse
 public sealed class UpdateOwnProfileHandler : IRequestHandler<UpdateOwnProfileCommand, UpdateOwnProfileResponse>
 {
     private readonly IProfileService _profileService;
+    private readonly IMapper _mapper;
 
-    public UpdateOwnProfileHandler(IProfileService profileService)
+    public UpdateOwnProfileHandler(IProfileService profileService, IMapper mapper)
     {
         _profileService = profileService;
+        _mapper = mapper;
     }
 
     public async Task<UpdateOwnProfileResponse> Handle(
@@ -45,7 +47,7 @@ public sealed class UpdateOwnProfileHandler : IRequestHandler<UpdateOwnProfileCo
         CancellationToken cancellationToken)
     {
         var result = await _profileService.UpdateOwnAsync(
-            command.Adapt<UpdateProfileArgs>(),
+            _mapper.Map<UpdateProfileArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

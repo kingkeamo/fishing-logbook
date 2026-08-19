@@ -177,8 +177,9 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 - `ServiceCollectionExtensions` exposes `AddFishingLogBook(IConfiguration)`, which composes
   `AddFishingLogBookApplication()` and `AddFishingLogBookInfrastructure(IConfiguration)`.
 - `AddFishingLogBookApplication` registers MediatR (scan Application),
-  `AddValidatorsFromAssembly`, `ValidationBehaviour<,>`, Mapster
-  (`TypeAdapterConfig.GlobalSettings.Scan` + `IMapper` singleton, same as rah-portal),
+  `AddValidatorsFromAssembly`, `ValidationBehaviour<,>`, Mapster (a **new**
+  `TypeAdapterConfig` scanned for Application `IRegister` types, registered with `IMapper`
+  — never `TypeAdapterConfig.GlobalSettings`; see **`cqrs.md` → Mapster**),
   and application `I*Service` implementations. Register new repositories in
   `AddFishingLogBookInfrastructure`. Do not register individual handlers, validators,
   or `IRegister` types.

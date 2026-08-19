@@ -3,7 +3,6 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Users;
 using FluentResults;
-using Mapster;
 using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Application.Users.Services;
@@ -42,7 +41,11 @@ public sealed class UserIdentityService : IUserIdentityService
         }
 
         var existing = await _userIdentityRepository.FindUserIdAsync(
-            args.Adapt<FindUserIdentityArgs>(),
+            new FindUserIdentityArgs
+            {
+                Provider = args.Provider,
+                Subject = args.Subject
+            },
             cancellationToken);
         if (existing.IsFailed)
         {

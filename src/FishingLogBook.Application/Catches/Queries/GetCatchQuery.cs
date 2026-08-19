@@ -3,7 +3,6 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
-using Mapster;
 using MediatR;
 
 namespace FishingLogBook.Application.Catches.Queries;
@@ -29,7 +28,9 @@ public sealed class GetCatchHandler : IRequestHandler<GetCatchQuery, GetCatchRes
 
     public async Task<GetCatchResponse> Handle(GetCatchQuery query, CancellationToken cancellationToken)
     {
-        var result = await _catchService.GetViewAsync(query.Adapt<GetCatchArgs>(), cancellationToken);
+        var result = await _catchService.GetViewAsync(
+            new GetCatchArgs { CatchId = query.CatchId },
+            cancellationToken);
         if (result.IsFailed)
         {
             return ValidatedResponse.FromError<GetCatchResponse>(result.Errors[0]);
