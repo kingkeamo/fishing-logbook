@@ -29,8 +29,8 @@ public class WhenTestingTransactionCompletion : BaseOfflineStoreTest
 
         // Act
         // Assert
-        script.Should().Contain("store.openCursor()");
-        script.Should().NotContain("store.getAll()");
+        script.Should().Contain(".openCursor()");
+        script.Should().NotContain(".getAll()");
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class WhenTestingTransactionCompletion : BaseOfflineStoreTest
         // Assert
         script.Should().Contain("function withTimeout");
         script.Should().Contain("IndexedDB open");
-        script.Should().Contain("IndexedDB photograph read");
+        script.Should().Contain("IndexedDB ${operationName}");
         script.Should().Contain("timed out");
     }
 }

@@ -348,7 +348,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await logging.Received(1).LogErrorAsync(
-            "production catch synchronisation",
+            "catch synchronisation",
             Arg.Is<Exception>(exception =>
                 exception is HttpRequestException
                 && exception.Message == "The API is unavailable."),
@@ -391,7 +391,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await logging.Received(1).LogErrorAsync(
-            "production catch synchronisation",
+            "catch synchronisation",
             Arg.Is<Exception>(exception =>
                 exception is InvalidOperationException
                 && exception.Message == "IndexedDB getAll failed."),

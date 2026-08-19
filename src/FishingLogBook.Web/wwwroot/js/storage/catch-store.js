@@ -8,12 +8,13 @@ import {
 import { emit, emitStorageEstimate, emitTimedOut } from './offline-diagnostics.js';
 
 export const CATCH_DATABASE_NAME = 'FishingLogBook';
-export const CATCH_STORE_NAME = 'testCatches';
-export const PHOTO_STORE_NAME = 'testCatchPhotographs';
-export const PRODUCTION_CATCH_STORE_NAME = 'catches';
-export const PRODUCTION_PHOTO_STORE_NAME = 'catchPhotographs';
-export const CATCH_DATABASE_VERSION = 3;
+export const CATCH_STORE_NAME = 'catches';
+export const PHOTO_STORE_NAME = 'catchPhotographs';
+export const CATCH_DATABASE_VERSION = 4;
 export const openTimeoutMs = 8000;
+
+const LEGACY_TEST_CATCH_STORE_NAME = 'testCatches';
+const LEGACY_TEST_CATCH_PHOTO_STORE_NAME = 'testCatchPhotographs';
 
 const databaseName = CATCH_DATABASE_NAME;
 const storeName = CATCH_STORE_NAME;
@@ -35,11 +36,11 @@ export function openCatchDatabase() {
             if (!db.objectStoreNames.contains(photographStoreName)) {
                 db.createObjectStore(photographStoreName, { keyPath: 'id' });
             }
-            if (!db.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)) {
-                db.createObjectStore(PRODUCTION_CATCH_STORE_NAME, { keyPath: 'id' });
+            if (db.objectStoreNames.contains(LEGACY_TEST_CATCH_STORE_NAME)) {
+                db.deleteObjectStore(LEGACY_TEST_CATCH_STORE_NAME);
             }
-            if (!db.objectStoreNames.contains(PRODUCTION_PHOTO_STORE_NAME)) {
-                db.createObjectStore(PRODUCTION_PHOTO_STORE_NAME, { keyPath: 'id' });
+            if (db.objectStoreNames.contains(LEGACY_TEST_CATCH_PHOTO_STORE_NAME)) {
+                db.deleteObjectStore(LEGACY_TEST_CATCH_PHOTO_STORE_NAME);
             }
         },
         onOpened: () => {
@@ -116,36 +117,9 @@ export function runCatchTransaction(objectStoreName, mode, operationName, execut
     }));
 }
 
-export async function putTestCatch(json) {
-    const catchRecord = JSON.parse(json);
-    await runCatchTransaction(storeName, 'readwrite', 'write', (store, succeed, fail) => {
-        const request = store.put(catchRecord);
-        request.onsuccess = () => succeed();
-        request.onerror = () => fail(request.error);
-    });
-}
-
-export async function getAllTestCatches() {
-    return runCatchTransaction(storeName, 'readonly', 'read', (store, succeed, fail) => {
-        const items = [];
-        const request = store.openCursor();
-        request.onsuccess = () => {
-            const cursor = request.result;
-            if (!cursor) {
-                succeed(items.map((item) => JSON.stringify(item)));
-                return;
-            }
-
-            items.push(cursor.value);
-            cursor.continue();
-        };
-        request.onerror = () => fail(request.error);
-    });
-}
-
-function runProductionCatchTransaction(mode, operationName, execute) {
+function runCatchWithPhotographsTransaction(mode, operationName, execute) {
     const started = performance.now();
-    const storeNames = [PRODUCTION_CATCH_STORE_NAME, PRODUCTION_PHOTO_STORE_NAME];
+    const storeNames = [CATCH_STORE_NAME, PHOTO_STORE_NAME];
     return openCatchDatabase().then((db) => runMultiStoreTransaction(db, {
         storeNames,
         mode,
@@ -199,7 +173,7 @@ export async function putCatchWithPhotographs(json, photographs) {
         throw new Error('Catch requires at least one photograph');
     }
 
-    await runProductionCatchTransaction('readwrite', 'write', (transaction, succeed, fail) => {
+    await runCatchWithPhotographsTransaction('readwrite', 'write', (transaction, succeed, fail) => {
         for (const photograph of photos) {
             if (!photograph?.id) {
                 fail(new Error('Photograph id is required'));
@@ -207,8 +181,8 @@ export async function putCatchWithPhotographs(json, photographs) {
             }
         }
 
-        const catchStore = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME);
-        const photoStore = transaction.objectStore(PRODUCTION_PHOTO_STORE_NAME);
+        const catchStore = transaction.objectStore(CATCH_STORE_NAME);
+        const photoStore = transaction.objectStore(PHOTO_STORE_NAME);
         const catchRequest = catchStore.put(catchRecord);
         catchRequest.onerror = () => fail(catchRequest.error);
         catchRequest.onsuccess = () => {
@@ -238,7 +212,7 @@ export async function updateCatchMetadata(json) {
         throw new Error('Owned Catch id is required');
     }
 
-    await runCatchTransaction(PRODUCTION_CATCH_STORE_NAME, 'readwrite', 'sync-state-write', (store, succeed, fail) => {
+    await runCatchTransaction(CATCH_STORE_NAME, 'readwrite', 'sync-state-write', (store, succeed, fail) => {
         const existingRequest = store.get(catchRecord.id);
         existingRequest.onerror = () => fail(existingRequest.error);
         existingRequest.onsuccess = () => {
@@ -283,9 +257,9 @@ export async function updateCatchMetadata(json) {
 }
 
 export async function getAllCatchesWithPhotographs(ownerUserId) {
-    return runProductionCatchTransaction('readonly', 'read', (transaction, succeed, fail) => {
-        const catchStore = transaction.objectStore(PRODUCTION_CATCH_STORE_NAME);
-        const photoStore = transaction.objectStore(PRODUCTION_PHOTO_STORE_NAME);
+    return runCatchWithPhotographsTransaction('readonly', 'read', (transaction, succeed, fail) => {
+        const catchStore = transaction.objectStore(CATCH_STORE_NAME);
+        const photoStore = transaction.objectStore(PHOTO_STORE_NAME);
         const catches = [];
         const catchRequest = catchStore.openCursor();
         catchRequest.onerror = () => fail(catchRequest.error);

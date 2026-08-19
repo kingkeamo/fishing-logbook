@@ -7,39 +7,12 @@
 <body>
     <p id="status">loading</p>
     <script type="module">
-        import { getAllTestCatches, putTestCatch, putCatchWithPhotographs, getAllCatchesWithPhotographs, updateCatchMetadata } from '../../wwwroot/js/storage/catch-store.js';
-        import { getTestCatchPhotograph, putTestCatchPhotograph } from '../../wwwroot/js/storage/photo-store.js';
-        import { putDiagnosticEvent } from '../../wwwroot/js/storage/diagnostic-store.js';
+        import { putCatchWithPhotographs, getAllCatchesWithPhotographs, updateCatchMetadata } from '../../wwwroot/js/storage/catch-store.js';
 
         const ownerUserId = '11111111-1111-1111-1111-111111111111';
 
         window.harness = {
             async putAndGetCatch() {
-                await putTestCatch(JSON.stringify({ id: 'harness-catch', notes: 'persisted' }));
-                const items = await getAllTestCatches();
-                return items.map((item) => JSON.parse(item));
-            },
-            async readCatches() {
-                const items = await getAllTestCatches();
-                return items.map((item) => JSON.parse(item));
-            },
-            async putAndGetPhoto() {
-                await putTestCatchPhotograph('harness-photo', new Uint8Array([7, 8, 9]), 'image/jpeg');
-                return getTestCatchPhotograph('harness-photo');
-            },
-            async writeIsolatedRecords() {
-                await putTestCatch(JSON.stringify({ id: 'catch-only', notes: 'catch-db' }));
-                await putDiagnosticEvent(JSON.stringify({
-                    id: 'diag-only',
-                    timestampUtc: '2026-01-01T00:00:00.000Z'
-                }), 10);
-                return {
-                    catchStores: await storeNames('FishingLogBook'),
-                    diagnosticStores: await storeNames('FishingLogBookDiagnostics'),
-                    catches: await window.harness.readCatches()
-                };
-            },
-            async putAndGetProductionCatch() {
                 const catchId = '11111111-1111-1111-1111-111111111111';
                 const photographId = '22222222-2222-2222-2222-222222222222';
                 await putCatchWithPhotographs(
@@ -62,7 +35,7 @@
                 );
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async putAndGetProductionCatchWithProvenance() {
+            async putAndGetCatchWithProvenance() {
                 const catchId = '11111111-1111-1111-1111-111111111111';
                 const photographId = '22222222-2222-2222-2222-222222222222';
                 await putCatchWithPhotographs(
@@ -87,7 +60,7 @@
                 );
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async putLegacyProductionCatchWithoutProvenance() {
+            async putLegacyCatchWithoutProvenance() {
                 const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
                 const photographId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
                 await putCatchWithPhotographs(
@@ -110,7 +83,7 @@
                 );
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async putAndGetProductionCatchWithThreePhotographs() {
+            async putAndGetCatchWithThreePhotographs() {
                 const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
                 const photoA = '11111111-1111-1111-1111-111111111111';
                 const photoB = '22222222-2222-2222-2222-222222222222';
@@ -134,7 +107,7 @@
                 );
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async putAndGetProductionCatchWithLocation() {
+            async putAndGetCatchWithLocation() {
                 const catchId = '11111111-1111-1111-1111-111111111111';
                 const photographId = '22222222-2222-2222-2222-222222222222';
                 await putCatchWithPhotographs(
@@ -166,7 +139,7 @@
                 );
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async putLegacyProductionCatchWithoutLocation() {
+            async putLegacyCatchWithoutLocation() {
                 const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
                 const photographId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
                 await putCatchWithPhotographs(
@@ -189,13 +162,13 @@
                 );
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async readProductionCatches() {
+            async readCatches() {
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async transitionProductionCatchSyncState() {
+            async transitionCatchSyncState() {
                 const catchId = '11111111-1111-1111-1111-111111111111';
                 const photographId = '22222222-2222-2222-2222-222222222222';
-                await window.harness.putAndGetProductionCatch();
+                await window.harness.putAndGetCatch();
                 await updateCatchMetadata(JSON.stringify({
                     id: catchId,
                     userId: ownerUserId,
@@ -211,7 +184,7 @@
                 }));
                 return getAllCatchesWithPhotographs(ownerUserId);
             },
-            async putUnscopedProductionCatchThenReadAsFirstSigner() {
+            async putUnscopedCatchThenReadAsFirstSigner() {
                 const catchId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
                 const photographId = 'unscoped-photo';
                 const firstSignerUserId = '22222222-2222-2222-2222-222222222222';
@@ -239,10 +212,10 @@
                 return {
                     firstSignerView: await getAllCatchesWithPhotographs(firstSignerUserId),
                     originalOwnerView: await getAllCatchesWithPhotographs(ownerUserId),
-                    stored: await readRawProductionCatch(catchId)
+                    stored: await readRawCatch(catchId)
                 };
             },
-            async putProductionCatchWithoutPhotographId() {
+            async putCatchWithoutPhotographId() {
                 try {
                     await putCatchWithPhotographs(
                         JSON.stringify({
@@ -260,10 +233,10 @@
                     return { threw: true, items: await getAllCatchesWithPhotographs(ownerUserId) };
                 }
             },
-            async putAndEditProductionCatchDetails() {
+            async putAndEditCatchDetails() {
                 const catchId = '11111111-1111-1111-1111-111111111111';
                 const photographId = '22222222-2222-2222-2222-222222222222';
-                await window.harness.putAndGetProductionCatch();
+                await window.harness.putAndGetCatch();
                 await putCatchWithPhotographs(
                     JSON.stringify({
                         id: catchId,
@@ -298,20 +271,7 @@
             }
         };
 
-        function storeNames(databaseName) {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(databaseName);
-                request.onsuccess = () => {
-                    const db = request.result;
-                    const names = [...db.objectStoreNames];
-                    db.close();
-                    resolve(names.sort());
-                };
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        function readRawProductionCatch(id) {
+        function readRawCatch(id) {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open('FishingLogBook');
                 request.onsuccess = () => {

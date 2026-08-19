@@ -114,7 +114,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         catch (Exception exception)
         {
             await Logging.LogErrorAsync(
-                "production catch synchronisation",
+                "catch synchronisation",
                 exception,
                 CancellationToken.None);
         }

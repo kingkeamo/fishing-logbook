@@ -67,7 +67,7 @@ body:
     attributes:
       label: Dependencies
       description: Issues or foundations that must exist first. Write "None" if there are none.
-      placeholder: Depends on offline TestCatch persistence.
+      placeholder: Depends on offline Catch persistence.
     validations:
       required: true
 

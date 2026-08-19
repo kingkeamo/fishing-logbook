@@ -19,15 +19,7 @@ public class WhenTestingUninitialisedProductionDatabase : BaseDiagnosticsInspect
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = CreateUninitialisedStore();
-        var probe = Substitute.For<IDiagnosticIndexedDbProbe>();
-        probe.RunIsolatedAsync(Arg.Any<CancellationToken>())
-            .Returns(new DiagnosticProbeResultModel
-            {
-                DatabaseName = DiagnosticIndexedDbProbe.IsolatedDatabaseName,
-                LastCompletedStage = DiagnosticIndexedDbProbe.StageCountReturned,
-                Count = 1
-            });
-        await using var context = CreateContext(store, probe: probe);
+        await using var context = CreateContext(store);
 
         // Act
         var cut = context.Render<DiagnosticsInspector>();
@@ -37,11 +29,8 @@ public class WhenTestingUninitialisedProductionDatabase : BaseDiagnosticsInspect
         {
             cut.Find("#diagnostics-probe-production-stage").TextContent.Should()
                 .Contain("Production diagnostic database not initialised");
-            cut.Find("#diagnostics-probe-isolated-stage").TextContent.Should()
-                .Contain(DiagnosticIndexedDbProbe.StageCountReturned);
             cut.FindAll("#diagnostics-probe-production-error").Should().BeEmpty();
         });
-        await probe.Received(1).RunIsolatedAsync(Arg.Any<CancellationToken>());
         await store.Received(1).InspectExistingAsync(Arg.Any<CancellationToken>());
     }
 

@@ -226,11 +226,11 @@ After clicking Save, for example:
 - verify the DTO/model passed to `SaveAsync` contains the expected values
 
 ```csharp
-cut.WaitForAssertion(() => cut.Find("#save-test-catch-spinner").Should().BeEmpty());
+cut.WaitForAssertion(() => cut.Find("#save-catch-spinner").Should().BeEmpty());
 await store.Received(1).SaveAsync(
-    Arg.Is<TestCatchModel>(testCatch =>
-        testCatch.SpeciesName == "Pike" &&
-        testCatch.SyncStatus == SyncStatus.SavedLocally),
+    Arg.Is<CatchModel>(catchModel =>
+        catchModel.SpeciesName == "Pike" &&
+        catchModel.SyncStatus == SyncStatus.SavedLocally),
     Arg.Any<CancellationToken>());
 ```
 

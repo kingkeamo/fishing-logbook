@@ -23,7 +23,7 @@ body:
     attributes:
       label: Technical Goal
       description: The technical outcome this issue must deliver, described in observable terms where possible.
-      placeholder: A TestCatch created while offline is still present after the application is closed and reopened.
+      placeholder: A Catch created while offline is still present after the application is closed and reopened.
     validations:
       required: true
 

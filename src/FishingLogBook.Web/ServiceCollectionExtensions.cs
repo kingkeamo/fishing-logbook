@@ -21,10 +21,6 @@ using FishingLogBook.Web.Features.Profile.Offline;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.SystemStatus.Clients;
-using FishingLogBook.Web.Features.TestCatch.Clients;
-using FishingLogBook.Web.Features.TestCatch.Offline;
-using FishingLogBook.Web.Features.TestCatch.Offline.Stores;
-using FishingLogBook.Web.Features.TestCatch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Users.Clients;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
@@ -59,7 +55,6 @@ public static class ServiceCollectionExtensions
         {
             client.BaseAddress = apiBaseAddress;
         }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
-        services.AddScoped<ITestCatchClient, TestCatchClient>();
         services.AddScoped<IProfileClient, ProfileClient>();
         services.AddScoped<IFishingPreferenceClient, FishingPreferenceClient>();
         services.AddScoped<IAnglerPreferencesStore, IndexedDbAnglerPreferencesStore>();
@@ -68,10 +63,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<ITimeService, TimeService>();
-        services.AddScoped<ITestCatchJsonStore, IndexedDbTestCatchJsonStore>();
-        services.AddScoped<ITestCatchStore, TestCatchStore>();
-        services.AddScoped<ITestCatchPhotoStore, IndexedDbTestCatchPhotoStore>();
-        services.AddScoped<ITestCatchSynchroniser, TestCatchSynchroniser>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
         services.AddScoped<ICatchSynchroniser, CatchSynchroniser>();
         services.AddScoped<ICatchClient, CatchClient>();
@@ -81,7 +72,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();
-        services.AddScoped<IDiagnosticIndexedDbProbe, DiagnosticIndexedDbProbe>();
         services.AddScoped<IDiagnosticLogger, DiagnosticLogger>();
         services.AddScoped<IDiagnosticSynchroniser, DiagnosticSynchroniser>();
         services.AddLocalization();

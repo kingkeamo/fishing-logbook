@@ -28,8 +28,6 @@ public class SystemApiFactory : WebApplicationFactory<Program>
 
     public ISystemRepository SystemRepository { get; } = Substitute.For<ISystemRepository>();
 
-    public ITestCatchRepository TestCatchRepository { get; } = Substitute.For<ITestCatchRepository>();
-
     public IObjectStorage ObjectStorage { get; } = Substitute.For<IObjectStorage>();
 
     public IUserIdentityRepository UserIdentityRepository { get; } = Substitute.For<IUserIdentityRepository>();
@@ -181,8 +179,6 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             TestAuthentication.ConfigureJwtBearer(services);
             services.RemoveAll<ISystemRepository>();
             services.AddScoped(_ => SystemRepository);
-            services.RemoveAll<ITestCatchRepository>();
-            services.AddScoped(_ => TestCatchRepository);
             services.RemoveAll<IObjectStorage>();
             services.AddSingleton(_ => ObjectStorage);
             services.RemoveAll<IUserIdentityRepository>();

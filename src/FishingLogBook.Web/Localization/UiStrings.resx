@@ -72,33 +72,6 @@
   <data name="Language_French" xml:space="preserve">
     <value>Français</value>
   </data>
-  <data name="TestCatch_Nav" xml:space="preserve">
-    <value>Test catch</value>
-  </data>
-  <data name="TestCatch_PageTitle" xml:space="preserve">
-    <value>FishingLogBook - Test catch</value>
-  </data>
-  <data name="TestCatch_Title" xml:space="preserve">
-    <value>Test catch</value>
-  </data>
-  <data name="TestCatch_Subtitle" xml:space="preserve">
-    <value>Saved on this device until synchronisation</value>
-  </data>
-  <data name="TestCatch_Species" xml:space="preserve">
-    <value>Species</value>
-  </data>
-  <data name="TestCatch_Notes" xml:space="preserve">
-    <value>Notes</value>
-  </data>
-  <data name="TestCatch_Save" xml:space="preserve">
-    <value>Save catch</value>
-  </data>
-  <data name="TestCatch_Saving" xml:space="preserve">
-    <value>Saving catch</value>
-  </data>
-  <data name="TestCatch_Empty" xml:space="preserve">
-    <value>No catches saved yet</value>
-  </data>
   <data name="SyncStatus_SavedLocally" xml:space="preserve">
     <value>Saved locally — not synchronised</value>
   </data>
@@ -122,75 +95,6 @@
   </data>
   <data name="Catch_SyncFailureReassurance" xml:space="preserve">
     <value>Your catch is still saved on this device.</value>
-  </data>
-  <data name="TestCatch_Retry" xml:space="preserve">
-    <value>Retry synchronisation</value>
-  </data>
-  <data name="TestCatch_RetryPhotograph" xml:space="preserve">
-    <value>Retry photograph upload</value>
-  </data>
-  <data name="TestCatch_TakePhoto" xml:space="preserve">
-    <value>Take photo</value>
-  </data>
-  <data name="TestCatch_ChoosePhoto" xml:space="preserve">
-    <value>Choose existing photo</value>
-  </data>
-  <data name="TestCatch_PhotographAlt" xml:space="preserve">
-    <value>Catch photograph</value>
-  </data>
-  <data name="TestCatch_PhotoSavedLocally" xml:space="preserve">
-    <value>Photograph saved locally — not uploaded</value>
-  </data>
-  <data name="TestCatch_PhotoWaiting" xml:space="preserve">
-    <value>Photograph waiting to upload</value>
-  </data>
-  <data name="TestCatch_PhotoUploading" xml:space="preserve">
-    <value>Uploading photograph</value>
-  </data>
-  <data name="TestCatch_PhotoUploaded" xml:space="preserve">
-    <value>Photograph uploaded</value>
-  </data>
-  <data name="TestCatch_PhotoFailed" xml:space="preserve">
-    <value>Photograph upload failed</value>
-  </data>
-  <data name="TestCatch_LoadFailed" xml:space="preserve">
-    <value>Could not load local catches. Your saved catches are still stored on this device.</value>
-  </data>
-  <data name="TestCatch_RetryLoad" xml:space="preserve">
-    <value>Retry loading</value>
-  </data>
-  <data name="TestCatch_LocationTitle" xml:space="preserve">
-    <value>Save where you caught it</value>
-  </data>
-  <data name="TestCatch_LocationExplainer" xml:space="preserve">
-    <value>Keep a record of where you caught this fish for your maps and history. Your precise location is private by default.</value>
-  </data>
-  <data name="TestCatch_LocationAllow" xml:space="preserve">
-    <value>Allow location</value>
-  </data>
-  <data name="TestCatch_LocationNotNow" xml:space="preserve">
-    <value>Not now</value>
-  </data>
-  <data name="TestCatch_LocationWillCapture" xml:space="preserve">
-    <value>Location will be saved with this catch.</value>
-  </data>
-  <data name="TestCatch_LocationOff" xml:space="preserve">
-    <value>Location is off. You can enable it later without blocking Save.</value>
-  </data>
-  <data name="TestCatch_LocationTryAgain" xml:space="preserve">
-    <value>Try location again</value>
-  </data>
-  <data name="TestCatch_LocationSaved" xml:space="preserve">
-    <value>Saved</value>
-  </data>
-  <data name="TestCatch_LocationLabel" xml:space="preserve">
-    <value>Location</value>
-  </data>
-  <data name="TestCatch_LocationRemove" xml:space="preserve">
-    <value>Remove</value>
-  </data>
-  <data name="TestCatch_LocationMissing" xml:space="preserve">
-    <value>No location</value>
   </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
@@ -242,12 +146,6 @@
   </data>
   <data name="Diagnostics_LastOperation" xml:space="preserve">
     <value>Last operation</value>
-  </data>
-  <data name="Diagnostics_IsolatedProbe" xml:space="preserve">
-    <value>Isolated probe (FishingLogBookDiagnosticsTest)</value>
-  </data>
-  <data name="Diagnostics_IsolatedProbeFailed" xml:space="preserve">
-    <value>Isolated probe failed at</value>
   </data>
   <data name="Diagnostics_ProductionProbe" xml:space="preserve">
     <value>Production probe (FishingLogBookDiagnostics)</value>
