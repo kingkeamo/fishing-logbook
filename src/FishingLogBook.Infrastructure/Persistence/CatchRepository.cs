@@ -274,7 +274,7 @@ public sealed class CatchRepository : ICatchRepository
             FROM "Catch"
             WHERE "Id" = @Id;
             """;
-        var catchRow = await connection.QuerySingleOrDefaultAsync<CatchRow>(new CommandDefinition(
+        var catchRow = await connection.QuerySingleOrDefaultAsync<CatchPersistenceRow>(new CommandDefinition(
             catchSql,
             new { Id = id },
             transaction,
@@ -353,7 +353,7 @@ public sealed class CatchRepository : ICatchRepository
         return true;
     }
 
-    internal sealed class CatchRow
+    internal sealed class CatchPersistenceRow
     {
         public Guid Id { get; init; }
 

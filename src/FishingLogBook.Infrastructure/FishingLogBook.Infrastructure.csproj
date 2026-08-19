@@ -6,10 +6,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="FishingLogBook.Infrastructure.Tests" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="FluentResults" />
