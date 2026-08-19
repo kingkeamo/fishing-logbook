@@ -6,7 +6,7 @@ namespace FishingLogBook.Web.Features.Profile.Offline;
 
 public sealed class IndexedDbAnglerPreferencesCache : IAnglerPreferencesCache
 {
-    private const string ModulePath = "./js/offline-store.js";
+    private const string ModulePath = "./js/preference-store.js";
 
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 

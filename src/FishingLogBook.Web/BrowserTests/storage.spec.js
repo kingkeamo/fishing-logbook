@@ -40,7 +40,7 @@ test.describe('Catch and diagnostic IndexedDB', () => {
 
         const result = await page.evaluate(() => window.harness.writeIsolatedRecords());
 
-        expect(result.catchStores).toEqual(['catchPhotographs', 'catches', 'fishingPreferences', 'testCatchPhotographs', 'testCatches']);
+        expect(result.catchStores).toEqual(['catchPhotographs', 'catches', 'testCatchPhotographs', 'testCatches']);
         expect(result.diagnosticStores).toEqual(['diagnosticEvents']);
         expect(result.catches).toEqual([{ id: 'catch-only', notes: 'catch-db' }]);
     });

@@ -23,14 +23,10 @@ export function openDatabase({
     onOpened,
     onFailed,
     onTimedOut,
-    onBlocked,
     onVersionChange
 }) {
     return withTimeout(new Promise((resolve, reject) => {
         const request = indexedDB.open(databaseName, version);
-        request.onblocked = () => {
-            onBlocked?.();
-        };
         request.onupgradeneeded = (event) => {
             onUpgrade?.(request.result, event);
         };

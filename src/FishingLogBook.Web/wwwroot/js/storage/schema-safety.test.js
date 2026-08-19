@@ -8,7 +8,7 @@ import {
     PHOTO_STORE_NAME,
     PRODUCTION_CATCH_STORE_NAME,
     PRODUCTION_PHOTO_STORE_NAME,
-    FISHING_PREFERENCE_STORE_NAME,
+    CATCH_DATABASE_VERSION,
     getAllTestCatches,
     putTestCatch
 } from './catch-store.js';
@@ -17,6 +17,11 @@ import {
     DIAGNOSTIC_STORE_NAME,
     putDiagnosticEvent
 } from './diagnostic-store.js';
+import {
+    PREFERENCE_DATABASE_NAME,
+    PREFERENCE_STORE_NAME,
+    putFishingPreferences
+} from './preference-store.js';
 
 const storageDir = dirname(fileURLToPath(import.meta.url));
 
@@ -36,6 +41,60 @@ describe('schema safety', () => {
         expect(diagnosticSource).not.toContain('testCatchPhotographs');
         expect(indexedDbSource).not.toContain('FishingLogBookDiagnostics');
         expect(indexedDbSource).not.toContain(CATCH_DATABASE_NAME);
+    });
+
+    it('does not mix Catch and preference schema names across store modules', () => {
+        const catchSource = readJs('catch-store.js');
+        const preferenceSource = readJs('preference-store.js');
+        const indexedDbSource = readJs('indexed-db.js');
+
+        expect(catchSource).not.toContain(PREFERENCE_DATABASE_NAME);
+        expect(catchSource).not.toContain(PREFERENCE_STORE_NAME);
+        expect(catchSource).not.toContain('fishingPreferences');
+        expect(preferenceSource).not.toContain(`'${CATCH_DATABASE_NAME}'`);
+        expect(preferenceSource).not.toContain(CATCH_STORE_NAME);
+        expect(preferenceSource).not.toContain(PRODUCTION_CATCH_STORE_NAME);
+        expect(preferenceSource).not.toContain(PRODUCTION_PHOTO_STORE_NAME);
+        expect(indexedDbSource).not.toContain(PREFERENCE_DATABASE_NAME);
+    });
+
+    it('keeps the released Catch database version unchanged', () => {
+        expect(CATCH_DATABASE_VERSION).toBe(3);
+    });
+
+    it('does not let the preference store modify the Catch schema', async () => {
+        await putTestCatch(JSON.stringify({ id: 'catch-1', notes: 'keep' }));
+        await putFishingPreferences(
+            '11111111-1111-1111-1111-111111111111',
+            JSON.stringify({ weightUnit: 1 }));
+
+        const catchDb = await new Promise((resolveOpen, reject) => {
+            const request = indexedDB.open(CATCH_DATABASE_NAME);
+            request.onsuccess = () => resolveOpen(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        const preferenceDb = await new Promise((resolveOpen, reject) => {
+            const request = indexedDB.open(PREFERENCE_DATABASE_NAME);
+            request.onsuccess = () => resolveOpen(request.result);
+            request.onerror = () => reject(request.error);
+        });
+
+        expect(catchDb.version).toBe(CATCH_DATABASE_VERSION);
+        expect([...catchDb.objectStoreNames].sort()).toEqual([
+            PHOTO_STORE_NAME,
+            CATCH_STORE_NAME,
+            PRODUCTION_CATCH_STORE_NAME,
+            PRODUCTION_PHOTO_STORE_NAME
+        ].sort());
+        expect(catchDb.objectStoreNames.contains(PREFERENCE_STORE_NAME)).toBe(false);
+        expect([...preferenceDb.objectStoreNames]).toEqual([PREFERENCE_STORE_NAME]);
+        expect(preferenceDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
+        expect(preferenceDb.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)).toBe(false);
+        catchDb.close();
+        preferenceDb.close();
+
+        const catches = await getAllTestCatches();
+        expect(JSON.parse(catches[0]).notes).toBe('keep');
     });
 
     it('does not let the diagnostic store modify the Catch schema', async () => {
@@ -62,7 +121,6 @@ describe('schema safety', () => {
         expect(catchDb.objectStoreNames.contains(PHOTO_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(PRODUCTION_CATCH_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(PRODUCTION_PHOTO_STORE_NAME)).toBe(true);
-        expect(catchDb.objectStoreNames.contains(FISHING_PREFERENCE_STORE_NAME)).toBe(true);
         expect(catchDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
         expect(diagnosticDb.objectStoreNames.contains(DIAGNOSTIC_STORE_NAME)).toBe(true);
@@ -85,8 +143,7 @@ describe('schema safety', () => {
             PHOTO_STORE_NAME,
             CATCH_STORE_NAME,
             PRODUCTION_CATCH_STORE_NAME,
-            PRODUCTION_PHOTO_STORE_NAME,
-            FISHING_PREFERENCE_STORE_NAME
+            PRODUCTION_PHOTO_STORE_NAME
         ].sort());
         db.close();
     });
