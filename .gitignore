@@ -67,6 +67,9 @@ artifacts/javascript-tests/
 # Local scratch
 .tmp/
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # OS files
 .DS_Store
 Thumbs.db
