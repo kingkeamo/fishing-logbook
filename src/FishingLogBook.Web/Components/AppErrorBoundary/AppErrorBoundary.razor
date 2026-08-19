@@ -6,17 +6,39 @@
     </ChildContent>
     <ErrorContent>
         <MudContainer MaxWidth="MaxWidth.Small" Class="app-error-boundary-container pa-4">
-            <MudStack Spacing="3">
-                <MudAlert Severity="Severity.Error" Variant="Variant.Filled" id="app-error-boundary-alert">
-                    <MudText Typo="Typo.h6">@Loc["App_UnhandledErrorTitle"]</MudText>
-                    <MudText Typo="Typo.body2">@Loc["App_UnhandledErrorMessage"]</MudText>
-                </MudAlert>
+            <MudStack Spacing="2"
+                      AlignItems="AlignItems.Center"
+                      role="alert"
+                      id="app-error-boundary">
+                <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline"
+                         Color="Color.Error"
+                         Size="Size.Medium"
+                         aria-hidden="true"
+                         id="app-error-boundary-icon" />
+                <MudText Typo="Typo.h6"
+                         Align="Align.Center"
+                         id="app-error-boundary-title">
+                    @Loc["App_UnhandledErrorTitle"]
+                </MudText>
+                <MudText Typo="Typo.body2"
+                         Align="Align.Center"
+                         Class="mud-text-secondary"
+                         id="app-error-boundary-message">
+                    @Loc["App_UnhandledErrorMessage"]
+                </MudText>
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            FullWidth="true"
-                           OnClick="Reload"
-                           id="app-error-boundary-reload">
-                    @Loc["Action_Reload"]
+                           OnClick="TryAgain"
+                           id="app-error-boundary-try-again">
+                    @Loc["Action_TryAgain"]
+                </MudButton>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           FullWidth="true"
+                           OnClick="GoHome"
+                           id="app-error-boundary-go-home">
+                    @Loc["Action_GoHome"]
                 </MudButton>
             </MudStack>
         </MudContainer>

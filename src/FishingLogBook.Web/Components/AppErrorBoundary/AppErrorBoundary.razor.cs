@@ -23,9 +23,15 @@ public partial class AppErrorBoundary : ComponentBase, IDisposable
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private void Reload()
+    private void TryAgain()
     {
-        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        _errorBoundary?.Recover();
+    }
+
+    private void GoHome()
+    {
+        _errorBoundary?.Recover();
+        NavigationManager.NavigateTo("/");
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs args)

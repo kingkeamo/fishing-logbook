@@ -30,7 +30,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
         await location.DidNotReceive().TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>());
         cut.FindAll("#catch-location").Should().BeEmpty();
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-location-status").TextContent.Should().Contain("Location on"));
+            cut.Find("#catch-location-status").TextContent.Should().Contain("Location on · Private"));
         cut.FindAll("#catch-location-explainer").Should().BeEmpty();
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
@@ -246,7 +246,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
         cut.WaitForAssertion(() =>
         {
             cut.FindAll("#catch-location-explainer").Should().BeEmpty();
-            cut.Find("#catch-location-status").TextContent.Should().Contain("Location on");
+            cut.Find("#catch-location-status").TextContent.Should().Contain("Location on · Private");
         });
         cut.FindAll("#catch-location").Should().BeEmpty();
         await location.Received(1).TryCaptureAsync(true, Arg.Any<CancellationToken>());
@@ -267,7 +267,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-location-status").TextContent.Should().Contain("Localisation activée"));
+            cut.Find("#catch-location-status").TextContent.Should().Contain("Localisation activée · Privée"));
         await location.DidNotReceive().TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
@@ -355,7 +355,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
         // Assert
         await location.Received(1).TryCaptureAsync(false, Arg.Any<CancellationToken>());
         cut.FindAll("#catch-location-saved").Should().BeEmpty();
-        cut.Find("#catch-location-status").TextContent.Should().Contain("Location on");
+        cut.Find("#catch-location-status").TextContent.Should().Contain("Location on · Private");
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeTrue();
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("second.jpg", 0xFF, 0xD8, 0x02));
         await location.Received(2).TryCaptureAsync(false, Arg.Any<CancellationToken>());

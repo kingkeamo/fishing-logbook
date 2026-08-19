@@ -34,6 +34,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private string? _carriedMethod;
     private string? _carriedSpecies;
     private bool _carriedSpeciesWasExplicit;
+    private bool _isLoading = true;
     private bool _isSaving;
     private bool _isSaved;
     private bool _saveFailed;
@@ -73,9 +74,16 @@ public partial class RecordCatch : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadCatalogueAsync();
-        ApplyProfileDefaults();
-        await RefreshLocationPromptAsync();
+        try
+        {
+            await LoadCatalogueAsync();
+            ApplyProfileDefaults();
+            await RefreshLocationPromptAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private async Task LoadCatalogueAsync()
@@ -159,33 +167,6 @@ public partial class RecordCatch : ComponentBase, IDisposable
     {
         _selectedSpecies = species;
         _speciesIsExplicit = true;
-    }
-
-    private string MethodInput
-    {
-        get
-        {
-            return _selectedMethod;
-        }
-
-        set
-        {
-            SelectMethod(value);
-        }
-    }
-
-    private string SpeciesInput
-    {
-        get
-        {
-            return _selectedSpecies;
-        }
-
-        set
-        {
-            _selectedSpecies = value;
-            _speciesIsExplicit = !string.IsNullOrWhiteSpace(value);
-        }
     }
 
     private async Task ChooseMethodAsync()

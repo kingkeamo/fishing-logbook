@@ -279,9 +279,6 @@
   <data name="Catch_RecordTitle" xml:space="preserve">
     <value>Enregistrer une prise</value>
   </data>
-  <data name="Catch_RecordSubtitle" xml:space="preserve">
-    <value>Photographiez, puis enregistrez sur cet appareil</value>
-  </data>
   <data name="Catch_TakePhoto" xml:space="preserve">
     <value>Prendre une photo</value>
   </data>
@@ -342,8 +339,8 @@
   <data name="Catch_LocationSaved" xml:space="preserve">
     <value>Localisation enregistrée</value>
   </data>
-  <data name="Catch_LocationOn" xml:space="preserve">
-    <value>Localisation activée</value>
+  <data name="Catch_LocationOnPrivate" xml:space="preserve">
+    <value>Localisation activée · Privée</value>
   </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Prises</value>
@@ -622,12 +619,12 @@
     <value>Un problème est survenu</value>
   </data>
   <data name="App_UnhandledErrorMessage" xml:space="preserve">
-    <value>L’application a rencontré une erreur inattendue. Rechargez pour continuer.</value>
+    <value>Nous n'avons pas pu charger cet écran. Réessayez ou revenez à l'accueil.</value>
   </data>
   <data name="App_UnhandledErrorSnackbar" xml:space="preserve">
     <value>Un problème est survenu. Veuillez réessayer.</value>
   </data>
-  <data name="Action_Reload" xml:space="preserve">
-    <value>Recharger</value>
+  <data name="Action_TryAgain" xml:space="preserve">
+    <value>Réessayer</value>
   </data>
 </root>

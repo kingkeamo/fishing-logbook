@@ -84,6 +84,37 @@ public class BaseRecordCatchTest
         return Substitute.For<IModalService>();
     }
 
+    protected static void AnswerCataloguePicker(
+        IModalService modalService,
+        string offeredOptionCode,
+        CatalogueOptionModel chosen)
+    {
+        modalService
+            .ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
+                Arg.Is<CataloguePickerModalModel>(model =>
+                    model.Options.Any(option => option.Code == offeredOptionCode)),
+                Arg.Any<CancellationToken>())
+            .Returns(new CataloguePickerModalResult(chosen));
+    }
+
+    protected static string SelectedMethod(IRenderedComponent<RecordCatch> cut)
+    {
+        return SelectedChip(cut, "record-catch-method-chips");
+    }
+
+    protected static string SelectedSpecies(IRenderedComponent<RecordCatch> cut)
+    {
+        return SelectedChip(cut, "record-catch-species-chips");
+    }
+
+    private static string SelectedChip(IRenderedComponent<RecordCatch> cut, string containerId)
+    {
+        var selected = cut.Find($"#{containerId}")
+            .QuerySelectorAll(".mud-chip-filled")
+            .FirstOrDefault();
+        return selected?.TextContent.Trim() ?? string.Empty;
+    }
+
     protected static FishingCatalogueDto SampleCatalogue()
     {
         return new FishingCatalogueDto(

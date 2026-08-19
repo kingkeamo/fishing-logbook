@@ -4,10 +4,10 @@ html, body {
 }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: #b32121;
-    color: #ffffff;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    background: var(--mud-palette-surface, #ffffff);
+    color: var(--mud-palette-text-primary, #1f1f1f);
+    border-bottom: 3px solid var(--mud-palette-error, #b32121);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
     display: none;
     left: 0;
@@ -19,7 +19,7 @@ html, body {
 }
 
 #blazor-error-ui a {
-    color: #ffffff;
+    color: var(--mud-palette-primary, #00695c);
     font-weight: 600;
     text-decoration: underline;
 }
@@ -32,14 +32,12 @@ html, body {
     }
 
 .blazor-error-boundary {
-    background: #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
+    background: var(--mud-palette-surface, #ffffff);
+    color: var(--mud-palette-text-primary, #1f1f1f);
+    border: 1px solid var(--mud-palette-error, #b32121);
+    border-radius: var(--mud-default-borderradius, 4px);
+    padding: 1rem;
 }
-
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
 
 .loading-progress {
     position: absolute;

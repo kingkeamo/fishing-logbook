@@ -50,6 +50,8 @@
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent>
-        @Body
+        <AppErrorBoundary>
+            @Body
+        </AppErrorBoundary>
     </MudMainContent>
 </MudLayout>
