@@ -103,7 +103,7 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 IsWriting.Value = false;
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception exceptionWhileLogging)
@@ -151,8 +151,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         {
             isOnline = await _networkStatus.IsOnlineAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            throw;
         }
         catch (Exception onlineCheckException)
         {
@@ -195,8 +196,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 return parsed;
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            throw;
         }
         catch (Exception exception)
         {
@@ -209,8 +211,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         {
             await _jsRuntime.InvokeVoidAsync("fishingLogBookDiagnostics.setSessionId", cancellationToken, created.ToString("D"));
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            throw;
         }
         catch (Exception exception)
         {
@@ -228,9 +231,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 await _jsRuntime.InvokeAsync<string>("fishingLogBookDiagnostics.getPlatform", cancellationToken),
                 120);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            return null;
+            throw;
         }
         catch (Exception exception)
         {
@@ -272,8 +275,9 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 eventName,
                 message);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            throw;
         }
         catch (Exception exception)
         {

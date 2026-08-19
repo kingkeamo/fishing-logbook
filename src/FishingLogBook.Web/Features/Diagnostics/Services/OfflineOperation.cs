@@ -181,7 +181,7 @@ public static class OfflineOperation
         {
             await diagnostics.LogAsync(level, eventName, message, metadata, exception, cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception loggingException)

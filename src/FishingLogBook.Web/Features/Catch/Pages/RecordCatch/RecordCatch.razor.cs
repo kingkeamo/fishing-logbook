@@ -436,7 +436,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         {
             await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception exception)

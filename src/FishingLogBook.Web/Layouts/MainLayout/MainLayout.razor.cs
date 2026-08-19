@@ -103,7 +103,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         {
             await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             return;
         }
@@ -119,7 +119,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         {
             await DiagnosticSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             return;
         }
