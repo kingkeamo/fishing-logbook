@@ -9,6 +9,7 @@
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="FluentResults" />
+    <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Npgsql" />
