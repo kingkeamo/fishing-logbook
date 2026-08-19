@@ -170,7 +170,7 @@ public class WhenTestingCreate : BaseUserIdentityRepositoryTest
         // Arrange
         var subject = NewSubject();
         var email = NewEmail();
-        var service = new UserIdentityService(Sut, NullLogger<UserIdentityService>.Instance);
+        var service = new UserIdentityService(Sut, NullLogger<UserIdentityService>.Instance, TestMapper.Create());
         var usersBefore = await CountUsersAsync();
 
         // Act

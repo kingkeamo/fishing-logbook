@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="FishingLogBook.Application.Tests.Common" />
   </ItemGroup>
 
   <ItemGroup>

@@ -12,6 +12,6 @@ public class BaseUpsertCatchCommandTest
 
     protected BaseUpsertCatchCommandTest()
     {
-        Sut = new UpsertCatchHandler(MockCatchService);
+        Sut = new UpsertCatchHandler(MockCatchService, TestMapper.Create());
     }
 }

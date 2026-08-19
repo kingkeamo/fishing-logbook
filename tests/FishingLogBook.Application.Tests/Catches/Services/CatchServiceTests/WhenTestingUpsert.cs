@@ -14,8 +14,6 @@ public class WhenTestingUpsert : BaseCatchServiceTest
 {
     public WhenTestingUpsert()
     {
-        ((IRegister)new FishingLogBook.Application.Common.Mappings.CatchMappingRegistration())
-            .Register(TypeAdapterConfig.GlobalSettings);
     }
 
     [Fact]

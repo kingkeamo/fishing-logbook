@@ -279,9 +279,6 @@
   <data name="Catch_RecordTitle" xml:space="preserve">
     <value>Record catch</value>
   </data>
-  <data name="Catch_RecordSubtitle" xml:space="preserve">
-    <value>Photograph, then save on this device</value>
-  </data>
   <data name="Catch_TakePhoto" xml:space="preserve">
     <value>Take photo</value>
   </data>
@@ -342,8 +339,8 @@
   <data name="Catch_LocationSaved" xml:space="preserve">
     <value>Location saved</value>
   </data>
-  <data name="Catch_LocationOn" xml:space="preserve">
-    <value>Location on</value>
+  <data name="Catch_LocationOnPrivate" xml:space="preserve">
+    <value>Location on · Private</value>
   </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Catches</value>
@@ -390,14 +387,20 @@
   <data name="Catch_EditWeight" xml:space="preserve">
     <value>Weight</value>
   </data>
-  <data name="Catch_EditWeightUnit" xml:space="preserve">
-    <value>Kilograms</value>
+  <data name="Catch_WeightUnitShort_Kg" xml:space="preserve">
+    <value>kg</value>
+  </data>
+  <data name="Catch_WeightUnitShort_Lb" xml:space="preserve">
+    <value>lb</value>
   </data>
   <data name="Catch_EditLength" xml:space="preserve">
     <value>Length</value>
   </data>
-  <data name="Catch_EditLengthUnit" xml:space="preserve">
-    <value>Centimetres</value>
+  <data name="Catch_LengthUnitShort_Cm" xml:space="preserve">
+    <value>cm</value>
+  </data>
+  <data name="Catch_LengthUnitShort_In" xml:space="preserve">
+    <value>in</value>
   </data>
   <data name="Catch_EditMethod" xml:space="preserve">
     <value>Fishing method</value>
@@ -427,10 +430,10 @@
     <value>This catch could not be loaded.</value>
   </data>
   <data name="Catch_EditWeightInvalid" xml:space="preserve">
-    <value>Weight must be greater than 0 kg and at most 1000 kg.</value>
+    <value>Weight must be greater than 0 {0} and at most {1} {0}.</value>
   </data>
   <data name="Catch_EditLengthInvalid" xml:space="preserve">
-    <value>Length must be greater than 0 cm and at most 1000 cm.</value>
+    <value>Length must be greater than 0 {0} and at most {1} {0}.</value>
   </data>
   <data name="Catch_EditCaughtOnInvalid" xml:space="preserve">
     <value>Enter a valid catch time that is not in the future.</value>
@@ -525,18 +528,6 @@
   <data name="Profile_ShowHomeRegion" xml:space="preserve">
     <value>Show home region to other anglers</value>
   </data>
-  <data name="Profile_FishingTypes" xml:space="preserve">
-    <value>Preferred fishing types</value>
-  </data>
-  <data name="Profile_ShowFishingTypes" xml:space="preserve">
-    <value>Show preferred fishing types to other anglers</value>
-  </data>
-  <data name="Profile_PreferredSpecies" xml:space="preserve">
-    <value>Preferred species</value>
-  </data>
-  <data name="Profile_PreferredSpeciesHelp" xml:space="preserve">
-    <value>Separate species with commas</value>
-  </data>
   <data name="Profile_ShowPreferredSpecies" xml:space="preserve">
     <value>Show preferred species to other anglers</value>
   </data>
@@ -564,6 +555,42 @@
   <data name="Profile_SaveFailed" xml:space="preserve">
     <value>Unable to save profile.</value>
   </data>
+  <data name="Profile_FishingMethods" xml:space="preserve">
+    <value>Preferred Fishing Methods</value>
+  </data>
+  <data name="Profile_FishingMethod_SetDefault" xml:space="preserve">
+    <value>Set as default method:</value>
+  </data>
+  <data name="Profile_FishingMethod_Default" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Profile_FishingMethod_Species" xml:space="preserve">
+    <value>Preferred Species for {0}</value>
+  </data>
+  <data name="Profile_FishingSpecies_SetDefault" xml:space="preserve">
+    <value>Set as default species:</value>
+  </data>
+  <data name="Profile_FishingSpecies_Remove" xml:space="preserve">
+    <value>Remove {0}</value>
+  </data>
+  <data name="Profile_WeightUnit" xml:space="preserve">
+    <value>Preferred Weight Unit</value>
+  </data>
+  <data name="Profile_WeightUnit_Kg" xml:space="preserve">
+    <value>Kilograms (kg)</value>
+  </data>
+  <data name="Profile_WeightUnit_Lb" xml:space="preserve">
+    <value>Pounds (lb)</value>
+  </data>
+  <data name="Profile_LengthUnit" xml:space="preserve">
+    <value>Preferred Length Unit</value>
+  </data>
+  <data name="Profile_LengthUnit_Cm" xml:space="preserve">
+    <value>Centimetres (cm)</value>
+  </data>
+  <data name="Profile_LengthUnit_In" xml:space="preserve">
+    <value>Inches (in)</value>
+  </data>
   <data name="Auth_SignIn" xml:space="preserve">
     <value>Sign in</value>
   </data>
@@ -576,16 +603,28 @@
   <data name="Modal_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="Modal_Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Modal_NoMatches" xml:space="preserve">
+    <value>No matches found.</value>
+  </data>
+  <data name="Common_More" xml:space="preserve">
+    <value>More…</value>
+  </data>
+  <data name="Catch_CatalogueUnavailable" xml:space="preserve">
+    <value>Suggestions are unavailable offline. You can still type a method and species.</value>
+  </data>
   <data name="App_UnhandledErrorTitle" xml:space="preserve">
     <value>Something went wrong</value>
   </data>
   <data name="App_UnhandledErrorMessage" xml:space="preserve">
-    <value>The app hit an unexpected error. Reload to continue.</value>
+    <value>We couldn't load this screen. Try again, or return home.</value>
   </data>
   <data name="App_UnhandledErrorSnackbar" xml:space="preserve">
     <value>Something went wrong. Please try again.</value>
   </data>
-  <data name="Action_Reload" xml:space="preserve">
-    <value>Reload</value>
+  <data name="Action_TryAgain" xml:space="preserve">
+    <value>Try again</value>
   </data>
 </root>

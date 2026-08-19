@@ -3,7 +3,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Users;
 using FluentResults;
-using Mapster;
+using MapsterMapper;
 using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Application.Users.Services;
@@ -16,13 +16,16 @@ public sealed class UserIdentityService : IUserIdentityService
 
     private readonly IUserIdentityRepository _userIdentityRepository;
     private readonly ILogger<UserIdentityService> _logger;
+    private readonly IMapper _mapper;
 
     public UserIdentityService(
         IUserIdentityRepository userIdentityRepository,
-        ILogger<UserIdentityService> logger)
+        ILogger<UserIdentityService> logger,
+        IMapper mapper)
     {
         _userIdentityRepository = userIdentityRepository;
         _logger = logger;
+        _mapper = mapper;
     }
 
     public async Task<Result<Guid>> ResolveAsync(
@@ -42,7 +45,7 @@ public sealed class UserIdentityService : IUserIdentityService
         }
 
         var existing = await _userIdentityRepository.FindUserIdAsync(
-            args.Adapt<FindUserIdentityArgs>(),
+            _mapper.Map<FindUserIdentityArgs>(args),
             cancellationToken);
         if (existing.IsFailed)
         {

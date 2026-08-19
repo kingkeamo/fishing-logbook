@@ -1,0 +1,48 @@
+@namespace FishingLogBook.Web.Common.Modals
+
+<MudDialog id="catalogue-picker-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="catalogue-picker-modal-title">@Model.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="_search"
+                          Label="@Loc["Modal_Search"]"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          id="catalogue-picker-modal-search" />
+            @if (FilteredOptions.Count == 0)
+            {
+                <MudText Typo="Typo.body2"
+                         Class="mud-text-secondary"
+                         id="catalogue-picker-modal-empty">
+                    @Loc["Modal_NoMatches"]
+                </MudText>
+            }
+            else
+            {
+                <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catalogue-picker-modal-options">
+                    @foreach (var option in FilteredOptions)
+                    {
+                        <MudChip T="string"
+                                 Color="Color.Default"
+                                 Variant="Variant.Outlined"
+                                 OnClick="() => Select(option)"
+                                 id="@($"catalogue-picker-modal-option-{option.Code}")">
+                            @option.Name
+                        </MudChip>
+                    }
+                </MudStack>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   OnClick="Cancel"
+                   id="catalogue-picker-modal-cancel">
+            @Loc["Modal_Cancel"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

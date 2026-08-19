@@ -1,3 +1,4 @@
+using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Profiles;
 
 namespace FishingLogBook.Tests.Common.Builders;
@@ -17,6 +18,8 @@ public sealed class ProfileBuilder
     private bool _showHomeRegion;
     private bool _showPreferredFishingTypes;
     private bool _showPreferredSpecies;
+    private WeightUnitEnum _preferredWeightUnit = WeightUnitEnum.Kg;
+    private LengthUnitEnum _preferredLengthUnit = LengthUnitEnum.Cm;
 
     public ProfileBuilder WithUserId(Guid userId)
     {
@@ -106,6 +109,13 @@ public sealed class ProfileBuilder
         return this;
     }
 
+    public ProfileBuilder WithMeasurementUnits(WeightUnitEnum weightUnit, LengthUnitEnum lengthUnit)
+    {
+        _preferredWeightUnit = weightUnit;
+        _preferredLengthUnit = lengthUnit;
+        return this;
+    }
+
     public Profile Build()
     {
         return new Profile
@@ -122,7 +132,9 @@ public sealed class ProfileBuilder
             ShowPhotograph = _showPhotograph,
             ShowHomeRegion = _showHomeRegion,
             ShowPreferredFishingTypes = _showPreferredFishingTypes,
-            ShowPreferredSpecies = _showPreferredSpecies
+            ShowPreferredSpecies = _showPreferredSpecies,
+            PreferredWeightUnit = _preferredWeightUnit,
+            PreferredLengthUnit = _preferredLengthUnit
         };
     }
 }

@@ -1,9 +1,13 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
+using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -16,19 +20,33 @@ public partial class RecordCatch : ComponentBase, IDisposable
 {
     private const long MaxPhotographBytes = 10 * 1024 * 1024;
     private const double SwipeThresholdPixels = 40;
+    private const int MaxChipOptions = 6;
+
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly List<PendingPhotograph> _photographs = [];
     private DateTimeOffset? _caughtOn;
     private int _carouselIndex;
     private double _pointerStartX;
+    private string _selectedMethod = string.Empty;
+    private string _selectedSpecies = string.Empty;
+    private bool _methodIsExplicit;
+    private bool _speciesIsExplicit;
+    private string? _carriedMethod;
+    private string? _carriedSpecies;
+    private bool _carriedSpeciesWasExplicit;
+    private bool _isLoading = true;
     private bool _isSaving;
     private bool _isSaved;
     private bool _saveFailed;
     private bool _unsupportedFormat;
+    private bool _catalogueUnavailable;
     private bool _locationCaptureStarted;
     private bool _locationSaved;
     private LocationPromptStatus _locationPrompt = new(false, false, false);
     private CatchLocationModel? _capturedLocation;
+    private FishingPreferencesDto? _preferences;
+    private IReadOnlyList<FishingMethodDto> _catalogueMethods = [];
+    private IReadOnlyList<SpeciesDto> _catalogueSpecies = [];
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
@@ -46,11 +64,142 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private ILocationService LocationService { get; set; } = default!;
 
     [Inject]
+    private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
+
+    [Inject]
+    private IModalService ModalService { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        await RefreshLocationPromptAsync();
+        try
+        {
+            var catalogue = LoadCatalogueAsync();
+            var locationPrompt = RefreshLocationPromptAsync();
+            await Task.WhenAll(catalogue, locationPrompt);
+            ApplyProfileDefaults();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadCatalogueAsync()
+    {
+        var anglerPreferences = await AnglerPreferences.GetAsync(_cancellationTokenSource.Token);
+        _catalogueMethods = anglerPreferences.Catalogue.Methods;
+        _catalogueSpecies = anglerPreferences.Catalogue.AllSpecies;
+        _preferences = anglerPreferences.Preferences;
+        _catalogueUnavailable = !anglerPreferences.HasCatalogue;
+    }
+
+    private void ApplyProfileDefaults()
+    {
+        var defaultMethod = _preferences?.Methods.FirstOrDefault(method => method.IsDefault);
+        if (defaultMethod is null)
+        {
+            return;
+        }
+
+        _selectedMethod = defaultMethod.Name;
+        _methodIsExplicit = false;
+        _selectedSpecies = defaultMethod.Species.FirstOrDefault(species => species.IsDefault)?.Name
+            ?? string.Empty;
+        _speciesIsExplicit = false;
+    }
+
+    private IReadOnlyList<CatchChipOptionModel> MethodOptions
+    {
+        get
+        {
+            var preferred = _preferences?.Methods
+                .OrderByDescending(method => method.IsDefault)
+                .Select(method => new CatchChipOptionModel(method.Code, method.Name))
+                .ToArray() ?? [];
+            var options = preferred.Length > 0
+                ? preferred
+                : [.. _catalogueMethods.Select(method => new CatchChipOptionModel(method.Code, method.Name))];
+            return CatchChipOptionModel.BuildShortlist(options, _selectedMethod, MaxChipOptions);
+        }
+    }
+
+    private IReadOnlyList<CatchChipOptionModel> SpeciesOptions
+    {
+        get
+        {
+            var methodPreference = FindMethodPreference(_selectedMethod);
+            var preferred = methodPreference?.Species
+                .OrderByDescending(species => species.IsDefault)
+                .Select(species => new CatchChipOptionModel(species.Code, species.Name))
+                .ToArray() ?? [];
+            return CatchChipOptionModel.BuildShortlist(preferred, _selectedSpecies, MaxChipOptions);
+        }
+    }
+
+    private FishingMethodPreferenceDto? FindMethodPreference(string methodName)
+    {
+        return _preferences?.Methods.FirstOrDefault(method =>
+            string.Equals(method.Name, methodName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void SelectMethod(string method)
+    {
+        _selectedMethod = method;
+        _methodIsExplicit = !string.IsNullOrWhiteSpace(method);
+        ApplyDefaultSpeciesForMethod();
+    }
+
+    private void ApplyDefaultSpeciesForMethod()
+    {
+        if (_speciesIsExplicit)
+        {
+            return;
+        }
+
+        _selectedSpecies = FindMethodPreference(_selectedMethod)?.Species
+            .FirstOrDefault(species => species.IsDefault)?.Name
+            ?? string.Empty;
+    }
+
+    private void SelectSpecies(string species)
+    {
+        _selectedSpecies = species;
+        _speciesIsExplicit = true;
+    }
+
+    private async Task ChooseMethodAsync()
+    {
+        var chosen = await ChooseFromCatalogueAsync(
+            Loc["Catch_EditMethod"],
+            [.. _catalogueMethods.Select(method => new CatalogueOptionModel(method.Id, method.Code, method.Name))]);
+        if (chosen is not null)
+        {
+            SelectMethod(chosen.Name);
+        }
+    }
+
+    private async Task ChooseSpeciesAsync()
+    {
+        var chosen = await ChooseFromCatalogueAsync(
+            Loc["Catch_EditSpecies"],
+            [.. _catalogueSpecies.Select(species => new CatalogueOptionModel(species.Id, species.Code, species.Name))]);
+        if (chosen is not null)
+        {
+            SelectSpecies(chosen.Name);
+        }
+    }
+
+    private async Task<CatalogueOptionModel?> ChooseFromCatalogueAsync(
+        string title,
+        IReadOnlyList<CatalogueOptionModel> options)
+    {
+        var result = await ModalService.ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
+            new CataloguePickerModalModel(title, options),
+            _cancellationTokenSource.Token);
+        return result?.Option;
     }
 
     private bool CanSave
@@ -226,6 +375,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
             {
                 throw new InvalidOperationException("The current user could not be resolved.");
             }
+
             var catchId = Guid.NewGuid();
             var photographs = _photographs
                 .Select(photograph => new CatchPhotographModel(
@@ -234,17 +384,26 @@ public partial class RecordCatch : ComponentBase, IDisposable
                     photograph.ContentType,
                     photograph.Bytes))
                 .ToArray();
+            var method = TrimToNull(_selectedMethod);
+            var species = TrimToNull(_selectedSpecies);
             var location = _capturedLocation;
             await CatchStore.SaveAsync(
                 new CatchModel(
                     catchId,
                     _caughtOn ?? DateTimeOffset.UtcNow,
                     photographs,
-                    Location: location,
-                    UserId: ownerUserId,
-                    AnglerUserId: ownerUserId,
-                    RecordedByUserId: ownerUserId),
+                    species,
+                    location,
+                    ownerUserId,
+                    SyncStatus.SavedLocally,
+                    SyncStatus.SavedLocally,
+                    ownerUserId,
+                    ownerUserId,
+                    Method: method),
                 _cancellationTokenSource.Token);
+            _carriedMethod = method;
+            _carriedSpecies = species;
+            _carriedSpeciesWasExplicit = _speciesIsExplicit;
             _isSaved = true;
             _locationSaved = location is not null;
             saved = true;
@@ -273,11 +432,12 @@ public partial class RecordCatch : ComponentBase, IDisposable
 
     private async Task SafeSynchronisePendingAsync()
     {
+        var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            await CatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+            await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception exception)
@@ -285,7 +445,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
             await Logging.LogErrorAsync(
                 "production catch synchronisation",
                 exception,
-                _cancellationTokenSource.Token);
+                CancellationToken.None);
         }
     }
 
@@ -300,6 +460,10 @@ public partial class RecordCatch : ComponentBase, IDisposable
         _capturedLocation = null;
         _locationCaptureStarted = false;
         _locationSaved = false;
+        _selectedMethod = _carriedMethod ?? string.Empty;
+        _methodIsExplicit = _carriedMethod is not null;
+        _selectedSpecies = _carriedSpecies ?? string.Empty;
+        _speciesIsExplicit = _carriedSpeciesWasExplicit;
     }
 
     private async Task AllowLocationAsync()
@@ -380,6 +544,11 @@ public partial class RecordCatch : ComponentBase, IDisposable
         {
             _locationPrompt = new LocationPromptStatus(false, true, false);
         }
+    }
+
+    private static string? TrimToNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     public void Dispose()

@@ -201,6 +201,67 @@ public class WhenTestingValidate : BaseUpdateOwnProfileCommandValidatorTest
         result.ShouldNotHaveAnyValidationErrors();
     }
 
+    [Fact]
+    public void ItShouldHaveAValidationErrorWhenThePreferredWeightUnitIsNotAKnownValue()
+    {
+        // Arrange
+        var command = new UpdateOwnProfileCommand
+        {
+            UserId = Guid.NewGuid(),
+            Profile = ValidProfile() with { PreferredWeightUnit = (WeightUnitEnum)7 }
+        };
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(value => value.Profile.PreferredWeightUnit)
+            .WithErrorMessage("Preferred weight unit is not recognised.");
+    }
+
+    [Fact]
+    public void ItShouldHaveAValidationErrorWhenThePreferredLengthUnitIsNotAKnownValue()
+    {
+        // Arrange
+        var command = new UpdateOwnProfileCommand
+        {
+            UserId = Guid.NewGuid(),
+            Profile = ValidProfile() with { PreferredLengthUnit = (LengthUnitEnum)7 }
+        };
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(value => value.Profile.PreferredLengthUnit)
+            .WithErrorMessage("Preferred length unit is not recognised.");
+    }
+
+    [Theory]
+    [InlineData(WeightUnitEnum.Kg, LengthUnitEnum.Cm)]
+    [InlineData(WeightUnitEnum.Lb, LengthUnitEnum.In)]
+    [InlineData(WeightUnitEnum.Kg, LengthUnitEnum.In)]
+    [InlineData(WeightUnitEnum.Lb, LengthUnitEnum.Cm)]
+    public void ItShouldAcceptEverySupportedUnitCombination(WeightUnitEnum weightUnit, LengthUnitEnum lengthUnit)
+    {
+        // Arrange
+        var command = new UpdateOwnProfileCommand
+        {
+            UserId = Guid.NewGuid(),
+            Profile = ValidProfile() with
+            {
+                PreferredWeightUnit = weightUnit,
+                PreferredLengthUnit = lengthUnit
+            }
+        };
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
     private static UpdateProfileDto ValidProfile()
     {
         return new UpdateProfileDto(

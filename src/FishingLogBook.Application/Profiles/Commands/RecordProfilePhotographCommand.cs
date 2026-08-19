@@ -4,7 +4,7 @@ using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
-using Mapster;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Profiles.Commands;
@@ -25,10 +25,12 @@ public sealed class RecordProfilePhotographHandler
     : IRequestHandler<RecordProfilePhotographCommand, RecordProfilePhotographResponse>
 {
     private readonly IProfileService _profileService;
+    private readonly IMapper _mapper;
 
-    public RecordProfilePhotographHandler(IProfileService profileService)
+    public RecordProfilePhotographHandler(IProfileService profileService, IMapper mapper)
     {
         _profileService = profileService;
+        _mapper = mapper;
     }
 
     public async Task<RecordProfilePhotographResponse> Handle(
@@ -36,7 +38,7 @@ public sealed class RecordProfilePhotographHandler
         CancellationToken cancellationToken)
     {
         var result = await _profileService.RecordPhotographAsync(
-            command.Adapt<RecordProfilePhotographArgs>(),
+            _mapper.Map<RecordProfilePhotographArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

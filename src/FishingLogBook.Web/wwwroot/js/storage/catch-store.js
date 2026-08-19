@@ -395,3 +395,4 @@ function uint8ToBase64(bytes) {
 
     return btoa(binary);
 }
+

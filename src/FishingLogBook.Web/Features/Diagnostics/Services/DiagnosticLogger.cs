@@ -103,10 +103,13 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 IsWriting.Value = false;
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
         catch (Exception exceptionWhileLogging)
         {
-            await RecordFailureAsync(exceptionWhileLogging, eventName, cancellationToken);
-            await WriteConsoleAsync(DiagnosticLevel.Error, eventName, "Diagnostic persistence failed.", cancellationToken);
+            await RecordFailureAsync(exceptionWhileLogging, eventName, CancellationToken.None);
+            await WriteConsoleAsync(DiagnosticLevel.Error, eventName, "Diagnostic persistence failed.", CancellationToken.None);
         }
     }
 
@@ -148,9 +151,13 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         {
             isOnline = await _networkStatus.IsOnlineAsync(cancellationToken);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception onlineCheckException)
         {
-            await _logging.LogErrorAsync("diagnostic online check", onlineCheckException, cancellationToken);
+            await _logging.LogErrorAsync("diagnostic online check", onlineCheckException, CancellationToken.None);
         }
 
         return new DiagnosticEventModel
@@ -189,9 +196,13 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 return parsed;
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
-            await _logging.LogErrorAsync("diagnostic session read", exception, cancellationToken);
+            await _logging.LogErrorAsync("diagnostic session read", exception, CancellationToken.None);
         }
 
         var created = Guid.NewGuid();
@@ -200,9 +211,13 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         {
             await _jsRuntime.InvokeVoidAsync("fishingLogBookDiagnostics.setSessionId", cancellationToken, created.ToString("D"));
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
-            await _logging.LogErrorAsync("diagnostic session write", exception, cancellationToken);
+            await _logging.LogErrorAsync("diagnostic session write", exception, CancellationToken.None);
         }
 
         return created;
@@ -216,9 +231,13 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 await _jsRuntime.InvokeAsync<string>("fishingLogBookDiagnostics.getPlatform", cancellationToken),
                 120);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
-            await _logging.LogErrorAsync("diagnostic platform read", exception, cancellationToken);
+            await _logging.LogErrorAsync("diagnostic platform read", exception, CancellationToken.None);
             return null;
         }
     }
@@ -256,9 +275,13 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
                 eventName,
                 message);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
-            await _logging.LogErrorAsync("diagnostic console", exception, cancellationToken);
+            await _logging.LogErrorAsync("diagnostic console", exception, CancellationToken.None);
         }
     }
 }

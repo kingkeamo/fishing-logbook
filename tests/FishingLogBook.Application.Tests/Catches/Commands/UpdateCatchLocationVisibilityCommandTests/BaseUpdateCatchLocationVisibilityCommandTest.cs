@@ -12,6 +12,6 @@ public class BaseUpdateCatchLocationVisibilityCommandTest
 
     protected BaseUpdateCatchLocationVisibilityCommandTest()
     {
-        Sut = new UpdateCatchLocationVisibilityHandler(MockCatchService);
+        Sut = new UpdateCatchLocationVisibilityHandler(MockCatchService, TestMapper.Create());
     }
 }

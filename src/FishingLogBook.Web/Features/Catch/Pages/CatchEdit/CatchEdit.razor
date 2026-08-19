@@ -27,28 +27,83 @@
         }
         else
         {
-            <MudTextField @bind-Value="_speciesName"
-                          Label="@Loc["Catch_EditSpecies"]"
-                          MaxLength="@CatchDetailConstants.MaxSpeciesNameLength"
-                          Immediate="true"
-                          id="catch-edit-species" />
+            @if (_catalogueUnavailable)
+            {
+                <MudText Typo="Typo.caption"
+                         Class="mud-text-secondary"
+                         id="catch-edit-catalogue-unavailable">
+                    @Loc["Catch_CatalogueUnavailable"]
+                </MudText>
+            }
+
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.caption">@Loc["Catch_EditMethod"]</MudText>
+                <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catch-edit-method-chips">
+                    @foreach (var method in MethodOptions)
+                    {
+                        var selected = string.Equals(method.Name, _method, StringComparison.OrdinalIgnoreCase);
+                        <MudChip T="string"
+                                 Color="@(selected ? Color.Primary : Color.Default)"
+                                 Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => SelectMethod(method.Name))"
+                                 id="@($"catch-edit-method-{method.Code}")">
+                            @method.Name
+                        </MudChip>
+                    }
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               OnClick="ChooseMethodAsync"
+                               id="catch-edit-method-more">
+                        @Loc["Common_More"]
+                    </MudButton>
+                </MudStack>
+                <MudTextField @bind-Value="MethodInput"
+                              Label="@Loc["Catch_EditMethod"]"
+                              MaxLength="@CatchDetailConstants.MaxMethodLength"
+                              Immediate="true"
+                              id="catch-edit-method" />
+            </MudStack>
+
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.caption">@Loc["Catch_EditSpecies"]</MudText>
+                <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catch-edit-species-chips">
+                    @foreach (var species in SpeciesOptions)
+                    {
+                        var selected = string.Equals(species.Name, _speciesName, StringComparison.OrdinalIgnoreCase);
+                        <MudChip T="string"
+                                 Color="@(selected ? Color.Primary : Color.Default)"
+                                 Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => SelectSpecies(species.Name))"
+                                 id="@($"catch-edit-species-{species.Code}")">
+                            @species.Name
+                        </MudChip>
+                    }
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               OnClick="ChooseSpeciesAsync"
+                               id="catch-edit-species-more">
+                        @Loc["Common_More"]
+                    </MudButton>
+                </MudStack>
+                <MudTextField @bind-Value="SpeciesInput"
+                              Label="@Loc["Catch_EditSpecies"]"
+                              MaxLength="@CatchDetailConstants.MaxSpeciesNameLength"
+                              Immediate="true"
+                              id="catch-edit-species" />
+            </MudStack>
+
             <MudTextField @bind-Value="_weightText"
-                          Label="@Loc["Catch_EditWeight"]"
-                          HelperText="@Loc["Catch_EditWeightUnit"]"
+                          Label="@WeightLabel"
                           Immediate="true"
                           InputType="InputType.Number"
                           id="catch-edit-weight" />
+
             <MudTextField @bind-Value="_lengthText"
-                          Label="@Loc["Catch_EditLength"]"
-                          HelperText="@Loc["Catch_EditLengthUnit"]"
+                          Label="@LengthLabel"
                           Immediate="true"
                           InputType="InputType.Number"
                           id="catch-edit-length" />
-            <MudTextField @bind-Value="_method"
-                          Label="@Loc["Catch_EditMethod"]"
-                          MaxLength="@CatchDetailConstants.MaxMethodLength"
-                          Immediate="true"
-                          id="catch-edit-method" />
+
             <MudTextField @bind-Value="_baitOrLure"
                           Label="@Loc["Catch_EditBaitOrLure"]"
                           MaxLength="@CatchDetailConstants.MaxBaitOrLureLength"

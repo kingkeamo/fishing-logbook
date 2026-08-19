@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     CATCH_DATABASE_NAME,
+    CATCH_DATABASE_VERSION,
     CATCH_STORE_NAME,
     PHOTO_STORE_NAME,
     PRODUCTION_CATCH_STORE_NAME,
@@ -109,7 +110,7 @@ describe('Catch store', () => {
         const first = await openCatchDatabase();
 
         const upgraded = await new Promise((resolve, reject) => {
-            const request = indexedDB.open(CATCH_DATABASE_NAME, 4);
+            const request = indexedDB.open(CATCH_DATABASE_NAME, CATCH_DATABASE_VERSION + 1);
             request.onupgradeneeded = () => { };
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);

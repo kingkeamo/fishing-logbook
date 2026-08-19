@@ -13,7 +13,7 @@ public class BaseResolveCurrentUserCommandTest
 
     protected BaseResolveCurrentUserCommandTest()
     {
-        Sut = new ResolveCurrentUserHandler(MockUserIdentityService);
+        Sut = new ResolveCurrentUserHandler(MockUserIdentityService, TestMapper.Create());
     }
 
     protected static ResolveUserIdentityArgs Matching(ResolveCurrentUserCommand command)

@@ -64,6 +64,9 @@ test-results/
 coverage/
 artifacts/javascript-tests/
 
+# Local scratch
+.tmp/
+
 # OS files
 .DS_Store
 Thumbs.db

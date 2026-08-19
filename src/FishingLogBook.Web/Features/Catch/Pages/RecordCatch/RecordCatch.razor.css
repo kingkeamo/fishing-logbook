@@ -23,11 +23,23 @@
     justify-content: center;
     min-height: 2.75rem;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--mud-palette-lines-default);
     border-radius: var(--mud-default-borderradius);
     cursor: pointer;
     text-align: center;
     font-weight: 500;
+}
+
+.record-catch-photo-picker-primary {
+    border: 1px solid var(--mud-palette-primary);
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+.record-catch-photo-picker-secondary {
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: transparent;
+    color: var(--mud-palette-text-primary);
+    font-weight: 400;
 }
 
 ::deep .record-catch-photo-input {

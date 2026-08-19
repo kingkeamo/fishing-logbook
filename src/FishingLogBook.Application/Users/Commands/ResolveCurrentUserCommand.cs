@@ -2,7 +2,7 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FluentValidation;
-using Mapster;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Users.Commands;
@@ -24,10 +24,12 @@ public sealed class ResolveCurrentUserResponse : ValidatedResponse
 public sealed class ResolveCurrentUserHandler : IRequestHandler<ResolveCurrentUserCommand, ResolveCurrentUserResponse>
 {
     private readonly IUserIdentityService _userIdentityService;
+    private readonly IMapper _mapper;
 
-    public ResolveCurrentUserHandler(IUserIdentityService userIdentityService)
+    public ResolveCurrentUserHandler(IUserIdentityService userIdentityService, IMapper mapper)
     {
         _userIdentityService = userIdentityService;
+        _mapper = mapper;
     }
 
     public async Task<ResolveCurrentUserResponse> Handle(
@@ -35,7 +37,7 @@ public sealed class ResolveCurrentUserHandler : IRequestHandler<ResolveCurrentUs
         CancellationToken cancellationToken)
     {
         var result = await _userIdentityService.ResolveAsync(
-            command.Adapt<ResolveUserIdentityArgs>(),
+            _mapper.Map<ResolveUserIdentityArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

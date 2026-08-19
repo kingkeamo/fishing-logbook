@@ -7,7 +7,7 @@ using FishingLogBook.Domain.Catches;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
-using Mapster;
+using MapsterMapper;
 
 namespace FishingLogBook.Application.Catches.Services;
 
@@ -16,15 +16,18 @@ public sealed class CatchService : ICatchService
     private readonly ICatchRepository _catchRepository;
     private readonly ICurrentUser _currentUser;
     private readonly ICatchLocationPrivacyService _catchLocationPrivacyService;
+    private readonly IMapper _mapper;
 
     public CatchService(
         ICatchRepository catchRepository,
         ICurrentUser currentUser,
-        ICatchLocationPrivacyService catchLocationPrivacyService)
+        ICatchLocationPrivacyService catchLocationPrivacyService,
+        IMapper mapper)
     {
         _catchRepository = catchRepository;
         _currentUser = currentUser;
         _catchLocationPrivacyService = catchLocationPrivacyService;
+        _mapper = mapper;
     }
 
     public async Task<Result<CatchDto>> UpsertAsync(UpsertCatchArgs args, CancellationToken cancellationToken)
@@ -84,7 +87,7 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchDto>(saved.Errors);
         }
 
-        return Result.Ok(saved.Value.Adapt<CatchDto>());
+        return Result.Ok(_mapper.Map<CatchDto>(saved.Value));
     }
 
     public async Task<Result<CatchViewDto>> GetViewAsync(GetCatchArgs args, CancellationToken cancellationToken)

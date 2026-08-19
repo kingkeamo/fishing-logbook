@@ -5,181 +5,244 @@
 
 <PageTitle>@Loc["Catch_RecordPageTitle"]</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="record-catch-container pa-4">
-    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
-        <MudStack Spacing="1" AlignItems="AlignItems.Center">
-            <MudText Typo="Typo.h4" Align="Align.Center">@Loc["Catch_RecordTitle"]</MudText>
-            <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">@Loc["Catch_RecordSubtitle"]</MudText>
-        </MudStack>
+<MudContainer MaxWidth="MaxWidth.Small" Class="record-catch-container pa-3">
+    <MudStack Spacing="2" AlignItems="AlignItems.Stretch">
+        <MudText Typo="Typo.h6" Align="Align.Center" id="record-catch-title">@Loc["Catch_RecordTitle"]</MudText>
 
-        <MudPaper Class="pa-4" Elevation="2">
-            <MudStack Spacing="3">
-                @if (!_isSaved)
-                {
-                    <div class="record-catch-photo-actions">
-                        <label for="catch-photo-camera"
-                               class="record-catch-photo-picker"
-                               id="catch-take-photo">
-                            @Loc["Catch_TakePhoto"]
-                        </label>
-                        <label for="catch-photo-gallery"
-                               class="record-catch-photo-picker"
-                               id="catch-choose-photo">
-                            @Loc["Catch_ChoosePhoto"]
-                        </label>
-                        <InputFile OnChange="OnPhotographSelected"
-                                   accept="image/*"
-                                   capture="environment"
-                                   class="record-catch-photo-input"
-                                   id="catch-photo-camera" />
-                        <InputFile OnChange="OnPhotographSelected"
-                                   accept="image/*"
-                                   multiple
-                                   class="record-catch-photo-input"
-                                   id="catch-photo-gallery" />
-                    </div>
-                }
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center"
+                                 id="record-catch-loading" />
+        }
+        else
+        {
+            <MudPaper Class="pa-3" Elevation="2">
+                <MudStack Spacing="2">
+                    @if (_catalogueUnavailable)
+                    {
+                        <MudText Typo="Typo.caption"
+                                 Class="mud-text-secondary"
+                                 id="record-catch-catalogue-unavailable">
+                            @Loc["Catch_CatalogueUnavailable"]
+                        </MudText>
+                    }
 
-                @if (!_isSaved && _locationPrompt.ShowExplainer)
-                {
-                    <MudStack Spacing="2" id="catch-location-explainer">
-                        <MudText Typo="Typo.body2">@Loc["Catch_LocationExplainer"]</MudText>
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_LocationPrivacy"]</MudText>
-                        <MudStack Row="true" Spacing="2">
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       OnClick="AllowLocationAsync"
-                                       id="catch-location-allow">
-                                @Loc["Catch_LocationAllow"]
-                            </MudButton>
-                            <MudButton Variant="Variant.Text"
-                                       Color="Color.Default"
-                                       OnClick="DismissLocationAsync"
-                                       id="catch-location-not-now">
-                                @Loc["Catch_LocationNotNow"]
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.caption">@Loc["Catch_EditMethod"]</MudText>
+                        <MudStack Row="true" Spacing="1" Class="flex-wrap" id="record-catch-method-chips">
+                            @foreach (var method in MethodOptions)
+                            {
+                                var selected = string.Equals(method.Name, _selectedMethod, StringComparison.OrdinalIgnoreCase);
+                                <MudChip T="string"
+                                         Color="@(selected ? Color.Primary : Color.Default)"
+                                         Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                         OnClick="@(() => SelectMethod(method.Name))"
+                                         id="@($"record-catch-method-{method.Code}")">
+                                    @method.Name
+                                </MudChip>
+                            }
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Text"
+                                       OnClick="ChooseMethodAsync"
+                                       id="record-catch-method-more">
+                                @Loc["Common_More"]
                             </MudButton>
                         </MudStack>
                     </MudStack>
-                }
-                else if (!_isSaved && _locationPrompt.WillCaptureOnSave)
-                {
-                    <MudText Typo="Typo.caption"
-                             Color="Color.Success"
-                             id="catch-location-status">
-                        @Loc["Catch_LocationOn"]
-                    </MudText>
-                }
-                else if (!_isSaved && _locationPrompt.ShowEnableLater)
-                {
-                    <MudButton Variant="Variant.Text"
-                               Color="Color.Primary"
-                               OnClick="AllowLocationAsync"
-                               id="catch-location-try-again">
-                        @Loc["Catch_LocationTryAgain"]
-                    </MudButton>
-                }
 
-                @if (_unsupportedFormat && !_isSaved)
-                {
-                    <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
-                }
-
-                @if (_photographs.Count > 0 && CurrentPhotograph is { } current)
-                {
-                    <div class="record-catch-carousel"
-                         id="catch-photo-carousel"
-                         @onpointerdown="OnPointerDown"
-                         @onpointerup="OnPointerUp">
-                        <img src="@current.PreviewUrl"
-                             alt="@Loc["Catch_PhotographAlt"]"
-                             class="record-catch-photo-preview"
-                             id="@($"catch-photo-image-{current.Id:D}")" />
-                    </div>
-                    <MudStack Row="true"
-                              Justify="Justify.SpaceBetween"
-                              AlignItems="AlignItems.Center">
-                        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
-                                       Disabled="@(!CanShowPrevious)"
-                                       OnClick="ShowPrevious"
-                                       aria-label="@Loc["Catch_PreviousPhoto"]"
-                                       id="catch-photo-prev" />
-                        <MudText Typo="Typo.body2" id="catch-photo-position">@PhotoPosition</MudText>
-                        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                                       Disabled="@(!CanShowNext)"
-                                       OnClick="ShowNext"
-                                       aria-label="@Loc["Catch_NextPhoto"]"
-                                       id="catch-photo-next" />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.caption">@Loc["Catch_EditSpecies"]</MudText>
+                        <MudStack Row="true" Spacing="1" Class="flex-wrap" id="record-catch-species-chips">
+                            @foreach (var species in SpeciesOptions)
+                            {
+                                var selected = string.Equals(species.Name, _selectedSpecies, StringComparison.OrdinalIgnoreCase);
+                                <MudChip T="string"
+                                         Color="@(selected ? Color.Primary : Color.Default)"
+                                         Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                         OnClick="@(() => SelectSpecies(species.Name))"
+                                         id="@($"record-catch-species-{species.Code}")">
+                                    @species.Name
+                                </MudChip>
+                            }
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Text"
+                                       OnClick="ChooseSpeciesAsync"
+                                       id="record-catch-species-more">
+                                @Loc["Common_More"]
+                            </MudButton>
+                        </MudStack>
                     </MudStack>
+
                     @if (!_isSaved)
                     {
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Error"
-                                   FullWidth="true"
-                                   OnClick="RemoveCurrentPhotograph"
-                                   id="catch-photo-remove">
-                            @Loc["Catch_RemovePhoto"]
+                        <div class="record-catch-photo-actions">
+                            <label for="catch-photo-camera"
+                                   class="record-catch-photo-picker record-catch-photo-picker-primary"
+                                   id="catch-take-photo">
+                                @Loc["Catch_TakePhoto"]
+                            </label>
+                            <label for="catch-photo-gallery"
+                                   class="record-catch-photo-picker record-catch-photo-picker-secondary"
+                                   id="catch-choose-photo">
+                                @Loc["Catch_ChoosePhoto"]
+                            </label>
+                            <InputFile OnChange="OnPhotographSelected"
+                                       accept="image/*"
+                                       capture="environment"
+                                       class="record-catch-photo-input"
+                                       id="catch-photo-camera" />
+                            <InputFile OnChange="OnPhotographSelected"
+                                       accept="image/*"
+                                       multiple
+                                       class="record-catch-photo-input"
+                                       id="catch-photo-gallery" />
+                        </div>
+                    }
+
+                    @if (!_isSaved && _locationPrompt.ShowExplainer)
+                    {
+                        <MudStack Spacing="1" id="catch-location-explainer">
+                            <MudText Typo="Typo.caption">@Loc["Catch_LocationExplainer"]</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_LocationPrivacy"]</MudText>
+                            <MudStack Row="true" Spacing="1">
+                                <MudButton Variant="Variant.Filled"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="AllowLocationAsync"
+                                           id="catch-location-allow">
+                                    @Loc["Catch_LocationAllow"]
+                                </MudButton>
+                                <MudButton Variant="Variant.Text"
+                                           Size="Size.Small"
+                                           Color="Color.Default"
+                                           OnClick="DismissLocationAsync"
+                                           id="catch-location-not-now">
+                                    @Loc["Catch_LocationNotNow"]
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+                    }
+                    else if (!_isSaved && _locationPrompt.WillCaptureOnSave)
+                    {
+                        <MudText Typo="Typo.caption"
+                                 Color="Color.Success"
+                                 id="catch-location-status">
+                            @Loc["Catch_LocationOnPrivate"]
+                        </MudText>
+                    }
+                    else if (!_isSaved && _locationPrompt.ShowEnableLater)
+                    {
+                        <MudButton Variant="Variant.Text"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   OnClick="AllowLocationAsync"
+                                   id="catch-location-try-again">
+                            @Loc["Catch_LocationTryAgain"]
                         </MudButton>
                     }
-                    <MudText Typo="Typo.body2" id="catch-caught-on">@CaughtOnDisplay</MudText>
-                }
 
-                @if (_isSaved)
-                {
-                    <MudAlert Severity="Severity.Success" id="catch-saved">@Loc["Catch_Saved"]</MudAlert>
-                    <MudText Typo="Typo.caption" id="catch-sync-saved-locally">
-                        @Loc["SyncStatus_SavedLocally"]
-                    </MudText>
-                    @if (_locationSaved)
+                    @if (_unsupportedFormat && !_isSaved)
                     {
-                        <MudText Typo="Typo.caption" id="catch-location-saved">@Loc["Catch_LocationSaved"]</MudText>
+                        <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
                     }
-                }
 
-                @if (_saveFailed)
-                {
-                    <MudAlert Severity="Severity.Error" id="catch-save-failed">@Loc["Catch_SaveFailed"]</MudAlert>
-                }
+                    @if (_photographs.Count > 0 && CurrentPhotograph is { } current)
+                    {
+                        <div class="record-catch-carousel"
+                             id="catch-photo-carousel"
+                             @onpointerdown="OnPointerDown"
+                             @onpointerup="OnPointerUp">
+                            <img src="@current.PreviewUrl"
+                                 alt="@Loc["Catch_PhotographAlt"]"
+                                 class="record-catch-photo-preview"
+                                 id="@($"catch-photo-image-{current.Id:D}")" />
+                        </div>
+                        <MudStack Row="true"
+                                  Justify="Justify.SpaceBetween"
+                                  AlignItems="AlignItems.Center">
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                                           Disabled="@(!CanShowPrevious)"
+                                           OnClick="ShowPrevious"
+                                           aria-label="@Loc["Catch_PreviousPhoto"]"
+                                           id="catch-photo-prev" />
+                            <MudText Typo="Typo.body2" id="catch-photo-position">@PhotoPosition</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                                           Disabled="@(!CanShowNext)"
+                                           OnClick="ShowNext"
+                                           aria-label="@Loc["Catch_NextPhoto"]"
+                                           id="catch-photo-next" />
+                        </MudStack>
+                        @if (!_isSaved)
+                        {
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Error"
+                                       FullWidth="true"
+                                       OnClick="RemoveCurrentPhotograph"
+                                       id="catch-photo-remove">
+                                @Loc["Catch_RemovePhoto"]
+                            </MudButton>
+                        }
+                        <MudText Typo="Typo.body2" id="catch-caught-on">@CaughtOnDisplay</MudText>
+                    }
 
-                @if (_isSaved)
-                {
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               FullWidth="true"
-                               OnClick="RecordAnotherCatch"
-                               id="catch-record-another">
-                        @Loc["Catch_RecordAnother"]
-                    </MudButton>
-                    <MudButton Variant="Variant.Outlined"
-                               Color="Color.Primary"
-                               FullWidth="true"
-                               Href="/catches"
-                               id="catch-view-catches">
-                        @Loc["Catch_ViewCatches"]
-                    </MudButton>
-                }
-                else
-                {
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               FullWidth="true"
-                               Disabled="@(!CanSave)"
-                               OnClick="SaveAsync"
-                               id="save-catch-button">
-                        @if (_isSaving)
+                    @if (_isSaved)
+                    {
+                        <MudAlert Severity="Severity.Success" id="catch-saved">@Loc["Catch_Saved"]</MudAlert>
+                        <MudText Typo="Typo.caption" id="catch-sync-saved-locally">
+                            @Loc["SyncStatus_SavedLocally"]
+                        </MudText>
+                        @if (_locationSaved)
                         {
-                            <MudProgressCircular Size="Size.Small"
-                                                 Indeterminate="true"
-                                                 Class="ms-n1 mr-2"
-                                                 id="save-catch-spinner" />
-                            @Loc["Catch_Saving"]
+                            <MudText Typo="Typo.caption" id="catch-location-saved">@Loc["Catch_LocationSaved"]</MudText>
                         }
-                        else
-                        {
-                            @Loc["Catch_Save"]
-                        }
-                    </MudButton>
-                }
-            </MudStack>
-        </MudPaper>
+                    }
+
+                    @if (_saveFailed)
+                    {
+                        <MudAlert Severity="Severity.Error" id="catch-save-failed">@Loc["Catch_SaveFailed"]</MudAlert>
+                    }
+
+                    @if (_isSaved)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   FullWidth="true"
+                                   OnClick="RecordAnotherCatch"
+                                   id="catch-record-another">
+                            @Loc["Catch_RecordAnother"]
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   FullWidth="true"
+                                   Href="/catches"
+                                   id="catch-view-catches">
+                            @Loc["Catch_ViewCatches"]
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   FullWidth="true"
+                                   Disabled="@(!CanSave)"
+                                   OnClick="SaveAsync"
+                                   id="save-catch-button">
+                            @if (_isSaving)
+                            {
+                                <MudProgressCircular Size="Size.Small"
+                                                     Indeterminate="true"
+                                                     Class="ms-n1 mr-2"
+                                                     id="save-catch-spinner" />
+                                @Loc["Catch_Saving"]
+                            }
+                            else
+                            {
+                                @Loc["Catch_Save"]
+                            }
+                        </MudButton>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
     </MudStack>
 </MudContainer>

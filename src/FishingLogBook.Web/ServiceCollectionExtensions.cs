@@ -9,6 +9,7 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
+using FishingLogBook.Web.Features.Profile.Offline;
 using FishingLogBook.Web.Features.Profile.Services;
 using FishingLogBook.Web.Features.SystemStatus.Services;
 using FishingLogBook.Web.Features.TestCatch.Offline;
@@ -49,6 +50,9 @@ public static class ServiceCollectionExtensions
         }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
         services.AddScoped<ITestCatchClient, TestCatchClient>();
         services.AddScoped<IProfileClient, ProfileClient>();
+        services.AddScoped<IFishingPreferenceClient, FishingPreferenceClient>();
+        services.AddScoped<IAnglerPreferencesCache, IndexedDbAnglerPreferencesCache>();
+        services.AddScoped<IAnglerPreferencesProvider, AnglerPreferencesProvider>();
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<ITimeService, TimeService>();
@@ -61,6 +65,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatchClient, CatchClient>();
         services.AddScoped<ICurrentUserClient, CurrentUserClient>();
         services.AddScoped<ILocalCatchOwnerService, LocalCatchOwnerService>();
+        services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();

@@ -14,7 +14,6 @@ public class WhenTestingHandle : BaseGrantPlatformCapabilityCommandTest
 {
     public WhenTestingHandle()
     {
-        ((IRegister)new CapabilityMappingRegistration()).Register(TypeAdapterConfig.GlobalSettings);
     }
 
     [Fact]

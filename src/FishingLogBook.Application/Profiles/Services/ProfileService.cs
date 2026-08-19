@@ -5,6 +5,7 @@ using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FluentResults;
 
 namespace FishingLogBook.Application.Profiles.Services;
@@ -147,7 +148,9 @@ public sealed class ProfileService : IProfileService
             profile.ShowPhotograph,
             profile.ShowHomeRegion,
             profile.ShowPreferredFishingTypes,
-            profile.ShowPreferredSpecies);
+            profile.ShowPreferredSpecies,
+            (WeightUnitEnum)profile.PreferredWeightUnit,
+            (LengthUnitEnum)profile.PreferredLengthUnit);
     }
 
     private async Task<PublicProfileDto> ToPublicDtoAsync(Profile profile, CancellationToken cancellationToken)
@@ -192,6 +195,8 @@ public sealed class ProfileService : IProfileService
             HomeRegion = TrimOrNull(args.HomeRegion),
             PreferredFishingTypes = [.. args.PreferredFishingTypes],
             PreferredSpecies = [.. args.PreferredSpecies.Select(value => value.Trim()).Where(value => value.Length > 0)],
+            PreferredWeightUnit = args.PreferredWeightUnit,
+            PreferredLengthUnit = args.PreferredLengthUnit,
             ShowDisplayName = args.ShowDisplayName,
             ShowPhotograph = args.ShowPhotograph,
             ShowHomeRegion = args.ShowHomeRegion,

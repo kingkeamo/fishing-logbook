@@ -15,6 +15,7 @@ public sealed class ProfileRepository : IProfileRepository
     private const string SelectSql = """
         SELECT "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
                "HomeRegion", "PreferredFishingTypes", "PreferredSpecies",
+               "PreferredWeightUnit", "PreferredLengthUnit",
                "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
                "ShowPreferredFishingTypes", "ShowPreferredSpecies"
         FROM "Profile"
@@ -78,12 +79,14 @@ public sealed class ProfileRepository : IProfileRepository
                 INSERT INTO "Profile" (
                     "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
                     "HomeRegion", "PreferredFishingTypes", "PreferredSpecies",
+                    "PreferredWeightUnit", "PreferredLengthUnit",
                     "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
                     "ShowPreferredFishingTypes", "ShowPreferredSpecies",
                     "UpdatedOn")
                 VALUES (
                     @UserId, @DisplayName, @PhotographId, @PhotographObjectKey, @PhotographContentType,
                     @HomeRegion, @PreferredFishingTypes, @PreferredSpecies,
+                    @PreferredWeightUnit, @PreferredLengthUnit,
                     @ShowDisplayName, @ShowPhotograph, @ShowHomeRegion,
                     @ShowPreferredFishingTypes, @ShowPreferredSpecies,
                     now())
@@ -92,6 +95,8 @@ public sealed class ProfileRepository : IProfileRepository
                     "HomeRegion" = EXCLUDED."HomeRegion",
                     "PreferredFishingTypes" = EXCLUDED."PreferredFishingTypes",
                     "PreferredSpecies" = EXCLUDED."PreferredSpecies",
+                    "PreferredWeightUnit" = EXCLUDED."PreferredWeightUnit",
+                    "PreferredLengthUnit" = EXCLUDED."PreferredLengthUnit",
                     "ShowDisplayName" = EXCLUDED."ShowDisplayName",
                     "ShowPhotograph" = EXCLUDED."ShowPhotograph",
                     "ShowHomeRegion" = EXCLUDED."ShowHomeRegion",
@@ -100,7 +105,10 @@ public sealed class ProfileRepository : IProfileRepository
                     "UpdatedOn" = now();
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
-            await connection.ExecuteAsync(new CommandDefinition(sql, profile, cancellationToken: cancellationToken));
+            await connection.ExecuteAsync(new CommandDefinition(
+                sql,
+                ToParameters(profile),
+                cancellationToken: cancellationToken));
             return await RequireByUserIdAsync(connection, profile.UserId, cancellationToken);
         }
         catch (Exception exception)
@@ -141,6 +149,28 @@ public sealed class ProfileRepository : IProfileRepository
             _logger.LogError(exception, "Failed to update angler profile photograph {UserId}.", args.UserId);
             return Result.Fail<Profile>(FailedMessage);
         }
+    }
+
+    private static object ToParameters(Profile profile)
+    {
+        return new
+        {
+            profile.UserId,
+            profile.DisplayName,
+            profile.PhotographId,
+            profile.PhotographObjectKey,
+            profile.PhotographContentType,
+            profile.HomeRegion,
+            profile.PreferredFishingTypes,
+            profile.PreferredSpecies,
+            PreferredWeightUnit = (int)profile.PreferredWeightUnit,
+            PreferredLengthUnit = (int)profile.PreferredLengthUnit,
+            profile.ShowDisplayName,
+            profile.ShowPhotograph,
+            profile.ShowHomeRegion,
+            profile.ShowPreferredFishingTypes,
+            profile.ShowPreferredSpecies
+        };
     }
 
     private static async Task<Result<Profile>> RequireByUserIdAsync(

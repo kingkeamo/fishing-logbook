@@ -3,7 +3,7 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using FluentValidation;
-using Mapster;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Capabilities.Commands;
@@ -22,10 +22,12 @@ public sealed class GrantPlatformCapabilityResponse : ValidatedResponse
 public sealed class GrantPlatformCapabilityHandler : IRequestHandler<GrantPlatformCapabilityCommand, GrantPlatformCapabilityResponse>
 {
     private readonly IPlatformCapabilityService _platformCapabilityService;
+    private readonly IMapper _mapper;
 
-    public GrantPlatformCapabilityHandler(IPlatformCapabilityService platformCapabilityService)
+    public GrantPlatformCapabilityHandler(IPlatformCapabilityService platformCapabilityService, IMapper mapper)
     {
         _platformCapabilityService = platformCapabilityService;
+        _mapper = mapper;
     }
 
     public async Task<GrantPlatformCapabilityResponse> Handle(
@@ -33,7 +35,7 @@ public sealed class GrantPlatformCapabilityHandler : IRequestHandler<GrantPlatfo
         CancellationToken cancellationToken)
     {
         var result = await _platformCapabilityService.GrantAsync(
-            command.Adapt<GrantPlatformCapabilityArgs>(),
+            _mapper.Map<GrantPlatformCapabilityArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

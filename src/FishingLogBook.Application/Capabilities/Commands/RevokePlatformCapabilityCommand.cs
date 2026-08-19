@@ -3,7 +3,7 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using FluentValidation;
-using Mapster;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Capabilities.Commands;
@@ -22,10 +22,12 @@ public sealed class RevokePlatformCapabilityResponse : ValidatedResponse
 public sealed class RevokePlatformCapabilityHandler : IRequestHandler<RevokePlatformCapabilityCommand, RevokePlatformCapabilityResponse>
 {
     private readonly IPlatformCapabilityService _platformCapabilityService;
+    private readonly IMapper _mapper;
 
-    public RevokePlatformCapabilityHandler(IPlatformCapabilityService platformCapabilityService)
+    public RevokePlatformCapabilityHandler(IPlatformCapabilityService platformCapabilityService, IMapper mapper)
     {
         _platformCapabilityService = platformCapabilityService;
+        _mapper = mapper;
     }
 
     public async Task<RevokePlatformCapabilityResponse> Handle(
@@ -33,7 +35,7 @@ public sealed class RevokePlatformCapabilityHandler : IRequestHandler<RevokePlat
         CancellationToken cancellationToken)
     {
         var result = await _platformCapabilityService.RevokeAsync(
-            command.Adapt<RevokePlatformCapabilityArgs>(),
+            _mapper.Map<RevokePlatformCapabilityArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

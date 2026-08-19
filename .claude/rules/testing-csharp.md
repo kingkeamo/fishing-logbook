@@ -397,16 +397,14 @@ Every test method uses exactly these section comments — no other comments:
 - Assert `result.IsFailure` / `IsSuccess`, `ErrorMessage`, `ValidationErrors`, and success
   data.
 - **Every test** must verify mocks with `Received(n)` / `DidNotReceive()` and `Arg.Is<T>(...)`
-  for meaningful inputs (see **Dependency verification**). When the handler calls
-  `.Adapt<TArgs>()`, `Arg.Is<TArgs>` on the adapted fields is what proves Mapster copied
-  the command — do not replace that with `Arg.Any<TArgs>()`.
-- Matching property names Adapt by convention without scanning. If an `IRegister`
-  customizes the pair, register it on `TypeAdapterConfig.GlobalSettings` in the test
-  constructor before `Handle` — handlers call `source.Adapt<T>()`, which uses
-  GlobalSettings, not a local config:
+  for meaningful inputs (see **Dependency verification**). When the handler maps its input,
+  `Arg.Is<TArgs>` on the mapped fields is what proves the mapping copied the command — do
+  not replace that with `Arg.Any<TArgs>()`.
+- Handlers that adapt their input take `IMapper` in the constructor. Build an **isolated**
+  mapper per test — never shared static configuration. See **Mapster in tests** below.
 
 ```csharp
-((IRegister)new UserMappingRegistration()).Register(TypeAdapterConfig.GlobalSettings);
+Sut = new UpdateOwnProfileHandler(MockProfileService, TestMapper.Create());
 ```
 
 - Build domain inputs with the shared builders from `FishingLogBook.Tests.Common`.
@@ -415,18 +413,78 @@ Every test method uses exactly these section comments — no other comments:
 
 ## Service tests (Application.Tests)
 
-- Extend `Base{Service}Test`. Construct the service with `Substitute.For<I*Repository>()`
-  and a Mapster `TypeAdapterConfig` when the service calls `.Adapt<T>()` or injects
-  `IMapper` (same as rah-portal):
+- Extend `Base{Service}Test`. Construct the service with `Substitute.For<I*Repository>()`.
+- A service that maps takes `IMapper` in its constructor. Give it an isolated mapper —
+  never shared static configuration, and never a single `IRegister` registered by hand,
+  which leaves a partial config and makes the suite order dependent. See
+  **Mapster in tests**.
 
 ```csharp
-var config = new TypeAdapterConfig();
-((IRegister)new UserMappingRegistration()).Register(config);
-Mapper = new Mapper(config);
+Sut = new CatchService(
+    MockCatchRepository,
+    MockCurrentUser,
+    MockCatchLocationPrivacyService,
+    TestMapper.Create());
 ```
 
 - Assert FluentResults `IsSuccess` / `IsFailed` **and** `Received(n)` / `DidNotReceive()`
   with `Arg.Is<>` on meaningful inputs (see **Dependency verification**).
+
+## Mapster in tests (mandatory)
+
+Production owns its Mapster configuration through DI and must never touch
+`TypeAdapterConfig.GlobalSettings` (**`cqrs.md` → Mapster**). Tests follow the same rule.
+
+`TypeAdapterConfig.GlobalSettings` is **process-wide mutable state**, and xUnit runs test
+classes in parallel. Sharing it corrupts mappings two ways:
+
+1. **Race.** `Scan` calls `NewConfig`, which resets a rule before re-adding its `.Map`
+   calls. Concurrent registration on the same static config intermittently yields mappings
+   with dropped properties. The tell is that properties mapped from a *nested* path come
+   back null while same-named top-level properties survive — so it reads like a product
+   bug and gets "fixed" in the wrong place. It fails perhaps one run in four, and passes in
+   isolation.
+2. **Order dependence.** A class that registers only its own `IRegister` leaves a *partial*
+   config behind. Whether another class sees the mapping it needs depends on which test ran
+   first, and on a configuration that never matches production.
+
+Build a **fresh, isolated** config and mapper instead, scanning the same assembly the
+composition root scans so tests see the configuration production actually builds:
+
+```csharp
+public static class TestMapper
+{
+    public static IMapper Create()
+    {
+        var typeAdapterConfig = new TypeAdapterConfig();
+        typeAdapterConfig.Scan(typeof(CatchMappingRegistration).Assembly);
+        return new Mapper(typeAdapterConfig);
+    }
+}
+```
+
+Put it in `{TestProject}/Common/TestMapper.cs`, expose the namespace as a global `<Using>`
+in the csproj, and pass `TestMapper.Create()` where the SUT takes an `IMapper`. Nothing is
+shared, so no lock and no initialisation flag are needed.
+
+A suite whose SUT takes no `IMapper` needs no mapper at all — do not wire one in
+"just in case".
+
+**Do not** disable test parallelisation, put otherwise-independent tests into one
+collection, or share a single `WebApplicationFactory`, to hide a Mapster race. Those mask
+the problem, slow the suite, and leave the order dependence in place.
+`DisableTestParallelization` is only for projects with genuinely process-wide test state
+that cannot be removed — for example a suite that mutates `CultureInfo.CurrentCulture`.
+
+**Do not** add a static lock or a `_registered` flag to production so that repeated
+container composition becomes safe. Give each container its own config.
+
+An architecture test (`Api.Tests/DependencyInjectionTests/WhenTestingMapsterConfiguration`)
+reads the compiled production assemblies and fails on any reference to the static Mapster
+entry points, and asserts two containers receive independent configurations. Keep it.
+
+The same reasoning applies to any other shared static a test mutates: fix the sharing, do
+not serialise the suite around it.
 
 ## Validator tests (Application.Tests)
 

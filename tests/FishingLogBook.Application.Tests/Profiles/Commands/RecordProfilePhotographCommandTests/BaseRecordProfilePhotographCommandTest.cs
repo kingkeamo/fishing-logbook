@@ -1,8 +1,6 @@
-using FishingLogBook.Application.Common.Mappings;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
 using FishingLogBook.Shared.Dtos;
-using Mapster;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Profiles.Commands.RecordProfilePhotographCommandTests;
@@ -14,8 +12,7 @@ public class BaseRecordProfilePhotographCommandTest
 
     protected BaseRecordProfilePhotographCommandTest()
     {
-        ((IRegister)new ProfileMappingRegistration()).Register(TypeAdapterConfig.GlobalSettings);
-        Sut = new RecordProfilePhotographHandler(MockProfileService);
+        Sut = new RecordProfilePhotographHandler(MockProfileService, TestMapper.Create());
     }
 
     protected static RecordProfilePhotographCommand Command(

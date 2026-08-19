@@ -13,8 +13,6 @@ public class WhenTestingHandle : BaseGetCatchQueryTest
 {
     public WhenTestingHandle()
     {
-        ((IRegister)new FishingLogBook.Application.Common.Mappings.CatchMappingRegistration())
-            .Register(TypeAdapterConfig.GlobalSettings);
     }
 
     [Fact]

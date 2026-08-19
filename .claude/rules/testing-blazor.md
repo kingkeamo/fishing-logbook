@@ -134,6 +134,11 @@ Keep a `DependencyInjection/` suite that builds `AddFishingLogBookWeb` with
 - **bUnit 2.x** (`BunitContext`) + **xUnit** + **NSubstitute** + **AwesomeAssertions**.
 - Test project `FishingLogBook.Web.Tests` references `FishingLogBook.Web` and
   `FishingLogBook.Shared`.
+- This project sets `[assembly: CollectionBehavior(DisableTestParallelization = true)]` in
+  `AssemblyInfo.cs`. Keep it: `TestCulture` swaps `CultureInfo.CurrentCulture` and
+  `DefaultThreadCurrentCulture`, which is process-wide and cannot be scoped per test. That
+  is the narrow case **`testing-csharp.md` → Mapster and shared static configuration**
+  allows — do not copy this switch into other test projects to paper over a race.
 
 ## MudBlazor + bUnit disposal (important)
 
