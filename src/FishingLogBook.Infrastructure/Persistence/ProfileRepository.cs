@@ -151,26 +151,59 @@ public sealed class ProfileRepository : IProfileRepository
         }
     }
 
-    private static object ToParameters(Profile profile)
+    private static ProfilePersistenceParameters ToParameters(Profile profile)
     {
-        return new
+        return new ProfilePersistenceParameters
         {
-            profile.UserId,
-            profile.DisplayName,
-            profile.PhotographId,
-            profile.PhotographObjectKey,
-            profile.PhotographContentType,
-            profile.HomeRegion,
-            profile.PreferredFishingTypes,
-            profile.PreferredSpecies,
+            UserId = profile.UserId,
+            DisplayName = profile.DisplayName,
+            PhotographId = profile.PhotographId,
+            PhotographObjectKey = profile.PhotographObjectKey,
+            PhotographContentType = profile.PhotographContentType,
+            HomeRegion = profile.HomeRegion,
+            PreferredFishingTypes = profile.PreferredFishingTypes,
+            PreferredSpecies = profile.PreferredSpecies,
             PreferredWeightUnit = (int)profile.PreferredWeightUnit,
             PreferredLengthUnit = (int)profile.PreferredLengthUnit,
-            profile.ShowDisplayName,
-            profile.ShowPhotograph,
-            profile.ShowHomeRegion,
-            profile.ShowPreferredFishingTypes,
-            profile.ShowPreferredSpecies
+            ShowDisplayName = profile.ShowDisplayName,
+            ShowPhotograph = profile.ShowPhotograph,
+            ShowHomeRegion = profile.ShowHomeRegion,
+            ShowPreferredFishingTypes = profile.ShowPreferredFishingTypes,
+            ShowPreferredSpecies = profile.ShowPreferredSpecies
         };
+    }
+
+    private sealed class ProfilePersistenceParameters
+    {
+        public Guid UserId { get; init; }
+
+        public string? DisplayName { get; init; }
+
+        public Guid? PhotographId { get; init; }
+
+        public string? PhotographObjectKey { get; init; }
+
+        public string? PhotographContentType { get; init; }
+
+        public string? HomeRegion { get; init; }
+
+        public string[] PreferredFishingTypes { get; init; } = [];
+
+        public string[] PreferredSpecies { get; init; } = [];
+
+        public int PreferredWeightUnit { get; init; }
+
+        public int PreferredLengthUnit { get; init; }
+
+        public bool ShowDisplayName { get; init; }
+
+        public bool ShowPhotograph { get; init; }
+
+        public bool ShowHomeRegion { get; init; }
+
+        public bool ShowPreferredFishingTypes { get; init; }
+
+        public bool ShowPreferredSpecies { get; init; }
     }
 
     private static async Task<Result<Profile>> RequireByUserIdAsync(

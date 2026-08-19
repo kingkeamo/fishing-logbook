@@ -27,7 +27,8 @@ public class WhenTestingMapsterConfiguration
     [
         typeof(CatchService).Assembly.Location,
         typeof(CatchRepository).Assembly.Location,
-        typeof(FishingLogBook.DependencyInjection.ServiceCollectionExtensions).Assembly.Location
+        typeof(FishingLogBook.DependencyInjection.ServiceCollectionExtensions).Assembly.Location,
+        typeof(Program).Assembly.Location
     ];
 
     [Theory]

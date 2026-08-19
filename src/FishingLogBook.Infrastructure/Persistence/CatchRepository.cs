@@ -213,7 +213,7 @@ public sealed class CatchRepository : ICatchRepository
             """;
         await connection.ExecuteAsync(new CommandDefinition(
             sql,
-            ToRow(catchRecord),
+            ToParameters(catchRecord),
             transaction,
             cancellationToken: cancellationToken));
     }
@@ -300,21 +300,21 @@ public sealed class CatchRepository : ICatchRepository
         return _mapper.Map<Catch>(catchRow);
     }
 
-    private static object ToRow(Catch catchRecord)
+    private static CatchPersistenceParameters ToParameters(Catch catchRecord)
     {
-        return new
+        return new CatchPersistenceParameters
         {
-            catchRecord.Id,
-            catchRecord.UserId,
-            catchRecord.AnglerUserId,
-            catchRecord.RecordedByUserId,
+            Id = catchRecord.Id,
+            UserId = catchRecord.UserId,
+            AnglerUserId = catchRecord.AnglerUserId,
+            RecordedByUserId = catchRecord.RecordedByUserId,
             CaughtOn = catchRecord.CaughtOn.ToUniversalTime(),
-            catchRecord.SpeciesName,
-            catchRecord.Weight,
-            catchRecord.Length,
-            catchRecord.Method,
-            catchRecord.BaitOrLure,
-            catchRecord.Notes,
+            SpeciesName = catchRecord.SpeciesName,
+            Weight = catchRecord.Weight,
+            Length = catchRecord.Length,
+            Method = catchRecord.Method,
+            BaitOrLure = catchRecord.BaitOrLure,
+            Notes = catchRecord.Notes,
             Latitude = catchRecord.Location?.Latitude,
             Longitude = catchRecord.Location?.Longitude,
             LocationAccuracyMetres = catchRecord.Location?.AccuracyMetres,
@@ -392,5 +392,44 @@ public sealed class CatchRepository : ICatchRepository
         public string? LocationConsentVersion { get; init; }
 
         public IReadOnlyList<CatchPhotograph> Photographs { get; set; } = [];
+    }
+
+    private sealed class CatchPersistenceParameters
+    {
+        public Guid Id { get; init; }
+
+        public Guid UserId { get; init; }
+
+        public Guid AnglerUserId { get; init; }
+
+        public Guid RecordedByUserId { get; init; }
+
+        public DateTimeOffset CaughtOn { get; init; }
+
+        public string? SpeciesName { get; init; }
+
+        public decimal? Weight { get; init; }
+
+        public decimal? Length { get; init; }
+
+        public string? Method { get; init; }
+
+        public string? BaitOrLure { get; init; }
+
+        public string? Notes { get; init; }
+
+        public double? Latitude { get; init; }
+
+        public double? Longitude { get; init; }
+
+        public double? LocationAccuracyMetres { get; init; }
+
+        public DateTimeOffset? LocationCapturedOn { get; init; }
+
+        public string? LocationSource { get; init; }
+
+        public string? LocationVisibility { get; init; }
+
+        public string? LocationConsentVersion { get; init; }
     }
 }

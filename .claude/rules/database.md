@@ -143,6 +143,14 @@ null). They still must not drop the source column.
   class) need no mapper. Domain construction that enforces invariants (for example
   `CatchLocation.TryCreate`) stays explicit, referenced from an `IRegister` conversion rather than
   hand-copied at the call site.
+- A repository helper method that builds a substantial or reused set of Dapper SQL parameters
+  from a Domain object must not return `object` backed by an anonymous type — the compile-time
+  contract is lost once it leaves the method. Return a named internal `*PersistenceParameters`
+  type instead (nested in the repository, alongside any row-DTO it already has, e.g.
+  `CatchRepository.CatchPersistenceParameters`). This is persistence-boundary shaping (flattening
+  a nested Domain value object, normalising timestamps to UTC, casting enums), not object
+  adaptation, so build it explicitly rather than through Mapster. A small anonymous object created
+  directly at a single inline Dapper call site (not returned from a helper) is still fine.
 
 GOOD:
 
