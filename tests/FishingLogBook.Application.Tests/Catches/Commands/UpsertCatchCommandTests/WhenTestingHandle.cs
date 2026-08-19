@@ -14,8 +14,7 @@ public class WhenTestingHandle : BaseUpsertCatchCommandTest
 {
     public WhenTestingHandle()
     {
-        ((IRegister)new FishingLogBook.Application.Common.Mappings.CatchMappingRegistration())
-            .Register(TypeAdapterConfig.GlobalSettings);
+        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

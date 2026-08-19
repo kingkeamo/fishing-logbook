@@ -14,7 +14,7 @@ public class BaseRecordProfilePhotographCommandTest
 
     protected BaseRecordProfilePhotographCommandTest()
     {
-        ((IRegister)new ProfileMappingRegistration()).Register(TypeAdapterConfig.GlobalSettings);
+        MapsterTestConfig.EnsureInitialised();
         Sut = new RecordProfilePhotographHandler(MockProfileService);
     }
 

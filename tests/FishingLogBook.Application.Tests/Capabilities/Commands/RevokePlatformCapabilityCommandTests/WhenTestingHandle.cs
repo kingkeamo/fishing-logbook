@@ -14,7 +14,7 @@ public class WhenTestingHandle : BaseRevokePlatformCapabilityCommandTest
 {
     public WhenTestingHandle()
     {
-        ((IRegister)new CapabilityMappingRegistration()).Register(TypeAdapterConfig.GlobalSettings);
+        MapsterTestConfig.EnsureInitialised();
     }
 
     [Fact]

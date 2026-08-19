@@ -15,7 +15,7 @@ public class BaseUpdateOwnProfileCommandTest
 
     protected BaseUpdateOwnProfileCommandTest()
     {
-        ((IRegister)new ProfileMappingRegistration()).Register(TypeAdapterConfig.GlobalSettings);
+        MapsterTestConfig.EnsureInitialised();
         Sut = new UpdateOwnProfileHandler(MockProfileService);
     }
 
