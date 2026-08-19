@@ -30,6 +30,11 @@ public partial class UserMenu : ComponentBase, IDisposable
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
+    protected override void OnInitialized()
+    {
+        ProfileSummary.Changed += OnSummaryChanged;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -37,6 +42,16 @@ public partial class UserMenu : ComponentBase, IDisposable
             return;
         }
 
+        await LoadSummaryAsync();
+    }
+
+    private void OnSummaryChanged()
+    {
+        _ = InvokeAsync(LoadSummaryAsync);
+    }
+
+    private async Task LoadSummaryAsync()
+    {
         if (!await IsAuthenticatedAsync())
         {
             return;
@@ -96,6 +111,7 @@ public partial class UserMenu : ComponentBase, IDisposable
 
     public void Dispose()
     {
+        ProfileSummary.Changed -= OnSummaryChanged;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }

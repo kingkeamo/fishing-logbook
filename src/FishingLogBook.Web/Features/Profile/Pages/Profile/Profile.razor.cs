@@ -52,6 +52,9 @@ public partial class Profile : ComponentBase, IDisposable
     private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
 
     [Inject]
+    private IProfileSummaryProvider ProfileSummary { get; set; } = default!;
+
+    [Inject]
     private IModalService ModalService { get; set; } = default!;
 
     [Inject]
@@ -106,6 +109,7 @@ public partial class Profile : ComponentBase, IDisposable
             var saved = await ProfileClient.UpdateOwnAsync(BuildUpdate(), _cancellationTokenSource.Token);
             saved = await SavePhotographAsync(saved);
             Apply(saved);
+            await ProfileSummary.RefreshAsync(_cancellationTokenSource.Token);
             var preferences = await FishingPreferenceClient.UpdatePreferencesAsync(
                 BuildPreferencesUpdate(),
                 _cancellationTokenSource.Token);

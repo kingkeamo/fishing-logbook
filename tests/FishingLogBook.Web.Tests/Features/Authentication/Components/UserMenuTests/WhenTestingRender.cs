@@ -127,4 +127,26 @@ public class WhenTestingRender : BaseUserMenuTest
         cut.FindAll("#user-menu-default-avatar").Should().BeEmpty();
         await profileSummary.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldShowTheUpdatedPhotographWhenTheSummaryChanges()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        await using var context = CreateContext(profileSummary);
+        var cut = context.Render<UserMenu>();
+        cut.WaitForAssertion(() => cut.Find("#user-menu-default-avatar").Should().NotBeNull());
+        profileSummary.GetAsync(Arg.Any<CancellationToken>()).Returns(WithPhotograph());
+
+        // Act
+        profileSummary.Changed += Raise.Event<Action>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#user-menu-photograph img").GetAttribute("src")
+                .Should().Be("https://cdn.test/photo.jpg"));
+        cut.FindAll("#user-menu-default-avatar").Should().BeEmpty();
+        await profileSummary.Received(2).GetAsync(Arg.Any<CancellationToken>());
+    }
 }

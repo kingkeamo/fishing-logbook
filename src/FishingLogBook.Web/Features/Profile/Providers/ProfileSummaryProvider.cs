@@ -13,6 +13,8 @@ public sealed class ProfileSummaryProvider : IProfileSummaryProvider
     private Guid _rememberedUserId;
     private ProfileSummaryModel? _remembered;
 
+    public event Action? Changed;
+
     public ProfileSummaryProvider(IProfileClient profileClient, ILocalCatchOwnerService localCatchOwner)
     {
         _profileClient = profileClient;
@@ -60,6 +62,13 @@ public sealed class ProfileSummaryProvider : IProfileSummaryProvider
         {
             _loadLock.Release();
         }
+    }
+
+    public async Task RefreshAsync(CancellationToken cancellationToken)
+    {
+        Invalidate();
+        await GetAsync(cancellationToken);
+        Changed?.Invoke();
     }
 
     public void Invalidate()

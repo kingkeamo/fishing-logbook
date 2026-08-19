@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Profile.Clients;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 using ProfilePage = FishingLogBook.Web.Features.Profile.Pages.Profile.Profile;
@@ -260,6 +261,55 @@ public class WhenTestingSave : BaseProfileTest
             Arg.Any<CancellationToken>());
         await profileClient.DidNotReceive().CreatePhotographUploadAsync(
             Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotRefreshTheUserMenuSummaryWhenSaveFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(EmptyProfile());
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns<ProfileDto>(_ => throw new HttpRequestException("Unable to save profile."));
+        var profileSummary = Substitute.For<IProfileSummaryProvider>();
+        await using var context = CreateContext(profileClient, profileSummary: profileSummary);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#profile-save-failed").TextContent.Should().Contain("Unable to save profile."));
+        await profileSummary.DidNotReceive().RefreshAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRefreshTheUserMenuSummaryAfterASuccessfulSave()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var userId = Guid.NewGuid();
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.GetOwnAsync(Arg.Any<CancellationToken>()).Returns(EmptyProfile(userId));
+        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
+        var profileSummary = Substitute.For<IProfileSummaryProvider>();
+        await using var context = CreateContext(profileClient, profileSummary: profileSummary);
+        var cut = context.Render<ProfilePage>();
+        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
+
+        // Act
+        await cut.Find("#profile-save-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
+        await profileSummary.Received(1).RefreshAsync(Arg.Any<CancellationToken>());
+        await profileClient.Received(1).UpdateOwnAsync(
+            Arg.Any<UpdateProfileDto>(),
             Arg.Any<CancellationToken>());
     }
 }
