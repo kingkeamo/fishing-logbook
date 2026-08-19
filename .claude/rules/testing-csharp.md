@@ -442,8 +442,8 @@ classes in parallel. Sharing it corrupts mappings two ways:
 
 1. **Race.** `Scan` calls `NewConfig`, which resets a rule before re-adding its `.Map`
    calls. Concurrent registration on the same static config intermittently yields mappings
-   with dropped properties. The tell is that properties mapped from a *nested* path come
-   back null while same-named top-level properties survive — so it reads like a product
+   with dropped properties. The tell is that properties mapped from a *nested*
+   path come back null while same-named top-level properties survive — so it reads like a product
    bug and gets "fixed" in the wrong place. It fails perhaps one run in four, and passes in
    isolation.
 2. **Order dependence.** A class that registers only its own `IRegister` leaves a *partial*
