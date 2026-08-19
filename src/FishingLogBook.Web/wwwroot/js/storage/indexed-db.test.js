@@ -443,3 +443,32 @@ describe('IndexedDB helper', () => {
         await expect(getStorageEstimate()).resolves.toEqual({ quota: null, usage: null });
     });
 });
+
+describe('blocked upgrades', () => {
+    it('reports a blocked upgrade instead of failing silently', async () => {
+        const databaseName = `blocked-${Math.floor(performance.now() * 1000)}`;
+        const holder = await new Promise((resolve, reject) => {
+            const request = indexedDB.open(databaseName, 1);
+            request.onupgradeneeded = () => request.result.createObjectStore('items', { keyPath: 'id' });
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+
+        let blocked = false;
+        const opening = openDatabase({
+            databaseName,
+            version: 2,
+            timeoutMs: 2000,
+            onUpgrade: () => { },
+            onBlocked: () => {
+                blocked = true;
+                holder.close();
+            }
+        });
+        const upgraded = await opening;
+
+        expect(blocked).toBe(true);
+        expect(upgraded.version).toBe(2);
+        upgraded.close();
+    });
+});

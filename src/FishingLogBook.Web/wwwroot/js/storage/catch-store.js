@@ -53,6 +53,12 @@ export function openCatchDatabase() {
             });
             void emitStorageEstimate();
         },
+        onBlocked: () => {
+            emit('OfflineDbOpenBlocked', {
+                operation: 'open',
+                elapsedMilliseconds: elapsedSince(started)
+            });
+        },
         onFailed: (error) => {
             emit('OfflineDbOpenFailed', {
                 operation: 'open',

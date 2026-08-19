@@ -877,3 +877,56 @@ describe('Fishing preference cache', () => {
         expect(await getFishingPreferences(otherId)).toBeNull();
     });
 });
+
+describe('Catch database upgrade from the released schema', () => {
+    it('upgrades a version 3 database and keeps existing Catch data', async () => {
+        const legacy = await new Promise((resolve, reject) => {
+            const request = indexedDB.open(CATCH_DATABASE_NAME, 3);
+            request.onupgradeneeded = () => {
+                const db = request.result;
+                db.createObjectStore(CATCH_STORE_NAME, { keyPath: 'id' });
+                db.createObjectStore(PHOTO_STORE_NAME, { keyPath: 'id' });
+                db.createObjectStore(PRODUCTION_CATCH_STORE_NAME, { keyPath: 'id' });
+                db.createObjectStore(PRODUCTION_PHOTO_STORE_NAME, { keyPath: 'id' });
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        await new Promise((resolve, reject) => {
+            const transaction = legacy.transaction(CATCH_STORE_NAME, 'readwrite');
+            transaction.objectStore(CATCH_STORE_NAME).put({ id: 'catch-1', notes: 'from-v3' });
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+        legacy.close();
+
+        const items = await getAllTestCatches();
+
+        expect(JSON.parse(items[0]).notes).toBe('from-v3');
+        const upgraded = await openCatchDatabase();
+        expect(upgraded.version).toBe(CATCH_DATABASE_VERSION);
+        expect(upgraded.objectStoreNames.contains(FISHING_PREFERENCE_STORE_NAME)).toBe(true);
+        upgraded.close();
+    });
+
+    it('caches preferences immediately after upgrading from version 3', async () => {
+        const legacy = await new Promise((resolve, reject) => {
+            const request = indexedDB.open(CATCH_DATABASE_NAME, 3);
+            request.onupgradeneeded = () => {
+                const db = request.result;
+                db.createObjectStore(CATCH_STORE_NAME, { keyPath: 'id' });
+                db.createObjectStore(PHOTO_STORE_NAME, { keyPath: 'id' });
+                db.createObjectStore(PRODUCTION_CATCH_STORE_NAME, { keyPath: 'id' });
+                db.createObjectStore(PRODUCTION_PHOTO_STORE_NAME, { keyPath: 'id' });
+            };
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        legacy.close();
+
+        await putFishingPreferences('11111111-1111-1111-1111-111111111111', '{"weightUnit":1}');
+        const cached = await getFishingPreferences('11111111-1111-1111-1111-111111111111');
+
+        expect(JSON.parse(cached)).toMatchObject({ weightUnit: 1 });
+    });
+});
