@@ -70,6 +70,40 @@ public class WhenTestingCacheFirst : BaseAnglerPreferencesProviderTest
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldNotCacheABackgroundRefreshUnderTheOldOwnerWhenTheAccountChanges()
+    {
+        // Arrange
+        var apiCalled = new TaskCompletionSource();
+        var apiReleased = new TaskCompletionSource<ProfileDto>();
+        MockCache.GetAsync(OwnerUserId, Arg.Any<CancellationToken>()).Returns(CachedPreferences());
+        GivenOnlineProfile(WeightUnitEnum.Kg, LengthUnitEnum.Cm);
+        MockProfileClient.GetOwnAsync(Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                apiCalled.TrySetResult();
+                return apiReleased.Task;
+            });
+        var cached = await Sut.GetAsync(CancellationToken.None);
+        await apiCalled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        // Act
+        MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OtherUserId);
+        apiReleased.SetResult(OnlineProfile(OtherUserId, WeightUnitEnum.Kg, LengthUnitEnum.Cm));
+        await Sut.SetAsync(OtherUserId, SavedPreferences(), CancellationToken.None);
+
+        // Assert
+        cached.WeightUnit.Should().Be(WeightUnitEnum.Lb);
+        await MockCache.DidNotReceive().SaveAsync(
+            OwnerUserId,
+            Arg.Any<AnglerPreferencesModel>(),
+            Arg.Any<CancellationToken>());
+        await MockCache.Received(1).SaveAsync(
+            OtherUserId,
+            Arg.Any<AnglerPreferencesModel>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private async Task<AnglerPreferencesModel> WaitForRefreshedWeightUnitAsync(WeightUnitEnum expected)
     {
         AnglerPreferencesModel latest;

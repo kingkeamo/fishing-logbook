@@ -423,7 +423,7 @@ public class WhenTestingPreferences : BaseProfileTest
     }
 
     [Fact]
-    public async Task ItShouldCacheThePreferencesForOfflineUseWhenSaving()
+    public async Task ItShouldHandTheSavedPreferencesToTheProviderWhenSaving()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -433,8 +433,11 @@ public class WhenTestingPreferences : BaseProfileTest
         profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
             .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
         var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        var cache = Substitute.For<IAnglerPreferencesCache>();
-        await using var context = CreateContext(profileClient, preferenceClient, cache: cache);
+        var anglerPreferences = Substitute.For<IAnglerPreferencesProvider>();
+        await using var context = CreateContext(
+            profileClient,
+            preferenceClient,
+            anglerPreferences: anglerPreferences);
         var cut = context.Render<ProfilePage>();
         cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
 
@@ -443,18 +446,18 @@ public class WhenTestingPreferences : BaseProfileTest
 
         // Assert
         cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
-        await cache.Received(1).SaveAsync(
+        await anglerPreferences.Received(1).SetAsync(
             userId,
             Arg.Is<AnglerPreferencesModel>(preferences =>
                 preferences.Catalogue.Methods.Count == 2
                 && preferences.Preferences.Methods.Count == 1
                 && preferences.Preferences.Methods[0].IsDefault),
             Arg.Any<CancellationToken>());
-        await cache.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await anglerPreferences.DidNotReceive().GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldStillSaveWhenTheOfflineCacheWriteFails()
+    public async Task ItShouldStillSaveWhenRememberingThePreferencesFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -464,10 +467,16 @@ public class WhenTestingPreferences : BaseProfileTest
         profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
             .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
         var preferenceClient = QuietFishingPreferenceClient(SamplePreferences(), SampleCatalogue());
-        var cache = Substitute.For<IAnglerPreferencesCache>();
-        cache.SaveAsync(Arg.Any<Guid>(), Arg.Any<AnglerPreferencesModel>(), Arg.Any<CancellationToken>())
+        var anglerPreferences = Substitute.For<IAnglerPreferencesProvider>();
+        anglerPreferences.SetAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<AnglerPreferencesModel>(),
+                Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("quota exceeded"));
-        await using var context = CreateContext(profileClient, preferenceClient, cache: cache);
+        await using var context = CreateContext(
+            profileClient,
+            preferenceClient,
+            anglerPreferences: anglerPreferences);
         var cut = context.Render<ProfilePage>();
         cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
 
@@ -479,7 +488,7 @@ public class WhenTestingPreferences : BaseProfileTest
         await profileClient.Received(1).UpdateOwnAsync(
             Arg.Any<UpdateProfileDto>(),
             Arg.Any<CancellationToken>());
-        await cache.Received(1).SaveAsync(
+        await anglerPreferences.Received(1).SetAsync(
             userId,
             Arg.Any<AnglerPreferencesModel>(),
             Arg.Any<CancellationToken>());

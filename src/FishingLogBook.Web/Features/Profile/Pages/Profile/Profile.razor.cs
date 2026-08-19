@@ -48,9 +48,6 @@ public partial class Profile : ComponentBase, IDisposable
     private IFishingPreferenceClient FishingPreferenceClient { get; set; } = default!;
 
     [Inject]
-    private IAnglerPreferencesCache AnglerPreferencesCache { get; set; } = default!;
-
-    [Inject]
     private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
 
     [Inject]
@@ -112,8 +109,7 @@ public partial class Profile : ComponentBase, IDisposable
                 BuildPreferencesUpdate(),
                 _cancellationTokenSource.Token);
             ApplyPreferences(preferences);
-            await CacheForOfflineUseAsync(saved, preferences);
-            AnglerPreferences.Invalidate();
+            await RememberPreferencesAsync(saved, preferences);
         }
         catch (Exception)
         {
@@ -125,11 +121,11 @@ public partial class Profile : ComponentBase, IDisposable
         }
     }
 
-    private async Task CacheForOfflineUseAsync(ProfileDto saved, FishingPreferencesDto preferences)
+    private async Task RememberPreferencesAsync(ProfileDto saved, FishingPreferencesDto preferences)
     {
         try
         {
-            await AnglerPreferencesCache.SaveAsync(
+            await AnglerPreferences.SetAsync(
                 saved.UserId,
                 new AnglerPreferencesModel(
                     new FishingCatalogueDto(_catalogueMethods, _catalogueSpecies),

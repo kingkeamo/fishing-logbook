@@ -50,10 +50,26 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
         return loaded.Preferences;
     }
 
-    public void Invalidate()
+    public async Task SetAsync(
+        Guid userId,
+        AnglerPreferencesModel preferences,
+        CancellationToken cancellationToken)
     {
-        _remembered = null;
-        _rememberedUserId = Guid.Empty;
+        if (userId == Guid.Empty)
+        {
+            return;
+        }
+
+        await _loadLock.WaitAsync(cancellationToken);
+        try
+        {
+            Remember(userId, preferences);
+            await TryCacheAsync(userId, preferences, cancellationToken);
+        }
+        finally
+        {
+            _loadLock.Release();
+        }
     }
 
     private async Task<LoadedPreferences> LoadAsync(Guid userId, CancellationToken cancellationToken)
@@ -94,6 +110,12 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
         {
             var fresh = await TryLoadFromApiAsync(CancellationToken.None);
             if (fresh is null)
+            {
+                return;
+            }
+
+            var currentUserId = await ResolveOwnerAsync(CancellationToken.None);
+            if (currentUserId != userId)
             {
                 return;
             }

@@ -6,5 +6,8 @@ public interface IAnglerPreferencesProvider
 {
     Task<AnglerPreferencesModel> GetAsync(CancellationToken cancellationToken);
 
-    void Invalidate();
+    Task SetAsync(
+        Guid userId,
+        AnglerPreferencesModel preferences,
+        CancellationToken cancellationToken);
 }

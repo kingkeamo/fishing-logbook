@@ -262,45 +262,4 @@ public class WhenTestingSave : BaseProfileTest
             Arg.Any<PhotographUploadRequestDto>(),
             Arg.Any<CancellationToken>());
     }
-
-    [Fact]
-    public async Task ItShouldInvalidateTheRememberedPreferencesAfterASuccessfulSave()
-    {
-        // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var userId = Guid.NewGuid();
-        var profileClient = Substitute.For<IProfileClient>();
-        profileClient.GetOwnAsync(Arg.Any<CancellationToken>())
-            .Returns(new ProfileDto(
-                userId,
-                "Eamonn",
-                null,
-                null,
-                null,
-                "Westmeath",
-                [],
-                [],
-                true,
-                true,
-                true,
-                true,
-                false));
-        profileClient.UpdateOwnAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
-            .Returns(call => ToSaved(userId, call.ArgAt<UpdateProfileDto>(0)));
-        var anglerPreferences = Substitute.For<IAnglerPreferencesProvider>();
-        await using var context = CreateContext(profileClient, anglerPreferences: anglerPreferences);
-        var cut = context.Render<ProfilePage>();
-        cut.WaitForAssertion(() => cut.Find("#profile-save-button"));
-        anglerPreferences.DidNotReceive().Invalidate();
-
-        // Act
-        await cut.Find("#profile-save-button").ClickAsync();
-
-        // Assert
-        cut.WaitForAssertion(() => cut.FindAll("#profile-save-failed").Should().BeEmpty());
-        anglerPreferences.Received(1).Invalidate();
-        await profileClient.Received(1).UpdateOwnAsync(
-            Arg.Any<UpdateProfileDto>(),
-            Arg.Any<CancellationToken>());
-    }
 }

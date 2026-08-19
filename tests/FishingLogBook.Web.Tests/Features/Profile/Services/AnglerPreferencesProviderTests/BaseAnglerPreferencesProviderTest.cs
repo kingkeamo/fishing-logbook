@@ -13,6 +13,7 @@ public class BaseAnglerPreferencesProviderTest
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     protected static readonly Guid FlyMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+    protected static readonly Guid SpinningMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
     protected static readonly Guid BrownTroutSpeciesId = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
 
     protected readonly IProfileClient MockProfileClient = Substitute.For<IProfileClient>();
@@ -61,27 +62,49 @@ public class BaseAnglerPreferencesProviderTest
             LengthUnitEnum.In);
     }
 
+
+    protected static AnglerPreferencesModel SavedPreferences()
+    {
+        return new AnglerPreferencesModel(
+            SampleCatalogue(),
+            new FishingPreferencesDto(
+            [
+                new FishingMethodPreferenceDto(SpinningMethodId, "Spinning", "Spinning", true, [])
+            ]),
+            WeightUnitEnum.Kg,
+            LengthUnitEnum.Cm);
+    }
+
+
+    protected static ProfileDto OnlineProfile(
+        Guid userId,
+        WeightUnitEnum weightUnit,
+        LengthUnitEnum lengthUnit)
+    {
+        return new ProfileDto(
+            userId,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [],
+            [],
+            true,
+            false,
+            false,
+            false,
+            false,
+            weightUnit,
+            lengthUnit);
+    }
+
     protected void GivenOnlineProfile(
         WeightUnitEnum weightUnit = WeightUnitEnum.Lb,
         LengthUnitEnum lengthUnit = LengthUnitEnum.In)
     {
         MockProfileClient.GetOwnAsync(Arg.Any<CancellationToken>())
-            .Returns(new ProfileDto(
-                OwnerUserId,
-                null,
-                null,
-                null,
-                null,
-                null,
-                [],
-                [],
-                true,
-                false,
-                false,
-                false,
-                false,
-                weightUnit,
-                lengthUnit));
+            .Returns(OnlineProfile(OwnerUserId, weightUnit, lengthUnit));
         MockFishingPreferenceClient.GetCatalogueAsync(Arg.Any<CancellationToken>())
             .Returns(SampleCatalogue());
         MockFishingPreferenceClient.GetPreferencesAsync(Arg.Any<CancellationToken>())
