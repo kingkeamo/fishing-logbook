@@ -46,17 +46,28 @@ public class BaseCatchCardTest
         decimal? weight = null,
         decimal? length = null,
         string? baitOrLure = null,
+        string? notes = null,
         CatchLocationModel? location = null,
         Guid? anglerUserId = null,
         Guid? recordedByUserId = null,
-        bool withPhotograph = true)
+        bool withPhotograph = true,
+        int photographCount = 1)
     {
+        IReadOnlyList<CatchPhotographModel> photographs = photographCount > 1
+            ? [.. Enumerable.Range(0, photographCount)
+                .Select(index => new CatchPhotographModel(
+                    Guid.NewGuid(),
+                    catchId,
+                    PhotographContentTypeConstants.Jpeg,
+                    [(byte)index, 2, 3]))]
+            : withPhotograph
+                ? [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])]
+                : [];
+
         return new CatchModel(
             catchId,
             DateTimeOffset.Parse("2026-08-17T16:50:00Z"),
-            withPhotograph
-                ? [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])]
-                : [],
+            photographs,
             SpeciesName: speciesName,
             Location: location,
             UserId: OwnerUserId,
@@ -67,6 +78,7 @@ public class BaseCatchCardTest
             Weight: weight,
             Length: length,
             Method: method,
-            BaitOrLure: baitOrLure);
+            BaitOrLure: baitOrLure,
+            Notes: notes);
     }
 }

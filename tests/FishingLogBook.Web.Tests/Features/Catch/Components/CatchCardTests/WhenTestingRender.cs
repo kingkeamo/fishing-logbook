@@ -193,6 +193,129 @@ public class WhenTestingRender : BaseCatchCardTest
     }
 
     [Fact]
+    public async Task ItShouldShowBaitOrLureWhenPopulated()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, baitOrLure: "Woolly Bugger");
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+
+        // Assert
+        cut.Find($"#catch-card-bait-{catchId:D}").TextContent.Should().Contain("Woolly Bugger");
+    }
+
+    [Fact]
+    public async Task ItShouldOmitTheBaitOrLureRowWhenNotPopulated()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, baitOrLure: null);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+
+        // Assert
+        cut.FindAll($"#catch-card-bait-{catchId:D}").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldShowANotesPreviewWhenPopulated()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, notes: "Took a slow retrieve near the reeds to trigger a take.");
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+
+        // Assert
+        cut.Find($"#catch-card-notes-{catchId:D}").TextContent.Should().Contain("Took a slow retrieve");
+    }
+
+    [Fact]
+    public async Task ItShouldOmitTheNotesRowWhenNotPopulated()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, notes: null);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+
+        // Assert
+        cut.FindAll($"#catch-card-notes-{catchId:D}").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldRenderASingleSimplePhotographWithoutCarouselControls()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, photographCount: 1);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+
+        // Assert
+        cut.Find($"#catch-card-photo-{catchId:D}").Should().NotBeNull();
+        cut.FindAll($"#catch-card-carousel-{catchId:D}").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldMakeAllPhotographsReachableThroughACarouselWhenThereAreMultiple()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, photographCount: 3);
+        await using var context = CreateContext();
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+        var firstSrc = cut.Find($"#catch-card-photo-{catchId:D}-0").GetAttribute("src");
+
+        // Act
+        await cut.Find("[aria-label='Index 2']").ClickAsync();
+        var secondSrc = cut.Find($"#catch-card-photo-{catchId:D}-1").GetAttribute("src");
+        await cut.Find("[aria-label='Index 3']").ClickAsync();
+        var thirdSrc = cut.Find($"#catch-card-photo-{catchId:D}-2").GetAttribute("src");
+
+        // Assert
+        cut.Find($"#catch-card-carousel-{catchId:D}").Should().NotBeNull();
+        firstSrc.Should().NotBe(secondSrc);
+        secondSrc.Should().NotBe(thirdSrc);
+        cut.Find($"#catch-card-photo-{catchId:D}-2").GetAttribute("alt").Should().Contain("3 of 3");
+    }
+
+    [Fact]
     public async Task ItShouldHideProvenanceWhenTheAnglerAndRecorderAreTheCurrentUser()
     {
         // Arrange

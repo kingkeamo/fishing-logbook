@@ -63,4 +63,31 @@ public class WhenTestingErrorLogging : BaseCatchListTest
             Arg.Any<CancellationToken>());
         await store.DidNotReceive().GetAllAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldNotLogAnErrorWhenLoadIsCancelledByDisposalWhileInFlight()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        var ownerCompletion = new TaskCompletionSource<Guid>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(_ => ownerCompletion.Task);
+        var logging = Substitute.For<ILoggingService>();
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        await using var context = CreateContext(store, owner, logging: logging);
+        var cut = context.Render<CatchList>();
+
+        // Act
+        cut.Instance.Dispose();
+        ownerCompletion.SetException(new OperationCanceledException());
+        await Task.Delay(20);
+
+        // Assert
+        await logging.DidNotReceive().LogErrorAsync(
+            Arg.Any<string>(),
+            Arg.Any<Exception>(),
+            Arg.Any<CancellationToken>());
+    }
 }

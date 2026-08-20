@@ -92,6 +92,10 @@ public partial class CatchList : ComponentBase, IDisposable
             ComputeFilterOptions();
             RebuildFilteredGroups();
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
         catch (Exception exception)
         {
             _loadFailed = true;

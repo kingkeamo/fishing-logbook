@@ -14,6 +14,8 @@ public partial class CatchCard : ComponentBase
 {
     private string? _thumbnailUrl;
     private Guid _thumbnailPhotographId;
+    private IReadOnlyList<Guid> _carouselPhotographIds = [];
+    private IReadOnlyList<string> _carouselPhotoUrls = [];
 
     [Parameter, EditorRequired]
     public CatchModel Catch { get; set; } = default!;
@@ -58,16 +60,35 @@ public partial class CatchCard : ComponentBase
         {
             _thumbnailUrl = null;
             _thumbnailPhotographId = Guid.Empty;
+        }
+        else if (_thumbnailPhotographId != photograph.Id || _thumbnailUrl is null)
+        {
+            _thumbnailPhotographId = photograph.Id;
+            _thumbnailUrl = ToDataUrl(photograph);
+        }
+
+        if (!HasMultiplePhotographs)
+        {
+            _carouselPhotographIds = [];
+            _carouselPhotoUrls = [];
             return;
         }
 
-        if (_thumbnailPhotographId == photograph.Id && _thumbnailUrl is not null)
+        var currentIds = Catch.Photographs.Select(item => item.Id).ToArray();
+        if (currentIds.SequenceEqual(_carouselPhotographIds))
         {
             return;
         }
 
-        _thumbnailPhotographId = photograph.Id;
-        _thumbnailUrl = $"data:{photograph.ContentType};base64,{Convert.ToBase64String(photograph.Bytes)}";
+        _carouselPhotographIds = currentIds;
+        _carouselPhotoUrls = [.. Catch.Photographs
+            .Where(item => item.Bytes is { Length: > 0 })
+            .Select(ToDataUrl)];
+    }
+
+    private static string ToDataUrl(CatchPhotographModel photograph)
+    {
+        return $"data:{photograph.ContentType};base64,{Convert.ToBase64String(photograph.Bytes!)}";
     }
 
     private string EditHref => $"/catches/{Catch.Id:D}/edit";
@@ -80,6 +101,17 @@ public partial class CatchCard : ComponentBase
         $"{DateGrouping.RelativeDayLabel(LocalCaughtOn, LocalToday)} · {LocalCaughtOn.ToString("t", CultureInfo.CurrentCulture)}";
 
     private bool HasMethod => !string.IsNullOrWhiteSpace(Catch.Method);
+
+    private bool HasBaitOrLure => !string.IsNullOrWhiteSpace(Catch.BaitOrLure);
+
+    private bool HasNotes => !string.IsNullOrWhiteSpace(Catch.Notes);
+
+    private bool HasMultiplePhotographs => Catch.Photographs.Count > 1;
+
+    private string PhotographAlt(int index)
+    {
+        return Loc["Catch_PhotographAltNumbered", index + 1, _carouselPhotoUrls.Count];
+    }
 
     private string? MeasurementsLabel
     {

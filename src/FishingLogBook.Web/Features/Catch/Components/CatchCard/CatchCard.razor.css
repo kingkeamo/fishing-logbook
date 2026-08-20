@@ -73,8 +73,27 @@
 .catch-card-time,
 .catch-card-method,
 .catch-card-measurements,
+.catch-card-bait,
+.catch-card-notes,
 .catch-card-provenance {
     color: var(--mud-palette-text-secondary);
+}
+
+.catch-card-notes {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.catch-card-media-carousel {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 0;
+}
+
+::deep .catch-card-carousel {
+    height: 100%;
 }
 
 .catch-card-attention {
