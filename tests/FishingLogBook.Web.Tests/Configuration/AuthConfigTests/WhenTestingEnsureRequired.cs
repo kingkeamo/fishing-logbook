@@ -9,6 +9,7 @@ public class WhenTestingEnsureRequired
     [Theory]
     [InlineData(nameof(AuthConfig.Authority), "Auth:Authority")]
     [InlineData(nameof(AuthConfig.ClientId), "Auth:ClientId")]
+    [InlineData(nameof(AuthConfig.HostedUiDomain), "Auth:HostedUiDomain")]
     [InlineData(nameof(AuthConfig.ApiResource), "Auth:ApiResource")]
     [InlineData(nameof(AuthConfig.ApiScope), "Auth:ApiScope")]
     public void ItShouldThrowWhenRequiredValueIsMissing(string propertyName, string configurationKey)
@@ -44,6 +45,7 @@ public class WhenTestingEnsureRequired
         {
             Authority = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool",
             ClientId = "test-pwa-client",
+            HostedUiDomain = "https://test.auth.us-east-1.amazoncognito.com",
             ApiResource = TestAuthConstants.ApiResource,
             ApiScope = TestAuthConstants.ApiScope
         };

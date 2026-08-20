@@ -96,13 +96,12 @@ public class WhenTestingMenuActions : BaseUserMenuTest
     }
 
     [Fact]
-    public async Task ItShouldSignOutThroughTheExistingAuthenticationFlow()
+    public async Task ItShouldSignOutThroughTheCognitoSupportedFlow()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var profileSummary = ProfileSummary(WithPhotograph());
         await using var context = CreateContext(profileSummary);
-        var navigation = context.Services.GetRequiredService<NavigationManager>();
         var (cut, popover) = RenderMenu(context);
         await cut.InvokeAsync(() => cut.FindComponent<MudMenu>().Instance.OpenMenuAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs()));
         cut.WaitForAssertion(() => popover.Find("#user-menu-sign-out").Should().NotBeNull());
@@ -111,7 +110,12 @@ public class WhenTestingMenuActions : BaseUserMenuTest
         await popover.Find("#user-menu-sign-out").ClickAsync();
 
         // Assert
-        navigation.Uri.Should().Be(navigation.BaseUri + "authentication/logout");
+        var invocation = context.JSInterop.VerifyInvoke("fishingLogBookAuthentication.logout");
+        invocation.Arguments.Should().Equal(
+            "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_test",
+            "test-client",
+            "https://test.auth.eu-west-2.amazoncognito.com",
+            "http://localhost/");
         profileSummary.Received(1).Invalidate();
     }
 }

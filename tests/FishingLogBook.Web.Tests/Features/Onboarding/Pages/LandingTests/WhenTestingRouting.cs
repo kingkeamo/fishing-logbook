@@ -24,6 +24,8 @@ public class WhenTestingRouting : BaseLandingTest
         cut.Find("#public-landing-page").TextContent.Should().Contain("Your private fishing logbook");
         cut.Find("#landing-create-account").TextContent.Should().Contain("Create account");
         cut.Find("#landing-sign-in").TextContent.Should().Contain("Sign in");
+        cut.Find("#landing-brand-logo").GetAttribute("src")
+            .Should().Be("images/brand/brand-horizontal-transparent.png");
         await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
     }
 

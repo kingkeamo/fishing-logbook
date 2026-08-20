@@ -256,7 +256,7 @@
     <value>Saved on this device</value>
   </data>
   <data name="Catch_LogbookEmpty" xml:space="preserve">
-    <value>No catches saved on this device yet</value>
+    <value>No catches in your Logbook yet</value>
   </data>
   <data name="Catch_RecordFirstCatch" xml:space="preserve">
     <value>Record your first catch</value>
@@ -625,8 +625,10 @@
   <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Welcome to Catch, But Don’t Forget</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Set up your private, offline-friendly fishing logbook in about a minute.</value></data>
   <data name="Onboarding_PreferencesStep" xml:space="preserve"><value>Preferences</value></data>
-  <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>Choose your units</value></data>
-  <data name="Onboarding_PreferencesBody" xml:space="preserve"><value>Set the measurements you use on the water. You can change these later in Profile.</value></data>
+  <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>Set your fishing preferences</value></data>
+  <data name="Onboarding_PreferencesBody" xml:space="preserve"><value>Choose what you fish for and the measurements you use. You can change these later in Profile.</value></data>
+  <data name="Onboarding_FishingType" xml:space="preserve"><value>Preferred fishing type</value></data>
+  <data name="Onboarding_PreferredSpecies" xml:space="preserve"><value>Preferred species</value></data>
   <data name="Onboarding_LocationStep" xml:space="preserve"><value>Location</value></data>
   <data name="Onboarding_LocationTitle" xml:space="preserve"><value>Remember where you caught it</value></data>
   <data name="Onboarding_LocationBody" xml:space="preserve"><value>Allow location only when you want the app to capture a catch position. You can skip this step.</value></data>
