@@ -2,6 +2,8 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -10,6 +12,7 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Pages.CatchEditTests;
 
@@ -157,6 +160,108 @@ public class WhenTestingRender : BaseCatchEditTest
         await owner.Received(1).GetUserIdAsync(Arg.Any<CancellationToken>());
         await store.Received(1).GetAsync(OtherUserId, catchId, Arg.Any<CancellationToken>());
         await store.DidNotReceive().GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldLocalizeTheCatchFromTheServerWhenNotSavedLocally()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var photographId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns((CatchModel?)null);
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var catchClient = Substitute.For<ICatchClient>();
+        catchClient.GetAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(new CatchViewDto(catchId, OwnerUserId, StoredCaughtOn)
+            {
+                AnglerUserId = OwnerUserId,
+                RecordedByUserId = OwnerUserId,
+                SpeciesName = "Pike",
+                Photographs = [new CatchPhotographViewDto(photographId, PhotographContentTypeConstants.Jpeg, "https://r2.test/one")]
+            });
+        catchClient.DownloadPhotographAsync("https://r2.test/one", Arg.Any<CancellationToken>())
+            .Returns(new byte[] { 1, 2, 3 });
+        await using var context = CreateContext(store, catchClient: catchClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Pike"));
+        await catchClient.Received(1).DownloadPhotographAsync("https://r2.test/one", Arg.Any<CancellationToken>());
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.Id == catchId
+                && catchRecord.SyncStatus == SyncStatus.Synchronised
+                && catchRecord.Photographs.Single().Id == photographId
+                && catchRecord.Photographs.Single().Bytes!.SequenceEqual(new byte[] { 1, 2, 3 })),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowAnOfflineSpecificMessageWhenTheCatchCannotBeDownloaded()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns((CatchModel?)null);
+        var catchClient = Substitute.For<ICatchClient>();
+        var logging = QuietLogging();
+        var failure = new HttpRequestException("offline");
+        catchClient.GetAsync(catchId, Arg.Any<CancellationToken>())
+            .ThrowsAsync(failure);
+        await using var context = CreateContext(store, logging: logging, catchClient: catchClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-load-failed").TextContent
+                .Should().Contain("isn't saved on this device yet"));
+        await logging.Received(1).LogErrorAsync(
+            "loading a server catch for local editing",
+            Arg.Is<Exception>(exception => ReferenceEquals(exception, failure)),
+            Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotLocalizeACatchOwnedByAnotherUser()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns((CatchModel?)null);
+        var catchClient = Substitute.For<ICatchClient>();
+        catchClient.GetAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(new CatchViewDto(catchId, OtherUserId, StoredCaughtOn)
+            {
+                AnglerUserId = OtherUserId,
+                RecordedByUserId = OtherUserId,
+                Photographs = [new CatchPhotographViewDto(Guid.NewGuid(), PhotographContentTypeConstants.Jpeg, "https://r2.test/one")]
+            });
+        await using var context = CreateContext(store, catchClient: catchClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-load-failed").TextContent.Should().Contain("could not be loaded"));
+        await catchClient.DidNotReceive().DownloadPhotographAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 }

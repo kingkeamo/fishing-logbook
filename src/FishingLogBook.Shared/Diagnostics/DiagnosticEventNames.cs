@@ -46,6 +46,9 @@ public static class DiagnosticEventNames
     public const string PhotographUploadStarted = "PhotographUploadStarted";
     public const string PhotographUploadSucceeded = "PhotographUploadSucceeded";
     public const string PhotographUploadFailed = "PhotographUploadFailed";
+    public const string PhotographDeleteStarted = "PhotographDeleteStarted";
+    public const string PhotographDeleteSucceeded = "PhotographDeleteSucceeded";
+    public const string PhotographDeleteFailed = "PhotographDeleteFailed";
     public const string CatchSyncCompleted = "CatchSyncCompleted";
     public const string CatchSyncFailed = "CatchSyncFailed";
     public const string AuthenticationUnavailable = "AuthenticationUnavailable";

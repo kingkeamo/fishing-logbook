@@ -513,4 +513,82 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldDeleteAPendingDeletionPhotographFromTheServerAndRemoveItLocally()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            CreatePhotograph(PhotographAId, CatchId, SyncStatus.Synchronised) with { ObjectKey = "catches/a" },
+            CreatePhotograph(PhotographBId, CatchId, SyncStatus.PendingDeletion) with { ObjectKey = "catches/b" }
+        };
+        var catchRecord = CreateCatch(
+            metadataStatus: SyncStatus.Synchronised,
+            photographs: photographs) with
+        {
+            SyncStatus = SyncStatus.WaitingToSynchronise
+        };
+        var store = await CreateStoreAsync(catchRecord);
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+
+        // Assert
+        saved!.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved.Photographs.Should().ContainSingle()
+            .Which.Id.Should().Be(PhotographAId);
+        await MockCatchClient.Received(1).DeletePhotographAsync(
+            CatchId,
+            PhotographBId,
+            Arg.Any<CancellationToken>());
+        await MockCatchClient.DidNotReceive().CreatePhotographUploadAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepAPendingDeletionPhotographRetryableWhenTheServerDeleteFails()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            CreatePhotograph(PhotographAId, CatchId, SyncStatus.PendingDeletion) with { ObjectKey = "catches/a" }
+        };
+        var catchRecord = CreateCatch(
+            metadataStatus: SyncStatus.Synchronised,
+            photographs: photographs) with
+        {
+            SyncStatus = SyncStatus.WaitingToSynchronise
+        };
+        var store = await CreateStoreAsync(catchRecord);
+        MockCatchClient.DeletePhotographAsync(CatchId, PhotographAId, Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("unavailable"));
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+
+        // Assert
+        saved!.Photographs.Should().ContainSingle()
+            .Which.SyncStatus.Should().Be(SyncStatus.PendingDeletion);
+        saved.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+
+        // Act - retry
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+
+        // Assert - still routed through delete, never through upload
+        await MockCatchClient.Received(2).DeletePhotographAsync(
+            CatchId,
+            PhotographAId,
+            Arg.Any<CancellationToken>());
+        await MockCatchClient.DidNotReceive().CreatePhotographUploadAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+    }
 }

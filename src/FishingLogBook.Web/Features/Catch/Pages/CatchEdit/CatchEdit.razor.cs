@@ -5,6 +5,8 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Clients;
+using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -14,6 +16,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
@@ -21,6 +24,7 @@ namespace FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
 public partial class CatchEdit : ComponentBase, IDisposable
 {
     private const int MaxChipOptions = 6;
+    private const long MaxPhotographBytes = 10 * 1024 * 1024;
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private CatchModel? _catch;
@@ -35,8 +39,13 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private bool _isLoading = true;
     private bool _isSaving;
     private bool _loadFailed;
+    private bool _offlineUnavailable;
     private bool _saveFailed;
     private bool _saved;
+    private bool _unsupportedFormat;
+    private bool _cannotRemoveLastPhoto;
+    private bool _addPhotoFailed;
+    private bool _removePhotoFailed;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _catalogueUnavailable;
@@ -50,6 +59,9 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
+
+    [Inject]
+    private ICatchClient CatchClient { get; set; } = default!;
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
@@ -127,6 +139,38 @@ public partial class CatchEdit : ComponentBase, IDisposable
         }
     }
 
+    private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs
+    {
+        get
+        {
+            return _catch is null
+                ? []
+                : _catch.Photographs
+                    .Where(photograph => photograph.SyncStatus != SyncStatus.PendingDeletion)
+                    .Select(photograph => new CatchPhotographCarouselItemModel(
+                        photograph.Id,
+                        photograph.ContentType,
+                        photograph.Bytes,
+                        photograph.RemoteUrl))
+                    .ToArray();
+        }
+    }
+
+    private string? LocationVisibilityLabel
+    {
+        get
+        {
+            return _catch?.Location?.Visibility switch
+            {
+                LocationDefaults.Private => Loc["Catch_LocationVisibilityPrivate"].Value,
+                LocationDefaults.Approximate => Loc["Catch_LocationVisibilityApproximate"].Value,
+                LocationDefaults.FishingVenueOnly => Loc["Catch_LocationVisibilityFishingVenueOnly"].Value,
+                LocationDefaults.Public => Loc["Catch_LocationVisibilityPublic"].Value,
+                _ => null
+            };
+        }
+    }
+
     private IReadOnlyList<CatchChipOptionModel> MethodOptions
     {
         get
@@ -158,52 +202,6 @@ public partial class CatchEdit : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
-    }
-
-    private async Task LoadAsync()
-    {
-        _isLoading = true;
-        _loadFailed = false;
-        try
-        {
-            await LoadPreferencesAsync();
-            var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
-            _catch = await CatchStore.GetAsync(ownerUserId, CatchId, _cancellationTokenSource.Token);
-            if (_catch is null)
-            {
-                _loadFailed = true;
-                return;
-            }
-
-            if (!await BindFormAsync(_catch))
-            {
-                _loadFailed = true;
-                _catch = null;
-                return;
-            }
-
-            ApplyProfileDefaultsToEmptyFields();
-        }
-        catch (Exception)
-        {
-            _loadFailed = true;
-            _catch = null;
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private async Task LoadPreferencesAsync()
-    {
-        var anglerPreferences = await AnglerPreferences.GetAsync(_cancellationTokenSource.Token);
-        _weightUnit = anglerPreferences.WeightUnit;
-        _lengthUnit = anglerPreferences.LengthUnit;
-        _catalogueMethods = anglerPreferences.Catalogue.Methods;
-        _catalogueSpecies = anglerPreferences.Catalogue.AllSpecies;
-        _preferences = anglerPreferences.Preferences;
-        _catalogueUnavailable = !anglerPreferences.HasCatalogue;
     }
 
     private void ApplyProfileDefaultsToEmptyFields()
@@ -313,237 +311,6 @@ public partial class CatchEdit : ComponentBase, IDisposable
         return result?.Option;
     }
 
-    private async Task SaveAsync()
-    {
-        if (_catch is null || _isSaving)
-        {
-            return;
-        }
-
-        _isSaving = true;
-        _saveFailed = false;
-        _saved = false;
-        _validationMessage = null;
-        try
-        {
-            var built = await TryBuildUpdatedCatchAsync();
-            if (built is null)
-            {
-                return;
-            }
-
-            await CatchStore.SaveAsync(built.Updated, _cancellationTokenSource.Token);
-            _catch = built.Updated;
-            await BindFormAsync(built.Updated);
-            _saved = true;
-            if (built.MetadataChanged)
-            {
-                TryToSynchronisePending();
-            }
-        }
-        catch (Exception)
-        {
-            _saveFailed = true;
-        }
-        finally
-        {
-            _isSaving = false;
-        }
-    }
-
-    private async Task<BuiltCatchEdit?> TryBuildUpdatedCatchAsync()
-    {
-        var details = await TryReadEditedDetailsAsync();
-        if (details is null)
-        {
-            return null;
-        }
-
-        var metadataChanged = HasDetailsChanged(details);
-        var updated = _catch! with
-        {
-            SpeciesName = details.SpeciesName,
-            Weight = details.Weight,
-            Length = details.Length,
-            Method = details.Method,
-            BaitOrLure = details.BaitOrLure,
-            Notes = details.Notes,
-            CaughtOn = details.CaughtOn,
-            MetadataSyncStatus = metadataChanged
-                ? SyncStatus.WaitingToSynchronise
-                : _catch.MetadataSyncStatus,
-            SyncStatus = metadataChanged
-                ? PendingOverallStatus(_catch.SyncStatus)
-                : _catch.SyncStatus
-        };
-        return new BuiltCatchEdit(updated, metadataChanged);
-    }
-
-    private async Task<EditedCatchDetails?> TryReadEditedDetailsAsync()
-    {
-        var caughtOn = await TryParseCaughtOnAsync();
-        if (caughtOn is null)
-        {
-            _validationMessage = Loc["Catch_EditCaughtOnInvalid"];
-            return null;
-        }
-
-        if (!TryParseMeasurement(_weightText, out var displayWeight))
-        {
-            _validationMessage = WeightInvalidMessage;
-            return null;
-        }
-
-        var weight = Measurement.ToCanonicalWeight(displayWeight, _weightUnit, _catch?.Weight);
-        if (!CatchDetailConstants.IsWeightValid(weight))
-        {
-            _validationMessage = WeightInvalidMessage;
-            return null;
-        }
-
-        if (!TryParseMeasurement(_lengthText, out var displayLength))
-        {
-            _validationMessage = LengthInvalidMessage;
-            return null;
-        }
-
-        var length = Measurement.ToCanonicalLength(displayLength, _lengthUnit, _catch?.Length);
-        if (!CatchDetailConstants.IsLengthValid(length))
-        {
-            _validationMessage = LengthInvalidMessage;
-            return null;
-        }
-
-        var speciesName = TrimToNull(_speciesName);
-        var method = TrimToNull(_method);
-        var baitOrLure = TrimToNull(_baitOrLure);
-        var notes = TrimToNull(_notes);
-        if (!CatchDetailConstants.IsOptionalTextValid(speciesName, CatchDetailConstants.MaxSpeciesNameLength)
-            || !CatchDetailConstants.IsOptionalTextValid(method, CatchDetailConstants.MaxMethodLength)
-            || !CatchDetailConstants.IsOptionalTextValid(baitOrLure, CatchDetailConstants.MaxBaitOrLureLength)
-            || !CatchDetailConstants.IsOptionalTextValid(notes, CatchDetailConstants.MaxNotesLength))
-        {
-            _validationMessage = Loc["Catch_EditTextTooLong"];
-            return null;
-        }
-
-        return new EditedCatchDetails(
-            speciesName,
-            weight,
-            length,
-            method,
-            baitOrLure,
-            notes,
-            caughtOn.Value);
-    }
-
-    private bool HasDetailsChanged(EditedCatchDetails details)
-    {
-        return !string.Equals(_catch!.SpeciesName, details.SpeciesName, StringComparison.Ordinal)
-            || _catch.Weight != details.Weight
-            || _catch.Length != details.Length
-            || !string.Equals(_catch.Method, details.Method, StringComparison.Ordinal)
-            || !string.Equals(_catch.BaitOrLure, details.BaitOrLure, StringComparison.Ordinal)
-            || !string.Equals(_catch.Notes, details.Notes, StringComparison.Ordinal)
-            || _catch.CaughtOn != details.CaughtOn;
-    }
-
-    private static SyncStatus PendingOverallStatus(SyncStatus current)
-    {
-        if (current is SyncStatus.Synchronised
-            or SyncStatus.FailedToSynchronise
-            or SyncStatus.Synchronising)
-        {
-            return SyncStatus.WaitingToSynchronise;
-        }
-
-        return current;
-    }
-
-    private async Task<bool> BindFormAsync(CatchModel catchRecord)
-    {
-        _speciesName = catchRecord.SpeciesName ?? string.Empty;
-        _speciesIsExplicit = !string.IsNullOrWhiteSpace(catchRecord.SpeciesName);
-        var displayWeight = Measurement.ToDisplayWeight(catchRecord.Weight, _weightUnit);
-        var displayLength = Measurement.ToDisplayLength(catchRecord.Length, _lengthUnit);
-        _weightText = displayWeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-        _lengthText = displayLength?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-        _method = catchRecord.Method ?? string.Empty;
-        _baitOrLure = catchRecord.BaitOrLure ?? string.Empty;
-        _notes = catchRecord.Notes ?? string.Empty;
-        var localValue = await Time.ToDateTimeLocalValueAsync(
-            catchRecord.CaughtOn,
-            _cancellationTokenSource.Token);
-        if (string.IsNullOrWhiteSpace(localValue))
-        {
-            return false;
-        }
-
-        _caughtOnLocal = localValue;
-        return true;
-    }
-
-    private async Task<DateTimeOffset?> TryParseCaughtOnAsync()
-    {
-        var converted = await Time.FromDateTimeLocalValueAsync(
-            _caughtOnLocal,
-            _cancellationTokenSource.Token);
-        if (converted is null)
-        {
-            return null;
-        }
-
-        var caughtOn = converted.Value.ToUniversalTime();
-        if (_catch is not null)
-        {
-            var originalLocal = await Time.ToDateTimeLocalValueAsync(
-                _catch.CaughtOn,
-                _cancellationTokenSource.Token);
-            if (string.Equals(originalLocal, _caughtOnLocal, StringComparison.Ordinal))
-            {
-                caughtOn = _catch.CaughtOn.ToUniversalTime();
-            }
-        }
-
-        if (!CatchDetailConstants.IsCaughtOnValid(caughtOn, DateTimeOffset.UtcNow))
-        {
-            return null;
-        }
-
-        return caughtOn;
-    }
-
-    private static bool TryParseMeasurement(string text, out decimal? value)
-    {
-        value = null;
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return true;
-        }
-
-        if (!decimal.TryParse(
-                text,
-                NumberStyles.Number,
-                CultureInfo.InvariantCulture,
-                out var parsed)
-            && !decimal.TryParse(
-                text,
-                NumberStyles.Number,
-                CultureInfo.CurrentCulture,
-                out parsed))
-        {
-            return false;
-        }
-
-        value = parsed;
-        return true;
-    }
-
-    private static string? TrimToNull(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    }
-
     private void TryToSynchronisePending()
     {
         _ = SafeSynchronisePendingAsync();
@@ -573,15 +340,4 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }
-
-    private sealed record EditedCatchDetails(
-        string? SpeciesName,
-        decimal? Weight,
-        decimal? Length,
-        string? Method,
-        string? BaitOrLure,
-        string? Notes,
-        DateTimeOffset CaughtOn);
-
-    private sealed record BuiltCatchEdit(CatchModel Updated, bool MetadataChanged);
 }

@@ -14,6 +14,10 @@ public interface ICatchRepository
         GetCatchPhotographArgs args,
         CancellationToken cancellationToken);
 
+    Task<Result> DeletePhotographAsync(
+        GetCatchPhotographArgs args,
+        CancellationToken cancellationToken);
+
     Task<Result<Catch>> UpsertAsync(Catch catchRecord, CancellationToken cancellationToken);
 
     Task<Result> UpdateLocationVisibilityAsync(

@@ -6,6 +6,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Application.Catches.Services;
 
@@ -16,15 +17,18 @@ public sealed class CatchPhotographService : ICatchPhotographService
     private readonly ICatchRepository _catchRepository;
     private readonly IObjectStorage _objectStorage;
     private readonly ICurrentUser _currentUser;
+    private readonly ILogger<CatchPhotographService> _logger;
 
     public CatchPhotographService(
         ICatchRepository catchRepository,
         IObjectStorage objectStorage,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        ILogger<CatchPhotographService> logger)
     {
         _catchRepository = catchRepository;
         _objectStorage = objectStorage;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public bool IsObjectStorageConfigured
@@ -90,6 +94,41 @@ public sealed class CatchPhotographService : ICatchPhotographService
         return string.Equals(args.ObjectKey, expected, StringComparison.Ordinal)
             ? Result.Ok()
             : Result.Fail(new CatchPhotographObjectKeyMismatchError());
+    }
+
+    public async Task<Result> DeleteAsync(
+        DeleteCatchPhotographArgs args,
+        CancellationToken cancellationToken)
+    {
+        var photograph = await LoadOwnedPhotographAsync(args.CatchId, args.PhotographId, cancellationToken);
+        if (photograph.IsFailed)
+        {
+            return photograph.ToResult();
+        }
+
+        var objectKey = CatchPhotographObjectKey.Build(_currentUser.UserId, args.CatchId, args.PhotographId);
+        try
+        {
+            await _objectStorage.DeleteObjectAsync(objectKey, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to delete object storage photograph {PhotographId} for catch {CatchId}.",
+                args.PhotographId,
+                args.CatchId);
+            return Result.Fail(new CatchPhotographStorageDeleteFailedError());
+        }
+
+        return await _catchRepository.DeletePhotographAsync(
+            new GetCatchPhotographArgs
+            {
+                UserId = _currentUser.UserId,
+                CatchId = args.CatchId,
+                PhotographId = args.PhotographId
+            },
+            cancellationToken);
     }
 
     private async Task<Result<Domain.Catches.CatchPhotograph>> LoadOwnedPhotographAsync(

@@ -10,7 +10,7 @@ namespace FishingLogBook.Infrastructure.Storage;
 public sealed class S3CompatibleObjectStorage : IObjectStorage, IDisposable
 {
     private readonly ObjectStorageConfig _config;
-    private readonly AmazonS3Client? _client;
+    private readonly IAmazonS3? _client;
 
     public S3CompatibleObjectStorage(IOptions<ObjectStorageConfig> configOptions)
     {
@@ -28,6 +28,12 @@ public sealed class S3CompatibleObjectStorage : IObjectStorage, IDisposable
             AuthenticationRegion = "auto"
         };
         _client = new AmazonS3Client(credentials, amazonS3Config);
+    }
+
+    internal S3CompatibleObjectStorage(ObjectStorageConfig config, IAmazonS3 client)
+    {
+        _config = config;
+        _client = client;
     }
 
     public bool IsConfigured => _config.IsConfigured && _client is not null;
@@ -63,11 +69,22 @@ public sealed class S3CompatibleObjectStorage : IObjectStorage, IDisposable
         return Task.FromResult(new Uri(Client.GetPreSignedURL(request)));
     }
 
+    public Task DeleteObjectAsync(string objectKey, CancellationToken cancellationToken)
+    {
+        return Client.DeleteObjectAsync(
+            new DeleteObjectRequest
+            {
+                BucketName = _config.BucketName,
+                Key = objectKey
+            },
+            cancellationToken);
+    }
+
     public void Dispose()
     {
         _client?.Dispose();
     }
 
-    private AmazonS3Client Client =>
+    private IAmazonS3 Client =>
         _client ?? throw new InvalidOperationException("Object storage is not configured.");
 }

@@ -183,27 +183,46 @@ export async function putCatchWithPhotographs(json, photographs) {
 
         const catchStore = transaction.objectStore(CATCH_STORE_NAME);
         const photoStore = transaction.objectStore(PHOTO_STORE_NAME);
+        const incomingIds = new Set(photos.map((photograph) => photograph.id));
         const catchRequest = catchStore.put(catchRecord);
         catchRequest.onerror = () => fail(catchRequest.error);
         catchRequest.onsuccess = () => {
-            let remaining = photos.length;
-            for (const photograph of photos) {
-                const request = photoStore.put({
-                    id: photograph.id,
-                    catchId: photograph.catchId,
-                    contentType: photograph.contentType,
-                    bytes: toStoredBytes(photograph.bytes)
-                });
-                request.onerror = () => fail(request.error);
-                request.onsuccess = () => {
-                    remaining -= 1;
-                    if (remaining === 0) {
-                        succeed();
+            const cursorRequest = photoStore.openCursor();
+            cursorRequest.onerror = () => fail(cursorRequest.error);
+            cursorRequest.onsuccess = () => {
+                const cursor = cursorRequest.result;
+                if (cursor) {
+                    if (cursor.value.catchId === catchRecord.id && !incomingIds.has(cursor.value.id)) {
+                        cursor.delete();
                     }
-                };
-            }
+
+                    cursor.continue();
+                    return;
+                }
+
+                writePhotographs(photoStore, photos, succeed, fail);
+            };
         };
     });
+}
+
+function writePhotographs(photoStore, photos, succeed, fail) {
+    let remaining = photos.length;
+    for (const photograph of photos) {
+        const request = photoStore.put({
+            id: photograph.id,
+            catchId: photograph.catchId,
+            contentType: photograph.contentType,
+            bytes: toStoredBytes(photograph.bytes)
+        });
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+            remaining -= 1;
+            if (remaining === 0) {
+                succeed();
+            }
+        };
+    }
 }
 
 export async function updateCatchMetadata(json) {

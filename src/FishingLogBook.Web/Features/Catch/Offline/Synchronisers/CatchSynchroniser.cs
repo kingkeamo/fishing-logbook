@@ -191,10 +191,9 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
 
         foreach (var photograph in catchRecord.Photographs.Where(NeedsPhotographSynchronisation).ToArray())
         {
-            catchRecord = await SynchronisePhotographAsync(
-                catchRecord,
-                photograph.Id,
-                cancellationToken);
+            catchRecord = photograph.SyncStatus == SyncStatus.PendingDeletion
+                ? await DeletePhotographAsync(catchRecord, photograph.Id, cancellationToken)
+                : await SynchronisePhotographAsync(catchRecord, photograph.Id, cancellationToken);
         }
 
         catchRecord = catchRecord with { SyncStatus = DeriveOverallStatus(catchRecord) };
@@ -384,6 +383,71 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
 
             return catchRecord;
         }
+    }
+
+    private async Task<CatchModel> DeletePhotographAsync(
+        CatchModel catchRecord,
+        Guid photographId,
+        CancellationToken cancellationToken)
+    {
+        await SafeLogAsync(
+            DiagnosticLevel.Information,
+            DiagnosticEventNames.PhotographDeleteStarted,
+            "Catch photograph delete started.",
+            catchRecord.Id,
+            photographId,
+            exception: null,
+            cancellationToken);
+
+        try
+        {
+            await _client.DeletePhotographAsync(catchRecord.Id, photographId, cancellationToken);
+            catchRecord = WithoutPhotograph(catchRecord, photographId);
+            await _store.SaveAsync(catchRecord, cancellationToken);
+            await SafeLogAsync(
+                DiagnosticLevel.Information,
+                DiagnosticEventNames.PhotographDeleteSucceeded,
+                "Catch photograph delete succeeded.",
+                catchRecord.Id,
+                photographId,
+                exception: null,
+                cancellationToken);
+            return catchRecord;
+        }
+        catch (Exception exception) when (IsSynchronisationFailure(exception, cancellationToken))
+        {
+            await SafeLogAsync(
+                DiagnosticLevel.Error,
+                DiagnosticEventNames.PhotographDeleteFailed,
+                "Catch photograph delete failed.",
+                catchRecord.Id,
+                photographId,
+                exception,
+                cancellationToken);
+            if (IsAuthenticationFailure(exception))
+            {
+                await SafeLogAsync(
+                    DiagnosticLevel.Warning,
+                    DiagnosticEventNames.AuthenticationUnavailable,
+                    "Authentication is unavailable for catch synchronisation.",
+                    catchRecord.Id,
+                    photographId,
+                    exception,
+                    cancellationToken);
+            }
+
+            return catchRecord;
+        }
+    }
+
+    private static CatchModel WithoutPhotograph(CatchModel catchRecord, Guid photographId)
+    {
+        return catchRecord with
+        {
+            Photographs = catchRecord.Photographs
+                .Where(photograph => photograph.Id != photographId)
+                .ToArray()
+        };
     }
 
     private async Task<IReadOnlyList<CatchModel>> RecoverInterruptedAsync(

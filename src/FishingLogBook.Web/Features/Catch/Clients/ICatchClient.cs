@@ -8,6 +8,10 @@ public interface ICatchClient
 
     Task<IReadOnlyList<CatchViewDto>> GetAllAsync(CancellationToken cancellationToken);
 
+    Task<CatchViewDto?> GetAsync(Guid catchId, CancellationToken cancellationToken);
+
+    Task<byte[]> DownloadPhotographAsync(string url, CancellationToken cancellationToken);
+
     Task<PhotographUploadDto> CreatePhotographUploadAsync(
         Guid catchId,
         PhotographUploadRequestDto request,
@@ -23,6 +27,8 @@ public interface ICatchClient
         Guid catchId,
         RecordPhotographDto request,
         CancellationToken cancellationToken);
+
+    Task DeletePhotographAsync(Guid catchId, Guid photographId, CancellationToken cancellationToken);
 
     Task UpdateLocationVisibilityAsync(Guid catchId, string visibility, CancellationToken cancellationToken);
 }

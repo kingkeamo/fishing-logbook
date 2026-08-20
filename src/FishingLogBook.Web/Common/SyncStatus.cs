@@ -6,5 +6,6 @@ public enum SyncStatus
     WaitingToSynchronise,
     Synchronising,
     Synchronised,
-    FailedToSynchronise
+    FailedToSynchronise,
+    PendingDeletion
 }

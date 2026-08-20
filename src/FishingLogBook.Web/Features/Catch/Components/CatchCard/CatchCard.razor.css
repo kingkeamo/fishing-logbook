@@ -22,52 +22,6 @@
     width: clamp(5rem, 22vw, 6.5rem);
 }
 
-.catch-card-media {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 0.5rem;
-    overflow: hidden;
-}
-
-::deep .catch-card-photo {
-    width: 100%;
-    height: 100%;
-}
-
-::deep .catch-card-photo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.catch-card-photo-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--mud-palette-action-disabled-background);
-    color: var(--mud-palette-text-disabled);
-}
-
-.catch-card-photo-navigation {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    min-height: 1.75rem;
-    margin-top: 0.125rem;
-}
-
-.catch-card-photo-count {
-    white-space: nowrap;
-    color: var(--mud-palette-text-secondary);
-}
-
-.catch-card-photo-navigation ::deep .mud-icon-button {
-    padding: 0.125rem;
-}
-
 .catch-card-info-link {
     flex: 1;
     min-width: 0;

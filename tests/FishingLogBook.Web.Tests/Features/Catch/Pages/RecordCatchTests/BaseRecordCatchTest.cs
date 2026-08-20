@@ -248,8 +248,9 @@ public class BaseRecordCatchTest
 
     protected static Guid VisiblePhotographId(IRenderedComponent<RecordCatch> cut)
     {
-        var imageId = cut.Find("#catch-photo-carousel img").Id
-            ?? throw new InvalidOperationException("The visible photograph has no id.");
-        return Guid.Parse(imageId["catch-photo-image-".Length..]);
+        var photographId = cut.Find("#catch-photo-carousel img")
+            .GetAttribute("data-photograph-id");
+        return Guid.Parse(photographId
+            ?? throw new InvalidOperationException("The visible photograph has no photograph id."));
     }
 }

@@ -31,52 +31,10 @@
 
     <div class="catch-card-body">
         <div class="catch-card-media-block">
-            <div class="catch-card-media">
-                @if (CurrentPhotoUrl is not null)
-                {
-                    <MudImage Src="@CurrentPhotoUrl"
-                              Alt="@CurrentPhotographAlt"
-                              ObjectFit="ObjectFit.Cover"
-                              Fluid="true"
-                              Class="catch-card-photo"
-                              id="@PhotoElementId" />
-                }
-                else
-                {
-                    <div class="catch-card-photo-placeholder"
-                         role="img"
-                         aria-label="@Loc["Catch_NoPhotograph"]"
-                         id="@($"catch-card-no-photo-{Catch.Id:D}")">
-                        <MudIcon Icon="@Icons.Material.Filled.PhotoCamera"
-                                 aria-hidden="true" />
-                    </div>
-                }
-            </div>
-
-            @if (HasMultiplePhotographs)
-            {
-                <div class="catch-card-photo-navigation"
-                     id="@($"catch-card-photo-navigation-{Catch.Id:D}")">
-
-                    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
-                                   Size="Size.Small"
-                                   OnClick="PreviousPhotograph"
-                                   aria-label="@Loc["Catch_PreviousPhotograph"]"
-                                   id="@($"catch-card-photo-previous-{Catch.Id:D}")" />
-
-                    <MudText Typo="Typo.caption"
-                             Class="catch-card-photo-count"
-                             id="@($"catch-card-photo-count-{Catch.Id:D}")">
-                        @CurrentPhotographNumber of @PhotographCount
-                    </MudText>
-
-                    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                                   Size="Size.Small"
-                                   OnClick="NextPhotograph"
-                                   aria-label="@Loc["Catch_NextPhotograph"]"
-                                   id="@($"catch-card-photo-next-{Catch.Id:D}")" />
-                </div>
-            }
+            <CatchPhotographCarousel Photographs="CarouselPhotographs"
+                                      IdPrefix="catch-card"
+                                      IdSuffix="@Catch.Id.ToString("D")"
+                                      Compact="true" />
         </div>
 
         <a class="catch-card-info-link"

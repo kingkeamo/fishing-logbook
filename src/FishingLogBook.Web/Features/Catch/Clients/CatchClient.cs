@@ -34,6 +34,25 @@ public sealed class CatchClient : ICatchClient
         return catches ?? [];
     }
 
+    public async Task<CatchViewDto?> GetAsync(Guid catchId, CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.GetAsync($"api/catches/{catchId:D}", cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<CatchViewDto>(cancellationToken);
+    }
+
+    public async Task<byte[]> DownloadPhotographAsync(string url, CancellationToken cancellationToken)
+    {
+        using var response = await _anonymousClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
     public async Task<PhotographUploadDto> CreatePhotographUploadAsync(
         Guid catchId,
         PhotographUploadRequestDto request,
@@ -69,6 +88,22 @@ public sealed class CatchClient : ICatchClient
             $"api/catches/{catchId:D}/photographs",
             request,
             cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task DeletePhotographAsync(
+        Guid catchId,
+        Guid photographId,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.DeleteAsync(
+            $"api/catches/{catchId:D}/photographs/{photographId:D}",
+            cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return;
+        }
+
         response.EnsureSuccessStatusCode();
     }
 
