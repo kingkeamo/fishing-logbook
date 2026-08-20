@@ -96,6 +96,9 @@
   <data name="Catch_SyncFailureReassurance" xml:space="preserve">
     <value>Your catch is still saved on this device.</value>
   </data>
+  <data name="Catch_SyncPendingReassurance" xml:space="preserve">
+    <value>Saved on this device. It will sync automatically.</value>
+  </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
   </data>
@@ -186,6 +189,9 @@
   <data name="Catch_PhotographAlt" xml:space="preserve">
     <value>Catch photograph</value>
   </data>
+  <data name="Catch_PhotographAltNumbered" xml:space="preserve">
+    <value>Catch photograph {0} of {1}</value>
+  </data>
   <data name="Catch_PhotoUnsupported" xml:space="preserve">
     <value>This photo format isn't supported. Please use JPEG, PNG or WebP.</value>
   </data>
@@ -252,20 +258,74 @@
   <data name="Catch_LogbookEmpty" xml:space="preserve">
     <value>No catches saved on this device yet</value>
   </data>
+  <data name="Catch_RecordFirstCatch" xml:space="preserve">
+    <value>Record your first catch</value>
+  </data>
   <data name="Catch_LoadFailed" xml:space="preserve">
     <value>Catches could not be loaded.</value>
   </data>
   <data name="Catch_UnknownSpecies" xml:space="preserve">
     <value>Catch</value>
   </data>
-  <data name="Catch_AnglerYou" xml:space="preserve">
-    <value>Angler: You</value>
+  <data name="Catch_RecordedForAnotherAngler" xml:space="preserve">
+    <value>Recorded for another angler</value>
   </data>
-  <data name="Catch_RecordedByYou" xml:space="preserve">
-    <value>Recorded by: You</value>
+  <data name="Catch_RecordedBySomeoneElse" xml:space="preserve">
+    <value>Recorded by someone else</value>
   </data>
   <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
     <value>Location privacy</value>
+  </data>
+  <data name="Catch_MoreActions" xml:space="preserve">
+    <value>More actions</value>
+  </data>
+  <data name="Catch_NoPhotograph" xml:space="preserve">
+    <value>No photograph</value>
+  </data>
+  <data name="Catch_Search" xml:space="preserve">
+    <value>Search catches</value>
+  </data>
+  <data name="Catch_Filters" xml:space="preserve">
+    <value>Filters</value>
+  </data>
+  <data name="Catch_ClearFilters" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="Catch_FilterAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Catch_FilterSpecies" xml:space="preserve">
+    <value>Species</value>
+  </data>
+  <data name="Catch_FilterDateRange" xml:space="preserve">
+    <value>Date range</value>
+  </data>
+  <data name="Catch_DateRange_Today" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Catch_DateRange_Last7Days" xml:space="preserve">
+    <value>Last 7 days</value>
+  </data>
+  <data name="Catch_DateRange_Last30Days" xml:space="preserve">
+    <value>Last 30 days</value>
+  </data>
+  <data name="Catch_DateGroupToday" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="Catch_DateGroupYesterday" xml:space="preserve">
+    <value>Yesterday</value>
+  </data>
+  <data name="Catch_GroupCatchCountSingular" xml:space="preserve">
+    <value>{0} catch</value>
+  </data>
+  <data name="Catch_GroupCatchCountPlural" xml:space="preserve">
+    <value>{0} catches</value>
+  </data>
+  <data name="Catch_NoSearchResults" xml:space="preserve">
+    <value>No catches match your search or filters.</value>
+  </data>
+  <data name="Catch_ClearSearchOrFilters" xml:space="preserve">
+    <value>Clear search and filters</value>
   </data>
   <data name="Catch_Edit" xml:space="preserve">
     <value>Edit details</value>

@@ -1,9 +1,19 @@
+using System.Globalization;
 using Bunit;
+using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -20,7 +30,10 @@ public class BaseCatchListTest
         ICatchStore store,
         ILocalCatchOwnerService? owner = null,
         ICatchSynchroniser? synchroniser = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        ITimeService? time = null,
+        IAnglerPreferencesProvider? anglerPreferences = null,
+        ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -30,14 +43,107 @@ public class BaseCatchListTest
         context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddSingleton(synchroniser ?? Substitute.For<ICatchSynchroniser>());
         context.Services.AddSingleton(modalService ?? Substitute.For<IModalService>());
+        context.Services.AddSingleton(time ?? UtcTime());
+        context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
+        context.Services.AddSingleton(logging ?? QuietLogging());
+        context.Services.AddSingleton<IMeasurementService, MeasurementService>();
+        context.Services.AddSingleton<ICatchDateGroupingService, CatchDateGroupingService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
 
-    protected static ILocalCatchOwnerService SignedInOwner()
+    protected static ILocalCatchOwnerService SignedInOwner(Guid? userId = null)
     {
         var owner = Substitute.For<ILocalCatchOwnerService>();
-        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OwnerUserId);
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(userId ?? OwnerUserId);
         return owner;
+    }
+
+    protected static IAnglerPreferencesProvider QuietAnglerPreferences(
+        WeightUnitEnum weightUnit = WeightUnitEnum.Kg,
+        LengthUnitEnum lengthUnit = LengthUnitEnum.Cm)
+    {
+        var provider = Substitute.For<IAnglerPreferencesProvider>();
+        provider.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(new AnglerPreferencesModel(
+                new FishingCatalogueDto([], []),
+                new FishingPreferencesDto([]),
+                weightUnit,
+                lengthUnit));
+        return provider;
+    }
+
+    protected static ILoggingService QuietLogging()
+    {
+        var logging = Substitute.For<ILoggingService>();
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return logging;
+    }
+
+    protected static ITimeService UtcTime()
+    {
+        return OffsetTime(TimeSpan.Zero);
+    }
+
+    protected static ITimeService OffsetTime(TimeSpan offset)
+    {
+        var time = Substitute.For<ITimeService>();
+        time.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(call => ToDateTimeLocal(call.Arg<DateTimeOffset>(), offset));
+        return time;
+    }
+
+    protected static ITimeService FixedTodayTime(string localToday)
+    {
+        var time = Substitute.For<ITimeService>();
+        time.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var instant = call.Arg<DateTimeOffset>();
+                return (DateTimeOffset.UtcNow - instant).Duration() < TimeSpan.FromMinutes(1)
+                    ? $"{localToday}T12:00"
+                    : instant.UtcDateTime.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+            });
+        return time;
+    }
+
+    private static string ToDateTimeLocal(DateTimeOffset instant, TimeSpan offset)
+    {
+        return instant.ToUniversalTime().UtcDateTime.Add(offset)
+            .ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+    }
+
+    protected static CatchModel StoredCatch(
+        Guid catchId,
+        DateTimeOffset caughtOn,
+        SyncStatus syncStatus = SyncStatus.Synchronised,
+        string? speciesName = null,
+        string? method = null,
+        string? baitOrLure = null,
+        decimal? weight = null,
+        decimal? length = null,
+        CatchLocationModel? location = null,
+        Guid? anglerUserId = null,
+        Guid? recordedByUserId = null,
+        bool withPhotograph = true)
+    {
+        return new CatchModel(
+            catchId,
+            caughtOn,
+            withPhotograph
+                ? [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3])]
+                : [],
+            SpeciesName: speciesName,
+            Location: location,
+            UserId: OwnerUserId,
+            SyncStatus: syncStatus,
+            MetadataSyncStatus: syncStatus,
+            AnglerUserId: anglerUserId ?? OwnerUserId,
+            RecordedByUserId: recordedByUserId ?? OwnerUserId,
+            Weight: weight,
+            Length: length,
+            Method: method,
+            BaitOrLure: baitOrLure);
     }
 }

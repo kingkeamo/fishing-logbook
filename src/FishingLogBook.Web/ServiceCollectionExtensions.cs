@@ -69,6 +69,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICurrentUserClient, CurrentUserClient>();
         services.AddScoped<ILocalCatchOwnerService, LocalCatchOwnerService>();
         services.AddScoped<IMeasurementService, MeasurementService>();
+        services.AddScoped<ICatchDateGroupingService, CatchDateGroupingService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();

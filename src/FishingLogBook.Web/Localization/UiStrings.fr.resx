@@ -96,6 +96,9 @@
   <data name="Catch_SyncFailureReassurance" xml:space="preserve">
     <value>Votre prise reste enregistrée sur cet appareil.</value>
   </data>
+  <data name="Catch_SyncPendingReassurance" xml:space="preserve">
+    <value>Enregistrée sur cet appareil. Elle se synchronisera automatiquement.</value>
+  </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
   </data>
@@ -186,6 +189,9 @@
   <data name="Catch_PhotographAlt" xml:space="preserve">
     <value>Photographie de la prise</value>
   </data>
+  <data name="Catch_PhotographAltNumbered" xml:space="preserve">
+    <value>Photographie de la prise {0} sur {1}</value>
+  </data>
   <data name="Catch_PhotoUnsupported" xml:space="preserve">
     <value>Ce format de photo n'est pas pris en charge. Utilisez JPEG, PNG ou WebP.</value>
   </data>
@@ -252,20 +258,74 @@
   <data name="Catch_LogbookEmpty" xml:space="preserve">
     <value>Aucune prise enregistrée sur cet appareil</value>
   </data>
+  <data name="Catch_RecordFirstCatch" xml:space="preserve">
+    <value>Enregistrez votre première prise</value>
+  </data>
   <data name="Catch_LoadFailed" xml:space="preserve">
     <value>Les prises n'ont pas pu être chargées.</value>
   </data>
   <data name="Catch_UnknownSpecies" xml:space="preserve">
     <value>Prise</value>
   </data>
-  <data name="Catch_AnglerYou" xml:space="preserve">
-    <value>Pêcheur : Vous</value>
+  <data name="Catch_RecordedForAnotherAngler" xml:space="preserve">
+    <value>Enregistrée pour un autre pêcheur</value>
   </data>
-  <data name="Catch_RecordedByYou" xml:space="preserve">
-    <value>Enregistré par : Vous</value>
+  <data name="Catch_RecordedBySomeoneElse" xml:space="preserve">
+    <value>Enregistrée par quelqu'un d'autre</value>
   </data>
   <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
     <value>Confidentialité de la localisation</value>
+  </data>
+  <data name="Catch_MoreActions" xml:space="preserve">
+    <value>Plus d'actions</value>
+  </data>
+  <data name="Catch_NoPhotograph" xml:space="preserve">
+    <value>Aucune photo</value>
+  </data>
+  <data name="Catch_Search" xml:space="preserve">
+    <value>Rechercher des prises</value>
+  </data>
+  <data name="Catch_Filters" xml:space="preserve">
+    <value>Filtres</value>
+  </data>
+  <data name="Catch_ClearFilters" xml:space="preserve">
+    <value>Tout effacer</value>
+  </data>
+  <data name="Catch_FilterAll" xml:space="preserve">
+    <value>Toutes</value>
+  </data>
+  <data name="Catch_FilterSpecies" xml:space="preserve">
+    <value>Espèce</value>
+  </data>
+  <data name="Catch_FilterDateRange" xml:space="preserve">
+    <value>Période</value>
+  </data>
+  <data name="Catch_DateRange_Today" xml:space="preserve">
+    <value>Aujourd'hui</value>
+  </data>
+  <data name="Catch_DateRange_Last7Days" xml:space="preserve">
+    <value>7 derniers jours</value>
+  </data>
+  <data name="Catch_DateRange_Last30Days" xml:space="preserve">
+    <value>30 derniers jours</value>
+  </data>
+  <data name="Catch_DateGroupToday" xml:space="preserve">
+    <value>Aujourd'hui</value>
+  </data>
+  <data name="Catch_DateGroupYesterday" xml:space="preserve">
+    <value>Hier</value>
+  </data>
+  <data name="Catch_GroupCatchCountSingular" xml:space="preserve">
+    <value>{0} prise</value>
+  </data>
+  <data name="Catch_GroupCatchCountPlural" xml:space="preserve">
+    <value>{0} prises</value>
+  </data>
+  <data name="Catch_NoSearchResults" xml:space="preserve">
+    <value>Aucune prise ne correspond à votre recherche ou vos filtres.</value>
+  </data>
+  <data name="Catch_ClearSearchOrFilters" xml:space="preserve">
+    <value>Effacer la recherche et les filtres</value>
   </data>
   <data name="Catch_Edit" xml:space="preserve">
     <value>Modifier les détails</value>
@@ -460,7 +520,7 @@
     <value>Méthodes de pêche préférées</value>
   </data>
   <data name="Profile_FishingMethod_SetDefault" xml:space="preserve">
-    <value>Définir comme méthode par défaut :</value>
+    <value>Définir comme méthode par défaut :</value>
   </data>
   <data name="Profile_FishingMethod_Default" xml:space="preserve">
     <value>Défaut</value>
@@ -469,7 +529,7 @@
     <value>Espèces préférées pour {0}</value>
   </data>
   <data name="Profile_FishingSpecies_SetDefault" xml:space="preserve">
-    <value>Définir comme espèce par défaut :</value>
+    <value>Définir comme espèce par défaut :</value>
   </data>
   <data name="Profile_FishingSpecies_Remove" xml:space="preserve">
     <value>Retirer {0}</value>

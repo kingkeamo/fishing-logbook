@@ -14,130 +14,123 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Pages.CatchListTests;
 public class WhenTestingSyncStatus : BaseCatchListTest
 {
     [Fact]
-    public async Task ItShouldShowTheFailedStatusAndRetryTheExactCatch()
+    public async Task ItShouldBeQuietForAFullySynchronisedCatch()
     {
         // Arrange
-        var catchId = Guid.NewGuid();
-        var catchRecord = CatchWithStatus(catchId, SyncStatus.FailedToSynchronise);
-        var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<CatchModel>>([catchRecord]);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
-        await using var context = CreateContext(store, synchroniser: synchroniser);
-
-        // Act
-        var cut = context.Render<CatchList>();
-        await cut.Find($"#catch-sync-retry-{catchId:D}").ClickAsync(new());
-
-        // Assert
-        cut.Find($"#catch-sync-status-{catchId:D}").TextContent
-            .Should().Contain("Failed to synchronise");
-        cut.Find($"#catch-sync-reassurance-{catchId:D}").TextContent
-            .Should().Contain("Your catch is still saved on this device.");
-        await synchroniser.Received(1).RetryAsync(
-            catchId,
-            Arg.Any<CancellationToken>());
-        await store.Received(2).GetAllAsync(
-            OwnerUserId,
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldShowTheSynchronisedStatus()
-    {
-        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
         store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<CatchModel>>(
-                [CatchWithStatus(catchId, SyncStatus.Synchronised)]);
+                [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.Synchronised)]);
         await using var context = CreateContext(store);
 
         // Act
         var cut = context.Render<CatchList>();
 
         // Assert
-        cut.Find($"#catch-sync-status-{catchId:D}").TextContent
-            .Should().Contain("Synchronised");
+        cut.WaitForAssertion(() => cut.Find($"#catch-card-{catchId:D}").Should().NotBeNull());
+        cut.FindAll($"#catch-card-attention-{catchId:D}").Should().BeEmpty();
         cut.FindAll($"#catch-sync-retry-{catchId:D}").Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task ItShouldOfferManualSynchronisationWhileWaitingToSynchronise()
+    [Theory]
+    [InlineData(SyncStatus.SavedLocally)]
+    [InlineData(SyncStatus.WaitingToSynchronise)]
+    [InlineData(SyncStatus.FailedToSynchronise)]
+    public async Task ItShouldShowAttentionAndRetryForNonHealthyStates(SyncStatus status)
     {
         // Arrange
-        var catchId = Guid.NewGuid();
-        var catchRecord = CatchWithStatus(catchId, SyncStatus.WaitingToSynchronise);
-        var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<CatchModel>>([catchRecord]);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
-        await using var context = CreateContext(store, synchroniser: synchroniser);
-
-        // Act
-        var cut = context.Render<CatchList>();
-        await cut.Find($"#catch-sync-retry-{catchId:D}").ClickAsync(new());
-
-        // Assert
-        cut.Find($"#catch-sync-status-{catchId:D}").TextContent
-            .Should().Contain("Waiting to synchronise");
-        await synchroniser.Received(1).RetryAsync(
-            catchId,
-            Arg.Any<CancellationToken>());
-        await store.Received(2).GetAllAsync(
-            OwnerUserId,
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldNotOfferManualSynchronisationWhileSynchronising()
-    {
-        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
         store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<CatchModel>>(
-                [CatchWithStatus(catchId, SyncStatus.Synchronising)]);
+                [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), status)]);
         await using var context = CreateContext(store);
 
         // Act
         var cut = context.Render<CatchList>();
 
         // Assert
-        cut.Find($"#catch-sync-status-{catchId:D}").TextContent
-            .Should().Contain("Synchronising");
+        cut.WaitForAssertion(() =>
+            cut.Find($"#catch-sync-retry-{catchId:D}").Should().NotBeNull());
+    }
+
+    [Fact]
+    public async Task ItShouldShowAQuietSynchronisingIndicatorWithoutRetry()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns<IReadOnlyList<CatchModel>>(
+                [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.Synchronising)]);
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#catch-card-synchronising-{catchId:D}").Should().NotBeNull());
         cut.FindAll($"#catch-sync-retry-{catchId:D}").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ItShouldOfferManualSynchronisationForALocallySavedCatch()
+    public async Task ItShouldRetryTheExactCatchAndReloadTheList()
     {
         // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
-        var catchRecord = CatchWithStatus(catchId, SyncStatus.SavedLocally);
         var store = Substitute.For<ICatchStore>();
         store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<CatchModel>>([catchRecord]);
+            .Returns(
+                _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.FailedToSynchronise)],
+                _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.Synchronised)]);
         var synchroniser = Substitute.For<ICatchSynchroniser>();
         await using var context = CreateContext(store, synchroniser: synchroniser);
         var cut = context.Render<CatchList>();
+        cut.WaitForAssertion(() => cut.Find($"#catch-sync-retry-{catchId:D}").Should().NotBeNull());
 
         // Act
-        await cut.Find($"#catch-sync-retry-{catchId:D}").ClickAsync(new());
+        await cut.Find($"#catch-sync-retry-{catchId:D}").ClickAsync();
 
         // Assert
-        cut.Find($"#catch-sync-retry-{catchId:D}").TextContent
-            .Should().Contain("Synchronise now");
-        await synchroniser.Received(1).RetryAsync(
-            catchId,
-            Arg.Any<CancellationToken>());
-        await store.Received(2).GetAllAsync(
-            OwnerUserId,
-            Arg.Any<CancellationToken>());
+        cut.WaitForAssertion(() =>
+            cut.FindAll($"#catch-sync-retry-{catchId:D}").Should().BeEmpty());
+        await synchroniser.Received(1).RetryAsync(catchId, Arg.Any<CancellationToken>());
+        await store.Received(2).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldShowFrenchSyncActions()
+    public async Task ItShouldRefreshWhenBackgroundSynchronisationChangesState()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(
+                _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.SavedLocally)],
+                _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.Synchronised)]);
+        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        await using var context = CreateContext(store, synchroniser: synchroniser);
+        var cut = context.Render<CatchList>();
+        cut.WaitForAssertion(() => cut.Find($"#catch-sync-retry-{catchId:D}").Should().NotBeNull());
+
+        // Act
+        synchroniser.StateChanged += Raise.Event<EventHandler>(synchroniser, EventArgs.Empty);
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.FindAll($"#catch-sync-retry-{catchId:D}").Should().BeEmpty());
+        await store.Received(2).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowFrenchSyncReassurance()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
@@ -145,62 +138,16 @@ public class WhenTestingSyncStatus : BaseCatchListTest
         var store = Substitute.For<ICatchStore>();
         store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<CatchModel>>(
-                [CatchWithStatus(catchId, SyncStatus.FailedToSynchronise)]);
+                [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.FailedToSynchronise)]);
         await using var context = CreateContext(store);
 
         // Act
         var cut = context.Render<CatchList>();
 
         // Assert
-        cut.Find($"#catch-sync-retry-{catchId:D}").TextContent
-            .Should().Contain("Réessayer");
-        cut.Find($"#catch-sync-reassurance-{catchId:D}").TextContent
-            .Should().Contain("Votre prise reste enregistrée sur cet appareil.");
-    }
-
-    [Fact]
-    public async Task ItShouldRefreshWhenBackgroundSynchronisationChangesState()
-    {
-        // Arrange
-        var catchId = Guid.NewGuid();
-        var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(
-                _ => [CatchWithStatus(catchId, SyncStatus.SavedLocally)],
-                _ => [CatchWithStatus(catchId, SyncStatus.Synchronised)]);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
-        await using var context = CreateContext(store, synchroniser: synchroniser);
-        var cut = context.Render<CatchList>();
-
-        // Act
-        synchroniser.StateChanged += Raise.Event<EventHandler>(
-            synchroniser,
-            EventArgs.Empty);
-
-        // Assert
         cut.WaitForAssertion(() =>
-            cut.Find($"#catch-sync-status-{catchId:D}").TextContent
-                .Should().Contain("Synchronised"));
-        await store.Received(2).GetAllAsync(
-            OwnerUserId,
-            Arg.Any<CancellationToken>());
-    }
-
-    private static CatchModel CatchWithStatus(Guid catchId, SyncStatus status)
-    {
-        return new CatchModel(
-            catchId,
-            DateTimeOffset.Parse("2026-08-17T12:00:00Z"),
-            [
-                new CatchPhotographModel(
-                    Guid.NewGuid(),
-                    catchId,
-                    "image/jpeg",
-                    [1, 2, 3],
-                    status)
-            ],
-            UserId: OwnerUserId,
-            SyncStatus: status,
-            MetadataSyncStatus: status);
+            cut.Find($"#catch-sync-reassurance-{catchId:D}").TextContent
+                .Should().Contain("Votre prise reste enregistrée sur cet appareil."));
+        cut.Find($"#catch-sync-retry-{catchId:D}").TextContent.Should().Contain("Réessayer");
     }
 }
