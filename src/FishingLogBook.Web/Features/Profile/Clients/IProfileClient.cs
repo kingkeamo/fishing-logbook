@@ -8,6 +8,8 @@ public interface IProfileClient
 
     Task<ProfileDto> UpdateOwnAsync(UpdateProfileDto profile, CancellationToken cancellationToken);
 
+    Task<ProfileDto> CompleteOnboardingAsync(CancellationToken cancellationToken);
+
     Task<PublicProfileDto> GetPublicAsync(Guid userId, CancellationToken cancellationToken);
 
     Task<PhotographUploadDto> CreatePhotographUploadAsync(

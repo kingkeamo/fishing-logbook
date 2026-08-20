@@ -1,0 +1,9 @@
+.landing-page { min-height: calc(100vh - 96px); }
+.landing-content { padding-bottom: 3rem; padding-top: 2rem; }
+.landing-logo { height: auto; max-width: min(100%, 365px); }
+.landing-tagline { color: var(--mud-palette-secondary); font-weight: 600; }
+.landing-heading, .landing-introduction { max-width: 42rem; }
+.landing-benefits { width: 100%; }
+.landing-benefit { align-items: center; background: color-mix(in srgb, var(--mud-palette-primary) 8%, transparent); display: flex; gap: 0.75rem; height: 100%; }
+.landing-actions { max-width: 22rem; width: 100%; }
+@media (max-width: 600px) { .landing-content { padding-top: 1rem; } }

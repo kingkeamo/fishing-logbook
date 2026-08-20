@@ -1,11 +1,11 @@
 {
-  "name": "FishingLogBook",
-  "short_name": "FishingLogBook",
+  "name": "Catch, But Don’t Forget",
+  "short_name": "Catch Logbook",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#00695c",
+  "background_color": "#0b1f3a",
+  "theme_color": "#0b1f3a",
   "prefer_related_applications": false,
   "icons": [
     {

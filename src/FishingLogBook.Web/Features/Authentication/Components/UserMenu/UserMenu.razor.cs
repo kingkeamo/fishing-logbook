@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using FishingLogBook.Web.Features.Authentication.Services;
+using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Features.Authentication.Components.UserMenu;
 
@@ -26,6 +28,12 @@ public partial class UserMenu : ComponentBase, IDisposable
 
     [Inject]
     private IProfileSummaryProvider ProfileSummary { get; set; } = default!;
+
+    [Inject]
+    private AuthConfig AuthConfig { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; } = default!;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
@@ -93,10 +101,15 @@ public partial class UserMenu : ComponentBase, IDisposable
         Navigation.NavigateToLogin("authentication/login");
     }
 
-    private void BeginSignOut()
+    private async Task BeginSignOut()
     {
         ProfileSummary.Invalidate();
-        Navigation.NavigateToLogout("authentication/logout");
+        await JsRuntime.InvokeVoidAsync(
+            "fishingLogBookAuthentication.logout",
+            AuthConfig.Authority,
+            AuthConfig.ClientId,
+            AuthConfig.HostedUiDomain,
+            Navigation.BaseUri);
     }
 
     private string SignedInLabel(ClaimsPrincipal user)

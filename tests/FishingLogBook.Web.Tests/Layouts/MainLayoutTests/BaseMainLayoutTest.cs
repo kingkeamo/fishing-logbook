@@ -1,5 +1,6 @@
 using Bunit;
 using Bunit.TestDoubles;
+using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
@@ -30,6 +31,14 @@ public class BaseMainLayoutTest
         context.Services.AddMudServices();
         context.Services.AddLocalization();
         context.Services.AddSingleton<ISignedInUserDisplayService, SignedInUserDisplayService>();
+        context.Services.AddSingleton(new AuthConfig
+        {
+            Authority = "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_test",
+            ClientId = "test-client",
+            HostedUiDomain = "https://test.auth.eu-west-2.amazoncognito.com",
+            ApiResource = "https://api.test",
+            ApiScope = "https://api.test/access"
+        });
         var authorization = context.AddAuthorization();
         if (isAuthenticated)
         {

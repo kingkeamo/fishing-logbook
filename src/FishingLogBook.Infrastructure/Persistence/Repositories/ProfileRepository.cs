@@ -17,7 +17,7 @@ public sealed class ProfileRepository : IProfileRepository
                "HomeRegion",
                "PreferredWeightUnit", "PreferredLengthUnit",
                "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
-               "ShowPreferredFishingMethods", "ShowPreferredSpecies"
+               "ShowPreferredFishingMethods", "ShowPreferredSpecies", "OnboardingCompletedOn"
         FROM "Profile"
         """;
 
@@ -112,6 +112,33 @@ public sealed class ProfileRepository : IProfileRepository
         catch (Exception exception)
         {
             _logger.LogError(exception, "Failed to save angler profile {UserId}.", profile.UserId);
+            return Result.Fail<Profile>(FailedMessage);
+        }
+    }
+
+    public async Task<Result<Profile>> CompleteOnboardingAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            const string sql = """
+                INSERT INTO "Profile" ("UserId", "OnboardingCompletedOn", "UpdatedOn")
+                VALUES (@UserId, now(), now())
+                ON CONFLICT ("UserId") DO UPDATE SET
+                    "OnboardingCompletedOn" = COALESCE("Profile"."OnboardingCompletedOn", now()),
+                    "UpdatedOn" = now();
+                """;
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            await connection.ExecuteAsync(new CommandDefinition(
+                sql,
+                new { UserId = userId },
+                cancellationToken: cancellationToken));
+            return await RequireByUserIdAsync(connection, userId, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to complete onboarding for user {UserId}.", userId);
             return Result.Fail<Profile>(FailedMessage);
         }
     }

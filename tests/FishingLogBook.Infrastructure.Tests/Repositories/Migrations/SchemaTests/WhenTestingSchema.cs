@@ -90,4 +90,24 @@ public class WhenTestingSchema
         tableNames.Should().Contain("UserFishingMethodPreference");
         tableNames.Should().Contain("UserFishingSpeciesPreference");
     }
+
+    [Fact]
+    public async Task ItShouldExposeNullableOnboardingCompletion()
+    {
+        // Arrange
+        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
+        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+
+        // Act
+        var nullable = await connection.QuerySingleAsync<string>(
+            """
+            SELECT "is_nullable" FROM information_schema.columns
+            WHERE "table_schema" = 'public'
+              AND "table_name" = 'Profile'
+              AND "column_name" = 'OnboardingCompletedOn';
+            """);
+
+        // Assert
+        nullable.Should().Be("YES");
+    }
 }

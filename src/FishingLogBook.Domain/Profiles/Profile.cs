@@ -29,4 +29,6 @@ public sealed class Profile
     public bool ShowPreferredFishingMethods { get; init; }
 
     public bool ShowPreferredSpecies { get; init; }
+
+    public DateTimeOffset? OnboardingCompletedOn { get; init; }
 }

@@ -8,6 +8,8 @@ public sealed class AuthConfig
 
     public string ClientId { get; set; } = string.Empty;
 
+    public string HostedUiDomain { get; set; } = string.Empty;
+
     public string ApiScope { get; set; } = string.Empty;
 
     public string ApiResource { get; set; } = string.Empty;
@@ -23,6 +25,12 @@ public sealed class AuthConfig
         if (string.IsNullOrWhiteSpace(ClientId))
         {
             missing.Add("Auth:ClientId");
+        }
+
+        if (!Uri.TryCreate(HostedUiDomain, UriKind.Absolute, out var hostedUiDomain)
+            || hostedUiDomain.Scheme != Uri.UriSchemeHttps)
+        {
+            missing.Add("Auth:HostedUiDomain");
         }
 
         if (string.IsNullOrWhiteSpace(ApiResource))

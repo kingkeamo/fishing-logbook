@@ -7,20 +7,24 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Dense="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                       Color="Color.Inherit"
-                       Edge="Edge.Start"
-                       Class="d-md-none"
-                       OnClick="ToggleDrawer"
-                       aria-label="@Loc["Nav_Menu"]"
-                       id="app-menu-button" />
+        <AuthorizeView>
+            <Authorized>
+                <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                               Color="Color.Inherit"
+                               Edge="Edge.Start"
+                               Class="d-md-none"
+                               OnClick="ToggleDrawer"
+                               aria-label="@Loc["Nav_Menu"]"
+                               id="app-menu-button" />
+            </Authorized>
+        </AuthorizeView>
         <MudLink Href="/"
                  Underline="Underline.None"
                  Color="Color.Inherit"
                  Class="app-brand"
                  aria-label="@Loc["App_Name"]"
                  id="app-brand">
-            <MudIcon Icon="@Icons.Material.Filled.Phishing" aria-hidden="true" id="app-brand-mark" />
+            <img src="images/brand/brand-mark-transparent.png" class="app-brand-mark" alt="" aria-hidden="true" id="app-brand-mark" />
             <MudText Typo="Typo.h6" Class="app-brand-name d-none d-sm-flex" id="app-brand-name">@Loc["App_Name"]</MudText>
         </MudLink>
         <MudSpacer />
@@ -32,30 +36,25 @@
                        id="theme-toggle-button" />
         <UserMenu />
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen"
-               Variant="DrawerVariant.Responsive"
-               Breakpoint="@NavigationBreakpoint"
-               ClipMode="DrawerClipMode.Always"
-               Elevation="1"
-               id="app-drawer">
-        <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" id="home-nav-link">
-                @Loc["Nav_Home"]
-            </MudNavLink>
-            <MudNavLink Href="/catches/record" Icon="@Icons.Material.Filled.AddAPhoto" id="record-catch-nav-link">
-                @Loc["Catch_RecordNav"]
-            </MudNavLink>
-            <MudNavLink Href="/catches" Icon="@Icons.Material.Filled.MenuBook" id="catch-logbook-nav-link">
-                @Loc["Catch_LogbookNav"]
-            </MudNavLink>
-            <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person" id="profile-nav-link">
-                @Loc["Profile_Nav"]
-            </MudNavLink>
-            <MudNavLink Href="/diagnostics" Icon="@Icons.Material.Filled.BugReport" id="diagnostics-nav-button">
-                @Loc["Diagnostics_Nav"]
-            </MudNavLink>
-        </MudNavMenu>
-    </MudDrawer>
+    <AuthorizeView>
+        <Authorized>
+            <MudDrawer @bind-Open="_drawerOpen"
+                       Variant="DrawerVariant.Responsive"
+                       Breakpoint="@NavigationBreakpoint"
+                       ClipMode="DrawerClipMode.Always"
+                       Elevation="1"
+                       id="app-drawer">
+                <MudNavMenu>
+                    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home" id="home-nav-link">@Loc["Nav_Home"]</MudNavLink>
+                    <MudNavLink Href="/catches/record" Icon="@Icons.Material.Filled.AddAPhoto" id="record-catch-nav-link">@Loc["Catch_RecordNav"]</MudNavLink>
+                    <MudNavLink Href="/catches" Icon="@Icons.Material.Filled.MenuBook" id="catch-logbook-nav-link">@Loc["Catch_LogbookNav"]</MudNavLink>
+                    <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person" id="profile-nav-link">@Loc["Profile_Nav"]</MudNavLink>
+                    <MudNavLink Href="/install" Icon="@Icons.Material.Filled.InstallMobile" id="install-nav-link">@Loc["Onboarding_InstallNav"]</MudNavLink>
+                    <MudNavLink Href="/diagnostics" Icon="@Icons.Material.Filled.BugReport" id="diagnostics-nav-button">@Loc["Diagnostics_Nav"]</MudNavLink>
+                </MudNavMenu>
+            </MudDrawer>
+        </Authorized>
+    </AuthorizeView>
     <MudMainContent>
         <div class="app-shell-content" id="app-shell-content">
             <AppErrorBoundary>

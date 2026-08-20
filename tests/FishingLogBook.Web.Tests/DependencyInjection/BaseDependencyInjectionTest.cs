@@ -38,6 +38,7 @@ public class BaseDependencyInjectionTest
         {
             Authority = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool",
             ClientId = "test-pwa-client",
+            HostedUiDomain = "https://test.auth.us-east-1.amazoncognito.com",
             ApiScope = TestAuthConstants.ApiScope,
             ApiResource = TestAuthConstants.ApiResource
         };

@@ -28,6 +28,14 @@ public static class ProfileEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapPut("/api/profiles/me/onboarding", CompleteOnboardingAsync)
+            .WithName("CompleteOnboarding")
+            .WithTags("Profiles")
+            .RequireAuthorization()
+            .Produces<ProfileDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         endpoints.MapGet("/api/profiles/{userId:guid}", GetPublicAsync)
             .WithName("GetPublicProfile")
             .WithTags("Profiles")
@@ -120,6 +128,26 @@ public static class ProfileEndpoints
         }
 
         return ToDataResult(response.IsFailure, response.ErrorMessage, response.Profile, StatusCodes.Status503ServiceUnavailable);
+    }
+
+    private static async Task<IResult> CompleteOnboardingAsync(
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new CompleteOnboardingCommand { UserId = currentUser.UserId },
+            cancellationToken);
+        return ToDataResult(
+            response.IsFailure,
+            response.ErrorMessage,
+            response.Profile,
+            StatusCodes.Status503ServiceUnavailable);
     }
 
     private static async Task<IResult> CreatePhotographUploadAsync(

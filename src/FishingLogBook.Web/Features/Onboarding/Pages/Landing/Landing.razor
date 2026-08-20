@@ -1,0 +1,38 @@
+@page "/"
+
+<PageTitle>@Loc["Landing_PageTitle"]</PageTitle>
+
+@if (_isResolvingAuthentication)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center pa-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="@Loc["Common_Loading"]" id="landing-loading" />
+    </MudContainer>
+}
+else if (_isAnonymous)
+{
+    <main class="landing-page" id="public-landing-page">
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="landing-content">
+            <MudStack Spacing="4" AlignItems="AlignItems.Center">
+                <img src="images/brand/brand-horizontal-transparent.png" class="landing-logo" alt="@Loc["Brand_LogoAlt"]" id="landing-brand-logo" />
+                <MudText Typo="Typo.h5" Align="Align.Center" Class="landing-tagline">@Loc["Landing_Tagline"]</MudText>
+                <MudText Typo="Typo.h4" Align="Align.Center" Class="landing-heading">@Loc["Landing_Heading"]</MudText>
+                <MudText Typo="Typo.body1" Align="Align.Center" Class="landing-introduction">@Loc["Landing_Introduction"]</MudText>
+                <MudGrid Justify="Justify.Center" Class="landing-benefits">
+                    <MudItem xs="12" sm="4">
+                        <MudPaper Class="landing-benefit pa-4" Elevation="0"><MudIcon Icon="@Icons.Material.Filled.AddAPhoto" Color="Color.Primary" Size="Size.Large" aria-hidden="true" /><MudText Typo="Typo.subtitle1">@Loc["Landing_BenefitRecord"]</MudText></MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudPaper Class="landing-benefit pa-4" Elevation="0"><MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Primary" Size="Size.Large" aria-hidden="true" /><MudText Typo="Typo.subtitle1">@Loc["Landing_BenefitPrivate"]</MudText></MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudPaper Class="landing-benefit pa-4" Elevation="0"><MudIcon Icon="@Icons.Material.Filled.SignalWifiOff" Color="Color.Primary" Size="Size.Large" aria-hidden="true" /><MudText Typo="Typo.subtitle1">@Loc["Landing_BenefitOffline"]</MudText></MudPaper>
+                    </MudItem>
+                </MudGrid>
+                <MudStack Spacing="2" Class="landing-actions">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginCreateAccount" id="landing-create-account">@Loc["Auth_CreateAccount"]</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginSignIn" id="landing-sign-in">@Loc["Auth_SignIn"]</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudContainer>
+    </main>
+}

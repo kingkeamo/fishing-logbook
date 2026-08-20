@@ -1,0 +1,175 @@
+@page "/onboarding"
+@using Microsoft.AspNetCore.Authorization
+@using FishingLogBook.Shared.Enums
+@attribute [Authorize]
+
+<PageTitle>@Loc["Onboarding_PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Gutters="false" Class="onboarding-container">
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="d-block ma-auto" id="onboarding-loading" />
+    }
+    else
+    {
+        <MudPaper Class="pa-4 pa-sm-6" Elevation="2">
+            <MudStack Spacing="3">
+                <img src="images/brand/brand-horizontal-transparent.png" class="onboarding-logo" alt="@Loc["Brand_LogoAlt"]" id="onboarding-brand-logo" />
+                <MudStepper @bind-ActiveIndex="_activeStep" NonLinear="false" ShowResetButton="false" Class="onboarding-stepper">
+                    <ChildContent>
+                        <MudStep Title="@Loc["Onboarding_WelcomeStep"]">
+                            <MudStack Spacing="2" Class="py-4">
+                                <MudText Typo="Typo.h4">@Loc["Onboarding_WelcomeTitle"]</MudText>
+                                <MudText>@Loc["Onboarding_WelcomeBody"]</MudText>
+                            </MudStack>
+                        </MudStep>
+                        <MudStep Title="@Loc["Onboarding_PreferencesStep"]">
+                            <MudStack Spacing="3" Class="py-4">
+                                <MudText Typo="Typo.h5">@Loc["Onboarding_PreferencesTitle"]</MudText>
+                                <MudText>@Loc["Onboarding_PreferencesBody"]</MudText>
+                                <MudStack Spacing="1">
+                                    <MudText Typo="Typo.subtitle2">@Loc["Onboarding_FishingType"]</MudText>
+                                    <MudStack Row="true" Spacing="1" Class="flex-wrap" id="onboarding-method-chips">
+                                        @foreach (var method in MethodChips)
+                                        {
+                                            var selected = IsMethodSelected(method.Id);
+                                            <MudChip T="string"
+                                                     Color="@(selected ? Color.Primary : Color.Default)"
+                                                     Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                                     OnClick="@(() => ToggleMethod(method))"
+                                                     id="@($"onboarding-method-{method.Code}")">
+                                                @method.Name
+                                            </MudChip>
+                                        }
+                                        <MudButton Size="Size.Small"
+                                                   Variant="Variant.Outlined"
+                                                   StartIcon="@Icons.Material.Filled.Add"
+                                                   OnClick="AddMethodAsync"
+                                                   id="onboarding-method-more">
+                                            @Loc["Common_More"]
+                                        </MudButton>
+                                    </MudStack>
+                                    @if (_selectedMethods.Count > 1)
+                                    {
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Profile_FishingMethod_SetDefault"]</MudText>
+                                        <MudStack Row="true" Spacing="1" Class="flex-wrap" id="onboarding-method-default-chips">
+                                            @foreach (var method in _selectedMethods)
+                                            {
+                                                <MudChip T="string"
+                                                         Color="@(method.IsDefault ? Color.Secondary : Color.Default)"
+                                                         Variant="@(method.IsDefault ? Variant.Filled : Variant.Outlined)"
+                                                         Icon="@(method.IsDefault ? Icons.Material.Filled.Star : null)"
+                                                         OnClick="@(() => SetDefaultMethod(method.FishingMethodId))"
+                                                         id="@($"onboarding-method-default-{method.Code}")">
+                                                    @method.Name
+                                                </MudChip>
+                                            }
+                                        </MudStack>
+                                    }
+                                </MudStack>
+                                @foreach (var selectedMethod in _selectedMethods)
+                                {
+                                    <MudStack Spacing="1" id="@($"onboarding-species-section-{selectedMethod.Code}")">
+                                        <MudText Typo="Typo.subtitle2">@string.Format(Loc["Profile_FishingMethod_Species"], selectedMethod.Name)</MudText>
+                                        <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                                            @foreach (var species in selectedMethod.Species)
+                                            {
+                                                <MudChip T="string"
+                                                         Color="@(species.IsDefault ? Color.Secondary : Color.Primary)"
+                                                         Variant="Variant.Filled"
+                                                         Icon="@(species.IsDefault ? Icons.Material.Filled.Star : null)"
+                                                         OnClick="@(() => SetDefaultSpecies(selectedMethod.FishingMethodId, species.SpeciesId))"
+                                                         id="@($"onboarding-species-{selectedMethod.Code}-{species.Code}")">
+                                                    @species.Name
+                                                </MudChip>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                               Size="Size.Small"
+                                                               aria-label="@string.Format(Loc["Profile_FishingSpecies_Remove"], species.Name)"
+                                                               OnClick="@(() => RemoveSpecies(selectedMethod.FishingMethodId, species.SpeciesId))"
+                                                               id="@($"onboarding-species-remove-{selectedMethod.Code}-{species.Code}")" />
+                                            }
+                                            <MudButton Size="Size.Small"
+                                                       Variant="Variant.Outlined"
+                                                       StartIcon="@Icons.Material.Filled.Add"
+                                                       OnClick="@(() => AddSpeciesToMethodAsync(selectedMethod.FishingMethodId))"
+                                                       id="@($"onboarding-species-more-{selectedMethod.Code}")">
+                                                @Loc["Common_More"]
+                                            </MudButton>
+                                        </MudStack>
+                                    </MudStack>
+                                }
+                                <MudSelect T="WeightUnitEnum" @bind-Value="_weightUnit" Label="@Loc["Profile_WeightUnit"]" Variant="Variant.Outlined" id="onboarding-weight-unit">
+                                    <MudSelectItem Value="WeightUnitEnum.Kg">@Loc["Profile_WeightUnit_Kg"]</MudSelectItem>
+                                    <MudSelectItem Value="WeightUnitEnum.Lb">@Loc["Profile_WeightUnit_Lb"]</MudSelectItem>
+                                </MudSelect>
+                                <MudSelect T="LengthUnitEnum" @bind-Value="_lengthUnit" Label="@Loc["Profile_LengthUnit"]" Variant="Variant.Outlined" id="onboarding-length-unit">
+                                    <MudSelectItem Value="LengthUnitEnum.Cm">@Loc["Profile_LengthUnit_Cm"]</MudSelectItem>
+                                    <MudSelectItem Value="LengthUnitEnum.In">@Loc["Profile_LengthUnit_In"]</MudSelectItem>
+                                </MudSelect>
+                            </MudStack>
+                        </MudStep>
+                        <MudStep Title="@Loc["Onboarding_LocationStep"]">
+                            <MudStack Spacing="3" Class="py-4">
+                                <MudText Typo="Typo.h5">@Loc["Onboarding_LocationTitle"]</MudText>
+                                <MudText>@Loc["Onboarding_LocationBody"]</MudText>
+                                <MudAlert Severity="Severity.Info">@Loc["Onboarding_LocationPrivacy"]</MudAlert>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AllowLocationAsync" Disabled="_locationHandled" id="onboarding-allow-location">@Loc["Onboarding_AllowLocation"]</MudButton>
+                                <MudButton Variant="Variant.Text" OnClick="SkipLocationAsync" Disabled="_locationHandled" id="onboarding-skip-location">@Loc["Action_NotNow"]</MudButton>
+                                @if (_locationHandled)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Success" id="onboarding-location-handled">@Loc["Onboarding_LocationHandled"]</MudText>
+                                }
+                            </MudStack>
+                        </MudStep>
+                        <MudStep Title="@Loc["Onboarding_InstallStep"]">
+                            <MudStack Spacing="3" Class="py-4">
+                                <MudText Typo="Typo.h5">@Loc["Onboarding_InstallTitle"]</MudText>
+                                @if (_installState.IsInstalled)
+                                {
+                                    <MudAlert Severity="Severity.Success">@Loc["Onboarding_AlreadyInstalled"]</MudAlert>
+                                }
+                                else if (_installState.CanPrompt)
+                                {
+                                    <MudText>@Loc["Onboarding_InstallPromptBody"]</MudText>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="InstallAsync" id="onboarding-install">@Loc["Onboarding_InstallAction"]</MudButton>
+                                }
+                                else if (_installState.IsIos)
+                                {
+                                    <MudText>@Loc["Onboarding_InstallIos"]</MudText>
+                                }
+                                else if (_installState.IsAndroid)
+                                {
+                                    <MudText>@Loc["Onboarding_InstallAndroid"]</MudText>
+                                }
+                                else
+                                {
+                                    <MudText>@Loc["Onboarding_InstallUnavailable"]</MudText>
+                                }
+                            </MudStack>
+                        </MudStep>
+                    </ChildContent>
+                    <ActionContent></ActionContent>
+                </MudStepper>
+
+                @if (_saveFailed)
+                {
+                    <MudAlert Severity="Severity.Error" id="onboarding-save-failed">@Loc["Onboarding_SaveFailed"]</MudAlert>
+                }
+                <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2">
+                    @if (_activeStep > 0)
+                    {
+                        <MudButton Variant="Variant.Text" OnClick="Previous" id="onboarding-previous">@Loc["Action_Back"]</MudButton>
+                    }
+                    @if (_activeStep < 3)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextAsync" Disabled="@(_isSaving || (_activeStep == 2 && !_locationHandled))" id="onboarding-next">@Loc["Action_Next"]</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync" Disabled="_isSaving" id="onboarding-finish">@Loc["Onboarding_Finish"]</MudButton>
+                    }
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    }
+</MudContainer>

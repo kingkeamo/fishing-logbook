@@ -63,7 +63,7 @@ public class WhenTestingRender : BaseCatchListTest
     }
 
     [Fact]
-    public async Task ItShouldShowEmptyCopyAndACtaWhenNoCatchesExist()
+    public async Task ItShouldShowEmptyCopyAndOnlyTheHeaderCtaWhenNoCatchesExist()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -78,8 +78,9 @@ public class WhenTestingRender : BaseCatchListTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#catch-list-empty").TextContent.Should().Contain("No catches saved");
-            cut.Find("#catch-list-empty-record-link").GetAttribute("href").Should().Be("/catches/record");
+            cut.Find("#catch-list-empty").TextContent.Should().Contain("No catches in your Logbook yet");
+            cut.Markup.Should().NotContain("Saved on this device");
+            cut.FindAll("a[href='/catches/record']").Should().ContainSingle();
         });
         await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
@@ -140,7 +141,7 @@ public class WhenTestingRender : BaseCatchListTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-list-empty").TextContent.Should().Contain("No catches saved"));
+            cut.Find("#catch-list-empty").TextContent.Should().Contain("No catches in your Logbook yet"));
         cut.FindAll($"#catch-card-{ownerCatchId:D}").Should().BeEmpty();
         await store.Received(1).GetAllAsync(OtherUserId, Arg.Any<CancellationToken>());
         await store.DidNotReceive().GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());

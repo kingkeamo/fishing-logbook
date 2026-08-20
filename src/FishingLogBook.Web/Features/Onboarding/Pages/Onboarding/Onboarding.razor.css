@@ -1,0 +1,23 @@
+.onboarding-container {
+    padding: 2rem 1rem;
+}
+
+.onboarding-logo {
+    align-self: center;
+    height: auto;
+    max-width: min(100%, 365px);
+}
+
+::deep .onboarding-stepper .mud-stepper-header {
+    scrollbar-width: none;
+}
+
+::deep .onboarding-stepper .mud-stepper-header::-webkit-scrollbar {
+    display: none;
+}
+
+@media (max-width: 600px) {
+    .onboarding-container {
+        padding: 1rem 0.5rem;
+    }
+}

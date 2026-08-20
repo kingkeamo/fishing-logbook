@@ -9,10 +9,7 @@
 <MudContainer MaxWidth="MaxWidth.Medium" Gutters="false" Class="catch-list-container">
     <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap" Spacing="2">
-            <MudStack Spacing="0">
-                <MudText Typo="Typo.h4" id="catch-list-title">@Loc["Catch_LogbookTitle"]</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mud-text-secondary">@Loc["Catch_LogbookSubtitle"]</MudText>
-            </MudStack>
+            <MudText Typo="Typo.h4" id="catch-list-title">@Loc["Catch_LogbookTitle"]</MudText>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        Href="/catches/record"
@@ -36,12 +33,6 @@
             <MudStack Spacing="2" AlignItems="AlignItems.Center" Class="catch-list-empty-state" id="catch-list-empty">
                 <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" Class="mud-text-secondary" aria-hidden="true" />
                 <MudText Typo="Typo.body1" Align="Align.Center">@Loc["Catch_LogbookEmpty"]</MudText>
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           Href="/catches/record"
-                           id="catch-list-empty-record-link">
-                    @Loc["Catch_RecordFirstCatch"]
-                </MudButton>
             </MudStack>
         }
         else

@@ -30,6 +30,14 @@ public sealed class ProfileClient : IProfileClient
         return saved ?? throw new HttpRequestException("Saved profile was missing.");
     }
 
+    public async Task<ProfileDto> CompleteOnboardingAsync(CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.PutAsync("api/profiles/me/onboarding", null, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var profile = await response.Content.ReadFromJsonAsync<ProfileDto>(cancellationToken);
+        return profile ?? throw new HttpRequestException("Completed onboarding profile was missing.");
+    }
+
     public async Task<PublicProfileDto> GetPublicAsync(Guid userId, CancellationToken cancellationToken)
     {
         var profile = await _apiClient.GetFromJsonAsync<PublicProfileDto>(
