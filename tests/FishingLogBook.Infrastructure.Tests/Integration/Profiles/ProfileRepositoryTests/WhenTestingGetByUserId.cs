@@ -39,8 +39,6 @@ public class WhenTestingGetByUserId : BaseProfileRepositoryTest
             .WithDisplayName("Eamonn")
             .WithPhotograph(photographId, objectKey, PhotographContentTypeConstants.Webp)
             .WithHomeRegion("Westmeath")
-            .WithFishingTypes("Coarse", "Fly")
-            .WithSpecies("Pike")
             .ShowAll()
             .Build();
         var saved = await Sut.UpsertAsync(profile, CancellationToken.None);
@@ -58,12 +56,10 @@ public class WhenTestingGetByUserId : BaseProfileRepositoryTest
         result.Value.PhotographObjectKey.Should().Be(objectKey);
         result.Value.PhotographContentType.Should().Be(PhotographContentTypeConstants.Webp);
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Coarse", "Fly");
-        result.Value.PreferredSpecies.Should().Equal("Pike");
         result.Value.ShowDisplayName.Should().BeTrue();
         result.Value.ShowPhotograph.Should().BeTrue();
         result.Value.ShowHomeRegion.Should().BeTrue();
-        result.Value.ShowPreferredFishingTypes.Should().BeTrue();
+        result.Value.ShowPreferredFishingMethods.Should().BeTrue();
         result.Value.ShowPreferredSpecies.Should().BeTrue();
     }
 }

@@ -426,6 +426,9 @@
   <data name="Profile_ShowHomeRegion" xml:space="preserve">
     <value>Afficher la région d’origine aux autres pêcheurs</value>
   </data>
+  <data name="Profile_ShowPreferredFishingMethods" xml:space="preserve">
+    <value>Afficher les méthodes de pêche préférées aux autres pêcheurs</value>
+  </data>
   <data name="Profile_ShowPreferredSpecies" xml:space="preserve">
     <value>Afficher les espèces préférées aux autres pêcheurs</value>
   </data>

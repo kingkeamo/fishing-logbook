@@ -24,12 +24,10 @@ public partial class Profile : ComponentBase, IDisposable
     private string? _homeRegion;
     private WeightUnitEnum _preferredWeightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _preferredLengthUnit = LengthUnitEnum.Cm;
-    private IReadOnlyCollection<string> _preferredFishingTypes = [];
-    private IReadOnlyCollection<string> _legacyPreferredSpecies = [];
     private bool _showDisplayName = true;
     private bool _showPhotograph;
     private bool _showHomeRegion;
-    private bool _showPreferredFishingTypes;
+    private bool _showPreferredFishingMethods;
     private bool _showPreferredSpecies;
     private bool _isLoading = true;
     private bool _isSaving;
@@ -78,7 +76,6 @@ public partial class Profile : ComponentBase, IDisposable
             var profile = await profileTask;
             var catalogue = await catalogueTask;
             var preferences = await preferencesTask;
-            _legacyPreferredSpecies = [.. profile.PreferredSpecies];
 
             Apply(profile);
             _catalogueMethods = catalogue.Methods;
@@ -191,13 +188,12 @@ public partial class Profile : ComponentBase, IDisposable
     {
         _displayName = profile.DisplayName;
         _homeRegion = profile.HomeRegion;
-        _preferredFishingTypes = [.. profile.PreferredFishingTypes];
         _preferredWeightUnit = profile.PreferredWeightUnit;
         _preferredLengthUnit = profile.PreferredLengthUnit;
         _showDisplayName = profile.ShowDisplayName;
         _showPhotograph = profile.ShowPhotograph;
         _showHomeRegion = profile.ShowHomeRegion;
-        _showPreferredFishingTypes = profile.ShowPreferredFishingTypes;
+        _showPreferredFishingMethods = profile.ShowPreferredFishingMethods;
         _showPreferredSpecies = profile.ShowPreferredSpecies;
         if (_pendingPhotographBytes is null)
         {
@@ -224,28 +220,13 @@ public partial class Profile : ComponentBase, IDisposable
         return new UpdateProfileDto(
             _displayName,
             _homeRegion,
-            [.. _preferredFishingTypes],
-            PreferredSpeciesNames(),
             _showDisplayName,
             _showPhotograph,
             _showHomeRegion,
-            _showPreferredFishingTypes,
+            _showPreferredFishingMethods,
             _showPreferredSpecies,
             _preferredWeightUnit,
             _preferredLengthUnit);
-    }
-
-    private string[] PreferredSpeciesNames()
-    {
-        return
-        [
-            .. _legacyPreferredSpecies
-                .Concat(_selectedMethods
-                    .SelectMany(method => method.Species)
-                    .Select(species => species.Name))
-                .Where(name => name.Length <= ProfileDetailConstants.MaxPreferredSpeciesNameLength)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-        ];
     }
 
     private UpdateFishingPreferencesDto BuildPreferencesUpdate()

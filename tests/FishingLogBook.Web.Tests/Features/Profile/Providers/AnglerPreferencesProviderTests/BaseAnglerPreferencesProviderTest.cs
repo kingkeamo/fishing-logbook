@@ -90,8 +90,6 @@ public class BaseAnglerPreferencesProviderTest
             null,
             null,
             null,
-            [],
-            [],
             true,
             false,
             false,

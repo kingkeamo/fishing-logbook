@@ -85,6 +85,24 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
     }
 
     [Fact]
+    public async Task ItShouldReturnFailureWhenThePreferenceLookupFails()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        StubVisibleProfile(userId, profile => profile);
+        MockFishingPreferenceService
+            .GetPreferencesAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<FishingPreferencesDto>("Failed to load fishing preferences."));
+
+        // Act
+        var result = await Sut.GetPublicAsync(userId, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Message.Should().Be("Failed to load fishing preferences.");
+    }
+
+    [Fact]
     public async Task ItShouldReturnADefaultPublicProfileWithoutWritingWhenNoProfileRowExists()
     {
         // Arrange
@@ -105,7 +123,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         result.Value.DisplayName.Should().BeNull();
         result.Value.PhotographUrl.Should().BeNull();
         result.Value.HomeRegion.Should().BeNull();
-        result.Value.PreferredFishingTypes.Should().BeEmpty();
+        result.Value.PreferredFishingMethods.Should().BeEmpty();
         result.Value.PreferredSpecies.Should().BeEmpty();
         typeof(PublicProfileDto).GetProperty("Latitude").Should().BeNull();
         typeof(PublicProfileDto).GetProperty("Longitude").Should().BeNull();
@@ -114,6 +132,9 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         await MockProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
         await MockProfileRepository.DidNotReceive().UpsertAsync(
             Arg.Any<Profile>(),
+            Arg.Any<CancellationToken>());
+        await MockFishingPreferenceService.DidNotReceive().GetPreferencesAsync(
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -131,7 +152,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         result.IsSuccess.Should().BeTrue();
         result.Value.DisplayName.Should().BeNull();
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Fly");
+        result.Value.PreferredFishingMethods.Should().Equal("Fly");
         result.Value.PreferredSpecies.Should().Equal("Pike");
         result.Value.PhotographUrl.Should().Be("https://storage.test/download");
         await MockProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
@@ -152,7 +173,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         result.Value.PhotographUrl.Should().BeNull();
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Fly");
+        result.Value.PreferredFishingMethods.Should().Equal("Fly");
         result.Value.PreferredSpecies.Should().Equal("Pike");
         await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
             Arg.Any<string>(),
@@ -175,23 +196,23 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         result.Value.HomeRegion.Should().BeNull();
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.PhotographUrl.Should().Be("https://storage.test/download");
-        result.Value.PreferredFishingTypes.Should().Equal("Fly");
+        result.Value.PreferredFishingMethods.Should().Equal("Fly");
         result.Value.PreferredSpecies.Should().Equal("Pike");
     }
 
     [Fact]
-    public async Task ItShouldOmitFishingTypesWhenShowPreferredFishingTypesIsFalse()
+    public async Task ItShouldOmitFishingMethodsWhenShowPreferredFishingMethodsIsFalse()
     {
         // Arrange
         var userId = Guid.NewGuid();
-        StubVisibleProfile(userId, profile => profile.HideFishingTypes());
+        StubVisibleProfile(userId, profile => profile.HideFishingMethods());
 
         // Act
         var result = await Sut.GetPublicAsync(userId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.PreferredFishingTypes.Should().BeEmpty();
+        result.Value.PreferredFishingMethods.Should().BeEmpty();
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
         result.Value.PreferredSpecies.Should().Equal("Pike");
@@ -212,7 +233,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         result.Value.PreferredSpecies.Should().BeEmpty();
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Fly");
+        result.Value.PreferredFishingMethods.Should().Equal("Fly");
     }
 
     [Fact]
@@ -230,7 +251,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         result.Value.DisplayName.Should().BeNull();
         result.Value.PhotographUrl.Should().BeNull();
         result.Value.HomeRegion.Should().BeNull();
-        result.Value.PreferredFishingTypes.Should().BeEmpty();
+        result.Value.PreferredFishingMethods.Should().BeEmpty();
         result.Value.PreferredSpecies.Should().BeEmpty();
         typeof(PublicProfileDto).GetProperty("Location").Should().BeNull();
         await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
@@ -239,6 +260,9 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
             Arg.Any<CancellationToken>());
         await MockProfileRepository.DidNotReceive().UpsertAsync(
             Arg.Any<Profile>(),
+            Arg.Any<CancellationToken>());
+        await MockFishingPreferenceService.DidNotReceive().GetPreferencesAsync(
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -258,7 +282,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.PhotographUrl.Should().Be("https://storage.test/download");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Fly");
+        result.Value.PreferredFishingMethods.Should().Equal("Fly");
         result.Value.PreferredSpecies.Should().Equal("Pike");
         typeof(PublicProfileDto).GetProperty("Latitude").Should().BeNull();
         typeof(PublicProfileDto).GetProperty("Longitude").Should().BeNull();
@@ -269,6 +293,7 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
             objectKey,
             TimeSpan.FromHours(1),
             Arg.Any<CancellationToken>());
+        await MockFishingPreferenceService.Received(1).GetPreferencesAsync(userId, Arg.Any<CancellationToken>());
     }
 
     private string StubVisibleProfile(Guid userId, Func<ProfileBuilder, ProfileBuilder> configure)
@@ -281,8 +306,6 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
                     .WithDisplayName("Eamonn")
                     .WithPhotograph(photographId, objectKey, PhotographContentTypeConstants.Jpeg)
                     .WithHomeRegion("Westmeath")
-                    .WithFishingTypes("Fly")
-                    .WithSpecies("Pike")
                     .ShowAll())
             .Build();
         MockProfileRepository
@@ -294,6 +317,17 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
         MockObjectStorage
             .CreateDownloadUrlAsync(objectKey, Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>())
             .Returns(new Uri("https://storage.test/download"));
+        MockFishingPreferenceService
+            .GetPreferencesAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(new FishingPreferencesDto(
+            [
+                new FishingMethodPreferenceDto(
+                    Guid.NewGuid(),
+                    "FLY",
+                    "Fly",
+                    true,
+                    [new FishingSpeciesPreferenceDto(Guid.NewGuid(), "PIKE", "Pike", true)])
+            ])));
         return objectKey;
     }
 }

@@ -65,8 +65,6 @@ public class WhenTestingUpsert : BaseProfileRepositoryTest
             .WithDisplayName("Old")
             .WithPhotograph(photographId, objectKey, PhotographContentTypeConstants.Jpeg)
             .WithHomeRegion("Dublin")
-            .WithFishingTypes("Sea")
-            .WithSpecies("Cod")
             .HideAll()
             .Build();
         var inserted = await Sut.UpsertAsync(first, CancellationToken.None);
@@ -75,8 +73,6 @@ public class WhenTestingUpsert : BaseProfileRepositoryTest
             .WithUserId(userId)
             .WithDisplayName("Eamonn")
             .WithHomeRegion("Westmeath")
-            .WithFishingTypes("Coarse", "Fly")
-            .WithSpecies("Pike", "Tench")
             .ShowAll()
             .Build();
 
@@ -88,12 +84,10 @@ public class WhenTestingUpsert : BaseProfileRepositoryTest
         result.Value.UserId.Should().Be(userId);
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Coarse", "Fly");
-        result.Value.PreferredSpecies.Should().Equal("Pike", "Tench");
         result.Value.ShowDisplayName.Should().BeTrue();
         result.Value.ShowPhotograph.Should().BeTrue();
         result.Value.ShowHomeRegion.Should().BeTrue();
-        result.Value.ShowPreferredFishingTypes.Should().BeTrue();
+        result.Value.ShowPreferredFishingMethods.Should().BeTrue();
         result.Value.ShowPreferredSpecies.Should().BeTrue();
         result.Value.PhotographId.Should().Be(photographId);
         result.Value.PhotographObjectKey.Should().Be(objectKey);
@@ -157,17 +151,14 @@ public class WhenTestingUpsert : BaseProfileRepositoryTest
         result.Value.UserId.Should().Be(userId);
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Coarse", "Fly");
-        result.Value.PreferredSpecies.Should().Equal("Pike", "Tench");
         result.Value.ShowDisplayName.Should().BeTrue();
         result.Value.ShowPhotograph.Should().BeTrue();
         result.Value.ShowHomeRegion.Should().BeTrue();
-        result.Value.ShowPreferredFishingTypes.Should().BeTrue();
+        result.Value.ShowPreferredFishingMethods.Should().BeTrue();
         result.Value.ShowPreferredSpecies.Should().BeTrue();
         result.Value.PhotographId.Should().BeNull();
         var loaded = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
         loaded.Value!.DisplayName.Should().Be("Eamonn");
-        loaded.Value.PreferredFishingTypes.Should().Equal("Coarse", "Fly");
         loaded.Value.ShowPreferredSpecies.Should().BeTrue();
     }
 }

@@ -48,12 +48,10 @@ public class WhenTestingGetOwn : BaseProfileServiceTest
         result.Value.DisplayName.Should().BeNull();
         result.Value.HomeRegion.Should().BeNull();
         result.Value.PhotographUrl.Should().BeNull();
-        result.Value.PreferredFishingTypes.Should().BeEmpty();
-        result.Value.PreferredSpecies.Should().BeEmpty();
         result.Value.ShowDisplayName.Should().BeTrue();
         result.Value.ShowPhotograph.Should().BeFalse();
         result.Value.ShowHomeRegion.Should().BeFalse();
-        result.Value.ShowPreferredFishingTypes.Should().BeFalse();
+        result.Value.ShowPreferredFishingMethods.Should().BeFalse();
         result.Value.ShowPreferredSpecies.Should().BeFalse();
         typeof(ProfileDto).GetProperty("Latitude").Should().BeNull();
         typeof(ProfileDto).GetProperty("Longitude").Should().BeNull();
@@ -73,8 +71,6 @@ public class WhenTestingGetOwn : BaseProfileServiceTest
             .WithUserId(userId)
             .WithDisplayName("Eamonn")
             .WithHomeRegion("Westmeath")
-            .WithFishingTypes("Coarse")
-            .WithSpecies("Pike")
             .Build();
         MockProfileRepository
             .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
@@ -88,8 +84,6 @@ public class WhenTestingGetOwn : BaseProfileServiceTest
         result.Value.UserId.Should().Be(userId);
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Coarse");
-        result.Value.PreferredSpecies.Should().Equal("Pike");
         await MockProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
         await MockProfileRepository.DidNotReceive().UpsertAsync(
             Arg.Any<Profile>(),

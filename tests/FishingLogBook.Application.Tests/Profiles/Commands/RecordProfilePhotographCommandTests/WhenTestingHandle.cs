@@ -54,8 +54,6 @@ public class WhenTestingHandle : BaseRecordProfilePhotographCommandTest
             "https://storage.test/download",
             "image/jpeg",
             null,
-            [],
-            [],
             true,
             true,
             false,

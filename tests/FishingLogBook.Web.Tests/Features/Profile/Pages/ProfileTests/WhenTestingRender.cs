@@ -61,8 +61,6 @@ public class WhenTestingRender : BaseProfileTest
                 "https://storage.test/photo",
                 "image/jpeg",
                 "Westmeath",
-                ["Fly"],
-                ["Pike", "Tench"],
                 true,
                 true,
                 true,

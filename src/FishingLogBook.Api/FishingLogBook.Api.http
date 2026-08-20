@@ -30,12 +30,10 @@ Authorization: Bearer <access-token>
 {
   "displayName": "Eamonn",
   "homeRegion": "Westmeath",
-  "preferredFishingTypes": [ "Coarse" ],
-  "preferredSpecies": [ "Pike" ],
   "showDisplayName": true,
   "showPhotograph": false,
   "showHomeRegion": true,
-  "showPreferredFishingTypes": true,
+  "showPreferredFishingMethods": true,
   "showPreferredSpecies": false,
   "preferredWeightUnit": 0,
   "preferredLengthUnit": 0

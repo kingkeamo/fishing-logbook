@@ -16,10 +16,6 @@ public sealed class Profile
 
     public string? HomeRegion { get; init; }
 
-    public string[] PreferredFishingTypes { get; init; } = [];
-
-    public string[] PreferredSpecies { get; init; } = [];
-
     public WeightUnitEnum PreferredWeightUnit { get; init; } = WeightUnitEnum.Kg;
 
     public LengthUnitEnum PreferredLengthUnit { get; init; } = LengthUnitEnum.Cm;
@@ -30,7 +26,7 @@ public sealed class Profile
 
     public bool ShowHomeRegion { get; init; }
 
-    public bool ShowPreferredFishingTypes { get; init; }
+    public bool ShowPreferredFishingMethods { get; init; }
 
     public bool ShowPreferredSpecies { get; init; }
 }

@@ -10,10 +10,6 @@ public sealed class UpdateProfileArgs
 
     public string? HomeRegion { get; init; }
 
-    public IReadOnlyList<string> PreferredFishingTypes { get; init; } = [];
-
-    public IReadOnlyList<string> PreferredSpecies { get; init; } = [];
-
     public WeightUnitEnum PreferredWeightUnit { get; init; } = WeightUnitEnum.Kg;
 
     public LengthUnitEnum PreferredLengthUnit { get; init; } = LengthUnitEnum.Cm;
@@ -24,7 +20,7 @@ public sealed class UpdateProfileArgs
 
     public bool ShowHomeRegion { get; init; }
 
-    public bool ShowPreferredFishingTypes { get; init; }
+    public bool ShowPreferredFishingMethods { get; init; }
 
     public bool ShowPreferredSpecies { get; init; }
 }

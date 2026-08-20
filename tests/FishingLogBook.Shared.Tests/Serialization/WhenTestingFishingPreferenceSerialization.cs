@@ -87,8 +87,6 @@ public class WhenTestingFishingPreferenceSerialization : BaseSerializationTest
         var original = new UpdateProfileDto(
             "Eamonn",
             "Westmeath",
-            [],
-            [],
             true,
             false,
             false,
@@ -116,12 +114,10 @@ public class WhenTestingFishingPreferenceSerialization : BaseSerializationTest
             {
               "displayName": "Eamonn",
               "homeRegion": null,
-              "preferredFishingTypes": [],
-              "preferredSpecies": [],
               "showDisplayName": true,
               "showPhotograph": false,
               "showHomeRegion": false,
-              "showPreferredFishingTypes": false,
+              "showPreferredFishingMethods": false,
               "showPreferredSpecies": false
             }
             """;

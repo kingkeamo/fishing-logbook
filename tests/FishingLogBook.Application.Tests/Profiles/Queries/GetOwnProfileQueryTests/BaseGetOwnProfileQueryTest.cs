@@ -24,8 +24,6 @@ public class BaseGetOwnProfileQueryTest
             null,
             null,
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,

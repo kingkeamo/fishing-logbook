@@ -91,7 +91,7 @@ public class WhenTestingGetOwn : IClassFixture<SystemApiFactory>
         body.DisplayName.Should().BeNull();
         body.ShowDisplayName.Should().BeTrue();
         body.ShowPhotograph.Should().BeFalse();
-        body.PreferredFishingTypes.Should().BeEmpty();
+        body.ShowPreferredFishingMethods.Should().BeFalse();
         typeof(ProfileDto).GetProperty("Location").Should().BeNull();
         await _factory.ProfileRepository.Received(1).GetByUserIdAsync(
             body.UserId,

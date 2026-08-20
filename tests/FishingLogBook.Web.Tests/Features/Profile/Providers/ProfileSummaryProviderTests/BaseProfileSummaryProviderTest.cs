@@ -33,8 +33,6 @@ public class BaseProfileSummaryProviderTest
             photographUrl,
             photographUrl is null ? null : "image/jpeg",
             null,
-            [],
-            [],
             true,
             true,
             false,
