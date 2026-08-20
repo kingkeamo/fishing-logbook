@@ -13,7 +13,6 @@ using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
@@ -21,14 +20,12 @@ namespace FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 public partial class RecordCatch : ComponentBase, IDisposable
 {
     private const long MaxPhotographBytes = 10 * 1024 * 1024;
-    private const double SwipeThresholdPixels = 40;
     private const int MaxChipOptions = 6;
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly List<PendingPhotograph> _photographs = [];
     private DateTimeOffset? _caughtOn;
-    private int _carouselIndex;
-    private double _pointerStartX;
+    private Guid? _activePhotographId;
     private string _selectedMethod = string.Empty;
     private string _selectedSpecies = string.Empty;
     private bool _methodIsExplicit;
@@ -212,22 +209,6 @@ public partial class RecordCatch : ComponentBase, IDisposable
         }
     }
 
-    private bool CanShowPrevious
-    {
-        get
-        {
-            return _carouselIndex > 0;
-        }
-    }
-
-    private bool CanShowNext
-    {
-        get
-        {
-            return _carouselIndex < _photographs.Count - 1;
-        }
-    }
-
     private string CaughtOnDisplay
     {
         get
@@ -236,28 +217,14 @@ public partial class RecordCatch : ComponentBase, IDisposable
         }
     }
 
-    private string PhotoPosition
-    {
-        get
-        {
-            return Loc["Catch_PhotoPosition", _carouselIndex + 1, _photographs.Count];
-        }
-    }
-
-    private PendingPhotograph? CurrentPhotograph
-    {
-        get
-        {
-            if (_photographs.Count == 0
-                || _carouselIndex < 0
-                || _carouselIndex >= _photographs.Count)
-            {
-                return null;
-            }
-
-            return _photographs[_carouselIndex];
-        }
-    }
+    private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs =>
+        _photographs
+            .Select(photograph => new CatchPhotographCarouselItemModel(
+                photograph.Id,
+                photograph.ContentType,
+                photograph.Bytes,
+                null))
+            .ToArray();
 
     private async Task OnPhotographSelected(InputFileChangeEventArgs args)
     {
@@ -290,73 +257,42 @@ public partial class RecordCatch : ComponentBase, IDisposable
         var bytes = buffer.ToArray();
         var contentType = file.ContentType;
         _caughtOn ??= DateTimeOffset.UtcNow;
-        _photographs.Add(new PendingPhotograph(
+        var photograph = new PendingPhotograph(
             Guid.NewGuid(),
             contentType,
-            bytes,
-            $"data:{contentType};base64,{Convert.ToBase64String(bytes)}"));
-        _carouselIndex = _photographs.Count - 1;
+            bytes);
+        _photographs.Add(photograph);
+        _activePhotographId = photograph.Id;
         _saveFailed = false;
     }
 
-    private void RemoveCurrentPhotograph()
+    private void RemovePhotograph(Guid photographId)
     {
-        var current = CurrentPhotograph;
-        if (_isSaved || current is null)
+        if (_isSaved)
         {
             return;
         }
 
-        var removedIndex = _photographs.FindIndex(photograph => photograph.Id == current.Id);
-        _photographs.RemoveAll(photograph => photograph.Id == current.Id);
+        var removedIndex = _photographs.FindIndex(photograph => photograph.Id == photographId);
+        if (removedIndex < 0)
+        {
+            return;
+        }
+
+        _photographs.RemoveAt(removedIndex);
         if (_photographs.Count == 0)
         {
-            _carouselIndex = 0;
+            _activePhotographId = null;
             _caughtOn = null;
             return;
         }
 
-        _carouselIndex = Math.Min(removedIndex, _photographs.Count - 1);
+        _activePhotographId = _photographs[Math.Min(removedIndex, _photographs.Count - 1)].Id;
     }
 
-    private void ShowPrevious()
+    private void OnActivePhotographChanged(Guid? photographId)
     {
-        if (!CanShowPrevious)
-        {
-            return;
-        }
-
-        _carouselIndex -= 1;
-    }
-
-    private void ShowNext()
-    {
-        if (!CanShowNext)
-        {
-            return;
-        }
-
-        _carouselIndex += 1;
-    }
-
-    private void OnPointerDown(PointerEventArgs args)
-    {
-        _pointerStartX = args.ClientX;
-    }
-
-    private void OnPointerUp(PointerEventArgs args)
-    {
-        var delta = args.ClientX - _pointerStartX;
-        if (delta <= -SwipeThresholdPixels)
-        {
-            ShowNext();
-            return;
-        }
-
-        if (delta >= SwipeThresholdPixels)
-        {
-            ShowPrevious();
-        }
+        _activePhotographId = photographId;
     }
 
     private async Task SaveAsync()
@@ -455,7 +391,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
     {
         _photographs.Clear();
         _caughtOn = null;
-        _carouselIndex = 0;
+        _activePhotographId = null;
         _isSaved = false;
         _saveFailed = false;
         _unsupportedFormat = false;
@@ -559,9 +495,5 @@ public partial class RecordCatch : ComponentBase, IDisposable
         _cancellationTokenSource.Dispose();
     }
 
-    private sealed record PendingPhotograph(
-        Guid Id,
-        string ContentType,
-        byte[] Bytes,
-        string PreviewUrl);
+    private sealed record PendingPhotograph(Guid Id, string ContentType, byte[] Bytes);
 }

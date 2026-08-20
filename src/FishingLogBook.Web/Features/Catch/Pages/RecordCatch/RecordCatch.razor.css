@@ -1,15 +1,3 @@
-.record-catch-carousel {
-    touch-action: pan-y;
-}
-
-.record-catch-photo-preview {
-    display: block;
-    width: 100%;
-    height: 16rem;
-    object-fit: cover;
-    border-radius: 0.5rem;
-}
-
 .record-catch-photo-actions {
     display: flex;
     position: relative;
@@ -52,10 +40,4 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
-}
-
-::deep #catch-photo-prev,
-::deep #catch-photo-next {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
 }

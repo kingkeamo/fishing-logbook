@@ -1,15 +1,19 @@
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Features.Catch.Components.CatchPhotographCarousel;
 
 public partial class CatchPhotographCarousel : ComponentBase
 {
+    private const double SwipeThresholdPixels = 40;
+
     private IReadOnlyList<Guid> _photographIds = [];
     private IReadOnlyList<string> _photoUrls = [];
     private int _currentPhotographIndex;
+    private double _pointerStartX;
 
     [Parameter, EditorRequired]
     public IReadOnlyList<CatchPhotographCarouselItemModel> Photographs { get; set; } = [];
@@ -20,6 +24,9 @@ public partial class CatchPhotographCarousel : ComponentBase
     [Parameter]
     public bool Compact { get; set; }
 
+    [Parameter]
+    public bool ShowSinglePhotographCount { get; set; }
+
     [Parameter, EditorRequired]
     public string IdPrefix { get; set; } = default!;
 
@@ -28,6 +35,12 @@ public partial class CatchPhotographCarousel : ComponentBase
 
     [Parameter]
     public EventCallback<Guid> OnRemovePhotograph { get; set; }
+
+    [Parameter]
+    public Guid? ActivePhotographId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> ActivePhotographIdChanged { get; set; }
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
@@ -50,7 +63,8 @@ public partial class CatchPhotographCarousel : ComponentBase
             .Select(ToPhotoUrl)
             .ToArray();
 
-        if (currentPhotographId is { } photographId)
+        var requestedPhotographId = ActivePhotographId ?? currentPhotographId;
+        if (requestedPhotographId is { } photographId)
         {
             var retainedIndex = Array.IndexOf(currentIds, photographId);
             _currentPhotographIndex = retainedIndex >= 0 ? retainedIndex : 0;
@@ -129,26 +143,60 @@ public partial class CatchPhotographCarousel : ComponentBase
                 PhotographCount]
             : Loc["Catch_PhotographAlt"];
 
-    private void PreviousPhotograph()
+    private Task PreviousPhotographAsync()
     {
         if (PhotographCount <= 1)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        _currentPhotographIndex =
-            (_currentPhotographIndex - 1 + PhotographCount) % PhotographCount;
+        return SetCurrentIndexAsync(
+            (_currentPhotographIndex - 1 + PhotographCount) % PhotographCount);
     }
 
-    private void NextPhotograph()
+    private Task NextPhotographAsync()
     {
         if (PhotographCount <= 1)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        _currentPhotographIndex =
-            (_currentPhotographIndex + 1) % PhotographCount;
+        return SetCurrentIndexAsync(
+            (_currentPhotographIndex + 1) % PhotographCount);
+    }
+
+    private async Task SetCurrentIndexAsync(int index)
+    {
+        _currentPhotographIndex = index;
+        await ActivePhotographIdChanged.InvokeAsync(CurrentPhotographId);
+    }
+
+    private Task OnKeyDownAsync(KeyboardEventArgs args)
+    {
+        return args.Key switch
+        {
+            "ArrowLeft" => PreviousPhotographAsync(),
+            "ArrowRight" => NextPhotographAsync(),
+            _ => Task.CompletedTask
+        };
+    }
+
+    private void OnPointerDown(PointerEventArgs args)
+    {
+        _pointerStartX = args.ClientX;
+    }
+
+    private Task OnPointerUpAsync(PointerEventArgs args)
+    {
+        var delta = args.ClientX - _pointerStartX;
+        if (delta <= -SwipeThresholdPixels)
+        {
+            return NextPhotographAsync();
+        }
+
+        return delta >= SwipeThresholdPixels
+            ? PreviousPhotographAsync()
+            : Task.CompletedTask;
     }
 
     private Task RemoveCurrentPhotographAsync()

@@ -1,3 +1,12 @@
+.catch-photograph-carousel {
+    touch-action: pan-y;
+}
+
+.catch-photograph-carousel:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+
 .catch-photograph-carousel-media {
     width: 100%;
     aspect-ratio: 1 / 1;

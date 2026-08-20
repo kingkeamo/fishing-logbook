@@ -146,42 +146,17 @@
                         <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
                     }
 
-                    @if (_photographs.Count > 0 && CurrentPhotograph is { } current)
+                    @if (_photographs.Count > 0)
                     {
-                        <div class="record-catch-carousel"
-                             id="catch-photo-carousel"
-                             @onpointerdown="OnPointerDown"
-                             @onpointerup="OnPointerUp">
-                            <img src="@current.PreviewUrl"
-                                 alt="@Loc["Catch_PhotographAlt"]"
-                                 class="record-catch-photo-preview"
-                                 id="@($"catch-photo-image-{current.Id:D}")" />
+                        <div id="catch-photo-carousel">
+                            <CatchPhotographCarousel Photographs="CarouselPhotographs"
+                                                      Editable="@(!_isSaved)"
+                                                      ActivePhotographId="_activePhotographId"
+                                                      ActivePhotographIdChanged="OnActivePhotographChanged"
+                                                      OnRemovePhotograph="RemovePhotograph"
+                                                      ShowSinglePhotographCount="true"
+                                                      IdPrefix="catch" />
                         </div>
-                        <MudStack Row="true"
-                                  Justify="Justify.SpaceBetween"
-                                  AlignItems="AlignItems.Center">
-                            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
-                                           Disabled="@(!CanShowPrevious)"
-                                           OnClick="ShowPrevious"
-                                           aria-label="@Loc["Catch_PreviousPhoto"]"
-                                           id="catch-photo-prev" />
-                            <MudText Typo="Typo.body2" id="catch-photo-position">@PhotoPosition</MudText>
-                            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
-                                           Disabled="@(!CanShowNext)"
-                                           OnClick="ShowNext"
-                                           aria-label="@Loc["Catch_NextPhoto"]"
-                                           id="catch-photo-next" />
-                        </MudStack>
-                        @if (!_isSaved)
-                        {
-                            <MudButton Variant="Variant.Outlined"
-                                       Color="Color.Error"
-                                       FullWidth="true"
-                                       OnClick="RemoveCurrentPhotograph"
-                                       id="catch-photo-remove">
-                                @Loc["Catch_RemovePhoto"]
-                            </MudButton>
-                        }
                         <MudText Typo="Typo.body2" id="catch-caught-on">@CaughtOnDisplay</MudText>
                     }
 

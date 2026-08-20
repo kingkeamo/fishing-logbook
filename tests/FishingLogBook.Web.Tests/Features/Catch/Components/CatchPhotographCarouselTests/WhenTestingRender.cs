@@ -4,6 +4,7 @@ using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Components.CatchPhotographCarousel;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Localization;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Components.CatchPhotographCarouselTests;
 
@@ -175,6 +176,54 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         // Assert
         cut.Find("#carousel-photo-count").TextContent.Should().Contain("3 of 3");
         cut.Find("#carousel-photo-2").GetAttribute("alt").Should().Contain("3 of 3");
+    }
+
+    [Theory]
+    [InlineData("ArrowRight", "2 of 3")]
+    [InlineData("ArrowLeft", "3 of 3")]
+    public async Task ItShouldNavigateWithTheKeyboard(string key, string expectedPosition)
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+            .Add(carousel => carousel.Photographs, Photographs(3))
+            .Add(carousel => carousel.IdPrefix, "carousel"));
+
+        // Act
+        await cut.Find(".catch-photograph-carousel")
+            .TriggerEventAsync("onkeydown", new KeyboardEventArgs { Key = key });
+
+        // Assert
+        cut.Find("#carousel-photo-count").TextContent.Should().Contain(expectedPosition);
+    }
+
+    [Theory]
+    [InlineData(100, 40, "2 of 3")]
+    [InlineData(40, 100, "3 of 3")]
+    public async Task ItShouldNavigateWithATouchSwipe(
+        double startX,
+        double endX,
+        string expectedPosition)
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+            .Add(carousel => carousel.Photographs, Photographs(3))
+            .Add(carousel => carousel.IdPrefix, "carousel"));
+        var carousel = cut.Find(".catch-photograph-carousel");
+
+        // Act
+        await carousel.TriggerEventAsync(
+            "onpointerdown",
+            new PointerEventArgs { ClientX = startX, PointerType = "touch" });
+        await carousel.TriggerEventAsync(
+            "onpointerup",
+            new PointerEventArgs { ClientX = endX, PointerType = "touch" });
+
+        // Assert
+        cut.Find("#carousel-photo-count").TextContent.Should().Contain(expectedPosition);
     }
 
     [Fact]

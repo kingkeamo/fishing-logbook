@@ -1,6 +1,12 @@
 @namespace FishingLogBook.Web.Features.Catch.Components.CatchPhotographCarousel
 
-<div class="@ContainerClass">
+<div class="@ContainerClass"
+     tabindex="0"
+     role="region"
+     aria-label="@CurrentPhotographAlt"
+     @onkeydown="OnKeyDownAsync"
+     @onpointerdown="OnPointerDown"
+     @onpointerup="OnPointerUpAsync">
     <div class="catch-photograph-carousel-media">
         @if (CurrentPhotoUrl is not null)
         {
@@ -9,6 +15,7 @@
                       ObjectFit="ObjectFit.Cover"
                       Fluid="true"
                       Class="catch-photograph-carousel-photo"
+                      data-photograph-id="@CurrentPhotographId"
                       id="@PhotoElementId" />
         }
         else
@@ -32,20 +39,26 @@
             {
                 <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
                                Size="Size.Small"
-                               OnClick="PreviousPhotograph"
-                               aria-label="@Loc["Catch_PreviousPhotograph"]"
+                               OnClick="PreviousPhotographAsync"
+                               aria-label="@Loc["Catch_PreviousPhoto"]"
                                id="@PreviousElementId" />
+            }
 
+            @if (HasMultiplePhotographs || (ShowSinglePhotographCount && PhotographCount == 1))
+            {
                 <MudText Typo="Typo.caption"
                          Class="catch-photograph-carousel-count"
                          id="@CountElementId">
                     @Loc["Catch_PhotoPosition", CurrentPhotographNumber, PhotographCount]
                 </MudText>
+            }
 
+            @if (HasMultiplePhotographs)
+            {
                 <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
                                Size="Size.Small"
-                               OnClick="NextPhotograph"
-                               aria-label="@Loc["Catch_NextPhotograph"]"
+                               OnClick="NextPhotographAsync"
+                               aria-label="@Loc["Catch_NextPhoto"]"
                                id="@NextElementId" />
             }
 

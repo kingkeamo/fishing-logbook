@@ -57,7 +57,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         cut.WaitForAssertion(() =>
             cut.Find("#catch-photo-unsupported").TextContent.Should().Contain("This photo format isn't supported"));
         VisiblePhotographId(cut).Should().Be(photographId);
-        cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 1 of 1");
+        cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 1 of 1");
         cut.Find("#catch-caught-on").TextContent.Should().Be(caughtOn);
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse();
         await cut.Find("#save-catch-button").ClickAsync();
@@ -93,10 +93,10 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#catch-photo-unsupported").TextContent.Should().Contain("This photo format isn't supported");
-            cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 2 of 2");
+            cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 2 of 2");
         });
         var pngId = VisiblePhotographId(cut);
-        await cut.Find("#catch-photo-prev").ClickAsync();
+        await cut.Find("#catch-photo-previous").ClickAsync();
         var jpegId = VisiblePhotographId(cut);
         jpegId.Should().NotBe(pngId);
         await cut.Find("#save-catch-button").ClickAsync();
@@ -201,10 +201,10 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 2 sur 2");
-            cut.Find("#catch-photo-remove").TextContent.Should().Contain("Retirer la photo");
+            cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 2 sur 2");
+            cut.Find("#catch-photo-remove").GetAttribute("aria-label").Should().Contain("Retirer la photo");
         });
-        cut.Find("#catch-photo-prev").GetAttribute("aria-label").Should().Contain("Photo précédente");
+        cut.Find("#catch-photo-previous").GetAttribute("aria-label").Should().Contain("Photo précédente");
         cut.Find("#catch-photo-next").GetAttribute("aria-label").Should().Contain("Photo suivante");
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
@@ -230,7 +230,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
 
         // Assert
         firstId.Should().NotBe(secondId);
-        cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 2 of 2");
+        cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 2 of 2");
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 2
@@ -268,15 +268,15 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#catch-photo-carousel").Should().NotBeNull();
-            cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 3 of 3");
+            cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 3 of 3");
         });
         var thirdId = VisiblePhotographId(cut);
-        await cut.Find("#catch-photo-prev").ClickAsync();
+        await cut.Find("#catch-photo-previous").ClickAsync();
         var secondId = VisiblePhotographId(cut);
-        await cut.Find("#catch-photo-prev").ClickAsync();
+        await cut.Find("#catch-photo-previous").ClickAsync();
         var firstId = VisiblePhotographId(cut);
         new[] { firstId, secondId, thirdId }.Should().OnlyHaveUniqueItems();
-        cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 1 of 3");
+        cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 1 of 3");
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
@@ -299,7 +299,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         {
             cut.Find("#catch-saved").Should().NotBeNull();
             cut.Find("#catch-photo-carousel").Should().NotBeNull();
-            cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 1 of 3");
+            cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 1 of 3");
             cut.Find("#catch-record-another").Should().NotBeNull();
         });
         cut.FindAll("#catch-photo-remove").Should().BeEmpty();
@@ -323,15 +323,15 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
             JpegFile("b.jpg", 0x02),
             JpegFile("c.jpg", 0x03));
         var thirdId = VisiblePhotographId(cut);
-        await cut.Find("#catch-photo-prev").ClickAsync();
+        await cut.Find("#catch-photo-previous").ClickAsync();
         var secondId = VisiblePhotographId(cut);
-        await cut.Find("#catch-photo-prev").ClickAsync();
+        await cut.Find("#catch-photo-previous").ClickAsync();
         var firstId = VisiblePhotographId(cut);
         await cut.Find("#catch-photo-next").ClickAsync();
 
         // Assert
         VisiblePhotographId(cut).Should().Be(secondId);
-        cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 2 of 3");
+        cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 2 of 3");
         new[] { firstId, secondId, thirdId }.Should().OnlyHaveUniqueItems();
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
@@ -351,19 +351,19 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
             JpegFile("b.jpg", 0x0B),
             JpegFile("c.jpg", 0x0C));
         var photoC = VisiblePhotographId(cut);
-        await cut.Find("#catch-photo-prev").ClickAsync();
+        await cut.Find("#catch-photo-previous").ClickAsync();
         var photoB = VisiblePhotographId(cut);
-        await cut.Find("#catch-photo-prev").ClickAsync();
+        await cut.Find("#catch-photo-previous").ClickAsync();
         var photoA = VisiblePhotographId(cut);
         await cut.Find("#catch-photo-next").ClickAsync();
         VisiblePhotographId(cut).Should().Be(photoB);
-        cut.Find("#catch-photo-position").TextContent.Should().Contain("Photo 2 of 3");
+        cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 2 of 3");
 
         // Act
         await cut.Find("#catch-photo-remove").ClickAsync();
 
         // Assert
-        cut.Find("#catch-photo-position").TextContent.Should().Contain(" of 2");
+        cut.Find("#catch-photo-count").TextContent.Should().Contain(" of 2");
         var remainingVisible = VisiblePhotographId(cut);
         remainingVisible.Should().Be(photoC);
         remainingVisible.Should().NotBe(photoB);
