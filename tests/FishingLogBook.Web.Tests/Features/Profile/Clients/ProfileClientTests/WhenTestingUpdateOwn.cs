@@ -16,8 +16,6 @@ public class WhenTestingUpdateOwn : BaseProfileClientTest
         var request = new UpdateProfileDto(
             "Eamonn",
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,
@@ -42,8 +40,6 @@ public class WhenTestingUpdateOwn : BaseProfileClientTest
         var request = new UpdateProfileDto(
             "Eamonn",
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,

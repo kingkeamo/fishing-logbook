@@ -45,8 +45,6 @@ public abstract class BaseProfileRepositoryTest
             .WithUserId(userId)
             .WithDisplayName("Eamonn")
             .WithHomeRegion("Westmeath")
-            .WithFishingTypes("Coarse", "Fly")
-            .WithSpecies("Pike", "Tench")
             .ShowAll()
             .Build();
     }

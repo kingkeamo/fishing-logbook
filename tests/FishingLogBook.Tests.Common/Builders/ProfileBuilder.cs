@@ -11,12 +11,10 @@ public sealed class ProfileBuilder
     private string? _photographObjectKey;
     private string? _photographContentType;
     private string? _homeRegion;
-    private string[] _fishingTypes = [];
-    private string[] _species = [];
     private bool _showDisplayName = true;
     private bool _showPhotograph;
     private bool _showHomeRegion;
-    private bool _showPreferredFishingTypes;
+    private bool _showPreferredFishingMethods;
     private bool _showPreferredSpecies;
     private WeightUnitEnum _preferredWeightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _preferredLengthUnit = LengthUnitEnum.Cm;
@@ -47,24 +45,12 @@ public sealed class ProfileBuilder
         return this;
     }
 
-    public ProfileBuilder WithFishingTypes(params string[] fishingTypes)
-    {
-        _fishingTypes = fishingTypes;
-        return this;
-    }
-
-    public ProfileBuilder WithSpecies(params string[] species)
-    {
-        _species = species;
-        return this;
-    }
-
     public ProfileBuilder ShowAll()
     {
         _showDisplayName = true;
         _showPhotograph = true;
         _showHomeRegion = true;
-        _showPreferredFishingTypes = true;
+        _showPreferredFishingMethods = true;
         _showPreferredSpecies = true;
         return this;
     }
@@ -74,7 +60,7 @@ public sealed class ProfileBuilder
         _showDisplayName = false;
         _showPhotograph = false;
         _showHomeRegion = false;
-        _showPreferredFishingTypes = false;
+        _showPreferredFishingMethods = false;
         _showPreferredSpecies = false;
         return this;
     }
@@ -97,9 +83,9 @@ public sealed class ProfileBuilder
         return this;
     }
 
-    public ProfileBuilder HideFishingTypes()
+    public ProfileBuilder HideFishingMethods()
     {
-        _showPreferredFishingTypes = false;
+        _showPreferredFishingMethods = false;
         return this;
     }
 
@@ -126,12 +112,10 @@ public sealed class ProfileBuilder
             PhotographObjectKey = _photographObjectKey,
             PhotographContentType = _photographContentType,
             HomeRegion = _homeRegion,
-            PreferredFishingTypes = _fishingTypes,
-            PreferredSpecies = _species,
             ShowDisplayName = _showDisplayName,
             ShowPhotograph = _showPhotograph,
             ShowHomeRegion = _showHomeRegion,
-            ShowPreferredFishingTypes = _showPreferredFishingTypes,
+            ShowPreferredFishingMethods = _showPreferredFishingMethods,
             ShowPreferredSpecies = _showPreferredSpecies,
             PreferredWeightUnit = _preferredWeightUnit,
             PreferredLengthUnit = _preferredLengthUnit

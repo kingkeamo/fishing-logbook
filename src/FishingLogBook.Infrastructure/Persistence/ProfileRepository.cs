@@ -14,10 +14,10 @@ public sealed class ProfileRepository : IProfileRepository
 
     private const string SelectSql = """
         SELECT "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
-               "HomeRegion", "PreferredFishingTypes", "PreferredSpecies",
+               "HomeRegion",
                "PreferredWeightUnit", "PreferredLengthUnit",
                "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
-               "ShowPreferredFishingTypes", "ShowPreferredSpecies"
+               "ShowPreferredFishingMethods", "ShowPreferredSpecies"
         FROM "Profile"
         """;
 
@@ -78,29 +78,27 @@ public sealed class ProfileRepository : IProfileRepository
             const string sql = """
                 INSERT INTO "Profile" (
                     "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
-                    "HomeRegion", "PreferredFishingTypes", "PreferredSpecies",
+                    "HomeRegion",
                     "PreferredWeightUnit", "PreferredLengthUnit",
                     "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
-                    "ShowPreferredFishingTypes", "ShowPreferredSpecies",
+                    "ShowPreferredFishingMethods", "ShowPreferredSpecies",
                     "UpdatedOn")
                 VALUES (
                     @UserId, @DisplayName, @PhotographId, @PhotographObjectKey, @PhotographContentType,
-                    @HomeRegion, @PreferredFishingTypes, @PreferredSpecies,
+                    @HomeRegion,
                     @PreferredWeightUnit, @PreferredLengthUnit,
                     @ShowDisplayName, @ShowPhotograph, @ShowHomeRegion,
-                    @ShowPreferredFishingTypes, @ShowPreferredSpecies,
+                    @ShowPreferredFishingMethods, @ShowPreferredSpecies,
                     now())
                 ON CONFLICT ("UserId") DO UPDATE SET
                     "DisplayName" = EXCLUDED."DisplayName",
                     "HomeRegion" = EXCLUDED."HomeRegion",
-                    "PreferredFishingTypes" = EXCLUDED."PreferredFishingTypes",
-                    "PreferredSpecies" = EXCLUDED."PreferredSpecies",
                     "PreferredWeightUnit" = EXCLUDED."PreferredWeightUnit",
                     "PreferredLengthUnit" = EXCLUDED."PreferredLengthUnit",
                     "ShowDisplayName" = EXCLUDED."ShowDisplayName",
                     "ShowPhotograph" = EXCLUDED."ShowPhotograph",
                     "ShowHomeRegion" = EXCLUDED."ShowHomeRegion",
-                    "ShowPreferredFishingTypes" = EXCLUDED."ShowPreferredFishingTypes",
+                    "ShowPreferredFishingMethods" = EXCLUDED."ShowPreferredFishingMethods",
                     "ShowPreferredSpecies" = EXCLUDED."ShowPreferredSpecies",
                     "UpdatedOn" = now();
                 """;
@@ -161,14 +159,12 @@ public sealed class ProfileRepository : IProfileRepository
             PhotographObjectKey = profile.PhotographObjectKey,
             PhotographContentType = profile.PhotographContentType,
             HomeRegion = profile.HomeRegion,
-            PreferredFishingTypes = profile.PreferredFishingTypes,
-            PreferredSpecies = profile.PreferredSpecies,
             PreferredWeightUnit = (int)profile.PreferredWeightUnit,
             PreferredLengthUnit = (int)profile.PreferredLengthUnit,
             ShowDisplayName = profile.ShowDisplayName,
             ShowPhotograph = profile.ShowPhotograph,
             ShowHomeRegion = profile.ShowHomeRegion,
-            ShowPreferredFishingTypes = profile.ShowPreferredFishingTypes,
+            ShowPreferredFishingMethods = profile.ShowPreferredFishingMethods,
             ShowPreferredSpecies = profile.ShowPreferredSpecies
         };
     }
@@ -187,10 +183,6 @@ public sealed class ProfileRepository : IProfileRepository
 
         public string? HomeRegion { get; init; }
 
-        public string[] PreferredFishingTypes { get; init; } = [];
-
-        public string[] PreferredSpecies { get; init; } = [];
-
         public int PreferredWeightUnit { get; init; }
 
         public int PreferredLengthUnit { get; init; }
@@ -201,7 +193,7 @@ public sealed class ProfileRepository : IProfileRepository
 
         public bool ShowHomeRegion { get; init; }
 
-        public bool ShowPreferredFishingTypes { get; init; }
+        public bool ShowPreferredFishingMethods { get; init; }
 
         public bool ShowPreferredSpecies { get; init; }
     }

@@ -30,8 +30,6 @@ public class BaseProfileClientTest
             null,
             null,
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,

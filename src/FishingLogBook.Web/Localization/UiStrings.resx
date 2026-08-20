@@ -426,6 +426,9 @@
   <data name="Profile_ShowHomeRegion" xml:space="preserve">
     <value>Show home region to other anglers</value>
   </data>
+  <data name="Profile_ShowPreferredFishingMethods" xml:space="preserve">
+    <value>Show preferred fishing methods to other anglers</value>
+  </data>
   <data name="Profile_ShowPreferredSpecies" xml:space="preserve">
     <value>Show preferred species to other anglers</value>
   </data>

@@ -111,7 +111,7 @@ public class WhenTestingRender : BasePublicProfileTest
             cut.FindAll("#public-profile-display-name").Should().BeEmpty();
             cut.FindAll("#public-profile-photo").Should().BeEmpty();
             cut.FindAll("#public-profile-home-region").Should().BeEmpty();
-            cut.FindAll("#public-profile-fishing-types").Should().BeEmpty();
+            cut.FindAll("#public-profile-fishing-methods").Should().BeEmpty();
             cut.FindAll("#public-profile-preferred-species").Should().BeEmpty();
             cut.FindAll("#public-profile-location").Should().BeEmpty();
         });
@@ -170,7 +170,7 @@ public class WhenTestingRender : BasePublicProfileTest
             cut.Find("#public-profile-display-name").TextContent.Should().Contain("Eamonn");
             cut.Find("#public-profile-photo").GetAttribute("src").Should().Be("https://storage.test/photo");
             cut.Find("#public-profile-home-region").TextContent.Should().Contain("Westmeath");
-            cut.Find("#public-profile-fishing-types").TextContent.Should().Contain("Fly");
+            cut.Find("#public-profile-fishing-methods").TextContent.Should().Contain("Fly");
             cut.Find("#public-profile-preferred-species").TextContent.Should().Contain("Pike");
             cut.FindAll("#public-profile-location").Should().BeEmpty();
         });

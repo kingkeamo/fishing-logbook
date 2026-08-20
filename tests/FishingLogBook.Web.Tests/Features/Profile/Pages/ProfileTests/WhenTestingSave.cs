@@ -71,8 +71,6 @@ public class WhenTestingSave : BaseProfileTest
                 null,
                 null,
                 "Westmeath",
-                ["Fly"],
-                ["Pike", "Tench"],
                 true,
                 true,
                 true,
@@ -93,12 +91,10 @@ public class WhenTestingSave : BaseProfileTest
             Arg.Is<UpdateProfileDto>(profile =>
                 profile.DisplayName == "Eamonn"
                 && profile.HomeRegion == "Westmeath"
-                && profile.PreferredFishingTypes.SequenceEqual(new[] { "Fly" })
-                && profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })
                 && profile.ShowDisplayName
                 && profile.ShowPhotograph
                 && profile.ShowHomeRegion
-                && profile.ShowPreferredFishingTypes
+                && profile.ShowPreferredFishingMethods
                 && !profile.ShowPreferredSpecies),
             Arg.Any<CancellationToken>());
         await profileClient.DidNotReceive().CreatePhotographUploadAsync(
@@ -195,7 +191,7 @@ public class WhenTestingSave : BaseProfileTest
             Arg.Is<UpdateProfileDto>(profile =>
                 profile.ShowDisplayName
                 && profile.ShowHomeRegion
-                && !profile.ShowPreferredFishingTypes
+                && !profile.ShowPreferredFishingMethods
                 && profile.ShowPreferredSpecies
                 && profile.ShowPhotograph),
             Arg.Any<CancellationToken>());
@@ -216,8 +212,6 @@ public class WhenTestingSave : BaseProfileTest
                 null,
                 null,
                 null,
-                ["Coarse"],
-                [],
                 true,
                 false,
                 false,
@@ -242,12 +236,10 @@ public class WhenTestingSave : BaseProfileTest
             Arg.Is<UpdateProfileDto>(profile =>
                 profile.DisplayName == "Eamonn"
                 && profile.HomeRegion == "Westmeath"
-                && profile.PreferredSpecies.SequenceEqual(new[] { "Brown Trout" })
-                && profile.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
                 && profile.ShowDisplayName
                 && !profile.ShowPhotograph
                 && !profile.ShowHomeRegion
-                && !profile.ShowPreferredFishingTypes
+                && !profile.ShowPreferredFishingMethods
                 && !profile.ShowPreferredSpecies),
             Arg.Any<CancellationToken>());
         await preferenceClient.Received(1).UpdatePreferencesAsync(

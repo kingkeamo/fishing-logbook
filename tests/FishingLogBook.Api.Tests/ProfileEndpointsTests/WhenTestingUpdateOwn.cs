@@ -38,24 +38,6 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldRejectAnUnknownFishingType()
-    {
-        // Arrange
-        _factory.ProfileRepository.ClearReceivedCalls();
-        var request = ValidRequest() with { PreferredFishingTypes = ["NotAType"] };
-        var client = _factory.CreateAuthenticatedClient();
-
-        // Act
-        var response = await client.PutAsJsonAsync("/api/profiles/me", request);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        await _factory.ProfileRepository.DidNotReceive().UpsertAsync(
-            Arg.Any<Profile>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task ItShouldReturnServiceUnavailableWhenTheProfileCannotBeLoaded()
     {
         // Arrange
@@ -137,12 +119,10 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
             userId = otherUserId,
             displayName = "Eamonn",
             homeRegion = "Westmeath",
-            preferredFishingTypes = new[] { "Coarse" },
-            preferredSpecies = new[] { "Pike" },
             showDisplayName = true,
             showPhotograph = false,
             showHomeRegion = true,
-            showPreferredFishingTypes = true,
+            showPreferredFishingMethods = true,
             showPreferredSpecies = false
         });
 
@@ -163,12 +143,10 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
                 profile.UserId == own.UserId
                 && profile.DisplayName == "Eamonn"
                 && profile.HomeRegion == "Westmeath"
-                && profile.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
-                && profile.PreferredSpecies.SequenceEqual(new[] { "Pike" })
                 && profile.ShowDisplayName
                 && !profile.ShowPhotograph
                 && profile.ShowHomeRegion
-                && profile.ShowPreferredFishingTypes
+                && profile.ShowPreferredFishingMethods
                 && !profile.ShowPreferredSpecies),
             Arg.Any<CancellationToken>());
     }
@@ -197,8 +175,6 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
         body!.UserId.Should().Be(own!.UserId);
         body.DisplayName.Should().Be("Eamonn");
         body.HomeRegion.Should().Be("Westmeath");
-        body.PreferredFishingTypes.Should().Equal("Coarse");
-        body.PreferredSpecies.Should().Equal("Pike");
         typeof(ProfileDto).GetProperty("Latitude").Should().BeNull();
         await _factory.ProfileRepository.Received(1).GetByUserIdAsync(
             own.UserId,
@@ -216,8 +192,6 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
         return new UpdateProfileDto(
             "Eamonn",
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
+using FishingLogBook.Domain.Catalogue;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Tests.Common.Builders;
@@ -132,7 +133,7 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
         body!.UserId.Should().Be(userId);
         body.DisplayName.Should().BeNull();
         body.HomeRegion.Should().BeNull();
-        body.PreferredFishingTypes.Should().BeEmpty();
+        body.PreferredFishingMethods.Should().BeEmpty();
         typeof(PublicProfileDto).GetProperty("Location").Should().BeNull();
         await _factory.ProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
         await _factory.ProfileRepository.DidNotReceive().UpsertAsync(
@@ -149,8 +150,6 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
             .WithUserId(userId)
             .WithDisplayName("Eamonn")
             .WithHomeRegion("Westmeath")
-            .WithFishingTypes("Fly")
-            .WithSpecies("Pike")
             .ShowAll()
             .HideSpecies()
             .Build();
@@ -161,6 +160,24 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
         _factory.ProfileRepository
             .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Profile?>(profile));
+        _factory.FishingPreferenceRepository
+            .GetMethodPreferencesAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<UserFishingMethodPreference>>(
+            [
+                new UserFishingMethodPreference { UserId = userId, FishingMethodId = SystemApiFactory.FlyMethodId, IsDefault = true }
+            ]));
+        _factory.FishingPreferenceRepository
+            .GetSpeciesPreferencesAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<UserFishingSpeciesPreference>>(
+            [
+                new UserFishingSpeciesPreference
+                {
+                    UserId = userId,
+                    FishingMethodId = SystemApiFactory.FlyMethodId,
+                    SpeciesId = SystemApiFactory.PikeSpeciesId,
+                    IsDefault = true
+                }
+            ]));
         var client = _factory.CreateAuthenticatedClient();
 
         // Act
@@ -173,7 +190,7 @@ public class WhenTestingGetPublic : IClassFixture<SystemApiFactory>
         body!.UserId.Should().Be(userId);
         body.DisplayName.Should().Be("Eamonn");
         body.HomeRegion.Should().Be("Westmeath");
-        body.PreferredFishingTypes.Should().Equal("Fly");
+        body.PreferredFishingMethods.Should().Equal("Fly");
         body.PreferredSpecies.Should().BeEmpty();
         typeof(PublicProfileDto).GetProperty("Latitude").Should().BeNull();
         typeof(PublicProfileDto).GetProperty("Longitude").Should().BeNull();

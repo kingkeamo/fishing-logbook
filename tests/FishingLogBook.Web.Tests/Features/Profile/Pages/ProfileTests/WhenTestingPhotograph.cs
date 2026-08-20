@@ -250,8 +250,6 @@ public class WhenTestingPhotograph : BaseProfileTest
                     "https://storage.test/download",
                     request.ContentType,
                     null,
-                    [],
-                    [],
                     true,
                     false,
                     false,

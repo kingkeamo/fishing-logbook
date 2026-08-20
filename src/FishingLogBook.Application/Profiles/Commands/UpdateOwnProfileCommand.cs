@@ -3,7 +3,6 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
-using FishingLogBook.Shared.Enums;
 using FluentValidation;
 using MapsterMapper;
 using MediatR;
@@ -17,8 +16,6 @@ public sealed class UpdateOwnProfileCommand : IRequest<UpdateOwnProfileResponse>
     public UpdateProfileDto Profile { get; init; } = new(
         null,
         null,
-        [],
-        [],
         true,
         false,
         false,
@@ -78,29 +75,11 @@ public sealed class UpdateOwnProfileCommandValidator : AbstractValidator<UpdateO
         RuleFor(command => command.Profile.HomeRegion)
             .MaximumLength(ProfileDetailConstants.MaxHomeRegionLength)
             .When(command => command.Profile.HomeRegion is not null);
-        RuleForEach(command => command.Profile.PreferredFishingTypes)
-            .Must(BeKnownFishingType)
-            .WithMessage("Preferred fishing type is not recognised.");
-        RuleForEach(command => command.Profile.PreferredSpecies)
-            .Must(BeAValidPreferredSpecies)
-            .WithMessage(
-                $"Preferred species must be {ProfileDetailConstants.MaxPreferredSpeciesNameLength} characters or fewer.");
         RuleFor(command => command.Profile.PreferredWeightUnit)
             .IsInEnum()
             .WithMessage("Preferred weight unit is not recognised.");
         RuleFor(command => command.Profile.PreferredLengthUnit)
             .IsInEnum()
             .WithMessage("Preferred length unit is not recognised.");
-    }
-
-    private static bool BeAValidPreferredSpecies(string value)
-    {
-        return !string.IsNullOrWhiteSpace(value)
-            && value.Trim().Length <= ProfileDetailConstants.MaxPreferredSpeciesNameLength;
-    }
-
-    private static bool BeKnownFishingType(string value)
-    {
-        return Enum.TryParse<FishingTypeEnum>(value, ignoreCase: true, out _);
     }
 }

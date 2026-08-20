@@ -33,12 +33,10 @@ public class WhenTestingHandle : BaseUpdateOwnProfileCommandTest
                 args.UserId == userId
                 && args.DisplayName == "Eamonn"
                 && args.HomeRegion == "Westmeath"
-                && args.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
-                && args.PreferredSpecies.SequenceEqual(new[] { "Pike" })
                 && args.ShowDisplayName
                 && !args.ShowPhotograph
                 && args.ShowHomeRegion
-                && args.ShowPreferredFishingTypes
+                && args.ShowPreferredFishingMethods
                 && !args.ShowPreferredSpecies),
             Arg.Any<CancellationToken>());
     }
@@ -87,9 +85,7 @@ public class WhenTestingHandle : BaseUpdateOwnProfileCommandTest
             Arg.Is<UpdateProfileArgs>(args =>
                 args.UserId == userId
                 && args.DisplayName == "Eamonn"
-                && args.HomeRegion == "Westmeath"
-                && args.PreferredFishingTypes.SequenceEqual(new[] { "Coarse" })
-                && args.PreferredSpecies.SequenceEqual(new[] { "Pike" })),
+                && args.HomeRegion == "Westmeath"),
             Arg.Any<CancellationToken>());
     }
 }

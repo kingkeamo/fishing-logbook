@@ -61,7 +61,7 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
     }
 
     [Fact]
-    public async Task ItShouldTrimDisplayNameHomeRegionAndSpecies()
+    public async Task ItShouldTrimDisplayNameAndHomeRegion()
     {
         // Arrange
         var userId = Guid.NewGuid();
@@ -70,8 +70,6 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
             UserId = userId,
             DisplayName = "  Eamonn  ",
             HomeRegion = "  Westmeath  ",
-            PreferredFishingTypes = ["Fly"],
-            PreferredSpecies = ["  Pike  ", " ", "Tench"],
             ShowDisplayName = true
         };
         MockProfileRepository
@@ -88,13 +86,11 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
         result.IsSuccess.Should().BeTrue();
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredSpecies.Should().Equal("Pike", "Tench");
         await MockProfileRepository.Received(1).UpsertAsync(
             Arg.Is<Profile>(profile =>
                 profile.UserId == userId
                 && profile.DisplayName == "Eamonn"
-                && profile.HomeRegion == "Westmeath"
-                && profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })),
+                && profile.HomeRegion == "Westmeath"),
             Arg.Any<CancellationToken>());
     }
 
@@ -158,12 +154,10 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
         result.Value.UserId.Should().Be(userId);
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Coarse", "Fly");
-        result.Value.PreferredSpecies.Should().Equal("Pike", "Tench");
         result.Value.ShowDisplayName.Should().BeTrue();
         result.Value.ShowPhotograph.Should().BeFalse();
         result.Value.ShowHomeRegion.Should().BeTrue();
-        result.Value.ShowPreferredFishingTypes.Should().BeTrue();
+        result.Value.ShowPreferredFishingMethods.Should().BeTrue();
         result.Value.ShowPreferredSpecies.Should().BeFalse();
         typeof(ProfileDto).GetProperty("Location").Should().BeNull();
         await MockProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
@@ -172,12 +166,10 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
                 profile.UserId == userId
                 && profile.DisplayName == "Eamonn"
                 && profile.HomeRegion == "Westmeath"
-                && profile.PreferredFishingTypes.SequenceEqual(new[] { "Coarse", "Fly" })
-                && profile.PreferredSpecies.SequenceEqual(new[] { "Pike", "Tench" })
                 && profile.ShowDisplayName
                 && !profile.ShowPhotograph
                 && profile.ShowHomeRegion
-                && profile.ShowPreferredFishingTypes
+                && profile.ShowPreferredFishingMethods
                 && !profile.ShowPreferredSpecies
                 && profile.PhotographId == null),
             Arg.Any<CancellationToken>());
@@ -224,12 +216,10 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
             UserId = userId,
             DisplayName = "Eamonn",
             HomeRegion = "Westmeath",
-            PreferredFishingTypes = ["Coarse", "Fly"],
-            PreferredSpecies = ["Pike", "Tench"],
             ShowDisplayName = true,
             ShowPhotograph = false,
             ShowHomeRegion = true,
-            ShowPreferredFishingTypes = true,
+            ShowPreferredFishingMethods = true,
             ShowPreferredSpecies = false
         };
     }

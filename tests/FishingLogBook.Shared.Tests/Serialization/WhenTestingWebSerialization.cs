@@ -229,8 +229,6 @@ public class WhenTestingWebSerialization : BaseSerializationTest
             null,
             null,
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,
@@ -281,8 +279,6 @@ public class WhenTestingWebSerialization : BaseSerializationTest
         var original = new UpdateProfileDto(
             "Eamonn",
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,

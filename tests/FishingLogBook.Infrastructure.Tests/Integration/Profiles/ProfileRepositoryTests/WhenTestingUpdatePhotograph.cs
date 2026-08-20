@@ -51,8 +51,6 @@ public class WhenTestingUpdatePhotograph : BaseProfileRepositoryTest
             .WithUserId(userId)
             .WithDisplayName("Eamonn")
             .WithHomeRegion("Westmeath")
-            .WithFishingTypes("Fly")
-            .WithSpecies("Pike")
             .ShowAll()
             .Build();
         var inserted = await Sut.UpsertAsync(existing, CancellationToken.None);
@@ -79,8 +77,6 @@ public class WhenTestingUpdatePhotograph : BaseProfileRepositoryTest
         result.Value.PhotographContentType.Should().Be(PhotographContentTypeConstants.Webp);
         result.Value.DisplayName.Should().Be("Eamonn");
         result.Value.HomeRegion.Should().Be("Westmeath");
-        result.Value.PreferredFishingTypes.Should().Equal("Fly");
-        result.Value.PreferredSpecies.Should().Equal("Pike");
         result.Value.ShowDisplayName.Should().BeTrue();
         result.Value.ShowPhotograph.Should().BeTrue();
         var loaded = await Sut.GetByUserIdAsync(userId, CancellationToken.None);

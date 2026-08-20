@@ -17,11 +17,16 @@ public sealed class ProfileService : IProfileService
 
     private readonly IProfileRepository _profileRepository;
     private readonly IObjectStorage _objectStorage;
+    private readonly IFishingPreferenceService _fishingPreferenceService;
 
-    public ProfileService(IProfileRepository profileRepository, IObjectStorage objectStorage)
+    public ProfileService(
+        IProfileRepository profileRepository,
+        IObjectStorage objectStorage,
+        IFishingPreferenceService fishingPreferenceService)
     {
         _profileRepository = profileRepository;
         _objectStorage = objectStorage;
+        _fishingPreferenceService = fishingPreferenceService;
     }
 
     public bool IsObjectStorageConfigured => _objectStorage.IsConfigured;
@@ -76,7 +81,7 @@ public sealed class ProfileService : IProfileService
         }
 
         var profile = existing.Value ?? CreateDefault(userId);
-        return Result.Ok(await ToPublicDtoAsync(profile, cancellationToken));
+        return await ToPublicDtoAsync(profile, cancellationToken);
     }
 
     public async Task<Result<PhotographUploadDto>> CreatePhotographUploadAsync(
@@ -142,29 +147,55 @@ public sealed class ProfileService : IProfileService
             await CreateDownloadUrlAsync(profile.PhotographObjectKey, cancellationToken),
             profile.PhotographContentType,
             profile.HomeRegion,
-            profile.PreferredFishingTypes,
-            profile.PreferredSpecies,
             profile.ShowDisplayName,
             profile.ShowPhotograph,
             profile.ShowHomeRegion,
-            profile.ShowPreferredFishingTypes,
+            profile.ShowPreferredFishingMethods,
             profile.ShowPreferredSpecies,
             (WeightUnitEnum)profile.PreferredWeightUnit,
             (LengthUnitEnum)profile.PreferredLengthUnit);
     }
 
-    private async Task<PublicProfileDto> ToPublicDtoAsync(Profile profile, CancellationToken cancellationToken)
+    private async Task<Result<PublicProfileDto>> ToPublicDtoAsync(Profile profile, CancellationToken cancellationToken)
     {
         var photographUrl = profile.ShowPhotograph
             ? await CreateDownloadUrlAsync(profile.PhotographObjectKey, cancellationToken)
             : null;
-        return new PublicProfileDto(
+
+        IReadOnlyList<string> methods = [];
+        IReadOnlyList<string> species = [];
+        if (profile.ShowPreferredFishingMethods || profile.ShowPreferredSpecies)
+        {
+            var preferences = await _fishingPreferenceService.GetPreferencesAsync(profile.UserId, cancellationToken);
+            if (preferences.IsFailed)
+            {
+                return Result.Fail<PublicProfileDto>(preferences.Errors);
+            }
+
+            if (profile.ShowPreferredFishingMethods)
+            {
+                methods = [.. preferences.Value.Methods.Select(method => method.Name)];
+            }
+
+            if (profile.ShowPreferredSpecies)
+            {
+                species =
+                [
+                    .. preferences.Value.Methods
+                        .SelectMany(method => method.Species)
+                        .Select(preference => preference.Name)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                ];
+            }
+        }
+
+        return Result.Ok(new PublicProfileDto(
             profile.UserId,
             profile.ShowDisplayName ? profile.DisplayName : null,
             photographUrl,
             profile.ShowHomeRegion ? profile.HomeRegion : null,
-            profile.ShowPreferredFishingTypes ? profile.PreferredFishingTypes : [],
-            profile.ShowPreferredSpecies ? profile.PreferredSpecies : []);
+            methods,
+            species));
     }
 
     private async Task<string?> CreateDownloadUrlAsync(string? objectKey, CancellationToken cancellationToken)
@@ -193,14 +224,12 @@ public sealed class ProfileService : IProfileService
             PhotographObjectKey = current.PhotographObjectKey,
             PhotographContentType = current.PhotographContentType,
             HomeRegion = TrimOrNull(args.HomeRegion),
-            PreferredFishingTypes = [.. args.PreferredFishingTypes],
-            PreferredSpecies = [.. args.PreferredSpecies.Select(value => value.Trim()).Where(value => value.Length > 0)],
             PreferredWeightUnit = args.PreferredWeightUnit,
             PreferredLengthUnit = args.PreferredLengthUnit,
             ShowDisplayName = args.ShowDisplayName,
             ShowPhotograph = args.ShowPhotograph,
             ShowHomeRegion = args.ShowHomeRegion,
-            ShowPreferredFishingTypes = args.ShowPreferredFishingTypes,
+            ShowPreferredFishingMethods = args.ShowPreferredFishingMethods,
             ShowPreferredSpecies = args.ShowPreferredSpecies
         };
     }

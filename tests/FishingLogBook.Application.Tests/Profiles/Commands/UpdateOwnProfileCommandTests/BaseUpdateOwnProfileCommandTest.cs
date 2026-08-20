@@ -27,8 +27,6 @@ public class BaseUpdateOwnProfileCommandTest
             Profile = new UpdateProfileDto(
                 "Eamonn",
                 "Westmeath",
-                ["Coarse"],
-                ["Pike"],
                 true,
                 false,
                 true,
@@ -48,8 +46,6 @@ public class BaseUpdateOwnProfileCommandTest
             null,
             null,
             "Westmeath",
-            ["Coarse"],
-            ["Pike"],
             true,
             false,
             true,

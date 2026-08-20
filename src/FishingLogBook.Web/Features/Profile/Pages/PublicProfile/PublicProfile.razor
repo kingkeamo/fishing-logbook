@@ -34,9 +34,9 @@
                     {
                         <MudText id="public-profile-home-region">@_profile.HomeRegion</MudText>
                     }
-                    @if (_profile.PreferredFishingTypes.Count > 0)
+                    @if (_profile.PreferredFishingMethods.Count > 0)
                     {
-                        <MudText id="public-profile-fishing-types">@string.Join(", ", _profile.PreferredFishingTypes)</MudText>
+                        <MudText id="public-profile-fishing-methods">@string.Join(", ", _profile.PreferredFishingMethods)</MudText>
                     }
                     @if (_profile.PreferredSpecies.Count > 0)
                     {
