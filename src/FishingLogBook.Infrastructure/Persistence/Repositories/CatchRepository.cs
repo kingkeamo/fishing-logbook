@@ -88,6 +88,38 @@ public sealed class CatchRepository : ICatchRepository
         }
     }
 
+    public async Task<Result> DeletePhotographAsync(
+        GetCatchPhotographArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            const string sql = """
+                DELETE FROM "CatchPhotograph" p
+                USING "Catch" c
+                WHERE p."Id" = @PhotographId
+                  AND p."CatchId" = @CatchId
+                  AND c."Id" = p."CatchId"
+                  AND c."UserId" = @UserId;
+                """;
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            await connection.ExecuteAsync(new CommandDefinition(
+                sql,
+                args,
+                cancellationToken: cancellationToken));
+            return Result.Ok();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to delete catch photograph {PhotographId} for catch {CatchId}.",
+                args.PhotographId,
+                args.CatchId);
+            return Result.Fail(FailedMessage);
+        }
+    }
+
     public async Task<Result<Catch>> UpsertAsync(Catch catchRecord, CancellationToken cancellationToken)
     {
         try

@@ -399,6 +399,30 @@
   <data name="Catch_EditTextTooLong" xml:space="preserve">
     <value>One of the text fields is too long.</value>
   </data>
+  <data name="Catch_EditPhotographsSection" xml:space="preserve">
+    <value>Photographs</value>
+  </data>
+  <data name="Catch_EditDetailsSection" xml:space="preserve">
+    <value>Catch details</value>
+  </data>
+  <data name="Catch_EditCannotRemoveLastPhoto" xml:space="preserve">
+    <value>A catch needs at least one photograph.</value>
+  </data>
+  <data name="Catch_EditPhotoActionFailed" xml:space="preserve">
+    <value>This couldn't be saved. Try again.</value>
+  </data>
+  <data name="Catch_EditRemovePhotoTitle" xml:space="preserve">
+    <value>Remove photograph?</value>
+  </data>
+  <data name="Catch_EditRemovePhotoMessage" xml:space="preserve">
+    <value>This photograph will be removed once it can sync with the server.</value>
+  </data>
+  <data name="Catch_EditRemovePhotoConfirm" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Catch_EditLoadOfflineFailed" xml:space="preserve">
+    <value>This catch isn't saved on this device yet. Connect to the internet and try again.</value>
+  </data>
   <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
     <value>FishingLogBook - Location privacy</value>
   </data>

@@ -15,4 +15,8 @@ public interface ICatchPhotographService
     Task<Result> RecordAsync(
         RecordCatchPhotographArgs args,
         CancellationToken cancellationToken);
+
+    Task<Result> DeleteAsync(
+        DeleteCatchPhotographArgs args,
+        CancellationToken cancellationToken);
 }

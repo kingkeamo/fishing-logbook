@@ -1,0 +1,61 @@
+.catch-photograph-carousel-media {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+::deep .catch-photograph-carousel-photo {
+    width: 100%;
+    height: 100%;
+}
+
+::deep .catch-photograph-carousel-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.catch-photograph-carousel-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mud-palette-action-disabled-background);
+    color: var(--mud-palette-text-disabled);
+}
+
+.catch-photograph-carousel-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 1.75rem;
+    margin-top: 0.125rem;
+}
+
+.catch-photograph-carousel-count {
+    white-space: nowrap;
+    color: var(--mud-palette-text-secondary);
+}
+
+.catch-photograph-carousel-navigation ::deep .mud-icon-button {
+    padding: 0.125rem;
+}
+
+.catch-photograph-carousel-large .catch-photograph-carousel-media {
+    aspect-ratio: auto;
+    height: 14rem;
+    width: 100%;
+    max-width: 20rem;
+    margin: 0 auto;
+}
+
+.catch-photograph-carousel-large .catch-photograph-carousel-navigation {
+    min-height: 2.5rem;
+}
+
+.catch-photograph-carousel-large .catch-photograph-carousel-navigation ::deep .mud-icon-button {
+    padding: 0.5rem;
+}

@@ -399,6 +399,30 @@
   <data name="Catch_EditTextTooLong" xml:space="preserve">
     <value>L'un des champs texte est trop long.</value>
   </data>
+  <data name="Catch_EditPhotographsSection" xml:space="preserve">
+    <value>Photographies</value>
+  </data>
+  <data name="Catch_EditDetailsSection" xml:space="preserve">
+    <value>Détails de la prise</value>
+  </data>
+  <data name="Catch_EditCannotRemoveLastPhoto" xml:space="preserve">
+    <value>Une prise doit avoir au moins une photographie.</value>
+  </data>
+  <data name="Catch_EditPhotoActionFailed" xml:space="preserve">
+    <value>Cela n'a pas pu être enregistré. Réessayez.</value>
+  </data>
+  <data name="Catch_EditRemovePhotoTitle" xml:space="preserve">
+    <value>Supprimer la photographie ?</value>
+  </data>
+  <data name="Catch_EditRemovePhotoMessage" xml:space="preserve">
+    <value>Cette photographie sera supprimée dès qu'elle pourra se synchroniser avec le serveur.</value>
+  </data>
+  <data name="Catch_EditRemovePhotoConfirm" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Catch_EditLoadOfflineFailed" xml:space="preserve">
+    <value>Cette prise n'est pas encore enregistrée sur cet appareil. Connectez-vous à Internet et réessayez.</value>
+  </data>
   <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
     <value>FishingLogBook - Confidentialité de la localisation</value>
   </data>

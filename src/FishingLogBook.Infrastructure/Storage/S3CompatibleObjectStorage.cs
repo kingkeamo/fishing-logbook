@@ -63,6 +63,17 @@ public sealed class S3CompatibleObjectStorage : IObjectStorage, IDisposable
         return Task.FromResult(new Uri(Client.GetPreSignedURL(request)));
     }
 
+    public Task DeleteObjectAsync(string objectKey, CancellationToken cancellationToken)
+    {
+        return Client.DeleteObjectAsync(
+            new DeleteObjectRequest
+            {
+                BucketName = _config.BucketName,
+                Key = objectKey
+            },
+            cancellationToken);
+    }
+
     public void Dispose()
     {
         _client?.Dispose();

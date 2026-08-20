@@ -334,6 +334,46 @@ describe('Catch store', () => {
         expect(photoIds).toEqual(['photo-a', 'photo-b']);
     });
 
+    it('deletes a photograph blob that is dropped from a subsequent put for the same Catch', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const keptPhotoId = '11111111-1111-1111-1111-111111111111';
+        const removedPhotoId = '22222222-2222-2222-2222-222222222222';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                caughtOn: '2026-08-17T08:00:00+00:00',
+                photographs: [
+                    { id: keptPhotoId, catchId, contentType: 'image/jpeg' },
+                    { id: removedPhotoId, catchId, contentType: 'image/png' }
+                ]
+            }),
+            [
+                { id: keptPhotoId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1]) },
+                { id: removedPhotoId, catchId, contentType: 'image/png', bytes: new Uint8Array([2]) }
+            ]
+        );
+
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                caughtOn: '2026-08-17T08:00:00+00:00',
+                photographs: [
+                    { id: keptPhotoId, catchId, contentType: 'image/jpeg' }
+                ]
+            }),
+            [
+                { id: keptPhotoId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1]) }
+            ]
+        );
+
+        const items = await getAllCatchesWithPhotographs(ownerUserId);
+        const photoIds = items[0].photographs.map((photograph) => photograph.id);
+
+        expect(photoIds).toEqual([keptPhotoId]);
+    });
+
     it('does not persist a Catch when a photograph has no id', async () => {
         await expect(putCatchWithPhotographs(
             JSON.stringify({ id: 'orphan-catch', caughtOn: '2026-08-17T08:00:00+00:00' }),
@@ -374,6 +414,11 @@ describe('Catch store', () => {
                         }
 
                         return {
+                            openCursor() {
+                                const request = { onsuccess: null, onerror: null, result: null };
+                                queueMicrotask(() => request.onsuccess?.());
+                                return request;
+                            },
                             put() {
                                 const request = {
                                     onsuccess: null,

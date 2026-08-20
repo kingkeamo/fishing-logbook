@@ -5,6 +5,8 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Clients;
+using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -14,6 +16,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
@@ -21,6 +24,7 @@ namespace FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
 public partial class CatchEdit : ComponentBase, IDisposable
 {
     private const int MaxChipOptions = 6;
+    private const long MaxPhotographBytes = 10 * 1024 * 1024;
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private CatchModel? _catch;
@@ -35,8 +39,13 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private bool _isLoading = true;
     private bool _isSaving;
     private bool _loadFailed;
+    private bool _offlineUnavailable;
     private bool _saveFailed;
     private bool _saved;
+    private bool _unsupportedFormat;
+    private bool _cannotRemoveLastPhoto;
+    private bool _addPhotoFailed;
+    private bool _removePhotoFailed;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _catalogueUnavailable;
@@ -50,6 +59,9 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
+
+    [Inject]
+    private ICatchClient CatchClient { get; set; } = default!;
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
@@ -127,6 +139,38 @@ public partial class CatchEdit : ComponentBase, IDisposable
         }
     }
 
+    private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs
+    {
+        get
+        {
+            return _catch is null
+                ? []
+                : _catch.Photographs
+                    .Where(photograph => photograph.SyncStatus != SyncStatus.PendingDeletion)
+                    .Select(photograph => new CatchPhotographCarouselItemModel(
+                        photograph.Id,
+                        photograph.ContentType,
+                        photograph.Bytes,
+                        photograph.RemoteUrl))
+                    .ToArray();
+        }
+    }
+
+    private string? LocationVisibilityLabel
+    {
+        get
+        {
+            return _catch?.Location?.Visibility switch
+            {
+                LocationDefaults.Private => Loc["Catch_LocationVisibilityPrivate"].Value,
+                LocationDefaults.Approximate => Loc["Catch_LocationVisibilityApproximate"].Value,
+                LocationDefaults.FishingVenueOnly => Loc["Catch_LocationVisibilityFishingVenueOnly"].Value,
+                LocationDefaults.Public => Loc["Catch_LocationVisibilityPublic"].Value,
+                _ => null
+            };
+        }
+    }
+
     private IReadOnlyList<CatchChipOptionModel> MethodOptions
     {
         get
@@ -164,11 +208,13 @@ public partial class CatchEdit : ComponentBase, IDisposable
     {
         _isLoading = true;
         _loadFailed = false;
+        _offlineUnavailable = false;
         try
         {
             await LoadPreferencesAsync();
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
-            _catch = await CatchStore.GetAsync(ownerUserId, CatchId, _cancellationTokenSource.Token);
+            _catch = await CatchStore.GetAsync(ownerUserId, CatchId, _cancellationTokenSource.Token)
+                ?? await TryLocalizeFromServerAsync(ownerUserId, _cancellationTokenSource.Token);
             if (_catch is null)
             {
                 _loadFailed = true;
@@ -193,6 +239,100 @@ public partial class CatchEdit : ComponentBase, IDisposable
         {
             _isLoading = false;
         }
+    }
+
+    private async Task<CatchModel?> TryLocalizeFromServerAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        CatchViewDto? remote;
+        try
+        {
+            remote = await CatchClient.GetAsync(CatchId, cancellationToken);
+        }
+        catch (Exception)
+        {
+            _offlineUnavailable = true;
+            return null;
+        }
+
+        if (remote is null || remote.UserId != ownerUserId || remote.Photographs.Count == 0)
+        {
+            return null;
+        }
+
+        var photographs = new List<CatchPhotographModel>();
+        foreach (var photograph in remote.Photographs)
+        {
+            if (string.IsNullOrWhiteSpace(photograph.Url))
+            {
+                _offlineUnavailable = true;
+                return null;
+            }
+
+            try
+            {
+                var bytes = await CatchClient.DownloadPhotographAsync(photograph.Url, cancellationToken);
+                photographs.Add(new CatchPhotographModel(
+                    photograph.Id,
+                    remote.Id,
+                    photograph.ContentType,
+                    bytes,
+                    SyncStatus.Synchronised));
+            }
+            catch (Exception)
+            {
+                _offlineUnavailable = true;
+                return null;
+            }
+        }
+
+        var localized = new CatchModel(
+            remote.Id,
+            remote.CaughtOn,
+            photographs,
+            remote.SpeciesName,
+            ToLocationModel(remote.Location),
+            remote.UserId,
+            SyncStatus.Synchronised,
+            SyncStatus.Synchronised,
+            remote.AnglerUserId,
+            remote.RecordedByUserId,
+            remote.Weight,
+            remote.Length,
+            remote.Method,
+            remote.BaitOrLure,
+            remote.Notes);
+
+        try
+        {
+            await CatchStore.SaveAsync(localized, cancellationToken);
+        }
+        catch (Exception)
+        {
+            _offlineUnavailable = true;
+            return null;
+        }
+
+        return localized;
+    }
+
+    private static CatchLocationModel? ToLocationModel(CatchLocationExposureDto? exposure)
+    {
+        if (exposure is null
+            || exposure.Latitude is null
+            || exposure.Longitude is null
+            || exposure.CapturedOn is null)
+        {
+            return null;
+        }
+
+        return new CatchLocationModel(
+            exposure.Latitude.Value,
+            exposure.Longitude.Value,
+            exposure.AccuracyMetres,
+            exposure.CapturedOn.Value,
+            exposure.Source ?? LocationDefaults.DeviceGps,
+            exposure.Visibility,
+            LocationDefaults.ConsentVersion);
     }
 
     private async Task LoadPreferencesAsync()
@@ -311,6 +451,137 @@ public partial class CatchEdit : ComponentBase, IDisposable
             new CataloguePickerModalModel(title, options),
             _cancellationTokenSource.Token);
         return result?.Option;
+    }
+
+    private async Task OnAddPhotographsSelected(InputFileChangeEventArgs args)
+    {
+        if (_catch is null)
+        {
+            return;
+        }
+
+        _addPhotoFailed = false;
+        var rejectedUnsupported = false;
+        var updated = _catch;
+        foreach (var file in args.GetMultipleFiles(10))
+        {
+            if (!PhotographContentTypeConstants.IsAllowed(file.ContentType))
+            {
+                rejectedUnsupported = true;
+                continue;
+            }
+
+            updated = await AppendPhotographAsync(updated, file);
+        }
+
+        _unsupportedFormat = rejectedUnsupported;
+        if (ReferenceEquals(updated, _catch))
+        {
+            return;
+        }
+
+        try
+        {
+            await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
+            _catch = updated;
+            TryToSynchronisePending();
+        }
+        catch (Exception)
+        {
+            _addPhotoFailed = true;
+        }
+    }
+
+    private async Task<CatchModel> AppendPhotographAsync(CatchModel current, IBrowserFile file)
+    {
+        await using var stream = file.OpenReadStream(MaxPhotographBytes);
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer, _cancellationTokenSource.Token);
+        var photograph = new CatchPhotographModel(
+            Guid.NewGuid(),
+            current.Id,
+            file.ContentType,
+            buffer.ToArray());
+        return current with
+        {
+            Photographs = [.. current.Photographs, photograph],
+            SyncStatus = PendingOverallStatus(current.SyncStatus)
+        };
+    }
+
+    private async Task OnRemovePhotographAsync(Guid photographId)
+    {
+        if (_catch is null)
+        {
+            return;
+        }
+
+        _addPhotoFailed = false;
+        _removePhotoFailed = false;
+        var visibleCount = _catch.Photographs
+            .Count(photograph => photograph.SyncStatus != SyncStatus.PendingDeletion);
+        if (visibleCount <= 1)
+        {
+            _cannotRemoveLastPhoto = true;
+            return;
+        }
+
+        _cannotRemoveLastPhoto = false;
+        var confirmed = await ModalService.ConfirmAsync(
+            new ConfirmModalModel(
+                Loc["Catch_EditRemovePhotoTitle"].Value,
+                Loc["Catch_EditRemovePhotoMessage"].Value,
+                Loc["Catch_EditRemovePhotoConfirm"].Value,
+                Loc["Modal_Cancel"].Value,
+                IsDestructive: true),
+            _cancellationTokenSource.Token);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var updated = _catch with
+        {
+            Photographs = _catch.Photographs
+                .Select(photograph => photograph.Id == photographId
+                    ? photograph with { SyncStatus = SyncStatus.PendingDeletion }
+                    : photograph)
+                .ToArray(),
+            SyncStatus = PendingOverallStatus(_catch.SyncStatus)
+        };
+        try
+        {
+            await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
+            _catch = updated;
+            TryToSynchronisePending();
+        }
+        catch (Exception)
+        {
+            _removePhotoFailed = true;
+        }
+    }
+
+    private async Task OpenLocationPrivacyAsync()
+    {
+        if (_catch is null)
+        {
+            return;
+        }
+
+        var result = await ModalService.ShowAsync<LocationPrivacyModal, LocationPrivacyModalModel, LocationPrivacyModalResult>(
+            new LocationPrivacyModalModel(CatchId),
+            _cancellationTokenSource.Token);
+        if (result?.Saved != true)
+        {
+            return;
+        }
+
+        var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
+        var reloaded = await CatchStore.GetAsync(ownerUserId, CatchId, _cancellationTokenSource.Token);
+        if (reloaded is not null)
+        {
+            _catch = reloaded;
+        }
     }
 
     private async Task SaveAsync()

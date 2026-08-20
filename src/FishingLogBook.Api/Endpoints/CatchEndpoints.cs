@@ -69,6 +69,16 @@ public static class CatchEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapDelete("/api/catches/{catchId:guid}/photographs/{photographId:guid}", DeletePhotographAsync)
+            .WithName("DeleteCatchPhotograph")
+            .WithTags("Catches")
+            .RequireAuthorization()
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         return endpoints;
     }
 
@@ -302,6 +312,52 @@ public static class CatchEndpoints
         if (response.Error is CatchPhotographObjectKeyMismatchError)
         {
             return Results.BadRequest(response);
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> DeletePhotographAsync(
+        Guid catchId,
+        Guid photographId,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new DeleteCatchPhotographCommand
+            {
+                CatchId = catchId,
+                PhotographId = photographId
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is CatchPhotographNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.Error is CatchObjectStorageNotConfiguredError)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
         }
 
         if (response.IsFailure)

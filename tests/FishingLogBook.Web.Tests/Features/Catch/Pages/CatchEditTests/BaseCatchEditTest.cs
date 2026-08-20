@@ -6,6 +6,7 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -40,7 +41,8 @@ public class BaseCatchEditTest
         ILoggingService? logging = null,
         ITimeService? time = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        ICatchClient? catchClient = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -53,9 +55,18 @@ public class BaseCatchEditTest
         context.Services.AddSingleton(time ?? UtcTime());
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
+        context.Services.AddSingleton(catchClient ?? QuietCatchClient());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static ICatchClient QuietCatchClient()
+    {
+        var client = Substitute.For<ICatchClient>();
+        client.GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((CatchViewDto?)null);
+        return client;
     }
 
     protected static IAnglerPreferencesProvider QuietAnglerPreferences(

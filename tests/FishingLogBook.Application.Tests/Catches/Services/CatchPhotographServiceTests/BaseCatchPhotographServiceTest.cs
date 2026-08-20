@@ -4,6 +4,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FluentResults;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Catches.Services.CatchPhotographServiceTests;
@@ -45,6 +46,10 @@ public class BaseCatchPhotographServiceTest
                     CatchId = CatchId,
                     ContentType = "image/jpeg"
                 }));
+        MockCatchRepository.DeletePhotographAsync(
+                Arg.Any<Application.Args.GetCatchPhotographArgs>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Ok());
     }
 
     protected CatchPhotographService CreateSut()
@@ -52,6 +57,7 @@ public class BaseCatchPhotographServiceTest
         return new CatchPhotographService(
             MockCatchRepository,
             MockObjectStorage,
-            MockCurrentUser);
+            MockCurrentUser,
+            NullLogger<CatchPhotographService>.Instance);
     }
 }

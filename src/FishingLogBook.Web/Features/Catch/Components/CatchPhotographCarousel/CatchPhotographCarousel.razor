@@ -1,0 +1,63 @@
+@namespace FishingLogBook.Web.Features.Catch.Components.CatchPhotographCarousel
+
+<div class="@ContainerClass">
+    <div class="catch-photograph-carousel-media">
+        @if (CurrentPhotoUrl is not null)
+        {
+            <MudImage Src="@CurrentPhotoUrl"
+                      Alt="@CurrentPhotographAlt"
+                      ObjectFit="ObjectFit.Cover"
+                      Fluid="true"
+                      Class="catch-photograph-carousel-photo"
+                      id="@PhotoElementId" />
+        }
+        else
+        {
+            <div class="catch-photograph-carousel-placeholder"
+                 role="img"
+                 aria-label="@Loc["Catch_NoPhotograph"]"
+                 id="@NoPhotoElementId">
+                <MudIcon Icon="@Icons.Material.Filled.PhotoCamera"
+                         aria-hidden="true" />
+            </div>
+        }
+    </div>
+
+    @if (ShowNavigationRow)
+    {
+        <div class="catch-photograph-carousel-navigation"
+             id="@NavigationElementId">
+
+            @if (HasMultiplePhotographs)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                               Size="Size.Small"
+                               OnClick="PreviousPhotograph"
+                               aria-label="@Loc["Catch_PreviousPhotograph"]"
+                               id="@PreviousElementId" />
+
+                <MudText Typo="Typo.caption"
+                         Class="catch-photograph-carousel-count"
+                         id="@CountElementId">
+                    @CurrentPhotographNumber of @PhotographCount
+                </MudText>
+
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                               Size="Size.Small"
+                               OnClick="NextPhotograph"
+                               aria-label="@Loc["Catch_NextPhotograph"]"
+                               id="@NextElementId" />
+            }
+
+            @if (Editable && PhotographCount > 0)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small"
+                               Color="Color.Error"
+                               OnClick="RemoveCurrentPhotographAsync"
+                               aria-label="@Loc["Catch_RemovePhoto"]"
+                               id="@RemoveElementId" />
+            }
+        </div>
+    }
+</div>
