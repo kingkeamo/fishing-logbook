@@ -186,20 +186,28 @@ Application indication of which User is authenticated. Repositories persist `Use
 API tests mock repositories and must not require live PostgreSQL.
 
 When uniqueness, transactions, or concurrency must be proven against a real database,
-put those tests in `tests/FishingLogBook.Infrastructure.Tests/Integration/`:
+put those tests in `tests/FishingLogBook.Infrastructure.Tests/Repositories/`:
 
 ```text
 FishingLogBook.Infrastructure.Tests/
     {Sut}Tests/                         → unit tests (no live database)
-    Integration/
+    Repositories/                       → live-database tests (Testcontainers)
         TestSupport/
             PostgresFixture.cs
         Repositories/
             {Repository}Tests/
+        Migrations/
+            SchemaTests/
+        NpgsqlConnectionFactoryTests/
 ```
 
-Example: `Integration/Repositories/UserIdentityRepositoryTests/`. Use the word
-**Integration**, not Sandbox.
+`Repositories/` is the live-database category (parallel to `Logging/`, `Storage/`, and
+other config-test groupings at the project root); `Repositories/Repositories/` is the
+subfolder specifically for `*Repository` test suites, alongside sibling live-DB areas
+(`Migrations/SchemaTests/`, `NpgsqlConnectionFactoryTests/`) that also need Postgres but
+are not themselves repositories. Example:
+`Repositories/Repositories/UserIdentityRepositoryTests/`. Use the word **Repositories**,
+not Integration or Sandbox.
 
 These tests run in normal GitHub Actions CI via Testcontainers PostgreSQL on the
 hosted Ubuntu runner. They do **not** use Neon, a shared CI database, or database

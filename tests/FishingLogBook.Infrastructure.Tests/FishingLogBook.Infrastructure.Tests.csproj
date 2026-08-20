@@ -34,8 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Integration\" />
-    <Folder Include="Repositories\" />
+    <Folder Include="Logging\" />
     <Folder Include="Storage\" />
   </ItemGroup>
 
