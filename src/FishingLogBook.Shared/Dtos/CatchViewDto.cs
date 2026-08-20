@@ -21,4 +21,6 @@ public sealed record CatchViewDto(
     public string? BaitOrLure { get; init; }
 
     public string? Notes { get; init; }
+
+    public IReadOnlyList<CatchPhotographViewDto> Photographs { get; init; } = [];
 }

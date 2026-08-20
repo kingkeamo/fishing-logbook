@@ -6,6 +6,8 @@ public interface ICatchClient
 {
     Task UpsertAsync(CatchDto catchRecord, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<CatchViewDto>> GetAllAsync(CancellationToken cancellationToken);
+
     Task<PhotographUploadDto> CreatePhotographUploadAsync(
         Guid catchId,
         PhotographUploadRequestDto request,

@@ -54,6 +54,37 @@ public class WhenTestingRender : BaseCatchCardTest
     }
 
     [Fact]
+    public async Task ItShouldRenderARemoteUrlPhotographWhenNoLocalBytesArePresent()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T16:50:00Z"),
+            [new CatchPhotographModel(
+                Guid.NewGuid(),
+                catchId,
+                "image/jpeg",
+                RemoteUrl: "https://r2.test/signed-download")],
+            SpeciesName: "Brown Trout",
+            UserId: OwnerUserId,
+            AnglerUserId: OwnerUserId,
+            RecordedByUserId: OwnerUserId);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+
+        // Assert
+        cut.Find($"#catch-card-photo-{catchId:D}").GetAttribute("src")
+            .Should().Be("https://r2.test/signed-download");
+    }
+
+    [Fact]
     public async Task ItShouldShowTheSpeciesNameAsThePrimaryLabel()
     {
         // Arrange
@@ -313,6 +344,37 @@ public class WhenTestingRender : BaseCatchCardTest
         firstSrc.Should().NotBe(secondSrc);
         secondSrc.Should().NotBe(thirdSrc);
         cut.Find($"#catch-card-photo-{catchId:D}-2").GetAttribute("alt").Should().Contain("3 of 3");
+    }
+
+    [Fact]
+    public async Task ItShouldRenderRemoteUrlPhotographsInTheCarouselWhenNoLocalBytesArePresent()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T16:50:00Z"),
+            [
+                new CatchPhotographModel(
+                    Guid.NewGuid(), catchId, "image/jpeg", RemoteUrl: "https://r2.test/one"),
+                new CatchPhotographModel(
+                    Guid.NewGuid(), catchId, "image/jpeg", RemoteUrl: "https://r2.test/two")
+            ],
+            SpeciesName: "Brown Trout",
+            UserId: OwnerUserId,
+            AnglerUserId: OwnerUserId,
+            RecordedByUserId: OwnerUserId);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday));
+
+        // Assert
+        cut.Find($"#catch-card-photo-{catchId:D}-0").GetAttribute("src").Should().Be("https://r2.test/one");
     }
 
     [Fact]

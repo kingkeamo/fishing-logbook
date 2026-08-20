@@ -1,6 +1,7 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
 using FishingLogBook.Application.Catches.Errors;
+using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Catches;
@@ -13,20 +14,25 @@ namespace FishingLogBook.Application.Catches.Services;
 
 public sealed class CatchService : ICatchService
 {
+    private static readonly TimeSpan DownloadLifetime = TimeSpan.FromHours(1);
+
     private readonly ICatchRepository _catchRepository;
     private readonly ICurrentUser _currentUser;
     private readonly ICatchLocationPrivacyService _catchLocationPrivacyService;
+    private readonly IObjectStorage _objectStorage;
     private readonly IMapper _mapper;
 
     public CatchService(
         ICatchRepository catchRepository,
         ICurrentUser currentUser,
         ICatchLocationPrivacyService catchLocationPrivacyService,
+        IObjectStorage objectStorage,
         IMapper mapper)
     {
         _catchRepository = catchRepository;
         _currentUser = currentUser;
         _catchLocationPrivacyService = catchLocationPrivacyService;
+        _objectStorage = objectStorage;
         _mapper = mapper;
     }
 
@@ -98,25 +104,26 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchViewDto>(loaded.Errors);
         }
 
-        var exposure = await _catchLocationPrivacyService.GetExposureAsync(
-            loaded.Value,
-            _currentUser.UserId,
-            cancellationToken);
-        return Result.Ok(new CatchViewDto(
-            loaded.Value.Id,
-            loaded.Value.UserId,
-            loaded.Value.CaughtOn,
-            exposure)
+        return Result.Ok(await ToViewDtoAsync(loaded.Value, cancellationToken));
+    }
+
+    public async Task<Result<IReadOnlyList<CatchViewDto>>> GetMyAsync(
+        GetMyCatchesArgs args,
+        CancellationToken cancellationToken)
+    {
+        var loaded = await _catchRepository.GetByUserIdAsync(args.UserId, cancellationToken);
+        if (loaded.IsFailed)
         {
-            AnglerUserId = loaded.Value.AnglerUserId,
-            RecordedByUserId = loaded.Value.RecordedByUserId,
-            SpeciesName = loaded.Value.SpeciesName,
-            Weight = loaded.Value.Weight,
-            Length = loaded.Value.Length,
-            Method = loaded.Value.Method,
-            BaitOrLure = loaded.Value.BaitOrLure,
-            Notes = loaded.Value.Notes
-        });
+            return Result.Fail<IReadOnlyList<CatchViewDto>>(loaded.Errors);
+        }
+
+        var views = new List<CatchViewDto>(loaded.Value.Count);
+        foreach (var catchRecord in loaded.Value)
+        {
+            views.Add(await ToViewDtoAsync(catchRecord, cancellationToken));
+        }
+
+        return Result.Ok<IReadOnlyList<CatchViewDto>>(views);
     }
 
     public async Task<Result> UpdateLocationVisibilityAsync(
@@ -147,6 +154,60 @@ public sealed class CatchService : ICatchService
                 Visibility = args.Visibility
             },
             cancellationToken);
+    }
+
+    private async Task<CatchViewDto> ToViewDtoAsync(Catch catchRecord, CancellationToken cancellationToken)
+    {
+        var exposure = await _catchLocationPrivacyService.GetExposureAsync(
+            catchRecord,
+            _currentUser.UserId,
+            cancellationToken);
+
+        var photographs = new List<CatchPhotographViewDto>(catchRecord.Photographs.Count);
+        foreach (var photograph in catchRecord.Photographs)
+        {
+            photographs.Add(new CatchPhotographViewDto(
+                photograph.Id,
+                photograph.ContentType,
+                await CreatePhotographUrlAsync(
+                    catchRecord.UserId,
+                    catchRecord.Id,
+                    photograph.Id,
+                    cancellationToken)));
+        }
+
+        return new CatchViewDto(
+            catchRecord.Id,
+            catchRecord.UserId,
+            catchRecord.CaughtOn,
+            exposure)
+        {
+            AnglerUserId = catchRecord.AnglerUserId,
+            RecordedByUserId = catchRecord.RecordedByUserId,
+            SpeciesName = catchRecord.SpeciesName,
+            Weight = catchRecord.Weight,
+            Length = catchRecord.Length,
+            Method = catchRecord.Method,
+            BaitOrLure = catchRecord.BaitOrLure,
+            Notes = catchRecord.Notes,
+            Photographs = photographs
+        };
+    }
+
+    private async Task<string?> CreatePhotographUrlAsync(
+        Guid userId,
+        Guid catchId,
+        Guid photographId,
+        CancellationToken cancellationToken)
+    {
+        if (!_objectStorage.IsConfigured)
+        {
+            return null;
+        }
+
+        var objectKey = CatchPhotographObjectKey.Build(userId, catchId, photographId);
+        var url = await _objectStorage.CreateDownloadUrlAsync(objectKey, DownloadLifetime, cancellationToken);
+        return url.ToString();
     }
 
     private async Task<Result<Catch>> LoadForCurrentUserAsync(Guid catchId, CancellationToken cancellationToken)

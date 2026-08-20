@@ -111,4 +111,76 @@ public class WhenTestingGetView : BaseCatchServiceTest
             ownerUserId,
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldBuildPhotographDownloadUrlsWhenObjectStorageIsConfigured()
+    {
+        // Arrange
+        var photographId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var catchRecord = new Catch
+        {
+            Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            UserId = CurrentUserId,
+            AnglerUserId = CurrentUserId,
+            RecordedByUserId = CurrentUserId,
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            Photographs = [new CatchPhotograph { Id = photographId, CatchId = Guid.Empty, ContentType = "image/jpeg" }]
+        };
+        MockCatchRepository
+            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(catchRecord));
+        MockObjectStorage.IsConfigured.Returns(true);
+        MockObjectStorage
+            .CreateDownloadUrlAsync(
+                $"catches/{CurrentUserId:D}/{catchRecord.Id:D}/{photographId:D}",
+                Arg.Any<TimeSpan>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new Uri("https://r2.test/signed-download"));
+
+        // Act
+        var result = await Sut.GetViewAsync(
+            new GetCatchArgs { CatchId = catchRecord.Id },
+            CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Photographs.Should().ContainSingle(photograph =>
+            photograph.Id == photographId
+            && photograph.ContentType == "image/jpeg"
+            && photograph.Url == "https://r2.test/signed-download");
+    }
+
+    [Fact]
+    public async Task ItShouldOmitPhotographUrlsWhenObjectStorageIsNotConfigured()
+    {
+        // Arrange
+        var photographId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var catchRecord = new Catch
+        {
+            Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            UserId = CurrentUserId,
+            AnglerUserId = CurrentUserId,
+            RecordedByUserId = CurrentUserId,
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            Photographs = [new CatchPhotograph { Id = photographId, CatchId = Guid.Empty, ContentType = "image/jpeg" }]
+        };
+        MockCatchRepository
+            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(catchRecord));
+        MockObjectStorage.IsConfigured.Returns(false);
+
+        // Act
+        var result = await Sut.GetViewAsync(
+            new GetCatchArgs { CatchId = catchRecord.Id },
+            CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Photographs.Should().ContainSingle(photograph =>
+            photograph.Id == photographId && photograph.Url == null);
+        await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
+            Arg.Any<string>(),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+    }
 }

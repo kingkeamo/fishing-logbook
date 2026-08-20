@@ -56,15 +56,23 @@ public partial class CatchCard : ComponentBase
     protected override void OnParametersSet()
     {
         var photograph = Catch.Photographs.FirstOrDefault();
-        if (photograph?.Bytes is not { Length: > 0 })
+        if (photograph?.Bytes is { Length: > 0 })
+        {
+            if (_thumbnailPhotographId != photograph.Id || _thumbnailUrl is null)
+            {
+                _thumbnailPhotographId = photograph.Id;
+                _thumbnailUrl = ToDataUrl(photograph);
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(photograph?.RemoteUrl))
+        {
+            _thumbnailPhotographId = photograph.Id;
+            _thumbnailUrl = photograph.RemoteUrl;
+        }
+        else
         {
             _thumbnailUrl = null;
             _thumbnailPhotographId = Guid.Empty;
-        }
-        else if (_thumbnailPhotographId != photograph.Id || _thumbnailUrl is null)
-        {
-            _thumbnailPhotographId = photograph.Id;
-            _thumbnailUrl = ToDataUrl(photograph);
         }
 
         if (!HasMultiplePhotographs)
@@ -81,9 +89,17 @@ public partial class CatchCard : ComponentBase
         }
 
         _carouselPhotographIds = currentIds;
-        _carouselPhotoUrls = [.. Catch.Photographs
-            .Where(item => item.Bytes is { Length: > 0 })
-            .Select(ToDataUrl)];
+        _carouselPhotoUrls = [.. Catch.Photographs.Select(PhotoSrc).OfType<string>()];
+    }
+
+    private static string? PhotoSrc(CatchPhotographModel photograph)
+    {
+        if (photograph.Bytes is { Length: > 0 })
+        {
+            return ToDataUrl(photograph);
+        }
+
+        return string.IsNullOrWhiteSpace(photograph.RemoteUrl) ? null : photograph.RemoteUrl;
     }
 
     private static string ToDataUrl(CatchPhotographModel photograph)
