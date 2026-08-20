@@ -320,61 +320,64 @@ public sealed class CatchRepository : ICatchRepository
         Guid userId,
         CancellationToken cancellationToken)
     {
-        const string catchSql = """
+        const string sql = """
             SELECT
-                "Id",
-                "UserId",
-                COALESCE("AnglerUserId", "UserId") AS "AnglerUserId",
-                COALESCE("RecordedByUserId", "UserId") AS "RecordedByUserId",
-                "CaughtOn",
-                "SpeciesName",
-                "Weight",
-                "Length",
-                "Method",
-                "BaitOrLure",
-                "Notes",
-                "Latitude",
-                "Longitude",
-                "LocationAccuracyMetres",
-                "LocationCapturedOn",
-                "LocationSource",
-                "LocationVisibility",
-                "LocationConsentVersion"
-            FROM "Catch"
-            WHERE "UserId" = @UserId
-            ORDER BY "CaughtOn" DESC;
+                c."Id",
+                c."UserId",
+                COALESCE(c."AnglerUserId", c."UserId") AS "AnglerUserId",
+                COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
+                c."CaughtOn",
+                c."SpeciesName",
+                c."Weight",
+                c."Length",
+                c."Method",
+                c."BaitOrLure",
+                c."Notes",
+                c."Latitude",
+                c."Longitude",
+                c."LocationAccuracyMetres",
+                c."LocationCapturedOn",
+                c."LocationSource",
+                c."LocationVisibility",
+                c."LocationConsentVersion",
+                p."Id",
+                p."CatchId",
+                p."ContentType"
+            FROM "Catch" c
+            LEFT JOIN "CatchPhotograph" p ON p."CatchId" = c."Id"
+            WHERE c."UserId" = @UserId
+            ORDER BY c."CaughtOn" DESC, p."Id";
             """;
-        var catchRows = (await connection.QueryAsync<CatchPersistenceRow>(new CommandDefinition(
-            catchSql,
-            new { UserId = userId },
-            cancellationToken: cancellationToken))).ToList();
-        if (catchRows.Count == 0)
+
+        var catchesById = new Dictionary<Guid, CatchPersistenceRow>();
+        var photographsById = new Dictionary<Guid, List<CatchPhotograph>>();
+        var order = new List<Guid>();
+        await connection.QueryAsync<CatchPersistenceRow, CatchPhotograph, CatchPersistenceRow>(
+            new CommandDefinition(sql, new { UserId = userId }, cancellationToken: cancellationToken),
+            (catchRow, photograph) =>
+            {
+                if (!catchesById.ContainsKey(catchRow.Id))
+                {
+                    catchesById[catchRow.Id] = catchRow;
+                    photographsById[catchRow.Id] = [];
+                    order.Add(catchRow.Id);
+                }
+
+                if (photograph is not null)
+                {
+                    photographsById[catchRow.Id].Add(photograph);
+                }
+
+                return catchRow;
+            },
+            splitOn: "Id");
+
+        foreach (var id in order)
         {
-            return [];
+            catchesById[id].Photographs = photographsById[id];
         }
 
-        const string photographSql = """
-            SELECT "Id", "CatchId", "ContentType"
-            FROM "CatchPhotograph"
-            WHERE "CatchId" = ANY(@CatchIds)
-            ORDER BY "CatchId", "Id";
-            """;
-        var photographs = await connection.QueryAsync<CatchPhotograph>(new CommandDefinition(
-            photographSql,
-            new { CatchIds = catchRows.Select(row => row.Id).ToArray() },
-            cancellationToken: cancellationToken));
-        var photographsByCatchId = photographs
-            .GroupBy(photograph => photograph.CatchId)
-            .ToDictionary(group => group.Key, group => (IReadOnlyList<CatchPhotograph>)group.ToArray());
-
-        foreach (var row in catchRows)
-        {
-            row.Photographs = photographsByCatchId.TryGetValue(row.Id, out var rowPhotographs)
-                ? rowPhotographs
-                : [];
-        }
-
-        return catchRows.Select(row => _mapper.Map<Catch>(row)).ToArray();
+        return order.Select(id => _mapper.Map<Catch>(catchesById[id])).ToArray();
     }
 
     private static CatchPersistenceParameters ToParameters(Catch catchRecord)
