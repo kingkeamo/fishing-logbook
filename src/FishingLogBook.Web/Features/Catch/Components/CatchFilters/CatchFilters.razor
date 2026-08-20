@@ -1,0 +1,127 @@
+@namespace FishingLogBook.Web.Features.Catch.Components.CatchFilters
+
+<div class="catch-filters">
+    <MudTextField T="string"
+                  Value="@Filters.SearchTerm"
+                  ValueChanged="OnSearchChanged"
+                  Placeholder="@Loc["Catch_Search"]"
+                  aria-label="@Loc["Catch_Search"]"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true"
+                  Clearable="true"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Class="catch-filters-search"
+                  id="catch-search" />
+
+    <div class="catch-filters-quick-row" id="catch-quick-filters">
+        <MudChip T="string"
+                 Color="@(Filters.Method is null ? Color.Primary : Color.Default)"
+                 Variant="@(Filters.Method is null ? Variant.Filled : Variant.Outlined)"
+                 OnClick="@(() => SelectMethod(null))"
+                 id="catch-filter-method-all">
+            @Loc["Catch_FilterAll"]
+        </MudChip>
+        @foreach (var method in MethodOptions)
+        {
+            var selected = string.Equals(Filters.Method, method, StringComparison.OrdinalIgnoreCase);
+            <MudChip T="string"
+                     Color="@(selected ? Color.Primary : Color.Default)"
+                     Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                     OnClick="@(() => SelectMethod(method))"
+                     id="@($"catch-filter-method-{method}")">
+                @method
+            </MudChip>
+        }
+
+        <MudMenu>
+            <ActivatorContent>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.FilterList"
+                           OnClick="@context.ToggleAsync"
+                           id="catch-filters-button">
+                    @Loc["Catch_Filters"]
+                </MudButton>
+            </ActivatorContent>
+            <ChildContent>
+                <div class="catch-filters-menu-content">
+                    @if (SpeciesOptions.Count > 0)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_FilterSpecies"]</MudText>
+                        <MudStack Row="true" Spacing="1" Class="flex-wrap catch-filters-menu-chips" id="catch-filter-species-chips">
+                            @foreach (var species in SpeciesOptions)
+                            {
+                                var selected = string.Equals(Filters.Species, species, StringComparison.OrdinalIgnoreCase);
+                                <MudChip T="string"
+                                         Color="@(selected ? Color.Primary : Color.Default)"
+                                         Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                         OnClick="@(() => SelectSpecies(species))"
+                                         id="@($"catch-filter-species-{species}")">
+                                    @species
+                                </MudChip>
+                            }
+                        </MudStack>
+                    }
+
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_FilterDateRange"]</MudText>
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap catch-filters-menu-chips" id="catch-filter-date-chips">
+                        @foreach (var dateRange in DateRangeOptions)
+                        {
+                            var selected = Filters.DateRange == dateRange;
+                            <MudChip T="string"
+                                     Color="@(selected ? Color.Primary : Color.Default)"
+                                     Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                     OnClick="@(() => SelectDateRange(dateRange))"
+                                     id="@($"catch-filter-date-{dateRange}")">
+                                @DateRangeLabel(dateRange)
+                            </MudChip>
+                        }
+                    </MudStack>
+
+                    <MudButton Variant="Variant.Text"
+                               Size="Size.Small"
+                               OnClick="ClearAll"
+                               id="catch-filters-menu-clear-all">
+                        @Loc["Catch_ClearFilters"]
+                    </MudButton>
+                </div>
+            </ChildContent>
+        </MudMenu>
+    </div>
+
+    @if (Filters.HasActiveFilters)
+    {
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="flex-wrap catch-filters-active" id="catch-active-filters">
+            @if (!string.IsNullOrWhiteSpace(Filters.SearchTerm))
+            {
+                <MudChip T="string" Color="Color.Secondary" OnClose="@(_ => ClearSearch())" id="catch-active-filter-search">
+                    @Filters.SearchTerm
+                </MudChip>
+            }
+            @if (Filters.Method is not null)
+            {
+                <MudChip T="string" Color="Color.Secondary" OnClose="@(_ => ClearMethod())" id="catch-active-filter-method">
+                    @Filters.Method
+                </MudChip>
+            }
+            @if (Filters.Species is not null)
+            {
+                <MudChip T="string" Color="Color.Secondary" OnClose="@(_ => ClearSpecies())" id="catch-active-filter-species">
+                    @Filters.Species
+                </MudChip>
+            }
+            @if (Filters.DateRange != CatchDateRangeFilter.All)
+            {
+                <MudChip T="string" Color="Color.Secondary" OnClose="@(_ => ClearDateRange())" id="catch-active-filter-date">
+                    @DateRangeLabel(Filters.DateRange)
+                </MudChip>
+            }
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearAll" id="catch-clear-all-filters">
+                @Loc["Catch_ClearFilters"]
+            </MudButton>
+        </MudStack>
+    }
+</div>

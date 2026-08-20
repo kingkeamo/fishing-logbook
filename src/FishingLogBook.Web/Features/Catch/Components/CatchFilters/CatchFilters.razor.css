@@ -1,0 +1,35 @@
+.catch-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.catch-filters-search {
+    max-width: 28rem;
+}
+
+.catch-filters-quick-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+}
+
+.catch-filters-menu-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    max-width: 20rem;
+}
+
+.catch-filters-menu-chips {
+    max-width: 100%;
+}
+
+.catch-filters-active {
+    padding-top: 0.125rem;
+}
