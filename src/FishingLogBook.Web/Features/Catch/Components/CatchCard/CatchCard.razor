@@ -1,0 +1,104 @@
+@namespace FishingLogBook.Web.Features.Catch.Components.CatchCard
+
+<MudCard Class="catch-card" id="@($"catch-card-{Catch.Id:D}")">
+    <div class="catch-card-menu">
+        <MudMenu>
+            <ActivatorContent>
+                <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
+                               aria-label="@Loc["Catch_MoreActions"]"
+                               OnClick="@context.ToggleAsync"
+                               id="@($"catch-card-menu-{Catch.Id:D}")" />
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                             Href="@EditHref"
+                             id="@($"catch-card-edit-{Catch.Id:D}")">
+                    @Loc["Catch_Edit"]
+                </MudMenuItem>
+                @if (Catch.Location is not null)
+                {
+                    <MudMenuItem Icon="@Icons.Material.Filled.LocationOn"
+                                 OnClick="LocationPrivacyAsync"
+                                 id="@($"catch-card-location-privacy-{Catch.Id:D}")">
+                        @Loc["Catch_ManageLocationPrivacy"]
+                    </MudMenuItem>
+                }
+            </ChildContent>
+        </MudMenu>
+    </div>
+
+    <a class="catch-card-body" href="@EditHref" id="@($"catch-card-link-{Catch.Id:D}")">
+        <div class="catch-card-media">
+            @if (_thumbnailUrl is not null)
+            {
+                <MudImage Src="@_thumbnailUrl"
+                          Alt="@Loc["Catch_PhotographAlt"]"
+                          ObjectFit="ObjectFit.Cover"
+                          Fluid="true"
+                          Class="catch-card-photo"
+                          id="@($"catch-card-photo-{Catch.Id:D}")" />
+            }
+            else
+            {
+                <div class="catch-card-photo-placeholder"
+                     role="img"
+                     aria-label="@Loc["Catch_NoPhotograph"]"
+                     id="@($"catch-card-no-photo-{Catch.Id:D}")">
+                    <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" aria-hidden="true" />
+                </div>
+            }
+        </div>
+        <div class="catch-card-info">
+            <MudText Typo="Typo.subtitle1" Class="catch-card-species" id="@($"catch-card-species-{Catch.Id:D}")">
+                @SpeciesLabel
+            </MudText>
+            <MudText Typo="Typo.caption" Class="catch-card-time" id="@($"catch-card-time-{Catch.Id:D}")">
+                @DateTimeLabel
+            </MudText>
+            @if (HasMethod)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-method" id="@($"catch-card-method-{Catch.Id:D}")">
+                    @Catch.Method
+                </MudText>
+            }
+            @if (MeasurementsLabel is not null)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-measurements" id="@($"catch-card-measurements-{Catch.Id:D}")">
+                    @MeasurementsLabel
+                </MudText>
+            }
+            @if (ProvenanceLabel is not null)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-provenance" id="@($"catch-card-provenance-{Catch.Id:D}")">
+                    @ProvenanceLabel
+                </MudText>
+            }
+        </div>
+    </a>
+
+    @if (IsSynchronising)
+    {
+        <div class="catch-card-sync-quiet" id="@($"catch-card-synchronising-{Catch.Id:D}")">
+            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Material.Filled.Sync" Size="Size.Small" aria-hidden="true" />
+                <MudText Typo="Typo.caption">@Loc["SyncStatus_Synchronising"]</MudText>
+            </MudStack>
+        </div>
+    }
+    else if (ShowsAttentionBanner)
+    {
+        <MudCardActions Class="catch-card-attention" id="@($"catch-card-attention-{Catch.Id:D}")">
+            <MudAlert Severity="AttentionSeverity" Dense="true" Class="catch-card-attention-alert">
+                <MudText Typo="Typo.caption" id="@($"catch-sync-reassurance-{Catch.Id:D}")">@AttentionMessage</MudText>
+            </MudAlert>
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       Disabled="IsRetrying"
+                       OnClick="RetryAsync"
+                       id="@($"catch-sync-retry-{Catch.Id:D}")">
+                @RetryLabel
+            </MudButton>
+        </MudCardActions>
+    }
+</MudCard>
