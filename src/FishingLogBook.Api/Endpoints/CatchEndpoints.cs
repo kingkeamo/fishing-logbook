@@ -21,6 +21,14 @@ public static class CatchEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapGet("/api/catches", ListMyAsync)
+            .WithName("ListMyCatches")
+            .WithTags("Catches")
+            .RequireAuthorization()
+            .Produces<IReadOnlyList<CatchViewDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         endpoints.MapGet("/api/catches/{catchId:guid}", GetAsync)
             .WithName("GetCatch")
             .WithTags("Catches")
@@ -103,6 +111,29 @@ public static class CatchEndpoints
         }
 
         return Results.Ok(response.Catch);
+    }
+
+    private static async Task<IResult> ListMyAsync(
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new GetMyCatchesQuery { UserId = currentUser.UserId },
+            cancellationToken);
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Catches);
     }
 
     private static async Task<IResult> GetAsync(

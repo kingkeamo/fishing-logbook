@@ -56,7 +56,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return Result.Fail<PhotographUploadDto>(new CatchPhotographNotFoundError());
         }
 
-        var objectKey = ObjectKey(_currentUser.UserId, args.CatchId, args.Request.PhotographId);
+        var objectKey = CatchPhotographObjectKey.Build(_currentUser.UserId, args.CatchId, args.Request.PhotographId);
         var uploadUrl = await _objectStorage.CreateUploadUrlAsync(
             objectKey,
             args.Request.ContentType,
@@ -86,7 +86,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return Result.Fail(new CatchPhotographNotFoundError());
         }
 
-        var expected = ObjectKey(_currentUser.UserId, args.CatchId, args.PhotographId);
+        var expected = CatchPhotographObjectKey.Build(_currentUser.UserId, args.CatchId, args.PhotographId);
         return string.Equals(args.ObjectKey, expected, StringComparison.Ordinal)
             ? Result.Ok()
             : Result.Fail(new CatchPhotographObjectKeyMismatchError());
@@ -118,10 +118,5 @@ public sealed class CatchPhotographService : ICatchPhotographService
         return loaded.Value is null
             ? Result.Fail<Domain.Catches.CatchPhotograph>(new CatchPhotographNotFoundError())
             : Result.Ok(loaded.Value);
-    }
-
-    private static string ObjectKey(Guid userId, Guid catchId, Guid photographId)
-    {
-        return $"catches/{userId:D}/{catchId:D}/{photographId:D}";
     }
 }

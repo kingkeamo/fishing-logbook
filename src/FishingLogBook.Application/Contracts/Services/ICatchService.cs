@@ -10,6 +10,8 @@ public interface ICatchService
 
     Task<Result<CatchViewDto>> GetViewAsync(GetCatchArgs args, CancellationToken cancellationToken);
 
+    Task<Result<IReadOnlyList<CatchViewDto>>> GetMyAsync(GetMyCatchesArgs args, CancellationToken cancellationToken);
+
     Task<Result> UpdateLocationVisibilityAsync(
         UpdateCatchLocationVisibilityArgs args,
         CancellationToken cancellationToken);
