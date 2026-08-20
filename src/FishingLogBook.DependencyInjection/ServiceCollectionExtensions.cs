@@ -15,6 +15,7 @@ using FishingLogBook.Application.Users.Services;
 using FishingLogBook.Domain.Config;
 using FishingLogBook.Infrastructure.Logging;
 using FishingLogBook.Infrastructure.Persistence;
+using FishingLogBook.Infrastructure.Persistence.Repositories;
 using FishingLogBook.Infrastructure.Storage;
 using FluentValidation;
 using Mapster;

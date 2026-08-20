@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Common.Mappings;
-using FishingLogBook.Infrastructure.Persistence;
+using FishingLogBook.Infrastructure.Persistence.Repositories;
 using Mapster;
 using MapsterMapper;
 

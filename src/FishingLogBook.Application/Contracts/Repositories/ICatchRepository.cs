@@ -8,6 +8,8 @@ public interface ICatchRepository
 {
     Task<Result<Catch?>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
+    Task<Result<IReadOnlyList<Catch>>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken);
+
     Task<Result<CatchPhotograph?>> GetPhotographAsync(
         GetCatchPhotographArgs args,
         CancellationToken cancellationToken);

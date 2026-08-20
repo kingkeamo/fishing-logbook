@@ -120,7 +120,7 @@ null). They still must not drop the source column.
 ## Repository pattern (Dapper)
 
 - **Interface:** `FishingLogBook.Application/Contracts/Repositories/I{Entity}Repository.cs`
-- **Implementation:** `FishingLogBook.Infrastructure/Persistence/{Entity}Repository.cs`
+- **Implementation:** `FishingLogBook.Infrastructure/Persistence/Repositories/{Entity}Repository.cs`
 - Inject `IDbConnectionFactory`; open a connection with
   `await _connectionFactory.CreateOpenConnectionAsync(cancellationToken)` inside an
   `await using`.
@@ -186,20 +186,28 @@ Application indication of which User is authenticated. Repositories persist `Use
 API tests mock repositories and must not require live PostgreSQL.
 
 When uniqueness, transactions, or concurrency must be proven against a real database,
-put those tests in `tests/FishingLogBook.Infrastructure.Tests/Integration/`:
+put those tests in `tests/FishingLogBook.Infrastructure.Tests/Repositories/`:
 
 ```text
 FishingLogBook.Infrastructure.Tests/
     {Sut}Tests/                         → unit tests (no live database)
-    Integration/
+    Repositories/                       → live-database tests (Testcontainers)
         TestSupport/
             PostgresFixture.cs
-        {Feature}/
+        Repositories/
             {Repository}Tests/
+        Migrations/
+            SchemaTests/
+        NpgsqlConnectionFactoryTests/
 ```
 
-Example: `Integration/Users/UserIdentityRepositoryTests/`. Use the word **Integration**,
-not Sandbox.
+`Repositories/` is the live-database category (parallel to `Logging/`, `Storage/`, and
+other config-test groupings at the project root); `Repositories/Repositories/` is the
+subfolder specifically for `*Repository` test suites, alongside sibling live-DB areas
+(`Migrations/SchemaTests/`, `NpgsqlConnectionFactoryTests/`) that also need Postgres but
+are not themselves repositories. Example:
+`Repositories/Repositories/UserIdentityRepositoryTests/`. Use the word **Repositories**,
+not Integration or Sandbox.
 
 These tests run in normal GitHub Actions CI via Testcontainers PostgreSQL on the
 hosted Ubuntu runner. They do **not** use Neon, a shared CI database, or database

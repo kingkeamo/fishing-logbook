@@ -186,6 +186,25 @@ Layouts/MainLayout/
   referenced as `FishingLogBook.Web.styles.css` in `index.html`. Global styles live in
   `wwwroot/css/app.css`.
 
+## Markup composition (mandatory)
+
+Do **not** share or de-duplicate markup within a `.razor` file by declaring an inline
+`RenderFragment` (`@{ RenderFragment x = @<div>...</div>; }`). It reads worse than the
+duplication it avoids — the markup is buried inside a code block, split from the rest of
+the template, and invoked by name (`@x`) rather than appearing where it renders.
+
+Write markup inline, directly where it appears. If the same block is genuinely needed in
+more than one place, or a single file's markup has grown too large to read as one piece,
+extract it into its own child component (full three-file pattern above:
+`.razor` / `.razor.cs` / `.razor.css`) and pass data in via `[Parameter]`, not a shared
+`RenderFragment` variable. A real component is testable and composable in a way an inline
+fragment is not.
+
+Reach for this split when a `.razor` file is doing more than one visually distinct job
+(for example: a card's photo/media area versus its text/detail area) — that is a sign it
+should already be two components, not one file with an inline fragment stitching two
+halves together.
+
 ## Production C# role suffixes (mandatory)
 
 Class names must make the architectural role obvious in search, stack traces, DI, and

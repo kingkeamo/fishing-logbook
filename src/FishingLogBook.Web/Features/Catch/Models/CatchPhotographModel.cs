@@ -8,4 +8,5 @@ public sealed record CatchPhotographModel(
     string ContentType,
     byte[]? Bytes = null,
     SyncStatus SyncStatus = SyncStatus.SavedLocally,
-    string? ObjectKey = null);
+    string? ObjectKey = null,
+    string? RemoteUrl = null);

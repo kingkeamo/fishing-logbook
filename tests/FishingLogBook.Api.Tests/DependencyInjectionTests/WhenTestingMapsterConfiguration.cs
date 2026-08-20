@@ -5,7 +5,7 @@ using AwesomeAssertions;
 using FishingLogBook.Application.Catches.Services;
 using FishingLogBook.Application.Common.Mappings;
 using FishingLogBook.DependencyInjection;
-using FishingLogBook.Infrastructure.Persistence;
+using FishingLogBook.Infrastructure.Persistence.Repositories;
 using Mapster;
 using MapsterMapper;
 using Microsoft.Extensions.Configuration;

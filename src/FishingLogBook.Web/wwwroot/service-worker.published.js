@@ -7,7 +7,16 @@
 self.importScripts('./service-worker-assets.js');
 self.addEventListener('install', event => event.waitUntil(onInstall(event)));
 self.addEventListener('activate', event => event.waitUntil(onActivate(event)));
-self.addEventListener('fetch', event => event.respondWith(onFetch(event)));
+// Never intercept cross-origin requests (e.g. presigned R2 photograph URLs). Re-dispatching
+// them via fetch(event.request) from inside the worker changes request semantics enough
+// that R2 rejects the re-issued request even though the same URL loads fine directly (FLB#74).
+self.addEventListener('fetch', event => {
+    if (new URL(event.request.url).origin !== self.location.origin) {
+        return;
+    }
+
+    event.respondWith(onFetch(event));
+});
 self.addEventListener('error', event => notifyServiceWorkerError(event.message || 'error'));
 self.addEventListener('unhandledrejection', event => notifyServiceWorkerError(String(event.reason || 'unhandledrejection')));
 

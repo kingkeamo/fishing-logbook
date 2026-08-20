@@ -26,6 +26,14 @@ public sealed class CatchClient : ICatchClient
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<IReadOnlyList<CatchViewDto>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        var catches = await _apiClient.GetFromJsonAsync<IReadOnlyList<CatchViewDto>>(
+            "api/catches",
+            cancellationToken);
+        return catches ?? [];
+    }
+
     public async Task<PhotographUploadDto> CreatePhotographUploadAsync(
         Guid catchId,
         PhotographUploadRequestDto request,

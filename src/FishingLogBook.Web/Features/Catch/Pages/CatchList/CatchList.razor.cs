@@ -1,8 +1,10 @@
 using System.Globalization;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -39,6 +41,9 @@ public partial class CatchList : ComponentBase, IDisposable
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
+
+    [Inject]
+    private ICatchClient CatchClient { get; set; } = default!;
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
@@ -81,7 +86,9 @@ public partial class CatchList : ComponentBase, IDisposable
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(cancellationToken);
             _currentUserId = ownerUserId;
             var saved = await CatchStore.GetAllAsync(ownerUserId, cancellationToken);
+            var serverOnly = await LoadServerOnlyCatchesAsync(saved, cancellationToken);
             _allCatches = saved
+                .Concat(serverOnly)
                 .OrderByDescending(catchRecord => catchRecord.CaughtOn)
                 .ToArray();
             var preferences = await preferencesTask;
@@ -107,6 +114,55 @@ public partial class CatchList : ComponentBase, IDisposable
         {
             _isLoading = false;
         }
+    }
+
+    private async Task<IReadOnlyList<CatchModel>> LoadServerOnlyCatchesAsync(
+        IReadOnlyList<CatchModel> local,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<CatchViewDto> remote;
+        try
+        {
+            remote = await CatchClient.GetAllAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("catch logbook server fetch", exception, CancellationToken.None);
+            return [];
+        }
+
+        var localIds = local.Select(catchRecord => catchRecord.Id).ToHashSet();
+        return [.. remote
+            .Where(catchRecord => !localIds.Contains(catchRecord.Id))
+            .Select(ToCatchModel)];
+    }
+
+    private static CatchModel ToCatchModel(CatchViewDto dto)
+    {
+        return new CatchModel(
+            dto.Id,
+            dto.CaughtOn,
+            [.. dto.Photographs.Select(photograph => new CatchPhotographModel(
+                photograph.Id,
+                dto.Id,
+                photograph.ContentType,
+                RemoteUrl: photograph.Url))],
+            SpeciesName: dto.SpeciesName,
+            Location: null,
+            UserId: dto.UserId,
+            SyncStatus: SyncStatus.Synchronised,
+            MetadataSyncStatus: SyncStatus.Synchronised,
+            AnglerUserId: dto.AnglerUserId,
+            RecordedByUserId: dto.RecordedByUserId,
+            Weight: dto.Weight,
+            Length: dto.Length,
+            Method: dto.Method,
+            BaitOrLure: dto.BaitOrLure,
+            Notes: dto.Notes);
     }
 
     private async Task ComputeLocalTimesAsync(CancellationToken cancellationToken)

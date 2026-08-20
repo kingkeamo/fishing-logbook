@@ -12,10 +12,9 @@ namespace FishingLogBook.Web.Features.Catch.Components.CatchCard;
 
 public partial class CatchCard : ComponentBase
 {
-    private string? _thumbnailUrl;
-    private Guid _thumbnailPhotographId;
-    private IReadOnlyList<Guid> _carouselPhotographIds = [];
-    private IReadOnlyList<string> _carouselPhotoUrls = [];
+    private IReadOnlyList<Guid> _photographIds = [];
+    private IReadOnlyList<string> _photoUrls = [];
+    private int _currentPhotographIndex;
 
     [Parameter, EditorRequired]
     public CatchModel Catch { get; set; } = default!;
@@ -55,40 +54,40 @@ public partial class CatchCard : ComponentBase
 
     protected override void OnParametersSet()
     {
-        var photograph = Catch.Photographs.FirstOrDefault();
-        if (photograph?.Bytes is not { Length: > 0 })
-        {
-            _thumbnailUrl = null;
-            _thumbnailPhotographId = Guid.Empty;
-        }
-        else if (_thumbnailPhotographId != photograph.Id || _thumbnailUrl is null)
-        {
-            _thumbnailPhotographId = photograph.Id;
-            _thumbnailUrl = ToDataUrl(photograph);
-        }
+        var photographs = Catch.Photographs
+            .Where(item =>
+                item.Bytes is { Length: > 0 } ||
+                !string.IsNullOrWhiteSpace(item.RemoteUrl))
+            .ToArray();
 
-        if (!HasMultiplePhotographs)
-        {
-            _carouselPhotographIds = [];
-            _carouselPhotoUrls = [];
-            return;
-        }
+        var currentIds = photographs
+            .Select(item => item.Id)
+            .ToArray();
 
-        var currentIds = Catch.Photographs.Select(item => item.Id).ToArray();
-        if (currentIds.SequenceEqual(_carouselPhotographIds))
+        if (currentIds.SequenceEqual(_photographIds))
         {
             return;
         }
 
-        _carouselPhotographIds = currentIds;
-        _carouselPhotoUrls = [.. Catch.Photographs
-            .Where(item => item.Bytes is { Length: > 0 })
-            .Select(ToDataUrl)];
+        _photographIds = currentIds;
+        _photoUrls = photographs
+            .Select(ToPhotoUrl)
+            .ToArray();
+
+        if (_currentPhotographIndex >= _photoUrls.Count)
+        {
+            _currentPhotographIndex = 0;
+        }
     }
 
-    private static string ToDataUrl(CatchPhotographModel photograph)
+    private static string ToPhotoUrl(CatchPhotographModel photograph)
     {
-        return $"data:{photograph.ContentType};base64,{Convert.ToBase64String(photograph.Bytes!)}";
+        if (photograph.Bytes is { Length: > 0 })
+        {
+            return $"data:{photograph.ContentType};base64,{Convert.ToBase64String(photograph.Bytes)}";
+        }
+
+        return photograph.RemoteUrl!;
     }
 
     private string EditHref => $"/catches/{Catch.Id:D}/edit";
@@ -106,11 +105,53 @@ public partial class CatchCard : ComponentBase
 
     private bool HasNotes => !string.IsNullOrWhiteSpace(Catch.Notes);
 
-    private bool HasMultiplePhotographs => Catch.Photographs.Count > 1;
+    private int PhotographCount => _photoUrls.Count;
 
-    private string PhotographAlt(int index)
+    private bool HasMultiplePhotographs => PhotographCount > 1;
+
+    private int CurrentPhotographNumber =>
+        PhotographCount == 0
+            ? 0
+            : _currentPhotographIndex + 1;
+
+    private string? CurrentPhotoUrl =>
+        PhotographCount == 0
+            ? null
+            : _photoUrls[_currentPhotographIndex];
+
+    private string PhotoElementId =>
+        HasMultiplePhotographs
+            ? $"catch-card-photo-{Catch.Id:D}-{_currentPhotographIndex}"
+            : $"catch-card-photo-{Catch.Id:D}";
+
+    private string CurrentPhotographAlt =>
+        HasMultiplePhotographs
+            ? Loc[
+                "Catch_PhotographAltNumbered",
+                CurrentPhotographNumber,
+                PhotographCount]
+            : Loc["Catch_PhotographAlt"];
+
+    private void PreviousPhotograph()
     {
-        return Loc["Catch_PhotographAltNumbered", index + 1, _carouselPhotoUrls.Count];
+        if (PhotographCount <= 1)
+        {
+            return;
+        }
+
+        _currentPhotographIndex =
+            (_currentPhotographIndex - 1 + PhotographCount) % PhotographCount;
+    }
+
+    private void NextPhotograph()
+    {
+        if (PhotographCount <= 1)
+        {
+            return;
+        }
+
+        _currentPhotographIndex =
+            (_currentPhotographIndex + 1) % PhotographCount;
     }
 
     private string? MeasurementsLabel
@@ -119,9 +160,11 @@ public partial class CatchCard : ComponentBase
         {
             var weight = Measurement.ToDisplayWeight(Catch.Weight, WeightUnit);
             var length = Measurement.ToDisplayLength(Catch.Length, LengthUnit);
+
             var weightText = weight is null
                 ? null
                 : $"{weight.Value.ToString("0.##", CultureInfo.CurrentCulture)} {WeightUnitLabel}";
+
             var lengthText = length is null
                 ? null
                 : $"{length.Value.ToString("0.##", CultureInfo.CurrentCulture)} {LengthUnitLabel}";
@@ -131,7 +174,10 @@ public partial class CatchCard : ComponentBase
                 return null;
             }
 
-            return string.Join(" · ", new[] { weightText, lengthText }.Where(value => value is not null));
+            return string.Join(
+                " · ",
+                new[] { weightText, lengthText }
+                    .Where(value => value is not null));
         }
     }
 
@@ -147,12 +193,14 @@ public partial class CatchCard : ComponentBase
     {
         get
         {
-            if (Catch.AnglerUserId != Guid.Empty && Catch.AnglerUserId != CurrentUserId)
+            if (Catch.AnglerUserId != Guid.Empty &&
+                Catch.AnglerUserId != CurrentUserId)
             {
                 return Loc["Catch_RecordedForAnotherAngler"];
             }
 
-            if (Catch.RecordedByUserId != Guid.Empty && Catch.RecordedByUserId != CurrentUserId)
+            if (Catch.RecordedByUserId != Guid.Empty &&
+                Catch.RecordedByUserId != CurrentUserId)
             {
                 return Loc["Catch_RecordedBySomeoneElse"];
             }
@@ -161,23 +209,31 @@ public partial class CatchCard : ComponentBase
         }
     }
 
-    private bool ShowsAttentionBanner => Catch.SyncStatus is SyncStatus.SavedLocally
-        or SyncStatus.WaitingToSynchronise
-        or SyncStatus.FailedToSynchronise;
+    private bool ShowsAttentionBanner =>
+        Catch.SyncStatus is SyncStatus.SavedLocally
+            or SyncStatus.WaitingToSynchronise
+            or SyncStatus.FailedToSynchronise;
 
-    private bool IsSynchronising => Catch.SyncStatus == SyncStatus.Synchronising;
+    private bool IsSynchronising =>
+        Catch.SyncStatus == SyncStatus.Synchronising;
 
-    private bool HasFailed => Catch.SyncStatus == SyncStatus.FailedToSynchronise;
+    private bool HasFailed =>
+        Catch.SyncStatus == SyncStatus.FailedToSynchronise;
 
-    private Severity AttentionSeverity => HasFailed ? Severity.Warning : Severity.Info;
+    private Severity AttentionSeverity =>
+        HasFailed
+            ? Severity.Warning
+            : Severity.Info;
 
-    private string AttentionMessage => HasFailed
-        ? Loc["Catch_SyncFailureReassurance"]
-        : Loc["Catch_SyncPendingReassurance"];
+    private string AttentionMessage =>
+        HasFailed
+            ? Loc["Catch_SyncFailureReassurance"]
+            : Loc["Catch_SyncPendingReassurance"];
 
-    private string RetryLabel => HasFailed
-        ? Loc["Catch_SyncRetry"]
-        : Loc["Catch_SyncNow"];
+    private string RetryLabel =>
+        HasFailed
+            ? Loc["Catch_SyncRetry"]
+            : Loc["Catch_SyncNow"];
 
     private Task RetryAsync()
     {
