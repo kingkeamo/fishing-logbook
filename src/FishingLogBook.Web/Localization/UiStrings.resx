@@ -189,6 +189,9 @@
   <data name="Catch_PhotographAlt" xml:space="preserve">
     <value>Catch photograph</value>
   </data>
+  <data name="Catch_PhotographAltNumbered" xml:space="preserve">
+    <value>Catch photograph {0} of {1}</value>
+  </data>
   <data name="Catch_PhotoUnsupported" xml:space="preserve">
     <value>This photo format isn't supported. Please use JPEG, PNG or WebP.</value>
   </data>

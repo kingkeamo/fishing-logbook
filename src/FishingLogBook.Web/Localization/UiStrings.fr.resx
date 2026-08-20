@@ -189,6 +189,9 @@
   <data name="Catch_PhotographAlt" xml:space="preserve">
     <value>Photographie de la prise</value>
   </data>
+  <data name="Catch_PhotographAltNumbered" xml:space="preserve">
+    <value>Photographie de la prise {0} sur {1}</value>
+  </data>
   <data name="Catch_PhotoUnsupported" xml:space="preserve">
     <value>Ce format de photo n'est pas pris en charge. Utilisez JPEG, PNG ou WebP.</value>
   </data>
