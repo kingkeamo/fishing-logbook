@@ -22,6 +22,23 @@ public class WhenTestingPublishedWorker : BaseServiceWorkerTest
     }
 
     [Fact]
+    public void ItShouldNotInterceptCrossOriginRequests()
+    {
+        // Arrange
+        var script = ReadWwwRootFile("service-worker.published.js");
+
+        // Act
+        // Assert
+        script.Should().Contain("new URL(event.request.url).origin !== self.location.origin");
+        var fetchListener = script.Substring(
+            script.IndexOf("self.addEventListener('fetch'", StringComparison.Ordinal));
+        fetchListener.IndexOf("origin !== self.location.origin", StringComparison.Ordinal)
+            .Should().BeLessThan(fetchListener.IndexOf("event.respondWith(onFetch(event))", StringComparison.Ordinal));
+        fetchListener.Substring(0, fetchListener.IndexOf("event.respondWith(onFetch(event))", StringComparison.Ordinal))
+            .Should().Contain("return;");
+    }
+
+    [Fact]
     public void ItShouldRebuildRedirectedCachedResponsesBeforeServingThem()
     {
         // Arrange
