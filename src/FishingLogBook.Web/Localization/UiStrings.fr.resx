@@ -517,7 +517,7 @@
     <value>Méthodes de pêche préférées</value>
   </data>
   <data name="Profile_FishingMethod_SetDefault" xml:space="preserve">
-    <value>Définir comme méthode par défaut :</value>
+    <value>Définir comme méthode par défaut :</value>
   </data>
   <data name="Profile_FishingMethod_Default" xml:space="preserve">
     <value>Défaut</value>
@@ -526,7 +526,7 @@
     <value>Espèces préférées pour {0}</value>
   </data>
   <data name="Profile_FishingSpecies_SetDefault" xml:space="preserve">
-    <value>Définir comme espèce par défaut :</value>
+    <value>Définir comme espèce par défaut :</value>
   </data>
   <data name="Profile_FishingSpecies_Remove" xml:space="preserve">
     <value>Retirer {0}</value>
