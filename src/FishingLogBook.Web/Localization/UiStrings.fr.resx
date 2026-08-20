@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="App_Name" xml:space="preserve">
-    <value>FishingLogBook</value>
+    <value>Catch, But Don’t Forget</value>
   </data>
   <data name="SystemStatus_PageTitle" xml:space="preserve">
     <value>FishingLogBook - État du système</value>
@@ -618,4 +618,40 @@
   <data name="Action_TryAgain" xml:space="preserve">
     <value>Réessayer</value>
   </data>
+  <data name="Common_Loading" xml:space="preserve"><value>Chargement</value></data>
+  <data name="Brand_LogoAlt" xml:space="preserve"><value>Catch, But Don’t Forget — Catch · Release · Remember</value></data>
+  <data name="Onboarding_PageTitle" xml:space="preserve"><value>Bienvenue</value></data>
+  <data name="Onboarding_WelcomeStep" xml:space="preserve"><value>Bienvenue</value></data>
+  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Bienvenue dans Catch, But Don’t Forget</value></data>
+  <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Configurez votre carnet de pêche privé, utilisable hors ligne, en une minute environ.</value></data>
+  <data name="Onboarding_PreferencesStep" xml:space="preserve"><value>Préférences</value></data>
+  <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>Choisissez vos unités</value></data>
+  <data name="Onboarding_PreferencesBody" xml:space="preserve"><value>Choisissez les mesures utilisées au bord de l’eau. Vous pourrez les modifier dans votre profil.</value></data>
+  <data name="Onboarding_LocationStep" xml:space="preserve"><value>Position</value></data>
+  <data name="Onboarding_LocationTitle" xml:space="preserve"><value>Souvenez-vous du lieu de capture</value></data>
+  <data name="Onboarding_LocationBody" xml:space="preserve"><value>Autorisez la position uniquement pour enregistrer le lieu d’une prise. Vous pouvez passer cette étape.</value></data>
+  <data name="Onboarding_LocationPrivacy" xml:space="preserve"><value>Les nouvelles positions sont privées par défaut. Le navigateur demande l’autorisation uniquement après votre choix.</value></data>
+  <data name="Onboarding_AllowLocation" xml:space="preserve"><value>Autoriser la position</value></data>
+  <data name="Onboarding_LocationHandled" xml:space="preserve"><value>Votre choix est enregistré et ne bloque pas la configuration.</value></data>
+  <data name="Onboarding_InstallStep" xml:space="preserve"><value>Installer</value></data>
+  <data name="Onboarding_InstallNav" xml:space="preserve"><value>Installer l’application</value></data>
+  <data name="Onboarding_InstallTitle" xml:space="preserve"><value>Gardez votre carnet à portée de main</value></data>
+  <data name="Onboarding_AlreadyInstalled" xml:space="preserve"><value>L’application est déjà installée sur cet appareil.</value></data>
+  <data name="Onboarding_InstallPromptBody" xml:space="preserve"><value>Installez l’application pour un accès rapide et plus fiable au bord de l’eau.</value></data>
+  <data name="Onboarding_InstallAction" xml:space="preserve"><value>Installer l’application</value></data>
+  <data name="Onboarding_InstallIos" xml:space="preserve"><value>Dans Safari, touchez Partager, puis Sur l’écran d’accueil.</value></data>
+  <data name="Onboarding_InstallAndroid" xml:space="preserve"><value>Ouvrez le menu du navigateur et choisissez Installer l’application ou Ajouter à l’écran d’accueil.</value></data>
+  <data name="Onboarding_InstallUnavailable" xml:space="preserve"><value>Vous pouvez continuer et installer plus tard depuis le menu du navigateur.</value></data>
+  <data name="Onboarding_SaveFailed" xml:space="preserve"><value>Enregistrement impossible. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="Onboarding_Finish" xml:space="preserve"><value>Ouvrir mon carnet</value></data>
+  <data name="Action_NotNow" xml:space="preserve"><value>Pas maintenant</value></data>
+  <data name="Action_Back" xml:space="preserve"><value>Retour</value></data>
+  <data name="Action_Next" xml:space="preserve"><value>Suivant</value></data>
+  <data name="Landing_PageTitle" xml:space="preserve"><value>Catch, But Don’t Forget</value></data>
+  <data name="Landing_Tagline" xml:space="preserve"><value>Catch · Release · Remember</value></data>
+  <data name="Landing_Heading" xml:space="preserve"><value>Votre carnet de pêche privé</value></data>
+  <data name="Landing_Introduction" xml:space="preserve"><value>Conservez chaque prise, photo et souvenir au même endroit, où que vous pêchiez.</value></data>
+  <data name="Landing_BenefitRecord" xml:space="preserve"><value>Enregistrez rapidement prises et photos</value></data>
+  <data name="Landing_BenefitPrivate" xml:space="preserve"><value>Vos lieux de pêche restent privés par défaut</value></data>
+  <data name="Landing_BenefitOffline" xml:space="preserve"><value>Conçu pour les zones sans réseau ou hors ligne</value></data>
 </root>

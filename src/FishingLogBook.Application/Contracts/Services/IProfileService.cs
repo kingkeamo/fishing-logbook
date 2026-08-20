@@ -10,6 +10,8 @@ public interface IProfileService
 
     Task<Result<ProfileDto>> UpdateOwnAsync(UpdateProfileArgs args, CancellationToken cancellationToken);
 
+    Task<Result<ProfileDto>> CompleteOnboardingAsync(Guid userId, CancellationToken cancellationToken);
+
     Task<Result<PublicProfileDto>> GetPublicAsync(Guid userId, CancellationToken cancellationToken);
 
     Task<Result<PhotographUploadDto>> CreatePhotographUploadAsync(

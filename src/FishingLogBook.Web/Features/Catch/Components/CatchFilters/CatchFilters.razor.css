@@ -33,3 +33,13 @@
 .catch-filters-active {
     padding-top: 0.125rem;
 }
+
+::deep .mud-chip > .mud-chip-content {
+    line-height: 1;
+}
+
+::deep .mud-chip .mud-chip-close-button {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+}

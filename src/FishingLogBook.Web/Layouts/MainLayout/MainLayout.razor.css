@@ -22,3 +22,9 @@
         padding: 1.5rem 2.5rem 3rem 2.5rem;
     }
 }
+.app-brand-mark {
+    height: 2rem;
+    margin-right: 0.5rem;
+    object-fit: contain;
+    width: 2rem;
+}

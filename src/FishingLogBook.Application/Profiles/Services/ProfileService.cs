@@ -61,6 +61,19 @@ public sealed class ProfileService : IProfileService
         return Result.Ok(await ToOwnDtoAsync(updated.Value, cancellationToken));
     }
 
+    public async Task<Result<ProfileDto>> CompleteOnboardingAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var completed = await _profileRepository.CompleteOnboardingAsync(userId, cancellationToken);
+        if (completed.IsFailed)
+        {
+            return Result.Fail<ProfileDto>(completed.Errors);
+        }
+
+        return Result.Ok(await ToOwnDtoAsync(completed.Value, cancellationToken));
+    }
+
     public async Task<Result<PublicProfileDto>> GetPublicAsync(Guid userId, CancellationToken cancellationToken)
     {
         var exists = await _profileRepository.UserExistsAsync(userId, cancellationToken);
@@ -153,7 +166,8 @@ public sealed class ProfileService : IProfileService
             profile.ShowPreferredFishingMethods,
             profile.ShowPreferredSpecies,
             (WeightUnitEnum)profile.PreferredWeightUnit,
-            (LengthUnitEnum)profile.PreferredLengthUnit);
+            (LengthUnitEnum)profile.PreferredLengthUnit,
+            profile.OnboardingCompletedOn.HasValue);
     }
 
     private async Task<Result<PublicProfileDto>> ToPublicDtoAsync(Profile profile, CancellationToken cancellationToken)
@@ -230,7 +244,8 @@ public sealed class ProfileService : IProfileService
             ShowPhotograph = args.ShowPhotograph,
             ShowHomeRegion = args.ShowHomeRegion,
             ShowPreferredFishingMethods = args.ShowPreferredFishingMethods,
-            ShowPreferredSpecies = args.ShowPreferredSpecies
+            ShowPreferredSpecies = args.ShowPreferredSpecies,
+            OnboardingCompletedOn = current.OnboardingCompletedOn
         };
     }
 

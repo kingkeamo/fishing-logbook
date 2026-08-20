@@ -1,0 +1,38 @@
+@page "/install"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>@Loc["Onboarding_InstallTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false">
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h4">@Loc["Onboarding_InstallTitle"]</MudText>
+            @if (_isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (_state.IsInstalled)
+            {
+                <MudAlert Severity="Severity.Success">@Loc["Onboarding_AlreadyInstalled"]</MudAlert>
+            }
+            else if (_state.CanPrompt)
+            {
+                <MudText>@Loc["Onboarding_InstallPromptBody"]</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="InstallAsync" id="install-app-button">@Loc["Onboarding_InstallAction"]</MudButton>
+            }
+            else if (_state.IsIos)
+            {
+                <MudText id="install-ios-guidance">@Loc["Onboarding_InstallIos"]</MudText>
+            }
+            else if (_state.IsAndroid)
+            {
+                <MudText id="install-android-guidance">@Loc["Onboarding_InstallAndroid"]</MudText>
+            }
+            else
+            {
+                <MudText>@Loc["Onboarding_InstallUnavailable"]</MudText>
+            }
+        </MudStack>
+    </MudPaper>
+</MudContainer>

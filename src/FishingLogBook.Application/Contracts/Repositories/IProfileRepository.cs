@@ -12,6 +12,8 @@ public interface IProfileRepository
 
     Task<Result<Profile>> UpsertAsync(Profile profile, CancellationToken cancellationToken);
 
+    Task<Result<Profile>> CompleteOnboardingAsync(Guid userId, CancellationToken cancellationToken);
+
     Task<Result<Profile>> UpdatePhotographAsync(
         RecordProfilePhotographArgs args,
         CancellationToken cancellationToken);

@@ -15,4 +15,5 @@ public sealed record ProfileDto(
     bool ShowPreferredFishingMethods,
     bool ShowPreferredSpecies,
     WeightUnitEnum PreferredWeightUnit = WeightUnitEnum.Kg,
-    LengthUnitEnum PreferredLengthUnit = LengthUnitEnum.Cm);
+    LengthUnitEnum PreferredLengthUnit = LengthUnitEnum.Cm,
+    bool OnboardingCompleted = false);

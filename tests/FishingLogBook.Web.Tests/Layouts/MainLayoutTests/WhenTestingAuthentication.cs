@@ -20,6 +20,9 @@ public class WhenTestingAuthentication : BaseMainLayoutTest
         // Assert
         cut.Find("#auth-sign-in-button").TextContent.Should().Contain("Sign in");
         cut.FindAll("#auth-sign-out-button").Should().BeEmpty();
+        cut.FindAll("#app-drawer").Should().BeEmpty();
+        cut.FindAll("#app-menu-button").Should().BeEmpty();
+        cut.FindAll("#record-catch-nav-link").Should().BeEmpty();
     }
 
     [Fact]
