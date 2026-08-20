@@ -38,7 +38,7 @@ public class WhenTestingMenu : BaseMainLayoutTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
-        await using var context = CreateContext();
+        await using var context = CreateContext(isAuthenticated: true);
 
         // Act
         var cut = context.Render<MainLayout>();

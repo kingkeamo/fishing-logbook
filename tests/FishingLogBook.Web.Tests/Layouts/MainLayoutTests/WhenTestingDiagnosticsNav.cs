@@ -12,7 +12,7 @@ public class WhenTestingDiagnosticsNav : BaseMainLayoutTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        await using var context = CreateContext();
+        await using var context = CreateContext(isAuthenticated: true);
 
         // Act
         var cut = context.Render<MainLayout>();
@@ -27,7 +27,7 @@ public class WhenTestingDiagnosticsNav : BaseMainLayoutTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
-        await using var context = CreateContext();
+        await using var context = CreateContext(isAuthenticated: true);
 
         // Act
         var cut = context.Render<MainLayout>();
