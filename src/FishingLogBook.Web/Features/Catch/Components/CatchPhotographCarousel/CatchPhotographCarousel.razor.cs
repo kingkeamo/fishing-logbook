@@ -40,21 +40,22 @@ public partial class CatchPhotographCarousel : ComponentBase
                 !string.IsNullOrWhiteSpace(item.RemoteUrl))
             .ToArray();
 
+        var currentPhotographId = CurrentPhotographId;
         var currentIds = photographs
             .Select(item => item.Id)
             .ToArray();
-
-        if (currentIds.SequenceEqual(_photographIds))
-        {
-            return;
-        }
 
         _photographIds = currentIds;
         _photoUrls = photographs
             .Select(ToPhotoUrl)
             .ToArray();
 
-        if (_currentPhotographIndex >= _photoUrls.Count)
+        if (currentPhotographId is { } photographId)
+        {
+            var retainedIndex = Array.IndexOf(currentIds, photographId);
+            _currentPhotographIndex = retainedIndex >= 0 ? retainedIndex : 0;
+        }
+        else if (_currentPhotographIndex >= _photoUrls.Count)
         {
             _currentPhotographIndex = 0;
         }

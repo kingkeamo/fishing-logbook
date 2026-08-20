@@ -95,6 +95,54 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
     }
 
     [Fact]
+    public async Task ItShouldRefreshThePhotographWhenContentChangesWithoutAnIdentityChange()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var photographId = Guid.NewGuid();
+        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+            .Add(carousel => carousel.Photographs,
+            [
+                new CatchPhotographCarouselItemModel(
+                    photographId,
+                    "image/jpeg",
+                    RemoteUrl: "https://r2.test/first-url")
+            ])
+            .Add(carousel => carousel.IdPrefix, "carousel"));
+
+        // Act
+        cut.Render(parameters => parameters
+            .Add(carousel => carousel.Photographs,
+            [
+                new CatchPhotographCarouselItemModel(
+                    photographId,
+                    "image/jpeg",
+                    RemoteUrl: "https://r2.test/refreshed-url")
+            ])
+            .Add(carousel => carousel.IdPrefix, "carousel"));
+
+        // Assert
+        cut.Find("#carousel-photo").GetAttribute("src").Should().Be("https://r2.test/refreshed-url");
+    }
+
+    [Fact]
+    public async Task ItShouldLocaliseThePhotographPosition()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.French);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+            .Add(carousel => carousel.Photographs, Photographs(2))
+            .Add(carousel => carousel.IdPrefix, "carousel"));
+
+        // Assert
+        cut.Find("#carousel-photo-count").TextContent.Should().Contain("Photo 1 sur 2");
+    }
+
+    [Fact]
     public async Task ItShouldNavigateNextAndPreviousWithWrapAround()
     {
         // Arrange

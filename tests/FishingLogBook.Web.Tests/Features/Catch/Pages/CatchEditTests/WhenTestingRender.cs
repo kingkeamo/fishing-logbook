@@ -214,9 +214,11 @@ public class WhenTestingRender : BaseCatchEditTest
         store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
             .Returns((CatchModel?)null);
         var catchClient = Substitute.For<ICatchClient>();
+        var logging = QuietLogging();
+        var failure = new HttpRequestException("offline");
         catchClient.GetAsync(catchId, Arg.Any<CancellationToken>())
-            .ThrowsAsync(new HttpRequestException("offline"));
-        await using var context = CreateContext(store, catchClient: catchClient);
+            .ThrowsAsync(failure);
+        await using var context = CreateContext(store, logging: logging, catchClient: catchClient);
 
         // Act
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
@@ -225,6 +227,10 @@ public class WhenTestingRender : BaseCatchEditTest
         cut.WaitForAssertion(() =>
             cut.Find("#catch-edit-load-failed").TextContent
                 .Should().Contain("isn't saved on this device yet"));
+        await logging.Received(1).LogErrorAsync(
+            "loading a server catch for local editing",
+            Arg.Is<Exception>(exception => ReferenceEquals(exception, failure)),
+            Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 

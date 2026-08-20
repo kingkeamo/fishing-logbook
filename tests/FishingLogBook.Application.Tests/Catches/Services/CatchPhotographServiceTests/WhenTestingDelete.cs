@@ -38,7 +38,29 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
     }
 
     [Fact]
-    public async Task ItShouldNotDeleteTheDatabaseRowWhenObjectStorageDeletionFails()
+    public async Task ItShouldNotDeleteTheObjectWhenDatabaseDeletionFails()
+    {
+        // Arrange
+        MockCatchRepository.DeletePhotographAsync(
+                Arg.Any<GetCatchPhotographArgs>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Fail("Database unavailable"));
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.DeleteAsync(
+            new DeleteCatchPhotographArgs { CatchId = CatchId, PhotographId = PhotographId },
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        await MockObjectStorage.DidNotReceive().DeleteObjectAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheDatabaseDeletionWhenObjectStorageCleanupFails()
     {
         // Arrange
         MockObjectStorage.DeleteObjectAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -51,18 +73,37 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
             CancellationToken.None);
 
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors.Should().ContainSingle()
-            .Which.Should().BeOfType<CatchPhotographStorageDeleteFailedError>();
-        await MockCatchRepository.DidNotReceive().DeletePhotographAsync(
-            Arg.Any<GetCatchPhotographArgs>(),
+        result.IsSuccess.Should().BeTrue();
+        await MockCatchRepository.Received(1).DeletePhotographAsync(
+            Arg.Is<GetCatchPhotographArgs>(query =>
+                query.UserId == UserId
+                && query.CatchId == CatchId
+                && query.PhotographId == PhotographId),
+            Arg.Any<CancellationToken>());
+        await MockObjectStorage.Received(1).DeleteObjectAsync(
+            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldDeleteTheObjectStorageEntryBeforeTheDatabaseRow()
+    public async Task ItShouldDeleteTheDatabaseRowAndObjectStorageEntry()
     {
         // Arrange
+        var operations = new List<string>();
+        MockCatchRepository.DeletePhotographAsync(
+                Arg.Any<GetCatchPhotographArgs>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                operations.Add("database");
+                return Result.Ok();
+            });
+        MockObjectStorage.DeleteObjectAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                operations.Add("object-storage");
+                return Task.CompletedTask;
+            });
         var sut = CreateSut();
 
         // Act
@@ -72,6 +113,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
+        operations.Should().Equal("database", "object-storage");
         await MockObjectStorage.Received(1).DeleteObjectAsync(
             $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
             Arg.Any<CancellationToken>());

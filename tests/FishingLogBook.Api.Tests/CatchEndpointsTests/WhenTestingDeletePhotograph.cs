@@ -82,7 +82,7 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldReturnServiceUnavailableWhenObjectStorageDeletionFails()
+    public async Task ItShouldReturnNoContentWhenObjectStorageCleanupFails()
     {
         // Arrange
         Reset();
@@ -106,9 +106,11 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
         var response = await client.DeleteAsync($"/api/catches/{catchId:D}/photographs/{photographId:D}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
-        await _factory.CatchRepository.DidNotReceive().DeletePhotographAsync(
-            Arg.Any<GetCatchPhotographArgs>(),
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await _factory.CatchRepository.Received(1).DeletePhotographAsync(
+            Arg.Is<GetCatchPhotographArgs>(query =>
+                query.CatchId == catchId
+                && query.PhotographId == photographId),
             Arg.Any<CancellationToken>());
     }
 
