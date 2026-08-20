@@ -33,4 +33,10 @@
     <ProjectReference Include="..\FishingLogBook.Tests.Common\FishingLogBook.Tests.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Integration\" />
+    <Folder Include="Repositories\" />
+    <Folder Include="Storage\" />
+  </ItemGroup>
+
 </Project>

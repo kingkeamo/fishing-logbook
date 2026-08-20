@@ -43,7 +43,7 @@ different project's test project.
 | `FishingLogBook.Tests.Common` | Shared test builders/fixtures — **no tests** (plain class library) | Domain, Shared |
 | `FishingLogBook.Shared.Tests` | DTO / contract serialisation | Shared, Tests.Common |
 | `FishingLogBook.Application.Tests` | CQRS handlers + FluentValidation validators | Application, Tests.Common |
-| `FishingLogBook.Infrastructure.Tests` | Unit tests at normal SUT/feature paths; live-infrastructure tests under `Integration/{Feature}/` (Testcontainers in CI) | Infrastructure, Tests.Common |
+| `FishingLogBook.Infrastructure.Tests` | Unit tests at normal SUT/feature paths; live-infrastructure tests under `Integration/Repositories/` (Testcontainers in CI) | Infrastructure, Tests.Common |
 | `FishingLogBook.Db.Migrations.Tests` | Migration ordering (`FilenameOnlyScriptComparer`) and engine helpers | Db.Migrations, Tests.Common |
 | `FishingLogBook.Api.Tests` | API endpoints via `WebApplicationFactory<Program>` (repositories mocked — no live DB in CI) | Api, Shared, Application, Tests.Common |
 
@@ -239,7 +239,7 @@ tests/FishingLogBook.Application.Tests/{Feature}/Commands/{Name}CommandValidator
 tests/FishingLogBook.Application.Tests/{Feature}/Queries/{Name}QueryTests/WhenTestingHandle.cs
 tests/FishingLogBook.Application.Tests/{Feature}/Services/{Name}ServiceTests/WhenTestingResolve.cs
 tests/FishingLogBook.Api.Tests/UserEndpointsTests/WhenTestingGetCurrent.cs
-tests/FishingLogBook.Infrastructure.Tests/Integration/Users/UserIdentityRepositoryTests/WhenTestingCreate.cs
+tests/FishingLogBook.Infrastructure.Tests/Integration/Repositories/UserIdentityRepositoryTests/WhenTestingCreate.cs
 ```
 
 ### One folder per SUT
@@ -536,7 +536,7 @@ Normal Infrastructure **unit** tests live at ordinary SUT/feature paths at the
 project root (`{Sut}Tests/`). They do not start Docker or PostgreSQL.
 
 Tests that require real external infrastructure live under
-`Integration/{Feature}/`. Use the word **Integration**, not Sandbox.
+`Integration/Repositories/`. Use the word **Integration**, not Sandbox.
 
 When an issue requires proving uniqueness, transactions, or concurrency, add those
 tests in `FishingLogBook.Infrastructure.Tests/Integration/` against a real
@@ -553,13 +553,13 @@ FishingLogBook.Infrastructure.Tests/
         TestSupport/
             PostgresFixture.cs
             PostgresCollection.cs
-        {Feature}/
+        Repositories/
             {Repository}Tests/
                 Base{Repository}Test.cs
                 WhenTesting{Method}.cs
 ```
 
-Example: `Integration/Users/UserIdentityRepositoryTests/`.
+Example: `Integration/Repositories/UserIdentityRepositoryTests/`.
 
 Postgres fixtures live only under `Integration/TestSupport/`. Do not put live-database
 repository tests next to unit tests at the project root.

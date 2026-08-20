@@ -120,7 +120,7 @@ null). They still must not drop the source column.
 ## Repository pattern (Dapper)
 
 - **Interface:** `FishingLogBook.Application/Contracts/Repositories/I{Entity}Repository.cs`
-- **Implementation:** `FishingLogBook.Infrastructure/Persistence/{Entity}Repository.cs`
+- **Implementation:** `FishingLogBook.Infrastructure/Persistence/Repositories/{Entity}Repository.cs`
 - Inject `IDbConnectionFactory`; open a connection with
   `await _connectionFactory.CreateOpenConnectionAsync(cancellationToken)` inside an
   `await using`.
@@ -194,12 +194,12 @@ FishingLogBook.Infrastructure.Tests/
     Integration/
         TestSupport/
             PostgresFixture.cs
-        {Feature}/
+        Repositories/
             {Repository}Tests/
 ```
 
-Example: `Integration/Users/UserIdentityRepositoryTests/`. Use the word **Integration**,
-not Sandbox.
+Example: `Integration/Repositories/UserIdentityRepositoryTests/`. Use the word
+**Integration**, not Sandbox.
 
 These tests run in normal GitHub Actions CI via Testcontainers PostgreSQL on the
 hosted Ubuntu runner. They do **not** use Neon, a shared CI database, or database

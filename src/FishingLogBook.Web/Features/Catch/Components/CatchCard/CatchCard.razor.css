@@ -15,22 +15,15 @@
     align-items: flex-start;
     gap: 0.875rem;
     padding: 0.875rem 2.5rem 0.875rem 0.875rem;
-    text-decoration: none;
-    color: inherit;
 }
 
-.catch-card-body:hover {
-    background-color: var(--mud-palette-action-default-hover);
-}
-
-.catch-card-body:focus-visible {
-    outline: 2px solid var(--mud-palette-primary);
-    outline-offset: -2px;
+.catch-card-media-block {
+    flex-shrink: 0;
+    width: clamp(5rem, 22vw, 6.5rem);
 }
 
 .catch-card-media {
-    flex-shrink: 0;
-    width: clamp(5rem, 22vw, 6.5rem);
+    width: 100%;
     aspect-ratio: 1 / 1;
     border-radius: 0.5rem;
     overflow: hidden;
@@ -44,6 +37,7 @@
 ::deep .catch-card-photo img {
     width: 100%;
     height: 100%;
+    object-fit: cover;
 }
 
 .catch-card-photo-placeholder {
@@ -56,8 +50,42 @@
     color: var(--mud-palette-text-disabled);
 }
 
-.catch-card-info {
+.catch-card-photo-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 1.75rem;
+    margin-top: 0.125rem;
+}
+
+.catch-card-photo-count {
+    white-space: nowrap;
+    color: var(--mud-palette-text-secondary);
+}
+
+.catch-card-photo-navigation ::deep .mud-icon-button {
+    padding: 0.125rem;
+}
+
+.catch-card-info-link {
     flex: 1;
+    min-width: 0;
+    align-self: stretch;
+    text-decoration: none;
+    color: inherit;
+}
+
+.catch-card-info-link:hover {
+    background-color: var(--mud-palette-action-default-hover);
+}
+
+.catch-card-info-link:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+
+.catch-card-info {
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -86,16 +114,6 @@
     overflow: hidden;
 }
 
-.catch-card-media-carousel {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    border-radius: 0;
-}
-
-::deep .catch-card-carousel {
-    height: 100%;
-}
-
 .catch-card-attention {
     display: flex;
     flex-direction: row;
@@ -113,4 +131,10 @@
 .catch-card-sync-quiet {
     padding: 0 0.875rem 0.75rem 0.875rem;
     color: var(--mud-palette-text-secondary);
+}
+
+@media (min-width: 960px) {
+    .catch-card-body {
+        min-height: 10.5rem;
+    }
 }

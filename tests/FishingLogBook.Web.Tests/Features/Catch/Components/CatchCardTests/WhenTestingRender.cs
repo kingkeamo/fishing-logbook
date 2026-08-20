@@ -320,30 +320,63 @@ public class WhenTestingRender : BaseCatchCardTest
     }
 
     [Fact]
-    public async Task ItShouldMakeAllPhotographsReachableThroughACarouselWhenThereAreMultiple()
+    public async Task ItShouldMakeAllPhotographsReachableWhenThereAreMultiple()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
         var stored = StoredCatch(catchId, photographCount: 3);
+
         await using var context = CreateContext();
+
         var cut = context.Render<CatchCard>(parameters => parameters
             .Add(card => card.Catch, stored)
             .Add(card => card.LocalCaughtOn, LocalToday)
             .Add(card => card.LocalToday, LocalToday));
-        var firstSrc = cut.Find($"#catch-card-photo-{catchId:D}-0").GetAttribute("src");
+
+        var firstSrc = cut
+            .Find($"#catch-card-photo-{catchId:D}-0")
+            .GetAttribute("src");
 
         // Act
-        await cut.Find("[aria-label='Index 2']").ClickAsync();
-        var secondSrc = cut.Find($"#catch-card-photo-{catchId:D}-1").GetAttribute("src");
-        await cut.Find("[aria-label='Index 3']").ClickAsync();
-        var thirdSrc = cut.Find($"#catch-card-photo-{catchId:D}-2").GetAttribute("src");
+        await cut.Find($"#catch-card-photo-next-{catchId:D}").ClickAsync();
+
+        var secondSrc = cut
+            .Find($"#catch-card-photo-{catchId:D}-1")
+            .GetAttribute("src");
+
+        await cut.Find($"#catch-card-photo-next-{catchId:D}").ClickAsync();
+
+        var thirdSrc = cut
+            .Find($"#catch-card-photo-{catchId:D}-2")
+            .GetAttribute("src");
 
         // Assert
-        cut.Find($"#catch-card-carousel-{catchId:D}").Should().NotBeNull();
         firstSrc.Should().NotBe(secondSrc);
         secondSrc.Should().NotBe(thirdSrc);
-        cut.Find($"#catch-card-photo-{catchId:D}-2").GetAttribute("alt").Should().Contain("3 of 3");
+
+        cut.Find($"#catch-card-photo-count-{catchId:D}")
+            .TextContent
+            .Should()
+            .Contain("3 of 3");
+
+        cut.Find($"#catch-card-photo-{catchId:D}-2")
+            .GetAttribute("alt")
+            .Should()
+            .Contain("3 of 3");
+
+        // Act - wrap back to the first photograph
+        await cut.Find($"#catch-card-photo-next-{catchId:D}").ClickAsync();
+
+        // Assert
+        cut.Find($"#catch-card-photo-count-{catchId:D}")
+            .TextContent
+            .Should()
+            .Contain("1 of 3");
+
+        cut.Find($"#catch-card-photo-{catchId:D}-0")
+            .Should()
+            .NotBeNull();
     }
 
     [Fact]

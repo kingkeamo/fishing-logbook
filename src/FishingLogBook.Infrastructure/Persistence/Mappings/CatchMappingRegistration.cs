@@ -1,4 +1,5 @@
 using FishingLogBook.Domain.Catches;
+using FishingLogBook.Infrastructure.Persistence.Repositories;
 using Mapster;
 
 namespace FishingLogBook.Infrastructure.Persistence.Mappings;
