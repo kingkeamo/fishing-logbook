@@ -1,5 +1,47 @@
 @namespace FishingLogBook.Web.Features.Catch.Components.CatchCard
 
+@{
+    RenderFragment infoContent =
+        @<div class="catch-card-info">
+            <MudText Typo="Typo.subtitle1" Class="catch-card-species" id="@($"catch-card-species-{Catch.Id:D}")">
+                @SpeciesLabel
+            </MudText>
+            <MudText Typo="Typo.caption" Class="catch-card-time" id="@($"catch-card-time-{Catch.Id:D}")">
+                @DateTimeLabel
+            </MudText>
+            @if (HasMethod)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-method" id="@($"catch-card-method-{Catch.Id:D}")">
+                    @Catch.Method
+                </MudText>
+            }
+            @if (MeasurementsLabel is not null)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-measurements" id="@($"catch-card-measurements-{Catch.Id:D}")">
+                    @MeasurementsLabel
+                </MudText>
+            }
+            @if (HasBaitOrLure)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-bait" id="@($"catch-card-bait-{Catch.Id:D}")">
+                    @Catch.BaitOrLure
+                </MudText>
+            }
+            @if (HasNotes)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-notes" id="@($"catch-card-notes-{Catch.Id:D}")">
+                    @Catch.Notes
+                </MudText>
+            }
+            @if (ProvenanceLabel is not null)
+            {
+                <MudText Typo="Typo.caption" Class="catch-card-provenance" id="@($"catch-card-provenance-{Catch.Id:D}")">
+                    @ProvenanceLabel
+                </MudText>
+            }
+        </div>;
+}
+
 <MudCard Class="catch-card" id="@($"catch-card-{Catch.Id:D}")">
     <div class="catch-card-menu">
         <MudMenu>
@@ -27,54 +69,60 @@
         </MudMenu>
     </div>
 
-    <a class="catch-card-body" href="@EditHref" id="@($"catch-card-link-{Catch.Id:D}")">
-        <div class="catch-card-media">
-            @if (_thumbnailUrl is not null)
-            {
-                <MudImage Src="@_thumbnailUrl"
-                          Alt="@Loc["Catch_PhotographAlt"]"
-                          ObjectFit="ObjectFit.Cover"
-                          Fluid="true"
-                          Class="catch-card-photo"
-                          id="@($"catch-card-photo-{Catch.Id:D}")" />
-            }
-            else
-            {
-                <div class="catch-card-photo-placeholder"
-                     role="img"
-                     aria-label="@Loc["Catch_NoPhotograph"]"
-                     id="@($"catch-card-no-photo-{Catch.Id:D}")">
-                    <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" aria-hidden="true" />
-                </div>
-            }
+    @if (HasMultiplePhotographs)
+    {
+        <div class="catch-card-media catch-card-media-carousel">
+            <MudCarousel TData="object"
+                         Class="catch-card-carousel"
+                         ShowArrows="true"
+                         ShowBullets="true"
+                         AutoCycle="false"
+                         EnableSwipeGesture="true"
+                         id="@($"catch-card-carousel-{Catch.Id:D}")">
+                @for (var index = 0; index < _carouselPhotoUrls.Count; index++)
+                {
+                    var photoIndex = index;
+                    <MudCarouselItem Transition="Transition.Slide">
+                        <MudImage Src="@_carouselPhotoUrls[photoIndex]"
+                                  Alt="@PhotographAlt(photoIndex)"
+                                  ObjectFit="ObjectFit.Cover"
+                                  Fluid="true"
+                                  Class="catch-card-photo"
+                                  id="@($"catch-card-photo-{Catch.Id:D}-{photoIndex}")" />
+                    </MudCarouselItem>
+                }
+            </MudCarousel>
         </div>
-        <div class="catch-card-info">
-            <MudText Typo="Typo.subtitle1" Class="catch-card-species" id="@($"catch-card-species-{Catch.Id:D}")">
-                @SpeciesLabel
-            </MudText>
-            <MudText Typo="Typo.caption" Class="catch-card-time" id="@($"catch-card-time-{Catch.Id:D}")">
-                @DateTimeLabel
-            </MudText>
-            @if (HasMethod)
-            {
-                <MudText Typo="Typo.caption" Class="catch-card-method" id="@($"catch-card-method-{Catch.Id:D}")">
-                    @Catch.Method
-                </MudText>
-            }
-            @if (MeasurementsLabel is not null)
-            {
-                <MudText Typo="Typo.caption" Class="catch-card-measurements" id="@($"catch-card-measurements-{Catch.Id:D}")">
-                    @MeasurementsLabel
-                </MudText>
-            }
-            @if (ProvenanceLabel is not null)
-            {
-                <MudText Typo="Typo.caption" Class="catch-card-provenance" id="@($"catch-card-provenance-{Catch.Id:D}")">
-                    @ProvenanceLabel
-                </MudText>
-            }
-        </div>
-    </a>
+        <a class="catch-card-body" href="@EditHref" id="@($"catch-card-link-{Catch.Id:D}")">
+            @infoContent
+        </a>
+    }
+    else
+    {
+        <a class="catch-card-body" href="@EditHref" id="@($"catch-card-link-{Catch.Id:D}")">
+            <div class="catch-card-media">
+                @if (_thumbnailUrl is not null)
+                {
+                    <MudImage Src="@_thumbnailUrl"
+                              Alt="@Loc["Catch_PhotographAlt"]"
+                              ObjectFit="ObjectFit.Cover"
+                              Fluid="true"
+                              Class="catch-card-photo"
+                              id="@($"catch-card-photo-{Catch.Id:D}")" />
+                }
+                else
+                {
+                    <div class="catch-card-photo-placeholder"
+                         role="img"
+                         aria-label="@Loc["Catch_NoPhotograph"]"
+                         id="@($"catch-card-no-photo-{Catch.Id:D}")">
+                        <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" aria-hidden="true" />
+                    </div>
+                }
+            </div>
+            @infoContent
+        </a>
+    }
 
     @if (IsSynchronising)
     {
