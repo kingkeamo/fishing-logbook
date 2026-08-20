@@ -38,7 +38,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
     }
 
     [Fact]
-    public async Task ItShouldNotDeleteTheObjectWhenDatabaseDeletionFails()
+    public async Task ItShouldReturnFailureWhenDatabaseDeletionFailsAfterObjectStorageDeletion()
     {
         // Arrange
         MockCatchRepository.DeletePhotographAsync(
@@ -54,13 +54,13 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        await MockObjectStorage.DidNotReceive().DeleteObjectAsync(
-            Arg.Any<string>(),
+        await MockObjectStorage.Received(1).DeleteObjectAsync(
+            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldKeepTheDatabaseDeletionWhenObjectStorageCleanupFails()
+    public async Task ItShouldNotDeleteTheDatabaseRowWhenObjectStorageDeletionFails()
     {
         // Arrange
         MockObjectStorage.DeleteObjectAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -73,12 +73,11 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
             CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        await MockCatchRepository.Received(1).DeletePhotographAsync(
-            Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == UserId
-                && query.CatchId == CatchId
-                && query.PhotographId == PhotographId),
+        result.IsFailed.Should().BeTrue();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().BeOfType<CatchPhotographStorageDeleteFailedError>();
+        await MockCatchRepository.DidNotReceive().DeletePhotographAsync(
+            Arg.Any<GetCatchPhotographArgs>(),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.Received(1).DeleteObjectAsync(
             $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
@@ -113,7 +112,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        operations.Should().Equal("database", "object-storage");
+        operations.Should().Equal("object-storage", "database");
         await MockObjectStorage.Received(1).DeleteObjectAsync(
             $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
             Arg.Any<CancellationToken>());

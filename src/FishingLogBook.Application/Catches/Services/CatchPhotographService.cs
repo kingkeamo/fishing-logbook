@@ -106,19 +106,6 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return photograph.ToResult();
         }
 
-        var deleteResult = await _catchRepository.DeletePhotographAsync(
-            new GetCatchPhotographArgs
-            {
-                UserId = _currentUser.UserId,
-                CatchId = args.CatchId,
-                PhotographId = args.PhotographId
-            },
-            cancellationToken);
-        if (deleteResult.IsFailed)
-        {
-            return deleteResult;
-        }
-
         var objectKey = CatchPhotographObjectKey.Build(_currentUser.UserId, args.CatchId, args.PhotographId);
         try
         {
@@ -131,9 +118,17 @@ public sealed class CatchPhotographService : ICatchPhotographService
                 "Failed to delete object storage photograph {PhotographId} for catch {CatchId}.",
                 args.PhotographId,
                 args.CatchId);
+            return Result.Fail(new CatchPhotographStorageDeleteFailedError());
         }
 
-        return Result.Ok();
+        return await _catchRepository.DeletePhotographAsync(
+            new GetCatchPhotographArgs
+            {
+                UserId = _currentUser.UserId,
+                CatchId = args.CatchId,
+                PhotographId = args.PhotographId
+            },
+            cancellationToken);
     }
 
     private async Task<Result<Domain.Catches.CatchPhotograph>> LoadOwnedPhotographAsync(
