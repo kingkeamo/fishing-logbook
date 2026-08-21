@@ -1,0 +1,84 @@
+@namespace FishingLogBook.Web.Browser.Install
+
+<section class="install-guidance" aria-labelledby="install-guidance-title" id="install-guidance">
+    <MudText Typo="Typo.h5" id="install-guidance-title">@Loc["Install_Title"]</MudText>
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="@Loc["Common_Loading"]" id="install-guidance-loading" />
+    }
+    else if (_state.IsInstalled || _result == InstallResult.Accepted)
+    {
+        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle" id="install-guidance-installed">
+            <MudText Typo="Typo.subtitle1">@Loc["Install_InstalledTitle"]</MudText>
+            <MudText>@(_state.IsWindows ? Loc["Install_InstalledWindows"] : Loc["Install_InstalledBody"])</MudText>
+        </MudAlert>
+    }
+    else
+    {
+        <MudText id="install-guidance-benefit">@Loc["Install_Benefit"]</MudText>
+
+        @if (_result == InstallResult.Dismissed)
+        {
+            <MudAlert Severity="Severity.Info" id="install-guidance-dismissed">@Loc["Install_Dismissed"]</MudAlert>
+        }
+
+        @if (_state.CanPrompt)
+        {
+            <MudText id="install-guidance-native">@Loc["Install_NativeAvailable"]</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.InstallMobile"
+                       OnClick="InstallAsync" Disabled="_isPrompting"
+                       aria-label="@Loc["Install_Action"]" id="install-guidance-action">
+                @Loc["Install_Action"]
+            </MudButton>
+        }
+
+        @if (_state.IsAndroid)
+        {
+            <MudText Typo="Typo.subtitle1" id="install-guidance-android-heading">@Loc["Install_AndroidHeading"]</MudText>
+            <MudText id="install-guidance-android-alternative">@Loc["Install_AndroidAlternative"]</MudText>
+            <ol class="install-steps" id="install-guidance-android-steps">
+                <li>@Loc["Install_AndroidStep1"]</li>
+                <li>@Loc["Install_AndroidStep2"]</li>
+                <li>@Loc["Install_AndroidStep3"]</li>
+            </ol>
+        }
+        else if (!_state.CanPrompt && _state.IsIos)
+        {
+            @if (!_state.IsSafari)
+            {
+                <MudAlert Severity="Severity.Info" id="install-guidance-ios-browser">@Loc["Install_IosUseSafari"]</MudAlert>
+            }
+            <MudText Typo="Typo.subtitle1" id="install-guidance-ios-heading">@Loc["Install_IosHeading"]</MudText>
+            <ol class="install-steps" id="install-guidance-ios-steps">
+                <li>@Loc["Install_IosStep1"]</li>
+                <li>@Loc["Install_IosStep2"]</li>
+                <li>@Loc["Install_IosStep3"]</li>
+                <li>@Loc["Install_IosStep4"]</li>
+                <li>@Loc["Install_IosStep5"]</li>
+            </ol>
+        }
+        else if (!_state.CanPrompt && _state.IsWindows)
+        {
+            <MudText Typo="Typo.subtitle1" id="install-guidance-windows-heading">@Loc["Install_WindowsHeading"]</MudText>
+            <ol class="install-steps" id="install-guidance-windows-steps">
+                <li>@Loc["Install_WindowsStep1"]</li>
+                <li>@Loc["Install_WindowsStep2"]</li>
+            </ol>
+        }
+        else if (!_state.CanPrompt)
+        {
+            <MudText Typo="Typo.subtitle1" id="install-guidance-other-heading">@Loc["Install_OtherHeading"]</MudText>
+            <MudText id="install-guidance-unsupported">@Loc["Install_Unsupported"]</MudText>
+            <ol class="install-steps" id="install-guidance-other-steps">
+                <li>@Loc["Install_OtherStep1"]</li>
+                <li>@Loc["Install_OtherStep2"]</li>
+            </ol>
+        }
+
+        @if (ShowInstallLaterMessage)
+        {
+            <MudText Typo="Typo.caption" Class="mud-text-secondary" id="install-guidance-later">@Loc["Install_Later"]</MudText>
+        }
+    }
+</section>

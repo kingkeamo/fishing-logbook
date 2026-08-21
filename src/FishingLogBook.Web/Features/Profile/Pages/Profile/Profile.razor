@@ -102,23 +102,28 @@
                             <MudStack Row="true" Spacing="1" Class="flex-wrap">
                                 @foreach (var species in selectedMethod.Species)
                                 {
-                                    <MudChip T="string"
-                                             Color="@(species.IsDefault ? Color.Secondary : Color.Primary)"
-                                             Variant="Variant.Filled"
-                                             Icon="@(species.IsDefault ? Icons.Material.Filled.Star : null)"
-                                             OnClick="@(() => SetDefaultSpeciesForMethod(selectedMethod.FishingMethodId, species.SpeciesId))"
-                                             id="@($"profile-species-{selectedMethod.Code}-{species.Code}")">
-                                        @species.Name
-                                        @if (species.IsDefault)
-                                        {
-                                            <span class="profile-default-label">&#160;@Loc["Profile_FishingMethod_Default"]</span>
-                                        }
-                                    </MudChip>
-                                    <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                                   Size="Size.Small"
-                                                   aria-label="@string.Format(Loc["Profile_FishingSpecies_Remove"], species.Name)"
-                                                   OnClick="@(() => RemoveSpeciesFromMethod(selectedMethod.FishingMethodId, species.SpeciesId))"
-                                                   id="@($"profile-species-remove-{selectedMethod.Code}-{species.Code}")" />
+                                    <span class="species-pill @(species.IsDefault ? "species-pill-secondary" : "species-pill-primary")"
+                                          id="@($"profile-species-pill-{selectedMethod.Code}-{species.Code}")">
+                                        <MudChip T="string"
+                                                 Color="@(species.IsDefault ? Color.Secondary : Color.Primary)"
+                                                 Variant="Variant.Filled"
+                                                 Icon="@(species.IsDefault ? Icons.Material.Filled.Star : null)"
+                                                 OnClick="@(() => SetDefaultSpeciesForMethod(selectedMethod.FishingMethodId, species.SpeciesId))"
+                                                 id="@($"profile-species-{selectedMethod.Code}-{species.Code}")">
+                                            @species.Name
+                                            @if (species.IsDefault)
+                                            {
+                                                <span class="profile-default-label">&#160;@Loc["Profile_FishingMethod_Default"]</span>
+                                            }
+                                        </MudChip>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+                                                       Size="Size.Small"
+                                                       Color="Color.Inherit"
+                                                       Class="species-pill-remove"
+                                                       aria-label="@string.Format(Loc["Profile_FishingSpecies_Remove"], species.Name)"
+                                                       OnClick="@(() => RemoveSpeciesFromMethod(selectedMethod.FishingMethodId, species.SpeciesId))"
+                                                       id="@($"profile-species-remove-{selectedMethod.Code}-{species.Code}")" />
+                                    </span>
                                 }
                                 <MudButton Size="Size.Small"
                                            Variant="Variant.Outlined"

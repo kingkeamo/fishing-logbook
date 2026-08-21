@@ -1,6 +1,5 @@
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
-using FishingLogBook.Web.Browser.Install;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Onboarding.Services;
@@ -21,19 +20,18 @@ public partial class Onboarding : ComponentBase, IDisposable
     private bool _isSaving;
     private bool _saveFailed;
     private bool _locationHandled;
+    private string? _preferenceValidationMessage;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private FishingCatalogueDto _catalogue = new([], []);
     private List<SelectedMethodPreference> _selectedMethods = [];
     private ProfileDto? _profile;
-    private InstallState _installState = new(false, false, false, false);
 
     [Inject] private IOnboardingService OnboardingService { get; set; } = default!;
     [Inject] private IProfileClient ProfileClient { get; set; } = default!;
     [Inject] private IFishingPreferenceClient FishingPreferenceClient { get; set; } = default!;
     [Inject] private IModalService ModalService { get; set; } = default!;
     [Inject] private ILocationService LocationService { get; set; } = default!;
-    [Inject] private IInstallService InstallService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
@@ -54,15 +52,6 @@ public partial class Onboarding : ComponentBase, IDisposable
         ApplyPreferences(await preferencesTask);
         _weightUnit = _profile.PreferredWeightUnit;
         _lengthUnit = _profile.PreferredLengthUnit;
-        try
-        {
-            _installState = await InstallService.GetStateAsync(CancellationToken.None);
-        }
-        catch (Exception)
-        {
-            _installState = new InstallState(false, false, false, false);
-        }
-
         _isLoading = false;
     }
 
@@ -70,12 +59,42 @@ public partial class Onboarding : ComponentBase, IDisposable
 
     private async Task NextAsync()
     {
-        if (_activeStep == 1 && !await SavePreferencesAsync())
+        if (_activeStep == 1 && (!ValidatePreferences() || !await SavePreferencesAsync()))
         {
             return;
         }
 
         _activeStep++;
+    }
+
+    private bool ValidatePreferences()
+    {
+        if (_selectedMethods.Count == 0)
+        {
+            _preferenceValidationMessage = Loc["Onboarding_ValidationFishingMethod"];
+            return false;
+        }
+
+        var incompleteMethods = _selectedMethods
+            .Where(method => method.Species.Count == 0)
+            .Select(method => method.Name)
+            .ToArray();
+        if (incompleteMethods.Length == 1)
+        {
+            _preferenceValidationMessage = string.Format(
+                Loc["Onboarding_ValidationSpeciesForMethod"], incompleteMethods[0]);
+            return false;
+        }
+
+        if (incompleteMethods.Length > 1)
+        {
+            _preferenceValidationMessage = string.Format(
+                Loc["Onboarding_ValidationSpeciesForMethods"], string.Join(", ", incompleteMethods));
+            return false;
+        }
+
+        _preferenceValidationMessage = null;
+        return true;
     }
 
     private async Task<bool> SavePreferencesAsync()
@@ -167,6 +186,7 @@ public partial class Onboarding : ComponentBase, IDisposable
 
     private void ToggleMethod(FishingMethodDto method)
     {
+        _preferenceValidationMessage = null;
         var selected = _selectedMethods.FirstOrDefault(item => item.FishingMethodId == method.Id);
         if (selected is null)
         {
@@ -194,6 +214,7 @@ public partial class Onboarding : ComponentBase, IDisposable
             return;
         }
 
+        _preferenceValidationMessage = null;
         var chosenIds = result.Options.Select(option => option.Id).ToHashSet();
         _selectedMethods.RemoveAll(method => !chosenIds.Contains(method.FishingMethodId));
         foreach (var chosen in _catalogue.Methods.Where(method =>
@@ -238,6 +259,7 @@ public partial class Onboarding : ComponentBase, IDisposable
             return;
         }
 
+        _preferenceValidationMessage = null;
         var chosenIds = result.Options.Select(option => option.Id).ToHashSet();
         method.Species.RemoveAll(species => !chosenIds.Contains(species.SpeciesId));
         foreach (var chosen in result.Options.Where(option =>
@@ -268,6 +290,7 @@ public partial class Onboarding : ComponentBase, IDisposable
         }
 
         method.Species.Remove(species);
+        _preferenceValidationMessage = null;
         EnsureDefaultSpecies(method);
     }
 
@@ -297,12 +320,6 @@ public partial class Onboarding : ComponentBase, IDisposable
     {
         await LocationService.DismissPromptAsync(CancellationToken.None);
         _locationHandled = true;
-    }
-
-    private async Task InstallAsync()
-    {
-        await InstallService.PromptAsync(CancellationToken.None);
-        _installState = await InstallService.GetStateAsync(CancellationToken.None);
     }
 
     private async Task FinishAsync()

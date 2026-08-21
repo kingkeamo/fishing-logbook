@@ -1,0 +1,21 @@
+.install-guidance {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.install-steps {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.install-steps li {
+    margin-bottom: 1rem;
+    padding-left: 0.25rem;
+}
+
+.install-steps li:last-child {
+    margin-bottom: 0;
+}
