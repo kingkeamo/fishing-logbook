@@ -1,4 +1,4 @@
-const epoch = '20260821-atomic-app-shell';
+const epoch = '20260821-pre-onboarding-startup';
 
 export function listenForServiceWorkerErrors(targetWindow = window) {
     targetWindow.navigator.serviceWorker?.addEventListener('message', (event) => {

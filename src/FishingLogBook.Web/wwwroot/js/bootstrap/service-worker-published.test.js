@@ -40,15 +40,28 @@ class TestResponse {
     }
 }
 
-function createWorker({ assets = [], match, fetch: fetchImplementation } = {}) {
+function createWorker({ assets = [], cacheKeys = [], match, fetch: fetchImplementation } = {}) {
     const listeners = {};
     const cache = {
         match: vi.fn(match ?? (async () => undefined)),
         keys: vi.fn(async () => []),
         put: vi.fn(async () => undefined)
     };
+    let recoveryComplete = false;
+    const recoveryCache = {
+        match: vi.fn(async () => recoveryComplete ? new TestResponse('complete') : undefined),
+        put: vi.fn(async () => { recoveryComplete = true; })
+    };
     const fetch = vi.fn(fetchImplementation ?? (async () => new TestResponse('network')));
-    const cacheDelete = vi.fn(async () => true);
+    const activeCacheKeys = [...cacheKeys];
+    const cacheDelete = vi.fn(async name => {
+        const index = activeCacheKeys.indexOf(name);
+        if (index >= 0) {
+            activeCacheKeys.splice(index, 1);
+        }
+
+        return true;
+    });
     const serviceWorker = {
         origin: 'https://app.test',
         location: new URL('https://app.test/service-worker.js'),
@@ -62,13 +75,15 @@ function createWorker({ assets = [], match, fetch: fetchImplementation } = {}) {
         }
     };
 
+    const caches = {
+        open: vi.fn(async name => name === 'service-worker-recovery' ? recoveryCache : cache),
+        keys: vi.fn(async () => activeCacheKeys),
+        delete: cacheDelete
+    };
+
     vm.runInNewContext(workerScript, {
         self: serviceWorker,
-        caches: {
-            open: vi.fn(async () => cache),
-            keys: vi.fn(async () => []),
-            delete: cacheDelete
-        },
+        caches,
         fetch,
         Request: TestRequest,
         Response: TestResponse,
@@ -96,7 +111,23 @@ function createWorker({ assets = [], match, fetch: fetchImplementation } = {}) {
         return installation;
     }
 
-    return { cache, cacheDelete, dispatchFetch, dispatchInstall, fetch, serviceWorker };
+    function dispatchActivate() {
+        let activation;
+        listeners.activate({ waitUntil: promise => { activation = Promise.resolve(promise); } });
+        return activation;
+    }
+
+    return {
+        cache,
+        cacheDelete,
+        caches,
+        dispatchActivate,
+        dispatchFetch,
+        dispatchInstall,
+        fetch,
+        recoveryCache,
+        serviceWorker
+    };
 }
 
 describe('published service worker', () => {
@@ -118,7 +149,7 @@ describe('published service worker', () => {
         expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
     });
 
-    it('installs the complete app shell and framework assets without taking over existing pages', async () => {
+    it('activates only after the complete app shell and framework assets are cached', async () => {
         const worker = createWorker({
             assets: [{ url: '_framework/app.wasm' }],
             fetch: async request => new TestResponse(request.url)
@@ -128,7 +159,57 @@ describe('published service worker', () => {
 
         expect(worker.cache.put).toHaveBeenCalledTimes(2);
         expect(worker.cacheDelete).not.toHaveBeenCalled();
-        expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
+        expect(worker.serviceWorker.skipWaiting).toHaveBeenCalledOnce();
+    });
+
+    it('reloads existing controlled clients once after a complete replacement activates', async () => {
+        const navigate = vi.fn(async () => undefined);
+        const worker = createWorker({
+            cacheKeys: ['offline-cache-previous', 'offline-cache-test']
+        });
+        worker.serviceWorker.clients.matchAll.mockResolvedValue([
+            { url: 'https://app.test/', navigate }
+        ]);
+
+        await worker.dispatchActivate();
+        await worker.dispatchActivate();
+
+        expect(worker.cacheDelete).toHaveBeenCalledOnce();
+        expect(worker.cacheDelete).toHaveBeenCalledWith('offline-cache-previous');
+        expect(worker.recoveryCache.put).toHaveBeenCalledOnce();
+        expect(navigate).toHaveBeenCalledOnce();
+        expect(navigate).toHaveBeenCalledWith('https://app.test/');
+    });
+
+    it('does not reload clients on a first service worker installation', async () => {
+        const navigate = vi.fn(async () => undefined);
+        const worker = createWorker({ cacheKeys: ['offline-cache-test'] });
+        worker.serviceWorker.clients.matchAll.mockResolvedValue([
+            { url: 'https://app.test/', navigate }
+        ]);
+
+        await worker.dispatchActivate();
+
+        expect(worker.recoveryCache.put).not.toHaveBeenCalled();
+        expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('does not replay authentication callback URLs during migration', async () => {
+        const navigate = vi.fn(async () => undefined);
+        const worker = createWorker({
+            cacheKeys: ['offline-cache-previous', 'offline-cache-test']
+        });
+        worker.serviceWorker.clients.matchAll.mockResolvedValue([
+            {
+                url: 'https://app.test/authentication/login-callback?code=test&state=test',
+                navigate
+            }
+        ]);
+
+        await worker.dispatchActivate();
+
+        expect(worker.recoveryCache.put).toHaveBeenCalledOnce();
+        expect(navigate).not.toHaveBeenCalled();
     });
 
     it('serves framework assets from the same versioned cache as the app shell', async () => {
