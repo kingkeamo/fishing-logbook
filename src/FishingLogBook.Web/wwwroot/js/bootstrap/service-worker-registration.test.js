@@ -4,7 +4,7 @@ import {
     registerServiceWorker
 } from './service-worker-registration.js';
 
-const currentEpoch = '20260821-spa-shell-navigation';
+const currentEpoch = '20260821-atomic-app-shell';
 
 function createTargetWindow({ epoch, localStorageThrows = false, registrationThrows = false } = {}) {
     const storage = {};
@@ -56,18 +56,18 @@ function createTargetWindow({ epoch, localStorageThrows = false, registrationThr
 }
 
 describe('service worker registration', () => {
-    it('unregisters stale workers and caches when the epoch changes', async () => {
+    it('registers the replacement without deleting the last complete cache when the epoch changes', async () => {
         const targetWindow = createTargetWindow({ epoch: 'old-epoch' });
 
         await registerServiceWorker(targetWindow);
 
-        expect(targetWindow.unregister).toHaveBeenCalledTimes(1);
-        expect(targetWindow.cacheDelete).toHaveBeenCalledWith('cache-v1');
+        expect(targetWindow.unregister).not.toHaveBeenCalled();
+        expect(targetWindow.cacheDelete).not.toHaveBeenCalled();
         expect(targetWindow.localStorage.getItem('flb-sw-epoch')).toBe(currentEpoch);
         expect(targetWindow.register).toHaveBeenCalledWith('service-worker.js', { updateViaCache: 'none' });
     });
 
-    it('skips unregister when the current epoch is already stored', async () => {
+    it('registers normally when the current epoch is already stored', async () => {
         const targetWindow = createTargetWindow({ epoch: currentEpoch });
 
         await registerServiceWorker(targetWindow);

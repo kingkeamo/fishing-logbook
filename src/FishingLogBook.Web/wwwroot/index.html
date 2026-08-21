@@ -47,7 +47,7 @@
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js" autostart="false"></script>
     <script type="module">
         const { registerServiceWorker } = await import('./js/bootstrap/service-worker-registration.js');
-        await registerServiceWorker();
+        registerServiceWorker();
         await import('./js/bootstrap/app.js');
         await Blazor.start();
     </script>

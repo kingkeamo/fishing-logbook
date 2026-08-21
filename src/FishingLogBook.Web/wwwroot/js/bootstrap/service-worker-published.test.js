@@ -40,7 +40,7 @@ class TestResponse {
     }
 }
 
-function createWorker({ match, fetch: fetchImplementation } = {}) {
+function createWorker({ assets = [], match, fetch: fetchImplementation } = {}) {
     const listeners = {};
     const cache = {
         match: vi.fn(match ?? (async () => undefined)),
@@ -48,10 +48,11 @@ function createWorker({ match, fetch: fetchImplementation } = {}) {
         put: vi.fn(async () => undefined)
     };
     const fetch = vi.fn(fetchImplementation ?? (async () => new TestResponse('network')));
+    const cacheDelete = vi.fn(async () => true);
     const serviceWorker = {
         origin: 'https://app.test',
         location: new URL('https://app.test/service-worker.js'),
-        assetsManifest: { version: 'test', assets: [] },
+        assetsManifest: { version: 'test', assets },
         importScripts: vi.fn(),
         addEventListener: (type, listener) => { listeners[type] = listener; },
         skipWaiting: vi.fn(async () => undefined),
@@ -66,7 +67,7 @@ function createWorker({ match, fetch: fetchImplementation } = {}) {
         caches: {
             open: vi.fn(async () => cache),
             keys: vi.fn(async () => []),
-            delete: vi.fn(async () => true)
+            delete: cacheDelete
         },
         fetch,
         Request: TestRequest,
@@ -89,10 +90,64 @@ function createWorker({ match, fetch: fetchImplementation } = {}) {
         };
     }
 
-    return { cache, dispatchFetch, fetch };
+    function dispatchInstall() {
+        let installation;
+        listeners.install({ waitUntil: promise => { installation = Promise.resolve(promise); } });
+        return installation;
+    }
+
+    return { cache, cacheDelete, dispatchFetch, dispatchInstall, fetch, serviceWorker };
 }
 
 describe('published service worker', () => {
+    it('rejects a partial installation and preserves the active worker', async () => {
+        const worker = createWorker({
+            assets: [{ url: '_framework/app.wasm' }],
+            fetch: async request => {
+                if (request.url.endsWith('/_framework/app.wasm')) {
+                    throw new TypeError('Failed to fetch');
+                }
+
+                return new TestResponse('shell');
+            }
+        });
+
+        await expect(worker.dispatchInstall()).rejects.toThrow('Failed to fetch');
+
+        expect(worker.cacheDelete).not.toHaveBeenCalled();
+        expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
+    });
+
+    it('installs the complete app shell and framework assets without taking over existing pages', async () => {
+        const worker = createWorker({
+            assets: [{ url: '_framework/app.wasm' }],
+            fetch: async request => new TestResponse(request.url)
+        });
+
+        await worker.dispatchInstall();
+
+        expect(worker.cache.put).toHaveBeenCalledTimes(2);
+        expect(worker.cacheDelete).not.toHaveBeenCalled();
+        expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
+    });
+
+    it('serves framework assets from the same versioned cache as the app shell', async () => {
+        const frameworkAsset = new TestResponse('framework');
+        const worker = createWorker({
+            assets: [{ url: '_framework/app.wasm' }],
+            match: async request => request.url?.endsWith('/_framework/app.wasm')
+                ? frameworkAsset
+                : undefined
+        });
+
+        const response = await worker.dispatchFetch(
+            'https://app.test/_framework/app.wasm',
+            { mode: 'cors' }).response;
+
+        expect(response).toBe(frameworkAsset);
+        expect(worker.fetch).not.toHaveBeenCalled();
+    });
+
     it('serves the cached app shell for a route navigation without using the network', async () => {
         const shell = new TestResponse('cached shell');
         const worker = createWorker({

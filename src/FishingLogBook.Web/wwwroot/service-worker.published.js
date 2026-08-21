@@ -38,9 +38,8 @@ async function onInstall(event) {
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
         .map(asset => new Request(asset.url, { cache: 'no-cache' }));
 
-    await Promise.all(assetsRequests.map(request => cacheUnredirected(cache, request).catch(() => undefined)));
+    await Promise.all(assetsRequests.map(request => cacheUnredirected(cache, request)));
     await cacheAppShell(cache);
-    await self.skipWaiting();
 }
 
 async function onActivate(event) {
@@ -86,7 +85,10 @@ async function onFetch(event) {
 }
 
 async function cacheAppShell(cache) {
-    await fetchAppShell(cache);
+    const shell = await fetchAppShell(cache);
+    if (!shell) {
+        throw new Error('App shell could not be cached');
+    }
 }
 
 async function fetchAppShell(cache) {
@@ -111,7 +113,7 @@ async function fetchAppShell(cache) {
 async function cacheUnredirected(cache, request) {
     const response = await fetch(request);
     if (!response.ok) {
-        return;
+        throw new Error(`Asset could not be cached: ${request.url}`);
     }
 
     const stored = await withoutRedirect(response);
