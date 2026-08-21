@@ -692,5 +692,6 @@
   <data name="Install_OtherStep2" xml:space="preserve"><value>If there is no icon, open the browser menu and look for Install app or Add to Home screen. If neither option appears, you can keep using the app in your browser.</value></data>
   <data name="Install_Later" xml:space="preserve"><value>Installation is optional. You can continue now and find this guidance again from the app menu.</value></data>
   <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choose at least one fishing method.</value></data>
-  <data name="Onboarding_ValidationSpecies" xml:space="preserve"><value>Choose at least one species.</value></data>
+  <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choose at least one species for {0}.</value></data>
+  <data name="Onboarding_ValidationSpeciesForMethods" xml:space="preserve"><value>Choose at least one species for each of these fishing methods: {0}.</value></data>
 </root>

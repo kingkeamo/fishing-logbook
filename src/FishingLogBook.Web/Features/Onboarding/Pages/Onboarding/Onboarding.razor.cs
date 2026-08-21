@@ -75,9 +75,21 @@ public partial class Onboarding : ComponentBase, IDisposable
             return false;
         }
 
-        if (_selectedMethods.All(method => method.Species.Count == 0))
+        var incompleteMethods = _selectedMethods
+            .Where(method => method.Species.Count == 0)
+            .Select(method => method.Name)
+            .ToArray();
+        if (incompleteMethods.Length == 1)
         {
-            _preferenceValidationMessage = Loc["Onboarding_ValidationSpecies"];
+            _preferenceValidationMessage = string.Format(
+                Loc["Onboarding_ValidationSpeciesForMethod"], incompleteMethods[0]);
+            return false;
+        }
+
+        if (incompleteMethods.Length > 1)
+        {
+            _preferenceValidationMessage = string.Format(
+                Loc["Onboarding_ValidationSpeciesForMethods"], string.Join(", ", incompleteMethods));
             return false;
         }
 
@@ -278,6 +290,7 @@ public partial class Onboarding : ComponentBase, IDisposable
         }
 
         method.Species.Remove(species);
+        _preferenceValidationMessage = null;
         EnsureDefaultSpecies(method);
     }
 

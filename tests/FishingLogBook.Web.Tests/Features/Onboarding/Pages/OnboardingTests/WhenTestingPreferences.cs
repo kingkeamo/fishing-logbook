@@ -59,13 +59,16 @@ public class WhenTestingPreferences
     [Fact]
     public async Task ItShouldRequireAtLeastOneFishingMethod()
     {
+        // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         await using var fixture = CreateFixture(new FishingPreferencesDto([]));
         var cut = fixture.Context.Render<OnboardingPage>();
 
+        // Act
         await MoveToPreferencesAsync(cut);
         await cut.Find("#onboarding-next").ClickAsync();
 
+        // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#onboarding-preference-validation").TextContent
                 .Should().Contain("Choose at least one fishing method."));
@@ -75,18 +78,65 @@ public class WhenTestingPreferences
     }
 
     [Fact]
-    public async Task ItShouldRequireAtLeastOneSpeciesOverall()
+    public async Task ItShouldRequireAtLeastOneSpeciesForTheSelectedMethod()
     {
+        // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         await using var fixture = CreateFixture(PreferencesWithoutSpecies());
         var cut = fixture.Context.Render<OnboardingPage>();
 
+        // Act
         await MoveToPreferencesAsync(cut);
         await cut.Find("#onboarding-next").ClickAsync();
 
+        // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#onboarding-preference-validation").TextContent
-                .Should().Contain("Choose at least one species."));
+                .Should().Contain("Choose at least one species for Fly."));
+        await fixture.Preferences.DidNotReceive().UpdatePreferencesAsync(
+            Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldIdentifyASelectedMethodWithoutSpecies()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var fixture = CreateFixture(TwoMethodPreferences(spinningHasSpecies: false));
+        var cut = fixture.Context.Render<OnboardingPage>();
+
+        // Act
+        await MoveToPreferencesAsync(cut);
+        await cut.Find("#onboarding-next").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#onboarding-preference-validation").TextContent
+                .Should().Contain("Choose at least one species for Spinning."));
+        await fixture.Preferences.DidNotReceive().UpdatePreferencesAsync(
+            Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldListAllSelectedMethodsWithoutSpecies()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var preferences = new FishingPreferencesDto(
+        [
+            new FishingMethodPreferenceDto(FlyMethodId, "Fly", "Fly", true, []),
+            new FishingMethodPreferenceDto(SpinningMethodId, "Spinning", "Spinning", false, [])
+        ]);
+        await using var fixture = CreateFixture(preferences);
+        var cut = fixture.Context.Render<OnboardingPage>();
+
+        // Act
+        await MoveToPreferencesAsync(cut);
+        await cut.Find("#onboarding-next").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#onboarding-preference-validation").TextContent.Should().Contain("Fly, Spinning"));
         await fixture.Preferences.DidNotReceive().UpdatePreferencesAsync(
             Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>());
     }
@@ -94,13 +144,16 @@ public class WhenTestingPreferences
     [Fact]
     public async Task ItShouldAdvanceAndPersistCanonicalPreferenceIdentityWhenRequirementsAreMet()
     {
+        // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         await using var fixture = CreateFixture(ValidPreferences());
         var cut = fixture.Context.Render<OnboardingPage>();
 
+        // Act
         await MoveToPreferencesAsync(cut);
         await cut.Find("#onboarding-next").ClickAsync();
 
+        // Assert
         cut.WaitForAssertion(() => cut.Find("#onboarding-allow-location").Should().NotBeNull());
         await fixture.Preferences.Received(1).UpdatePreferencesAsync(
             Arg.Is<UpdateFishingPreferencesDto>(update =>
@@ -108,6 +161,27 @@ public class WhenTestingPreferences
                 && update.Methods[0].FishingMethodId == FlyMethodId
                 && update.Methods[0].Species.Count == 1
                 && update.Methods[0].Species[0].SpeciesId == BrownTroutSpeciesId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAdvanceWhenEverySelectedMethodHasSpecies()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var fixture = CreateFixture(TwoMethodPreferences(spinningHasSpecies: true));
+        var cut = fixture.Context.Render<OnboardingPage>();
+
+        // Act
+        await MoveToPreferencesAsync(cut);
+        await cut.Find("#onboarding-next").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#onboarding-allow-location").Should().NotBeNull());
+        await fixture.Preferences.Received(1).UpdatePreferencesAsync(
+            Arg.Is<UpdateFishingPreferencesDto>(update =>
+                update.Methods.Count == 2
+                && update.Methods.All(method => method.Species.Count == 1)),
             Arg.Any<CancellationToken>());
     }
 
@@ -133,21 +207,46 @@ public class WhenTestingPreferences
             cut.FindAll("#onboarding-species-Fly-BrownTrout").Should().BeEmpty());
     }
 
-    [Theory]
-    [InlineData(false, "Choisissez au moins une méthode de pêche.")]
-    [InlineData(true, "Choisissez au moins une espèce.")]
-    public async Task ItShouldLocalisePreferenceValidation(bool hasMethod, string expected)
+    [Fact]
+    public async Task ItShouldLocaliseTheIncompleteMethodValidation()
     {
+        // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
-        var preferences = hasMethod ? PreferencesWithoutSpecies() : new FishingPreferencesDto([]);
+        var preferences = PreferencesWithoutSpecies("Pêche à la mouche");
         await using var fixture = CreateFixture(preferences);
         var cut = fixture.Context.Render<OnboardingPage>();
 
+        // Act
         await MoveToPreferencesAsync(cut);
         await cut.Find("#onboarding-next").ClickAsync();
 
+        // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#onboarding-preference-validation").TextContent.Should().Contain(expected));
+            cut.Find("#onboarding-preference-validation").TextContent
+                .Should().Contain("Choisissez au moins une espèce pour Pêche à la mouche."));
+        await fixture.Preferences.DidNotReceive().UpdatePreferencesAsync(
+            Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldBecomeInvalidWhenTheLastSpeciesIsRemoved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var fixture = CreateFixture(ValidPreferences());
+        var cut = fixture.Context.Render<OnboardingPage>();
+        await MoveToPreferencesAsync(cut);
+
+        // Act
+        await cut.Find("#onboarding-species-remove-Fly-BrownTrout").ClickAsync();
+        await cut.Find("#onboarding-next").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#onboarding-preference-validation").TextContent
+                .Should().Contain("Choose at least one species for Fly."));
+        await fixture.Preferences.DidNotReceive().UpdatePreferencesAsync(
+            Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -252,11 +351,11 @@ public class WhenTestingPreferences
         cut.WaitForAssertion(() => cut.Find("#onboarding-method-chips"));
     }
 
-    private static FishingPreferencesDto PreferencesWithoutSpecies()
+    private static FishingPreferencesDto PreferencesWithoutSpecies(string methodName = "Fly")
     {
         return new FishingPreferencesDto(
         [
-            new FishingMethodPreferenceDto(FlyMethodId, "Fly", "Fly", true, [])
+            new FishingMethodPreferenceDto(FlyMethodId, "Fly", methodName, true, [])
         ]);
     }
 
@@ -270,6 +369,22 @@ public class WhenTestingPreferences
                 "Fly",
                 true,
                 [new FishingSpeciesPreferenceDto(BrownTroutSpeciesId, "BrownTrout", "Brown Trout", true)])
+        ]);
+    }
+
+    private static FishingPreferencesDto TwoMethodPreferences(bool spinningHasSpecies)
+    {
+        var species = new FishingSpeciesPreferenceDto(
+            BrownTroutSpeciesId, "BrownTrout", "Brown Trout", true);
+        return new FishingPreferencesDto(
+        [
+            new FishingMethodPreferenceDto(FlyMethodId, "Fly", "Fly", true, [species]),
+            new FishingMethodPreferenceDto(
+                SpinningMethodId,
+                "Spinning",
+                "Spinning",
+                false,
+                spinningHasSpecies ? [species] : [])
         ]);
     }
 

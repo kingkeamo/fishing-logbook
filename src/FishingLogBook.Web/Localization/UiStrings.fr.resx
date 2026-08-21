@@ -692,5 +692,6 @@
   <data name="Install_OtherStep2" xml:space="preserve"><value>Si aucune icône n’apparaît, ouvrez le menu du navigateur et recherchez Installer l’application ou Ajouter à l’écran d’accueil. Si aucune option n’est proposée, vous pouvez continuer dans le navigateur.</value></data>
   <data name="Install_Later" xml:space="preserve"><value>L’installation est facultative. Vous pouvez continuer et retrouver ces instructions plus tard depuis le menu de l’application.</value></data>
   <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
-  <data name="Onboarding_ValidationSpecies" xml:space="preserve"><value>Choisissez au moins une espèce.</value></data>
+  <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espèce pour {0}.</value></data>
+  <data name="Onboarding_ValidationSpeciesForMethods" xml:space="preserve"><value>Choisissez au moins une espèce pour chacune de ces méthodes de pêche : {0}.</value></data>
 </root>
