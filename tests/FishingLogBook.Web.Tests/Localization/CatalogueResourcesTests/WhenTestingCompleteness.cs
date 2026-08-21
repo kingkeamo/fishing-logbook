@@ -29,10 +29,10 @@ public partial class WhenTestingCompleteness
         var speciesFrench = Keys(new ResourceManager(typeof(SpeciesStrings)), new CultureInfo(CultureNames.French));
 
         // Assert
-        methodEnglish.Should().Contain(methodCodes);
-        methodFrench.Should().Contain(methodCodes);
-        speciesEnglish.Should().Contain(speciesCodes);
-        speciesFrench.Should().Contain(speciesCodes);
+        methodEnglish.Should().BeEquivalentTo(methodCodes);
+        methodFrench.Should().BeEquivalentTo(methodCodes);
+        speciesEnglish.Should().BeEquivalentTo(speciesCodes);
+        speciesFrench.Should().BeEquivalentTo(speciesCodes);
     }
 
     [Fact]

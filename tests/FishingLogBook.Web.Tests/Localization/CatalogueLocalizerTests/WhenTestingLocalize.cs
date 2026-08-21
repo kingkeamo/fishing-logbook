@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Tests.Localization.CatalogueLocalizerTests;
 
@@ -78,6 +79,51 @@ public class WhenTestingLocalize
 
         // Assert
         actual.Methods.Single().Name.Should().Be("Fly");
+    }
+
+    [Fact]
+    public void ItShouldUseEnglishWhenTheFrenchResourceDoesNotContainTheKey()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.French);
+        using var context = CreateContext();
+        var localizer = context.Services.GetRequiredService<IStringLocalizer<CatalogueFallbackProbeStrings>>();
+
+        // Act
+        var actual = CatalogueLocalizer.Resolve(localizer, "EnglishOnly", "Canonical label");
+
+        // Assert
+        actual.Should().Be("English fallback");
+    }
+
+    [Fact]
+    public void ItShouldUseTheFrenchParentResourceForFrenchFrance()
+    {
+        // Arrange
+        using var culture = TestCulture.Use("fr-FR");
+        using var context = CreateContext();
+        var localizer = context.Services.GetRequiredService<IStringLocalizer<CatalogueFallbackProbeStrings>>();
+
+        // Act
+        var actual = CatalogueLocalizer.Resolve(localizer, "ParentCulture", "Canonical label");
+
+        // Assert
+        actual.Should().Be("Valeur française parente");
+    }
+
+    [Fact]
+    public void ItShouldUseTheCanonicalNameWhenNeitherFrenchNorEnglishContainsTheKey()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.French);
+        using var context = CreateContext();
+        var localizer = context.Services.GetRequiredService<IStringLocalizer<CatalogueFallbackProbeStrings>>();
+
+        // Act
+        var actual = CatalogueLocalizer.Resolve(localizer, "MissingEverywhere", "Canonical label");
+
+        // Assert
+        actual.Should().Be("Canonical label");
     }
 
     [Fact]

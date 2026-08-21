@@ -52,7 +52,7 @@ public sealed class CatalogueLocalizer : ICatalogueLocalizer
     private SpeciesDto Localize(SpeciesDto species) =>
         species with { Name = GetSpeciesLabel(species) };
 
-    private static string Resolve<TResource>(
+    internal static string Resolve<TResource>(
         IStringLocalizer<TResource> localizer,
         string code,
         string canonicalName)
