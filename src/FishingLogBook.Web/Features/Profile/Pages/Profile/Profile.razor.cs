@@ -261,24 +261,28 @@ public partial class Profile : ComponentBase, IDisposable
 
     private async Task AddMethodAsync()
     {
-        var shown = MethodChips.Select(method => method.Id).ToHashSet();
         var options = _catalogueMethods
-            .Where(method => !shown.Contains(method.Id))
             .Select(method => new CatalogueOptionModel(method.Id, method.Code, method.Name))
             .ToArray();
+        var selected = _selectedMethods.Select(method => method.FishingMethodId).ToHashSet();
         var result = await ModalService.ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
-            new CataloguePickerModalModel(Loc["Profile_FishingMethods"], options),
+            new CataloguePickerModalModel(
+                Loc["Profile_FishingMethods"], options, selected, true, Loc["Modal_FishingMethods"]),
             _cancellationTokenSource.Token);
         if (result is null)
         {
             return;
         }
 
-        var chosen = _catalogueMethods.FirstOrDefault(method => method.Id == result.Option.Id);
-        if (chosen is not null && !IsMethodSelected(chosen.Id))
+        var chosenIds = result.Options.Select(option => option.Id).ToHashSet();
+        _selectedMethods.RemoveAll(method => !chosenIds.Contains(method.FishingMethodId));
+        foreach (var chosen in _catalogueMethods.Where(method =>
+                     chosenIds.Contains(method.Id) && !IsMethodSelected(method.Id)))
         {
             ToggleMethod(chosen);
         }
+
+        EnsureDefaultMethod();
     }
 
     private void ToggleMethod(FishingMethodDto method)
@@ -331,26 +335,31 @@ public partial class Profile : ComponentBase, IDisposable
             return;
         }
 
-        var selected = method.Species.Select(species => species.SpeciesId).ToHashSet();
         var options = _catalogueSpecies
-            .Where(species => !selected.Contains(species.Id))
             .Select(species => new CatalogueOptionModel(species.Id, species.Code, species.Name))
             .ToArray();
+        var selected = method.Species.Select(species => species.SpeciesId).ToHashSet();
         var result = await ModalService.ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
             new CataloguePickerModalModel(
                 string.Format(Loc["Profile_FishingMethod_Species"], method.Name),
-                options),
+                options,
+                selected,
+                true,
+                Loc["Modal_Species"]),
             _cancellationTokenSource.Token);
         if (result is null)
         {
             return;
         }
 
-        method.Species.Add(new SelectedSpeciesPreference(
-            result.Option.Id,
-            result.Option.Code,
-            result.Option.Name,
-            false));
+        var chosenIds = result.Options.Select(option => option.Id).ToHashSet();
+        method.Species.RemoveAll(species => !chosenIds.Contains(species.SpeciesId));
+        foreach (var chosen in result.Options.Where(option =>
+                     method.Species.All(species => species.SpeciesId != option.Id)))
+        {
+            method.Species.Add(new SelectedSpeciesPreference(chosen.Id, chosen.Code, chosen.Name, false));
+        }
+
         EnsureDefaultSpecies(method);
     }
 

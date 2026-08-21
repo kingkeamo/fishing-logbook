@@ -656,4 +656,11 @@
   <data name="Landing_BenefitRecord" xml:space="preserve"><value>Quickly record catches and photographs</value></data>
   <data name="Landing_BenefitPrivate" xml:space="preserve"><value>Fishing spots stay private by default</value></data>
   <data name="Landing_BenefitOffline" xml:space="preserve"><value>Designed for poor signal and offline use</value></data>
+  <data name="Modal_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Modal_Selected" xml:space="preserve"><value>Selected</value></data>
+  <data name="Modal_Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Modal_NoneSelected" xml:space="preserve"><value>None selected</value></data>
+  <data name="Modal_ShowingLimited" xml:space="preserve"><value>Showing {0} of {1} {2}. Search to find more.</value></data>
+  <data name="Modal_Species" xml:space="preserve"><value>species</value></data>
+  <data name="Modal_FishingMethods" xml:space="preserve"><value>fishing methods</value></data>
 </root>

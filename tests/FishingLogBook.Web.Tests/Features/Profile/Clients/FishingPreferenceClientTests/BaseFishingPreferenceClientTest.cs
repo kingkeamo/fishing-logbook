@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Profile.Clients;
+using FishingLogBook.Web.Localization;
 using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Features.Profile.Clients.FishingPreferenceClientTests;
@@ -16,7 +17,12 @@ public class BaseFishingPreferenceClientTest
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient(HttpClientNames.AuthorizedApi)
             .Returns(new HttpClient(apiHandler) { BaseAddress = new Uri("https://api.test/") });
-        return new FishingPreferenceClient(factory);
+        var localizer = Substitute.For<ICatalogueLocalizer>();
+        localizer.Localize(Arg.Any<FishingLogBook.Shared.Dtos.FishingCatalogueDto>())
+            .Returns(call => call.Arg<FishingLogBook.Shared.Dtos.FishingCatalogueDto>());
+        localizer.Localize(Arg.Any<FishingLogBook.Shared.Dtos.FishingPreferencesDto>())
+            .Returns(call => call.Arg<FishingLogBook.Shared.Dtos.FishingPreferencesDto>());
+        return new FishingPreferenceClient(factory, localizer);
     }
 
     protected sealed class RecordingHandler : HttpMessageHandler

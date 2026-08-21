@@ -656,4 +656,11 @@
   <data name="Landing_BenefitRecord" xml:space="preserve"><value>Enregistrez rapidement prises et photos</value></data>
   <data name="Landing_BenefitPrivate" xml:space="preserve"><value>Vos lieux de pêche restent privés par défaut</value></data>
   <data name="Landing_BenefitOffline" xml:space="preserve"><value>Conçu pour les zones sans réseau ou hors ligne</value></data>
+  <data name="Modal_Save" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="Modal_Selected" xml:space="preserve"><value>Sélection</value></data>
+  <data name="Modal_Available" xml:space="preserve"><value>Options disponibles</value></data>
+  <data name="Modal_NoneSelected" xml:space="preserve"><value>Aucune sélection</value></data>
+  <data name="Modal_ShowingLimited" xml:space="preserve"><value>Affichage de {0} sur {1} {2}. Recherchez pour en trouver davantage.</value></data>
+  <data name="Modal_Species" xml:space="preserve"><value>espèces</value></data>
+  <data name="Modal_FishingMethods" xml:space="preserve"><value>méthodes de pêche</value></data>
 </root>

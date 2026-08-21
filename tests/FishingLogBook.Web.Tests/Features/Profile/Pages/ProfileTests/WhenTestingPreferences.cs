@@ -163,7 +163,10 @@ public class WhenTestingPreferences : BaseProfileTest
                 Arg.Any<CataloguePickerModalModel>(),
                 Arg.Any<CancellationToken>())
             .Returns(new CataloguePickerModalResult(
-                new CatalogueOptionModel(PikeSpeciesId, "Pike", "Pike")));
+            [
+                new CatalogueOptionModel(BrownTroutSpeciesId, "BrownTrout", "Brown Trout"),
+                new CatalogueOptionModel(PikeSpeciesId, "Pike", "Pike")
+            ]));
         await using var context = CreateContext(profileClient, preferenceClient, modalService);
         var cut = context.Render<ProfilePage>();
         cut.WaitForAssertion(() => cut.Find("#profile-species-more-Fly"));
@@ -175,11 +178,16 @@ public class WhenTestingPreferences : BaseProfileTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#profile-species-Fly-Pike").Should().NotBeNull();
+            cut.Find("#profile-species-Fly-BrownTrout").Should().NotBeNull();
             cut.Find("#profile-species-remove-Fly-Pike").Should().NotBeNull();
         });
         await modalService.Received(1)
             .ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
-                Arg.Is<CataloguePickerModalModel>(model => model.Options.Count == 2),
+                Arg.Is<CataloguePickerModalModel>(model =>
+                    model.Options.Count == 2
+                    && model.AllowMultiple
+                    && model.SelectedOptionIds != null
+                    && model.SelectedOptionIds.Count == 0),
                 Arg.Any<CancellationToken>());
     }
 

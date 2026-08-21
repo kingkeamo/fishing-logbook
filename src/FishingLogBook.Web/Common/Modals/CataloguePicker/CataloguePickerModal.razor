@@ -13,29 +13,69 @@
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
                           id="catalogue-picker-modal-search" />
-            @if (FilteredOptions.Count == 0)
-            {
-                <MudText Typo="Typo.body2"
-                         Class="mud-text-secondary"
-                         id="catalogue-picker-modal-empty">
-                    @Loc["Modal_NoMatches"]
+            <section class="catalogue-picker-section catalogue-picker-available"
+                     aria-labelledby="catalogue-picker-modal-available-label">
+                <MudText Typo="Typo.subtitle2" Class="catalogue-picker-label"
+                         id="catalogue-picker-modal-available-label">
+                    @Loc["Modal_Available"]
                 </MudText>
-            }
-            else
-            {
-                <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catalogue-picker-modal-options">
-                    @foreach (var option in FilteredOptions)
-                    {
-                        <MudChip T="string"
-                                 Color="Color.Default"
-                                 Variant="Variant.Outlined"
-                                 OnClick="() => Select(option)"
-                                 id="@($"catalogue-picker-modal-option-{option.Code}")">
-                            @option.Name
-                        </MudChip>
-                    }
-                </MudStack>
-            }
+                @if (IsInitialListLimited && string.IsNullOrWhiteSpace(_search))
+                {
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary catalogue-picker-count"
+                             id="catalogue-picker-modal-limit-message">
+                        @string.Format(Loc["Modal_ShowingLimited"], FilteredOptions.Count, Model.Options.Count, Model.ItemPluralName)
+                    </MudText>
+                }
+                @if (FilteredOptions.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary"
+                             id="catalogue-picker-modal-empty">
+                        @Loc["Modal_NoMatches"]
+                    </MudText>
+                }
+                else
+                {
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catalogue-picker-modal-options">
+                        @foreach (var option in FilteredOptions)
+                        {
+                            <MudChip T="string"
+                                     Color="@(_selectedOptionIds.Contains(option.Id) ? Color.Primary : Color.Default)"
+                                     Variant="@(_selectedOptionIds.Contains(option.Id) ? Variant.Filled : Variant.Outlined)"
+                                     OnClick="() => Toggle(option)"
+                                     id="@($"catalogue-picker-modal-option-{option.Code}")">
+                                @option.Name
+                            </MudChip>
+                        }
+                    </MudStack>
+                }
+            </section>
+            <section class="catalogue-picker-section catalogue-picker-selected"
+                     aria-labelledby="catalogue-picker-modal-selected-label">
+                <MudText Typo="Typo.subtitle2" Class="catalogue-picker-label"
+                         id="catalogue-picker-modal-selected-label">
+                    @Loc["Modal_Selected"]
+                </MudText>
+                @if (SelectedOptions.Count > 0)
+                {
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catalogue-picker-modal-selected">
+                        @foreach (var option in SelectedOptions)
+                        {
+                            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled"
+                                     OnClose="() => Toggle(option)"
+                                     id="@($"catalogue-picker-modal-selected-{option.Code}")">
+                                @option.Name
+                            </MudChip>
+                        }
+                    </MudStack>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary"
+                             id="catalogue-picker-modal-none-selected">
+                        @Loc["Modal_NoneSelected"]
+                    </MudText>
+                }
+            </section>
         </MudStack>
     </DialogContent>
     <DialogActions>
@@ -43,6 +83,10 @@
                    OnClick="Cancel"
                    id="catalogue-picker-modal-cancel">
             @Loc["Modal_Cancel"]
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="Save" id="catalogue-picker-modal-save">
+            @Loc["Modal_Save"]
         </MudButton>
     </DialogActions>
 </MudDialog>
