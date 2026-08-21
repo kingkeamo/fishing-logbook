@@ -27,6 +27,7 @@
   <ItemGroup>
     <Content Remove="wwwroot\**\*.test.js" />
     <None Include="wwwroot\**\*.test.js" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+    <Content Update="wwwroot\appsettings.Development.json" CopyToPublishDirectory="Never" />
     <Content Remove="BrowserTests\**" />
     <None Include="BrowserTests\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
   </ItemGroup>

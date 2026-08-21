@@ -54,44 +54,17 @@ jobs:
       # set; missing values fail this step instead of emitting Dev defaults.
       - name: Apply public Auth configuration
         env:
+          API_BASE_URL: https://fishing-logbook-dev-api.fly.dev
           AUTH_AUTHORITY: ${{ vars.AUTH_AUTHORITY }}
           AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
           AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
           AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
           AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
-        run: |
-          python3 <<'PY'
-          import json
-          import os
-          import sys
-          from pathlib import Path
-
-          required = [
-              "AUTH_AUTHORITY",
-              "AUTH_CLIENT_ID",
-              "AUTH_HOSTED_UI_DOMAIN",
-              "AUTH_API_SCOPE",
-              "AUTH_API_RESOURCE",
-          ]
-          missing = [name for name in required if not os.environ.get(name, "").strip()]
-          if missing:
-              sys.exit(
-                  "Missing required GitHub environment variables: "
-                  + ", ".join(missing)
-                  + ". Set them on the GitHub dev environment."
-              )
-
-          path = Path("src/FishingLogBook.Web/wwwroot/appsettings.Production.json")
-          data = json.loads(path.read_text(encoding="utf-8"))
-          data["Auth"] = {
-              "Authority": os.environ["AUTH_AUTHORITY"].strip(),
-              "ClientId": os.environ["AUTH_CLIENT_ID"].strip(),
-              "HostedUiDomain": os.environ["AUTH_HOSTED_UI_DOMAIN"].strip(),
-              "ApiScope": os.environ["AUTH_API_SCOPE"].strip(),
-              "ApiResource": os.environ["AUTH_API_RESOURCE"].strip(),
-          }
-          path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-          PY
+        run: >-
+          node src/FishingLogBook.Web/build/configure-web.mjs
+          --environment dev
+          --template src/FishingLogBook.Web/wwwroot/appsettings.Production.json
+          --output src/FishingLogBook.Web/wwwroot/appsettings.Production.json
 
       - name: Publish Web
         run: dotnet publish src/FishingLogBook.Web --configuration Release -o artifacts/web

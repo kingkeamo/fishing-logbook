@@ -9,6 +9,11 @@ Fly Terraform provider). These files live here so all infrastructure config sits
 | `fly.dev.toml` | `fishing-logbook-dev-api` | Dev |
 | `fly.prod.toml` | `fishing-logbook-prod-api` | Prod (create later, manually) |
 
+Production starts in the private-alpha low-cost configuration: auto-stop and auto-start
+enabled, with zero minimum running Machines. Cold-start latency is accepted initially.
+See [`docs/ProductionRunbook.md`](../../docs/ProductionRunbook.md) for the production-only
+secrets, custom-domain and ordered deployment procedure.
+
 The API **image** is still built from the repo-root [`Dockerfile`](../../Dockerfile)
 (`dockerfile = "../../Dockerfile"` in the toml — Fly resolves that path relative to
 the config file, not the deploy context). Always run `flyctl` from the **repository

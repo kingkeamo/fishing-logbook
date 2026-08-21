@@ -13,3 +13,15 @@ variable "production_branch" {
   description = "Git branch that maps to this Pages environment."
   default     = "main"
 }
+
+variable "project_name" {
+  type        = string
+  description = "Optional explicit Pages project name. Defaults to fishing-logbook-<environment>."
+  default     = ""
+}
+
+variable "custom_domains" {
+  type        = set(string)
+  description = "Custom domains to attach to the Pages project. DNS records are managed separately."
+  default     = []
+}

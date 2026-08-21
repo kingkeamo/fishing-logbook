@@ -10,17 +10,16 @@
 
 environment = "prod"
 
-# cognito_api_resource_identifier = "https://<production-api-host>"
+cognito_api_resource_identifier = "https://api.catchbutdontforget.com"
 
 # cloudflare_account_id = "<from dash.cloudflare.com → account ID>"
 # r2_location           = "enam"
 
-# Production callback URLs are required before apply. Do not guess the production domain.
-# cognito_callback_urls = ["https://<your-prod-web-domain>/authentication/login-callback"]
-# cognito_logout_urls = [
-#   "https://<your-prod-web-domain>/authentication/logout-callback",
-#   "https://<your-prod-web-domain>/",
-# ]
+cognito_callback_urls = ["https://app.catchbutdontforget.com/authentication/login-callback"]
+cognito_logout_urls = [
+  "https://app.catchbutdontforget.com/authentication/logout-callback",
+  "https://app.catchbutdontforget.com/",
+]
 
 # neon_org_id     = "<neon-organisation-id>"
 # neon_region     = "aws-us-east-1"
@@ -31,5 +30,7 @@ environment = "prod"
 # fly_vm_size = "shared-cpu-1x"
 
 # pages_production_branch = "main"
+# root_domain = "catchbutdontforget.com"
+# app_domain  = "app.catchbutdontforget.com"
 
 # grafana_cloud_stack_slug = "<slug from https://<slug>.grafana.net after Grafana Cloud signup>"

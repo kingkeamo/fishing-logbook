@@ -1,0 +1,133 @@
+name: deploy-production
+
+# Repository deployment only. Production infrastructure and database migrations remain
+# deliberate manual operations and must be complete before this workflow is approved.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Production deployment target
+        required: true
+        type: choice
+        options:
+          - web
+          - api
+          - root
+
+concurrency:
+  group: deploy-production-${{ inputs.target }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore FishingLogBook.sln
+      - run: dotnet build FishingLogBook.sln --configuration Release --no-restore
+      - run: dotnet test FishingLogBook.sln --configuration Release --no-build --verbosity normal
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Test deployment configuration guard
+        run: >-
+          node --test
+          src/FishingLogBook.Web/build/configure-web.test.mjs
+          src/FishingLogBook.Root/build/root-site.test.mjs
+
+  deploy-web:
+    name: Deploy production PWA
+    if: inputs.target == 'web'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Create and validate production public configuration
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          AUTH_AUTHORITY: ${{ vars.AUTH_AUTHORITY }}
+          AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
+          AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
+          AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
+          AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+        run: >-
+          node src/FishingLogBook.Web/build/configure-web.mjs
+          --environment prod
+          --template src/FishingLogBook.Web/wwwroot/appsettings.Production.json
+          --output src/FishingLogBook.Web/wwwroot/appsettings.Production.json
+      - run: dotnet publish src/FishingLogBook.Web --configuration Release -o artifacts/web
+      - name: Revalidate published production artifact
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          AUTH_AUTHORITY: ${{ vars.AUTH_AUTHORITY }}
+          AUTH_CLIENT_ID: ${{ vars.AUTH_CLIENT_ID }}
+          AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
+          AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
+          AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+        run: >-
+          node src/FishingLogBook.Web/build/configure-web.mjs
+          --environment prod
+          --template artifacts/web/wwwroot/appsettings.Production.json
+          --output artifacts/web/wwwroot/appsettings.Production.json
+          --artifact-root artifacts/web/wwwroot
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.86.0'
+          command: pages deploy artifacts/web/wwwroot --project-name fishing-logbook-prod --branch main
+      - name: Smoke check branded PWA origin
+        run: curl -fsS --retry 8 --retry-all-errors --retry-delay 5 https://app.catchbutdontforget.com/ | grep -q FishingLogBook
+
+  deploy-api:
+    name: Deploy production API
+    if: inputs.target == 'api'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        with:
+          version: 0.4.82
+      - name: Deploy to existing production Fly app
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy . --config infrastructure/fly/fly.prod.toml --app fishing-logbook-prod-api --remote-only
+      - name: Smoke check branded API origin
+        run: |
+          set -euo pipefail
+          for url in https://api.catchbutdontforget.com/health https://api.catchbutdontforget.com/api/system/database
+          do
+            curl -fsS --retry 8 --retry-all-errors --retry-delay 5 "${url}" | grep -q '"status":"Healthy"'
+          done
+
+  deploy-root:
+    name: Deploy production root site
+    if: inputs.target == 'root'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.86.0'
+          command: pages deploy src/FishingLogBook.Root --project-name catch-but-dont-forget-root --branch main
+      - name: Smoke check root site
+        run: curl -fsS --retry 8 --retry-all-errors --retry-delay 5 https://catchbutdontforget.com/ | grep -q 'Open the app'
