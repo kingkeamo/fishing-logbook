@@ -38,9 +38,8 @@ async function onInstall(event) {
         .filter(asset => !offlineAssetsExclude.some(pattern => pattern.test(asset.url)))
         .map(asset => new Request(asset.url, { cache: 'no-cache' }));
 
-    await Promise.all(assetsRequests.map(request => cacheUnredirected(cache, request).catch(() => undefined)));
+    await Promise.all(assetsRequests.map(request => cacheUnredirected(cache, request)));
     await cacheAppShell(cache);
-    await self.skipWaiting();
 }
 
 async function onActivate(event) {
@@ -75,30 +74,46 @@ async function onFetch(event) {
     }
 
     if (cachedResponse) {
-        cachedResponse = await withoutRedirect(cachedResponse);
+        return withoutRedirect(cachedResponse);
     }
 
-    return cachedResponse || fetch(event.request);
+    if (shouldServeIndexHtml) {
+        return (await fetchAppShell(cache)) || Response.error();
+    }
+
+    return fetch(event.request);
 }
 
 async function cacheAppShell(cache) {
-    const response = await fetch(new Request('./', { cache: 'no-cache' }));
-    if (!response.ok) {
-        return;
-    }
-
-    const shell = await withoutRedirect(response);
+    const shell = await fetchAppShell(cache);
     if (!shell) {
-        return;
+        throw new Error('App shell could not be cached');
     }
+}
 
-    await cache.put('index.html', shell);
+async function fetchAppShell(cache) {
+    try {
+        const response = await fetch(new Request(baseUrl.href, { cache: 'no-cache' }));
+        if (!response.ok) {
+            return undefined;
+        }
+
+        const shell = await withoutRedirect(response);
+        if (!shell) {
+            return undefined;
+        }
+
+        await cache.put('index.html', shell.clone());
+        return shell;
+    } catch {
+        return undefined;
+    }
 }
 
 async function cacheUnredirected(cache, request) {
     const response = await fetch(request);
     if (!response.ok) {
-        return;
+        throw new Error(`Asset could not be cached: ${request.url}`);
     }
 
     const stored = await withoutRedirect(response);

@@ -15,10 +15,12 @@ public class WhenTestingPublishedWorker : BaseServiceWorkerTest
         script.Should().Contain("event.request.mode === 'navigate'");
         script.Should().Contain("shouldServeIndexHtml");
         script.Should().Contain("? 'index.html'");
-        script.Should().Contain("cachedResponse || fetch(event.request)");
+        script.Should().Contain("return withoutRedirect(cachedResponse)");
+        script.Should().Contain("fetchAppShell(cache)");
+        script.Should().Contain("new Request(baseUrl.href");
         script.IndexOf("cache.match", StringComparison.Ordinal)
-            .Should().BeLessThan(script.IndexOf("cachedResponse || fetch(event.request)", StringComparison.Ordinal));
-        script.Should().NotContain("const networkResponse = await fetch(event.request)");
+            .Should().BeLessThan(script.IndexOf("fetchAppShell(cache)", StringComparison.Ordinal));
+        script.Should().NotContain("cachedResponse || fetch(event.request)");
     }
 
     [Fact]
