@@ -80,6 +80,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDiagnosticLogger, DiagnosticLogger>();
         services.AddScoped<IDiagnosticSynchroniser, DiagnosticSynchroniser>();
         services.AddLocalization();
+        services.AddScoped<ICatalogueLocalizer, CatalogueLocalizer>();
         services.AddScoped<ICultureService, CultureService>();
         services.AddScoped<ISignedInUserDisplayService, SignedInUserDisplayService>();
         services.AddMudServices();

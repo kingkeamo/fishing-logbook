@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="BrownTrout" xml:space="preserve"><value>Brown Trout</value></data>
+  <data name="RainbowTrout" xml:space="preserve"><value>Rainbow Trout</value></data>
+  <data name="BrookTrout" xml:space="preserve"><value>Brook Trout</value></data>
+  <data name="SeaTrout" xml:space="preserve"><value>Sea Trout</value></data>
+  <data name="Salmon" xml:space="preserve"><value>Salmon</value></data>
+  <data name="Pike" xml:space="preserve"><value>Pike</value></data>
+  <data name="Perch" xml:space="preserve"><value>Perch</value></data>
+  <data name="Carp" xml:space="preserve"><value>Carp</value></data>
+  <data name="Bream" xml:space="preserve"><value>Bream</value></data>
+  <data name="Roach" xml:space="preserve"><value>Roach</value></data>
+  <data name="Tench" xml:space="preserve"><value>Tench</value></data>
+  <data name="Grayling" xml:space="preserve"><value>Grayling</value></data>
+</root>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="BrownTrout" xml:space="preserve"><value>Truite brune</value></data>
+  <data name="RainbowTrout" xml:space="preserve"><value>Truite arc-en-ciel</value></data>
+  <data name="BrookTrout" xml:space="preserve"><value>Omble de fontaine</value></data>
+  <data name="SeaTrout" xml:space="preserve"><value>Truite de mer</value></data>
+  <data name="Salmon" xml:space="preserve"><value>Saumon</value></data>
+  <data name="Pike" xml:space="preserve"><value>Brochet</value></data>
+  <data name="Perch" xml:space="preserve"><value>Perche</value></data>
+  <data name="Carp" xml:space="preserve"><value>Carpe</value></data>
+  <data name="Bream" xml:space="preserve"><value>Brème</value></data>
+  <data name="Roach" xml:space="preserve"><value>Gardon</value></data>
+  <data name="Tench" xml:space="preserve"><value>Tanche</value></data>
+  <data name="Grayling" xml:space="preserve"><value>Ombre commun</value></data>
+</root>

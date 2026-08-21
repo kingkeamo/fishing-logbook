@@ -198,7 +198,7 @@ public partial class RecordCatch : ComponentBase, IDisposable
         var result = await ModalService.ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
             new CataloguePickerModalModel(title, options),
             _cancellationTokenSource.Token);
-        return result?.Option;
+        return result?.Options.SingleOrDefault();
     }
 
     private bool CanSave
