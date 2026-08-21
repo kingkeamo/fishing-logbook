@@ -22,6 +22,8 @@ self.addEventListener('unhandledrejection', event => notifyServiceWorkerError(St
 
 const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
+const recoveryCacheName = 'service-worker-recovery';
+const recoveryKey = 'pre-onboarding-startup-20260821';
 const offlineAssetsInclude = [ /\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.woff2$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.svg$/, /\.blat$/, /\.dat$/, /\.webmanifest$/ ];
 const offlineAssetsExclude = [ /^service-worker\.js$/, /\/_redirects$/, /\/_headers$/, /\.test\.js$/ ];
 
@@ -40,16 +42,38 @@ async function onInstall(event) {
 
     await Promise.all(assetsRequests.map(request => cacheUnredirected(cache, request)));
     await cacheAppShell(cache);
+    await self.skipWaiting();
 }
 
 async function onActivate(event) {
     console.info('Service worker: Activate');
-    await self.clients.claim();
-
     const cacheKeys = await caches.keys();
+    const hasPreviousAppShell = cacheKeys.some(key =>
+        key.startsWith(cacheNamePrefix) && key !== cacheName);
+
+    await self.clients.claim();
     await Promise.all(cacheKeys
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
         .map(key => caches.delete(key)));
+
+    if (hasPreviousAppShell) {
+        await reloadClientsOnce();
+    }
+}
+
+async function reloadClientsOnce() {
+    try {
+        const recoveryCache = await caches.open(recoveryCacheName);
+        if (await recoveryCache.match(recoveryKey)) {
+            return;
+        }
+
+        await recoveryCache.put(recoveryKey, new Response('complete'));
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        const appClients = clients.filter(client =>
+            !new URL(client.url).pathname.startsWith('/authentication/'));
+        await Promise.all(appClients.map(client => client.navigate(client.url)));
+    } catch { /* ignore */ }
 }
 
 async function onFetch(event) {

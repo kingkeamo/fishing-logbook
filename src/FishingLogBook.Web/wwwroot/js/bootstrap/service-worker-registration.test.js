@@ -4,7 +4,7 @@ import {
     registerServiceWorker
 } from './service-worker-registration.js';
 
-const currentEpoch = '20260821-atomic-app-shell';
+const currentEpoch = '20260821-pre-onboarding-startup';
 
 function createTargetWindow({ epoch, localStorageThrows = false, registrationThrows = false } = {}) {
     const storage = {};
