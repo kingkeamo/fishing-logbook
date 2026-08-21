@@ -20,7 +20,6 @@
             location.replace(location.pathname || '/');
         }
     </script>
-    <script type="module" src="js/bootstrap/app.js"></script>
 </head>
 
 <body>
@@ -45,7 +44,11 @@
         <span class="dismiss" role="button" tabindex="0" aria-label="Dismiss">🗙</span>
     </div>
     <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
-    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js" autostart="false"></script>
+    <script type="module">
+        await import('./js/bootstrap/app.js');
+        await Blazor.start();
+    </script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script type="module">
         import { registerServiceWorker } from './js/bootstrap/service-worker-registration.js';
