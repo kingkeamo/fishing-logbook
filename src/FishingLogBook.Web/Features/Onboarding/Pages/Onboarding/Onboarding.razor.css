@@ -8,6 +8,46 @@
     max-width: min(100%, 365px);
 }
 
+.species-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.species-pill-primary {
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+.species-pill-secondary {
+    background-color: var(--mud-palette-secondary);
+    color: var(--mud-palette-secondary-text);
+}
+
+::deep .species-pill .mud-chip {
+    margin: 0;
+    border-radius: 9999px 0 0 9999px;
+    padding-right: 0;
+}
+
+::deep .species-pill .species-pill-remove {
+    position: relative;
+    z-index: 1;
+    width: 1.125rem;
+    height: 1.125rem;
+    padding: 0.0625rem;
+    margin-left: 0.25rem;
+    margin-right: 0.5rem;
+    border-radius: 0 9999px 9999px 0;
+}
+
+::deep .species-pill .species-pill-remove::before {
+    content: "";
+    position: absolute;
+    inset: -0.4375rem;
+}
+
 ::deep .onboarding-stepper .mud-stepper-header {
     scrollbar-width: none;
 }

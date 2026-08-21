@@ -663,4 +663,34 @@
   <data name="Modal_ShowingLimited" xml:space="preserve"><value>Affichage de {0} sur {1} {2}. Recherchez pour en trouver davantage.</value></data>
   <data name="Modal_Species" xml:space="preserve"><value>espèces</value></data>
   <data name="Modal_FishingMethods" xml:space="preserve"><value>méthodes de pêche</value></data>
+  <data name="Install_Title" xml:space="preserve"><value>Installer Catch, But Don’t Forget</value></data>
+  <data name="Install_Benefit" xml:space="preserve"><value>Installez l’application pour y accéder rapidement depuis votre appareil et profiter d’une expérience plus fiable lorsque vous pêchez.</value></data>
+  <data name="Install_NativeAvailable" xml:space="preserve"><value>Votre navigateur peut installer l’application pour vous.</value></data>
+  <data name="Install_Action" xml:space="preserve"><value>Installer l’application</value></data>
+  <data name="Install_Dismissed" xml:space="preserve"><value>L’application n’a pas été installée. Vous pouvez réessayer ou continuer et l’installer plus tard.</value></data>
+  <data name="Install_InstalledTitle" xml:space="preserve"><value>L’application est installée</value></data>
+  <data name="Install_InstalledBody" xml:space="preserve"><value>Ouvrez Catch, But Don’t Forget depuis votre écran d’accueil comme vos autres applications.</value></data>
+  <data name="Install_InstalledWindows" xml:space="preserve"><value>Vous pouvez maintenant ouvrir Catch, But Don’t Forget comme une application Windows normale depuis le menu Démarrer ou la recherche, puis l’épingler où vous le souhaitez.</value></data>
+  <data name="Install_IosHeading" xml:space="preserve"><value>Ajouter l’application à l’écran d’accueil</value></data>
+  <data name="Install_IosUseSafari" xml:space="preserve"><value>Pour une installation fiable sur iPhone ou iPad, ouvrez d’abord ce site dans Safari.</value></data>
+  <data name="Install_IosStep1" xml:space="preserve"><value>Ouvrez Catch, But Don’t Forget dans Safari.</value></data>
+  <data name="Install_IosStep2" xml:space="preserve"><value>Touchez Partager.</value></data>
+  <data name="Install_IosStep3" xml:space="preserve"><value>Choisissez Sur l’écran d’accueil.</value></data>
+  <data name="Install_IosStep4" xml:space="preserve"><value>Touchez Ajouter.</value></data>
+  <data name="Install_IosStep5" xml:space="preserve"><value>Ouvrez Catch, But Don’t Forget depuis sa nouvelle icône sur l’écran d’accueil.</value></data>
+  <data name="Install_AndroidHeading" xml:space="preserve"><value>Installer depuis le menu du navigateur</value></data>
+  <data name="Install_AndroidAlternative" xml:space="preserve"><value>Vous ne voyez pas d’option d’installation près de la barre d’adresse ? Vous pouvez toujours installer l’application depuis le menu du navigateur.</value></data>
+  <data name="Install_AndroidStep1" xml:space="preserve"><value>Ouvrez le menu de votre navigateur.</value></data>
+  <data name="Install_AndroidStep2" xml:space="preserve"><value>Choisissez l’option Installer l’application ou Ajouter à l’écran d’accueil. Le libellé peut varier selon le navigateur.</value></data>
+  <data name="Install_AndroidStep3" xml:space="preserve"><value>Confirmez, puis ouvrez Catch, But Don’t Forget depuis votre écran d’accueil.</value></data>
+  <data name="Install_WindowsHeading" xml:space="preserve"><value>Installer sous Windows</value></data>
+  <data name="Install_WindowsStep1" xml:space="preserve"><value>Dans Edge ou Chrome, ouvrez le menu du navigateur et recherchez son option d’installation d’application.</value></data>
+  <data name="Install_WindowsStep2" xml:space="preserve"><value>Après l’installation, ouvrez l’application depuis le menu Démarrer ou la recherche, puis épinglez-la où vous le souhaitez.</value></data>
+  <data name="Install_OtherHeading" xml:space="preserve"><value>Installer depuis votre navigateur</value></data>
+  <data name="Install_Unsupported" xml:space="preserve"><value>Votre navigateur peut proposer l’installation sans afficher de bouton sur cette page.</value></data>
+  <data name="Install_OtherStep1" xml:space="preserve"><value>Recherchez une icône d’installation dans la barre d’adresse et sélectionnez-la.</value></data>
+  <data name="Install_OtherStep2" xml:space="preserve"><value>Si aucune icône n’apparaît, ouvrez le menu du navigateur et recherchez Installer l’application ou Ajouter à l’écran d’accueil. Si aucune option n’est proposée, vous pouvez continuer dans le navigateur.</value></data>
+  <data name="Install_Later" xml:space="preserve"><value>L’installation est facultative. Vous pouvez continuer et retrouver ces instructions plus tard depuis le menu de l’application.</value></data>
+  <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
+  <data name="Onboarding_ValidationSpecies" xml:space="preserve"><value>Choisissez au moins une espèce.</value></data>
 </root>
