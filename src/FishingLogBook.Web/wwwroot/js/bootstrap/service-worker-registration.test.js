@@ -4,16 +4,22 @@ import {
     registerServiceWorker
 } from './service-worker-registration.js';
 
-const currentEpoch = '20260814-cache-first-unredirected';
+const currentEpoch = '20260821-spa-shell-navigation';
 
-function createTargetWindow({ epoch, localStorageThrows = false } = {}) {
+function createTargetWindow({ epoch, localStorageThrows = false, registrationThrows = false } = {}) {
     const storage = {};
     if (epoch) {
         storage['flb-sw-epoch'] = epoch;
     }
 
     const unregister = vi.fn(async () => true);
-    const register = vi.fn(async () => ({}));
+    const register = vi.fn(async () => {
+        if (registrationThrows) {
+            throw new Error('registration failed');
+        }
+
+        return {};
+    });
     const cacheDelete = vi.fn(async () => true);
 
     return {
@@ -76,6 +82,19 @@ describe('service worker registration', () => {
         await registerServiceWorker(targetWindow);
 
         expect(targetWindow.register).toHaveBeenCalledWith('service-worker.js', { updateViaCache: 'none' });
+    });
+
+    it('does not block application startup when service worker registration fails', async () => {
+        const targetWindow = createTargetWindow({
+            epoch: currentEpoch,
+            registrationThrows: true
+        });
+
+        await expect(registerServiceWorker(targetWindow)).resolves.toBeUndefined();
+
+        expect(targetWindow.console.error).toHaveBeenCalledWith(
+            '[FLB] ServiceWorkerRegistrationError',
+            expect.any(Error));
     });
 
     it('logs ServiceWorkerError messages and ignores other worker messages', () => {

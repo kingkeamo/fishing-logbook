@@ -75,24 +75,37 @@ async function onFetch(event) {
     }
 
     if (cachedResponse) {
-        cachedResponse = await withoutRedirect(cachedResponse);
+        return withoutRedirect(cachedResponse);
     }
 
-    return cachedResponse || fetch(event.request);
+    if (shouldServeIndexHtml) {
+        return (await fetchAppShell(cache)) || Response.error();
+    }
+
+    return fetch(event.request);
 }
 
 async function cacheAppShell(cache) {
-    const response = await fetch(new Request('./', { cache: 'no-cache' }));
-    if (!response.ok) {
-        return;
-    }
+    await fetchAppShell(cache);
+}
 
-    const shell = await withoutRedirect(response);
-    if (!shell) {
-        return;
-    }
+async function fetchAppShell(cache) {
+    try {
+        const response = await fetch(new Request(baseUrl.href, { cache: 'no-cache' }));
+        if (!response.ok) {
+            return undefined;
+        }
 
-    await cache.put('index.html', shell);
+        const shell = await withoutRedirect(response);
+        if (!shell) {
+            return undefined;
+        }
+
+        await cache.put('index.html', shell.clone());
+        return shell;
+    } catch {
+        return undefined;
+    }
 }
 
 async function cacheUnredirected(cache, request) {

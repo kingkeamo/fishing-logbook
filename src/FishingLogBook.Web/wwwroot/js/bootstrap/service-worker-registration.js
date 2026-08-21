@@ -1,4 +1,4 @@
-const epoch = '20260814-cache-first-unredirected';
+const epoch = '20260821-spa-shell-navigation';
 
 export function listenForServiceWorkerErrors(targetWindow = window) {
     targetWindow.navigator.serviceWorker?.addEventListener('message', (event) => {
@@ -18,5 +18,9 @@ export async function registerServiceWorker(targetWindow = window) {
             targetWindow.localStorage.setItem('flb-sw-epoch', epoch);
         }
     } catch { /* ignore */ }
-    targetWindow.navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });
+    try {
+        await targetWindow.navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });
+    } catch (error) {
+        targetWindow.console.error('[FLB] ServiceWorkerRegistrationError', error);
+    }
 }

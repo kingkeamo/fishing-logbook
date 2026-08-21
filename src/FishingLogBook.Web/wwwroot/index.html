@@ -46,14 +46,12 @@
     <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js" autostart="false"></script>
     <script type="module">
+        const { registerServiceWorker } = await import('./js/bootstrap/service-worker-registration.js');
+        await registerServiceWorker();
         await import('./js/bootstrap/app.js');
         await Blazor.start();
     </script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script type="module">
-        import { registerServiceWorker } from './js/bootstrap/service-worker-registration.js';
-        registerServiceWorker();
-    </script>
 </body>
 
 </html>
