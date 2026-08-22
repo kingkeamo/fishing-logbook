@@ -14,4 +14,16 @@ describe('app bootstrap', () => {
         expect(window.fishingLogBookCulture.browser()).toBeTruthy();
         expect(typeof window.fishingLogBookNetwork.isOnline()).toBe('boolean');
     });
+
+    it('captures a browser install prompt offered before any page asks for it', async () => {
+        await import('./app.js');
+        const event = new Event('beforeinstallprompt');
+        event.prompt = () => Promise.resolve();
+        event.userChoice = Promise.resolve({ outcome: 'accepted' });
+
+        window.dispatchEvent(event);
+
+        const { getInstallState } = await import('../browser/install.js');
+        expect(getInstallState().canPrompt).toBe(true);
+    });
 });
