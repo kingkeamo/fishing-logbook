@@ -7,25 +7,31 @@ Production deploys are manual and must use an immutable annotated tag in the exa
 ## Normal release
 
 1. Merge the reviewed feature PR into `main` and wait for CI and development deployment checks.
-2. From an up-to-date `main`, create and push an annotated tag:
+2. Open **Actions**, select **Create Release**, choose `patch`, `minor`, or `major`, and run the workflow from `main`.
+3. The workflow validates that exact current `main` commit, calculates the next semantic version, creates the immutable tag and GitHub Release, then starts **Deploy production** with `target = all`.
+4. Approve the protected `prod` environment gate after confirming the tag and commit shown by the deployment workflow.
+5. Verify the root site, Web/PWA and API. Confirm the authenticated About/System screen shows the expected, independent Web and API versions and SHAs, and that Grafana diagnostics contain the API build metadata.
+
+Never move, delete or reuse a published release tag. Correct mistakes with a new version. Do not rerun **Create Release** to recover a partially completed release: it will correctly calculate a newer version.
+
+## Release recovery
+
+If the immutable tag was pushed but GitHub Release creation failed, keep the tag and create the missing Release against it:
 
    ```bash
-   git tag -a v0.2.0 -m "Release v0.2.0"
-   git push origin v0.2.0
+   gh release create v0.2.0 --verify-tag --generate-notes --title "CBDF v0.2.0"
    ```
 
-3. Run **Deploy production** manually, enter the exact tag, and choose the required target.
-4. Approve the protected `prod` environment gate after confirming the tag and commit shown by the workflow.
-5. Verify the authenticated About/System screen shows the expected, independent Web and API versions and SHAs.
+If release creation succeeded but production dispatch failed, manually run **Deploy production** using that existing tag and `target = all`. These recovery steps never move or recreate the tag.
 
-Never move, delete, or reuse a published release tag. Correct mistakes with a new version.
+As an emergency-only procedure when Actions is unavailable, an authorised maintainer may create the next correctly calculated annotated tag on a verified `main` commit and push it without force, then create the GitHub Release and manually start **Deploy production**. This is not the normal CBDF release path.
 
 ## Hotfix
 
 1. Branch from the currently deployed production tag and make the smallest fix.
-2. Review and validate that temporary hotfix branch, then create the next patch tag from its exact commit (for example `v0.2.1`).
-3. Follow the normal production workflow and verification steps above.
-4. Bring the same commit back into `main` by merge or cherry-pick, according to the actual history, and delete the temporary branch.
+2. Review and fully validate that temporary hotfix branch. Because **Create Release** deliberately accepts only current `main`, calculate the next patch version, create its annotated tag on the hotfix commit, and push it without force using the emergency procedure above.
+3. Create the GitHub Release for that existing tag, manually run **Deploy production** with `target = all`, approve the protected `prod` gate, and complete the normal verification steps.
+4. Bring the same fix back into `main` by merge or cherry-pick, according to the actual history, and delete the temporary branch.
 
 ## Rollback
 

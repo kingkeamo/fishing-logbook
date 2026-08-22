@@ -1,6 +1,7 @@
 name: build-test
 
 on:
+  workflow_call:
   push:
     branches: [main, develop]
   pull_request:
@@ -62,6 +63,7 @@ jobs:
       - run: npm ci
       - run: >-
           node --test
+          .github/scripts/release-version.test.mjs
           src/FishingLogBook.Web/build/configure-web.test.mjs
           src/FishingLogBook.Root/build/root-site.test.mjs
 

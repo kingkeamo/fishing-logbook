@@ -14,6 +14,7 @@ on:
         required: true
         type: choice
         options:
+          - all
           - web
           - api
           - root
@@ -68,7 +69,7 @@ jobs:
 
   deploy-web:
     name: Deploy production PWA
-    if: inputs.target == 'web'
+    if: inputs.target == 'all' || inputs.target == 'web'
     needs: validate
     runs-on: ubuntu-latest
     environment: prod
@@ -127,7 +128,7 @@ jobs:
 
   deploy-api:
     name: Deploy production API
-    if: inputs.target == 'api'
+    if: inputs.target == 'all' || inputs.target == 'api'
     needs: validate
     runs-on: ubuntu-latest
     environment: prod
@@ -161,7 +162,7 @@ jobs:
 
   deploy-root:
     name: Deploy production root site
-    if: inputs.target == 'root'
+    if: inputs.target == 'all' || inputs.target == 'root'
     needs: validate
     runs-on: ubuntu-latest
     environment: prod
