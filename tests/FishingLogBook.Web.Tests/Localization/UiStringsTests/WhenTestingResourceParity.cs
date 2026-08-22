@@ -40,10 +40,41 @@ public class WhenTestingResourceParity
         avatar.Should().Be("Votre photo de profil");
     }
 
+    [Fact]
+    public void ItShouldKeepInstallCopyFreeOfLegacyProductWording()
+    {
+        // Arrange
+        var manager = new ResourceManager(typeof(UiStrings));
+        var english = manager.GetResourceSet(new CultureInfo(CultureNames.English), true, false);
+        var french = manager.GetResourceSet(new CultureInfo(CultureNames.French), true, false);
+
+        // Act
+        var installValues = Values(english)
+            .Concat(Values(french))
+            .ToArray();
+
+        // Assert
+        installValues.Should().NotBeEmpty();
+        installValues.Should().AllSatisfy(value =>
+        {
+            value.Should().NotContain("Catch, But Don’t Forget");
+            value.Should().NotContain("CBDF");
+        });
+    }
+
     private static IReadOnlyCollection<string> Keys(ResourceSet? set)
     {
         return set is null
             ? []
             : [.. set.Cast<System.Collections.DictionaryEntry>().Select(entry => (string)entry.Key)];
+    }
+
+    private static IReadOnlyCollection<string> Values(ResourceSet? set)
+    {
+        return set is null
+            ? []
+            : [.. set.Cast<System.Collections.DictionaryEntry>()
+                .Where(entry => ((string)entry.Key).StartsWith("Install_", StringComparison.Ordinal))
+                .Select(entry => (string)entry.Value!)];
     }
 }

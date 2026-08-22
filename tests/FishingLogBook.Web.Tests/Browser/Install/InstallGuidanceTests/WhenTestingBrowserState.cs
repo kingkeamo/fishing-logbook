@@ -34,7 +34,8 @@ public class WhenTestingBrowserState : BaseInstallGuidanceTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#install-guidance-ios-steps").Children.Should().HaveCount(5);
+            cut.Find("#install-guidance-iphone-steps").Children.Should().HaveCount(8);
+            cut.Find("#install-guidance-ipad-steps").Children.Should().HaveCount(6);
             cut.Find("#install-guidance-android-steps").Children.Should().HaveCount(4);
             cut.Find("#install-guidance-computer-steps").Children.Should().HaveCount(4);
             cut.FindAll("#install-guidance-action").Should().BeEmpty();

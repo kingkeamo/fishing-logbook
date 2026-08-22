@@ -26,7 +26,8 @@ public class WhenTestingRender : BaseInstallGuidanceTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#install-guidance-ios-steps").Children.Should().HaveCount(5);
+            cut.Find("#install-guidance-iphone-steps").Children.Should().HaveCount(8);
+            cut.Find("#install-guidance-ipad-steps").Children.Should().HaveCount(6);
             cut.Find("#install-guidance-android-steps").Children.Should().HaveCount(4);
             cut.Find("#install-guidance-samsung-steps").Children.Should().HaveCount(3);
             cut.Find("#install-guidance-computer-steps").Children.Should().HaveCount(4);
@@ -83,8 +84,14 @@ public class WhenTestingRender : BaseInstallGuidanceTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#install-guidance-ios-panel").TextContent.Should().Contain("iPhone / iPad");
-            cut.Find("#install-guidance-ios-steps").TextContent.Should()
-                .Contain("Safari").And.Contain("Share").And.Contain("Add to Home Screen");
+            cut.Find("#install-guidance-iphone-steps").TextContent.Should()
+                .Contain("More").And.Contain("Share").And.Contain("Add to Home Screen")
+                .And.Contain("Open as Web App").And.Contain("Tap Add")
+                .And.Contain("Share button is already visible")
+                .And.Contain("Catch But Don’t Forget app");
+            cut.Find("#install-guidance-ipad-steps").TextContent.Should()
+                .Contain("Share in the top toolbar").And.Contain("Add to Home Screen")
+                .And.Contain("Open as Web App").And.Contain("Catch But Don’t Forget app");
             cut.Find("#install-guidance-ios-fallback").TextContent.Should().Contain("Open in Safari");
             cut.Find("#install-guidance-android-steps").TextContent.Should()
                 .Contain("⋮").And.Contain("Install app").And.Contain("Add to Home screen");
@@ -144,7 +151,10 @@ public class WhenTestingRender : BaseInstallGuidanceTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#install-guidance-ios-browser").TextContent.Should().Contain("Safari");
-            cut.Find("#install-guidance-ios-steps").Children.Should().HaveCount(5);
+            cut.Find("#install-guidance-ios-fallback").TextContent.Should()
+                .Contain("Open in Safari").And.Contain("copy the web address");
+            cut.Find("#install-guidance-iphone-steps").Children.Should().HaveCount(8);
+            cut.Find("#install-guidance-ipad-steps").Children.Should().HaveCount(6);
         });
         await service.Received(1).GetStateAsync(Arg.Any<CancellationToken>());
     }
@@ -184,7 +194,8 @@ public class WhenTestingRender : BaseInstallGuidanceTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#install-guidance-installed").TextContent.Should().Contain("App is installed");
+            cut.Find("#install-guidance-installed").TextContent.Should()
+                .Contain("App is installed").And.Contain("Catch But Don’t Forget app");
             cut.Find("#install-guidance-other-devices").TextContent.Should().Contain("another phone");
             cut.FindAll("#install-guidance-action").Should().BeEmpty();
             cut.FindAll("#install-guidance-benefit").Should().BeEmpty();
@@ -209,7 +220,8 @@ public class WhenTestingRender : BaseInstallGuidanceTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#install-guidance-installed").TextContent.Should().Contain("Start menu"));
+            cut.Find("#install-guidance-installed").TextContent.Should()
+                .Contain("Catch But Don’t Forget app").And.Contain("Start menu"));
         await service.Received(1).GetStateAsync(Arg.Any<CancellationToken>());
     }
 
@@ -255,8 +267,11 @@ public class WhenTestingRender : BaseInstallGuidanceTest
         {
             cut.Find("#install-guidance-title").TextContent.Should().Contain("Installer");
             cut.Find("#install-guidance-computer-panel").TextContent.Should().Contain("Ordinateur");
-            cut.Find("#install-guidance-ios-steps").TextContent.Should()
-                .Contain("Safari").And.Contain("Partager").And.Contain("Sur l’écran d’accueil");
+            cut.Find("#install-guidance-iphone-steps").TextContent.Should()
+                .Contain("Safari").And.Contain("Plus").And.Contain("Partager")
+                .And.Contain("Sur l’écran d’accueil").And.Contain("Ouvrir comme app web");
+            cut.Find("#install-guidance-ipad-steps").TextContent.Should()
+                .Contain("barre d’outils supérieure").And.Contain("Sur l’écran d’accueil");
             cut.Find("#install-guidance-android-steps").TextContent.Should()
                 .Contain("Installer l’application");
             cut.Find("#install-guidance-samsung-steps").TextContent.Should()
