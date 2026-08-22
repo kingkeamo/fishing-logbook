@@ -23,6 +23,7 @@ public class BaseDependencyInjectionTest
             new ApiConfig { BaseUrl = "https://example.test/" },
             new DiagnosticsClientConfig(),
             resolvedAuth,
+            new BuildMetadataConfig { Version = "0.1.0", Sha = "web-sha", Environment = "test" },
             apiBaseAddress);
 
         return services.BuildServiceProvider(new ServiceProviderOptions

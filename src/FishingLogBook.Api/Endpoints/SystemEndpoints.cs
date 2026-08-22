@@ -1,3 +1,4 @@
+using FishingLogBook.Api.Configuration;
 using FishingLogBook.Application.SystemStatus;
 using FishingLogBook.Shared.Dtos;
 
@@ -19,6 +20,12 @@ public static class SystemEndpoints
             .WithTags("System")
             .Produces<DatabaseTestDto>(StatusCodes.Status200OK)
             .Produces<DatabaseTestDto>(StatusCodes.Status503ServiceUnavailable);
+
+        endpoints.MapGet("/api/system/build", (BuildMetadataConfig buildMetadata) =>
+                Results.Ok(buildMetadata.ToDto()))
+            .WithName("GetBuildMetadata")
+            .WithTags("System")
+            .Produces<BuildMetadataDto>(StatusCodes.Status200OK);
 
         return endpoints;
     }

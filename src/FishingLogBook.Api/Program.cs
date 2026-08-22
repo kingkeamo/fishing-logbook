@@ -8,12 +8,18 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var buildMetadata = builder.Configuration
+    .GetSection(BuildMetadataConfig.SectionName)
+    .Get<BuildMetadataConfig>() ?? new BuildMetadataConfig();
+buildMetadata.EnsureRequired();
+
 builder.Host.UseSerilog((context, loggerConfiguration) =>
     SerilogHostLogging.Configure(loggerConfiguration, context.Configuration));
 
 const string webClientCorsPolicy = "WebClient";
 
 builder.Services.AddFishingLogBook(builder.Configuration);
+builder.Services.AddSingleton(buildMetadata);
 builder.Services.AddOpenApi();
 builder.Services.AddFishingLogBookJwtBearer(builder.Configuration);
 
@@ -39,8 +45,10 @@ var app = builder.Build();
 _ = app.Services.GetRequiredService<AuthConfig>();
 
 app.Logger.LogInformation(
-    "FishingLogBook API starting in {HostingEnvironment} environment.",
-    app.Environment.EnvironmentName);
+    "FishingLogBook API {AppVersion} build {BuildSha} starting in {BuildEnvironment} environment.",
+    buildMetadata.Version,
+    buildMetadata.Sha,
+    buildMetadata.Environment);
 
 app.MapOpenApi();
 app.UseSwaggerUI(options =>

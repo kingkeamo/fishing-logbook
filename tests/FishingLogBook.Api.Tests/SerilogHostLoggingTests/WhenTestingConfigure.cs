@@ -83,6 +83,29 @@ public class WhenTestingConfigure
         mockSink.Received(1).Emit(Arg.Is<LogEvent>(logEvent => logEvent.Properties.ContainsKey("env")));
     }
 
+    [Fact]
+    public void ItShouldAttachBuildMetadataAsStructuredProperties()
+    {
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["ExternalLogging:Provider"] = "None",
+            ["Build:Version"] = "0.1.0",
+            ["Build:Sha"] = "0123456789abcdef0123456789abcdef01234567"
+        });
+        var loggerConfiguration = new LoggerConfiguration();
+        var mockSink = Substitute.For<ILogEventSink>();
+        LogEvent? captured = null;
+        mockSink.When(sink => sink.Emit(Arg.Any<LogEvent>())).Do(call => captured = call.Arg<LogEvent>());
+
+        SerilogHostLogging.Configure(loggerConfiguration, configuration);
+        loggerConfiguration.WriteTo.Sink(mockSink);
+        using var logger = loggerConfiguration.CreateLogger();
+        logger.Information("started");
+
+        captured!.Properties["app_version"].Should().BeOfType<ScalarValue>().Which.Value.Should().Be("0.1.0");
+        captured.Properties["build_sha"].Should().BeOfType<ScalarValue>().Which.Value.Should().Be("0123456789abcdef0123456789abcdef01234567");
+    }
+
     private static IConfiguration BuildConfiguration(Dictionary<string, string?> values)
     {
         return new ConfigurationBuilder()

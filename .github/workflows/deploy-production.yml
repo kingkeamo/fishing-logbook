@@ -5,6 +5,10 @@ name: deploy-production
 on:
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: Immutable release tag to deploy (vX.Y.Z)
+        required: true
+        type: string
       target:
         description: Production deployment target
         required: true
@@ -25,8 +29,26 @@ jobs:
   validate:
     name: Build and test
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
+      timestamp: ${{ steps.release.outputs.timestamp }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          fetch-depth: 0
+      - name: Validate immutable release tag
+        id: release
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_TAG}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          test "$(git describe --tags --exact-match HEAD)" = "${RELEASE_TAG}"
+          echo "version=${RELEASE_TAG#v}" >> "${GITHUB_OUTPUT}"
+          echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          echo "timestamp=$(git show -s --format=%cI HEAD)" >> "${GITHUB_OUTPUT}"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -52,6 +74,8 @@ jobs:
     environment: prod
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -63,6 +87,10 @@ jobs:
           AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
           AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
           AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+          BUILD_VERSION: ${{ inputs.release_tag }}
+          BUILD_SHA: ${{ needs.validate.outputs.sha }}
+          BUILD_ENVIRONMENT: prod
+          BUILD_TIMESTAMP: ${{ needs.validate.outputs.timestamp }}
         run: >-
           node src/FishingLogBook.Web/build/configure-web.mjs
           --environment prod
@@ -77,12 +105,17 @@ jobs:
           AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
           AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
           AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+          BUILD_VERSION: ${{ inputs.release_tag }}
+          BUILD_SHA: ${{ needs.validate.outputs.sha }}
+          BUILD_ENVIRONMENT: prod
+          BUILD_TIMESTAMP: ${{ needs.validate.outputs.timestamp }}
         run: >-
           node src/FishingLogBook.Web/build/configure-web.mjs
           --environment prod
           --template artifacts/web/wwwroot/appsettings.Production.json
           --output artifacts/web/wwwroot/appsettings.Production.json
           --artifact-root artifacts/web/wwwroot
+          --validate-only true
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -100,13 +133,24 @@ jobs:
     environment: prod
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
       - uses: superfly/flyctl-actions/setup-flyctl@master
         with:
           version: 0.4.82
       - name: Deploy to existing production Fly app
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy . --config infrastructure/fly/fly.prod.toml --app fishing-logbook-prod-api --remote-only
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: >-
+          flyctl deploy .
+          --config infrastructure/fly/fly.prod.toml
+          --app fishing-logbook-prod-api
+          --remote-only
+          --build-arg BUILD_VERSION=${RELEASE_TAG#v}
+          --build-arg BUILD_SHA=${{ needs.validate.outputs.sha }}
+          --build-arg BUILD_ENVIRONMENT=prod
+          --build-arg BUILD_TIMESTAMP=${{ needs.validate.outputs.timestamp }}
       - name: Smoke check branded API origin
         run: |
           set -euo pipefail
@@ -123,6 +167,8 @@ jobs:
     environment: prod
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

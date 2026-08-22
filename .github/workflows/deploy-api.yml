@@ -52,7 +52,18 @@ jobs:
       - name: Deploy
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy . --config infrastructure/fly/fly.dev.toml --app fishing-logbook-dev-api --remote-only
+          BUILD_VERSION: 0.0.0-dev.${{ github.run_number }}
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
+        run: >-
+          flyctl deploy .
+          --config infrastructure/fly/fly.dev.toml
+          --app fishing-logbook-dev-api
+          --remote-only
+          --build-arg BUILD_VERSION=${BUILD_VERSION}
+          --build-arg BUILD_SHA=${BUILD_SHA}
+          --build-arg BUILD_ENVIRONMENT=dev
+          --build-arg BUILD_TIMESTAMP=${BUILD_TIMESTAMP}
 
       - name: Smoke checks
         run: |

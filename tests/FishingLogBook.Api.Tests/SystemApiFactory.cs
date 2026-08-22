@@ -156,7 +156,11 @@ public class SystemApiFactory : WebApplicationFactory<Program>
         {
             var values = new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Postgres"] = string.Empty
+                ["ConnectionStrings:Postgres"] = string.Empty,
+                ["Build:Version"] = "0.1.0",
+                ["Build:Sha"] = "0123456789abcdef0123456789abcdef01234567",
+                ["Build:Environment"] = "prod",
+                ["Build:Timestamp"] = "2026-08-22T00:00:00Z"
             };
             foreach (var pair in TestAuthentication.Configuration)
             {
@@ -168,6 +172,14 @@ public class SystemApiFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
+            services.RemoveAll<BuildMetadataConfig>();
+            services.AddSingleton(new BuildMetadataConfig
+            {
+                Version = "0.1.0",
+                Sha = "0123456789abcdef0123456789abcdef01234567",
+                Environment = "prod",
+                Timestamp = DateTimeOffset.Parse("2026-08-22T00:00:00Z")
+            });
             services.RemoveAll<AuthConfig>();
             services.AddSingleton(new AuthConfig
             {

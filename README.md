@@ -5,6 +5,9 @@ guides, fisheries and competition organisers. See [`docs/Requirements.md`](docs/
 for the product requirements and [`docs/Architecture.md`](docs/Architecture.md) for the
 architecture and hosting decisions.
 
+Release tagging, production promotion, hotfix and rollback steps are documented in
+[`docs/Release.md`](docs/Release.md).
+
 This repository currently contains the **initial technical foundation** described in
 [`BUILD.md`](BUILD.md). The goal of this stage is to prove the vertical architecture
 (PWA → API → PostgreSQL) cheaply and safely — not to build the full MVP. Fisheries,
