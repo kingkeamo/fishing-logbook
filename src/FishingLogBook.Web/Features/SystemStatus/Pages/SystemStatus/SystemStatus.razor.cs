@@ -1,5 +1,7 @@
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.SystemStatus.Clients;
 using FishingLogBook.Web.Features.SystemStatus.Models;
 using FishingLogBook.Web.Localization;
@@ -19,6 +21,7 @@ public partial class SystemStatus : ComponentBase, IDisposable
     private StatusState _apiStatus = StatusState.Checking;
     private StatusState _databaseStatus = StatusState.Checking;
     private string? _databaseName;
+    private BuildMetadataDto? _apiBuild;
     private bool _isChecking;
 
     [Inject]
@@ -26,6 +29,9 @@ public partial class SystemStatus : ComponentBase, IDisposable
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    [Inject]
+    private BuildMetadataConfig WebBuild { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -38,11 +44,13 @@ public partial class SystemStatus : ComponentBase, IDisposable
         _apiStatus = StatusState.Checking;
         _databaseStatus = StatusState.Checking;
         _databaseName = null;
+        _apiBuild = null;
 
         _apiStatus = await CheckApiAsync();
 
         if (_apiStatus == StatusState.Online)
         {
+            _apiBuild = await GetApiBuildAsync();
             _databaseStatus = await CheckDatabaseAsync();
         }
         else
@@ -51,6 +59,18 @@ public partial class SystemStatus : ComponentBase, IDisposable
         }
 
         _isChecking = false;
+    }
+
+    private async Task<BuildMetadataDto?> GetApiBuildAsync()
+    {
+        try
+        {
+            return await SystemStatusClient.GetBuildMetadataAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     private async Task<StatusState> CheckApiAsync()

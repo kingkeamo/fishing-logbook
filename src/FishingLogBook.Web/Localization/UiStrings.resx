@@ -694,4 +694,11 @@
   <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choose at least one fishing method.</value></data>
   <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choose at least one species for {0}.</value></data>
   <data name="Onboarding_ValidationSpeciesForMethods" xml:space="preserve"><value>Choose at least one species for each of these fishing methods: {0}.</value></data>
+  <data name="Build_About" xml:space="preserve"><value>About</value></data>
+  <data name="Build_App" xml:space="preserve"><value>App</value></data>
+  <data name="Build_Api" xml:space="preserve"><value>API</value></data>
+  <data name="Build_Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Build_Commit" xml:space="preserve"><value>Build</value></data>
+  <data name="Build_Environment" xml:space="preserve"><value>Environment</value></data>
+  <data name="Build_Unavailable" xml:space="preserve"><value>Unavailable</value></data>
 </root>

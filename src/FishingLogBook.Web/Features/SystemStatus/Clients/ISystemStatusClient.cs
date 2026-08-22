@@ -7,4 +7,6 @@ public interface ISystemStatusClient
     Task<HealthDto?> GetApiHealthAsync(CancellationToken cancellationToken);
 
     Task<DatabaseTestDto?> GetDatabaseStatusAsync(CancellationToken cancellationToken);
+
+    Task<BuildMetadataDto?> GetBuildMetadataAsync(CancellationToken cancellationToken);
 }

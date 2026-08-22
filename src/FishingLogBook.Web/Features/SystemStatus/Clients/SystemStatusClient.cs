@@ -23,4 +23,9 @@ public sealed class SystemStatusClient : ISystemStatusClient
 
         return await response.Content.ReadFromJsonAsync<DatabaseTestDto>(cancellationToken);
     }
+
+    public async Task<BuildMetadataDto?> GetBuildMetadataAsync(CancellationToken cancellationToken)
+    {
+        return await _httpClient.GetFromJsonAsync<BuildMetadataDto>("api/system/build", cancellationToken);
+    }
 }

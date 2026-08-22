@@ -1,3 +1,4 @@
+using FishingLogBook.Api.Configuration;
 using FishingLogBook.Domain.Config;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -12,12 +13,16 @@ public static class SerilogHostLogging
     {
         var externalLogging = configuration.GetSection(ExternalLoggingConfig.SectionName).Get<ExternalLoggingConfig>()
             ?? new ExternalLoggingConfig();
+        var buildMetadata = configuration.GetSection(BuildMetadataConfig.SectionName).Get<BuildMetadataConfig>()
+            ?? new BuildMetadataConfig();
 
         loggerConfiguration
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("env", externalLogging.StreamEnvironment)
+            .Enrich.WithProperty("app_version", buildMetadata.Version)
+            .Enrich.WithProperty("build_sha", buildMetadata.Sha)
             .WriteTo.Console();
 
         if (!externalLogging.IsConfigured)

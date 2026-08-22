@@ -20,6 +20,32 @@
             </MudStack>
         </MudPaper>
 
+        <MudPaper Class="pa-4" Elevation="2" id="build-information">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.h6">@Loc["Build_About"]</MudText>
+                <div id="web-build-information">
+                    <MudText Typo="Typo.subtitle1">@Loc["Build_App"]</MudText>
+                    <MudText>@Loc["Build_Version"]: @WebBuild.Version</MudText>
+                    <MudText>@Loc["Build_Commit"]: @WebBuild.Sha</MudText>
+                    <MudText>@Loc["Build_Environment"]: @WebBuild.Environment</MudText>
+                </div>
+                <MudDivider />
+                <div id="api-build-information">
+                    <MudText Typo="Typo.subtitle1">@Loc["Build_Api"]</MudText>
+                    @if (_apiBuild is null)
+                    {
+                        <MudText id="api-build-unavailable">@Loc["Build_Unavailable"]</MudText>
+                    }
+                    else
+                    {
+                        <MudText>@Loc["Build_Version"]: @_apiBuild.Version</MudText>
+                        <MudText>@Loc["Build_Commit"]: @_apiBuild.Sha</MudText>
+                        <MudText>@Loc["Build_Environment"]: @_apiBuild.Environment</MudText>
+                    }
+                </div>
+            </MudStack>
+        </MudPaper>
+
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth="true"

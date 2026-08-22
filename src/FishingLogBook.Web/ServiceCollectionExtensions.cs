@@ -39,12 +39,14 @@ public static class ServiceCollectionExtensions
         ApiConfig apiConfig,
         DiagnosticsClientConfig diagnosticsConfig,
         AuthConfig authConfig,
+        BuildMetadataConfig buildMetadata,
         Uri apiBaseAddress)
     {
         authConfig.EnsureRequired();
         services.AddSingleton(apiConfig);
         services.AddSingleton(diagnosticsConfig);
         services.AddSingleton(authConfig);
+        services.AddSingleton(buildMetadata);
         services.AddScoped<CorrelationContext>();
         services.AddTransient<CorrelationDelegatingHandler>();
         services.AddTransient(sp => CreateApiAuthorizationMessageHandler(sp, authConfig, apiBaseAddress));

@@ -12,6 +12,23 @@ export const requiredEnvironmentValues = {
     AUTH_API_RESOURCE: ['Auth', 'ApiResource'],
 };
 
+export const requiredBuildValues = {
+    BUILD_VERSION: ['Build', 'Version'],
+    BUILD_SHA: ['Build', 'Sha'],
+    BUILD_ENVIRONMENT: ['Build', 'Environment'],
+    BUILD_TIMESTAMP: ['Build', 'Timestamp'],
+};
+
+const releaseTagPattern = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+
+export function releaseVersion(tag) {
+    if (!releaseTagPattern.test(tag ?? '')) {
+        throw new Error('Production release tag must match vX.Y.Z');
+    }
+
+    return tag.slice(1);
+}
+
 export const productionExpectedValues = {
     API_BASE_URL: 'https://api.catchbutdontforget.com',
     AUTH_API_RESOURCE: 'https://api.catchbutdontforget.com',
@@ -34,23 +51,37 @@ const productionUrlValues = [
 ];
 
 export function buildConfiguration(template, values, environment) {
-    const missing = Object.keys(requiredEnvironmentValues).filter(name => !values[name]?.trim());
+    const normalizedValues = { ...values };
+    if (environment === 'prod') {
+        normalizedValues.BUILD_VERSION = releaseVersion(values.BUILD_VERSION?.trim());
+    }
+    const requiredValues = { ...requiredEnvironmentValues, ...requiredBuildValues };
+    const missing = Object.keys(requiredValues).filter(name => !normalizedValues[name]?.trim());
     if (missing.length > 0) {
         throw new Error(`Missing required deployment values: ${missing.join(', ')}`);
     }
 
     const result = structuredClone(template);
-    for (const [name, [section, key]] of Object.entries(requiredEnvironmentValues)) {
+    for (const [name, [section, key]] of Object.entries(requiredValues)) {
         result[section] ??= {};
-        result[section][key] = values[name].trim();
+        result[section][key] = normalizedValues[name].trim();
     }
 
     if (environment === 'prod') {
+        if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(normalizedValues.BUILD_VERSION)) {
+            throw new Error('Unsafe production configuration: BUILD_VERSION must be semantic X.Y.Z');
+        }
+        if (!/^[0-9a-f]{40}$/i.test(normalizedValues.BUILD_SHA.trim())) {
+            throw new Error('Unsafe production configuration: BUILD_SHA must be a full Git commit SHA');
+        }
+        if (normalizedValues.BUILD_ENVIRONMENT.trim() !== 'prod') {
+            throw new Error('Unsafe production configuration: BUILD_ENVIRONMENT must be prod');
+        }
         const errors = Object.entries(productionExpectedValues)
-            .filter(([name, expected]) => values[name].trim() !== expected)
+            .filter(([name, expected]) => normalizedValues[name].trim() !== expected)
             .map(([name, expected]) => `${name} must be ${expected}`);
         errors.push(...productionUrlValues
-            .filter(name => !values[name].trim().startsWith('https://'))
+            .filter(name => !normalizedValues[name].trim().startsWith('https://'))
             .map(name => `${name} must use HTTPS`));
         const serialized = JSON.stringify(result).toLowerCase();
         errors.push(...productionForbiddenMarkers
@@ -98,7 +129,9 @@ async function main(args = process.argv.slice(2)) {
 
     const template = JSON.parse(await readFile(options.template, 'utf8'));
     const configured = buildConfiguration(template, process.env, options.environment);
-    await writeFile(options.output, `${JSON.stringify(configured, null, 2)}\n`, 'utf8');
+    if (!('validate-only' in options)) {
+        await writeFile(options.output, `${JSON.stringify(configured, null, 2)}\n`, 'utf8');
+    }
     if (options['artifact-root']) {
         const paths = await findTextFiles(options['artifact-root']);
         validateProductionArtifactFiles(await Promise.all(paths.map(async path => [

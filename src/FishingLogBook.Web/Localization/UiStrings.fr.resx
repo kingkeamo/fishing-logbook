@@ -694,4 +694,11 @@
   <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
   <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espèce pour {0}.</value></data>
   <data name="Onboarding_ValidationSpeciesForMethods" xml:space="preserve"><value>Choisissez au moins une espèce pour chacune de ces méthodes de pêche : {0}.</value></data>
+  <data name="Build_About" xml:space="preserve"><value>À propos</value></data>
+  <data name="Build_App" xml:space="preserve"><value>Application</value></data>
+  <data name="Build_Api" xml:space="preserve"><value>API</value></data>
+  <data name="Build_Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Build_Commit" xml:space="preserve"><value>Build</value></data>
+  <data name="Build_Environment" xml:space="preserve"><value>Environnement</value></data>
+  <data name="Build_Unavailable" xml:space="preserve"><value>Indisponible</value></data>
 </root>

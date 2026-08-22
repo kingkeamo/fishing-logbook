@@ -60,6 +60,10 @@ jobs:
           AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
           AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
           AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+          BUILD_VERSION: 0.0.0-dev.${{ github.run_number }}
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_ENVIRONMENT: dev
+          BUILD_TIMESTAMP: ${{ github.event.head_commit.timestamp }}
         run: >-
           node src/FishingLogBook.Web/build/configure-web.mjs
           --environment dev

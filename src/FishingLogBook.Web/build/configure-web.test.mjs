@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import {
     buildConfiguration,
     productionForbiddenMarkers,
+    releaseVersion,
     validateProductionArtifactFiles,
 } from './configure-web.mjs';
 
@@ -14,6 +16,10 @@ const production = {
     AUTH_HOSTED_UI_DOMAIN: 'https://fishing-logbook-prod.auth.eu-west-2.amazoncognito.com',
     AUTH_API_SCOPE: 'https://api.catchbutdontforget.com/access',
     AUTH_API_RESOURCE: 'https://api.catchbutdontforget.com',
+    BUILD_VERSION: 'v0.1.0',
+    BUILD_SHA: '0123456789abcdef0123456789abcdef01234567',
+    BUILD_ENVIRONMENT: 'prod',
+    BUILD_TIMESTAMP: '2026-08-22T00:00:00Z',
 };
 
 describe('production Web configuration', () => {
@@ -21,6 +27,7 @@ describe('production Web configuration', () => {
         const result = buildConfiguration(template, production, 'prod');
         assert.equal(result.Api.BaseUrl, 'https://api.catchbutdontforget.com');
         assert.equal(result.Auth.ClientId, 'production-public-client');
+        assert.equal(result.Build.Version, '0.1.0');
     });
 
     it('rejects missing values', () => {
@@ -53,8 +60,28 @@ describe('production Web configuration', () => {
     });
 
     it('allows environment-specific dev configuration', () => {
-        const values = { ...production, API_BASE_URL: 'https://fishing-logbook-dev-api.fly.dev' };
+        const values = {
+            ...production,
+            API_BASE_URL: 'https://fishing-logbook-dev-api.fly.dev',
+            BUILD_VERSION: '0.0.0-dev.42',
+            BUILD_SHA: 'feature-sha',
+            BUILD_ENVIRONMENT: 'dev',
+        };
         assert.equal(buildConfiguration(template, values, 'dev').Api.BaseUrl, values.API_BASE_URL);
+    });
+
+    it('rejects missing production build metadata', () => {
+        assert.throws(
+            () => buildConfiguration(template, { ...production, BUILD_SHA: '' }, 'prod'),
+            /BUILD_SHA/);
+    });
+
+    it('converts a valid immutable release tag to a version', () => {
+        assert.equal(releaseVersion('v1.2.3'), '1.2.3');
+    });
+
+    it('rejects an invalid production release tag', () => {
+        assert.throws(() => releaseVersion('main'), /vX.Y.Z/);
     });
 
     it('rejects dev markers outside the configuration file', () => {
@@ -69,5 +96,25 @@ describe('production Web configuration', () => {
             ['appsettings.Production.json', JSON.stringify(buildConfiguration(template, production, 'prod'))],
             ['index.html', '<a href="https://app.catchbutdontforget.com">Open</a>'],
         ]));
+    });
+});
+
+describe('production release workflow', () => {
+    const workflow = readFileSync(
+        new URL('../../../.github/workflows/deploy-production.yml', import.meta.url),
+        'utf8');
+
+    it('requires and checks out an explicit immutable release tag', () => {
+        assert.match(workflow, /release_tag:\s*[\s\S]*required: true/);
+        assert.match(workflow, /ref: \$\{\{ inputs\.release_tag \}\}/);
+        assert.match(workflow, /git describe --tags --exact-match HEAD/);
+    });
+
+    it('injects metadata before publish and only validates after publish', () => {
+        const publishPosition = workflow.indexOf('dotnet publish');
+        const configurePosition = workflow.indexOf('configure-web.mjs');
+        const validateOnlyPosition = workflow.indexOf('--validate-only true');
+        assert.ok(configurePosition >= 0 && configurePosition < publishPosition);
+        assert.ok(validateOnlyPosition > publishPosition);
     });
 });
