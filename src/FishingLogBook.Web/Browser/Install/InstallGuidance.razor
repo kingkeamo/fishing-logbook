@@ -46,13 +46,32 @@
                     <MudAlert Severity="Severity.Info" id="install-guidance-ios-browser">@Loc["Install_IosUseSafari"]</MudAlert>
                 }
                 <MudText Typo="Typo.subtitle2" id="install-guidance-ios-heading">@Loc["Install_IosHeading"]</MudText>
-                <ol class="install-steps" id="install-guidance-ios-steps">
-                    <li>@Loc["Install_IosStep1"]</li>
-                    <li>@Loc["Install_IosStep2"]</li>
-                    <li>@Loc["Install_IosStep3"]</li>
-                    <li>@Loc["Install_IosStep4"]</li>
-                    <li>@Loc["Install_IosStep5"]</li>
-                </ol>
+                <div id="install-guidance-ios-steps">
+                    <div class="install-device-section">
+                        <MudText Typo="Typo.subtitle2" id="install-guidance-iphone-heading">@Loc["Install_IphoneHeading"]</MudText>
+                        <ol class="install-steps" id="install-guidance-iphone-steps">
+                            <li>@Loc["Install_IphoneStep1"]</li>
+                            <li>@Loc["Install_IphoneStep2"]</li>
+                            <li>@Loc["Install_IphoneStep3"]</li>
+                            <li>@Loc["Install_IphoneStep4"]</li>
+                            <li>@Loc["Install_IphoneStep5"]</li>
+                            <li>@Loc["Install_IphoneStep6"]</li>
+                            <li>@Loc["Install_IphoneStep7"]</li>
+                            <li>@Loc["Install_IphoneStep8"]</li>
+                        </ol>
+                    </div>
+                    <div class="install-device-section">
+                        <MudText Typo="Typo.subtitle2" id="install-guidance-ipad-heading">@Loc["Install_IpadHeading"]</MudText>
+                        <ol class="install-steps" id="install-guidance-ipad-steps">
+                            <li>@Loc["Install_IpadStep1"]</li>
+                            <li>@Loc["Install_IpadStep2"]</li>
+                            <li>@Loc["Install_IpadStep3"]</li>
+                            <li>@Loc["Install_IpadStep4"]</li>
+                            <li>@Loc["Install_IpadStep5"]</li>
+                            <li>@Loc["Install_IpadStep6"]</li>
+                        </ol>
+                    </div>
+                </div>
                 <MudText Typo="Typo.subtitle2" id="install-guidance-ios-fallback-heading">@Loc["Install_IosFallbackHeading"]</MudText>
                 <MudText id="install-guidance-ios-fallback">@Loc["Install_IosFallbackBody"]</MudText>
             </MudStack>

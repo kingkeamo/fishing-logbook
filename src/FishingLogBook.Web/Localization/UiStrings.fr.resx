@@ -663,33 +663,44 @@
   <data name="Modal_ShowingLimited" xml:space="preserve"><value>Affichage de {0} sur {1} {2}. Recherchez pour en trouver davantage.</value></data>
   <data name="Modal_Species" xml:space="preserve"><value>espèces</value></data>
   <data name="Modal_FishingMethods" xml:space="preserve"><value>méthodes de pêche</value></data>
-  <data name="Install_Title" xml:space="preserve"><value>Installer Catch, But Don’t Forget</value></data>
+  <data name="Install_Title" xml:space="preserve"><value>Installer Catch But Don’t Forget</value></data>
   <data name="Install_Benefit" xml:space="preserve"><value>Installez l’application pour y accéder rapidement depuis votre appareil et profiter d’une expérience plus fiable lorsque vous pêchez.</value></data>
   <data name="Install_NativeAvailable" xml:space="preserve"><value>Votre navigateur peut installer l’application pour vous.</value></data>
   <data name="Install_Action" xml:space="preserve"><value>Installer l’application</value></data>
   <data name="Install_Dismissed" xml:space="preserve"><value>L’application n’a pas été installée. Vous pouvez réessayer ou suivre les étapes correspondant à votre appareil ci-dessous.</value></data>
   <data name="Install_ManualIntro" xml:space="preserve"><value>Choisissez votre appareil ci-dessous pour obtenir les étapes détaillées.</value></data>
   <data name="Install_InstalledTitle" xml:space="preserve"><value>L’application est installée</value></data>
-  <data name="Install_InstalledBody" xml:space="preserve"><value>Vous utilisez l’application installée. Ouvrez Catch, But Don’t Forget depuis votre écran d’accueil chaque fois que vous partez pêcher.</value></data>
-  <data name="Install_InstalledDesktop" xml:space="preserve"><value>Vous utilisez l’application installée. Ouvrez Catch, But Don’t Forget depuis le menu Démarrer, le Dock ou votre liste d’applications, et épinglez-la où vous le souhaitez.</value></data>
+  <data name="Install_InstalledBody" xml:space="preserve"><value>Vous utilisez l’application installée. Ouvrez l’application Catch But Don’t Forget depuis votre écran d’accueil chaque fois que vous partez pêcher.</value></data>
+  <data name="Install_InstalledDesktop" xml:space="preserve"><value>Vous utilisez l’application installée. Ouvrez l’application Catch But Don’t Forget depuis le menu Démarrer, le Dock ou votre liste d’applications, et épinglez-la où vous le souhaitez.</value></data>
   <data name="Install_InstalledOtherDevices" xml:space="preserve"><value>Vous installez l’application sur un autre téléphone, une tablette ou un ordinateur ? Les étapes pour chaque appareil se trouvent ci-dessous.</value></data>
   <data name="Install_IosPanel" xml:space="preserve"><value>iPhone / iPad</value></data>
   <data name="Install_AndroidPanel" xml:space="preserve"><value>Android</value></data>
   <data name="Install_ComputerPanel" xml:space="preserve"><value>Ordinateur</value></data>
   <data name="Install_IosHeading" xml:space="preserve"><value>Ajouter l’application à l’écran d’accueil</value></data>
-  <data name="Install_IosUseSafari" xml:space="preserve"><value>Vous n’utilisez pas Safari. Ouvrez d’abord Catch, But Don’t Forget dans Safari, puis suivez les étapes ci-dessous.</value></data>
-  <data name="Install_IosStep1" xml:space="preserve"><value>Ouvrez Catch, But Don’t Forget dans Safari.</value></data>
-  <data name="Install_IosStep2" xml:space="preserve"><value>Touchez Partager, le carré avec une flèche vers le haut.</value></data>
-  <data name="Install_IosStep3" xml:space="preserve"><value>Faites défiler la liste et choisissez Sur l’écran d’accueil.</value></data>
-  <data name="Install_IosStep4" xml:space="preserve"><value>Vérifiez le nom proposé pour l’application, puis touchez Ajouter.</value></data>
-  <data name="Install_IosStep5" xml:space="preserve"><value>Ouvrez Catch, But Don’t Forget depuis sa nouvelle icône sur l’écran d’accueil.</value></data>
+  <data name="Install_IosUseSafari" xml:space="preserve"><value>Vous n’utilisez pas Safari. Ouvrez d’abord Catch But Don’t Forget dans Safari, puis suivez les étapes ci-dessous.</value></data>
+  <data name="Install_IphoneHeading" xml:space="preserve"><value>iPhone</value></data>
+  <data name="Install_IphoneStep1" xml:space="preserve"><value>Ouvrez Catch But Don’t Forget dans Safari.</value></data>
+  <data name="Install_IphoneStep2" xml:space="preserve"><value>Touchez ⋯ Plus dans la barre d’outils de Safari.</value></data>
+  <data name="Install_IphoneStep3" xml:space="preserve"><value>Touchez Partager.</value></data>
+  <data name="Install_IphoneStep4" xml:space="preserve"><value>Si le bouton Partager est déjà visible dans votre présentation Safari, vous pouvez le toucher directement.</value></data>
+  <data name="Install_IphoneStep5" xml:space="preserve"><value>Choisissez Sur l’écran d’accueil.</value></data>
+  <data name="Install_IphoneStep6" xml:space="preserve"><value>Si Safari affiche Ouvrir comme app web, vérifiez que l’option est activée.</value></data>
+  <data name="Install_IphoneStep7" xml:space="preserve"><value>Touchez Ajouter.</value></data>
+  <data name="Install_IphoneStep8" xml:space="preserve"><value>Ouvrez l’application Catch But Don’t Forget depuis la nouvelle icône sur l’écran d’accueil.</value></data>
+  <data name="Install_IpadHeading" xml:space="preserve"><value>iPad</value></data>
+  <data name="Install_IpadStep1" xml:space="preserve"><value>Ouvrez Catch But Don’t Forget dans Safari.</value></data>
+  <data name="Install_IpadStep2" xml:space="preserve"><value>Touchez Partager dans la barre d’outils supérieure.</value></data>
+  <data name="Install_IpadStep3" xml:space="preserve"><value>Choisissez Sur l’écran d’accueil. Si Safari l’affiche dans Plus, ouvrez d’abord Plus.</value></data>
+  <data name="Install_IpadStep4" xml:space="preserve"><value>Si Safari affiche Ouvrir comme app web, vérifiez que l’option est activée.</value></data>
+  <data name="Install_IpadStep5" xml:space="preserve"><value>Touchez Ajouter.</value></data>
+  <data name="Install_IpadStep6" xml:space="preserve"><value>Ouvrez l’application Catch But Don’t Forget depuis votre écran d’accueil.</value></data>
   <data name="Install_IosFallbackHeading" xml:space="preserve"><value>Aucune option Sur l’écran d’accueil ?</value></data>
-  <data name="Install_IosFallbackBody" xml:space="preserve"><value>Vous avez probablement ouvert la page dans un autre navigateur, ou dans une autre application comme une messagerie. Choisissez Ouvrir dans Safari si l’option est proposée, ou copiez l’adresse web, collez-la dans Safari, puis suivez les cinq étapes ci-dessus.</value></data>
+  <data name="Install_IosFallbackBody" xml:space="preserve"><value>Vous avez probablement ouvert la page dans un autre navigateur, ou dans une autre application comme une messagerie. Choisissez Ouvrir dans Safari si l’option est proposée, ou copiez l’adresse web, collez-la dans Safari, puis suivez les étapes iPhone ou iPad ci-dessus.</value></data>
   <data name="Install_AndroidHeading" xml:space="preserve"><value>Installer avec Chrome ou un autre navigateur Chromium</value></data>
   <data name="Install_AndroidStep1" xml:space="preserve"><value>Ouvrez le menu du navigateur, les trois points (⋮) en haut de l’écran.</value></data>
   <data name="Install_AndroidStep2" xml:space="preserve"><value>Choisissez Installer l’application, ou Ajouter à l’écran d’accueil selon le libellé affiché.</value></data>
   <data name="Install_AndroidStep3" xml:space="preserve"><value>Confirmez l’installation lorsque le navigateur vous le demande.</value></data>
-  <data name="Install_AndroidStep4" xml:space="preserve"><value>Ouvrez Catch, But Don’t Forget depuis sa nouvelle icône sur l’écran d’accueil.</value></data>
+  <data name="Install_AndroidStep4" xml:space="preserve"><value>Ouvrez l’application Catch But Don’t Forget depuis sa nouvelle icône sur l’écran d’accueil.</value></data>
   <data name="Install_SamsungHeading" xml:space="preserve"><value>Samsung Internet</value></data>
   <data name="Install_SamsungStep1" xml:space="preserve"><value>Ouvrez le menu du navigateur en bas de l’écran.</value></data>
   <data name="Install_SamsungStep2" xml:space="preserve"><value>Choisissez Ajouter la page à.</value></data>
@@ -698,7 +709,7 @@
   <data name="Install_ComputerStep1" xml:space="preserve"><value>Dans Chrome ou Edge, recherchez l’icône d’installation à droite de la barre d’adresse et sélectionnez-la.</value></data>
   <data name="Install_ComputerStep2" xml:space="preserve"><value>Aucune icône dans Chrome ? Ouvrez le menu du navigateur (⋮), puis choisissez Diffuser, enregistrer et partager, puis Installer la page en tant qu’application.</value></data>
   <data name="Install_ComputerStep3" xml:space="preserve"><value>Dans Edge, ouvrez le menu du navigateur, puis choisissez Applications, puis Installer ce site en tant qu’application.</value></data>
-  <data name="Install_ComputerStep4" xml:space="preserve"><value>Confirmez l’installation, puis ouvrez Catch, But Don’t Forget depuis le menu Démarrer, le Dock ou votre liste d’applications.</value></data>
+  <data name="Install_ComputerStep4" xml:space="preserve"><value>Confirmez l’installation, puis ouvrez l’application Catch But Don’t Forget depuis le menu Démarrer, le Dock ou votre liste d’applications.</value></data>
   <data name="Install_Later" xml:space="preserve"><value>L’installation est facultative. Vous pouvez continuer et retrouver ces instructions plus tard depuis le menu de l’application.</value></data>
   <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
   <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espèce pour {0}.</value></data>

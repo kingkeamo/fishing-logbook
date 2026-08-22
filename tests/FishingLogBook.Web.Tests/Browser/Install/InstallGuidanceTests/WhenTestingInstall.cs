@@ -33,7 +33,8 @@ public class WhenTestingInstall : BaseInstallGuidanceTest
         {
             cut.FindAll("#install-guidance-action").Should().BeEmpty();
             cut.Find("#install-guidance-android-steps").Children.Should().HaveCount(4);
-            cut.Find("#install-guidance-ios-steps").Children.Should().HaveCount(5);
+            cut.Find("#install-guidance-iphone-steps").Children.Should().HaveCount(8);
+            cut.Find("#install-guidance-ipad-steps").Children.Should().HaveCount(6);
             cut.Find("#install-guidance-computer-steps").Children.Should().HaveCount(4);
         });
         await service.Received(1).PromptAsync(Arg.Any<CancellationToken>());
@@ -62,7 +63,8 @@ public class WhenTestingInstall : BaseInstallGuidanceTest
             cut.Find("#install-guidance-dismissed").TextContent.Should().Contain("not installed");
             cut.Find("#install-guidance-action").Should().NotBeNull();
             cut.Find("#install-guidance-android-steps").Children.Should().HaveCount(4);
-            cut.Find("#install-guidance-ios-steps").Children.Should().HaveCount(5);
+            cut.Find("#install-guidance-iphone-steps").Children.Should().HaveCount(8);
+            cut.Find("#install-guidance-ipad-steps").Children.Should().HaveCount(6);
         });
         await service.Received(1).PromptAsync(Arg.Any<CancellationToken>());
         await service.Received(2).GetStateAsync(Arg.Any<CancellationToken>());

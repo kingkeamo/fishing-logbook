@@ -663,33 +663,44 @@
   <data name="Modal_ShowingLimited" xml:space="preserve"><value>Showing {0} of {1} {2}. Search to find more.</value></data>
   <data name="Modal_Species" xml:space="preserve"><value>species</value></data>
   <data name="Modal_FishingMethods" xml:space="preserve"><value>fishing methods</value></data>
-  <data name="Install_Title" xml:space="preserve"><value>Install Catch, But Don’t Forget</value></data>
+  <data name="Install_Title" xml:space="preserve"><value>Install Catch But Don’t Forget</value></data>
   <data name="Install_Benefit" xml:space="preserve"><value>Install the app for quick access from your device and a more reliable experience when you are out fishing.</value></data>
   <data name="Install_NativeAvailable" xml:space="preserve"><value>Your browser can install the app for you.</value></data>
   <data name="Install_Action" xml:space="preserve"><value>Install app</value></data>
   <data name="Install_Dismissed" xml:space="preserve"><value>The app was not installed. You can try again, or follow the steps for your device below.</value></data>
   <data name="Install_ManualIntro" xml:space="preserve"><value>Choose your device below for step-by-step instructions.</value></data>
   <data name="Install_InstalledTitle" xml:space="preserve"><value>App is installed</value></data>
-  <data name="Install_InstalledBody" xml:space="preserve"><value>You are using the installed app. Open Catch, But Don’t Forget from your Home Screen whenever you go fishing.</value></data>
-  <data name="Install_InstalledDesktop" xml:space="preserve"><value>You are using the installed app. Open Catch, But Don’t Forget from your Start menu, Dock or app list, and pin it where convenient.</value></data>
+  <data name="Install_InstalledBody" xml:space="preserve"><value>You are using the installed app. Open the Catch But Don’t Forget app from your Home Screen whenever you go fishing.</value></data>
+  <data name="Install_InstalledDesktop" xml:space="preserve"><value>You are using the installed app. Open the Catch But Don’t Forget app from your Start menu, Dock or app list, and pin it where convenient.</value></data>
   <data name="Install_InstalledOtherDevices" xml:space="preserve"><value>Installing on another phone, tablet or computer? The steps for every device are below.</value></data>
   <data name="Install_IosPanel" xml:space="preserve"><value>iPhone / iPad</value></data>
   <data name="Install_AndroidPanel" xml:space="preserve"><value>Android</value></data>
   <data name="Install_ComputerPanel" xml:space="preserve"><value>Computer</value></data>
   <data name="Install_IosHeading" xml:space="preserve"><value>Add the app to your Home Screen</value></data>
-  <data name="Install_IosUseSafari" xml:space="preserve"><value>You are not using Safari. Open Catch, But Don’t Forget in Safari first, then follow the steps below.</value></data>
-  <data name="Install_IosStep1" xml:space="preserve"><value>Open Catch, But Don’t Forget in Safari.</value></data>
-  <data name="Install_IosStep2" xml:space="preserve"><value>Tap Share, the square with an arrow pointing up.</value></data>
-  <data name="Install_IosStep3" xml:space="preserve"><value>Scroll down the list and choose Add to Home Screen.</value></data>
-  <data name="Install_IosStep4" xml:space="preserve"><value>Check the name shown for the app, then tap Add.</value></data>
-  <data name="Install_IosStep5" xml:space="preserve"><value>Open Catch, But Don’t Forget from its new Home Screen icon.</value></data>
+  <data name="Install_IosUseSafari" xml:space="preserve"><value>You are not using Safari. Open Catch But Don’t Forget in Safari first, then follow the steps below.</value></data>
+  <data name="Install_IphoneHeading" xml:space="preserve"><value>iPhone</value></data>
+  <data name="Install_IphoneStep1" xml:space="preserve"><value>Open Catch But Don’t Forget in Safari.</value></data>
+  <data name="Install_IphoneStep2" xml:space="preserve"><value>Tap ⋯ More in the Safari toolbar.</value></data>
+  <data name="Install_IphoneStep3" xml:space="preserve"><value>Tap Share.</value></data>
+  <data name="Install_IphoneStep4" xml:space="preserve"><value>If a Share button is already visible in your Safari layout, you can tap it directly instead.</value></data>
+  <data name="Install_IphoneStep5" xml:space="preserve"><value>Choose Add to Home Screen.</value></data>
+  <data name="Install_IphoneStep6" xml:space="preserve"><value>If Safari shows Open as Web App, make sure it is enabled.</value></data>
+  <data name="Install_IphoneStep7" xml:space="preserve"><value>Tap Add.</value></data>
+  <data name="Install_IphoneStep8" xml:space="preserve"><value>Open the Catch But Don’t Forget app from the new Home Screen icon.</value></data>
+  <data name="Install_IpadHeading" xml:space="preserve"><value>iPad</value></data>
+  <data name="Install_IpadStep1" xml:space="preserve"><value>Open Catch But Don’t Forget in Safari.</value></data>
+  <data name="Install_IpadStep2" xml:space="preserve"><value>Tap Share in the top toolbar.</value></data>
+  <data name="Install_IpadStep3" xml:space="preserve"><value>Choose Add to Home Screen. If Safari shows it through More, open More first.</value></data>
+  <data name="Install_IpadStep4" xml:space="preserve"><value>If Safari shows Open as Web App, make sure it is enabled.</value></data>
+  <data name="Install_IpadStep5" xml:space="preserve"><value>Tap Add.</value></data>
+  <data name="Install_IpadStep6" xml:space="preserve"><value>Open the Catch But Don’t Forget app from your Home Screen.</value></data>
   <data name="Install_IosFallbackHeading" xml:space="preserve"><value>No Add to Home Screen option?</value></data>
-  <data name="Install_IosFallbackBody" xml:space="preserve"><value>You have probably opened the page in another browser, or inside another app such as a messaging app. Choose Open in Safari if it is offered, or copy the web address, paste it into Safari, then follow the five steps above.</value></data>
+  <data name="Install_IosFallbackBody" xml:space="preserve"><value>You have probably opened the page in another browser, or inside another app such as a messaging app. Choose Open in Safari if it is offered, or copy the web address, paste it into Safari, then follow the iPhone or iPad steps above.</value></data>
   <data name="Install_AndroidHeading" xml:space="preserve"><value>Install with Chrome or another Chromium browser</value></data>
   <data name="Install_AndroidStep1" xml:space="preserve"><value>Open the browser menu, the three dots (⋮) at the top of the screen.</value></data>
   <data name="Install_AndroidStep2" xml:space="preserve"><value>Choose Install app, or Add to Home screen if that is the wording you see.</value></data>
   <data name="Install_AndroidStep3" xml:space="preserve"><value>Confirm the installation when your browser asks.</value></data>
-  <data name="Install_AndroidStep4" xml:space="preserve"><value>Open Catch, But Don’t Forget from its new Home Screen icon.</value></data>
+  <data name="Install_AndroidStep4" xml:space="preserve"><value>Open the Catch But Don’t Forget app from its new Home Screen icon.</value></data>
   <data name="Install_SamsungHeading" xml:space="preserve"><value>Samsung Internet</value></data>
   <data name="Install_SamsungStep1" xml:space="preserve"><value>Open the browser menu at the bottom of the screen.</value></data>
   <data name="Install_SamsungStep2" xml:space="preserve"><value>Choose Add page to.</value></data>
@@ -698,7 +709,7 @@
   <data name="Install_ComputerStep1" xml:space="preserve"><value>In Chrome or Edge, look for the install icon at the right-hand end of the address bar and select it.</value></data>
   <data name="Install_ComputerStep2" xml:space="preserve"><value>No icon in Chrome? Open the browser menu (⋮), then choose Cast, save and share, then Install page as app.</value></data>
   <data name="Install_ComputerStep3" xml:space="preserve"><value>In Edge, open the browser menu, then choose Apps, then Install this site as an app.</value></data>
-  <data name="Install_ComputerStep4" xml:space="preserve"><value>Confirm the installation, then open Catch, But Don’t Forget from your Start menu, Dock or app list.</value></data>
+  <data name="Install_ComputerStep4" xml:space="preserve"><value>Confirm the installation, then open the Catch But Don’t Forget app from your Start menu, Dock or app list.</value></data>
   <data name="Install_Later" xml:space="preserve"><value>Installation is optional. You can continue now and find this guidance again from the app menu.</value></data>
   <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choose at least one fishing method.</value></data>
   <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choose at least one species for {0}.</value></data>
