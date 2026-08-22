@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Install;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
 using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Localization;
@@ -275,7 +276,7 @@ public class WhenTestingPreferences
         using var culture = TestCulture.Use(CultureNames.English);
         await using var fixture = CreateFixture(
             ValidPreferences(),
-            installState: new InstallState(false, true, InstallPlatformFamilies.Windows, false),
+            installState: new InstallState(false, true, InstallPlatformFamilies.Desktop, false),
             installResult: InstallResult.Accepted);
         var cut = fixture.Context.Render<OnboardingPage>();
 
@@ -337,9 +338,10 @@ public class WhenTestingPreferences
         context.Services.AddSingleton(preferences);
 
         var install = Substitute.For<IInstallService>();
-        install.GetStateAsync(Arg.Any<CancellationToken>()).Returns(new InstallState(false, false, false, false));
+        install.GetStateAsync(Arg.Any<CancellationToken>()).Returns(InstallState.Unknown);
         context.Services.AddSingleton(install);
         context.Services.AddSingleton(Substitute.For<ILocationService>());
+        context.Services.AddSingleton(Substitute.For<ILoggingService>());
         context.AddAuthorization().SetAuthorized("tester@example.test");
         return context;
     }
@@ -427,10 +429,11 @@ public class WhenTestingPreferences
 
         var install = Substitute.For<IInstallService>();
         install.GetStateAsync(Arg.Any<CancellationToken>())
-            .Returns(installState ?? new InstallState(false, false, InstallPlatformFamilies.Other, false));
+            .Returns(installState ?? InstallState.Unknown);
         install.PromptAsync(Arg.Any<CancellationToken>()).Returns(installResult);
         context.Services.AddSingleton(install);
         context.Services.AddSingleton(Substitute.For<ILocationService>());
+        context.Services.AddSingleton(Substitute.For<ILoggingService>());
         context.AddAuthorization().SetAuthorized("tester@example.test");
         return new Fixture(context, onboarding, preferences, install);
     }

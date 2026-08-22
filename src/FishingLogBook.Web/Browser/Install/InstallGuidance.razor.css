@@ -19,3 +19,14 @@
 .install-steps li:last-child {
     margin-bottom: 0;
 }
+
+.install-guidance ::deep .mud-expand-panel-header {
+    min-height: 3rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 1.0625rem;
+}
+
+.install-guidance ::deep .mud-expand-panel-text {
+    padding-bottom: 1.25rem;
+}
