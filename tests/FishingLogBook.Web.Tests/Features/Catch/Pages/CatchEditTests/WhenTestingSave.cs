@@ -426,7 +426,7 @@ public class WhenTestingSave : BaseCatchEditTest
         cut.WaitForAssertion(() =>
             cut.Find("#catch-edit-saved").TextContent
                 .Should()
-                .Contain("DÃ©tails enregistrÃ©s sur cet appareil"));
+                .Contain("Détails enregistrés sur cet appareil"));
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Id == catchId && catchRecord.SpeciesName == "Brown Trout"),

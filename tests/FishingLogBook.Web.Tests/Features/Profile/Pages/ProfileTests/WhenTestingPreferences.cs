@@ -67,8 +67,8 @@ public class WhenTestingPreferences : BaseProfileTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#profile-method-default-Fly").TextContent.Should().Be("FlyÂ Default");
-            cut.Find("#profile-species-Fly-BrownTrout").TextContent.Should().Be("Brown TroutÂ Default");
+            cut.Find("#profile-method-default-Fly").TextContent.Should().Be("Fly Default");
+            cut.Find("#profile-species-Fly-BrownTrout").TextContent.Should().Be("Brown Trout Default");
         });
     }
 
@@ -94,7 +94,7 @@ public class WhenTestingPreferences : BaseProfileTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#profile-method-default-Spinning").TextContent.Should().Be("Spinning");
-            cut.Find("#profile-method-default-Fly").TextContent.Should().Be("FlyÂ Default");
+            cut.Find("#profile-method-default-Fly").TextContent.Should().Be("Fly Default");
         });
     }
 
@@ -388,10 +388,10 @@ public class WhenTestingPreferences : BaseProfileTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Markup.Should().Contain("MÃ©thodes de pÃªche prÃ©fÃ©rÃ©es");
-            cut.Markup.Should().Contain("UnitÃ© de poids prÃ©fÃ©rÃ©e");
-            cut.Markup.Should().Contain("EspÃ¨ces prÃ©fÃ©rÃ©es pour Fly");
-            cut.Find("#profile-species-more-Fly").TextContent.Should().Contain("Plusâ€¦");
+            cut.Markup.Should().Contain("Méthodes de pêche préférées");
+            cut.Markup.Should().Contain("Unité de poids préférée");
+            cut.Markup.Should().Contain("Espèces préférées pour Fly");
+            cut.Find("#profile-species-more-Fly").TextContent.Should().Contain("Plus…");
         });
     }
 }

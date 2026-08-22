@@ -115,7 +115,7 @@ public class WhenTestingRender : BaseCatchEditTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#catch-edit-title").TextContent.Should().Contain("Modifier la prise");
-            cut.Find("#catch-edit-save").TextContent.Should().Contain("Enregistrer les dÃ©tails");
+            cut.Find("#catch-edit-save").TextContent.Should().Contain("Enregistrer les détails");
         });
         await store.Received(1).GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>());
     }
