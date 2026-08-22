@@ -117,6 +117,10 @@ function createWorker({ assets = [], cacheKeys = [], match, fetch: fetchImplemen
         return activation;
     }
 
+    function dispatchMessage(data) {
+        listeners.message({ data });
+    }
+
     return {
         cache,
         cacheDelete,
@@ -124,6 +128,7 @@ function createWorker({ assets = [], cacheKeys = [], match, fetch: fetchImplemen
         dispatchActivate,
         dispatchFetch,
         dispatchInstall,
+        dispatchMessage,
         fetch,
         recoveryCache,
         serviceWorker
@@ -159,7 +164,66 @@ describe('published service worker', () => {
 
         expect(worker.cache.put).toHaveBeenCalledTimes(2);
         expect(worker.cacheDelete).not.toHaveBeenCalled();
+    });
+
+    it('waits for the running app instead of taking over as soon as it is installed', async () => {
+        const worker = createWorker({
+            assets: [{ url: '_framework/app.wasm' }],
+            fetch: async request => new TestResponse(request.url)
+        });
+
+        await worker.dispatchInstall();
+
+        expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
+    });
+
+    it('takes over only when the running app asks it to', () => {
+        const worker = createWorker();
+
+        worker.dispatchMessage({ type: 'SomethingElse' });
+        expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
+
+        worker.dispatchMessage({ type: 'SkipWaiting' });
+
         expect(worker.serviceWorker.skipWaiting).toHaveBeenCalledOnce();
+    });
+
+    it('ignores a message without data', () => {
+        const worker = createWorker();
+
+        expect(() => worker.dispatchMessage(null)).not.toThrow();
+        expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
+    });
+
+    it('leaves the reload to the app when the app requested the takeover', async () => {
+        const navigate = vi.fn(async () => undefined);
+        const worker = createWorker({
+            cacheKeys: ['offline-cache-previous', 'offline-cache-test']
+        });
+        worker.serviceWorker.clients.matchAll.mockResolvedValue([
+            { url: 'https://app.test/', navigate }
+        ]);
+
+        worker.dispatchMessage({ type: 'SkipWaiting' });
+        await worker.dispatchActivate();
+
+        expect(navigate).not.toHaveBeenCalled();
+        expect(worker.cacheDelete).toHaveBeenCalledOnce();
+        expect(worker.cacheDelete).toHaveBeenCalledWith('offline-cache-previous');
+        expect(worker.serviceWorker.clients.claim).toHaveBeenCalledOnce();
+    });
+
+    it('never deletes application data when a replacement activates', async () => {
+        const worker = createWorker({
+            cacheKeys: ['offline-cache-previous', 'offline-cache-test']
+        });
+
+        worker.dispatchMessage({ type: 'SkipWaiting' });
+        await worker.dispatchActivate();
+
+        expect(worker.cacheDelete).not.toHaveBeenCalledWith('service-worker-recovery');
+        expect(worker.cacheDelete.mock.calls.every(call => call[0].startsWith('offline-cache-')))
+            .toBe(true);
     });
 
     it('reloads existing controlled clients once after a complete replacement activates', async () => {

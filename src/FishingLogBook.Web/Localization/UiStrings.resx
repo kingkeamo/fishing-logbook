@@ -710,4 +710,14 @@
   <data name="Build_Commit" xml:space="preserve"><value>Build</value></data>
   <data name="Build_Environment" xml:space="preserve"><value>Environment</value></data>
   <data name="Build_Unavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Update_BannerTitle" xml:space="preserve"><value>New CBDF version available</value></data>
+  <data name="Update_BannerBody" xml:space="preserve"><value>Get the latest fixes and features.</value></data>
+  <data name="Update_Action" xml:space="preserve"><value>Update now</value></data>
+  <data name="Update_ActivatingTitle" xml:space="preserve"><value>Updating</value></data>
+  <data name="Update_ActivatingBody" xml:space="preserve"><value>The app will reopen on the new version in a moment.</value></data>
+  <data name="Update_FailedTitle" xml:space="preserve"><value>Update could not be completed</value></data>
+  <data name="Update_FailedBody" xml:space="preserve"><value>You can keep using the app as normal and try again.</value></data>
+  <data name="Update_StatusLabel" xml:space="preserve"><value>Update</value></data>
+  <data name="Update_StatusCurrent" xml:space="preserve"><value>Up to date</value></data>
+  <data name="Update_StatusAvailable" xml:space="preserve"><value>New version available</value></data>
 </root>

@@ -30,6 +30,21 @@
                     <MudText>@Loc["Build_Environment"]: @WebBuild.Environment</MudText>
                 </div>
                 <MudDivider />
+                <div id="update-information">
+                    <MudText Typo="Typo.subtitle1">@Loc["Update_StatusLabel"]</MudText>
+                    <MudText id="update-status">@UpdateStatusText</MudText>
+                    @if (CanUpdate)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.SystemUpdate"
+                                   OnClick="UpdateAsync"
+                                   id="update-now-button">
+                            @Loc["Update_Action"]
+                        </MudButton>
+                    }
+                </div>
+                <MudDivider />
                 <div id="api-build-information">
                     <MudText Typo="Typo.subtitle1">@Loc["Build_Api"]</MudText>
                     @if (_apiBuild is null)

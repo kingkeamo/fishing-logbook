@@ -1,5 +1,6 @@
 using Bunit;
 using Bunit.TestDoubles;
+using FishingLogBook.Web.Browser.Update;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -56,6 +57,7 @@ public class BaseMainLayoutTest
         context.Services.AddSingleton(
             diagnosticSynchroniser ?? Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(Substitute.For<ILoggingService>());
+        context.Services.AddSingleton(Substitute.For<IAppUpdateService>());
         context.Services.AddSingleton(profileSummary ?? QuietProfileSummary());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
