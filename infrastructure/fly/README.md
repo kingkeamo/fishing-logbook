@@ -57,11 +57,18 @@ policy for only `https://app.catchbutdontforget.com` and browser `PUT` requests 
 `Content-Type` header.
 
 Stage secrets before the first deployment so setting each value does not trigger a
-release. Capture sensitive Terraform outputs in memory rather than printing them:
+release. The Neon Terraform output is a `postgres://` URI suitable for tools such as
+`psql`; it is **not** a valid Npgsql connection string and must never be supplied directly
+as `ConnectionStrings__Postgres`. Obtain the production role password from Neon's Connect
+dialog and construct the Npgsql key/value form in memory:
 
 ```powershell
 Set-Location infrastructure/terraform/environments/prod
-$prodDatabase = terraform output -raw neon_connection_uri
+$prodDbHost = terraform output -raw neon_database_host
+$prodDbName = terraform output -raw neon_database_name
+$prodDbUser = terraform output -raw neon_database_user
+$prodDbPassword = Read-Host -MaskInput "Production Neon role password"
+$prodDatabase = "Host=$prodDbHost;Port=5432;Database=$prodDbName;Username=$prodDbUser;Password=$prodDbPassword;SSL Mode=Require"
 $prodLokiToken = terraform output -raw grafana_loki_write_token
 $prodAuthority = terraform output -raw cognito_authority
 $prodClientId = terraform output -raw cognito_client_id
@@ -91,7 +98,7 @@ flyctl secrets set --stage --app fishing-logbook-prod-api "ExternalLogging__ApiT
 Clear the local values and verify names/status without revealing values:
 
 ```powershell
-Remove-Variable prodDatabase, prodLokiToken, prodAuthority, prodClientId, prodLokiUrl, prodLokiUser, prodR2AccessKey, prodR2SecretKey
+Remove-Variable prodDatabase, prodDbHost, prodDbName, prodDbUser, prodDbPassword, prodLokiToken, prodAuthority, prodClientId, prodLokiUrl, prodLokiUser, prodR2AccessKey, prodR2SecretKey
 flyctl secrets list --app fishing-logbook-prod-api
 ```
 
@@ -99,6 +106,11 @@ All eleven entries should be `Staged`. Do not run `flyctl secrets deploy`; the f
 application deployment activates them. On Windows PowerShell, piping multiple secret
 lines to `flyctl secrets import` can add a UTF-8 BOM to the first name. Individual
 `flyctl secrets set` commands avoid that problem.
+
+If Npgsql receives a `postgres://` URI, parsing can fail and the resulting exception may
+include the malformed value. Rotate the database role password immediately if a URI with
+credentials ever reaches application logs, then replace the Fly secret with the key/value
+form above.
 
 ## Permanent API hostname and TLS
 
