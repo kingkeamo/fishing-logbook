@@ -6,7 +6,7 @@ const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
 describe('production root site', () => {
     it('presents the exact brand name', () => {
-        assert.match(html, /<h1>Catch, But Don't Forget<\/h1>/);
+        assert.match(html, /<h1>Catch But Don't Forget<\/h1>/);
     });
 
     it('links to the permanent production PWA origin', () => {
