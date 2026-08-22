@@ -2,6 +2,48 @@
     padding-top: 2rem;
 }
 
+.status-brand-mark {
+    height: 2.75rem;
+    object-fit: contain;
+    width: 2.75rem;
+}
+
+.status-metadata {
+    display: grid;
+    gap: 0.125rem 0.75rem;
+    grid-template-columns: max-content minmax(0, 1fr);
+    margin-top: 0.25rem;
+}
+
+.status-metadata-label {
+    font-weight: 600;
+}
+
+.status-metadata-value {
+    overflow-wrap: anywhere;
+}
+
+.status-update {
+    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.status-update-summary {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.625rem;
+}
+
+@media (min-width: 600px) {
+    .status-update {
+        align-items: center;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
 .status-row {
     width: 100%;
 }

@@ -11,7 +11,7 @@ export default defineConfig({
     test: {
         environment: 'jsdom',
         setupFiles: ['./vitest.setup.js'],
-        include: ['./wwwroot/js/**/*.test.js'],
+        include: ['./wwwroot/js/**/*.test.js', './wwwroot/manifest.test.js'],
         fileParallelism: false,
         pool: 'forks',
         singleFork: true,

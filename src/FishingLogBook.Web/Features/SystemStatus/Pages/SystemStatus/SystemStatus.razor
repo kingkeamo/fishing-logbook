@@ -1,11 +1,15 @@
 @page "/system-status"
 
-<PageTitle>@Loc["SystemStatus_PageTitle"]</PageTitle>
+<PageTitle>@Loc["App_Name"] - @Loc["SystemStatus_Subtitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Gutters="false" Class="status-container">
     <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
-        <MudStack Spacing="1" AlignItems="AlignItems.Center">
-            <MudIcon Icon="@Icons.Material.Filled.Phishing" Size="Size.Large" Color="Color.Primary" />
+        <MudStack Spacing="1" AlignItems="AlignItems.Center" Class="status-header" id="system-status-header">
+            <img src="images/brand/brand-mark-transparent.png"
+                 class="status-brand-mark"
+                 alt=""
+                 aria-hidden="true"
+                 id="system-status-brand-mark" />
             <MudText Typo="Typo.h4" Align="Align.Center">@Loc["App_Name"]</MudText>
             <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">@Loc["SystemStatus_Subtitle"]</MudText>
         </MudStack>
@@ -25,14 +29,24 @@
                 <MudText Typo="Typo.h6">@Loc["Build_About"]</MudText>
                 <div id="web-build-information">
                     <MudText Typo="Typo.subtitle1">@Loc["Build_App"]</MudText>
-                    <MudText>@Loc["Build_Version"]: @WebBuild.Version</MudText>
-                    <MudText>@Loc["Build_Commit"]: @WebBuild.Sha</MudText>
-                    <MudText>@Loc["Build_Environment"]: @WebBuild.Environment</MudText>
+                    <div class="status-metadata">
+                        <MudText Class="status-metadata-label">@Loc["Build_Version"]</MudText>
+                        <MudText>@WebBuild.Version</MudText>
+                        <MudText Class="status-metadata-label">@Loc["Build_Commit"]</MudText>
+                        <MudText Class="status-metadata-value">@WebBuild.Sha</MudText>
+                        <MudText Class="status-metadata-label">@Loc["Build_Environment"]</MudText>
+                        <MudText>@WebBuild.Environment</MudText>
+                    </div>
                 </div>
                 <MudDivider />
-                <div id="update-information">
-                    <MudText Typo="Typo.subtitle1">@Loc["Update_StatusLabel"]</MudText>
-                    <MudText id="update-status">@UpdateStatusText</MudText>
+                <div class="status-update" id="update-information">
+                    <div class="status-update-summary">
+                        <MudIcon Icon="@Icons.Material.Filled.SystemUpdate" Color="Color.Primary" Size="Size.Small" aria-hidden="true" />
+                        <div>
+                            <MudText Typo="Typo.subtitle1">@Loc["Update_StatusLabel"]</MudText>
+                            <MudText Class="mud-text-secondary" id="update-status">@UpdateStatusText</MudText>
+                        </div>
+                    </div>
                     @if (CanUpdate)
                     {
                         <MudButton Variant="Variant.Filled"
@@ -53,9 +67,14 @@
                     }
                     else
                     {
-                        <MudText>@Loc["Build_Version"]: @_apiBuild.Version</MudText>
-                        <MudText>@Loc["Build_Commit"]: @_apiBuild.Sha</MudText>
-                        <MudText>@Loc["Build_Environment"]: @_apiBuild.Environment</MudText>
+                        <div class="status-metadata">
+                            <MudText Class="status-metadata-label">@Loc["Build_Version"]</MudText>
+                            <MudText>@_apiBuild.Version</MudText>
+                            <MudText Class="status-metadata-label">@Loc["Build_Commit"]</MudText>
+                            <MudText Class="status-metadata-value">@_apiBuild.Sha</MudText>
+                            <MudText Class="status-metadata-label">@Loc["Build_Environment"]</MudText>
+                            <MudText>@_apiBuild.Environment</MudText>
+                        </div>
                     }
                 </div>
             </MudStack>

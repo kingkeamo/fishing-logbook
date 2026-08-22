@@ -62,7 +62,7 @@ public class WhenTestingUpdate : BaseAppUpdateBannerTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#app-update-banner-title").TextContent
-                .Should().Contain("New CBDF version available");
+                .Should().Contain("New version available");
             cut.Find("#app-update-banner-action").Should().NotBeNull();
         });
     }
