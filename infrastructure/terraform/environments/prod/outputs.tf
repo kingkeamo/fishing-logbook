@@ -79,6 +79,26 @@ output "cloudflare_pages_subdomain" {
   value       = module.cloudflare_pages.subdomain
 }
 
+output "cloudflare_pages_domains" {
+  description = "Custom domains attached to the production PWA Pages project."
+  value       = module.cloudflare_pages.domains
+}
+
+output "cloudflare_root_pages_project_name" {
+  description = "Cloudflare Pages project name for the small public root site."
+  value       = module.cloudflare_root_pages.project_name
+}
+
+output "cloudflare_root_pages_subdomain" {
+  description = "Cloudflare Pages subdomain for the small public root site."
+  value       = module.cloudflare_root_pages.subdomain
+}
+
+output "cloudflare_root_pages_domains" {
+  description = "Custom domains attached to the public root Pages project."
+  value       = module.cloudflare_root_pages.domains
+}
+
 output "grafana_url" {
   description = "Grafana UI URL. Null until grafana_cloud_stack_slug is set."
   value       = try(module.grafana_cloud[0].grafana_url, null)

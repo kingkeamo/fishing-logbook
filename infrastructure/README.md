@@ -313,6 +313,11 @@ Production follows the equivalent process from `environments/prod` and must be p
 with extra care. There is intentionally **no** one-command script that plans and applies
 without review.
 
+The complete production provisioning, deployment and recovery sequence is documented in
+[`docs/ProductionRunbook.md`](../docs/ProductionRunbook.md). Production deployments are
+manual workflow dispatches protected by the GitHub `prod` environment; they never apply
+Terraform or run database migrations.
+
 ## State
 
 Remote state is stored in **Cloudflare R2** (an S3-compatible bucket) using Terraform's

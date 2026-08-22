@@ -83,6 +83,18 @@ variable "pages_production_branch" {
   default     = "main"
 }
 
+variable "root_domain" {
+  type        = string
+  description = "Permanent production root-site domain."
+  default     = "catchbutdontforget.com"
+}
+
+variable "app_domain" {
+  type        = string
+  description = "Permanent production PWA domain."
+  default     = "app.catchbutdontforget.com"
+}
+
 variable "grafana_cloud_stack_slug" {
   type        = string
   description = "Existing Grafana Cloud stack slug (https://<slug>.grafana.net). Leave empty to skip Grafana resources. Account-specific; supply locally, never commit."

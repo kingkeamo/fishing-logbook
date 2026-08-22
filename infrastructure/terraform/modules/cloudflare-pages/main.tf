@@ -16,14 +16,23 @@ terraform {
 
 locals {
   resource_prefix = "fishing-logbook-${var.environment}"
+  project_name    = var.project_name == "" ? local.resource_prefix : var.project_name
 }
 
 resource "cloudflare_pages_project" "web" {
   account_id        = var.account_id
-  name              = local.resource_prefix
+  name              = local.project_name
   production_branch = var.production_branch
 
   lifecycle {
     prevent_destroy = true
   }
+}
+
+resource "cloudflare_pages_domain" "this" {
+  for_each = var.custom_domains
+
+  account_id   = var.account_id
+  project_name = cloudflare_pages_project.web.name
+  name         = each.value
 }

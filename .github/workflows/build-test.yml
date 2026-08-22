@@ -50,6 +50,21 @@ jobs:
       - name: Test JavaScript
         run: npm test
 
+  deployment-config-test:
+    name: Deployment configuration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: >-
+          node --test
+          src/FishingLogBook.Web/build/configure-web.test.mjs
+          src/FishingLogBook.Root/build/root-site.test.mjs
+
   javascript-browser-test:
     name: JavaScript browser tests
     runs-on: ubuntu-latest

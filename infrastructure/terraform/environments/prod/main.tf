@@ -35,6 +35,16 @@ module "cloudflare_pages" {
   environment       = var.environment
   account_id        = var.cloudflare_account_id
   production_branch = var.pages_production_branch
+  custom_domains    = [var.app_domain]
+}
+
+module "cloudflare_root_pages" {
+  source            = "../../modules/cloudflare-pages"
+  environment       = var.environment
+  account_id        = var.cloudflare_account_id
+  project_name      = "catch-but-dont-forget-root"
+  production_branch = var.pages_production_branch
+  custom_domains    = [var.root_domain]
 }
 
 module "grafana_cloud" {

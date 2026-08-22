@@ -10,5 +10,5 @@ output "subdomain" {
 
 output "domains" {
   description = "Custom domains attached to the Pages project."
-  value       = cloudflare_pages_project.web.domains
+  value       = sort([for domain in cloudflare_pages_domain.this : domain.name])
 }
