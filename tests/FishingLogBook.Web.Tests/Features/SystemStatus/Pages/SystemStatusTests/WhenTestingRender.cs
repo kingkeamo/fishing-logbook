@@ -61,6 +61,8 @@ public class WhenTestingRender : BaseSystemStatusTest
             cut.Find("#status-row-database").TextContent.Should().Contain("FishingLogBook database online");
             cut.Find("#web-build-information").TextContent.Should().Contain("web1234");
             cut.Find("#api-build-information").TextContent.Should().Contain("api5678");
+            cut.FindAll("#web-build-information .status-metadata").Should().ContainSingle();
+            cut.FindAll("#api-build-information .status-metadata").Should().ContainSingle();
         });
         await statusClient.Received(1).GetApiHealthAsync(Arg.Any<CancellationToken>());
         await statusClient.Received(1).GetBuildMetadataAsync(Arg.Any<CancellationToken>());
