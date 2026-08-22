@@ -17,6 +17,12 @@ self.addEventListener('fetch', event => {
 
     event.respondWith(onFetch(event));
 });
+self.addEventListener('message', event => {
+    if (event.data?.type === 'SkipWaiting') {
+        activationRequestedByClient = true;
+        self.skipWaiting();
+    }
+});
 self.addEventListener('error', event => notifyServiceWorkerError(event.message || 'error'));
 self.addEventListener('unhandledrejection', event => notifyServiceWorkerError(String(event.reason || 'unhandledrejection')));
 
@@ -24,6 +30,11 @@ const cacheNamePrefix = 'offline-cache-';
 const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
 const recoveryCacheName = 'service-worker-recovery';
 const recoveryKey = 'pre-onboarding-startup-20260821';
+
+// A replacement worker stays in `waiting` until the running app asks to activate it, so the
+// user chooses when to move to the new build (FLB#126). The client reloads itself once the
+// controller changes, so activation requested this way must not also navigate clients.
+let activationRequestedByClient = false;
 const offlineAssetsInclude = [ /\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.woff2$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.svg$/, /\.blat$/, /\.dat$/, /\.webmanifest$/ ];
 const offlineAssetsExclude = [ /^service-worker\.js$/, /\/_redirects$/, /\/_headers$/, /\.test\.js$/ ];
 
@@ -42,7 +53,6 @@ async function onInstall(event) {
 
     await Promise.all(assetsRequests.map(request => cacheUnredirected(cache, request)));
     await cacheAppShell(cache);
-    await self.skipWaiting();
 }
 
 async function onActivate(event) {
@@ -56,7 +66,7 @@ async function onActivate(event) {
         .filter(key => key.startsWith(cacheNamePrefix) && key !== cacheName)
         .map(key => caches.delete(key)));
 
-    if (hasPreviousAppShell) {
+    if (hasPreviousAppShell && !activationRequestedByClient) {
         await reloadClientsOnce();
     }
 }

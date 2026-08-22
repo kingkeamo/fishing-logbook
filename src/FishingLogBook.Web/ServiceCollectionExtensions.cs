@@ -2,6 +2,7 @@ using FishingLogBook.Web.Browser.Install;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Browser.Update;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
@@ -67,6 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INetworkService, NetworkService>();
         services.AddScoped<ILocationService, LocationService>();
         services.AddScoped<IInstallService, InstallService>();
+        services.AddScoped<IAppUpdateService, AppUpdateService>();
         services.AddScoped<IOnboardingService, OnboardingService>();
         services.AddScoped<ITimeService, TimeService>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();

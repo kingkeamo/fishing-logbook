@@ -1,6 +1,7 @@
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Browser.Update;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.SystemStatus.Clients;
 using FishingLogBook.Web.Features.SystemStatus.Models;
@@ -33,9 +34,39 @@ public partial class SystemStatus : ComponentBase, IDisposable
     [Inject]
     private BuildMetadataConfig WebBuild { get; set; } = default!;
 
+    [Inject]
+    private IAppUpdateService AppUpdate { get; set; } = default!;
+
+    private bool CanUpdate => AppUpdate.Status is AppUpdateStatus.Available or AppUpdateStatus.Failed;
+
+    private string UpdateStatusText
+    {
+        get
+        {
+            return AppUpdate.Status switch
+            {
+                AppUpdateStatus.Current => Loc["Update_StatusCurrent"],
+                AppUpdateStatus.Activating => Loc["Update_ActivatingTitle"],
+                AppUpdateStatus.Failed => Loc["Update_FailedTitle"],
+                _ => Loc["Update_StatusAvailable"]
+            };
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        AppUpdate.StatusChanged += OnUpdateStatusChanged;
         await RefreshAsync();
+    }
+
+    private async Task UpdateAsync()
+    {
+        await AppUpdate.ApplyAsync(_cancellationTokenSource.Token);
+    }
+
+    private void OnUpdateStatusChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private async Task RefreshAsync()
@@ -116,6 +147,7 @@ public partial class SystemStatus : ComponentBase, IDisposable
 
     public void Dispose()
     {
+        AppUpdate.StatusChanged -= OnUpdateStatusChanged;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }

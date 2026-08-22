@@ -710,4 +710,14 @@
   <data name="Build_Commit" xml:space="preserve"><value>Build</value></data>
   <data name="Build_Environment" xml:space="preserve"><value>Environnement</value></data>
   <data name="Build_Unavailable" xml:space="preserve"><value>Indisponible</value></data>
+  <data name="Update_BannerTitle" xml:space="preserve"><value>Nouvelle version de CBDF disponible</value></data>
+  <data name="Update_BannerBody" xml:space="preserve"><value>Obtenez les derniers correctifs et nouveautés.</value></data>
+  <data name="Update_Action" xml:space="preserve"><value>Mettre à jour</value></data>
+  <data name="Update_ActivatingTitle" xml:space="preserve"><value>Mise à jour en cours</value></data>
+  <data name="Update_ActivatingBody" xml:space="preserve"><value>L’application va rouvrir sur la nouvelle version dans un instant.</value></data>
+  <data name="Update_FailedTitle" xml:space="preserve"><value>La mise à jour n’a pas pu être effectuée</value></data>
+  <data name="Update_FailedBody" xml:space="preserve"><value>Vous pouvez continuer à utiliser l’application normalement et réessayer.</value></data>
+  <data name="Update_StatusLabel" xml:space="preserve"><value>Mise à jour</value></data>
+  <data name="Update_StatusCurrent" xml:space="preserve"><value>À jour</value></data>
+  <data name="Update_StatusAvailable" xml:space="preserve"><value>Nouvelle version disponible</value></data>
 </root>

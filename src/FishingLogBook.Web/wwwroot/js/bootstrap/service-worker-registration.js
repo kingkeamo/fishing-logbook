@@ -1,3 +1,5 @@
+import { trackAppUpdates } from '../browser/app-update.js';
+
 const epoch = '20260821-pre-onboarding-startup';
 
 export function listenForServiceWorkerErrors(targetWindow = window) {
@@ -15,13 +17,15 @@ export async function registerServiceWorker(targetWindow = window) {
     } catch { /* ignore */ }
 
     try {
-        await targetWindow.navigator.serviceWorker.register(
+        const registration = await targetWindow.navigator.serviceWorker.register(
             'service-worker.js',
             { updateViaCache: 'none' });
 
         if (epochChanged) {
             targetWindow.localStorage.setItem('flb-sw-epoch', epoch);
         }
+
+        trackAppUpdates(targetWindow, registration);
     } catch (error) {
         targetWindow.console.error('[FLB] ServiceWorkerRegistrationError', error);
     }

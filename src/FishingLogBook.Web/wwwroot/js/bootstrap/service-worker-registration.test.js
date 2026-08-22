@@ -117,4 +117,22 @@ describe('service worker registration', () => {
     it('does nothing when the browser has no service worker API', () => {
         expect(() => listenForServiceWorkerErrors({ navigator: {} })).not.toThrow();
     });
+
+    it('reports an update that was already waiting when the app started', async () => {
+        vi.resetModules();
+        const registration = await import('./service-worker-registration.js');
+        const update = await import('../browser/app-update.js');
+        const targetWindow = createTargetWindow({ epoch: currentEpoch });
+        const waiting = { postMessage: vi.fn(), addEventListener: vi.fn() };
+        targetWindow.navigator.serviceWorker.controller = {};
+        targetWindow.navigator.serviceWorker.register = vi.fn(async () => ({
+            waiting,
+            update: vi.fn(async () => undefined),
+            addEventListener: vi.fn()
+        }));
+
+        await registration.registerServiceWorker(targetWindow);
+
+        expect(update.getUpdateState()).toEqual({ isUpdateReady: true });
+    });
 });
