@@ -7,7 +7,7 @@ describe('web app manifest', () => {
         const root = resolve(import.meta.dirname);
         const manifest = JSON.parse(readFileSync(resolve(root, 'manifest.webmanifest'), 'utf8'));
 
-        expect(manifest.name).toBe('Catch, But Don’t Forget');
+        expect(manifest.name).toBe('Catch But Don’t Forget');
         expect(manifest.icons).toEqual(expect.arrayContaining([
             expect.objectContaining({ src: 'icon-192.png', sizes: '192x192' }),
             expect.objectContaining({ src: 'icon-512.png', sizes: '512x512' })

@@ -13,7 +13,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="App_Name" xml:space="preserve">
-    <value>Catch, But Don’t Forget</value>
+    <value>Catch But Don’t Forget</value>
   </data>
   <data name="SystemStatus_PageTitle" xml:space="preserve">
     <value>FishingLogBook - État du système</value>
@@ -619,10 +619,10 @@
     <value>Réessayer</value>
   </data>
   <data name="Common_Loading" xml:space="preserve"><value>Chargement</value></data>
-  <data name="Brand_LogoAlt" xml:space="preserve"><value>Catch, But Don’t Forget — Catch · Release · Remember</value></data>
+  <data name="Brand_LogoAlt" xml:space="preserve"><value>Catch But Don’t Forget — Catch · Release · Remember</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Bienvenue</value></data>
   <data name="Onboarding_WelcomeStep" xml:space="preserve"><value>Bienvenue</value></data>
-  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Bienvenue dans Catch, But Don’t Forget</value></data>
+  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Bienvenue dans Catch But Don’t Forget</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Configurez votre carnet de pêche privé, utilisable hors ligne, en une minute environ.</value></data>
   <data name="Onboarding_PreferencesStep" xml:space="preserve"><value>Préférences</value></data>
   <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>Définissez vos préférences de pêche</value></data>
@@ -649,7 +649,7 @@
   <data name="Action_NotNow" xml:space="preserve"><value>Pas maintenant</value></data>
   <data name="Action_Back" xml:space="preserve"><value>Retour</value></data>
   <data name="Action_Next" xml:space="preserve"><value>Suivant</value></data>
-  <data name="Landing_PageTitle" xml:space="preserve"><value>Catch, But Don’t Forget</value></data>
+  <data name="Landing_PageTitle" xml:space="preserve"><value>Catch But Don’t Forget</value></data>
   <data name="Landing_Tagline" xml:space="preserve"><value>Catch · Release · Remember</value></data>
   <data name="Landing_Heading" xml:space="preserve"><value>Votre carnet de pêche privé</value></data>
   <data name="Landing_Introduction" xml:space="preserve"><value>Conservez chaque prise, photo et souvenir au même endroit, où que vous pêchiez.</value></data>
@@ -721,7 +721,7 @@
   <data name="Build_Commit" xml:space="preserve"><value>Build</value></data>
   <data name="Build_Environment" xml:space="preserve"><value>Environnement</value></data>
   <data name="Build_Unavailable" xml:space="preserve"><value>Indisponible</value></data>
-  <data name="Update_BannerTitle" xml:space="preserve"><value>Nouvelle version de CBDF disponible</value></data>
+  <data name="Update_BannerTitle" xml:space="preserve"><value>Nouvelle version disponible</value></data>
   <data name="Update_BannerBody" xml:space="preserve"><value>Obtenez les derniers correctifs et nouveautés.</value></data>
   <data name="Update_Action" xml:space="preserve"><value>Mettre à jour</value></data>
   <data name="Update_ActivatingTitle" xml:space="preserve"><value>Mise à jour en cours</value></data>

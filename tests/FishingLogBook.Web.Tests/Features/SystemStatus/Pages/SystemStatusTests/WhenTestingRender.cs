@@ -13,6 +13,30 @@ namespace FishingLogBook.Web.Tests.Features.SystemStatus.Pages.SystemStatusTests
 public class WhenTestingRender : BaseSystemStatusTest
 {
     [Fact]
+    public async Task ItShouldShowTheCurrentBrandHeader()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var statusClient = Substitute.For<ISystemStatusClient>();
+        await using var context = CreateContext(statusClient);
+
+        // Act
+        var cut = context.Render<SystemStatusPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            var header = cut.Find("#system-status-header");
+            header.TextContent.Should().Contain("Catch But Don’t Forget");
+            header.TextContent.Should().Contain("System status");
+            header.TextContent.Should().NotContain("Catch, But Don’t Forget");
+            cut.Find("#system-status-brand-mark").GetAttribute("src")
+                .Should().Be("images/brand/brand-mark-transparent.png");
+            header.QuerySelectorAll(".mud-icon-root").Should().BeEmpty();
+        });
+    }
+
+    [Fact]
     public async Task ItShouldShowOnlineWhenApiAndDatabaseAreHealthy()
     {
         // Arrange

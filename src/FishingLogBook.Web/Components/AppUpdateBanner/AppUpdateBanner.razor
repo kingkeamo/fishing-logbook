@@ -2,9 +2,9 @@
 
 @if (IsVisible)
 {
-    <MudPaper Class="app-update-banner" Elevation="3" Square="true" role="status" aria-live="polite" id="app-update-banner">
+    <MudPaper Class="app-update-banner" Elevation="1" Outlined="true" role="status" aria-live="polite" id="app-update-banner">
         <div class="app-update-banner-content">
-            <MudIcon Icon="@Icons.Material.Filled.SystemUpdate" Color="Color.Primary" Size="Size.Medium" aria-hidden="true" />
+            <MudIcon Icon="@Icons.Material.Filled.SystemUpdate" Color="Color.Primary" Size="Size.Small" aria-hidden="true" />
             <div class="app-update-banner-text">
                 <MudText Typo="Typo.subtitle1" id="app-update-banner-title">@Title</MudText>
                 <MudText Typo="Typo.body2" Class="mud-text-secondary" id="app-update-banner-body">@Body</MudText>
@@ -14,7 +14,7 @@
         {
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
-                       Size="Size.Large"
+                       Size="Size.Medium"
                        StartIcon="@Icons.Material.Filled.SystemUpdate"
                        OnClick="UpdateAsync"
                        Disabled="IsActivating"

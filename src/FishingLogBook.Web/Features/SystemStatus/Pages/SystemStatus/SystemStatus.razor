@@ -1,11 +1,15 @@
 @page "/system-status"
 
-<PageTitle>@Loc["SystemStatus_PageTitle"]</PageTitle>
+<PageTitle>@Loc["App_Name"] - @Loc["SystemStatus_Subtitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Medium" Gutters="false" Class="status-container">
     <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
-        <MudStack Spacing="1" AlignItems="AlignItems.Center">
-            <MudIcon Icon="@Icons.Material.Filled.Phishing" Size="Size.Large" Color="Color.Primary" />
+        <MudStack Spacing="1" AlignItems="AlignItems.Center" Class="status-header" id="system-status-header">
+            <img src="images/brand/brand-mark-transparent.png"
+                 class="status-brand-mark"
+                 alt=""
+                 aria-hidden="true"
+                 id="system-status-brand-mark" />
             <MudText Typo="Typo.h4" Align="Align.Center">@Loc["App_Name"]</MudText>
             <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mud-text-secondary">@Loc["SystemStatus_Subtitle"]</MudText>
         </MudStack>

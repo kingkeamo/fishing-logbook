@@ -62,6 +62,29 @@ public class WhenTestingResourceParity
         });
     }
 
+    [Fact]
+    public void ItShouldUseTheCanonicalProductNameInUserFacingResources()
+    {
+        // Arrange
+        var manager = new ResourceManager(typeof(UiStrings));
+        var english = manager.GetResourceSet(new CultureInfo(CultureNames.English), true, false);
+        var french = manager.GetResourceSet(new CultureInfo(CultureNames.French), true, false);
+
+        // Act
+        var appName = manager.GetString("App_Name", new CultureInfo(CultureNames.English));
+        var userFacingValues = AllValues(english)
+            .Concat(AllValues(french))
+            .ToArray();
+
+        // Assert
+        appName.Should().Be("Catch But Don’t Forget");
+        userFacingValues.Should().AllSatisfy(value =>
+        {
+            value.Should().NotContain("Catch, But Don’t Forget");
+            value.Should().NotContain("CBDF");
+        });
+    }
+
     private static IReadOnlyCollection<string> Keys(ResourceSet? set)
     {
         return set is null
@@ -75,6 +98,14 @@ public class WhenTestingResourceParity
             ? []
             : [.. set.Cast<System.Collections.DictionaryEntry>()
                 .Where(entry => ((string)entry.Key).StartsWith("Install_", StringComparison.Ordinal))
+                .Select(entry => (string)entry.Value!)];
+    }
+
+    private static IReadOnlyCollection<string> AllValues(ResourceSet? set)
+    {
+        return set is null
+            ? []
+            : [.. set.Cast<System.Collections.DictionaryEntry>()
                 .Select(entry => (string)entry.Value!)];
     }
 }

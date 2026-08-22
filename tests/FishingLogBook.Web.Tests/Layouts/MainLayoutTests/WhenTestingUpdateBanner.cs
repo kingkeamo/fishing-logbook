@@ -61,7 +61,7 @@ public class WhenTestingUpdateBanner : BaseMainLayoutTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#app-update-banner-title").TextContent
-                .Should().Contain("New CBDF version available");
+                .Should().Contain("New version available");
             cut.Find("#app-update-banner-action").TextContent.Should().Contain("Update now");
             cut.Markup.IndexOf("app-update-banner", StringComparison.Ordinal)
                 .Should().BeLessThan(cut.Markup.IndexOf("app-shell-content", StringComparison.Ordinal));

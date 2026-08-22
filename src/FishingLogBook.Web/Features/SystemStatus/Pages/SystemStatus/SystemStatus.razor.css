@@ -2,6 +2,12 @@
     padding-top: 2rem;
 }
 
+.status-brand-mark {
+    height: 2.75rem;
+    object-fit: contain;
+    width: 2.75rem;
+}
+
 .status-row {
     width: 100%;
 }

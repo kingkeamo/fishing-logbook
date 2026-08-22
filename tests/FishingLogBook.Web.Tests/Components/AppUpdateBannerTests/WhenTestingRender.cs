@@ -46,7 +46,7 @@ public class WhenTestingRender : BaseAppUpdateBannerTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#app-update-banner-title").TextContent
-                .Should().Contain("New CBDF version available");
+                .Should().Contain("New version available");
             cut.Find("#app-update-banner-body").TextContent
                 .Should().Contain("Get the latest fixes and features.");
             cut.Find("#app-update-banner-action").TextContent.Should().Contain("Update now");
@@ -110,6 +110,7 @@ public class WhenTestingRender : BaseAppUpdateBannerTest
         {
             var banner = cut.Find("#app-update-banner").TextContent;
             banner.Should().NotContainAny(
+                "CBDF",
                 "service worker",
                 "cache",
                 "hard refresh",
@@ -133,7 +134,7 @@ public class WhenTestingRender : BaseAppUpdateBannerTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#app-update-banner-title").TextContent
-                .Should().Contain("Nouvelle version de CBDF disponible");
+                .Should().Contain("Nouvelle version disponible");
             cut.Find("#app-update-banner-action").TextContent.Should().Contain("Mettre à jour");
         });
     }

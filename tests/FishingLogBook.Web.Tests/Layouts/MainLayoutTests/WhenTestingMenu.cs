@@ -30,7 +30,7 @@ public class WhenTestingMenu : BaseMainLayoutTest
         cut.Find("#home-nav-link").GetAttribute("href").Should().Be("/");
         cut.Find("#app-brand-mark").GetAttribute("src").Should().Be("images/brand/brand-mark-transparent.png");
         cut.Find("#app-brand-mark").GetAttribute("src").Should().NotBe("icon-192.png");
-        cut.Find("#app-brand-name").TextContent.Should().Be("Catch, But Don’t Forget");
+        cut.Find("#app-brand-name").TextContent.Should().Be("Catch But Don’t Forget");
     }
 
     [Fact]
