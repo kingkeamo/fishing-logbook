@@ -310,13 +310,17 @@ public class WhenTestingSave : BaseCatchEditTest
             .Returns(Task.CompletedTask);
         var synchroniser = QuietSynchroniser();
         var time = UtcTime();
-        await using var context = CreateContext(store, synchroniser: synchroniser, time: time);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(
+            store,
+            synchroniser: synchroniser,
+            time: time,
+            anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
-        cut.WaitForAssertion(() => cut.Find("#catch-edit-species").Should().NotBeNull());
-        cut.Find("#catch-edit-species").Input("Pike");
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Spinning"));
+        await cut.Find("#catch-edit-method-Spinning").ClickAsync();
         cut.Find("#catch-edit-weight").Input("2.5");
         cut.Find("#catch-edit-length").Input("64");
-        cut.Find("#catch-edit-method").Input("Lure");
         cut.Find("#catch-edit-bait").Input("Spinner");
         cut.Find("#catch-edit-notes").Input("Weedline");
         cut.Find("#catch-edit-caught-on").Input("2026-08-17T09:15");
@@ -334,7 +338,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 && catchRecord.SpeciesName == "Pike"
                 && catchRecord.Weight == 2.5m
                 && catchRecord.Length == 64m
-                && catchRecord.Method == "Lure"
+                && catchRecord.Method == "Spinning"
                 && catchRecord.BaitOrLure == "Spinner"
                 && catchRecord.Notes == "Weedline"
                 && catchRecord.CaughtOn == DateTimeOffset.Parse("2026-08-17T09:15:00Z")
@@ -363,16 +367,20 @@ public class WhenTestingSave : BaseCatchEditTest
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
-            .Returns(StoredCatch(catchId, SyncStatus.Synchronised, SyncStatus.Synchronised));
+            .Returns(StoredCatch(catchId, SyncStatus.Synchronised, SyncStatus.Synchronised, method: "Fly"));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var synchroniser = Substitute.For<ICatchSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException());
-        await using var context = CreateContext(store, synchroniser: synchroniser);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(
+            store,
+            synchroniser: synchroniser,
+            anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
-        cut.WaitForAssertion(() => cut.Find("#catch-edit-species").Should().NotBeNull());
-        cut.Find("#catch-edit-species").Input("Pike");
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Spinning"));
+        await cut.Find("#catch-edit-method-Spinning").ClickAsync();
 
         // Act
         await cut.Find("#catch-edit-save").ClickAsync();
@@ -398,14 +406,18 @@ public class WhenTestingSave : BaseCatchEditTest
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
-            .Returns(StoredCatch(catchId));
+            .Returns(StoredCatch(catchId, method: "Fly"));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var synchroniser = QuietSynchroniser();
-        await using var context = CreateContext(store, synchroniser: synchroniser);
+        var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        await using var context = CreateContext(
+            store,
+            synchroniser: synchroniser,
+            anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
-        cut.WaitForAssertion(() => cut.Find("#catch-edit-species").Should().NotBeNull());
-        cut.Find("#catch-edit-species").Input("Brochet");
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-species-BrownTrout"));
+        cut.Find("#catch-edit-weight").Input("1.5");
 
         // Act
         await cut.Find("#catch-edit-save").ClickAsync();
@@ -417,8 +429,9 @@ public class WhenTestingSave : BaseCatchEditTest
                 .Contain("Détails enregistrés sur cet appareil"));
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
-                catchRecord.Id == catchId && catchRecord.SpeciesName == "Brochet"),
+                catchRecord.Id == catchId && catchRecord.SpeciesName == "Brown Trout"),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 }
+

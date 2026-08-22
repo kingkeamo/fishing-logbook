@@ -252,33 +252,6 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _speciesIsExplicit = true;
     }
 
-    private string MethodInput
-    {
-        get
-        {
-            return _method;
-        }
-
-        set
-        {
-            SelectMethod(value);
-        }
-    }
-
-    private string SpeciesInput
-    {
-        get
-        {
-            return _speciesName;
-        }
-
-        set
-        {
-            _speciesName = value;
-            _speciesIsExplicit = !string.IsNullOrWhiteSpace(value);
-        }
-    }
-
     private async Task ChooseMethodAsync()
     {
         var chosen = await ChooseFromCatalogueAsync(
@@ -341,3 +314,4 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _cancellationTokenSource.Dispose();
     }
 }
+

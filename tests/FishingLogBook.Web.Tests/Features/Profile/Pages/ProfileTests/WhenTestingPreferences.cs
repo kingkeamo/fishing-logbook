@@ -41,6 +41,8 @@ public class WhenTestingPreferences : BaseProfileTest
             cut.Find("#profile-species-section-Fly").Should().NotBeNull();
             cut.Find("#profile-species-Fly-BrownTrout").Should().NotBeNull();
             cut.FindAll("#profile-species-section-Spinning").Should().BeEmpty();
+            cut.Find("#profile-method-chips").QuerySelectorAll("input").Should().BeEmpty();
+            cut.Find("#profile-species-section-Fly").QuerySelectorAll("input").Should().BeEmpty();
         });
         await preferenceClient.Received(1).GetCatalogueAsync(Arg.Any<CancellationToken>());
         await preferenceClient.Received(1).GetPreferencesAsync(Arg.Any<CancellationToken>());
@@ -393,3 +395,4 @@ public class WhenTestingPreferences : BaseProfileTest
         });
     }
 }
+

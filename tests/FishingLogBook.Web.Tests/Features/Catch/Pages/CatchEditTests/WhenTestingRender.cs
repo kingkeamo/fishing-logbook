@@ -51,10 +51,14 @@ public class WhenTestingRender : BaseCatchEditTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#catch-edit-title").TextContent.Should().Contain("Edit catch");
-            cut.Find("#catch-edit-species").Should().NotBeNull();
+            cut.Find("#catch-edit-method-chips").Should().NotBeNull();
+            cut.Find("#catch-edit-species-chips").Should().NotBeNull();
+            cut.Find("#catch-edit-method-more").Should().NotBeNull();
+            cut.Find("#catch-edit-species-more").Should().NotBeNull();
+            cut.FindAll("#catch-edit-method").Should().BeEmpty();
+            cut.FindAll("#catch-edit-species").Should().BeEmpty();
             cut.Find("#catch-edit-weight").Should().NotBeNull();
             cut.Find("#catch-edit-length").Should().NotBeNull();
-            cut.Find("#catch-edit-method").Should().NotBeNull();
             cut.Find("#catch-edit-bait").Should().NotBeNull();
             cut.Find("#catch-edit-notes").Should().NotBeNull();
             cut.Find("#catch-edit-caught-on").GetAttribute("value").Should().Be("2026-08-17T08:00");
@@ -193,7 +197,7 @@ public class WhenTestingRender : BaseCatchEditTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-edit-species").GetAttribute("value").Should().Be("Pike"));
+            cut.Find("#catch-edit-species-Pike").ClassList.Should().Contain("mud-chip-filled"));
         await catchClient.Received(1).DownloadPhotographAsync("https://r2.test/one", Arg.Any<CancellationToken>());
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -265,3 +269,4 @@ public class WhenTestingRender : BaseCatchEditTest
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 }
+
