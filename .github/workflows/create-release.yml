@@ -1,0 +1,131 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Semantic version increment
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+concurrency:
+  group: cbdf-create-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify-main:
+    name: Verify current main candidate
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.candidate.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Confirm workflow targets current remote main
+        id: candidate
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+          DISPATCH_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "${DISPATCH_REF}" = "refs/heads/main"
+          git fetch origin main --tags
+          MAIN_SHA="$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')"
+          test "${DISPATCH_SHA}" = "${MAIN_SHA}"
+          test "$(git rev-parse HEAD)" = "${MAIN_SHA}"
+          echo "sha=${MAIN_SHA}" >> "${GITHUB_OUTPUT}"
+
+  validate:
+    name: Validate release candidate
+    needs: verify-main
+    uses: ./.github/workflows/build-test.yml
+    permissions:
+      contents: read
+
+  create-release:
+    name: Create immutable tag and release
+    needs: [verify-main, validate]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Calculate release version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags
+          LATEST_TAG="$(git tag --list | node .github/scripts/release-version.mjs latest)"
+          LATEST_SHA="$(git rev-list -n 1 "${LATEST_TAG}")"
+          if test "${LATEST_SHA}" = "${{ needs.verify-main.outputs.sha }}"
+          then
+            echo "Current main is already released as ${LATEST_TAG}; refusing to create a duplicate release." >&2
+            exit 1
+          fi
+          NEXT_TAG="$(git tag --list | node .github/scripts/release-version.mjs "${BUMP}")"
+          echo "tag=${NEXT_TAG}" >> "${GITHUB_OUTPUT}"
+      - name: Recheck candidate and push immutable tag
+        env:
+          BUMP: ${{ inputs.bump }}
+          CANDIDATE_SHA: ${{ needs.verify-main.outputs.sha }}
+          EXPECTED_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags
+          REMOTE_MAIN_SHA="$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')"
+          test "${REMOTE_MAIN_SHA}" = "${CANDIDATE_SHA}"
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          LATEST_TAG="$(git tag --list | node .github/scripts/release-version.mjs latest)"
+          LATEST_SHA="$(git rev-list -n 1 "${LATEST_TAG}")"
+          if test "${LATEST_SHA}" = "${CANDIDATE_SHA}"
+          then
+            echo "Current main is already released as ${LATEST_TAG}; refusing to create a duplicate release." >&2
+            exit 1
+          fi
+          NEXT_TAG="$(git tag --list | node .github/scripts/release-version.mjs "${BUMP}")"
+          test "${NEXT_TAG}" = "${EXPECTED_TAG}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${NEXT_TAG}" >/dev/null 2>&1
+          then
+            echo "Release tag ${NEXT_TAG} already exists; refusing to move or replace it." >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${NEXT_TAG}" "${CANDIDATE_SHA}" -m "CBDF ${NEXT_TAG}"
+          git push origin "refs/tags/${NEXT_TAG}"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT_TAG: ${{ steps.version.outputs.tag }}
+        run: >-
+          gh release create "${NEXT_TAG}"
+          --verify-tag
+          --generate-notes
+          --title "CBDF ${NEXT_TAG}"
+      - name: Start protected production deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT_TAG: ${{ steps.version.outputs.tag }}
+        run: >-
+          gh workflow run deploy-production.yml
+          --ref main
+          --raw-field release_tag="${NEXT_TAG}"
+          --raw-field target=all
