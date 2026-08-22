@@ -25,7 +25,8 @@ public class BaseMainLayoutTest
         bool isAuthenticated = false,
         ICatchSynchroniser? catchSynchroniser = null,
         IDiagnosticSynchroniser? diagnosticSynchroniser = null,
-        IProfileSummaryProvider? profileSummary = null)
+        IProfileSummaryProvider? profileSummary = null,
+        IAppUpdateService? appUpdate = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -57,7 +58,7 @@ public class BaseMainLayoutTest
         context.Services.AddSingleton(
             diagnosticSynchroniser ?? Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(Substitute.For<ILoggingService>());
-        context.Services.AddSingleton(Substitute.For<IAppUpdateService>());
+        context.Services.AddSingleton(appUpdate ?? Substitute.For<IAppUpdateService>());
         context.Services.AddSingleton(profileSummary ?? QuietProfileSummary());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;

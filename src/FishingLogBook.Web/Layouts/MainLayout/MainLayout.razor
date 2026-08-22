@@ -57,7 +57,11 @@
         </Authorized>
     </AuthorizeView>
     <MudMainContent>
-        <AppUpdateBanner />
+        <AuthorizeView>
+            <Authorized>
+                <AppUpdateBanner />
+            </Authorized>
+        </AuthorizeView>
         <div class="app-shell-content" id="app-shell-content">
             <AppErrorBoundary>
                 @Body
