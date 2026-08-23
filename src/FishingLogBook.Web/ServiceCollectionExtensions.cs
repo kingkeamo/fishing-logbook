@@ -18,6 +18,8 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
 using FishingLogBook.Web.Features.Diagnostics.Storage.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
+using FishingLogBook.Web.Features.OfflineAccess.Clients;
+using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
 using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Offline;
@@ -70,6 +72,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInstallService, InstallService>();
         services.AddScoped<IAppUpdateService, AppUpdateService>();
         services.AddScoped<IOnboardingService, OnboardingService>();
+        services.AddScoped<IOfflineAccessPreferenceClient, OfflineAccessPreferenceClient>();
+        services.AddScoped<IOfflineAccessDeviceService, OfflineAccessDeviceService>();
+        services.AddScoped<IOfflineAccessService, OfflineAccessService>();
         services.AddScoped<ITimeService, TimeService>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
         services.AddScoped<ICatchSynchroniser, CatchSynchroniser>();
