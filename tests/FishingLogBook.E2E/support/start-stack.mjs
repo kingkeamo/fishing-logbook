@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,6 +10,8 @@ const port = process.env.E2E_POSTGRES_PORT ?? '55433';
 const password = randomUUID();
 const connection = `Host=localhost;Port=${port};Database=postgres;Username=postgres;Password=${password}`;
 const children = [];
+const runtimeDirectory = resolve(projectRoot, 'tests/FishingLogBook.E2E/.runtime');
+const containerFile = resolve(runtimeDirectory, 'container-name');
 
 function run(command, args, environment = {}) {
     const child = spawn(command, args, {
@@ -37,6 +40,7 @@ async function waitFor(url, label, timeout = 120_000) {
 function cleanup() {
     for (const child of children.reverse()) child.kill();
     spawnSync('docker', ['rm', '--force', container], { stdio: 'ignore' });
+    try { unlinkSync(containerFile); } catch { /* global teardown may already remove it */ }
 }
 
 process.once('SIGINT', () => { cleanup(); process.exit(130); });
@@ -48,6 +52,8 @@ const docker = spawnSync('docker', [
     '-e', `POSTGRES_PASSWORD=${password}`, '-p', `${port}:5432`, 'postgres:18-alpine'
 ], { cwd: projectRoot, encoding: 'utf8' });
 if (docker.status !== 0) throw new Error('Unable to start the disposable E2E PostgreSQL container.');
+mkdirSync(runtimeDirectory, { recursive: true });
+writeFileSync(containerFile, container, { encoding: 'utf8', mode: 0o600 });
 
 for (let attempt = 0; attempt < 120; attempt += 1) {
     const ready = spawnSync('docker', ['exec', container, 'pg_isready', '-U', 'postgres'], {

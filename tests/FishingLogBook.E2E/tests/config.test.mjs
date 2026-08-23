@@ -19,3 +19,12 @@ test('requires explicit enablement and dedicated Cognito secrets', async () => {
     assert.match(workflow, /secrets\.E2E_COGNITO_USERNAME/);
     assert.match(workflow, /secrets\.E2E_COGNITO_PASSWORD/);
 });
+
+test('registers independent disposable-container teardown', async () => {
+    const config = await readFile(new URL('../playwright.config.mjs', import.meta.url), 'utf8');
+    const teardown = await readFile(new URL('../support/teardown.mjs', import.meta.url), 'utf8');
+
+    assert.match(config, /globalTeardown: '\.\/support\/teardown\.mjs'/);
+    assert.match(teardown, /\^fishing-logbook-e2e-/);
+    assert.match(teardown, /docker', \['rm', '--force'/);
+});

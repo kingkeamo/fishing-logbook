@@ -7,6 +7,7 @@ export default defineConfig({
     testDir: './specs',
     outputDir: 'artifacts/test-results',
     globalSetup: './support/auth.setup.mjs',
+    globalTeardown: './support/teardown.mjs',
     timeout: 45_000,
     expect: { timeout: 10_000 },
     fullyParallel: false,

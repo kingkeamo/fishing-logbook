@@ -26,7 +26,8 @@ npm --prefix tests/FishingLogBook.E2E test
 The default command starts a disposable PostgreSQL 18 container on port `55433`, applies
 the real migrations, and starts the API and Web projects. Override the port with
 `E2E_POSTGRES_PORT`. To use an already-running stack, set `E2E_EXTERNAL_STACK=true` and
-`E2E_BASE_URL`.
+`E2E_BASE_URL`. A separate global teardown removes the run-owned container even when
+Playwright forcibly terminates its WebServer process.
 
 Each run stores browser authentication state under `.auth/` and artifacts under
 `artifacts/`; both are ignored. Authentication setup never records traces, screenshots or
