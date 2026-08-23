@@ -148,4 +148,3 @@ public class WhenTestingRender : BaseProfileTest
         await profileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
     }
 }
-

@@ -69,4 +69,3 @@ public class WhenTestingActions
         return context;
     }
 }
-
