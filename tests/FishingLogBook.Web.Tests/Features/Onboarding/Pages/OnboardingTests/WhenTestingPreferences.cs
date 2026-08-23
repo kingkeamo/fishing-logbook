@@ -263,6 +263,8 @@ public class WhenTestingPreferences
         await cut.Find("#onboarding-skip-location").ClickAsync();
         await cut.Find("#onboarding-next").ClickAsync();
         cut.WaitForAssertion(() => cut.Find("#install-guidance-later").Should().NotBeNull());
+        await cut.Find("#onboarding-next").ClickAsync();
+        cut.WaitForAssertion(() => cut.Find("#onboarding-offline-optional").Should().NotBeNull());
         await cut.Find("#onboarding-finish").ClickAsync();
 
         await fixture.Onboarding.Received(1).CompleteAsync(Arg.Any<CancellationToken>());

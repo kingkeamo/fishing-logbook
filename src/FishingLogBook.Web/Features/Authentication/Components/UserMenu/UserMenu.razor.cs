@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Configuration;
+using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;

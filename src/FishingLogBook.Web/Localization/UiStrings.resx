@@ -789,4 +789,19 @@
   <data name="WebAuthnProbe_Outcome_missing-metadata" xml:space="preserve"><value>No probe metadata is stored</value></data>
   <data name="WebAuthnProbe_Outcome_cancelled" xml:space="preserve"><value>Device authentication was cancelled</value></data>
   <data name="WebAuthnProbe_Outcome_failed" xml:space="preserve"><value>The capability check failed</value></data>
+  <data name="OfflineAccess_Title" xml:space="preserve"><value>Offline access</value></data>
+  <data name="OfflineAccess_Description" xml:space="preserve"><value>Set up this device so you can securely open your own saved fishing data without a connection. Your device will ask you to verify it is you.</value></data>
+  <data name="OfflineAccess_Setup" xml:space="preserve"><value>Set up offline access</value></data>
+  <data name="OfflineAccess_Ready" xml:space="preserve"><value>Offline access is ready on this device.</value></data>
+  <data name="OfflineAccess_NotConfigured" xml:space="preserve"><value>Offline access is not set up on this device.</value></data>
+  <data name="OfflineAccess_EnabledOtherDevice" xml:space="preserve"><value>Offline access is enabled for your account. Set up this device to use it here.</value></data>
+  <data name="OfflineAccess_Unsupported" xml:space="preserve"><value>This device or browser cannot set up secure offline access.</value></data>
+  <data name="OfflineAccess_InstallRequired" xml:space="preserve"><value>On iPhone or iPad, first install Catch But Don’t Forget and open it from your Home Screen. You can then set up offline access here.</value></data>
+  <data name="OfflineAccess_Repair" xml:space="preserve"><value>Offline access needs to be set up again on this device.</value></data>
+  <data name="OfflineAccess_Cancelled" xml:space="preserve"><value>Device verification was cancelled. You can try again or continue without offline access.</value></data>
+  <data name="OfflineAccess_Failed" xml:space="preserve"><value>Offline access could not be set up. Please try again.</value></data>
+  <data name="OfflineAccess_RemoveDevice" xml:space="preserve"><value>Remove from this device</value></data>
+  <data name="OfflineAccess_TurnOffAccount" xml:space="preserve"><value>Turn off for my account</value></data>
+  <data name="Onboarding_OfflineAccessStep" xml:space="preserve"><value>Offline Access</value></data>
+  <data name="Onboarding_OfflineAccessOptional" xml:space="preserve"><value>Offline access is optional. Choose Open my Logbook to continue without setting it up.</value></data>
 </root>
