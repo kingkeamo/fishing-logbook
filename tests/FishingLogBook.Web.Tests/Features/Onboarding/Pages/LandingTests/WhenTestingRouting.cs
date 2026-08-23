@@ -5,6 +5,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using LandingPage = FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing;
@@ -129,14 +130,34 @@ public class WhenTestingRouting : BaseLandingTest
         await using var context = CreateContext(
             onboarding,
             authenticationStateProvider: Authentication(authentication.Task));
-        var cut = context.Render<LandingPage>();
+        context.Render<LandingPage>();
+        var navigation = context.Services.GetRequiredService<NavigationManager>();
+        var navigated = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+        {
+            if (args.Location.EndsWith("/catches", StringComparison.Ordinal))
+            {
+                navigated.TrySetResult();
+            }
+        }
+
+        navigation.LocationChanged += OnLocationChanged;
 
         // Act
-        authentication.SetResult(Authenticated());
+        try
+        {
+            authentication.SetResult(Authenticated());
+            await navigated.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            navigation.LocationChanged -= OnLocationChanged;
+        }
 
         // Assert
-        cut.WaitForAssertion(() =>
-            context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/catches"));
+        navigation.Uri.Should().EndWith("/catches");
         await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
     }
 
