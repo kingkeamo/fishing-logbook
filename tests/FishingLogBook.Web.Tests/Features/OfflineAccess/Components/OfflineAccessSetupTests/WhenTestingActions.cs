@@ -49,29 +49,6 @@ public class WhenTestingActions
         });
     }
 
-    [Fact]
-    public async Task ItShouldShowSafeSetupFailureDiagnostics()
-    {
-        var service = Substitute.For<IOfflineAccessService>();
-        service.GetStatusAsync(Arg.Any<CancellationToken>())
-            .Returns(new OfflineAccessStatusModel(false, "not-configured"));
-        service.SetupAsync(Arg.Any<CancellationToken>())
-            .Returns(new OfflineAccessStatusModel(
-                false,
-                "failed",
-                new OfflineAccessDeviceResultModel("failed", "EntitlementDecrypted", "OperationError", "The operation failed.")));
-        await using var context = CreateContext(service);
-        var cut = context.Render<OfflineAccessSetup>();
-        cut.WaitForAssertion(() => cut.Find("#offline-access-enable"));
-
-        await cut.Find("#offline-access-enable").ClickAsync();
-
-        cut.WaitForAssertion(() => cut.Find("#offline-access-diagnostic").TextContent.Should()
-            .Contain("EntitlementDecrypted")
-            .And.Contain("OperationError"));
-        await service.Received(1).SetupAsync(Arg.Any<CancellationToken>());
-    }
-
     private static BunitContext CreateContext(IOfflineAccessService service)
     {
         var context = new BunitContext();

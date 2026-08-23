@@ -19,10 +19,7 @@ public class WhenTestingLifecycle
 
         var status = await fixture.Sut.SetupAsync(CancellationToken.None);
 
-        status.Should().Be(new OfflineAccessStatusModel(
-            true,
-            "ready",
-            new OfflineAccessDeviceResultModel("ready")));
+        status.Should().Be(new OfflineAccessStatusModel(true, "ready"));
         await fixture.Preference.Received(1).SetAsync(true, Arg.Any<CancellationToken>());
     }
 
@@ -33,10 +30,7 @@ public class WhenTestingLifecycle
 
         var status = await fixture.Sut.SetupAsync(CancellationToken.None);
 
-        status.Should().Be(new OfflineAccessStatusModel(
-            false,
-            "cancelled",
-            new OfflineAccessDeviceResultModel("cancelled")));
+        status.Should().Be(new OfflineAccessStatusModel(false, "cancelled"));
         await fixture.Preference.DidNotReceive().SetAsync(true, Arg.Any<CancellationToken>());
     }
 

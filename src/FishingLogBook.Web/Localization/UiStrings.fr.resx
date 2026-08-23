@@ -800,7 +800,6 @@
   <data name="OfflineAccess_Repair" xml:space="preserve"><value>L’accès hors ligne doit être reconfiguré sur cet appareil.</value></data>
   <data name="OfflineAccess_Cancelled" xml:space="preserve"><value>La vérification de l’appareil a été annulée. Vous pouvez réessayer ou continuer sans accès hors ligne.</value></data>
   <data name="OfflineAccess_Failed" xml:space="preserve"><value>Impossible de configurer l’accès hors ligne. Veuillez réessayer.</value></data>
-  <data name="OfflineAccess_Diagnostic" xml:space="preserve"><value>Étape de validation : {0}. Erreur sûre : {1}</value></data>
   <data name="OfflineAccess_RemoveDevice" xml:space="preserve"><value>Supprimer de cet appareil</value></data>
   <data name="OfflineAccess_TurnOffAccount" xml:space="preserve"><value>Désactiver pour mon compte</value></data>
   <data name="Onboarding_OfflineAccessStep" xml:space="preserve"><value>Accès hors ligne</value></data>
