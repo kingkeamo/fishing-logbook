@@ -6,6 +6,7 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
@@ -52,6 +53,9 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
+
+    [Inject]
+    private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
@@ -334,8 +338,9 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             _locationSaved = location is not null;
             saved = true;
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            await Logging.LogErrorAsync("saving a catch locally", exception, CancellationToken.None);
             _saveFailed = true;
         }
         finally

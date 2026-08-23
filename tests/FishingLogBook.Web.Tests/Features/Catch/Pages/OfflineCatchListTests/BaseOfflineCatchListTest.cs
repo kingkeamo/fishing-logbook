@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -20,7 +21,10 @@ public class BaseOfflineCatchListTest
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    protected static BunitContext CreateContext(ICatchStore store, IAnglerPreferencesStore? preferences = null)
+    protected static BunitContext CreateContext(
+        ICatchStore store,
+        IAnglerPreferencesStore? preferences = null,
+        ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -28,6 +32,7 @@ public class BaseOfflineCatchListTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(preferences ?? EmptyPreferences());
+        context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton<ICatchDateGroupingService, CatchDateGroupingService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
@@ -35,6 +40,14 @@ public class BaseOfflineCatchListTest
         owner.Unlock(new OfflineOwnerModel(OwnerUserId, 1));
         context.Services.AddSingleton<IOfflineOwnerContextService>(owner);
         return context;
+    }
+
+    protected static ILoggingService QuietLogging()
+    {
+        var logging = Substitute.For<ILoggingService>();
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return logging;
     }
 
     protected static IAnglerPreferencesStore EmptyPreferences()

@@ -6,6 +6,7 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
@@ -40,6 +41,7 @@ public partial class OfflineCatchEdit : ComponentBase
     [Inject] private IAnglerPreferencesStore AnglerPreferencesStore { get; set; } = default!;
     [Inject] private IModalService ModalService { get; set; } = default!;
     [Inject] private IMeasurementService Measurement { get; set; } = default!;
+    [Inject] private ILoggingService Logging { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
@@ -67,8 +69,9 @@ public partial class OfflineCatchEdit : ComponentBase
             _weight = Measurement.ToDisplayWeight(_catch.Weight, _weightUnit);
             _length = Measurement.ToDisplayLength(_catch.Length, _lengthUnit);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            await Logging.LogErrorAsync("loading a catch for offline editing", exception, CancellationToken.None);
             _loadFailed = true;
         }
         finally
@@ -186,8 +189,9 @@ public partial class OfflineCatchEdit : ComponentBase
             }, CancellationToken.None);
             Navigation.NavigateTo("/offline/catches");
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            await Logging.LogErrorAsync("saving an offline catch edit", exception, CancellationToken.None);
             _saveFailed = true;
         }
         finally

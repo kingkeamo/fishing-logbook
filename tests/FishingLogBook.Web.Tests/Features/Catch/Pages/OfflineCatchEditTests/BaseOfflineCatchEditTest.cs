@@ -5,6 +5,7 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -22,7 +23,7 @@ public class BaseOfflineCatchEditTest
     protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     protected static readonly Guid CatchId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
-    protected static BunitContext CreateContext(ICatchStore catchStore)
+    protected static BunitContext CreateContext(ICatchStore catchStore, ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -30,6 +31,7 @@ public class BaseOfflineCatchEditTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(catchStore);
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
+        context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(Substitute.For<IModalService>());
         var preferences = Substitute.For<IAnglerPreferencesStore>();
         preferences.GetAsync(OwnerUserId, Arg.Any<CancellationToken>()).Returns(
@@ -40,6 +42,14 @@ public class BaseOfflineCatchEditTest
         owner.Unlock(new OfflineOwnerModel(OwnerUserId, 1));
         context.Services.AddSingleton<IOfflineOwnerContextService>(owner);
         return context;
+    }
+
+    protected static ILoggingService QuietLogging()
+    {
+        var logging = Substitute.For<ILoggingService>();
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return logging;
     }
 
     protected static CatchModel Catch(Guid ownerUserId) => new(

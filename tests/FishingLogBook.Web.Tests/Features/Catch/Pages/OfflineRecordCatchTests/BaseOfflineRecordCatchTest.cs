@@ -5,6 +5,7 @@ using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -20,7 +21,10 @@ public class BaseOfflineRecordCatchTest
 {
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-    protected static BunitContext CreateContext(ICatchStore catchStore, IAnglerPreferencesStore preferencesStore)
+    protected static BunitContext CreateContext(
+        ICatchStore catchStore,
+        IAnglerPreferencesStore preferencesStore,
+        ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -28,6 +32,7 @@ public class BaseOfflineRecordCatchTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(catchStore);
         context.Services.AddSingleton(preferencesStore);
+        context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(Substitute.For<IModalService>());
         var location = Substitute.For<ILocationService>();
         location.GetPromptStatusAsync(Arg.Any<CancellationToken>()).Returns(new LocationPromptStatus(false, false, false));
@@ -37,6 +42,14 @@ public class BaseOfflineRecordCatchTest
         owner.Unlock(new OfflineOwnerModel(OwnerUserId, 1));
         context.Services.AddSingleton<IOfflineOwnerContextService>(owner);
         return context;
+    }
+
+    protected static ILoggingService QuietLogging()
+    {
+        var logging = Substitute.For<ILoggingService>();
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return logging;
     }
 
     protected static AnglerPreferencesModel Preferences() => new(

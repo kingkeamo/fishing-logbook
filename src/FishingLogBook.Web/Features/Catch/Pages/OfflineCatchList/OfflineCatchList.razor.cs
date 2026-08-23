@@ -2,6 +2,7 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
 using FishingLogBook.Web.Localization;
@@ -22,6 +23,7 @@ public partial class OfflineCatchList : ComponentBase
     [Inject] private ICatchStore CatchStore { get; set; } = default!;
     [Inject] private IOfflineOwnerContextService OfflineOwnerContext { get; set; } = default!;
     [Inject] private IAnglerPreferencesStore AnglerPreferencesStore { get; set; } = default!;
+    [Inject] private ILoggingService Logging { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
@@ -41,8 +43,9 @@ public partial class OfflineCatchList : ComponentBase
                 _lengthUnit = preferences.LengthUnit;
             }
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            await Logging.LogErrorAsync("loading offline catches", exception, CancellationToken.None);
             _loadFailed = true;
         }
         finally

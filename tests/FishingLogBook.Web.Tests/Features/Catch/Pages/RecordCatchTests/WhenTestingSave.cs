@@ -84,11 +84,13 @@ public class WhenTestingSave : BaseRecordCatchTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
+        var exception = new InvalidOperationException("Photograph persistence failed.");
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new InvalidOperationException("Photograph persistence failed."));
+            .ThrowsAsync(exception);
         var synchroniser = QuietSynchroniser();
-        await using var context = CreateContext(store, synchroniser: synchroniser);
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, synchroniser: synchroniser, logging: logging);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
 
@@ -110,6 +112,10 @@ public class WhenTestingSave : BaseRecordCatchTest
                 && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
         await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "saving a catch locally",
+            Arg.Is<Exception>(caught => ReferenceEquals(caught, exception)),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

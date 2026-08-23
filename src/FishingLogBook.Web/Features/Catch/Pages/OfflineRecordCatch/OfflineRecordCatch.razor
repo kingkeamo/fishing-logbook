@@ -8,6 +8,10 @@
 {
     <MudProgressCircular Indeterminate="true" Color="Color.Primary" id="offline-record-loading" />
 }
+else if (_loadFailed)
+{
+    <MudAlert Severity="Severity.Error" id="offline-record-load-failed">@Loc["Catch_CatalogueUnavailable"]</MudAlert>
+}
 else
 {
     <RecordCatchEditor OwnerUserId="_ownerUserId"

@@ -14,6 +14,9 @@ const publish = spawnSync(
     { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
 if (publish.status !== 0) process.exit(publish.status ?? 1);
 const publishedWebRoot = path.join(publishedRoot, 'wwwroot');
+fs.copyFileSync(
+    path.join(root, 'src', 'FishingLogBook.Web', 'wwwroot', 'appsettings.Development.json'),
+    path.join(publishedWebRoot, 'appsettings.Production.json'));
 
 const mimeTypes = {
     '.html': 'text/html; charset=utf-8',
@@ -26,7 +29,7 @@ const mimeTypes = {
 };
 
 http.createServer((request, response) => {
-    const url = new URL(request.url ?? '/', `http://127.0.0.1:${port}`);
+    const url = new URL(request.url ?? '/', `http://localhost:${port}`);
     const decodedPath = decodeURIComponent(url.pathname);
     const contentRoot = decodedPath.startsWith('/src/') ? root : publishedWebRoot;
     let filePath = path.normalize(path.join(contentRoot, decodedPath));
@@ -51,18 +54,13 @@ http.createServer((request, response) => {
             return;
         }
 
-        const headers = {
+        response.writeHead(200, {
             'Content-Type': mimeTypes[path.extname(filePath)] ?? 'application/octet-stream',
             'Service-Worker-Allowed': '/',
             'Cache-Control': 'no-store'
-        };
-        if (contentRoot === publishedWebRoot) {
-            headers['Blazor-Environment'] = 'Development';
-        }
-
-        response.writeHead(200, headers);
+        });
         response.end(data);
     });
-}).listen(port, '127.0.0.1', () => {
-    process.stdout.write(`playwright harness listening on http://127.0.0.1:${port}\n`);
+}).listen(port, 'localhost', () => {
+    process.stdout.write(`playwright harness listening on http://localhost:${port}\n`);
 });

@@ -23,12 +23,12 @@ export default defineConfig({
     webServer: {
         command: 'node server.mjs',
         cwd: testsRoot,
-        url: 'http://127.0.0.1:4173/src/FishingLogBook.Web/BrowserTests/harness/index.html',
+        url: 'http://localhost:4173/src/FishingLogBook.Web/BrowserTests/harness/index.html',
         reuseExistingServer: !process.env.CI,
         timeout: 120000
     },
     use: {
-        baseURL: 'http://127.0.0.1:4173',
+        baseURL: 'http://localhost:4173',
         trace: 'on-first-retry'
     },
     projects: [
