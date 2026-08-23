@@ -101,6 +101,10 @@ public class WhenTestingRender : BaseProfileTest
         {
             cut.Markup.Should().Contain("Your profile");
             cut.Markup.Should().Contain("Choose what other anglers can see.");
+            cut.Find("#profile-sections").Should().NotBeNull();
+            cut.Find("#profile-your-details-section").TextContent.Should().Contain("Your details");
+            cut.Find("#profile-fishing-details-section").TextContent.Should().Contain("Fishing details");
+            cut.Find("#profile-offline-access-section").TextContent.Should().Contain("Offline access");
             cut.Find("#profile-display-name").Should().NotBeNull();
             cut.Find("#profile-home-region").Should().NotBeNull();
             cut.Find("#profile-weight-unit").Should().NotBeNull();

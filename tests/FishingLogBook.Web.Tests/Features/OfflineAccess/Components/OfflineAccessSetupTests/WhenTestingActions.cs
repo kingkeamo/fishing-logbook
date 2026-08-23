@@ -44,8 +44,16 @@ public class WhenTestingActions
 
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#offline-access-remove-device").Should().NotBeNull();
-            cut.Find("#offline-access-turn-off").Should().NotBeNull();
+            var deviceButton = cut.Find("#offline-access-remove-device");
+            deviceButton.TextContent.Should().Contain("Turn off for this device");
+            cut.Find("#offline-access-device-help").GetAttribute("aria-label").Should()
+                .Be("About turning off offline access for this device");
+
+            var accountButton = cut.Find("#offline-access-turn-off");
+            accountButton.TextContent.Should().Contain("Turn off for my account");
+            accountButton.ClassList.Should().Contain("mud-button-outlined-error");
+            cut.Find("#offline-access-account-help").GetAttribute("aria-label").Should()
+                .Be("About turning off offline access for your account");
         });
     }
 
