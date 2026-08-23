@@ -27,6 +27,9 @@
         {
             <MudPaper Class="pa-4" Elevation="2">
                 <MudStack Spacing="3">
+                    <MudExpansionPanels MultiExpansion="true" Elevation="1" id="profile-sections">
+                        <MudExpansionPanel Text="@Loc["Profile_YourDetailsSection"]" Expanded="true" id="profile-your-details-section">
+                            <MudStack Spacing="3">
                     <MudTextField @bind-Value="_displayName"
                                   Label="@Loc["Profile_DisplayName"]"
                                   Variant="Variant.Outlined"
@@ -46,6 +49,34 @@
                                Color="Color.Primary"
                                Label="@Loc["Profile_ShowHomeRegion"]"
                                id="profile-show-home-region" />
+
+                    <div class="profile-photo-actions">
+                        <label for="profile-photo-input" class="profile-photo-picker" id="profile-choose-photo">
+                            @Loc["Profile_ChoosePhoto"]
+                        </label>
+                        <InputFile OnChange="OnPhotographSelected"
+                                   accept="image/jpeg,image/png,image/webp"
+                                   class="profile-photo-input"
+                                   id="profile-photo-input" />
+                    </div>
+                    @if (_photographUrl is not null)
+                    {
+                        <img src="@_photographUrl"
+                             alt="@Loc["Profile_PhotographAlt"]"
+                             class="profile-photo-preview"
+                             id="profile-photo-preview" />
+                    }
+                    <MudSwitch @bind-Value="_showPhotograph"
+                               Color="Color.Primary"
+                               Label="@Loc["Profile_ShowPhotograph"]"
+                               id="profile-show-photograph" />
+
+                    <MudText Typo="Typo.caption" id="profile-privacy-caption">@Loc["Profile_LocationPrivacy"]</MudText>
+                            </MudStack>
+                        </MudExpansionPanel>
+
+                        <MudExpansionPanel Text="@Loc["Profile_FishingDetailsSection"]" id="profile-fishing-details-section">
+                            <MudStack Spacing="3">
 
                     <MudStack Spacing="1">
                         <MudText Typo="Typo.subtitle2">@Loc["Profile_FishingMethods"]</MudText>
@@ -162,29 +193,13 @@
                         <MudSelectItem Value="LengthUnitEnum.Cm">@Loc["Profile_LengthUnit_Cm"]</MudSelectItem>
                         <MudSelectItem Value="LengthUnitEnum.In">@Loc["Profile_LengthUnit_In"]</MudSelectItem>
                     </MudSelect>
+                            </MudStack>
+                        </MudExpansionPanel>
 
-                    <div class="profile-photo-actions">
-                        <label for="profile-photo-input" class="profile-photo-picker" id="profile-choose-photo">
-                            @Loc["Profile_ChoosePhoto"]
-                        </label>
-                        <InputFile OnChange="OnPhotographSelected"
-                                   accept="image/jpeg,image/png,image/webp"
-                                   class="profile-photo-input"
-                                   id="profile-photo-input" />
-                    </div>
-                    @if (_photographUrl is not null)
-                    {
-                        <img src="@_photographUrl"
-                             alt="@Loc["Profile_PhotographAlt"]"
-                             class="profile-photo-preview"
-                             id="profile-photo-preview" />
-                    }
-                    <MudSwitch @bind-Value="_showPhotograph"
-                               Color="Color.Primary"
-                               Label="@Loc["Profile_ShowPhotograph"]"
-                               id="profile-show-photograph" />
-
-                    <MudText Typo="Typo.caption" id="profile-privacy-caption">@Loc["Profile_LocationPrivacy"]</MudText>
+                        <MudExpansionPanel Text="@Loc["Profile_OfflineAccessSection"]" id="profile-offline-access-section">
+                            <OfflineAccessSetup ShowTitle="false" />
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
@@ -214,5 +229,5 @@
             </MudPaper>
         }
     </MudStack>
-    <OfflineAccessSetup />
 </MudContainer>
+

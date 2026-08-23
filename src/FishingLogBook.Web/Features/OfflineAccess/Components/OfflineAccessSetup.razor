@@ -6,9 +6,12 @@
 @inject IServiceProvider Services
 @inject IStringLocalizer<UiStrings> Loc
 
-<MudPaper Class="pa-4" Elevation="1" id="offline-access-setup">
+<MudPaper Class="@(ShowTitle ? "pa-4" : "pa-0")" Elevation="@(ShowTitle ? 1 : 0)" id="offline-access-setup">
     <MudStack Spacing="2">
-        <MudText Typo="Typo.h5">@Loc["OfflineAccess_Title"]</MudText>
+        @if (ShowTitle)
+        {
+            <MudText Typo="Typo.h5">@Loc["OfflineAccess_Title"]</MudText>
+        }
         <MudText>@Loc["OfflineAccess_Description"]</MudText>
         @if (_loading)
         {
@@ -19,12 +22,29 @@
             <MudAlert Severity="@StatusSeverity" id="offline-access-status">@StatusText</MudAlert>
             @if (_status?.IsReady == true)
             {
-                <MudButton Variant="Variant.Outlined" OnClick="RemoveAsync" Disabled="_busy" id="offline-access-remove-device">
-                    @Loc["OfflineAccess_RemoveDevice"]
-                </MudButton>
-                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="TurnOffAsync" Disabled="_busy" id="offline-access-turn-off">
-                    @Loc["OfflineAccess_TurnOffAccount"]
-                </MudButton>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="RemoveAsync" Disabled="_busy" id="offline-access-remove-device">
+                        @Loc["OfflineAccess_TurnOffDevice"]
+                    </MudButton>
+                    <MudTooltip Text="@Loc["OfflineAccess_TurnOffDeviceHelp"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                                       Size="Size.Small"
+                                       aria-label="@Loc["OfflineAccess_TurnOffDeviceHelpLabel"]"
+                                       id="offline-access-device-help" />
+                    </MudTooltip>
+                </MudStack>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" FullWidth="true" OnClick="TurnOffAsync" Disabled="_busy" id="offline-access-turn-off">
+                        @Loc["OfflineAccess_TurnOffAccount"]
+                    </MudButton>
+                    <MudTooltip Text="@Loc["OfflineAccess_TurnOffAccountHelp"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       aria-label="@Loc["OfflineAccess_TurnOffAccountHelpLabel"]"
+                                       id="offline-access-account-help" />
+                    </MudTooltip>
+                </MudStack>
             }
             else
             {
@@ -39,6 +59,7 @@
 
 @code {
     [Parameter] public EventCallback<bool> ReadyChanged { get; set; }
+    [Parameter] public bool ShowTitle { get; set; } = true;
 
     private FishingLogBook.Web.Features.OfflineAccess.Models.OfflineAccessStatusModel? _status;
     private bool _loading = true;
@@ -105,3 +126,4 @@
         finally { _busy = false; }
     }
 }
+
