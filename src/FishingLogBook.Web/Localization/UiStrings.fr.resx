@@ -731,4 +731,44 @@
   <data name="Update_StatusLabel" xml:space="preserve"><value>Mise à jour</value></data>
   <data name="Update_StatusCurrent" xml:space="preserve"><value>À jour</value></data>
   <data name="Update_StatusAvailable" xml:space="preserve"><value>Nouvelle version disponible</value></data>
+  <data name="WebAuthnProbe_PageTitle" xml:space="preserve"><value>Test de capacité WebAuthn</value></data>
+  <data name="WebAuthnProbe_Title" xml:space="preserve"><value>Test de capacité de déverrouillage hors ligne</value></data>
+  <data name="WebAuthnProbe_Scope" xml:space="preserve"><value>Ce diagnostic temporaire vérifie uniquement l’authentification de l’appareil. Il ne peut pas vous connecter, accéder aux données de pêche ni appeler l’API.</value></data>
+  <data name="WebAuthnProbe_ProvisionTitle" xml:space="preserve"><value>Configurer en ligne</value></data>
+  <data name="WebAuthnProbe_ProvisionBody" xml:space="preserve"><value>Effectuez ce test dans l’application installée lorsque vous êtes en ligne. Créez d’abord l’identifiant de test, puis appuyez sur Vérifier l’identifiant en ligne afin que chaque authentification de l’appareil ait sa propre action explicite.</value></data>
+  <data name="WebAuthnProbe_ProvisionAction" xml:space="preserve"><value>Configurer l’identifiant de test</value></data>
+  <data name="WebAuthnProbe_VerifyOnlineAction" xml:space="preserve"><value>Vérifier l’identifiant en ligne</value></data>
+  <data name="WebAuthnProbe_OfflineTitle" xml:space="preserve"><value>Tester après un démarrage à froid hors ligne</value></data>
+  <data name="WebAuthnProbe_OfflineBody" xml:space="preserve"><value>Fermez complètement l’application installée, activez le mode Avion, rouvrez-la depuis son icône, revenez ici depuis l’accueil, puis appuyez sur le bouton. L’authentification de l’appareil ne démarre jamais automatiquement.</value></data>
+  <data name="WebAuthnProbe_OfflineAction" xml:space="preserve"><value>Tester le déverrouillage hors ligne</value></data>
+  <data name="WebAuthnProbe_OpenAction" xml:space="preserve"><value>Ouvrir le test de déverrouillage de l’appareil</value></data>
+  <data name="WebAuthnProbe_CleanupNote" xml:space="preserve"><value>La suppression des métadonnées du test retire uniquement les valeurs de test inoffensives de l’application. La clé d’accès de test devra peut-être être supprimée manuellement dans Mots de passe Apple, Google Password Manager ou les réglages d’identifiants de votre appareil.</value></data>
+  <data name="WebAuthnProbe_RemoveMetadataAction" xml:space="preserve"><value>Supprimer les métadonnées du test</value></data>
+  <data name="WebAuthnProbe_LeaveAction" xml:space="preserve"><value>Quitter le test</value></data>
+  <data name="WebAuthnProbe_WebAuthnAvailable" xml:space="preserve"><value>API WebAuthn disponible</value></data>
+  <data name="WebAuthnProbe_PlatformAvailable" xml:space="preserve"><value>Authentificateur de plateforme disponible</value></data>
+  <data name="WebAuthnProbe_CreateSucceeded" xml:space="preserve"><value>CREATE réussi</value></data>
+  <data name="WebAuthnProbe_CreatePrfEnabled" xml:space="preserve"><value>PRF activée lors de CREATE</value></data>
+  <data name="WebAuthnProbe_CreatePrfResult" xml:space="preserve"><value>Résultat PRF lors de CREATE</value></data>
+  <data name="WebAuthnProbe_ImmediateGetSucceeded" xml:space="preserve"><value>GET immédiat réussi</value></data>
+  <data name="WebAuthnProbe_GetSucceeded" xml:space="preserve"><value>GET réussi</value></data>
+  <data name="WebAuthnProbe_UserVerified" xml:space="preserve"><value>Vérification de l’utilisateur confirmée</value></data>
+  <data name="WebAuthnProbe_GetPrfReported" xml:space="preserve"><value>Extension PRF indiquée lors de GET</value></data>
+  <data name="WebAuthnProbe_GetPrfResult" xml:space="preserve"><value>Résultat PRF lors de GET</value></data>
+  <data name="WebAuthnProbe_PayloadVerified" xml:space="preserve"><value>Contenu inoffensif déchiffré</value></data>
+  <data name="WebAuthnProbe_OfflineAtInvocation" xml:space="preserve"><value>Hors ligne lors du lancement</value></data>
+  <data name="WebAuthnProbe_Outcome" xml:space="preserve"><value>Résultat</value></data>
+  <data name="WebAuthnProbe_Yes" xml:space="preserve"><value>Oui</value></data>
+  <data name="WebAuthnProbe_No" xml:space="preserve"><value>Non</value></data>
+  <data name="WebAuthnProbe_NotReported" xml:space="preserve"><value>Non indiqué</value></data>
+  <data name="WebAuthnProbe_Outcome_unknown" xml:space="preserve"><value>Non exécuté</value></data>
+  <data name="WebAuthnProbe_Outcome_ready" xml:space="preserve"><value>Prêt</value></data>
+  <data name="WebAuthnProbe_Outcome_unsupported" xml:space="preserve"><value>WebAuthn n’est pas pris en charge</value></data>
+  <data name="WebAuthnProbe_Outcome_platform-unavailable" xml:space="preserve"><value>Aucun authentificateur de plateforme n’est disponible</value></data>
+  <data name="WebAuthnProbe_Outcome_provisioned" xml:space="preserve"><value>Configuration terminée</value></data>
+  <data name="WebAuthnProbe_Outcome_verified-online" xml:space="preserve"><value>Vérification en ligne terminée</value></data>
+  <data name="WebAuthnProbe_Outcome_retrieved" xml:space="preserve"><value>Récupération de l’identifiant terminée</value></data>
+  <data name="WebAuthnProbe_Outcome_missing-metadata" xml:space="preserve"><value>Aucune métadonnée de test n’est enregistrée</value></data>
+  <data name="WebAuthnProbe_Outcome_cancelled" xml:space="preserve"><value>L’authentification de l’appareil a été annulée</value></data>
+  <data name="WebAuthnProbe_Outcome_failed" xml:space="preserve"><value>Le test de capacité a échoué</value></data>
 </root>

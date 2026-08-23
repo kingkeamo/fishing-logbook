@@ -731,4 +731,44 @@
   <data name="Update_StatusLabel" xml:space="preserve"><value>Update</value></data>
   <data name="Update_StatusCurrent" xml:space="preserve"><value>Up to date</value></data>
   <data name="Update_StatusAvailable" xml:space="preserve"><value>New version available</value></data>
+  <data name="WebAuthnProbe_PageTitle" xml:space="preserve"><value>WebAuthn capability probe</value></data>
+  <data name="WebAuthnProbe_Title" xml:space="preserve"><value>Offline device unlock capability probe</value></data>
+  <data name="WebAuthnProbe_Scope" xml:space="preserve"><value>This disposable diagnostic checks device authentication only. It cannot sign you in, access fishing data or call the API.</value></data>
+  <data name="WebAuthnProbe_ProvisionTitle" xml:space="preserve"><value>Provision while online</value></data>
+  <data name="WebAuthnProbe_ProvisionBody" xml:space="preserve"><value>Run this inside the installed app while online. First create the test credential, then tap Verify online credential so each device-authentication request has its own explicit action.</value></data>
+  <data name="WebAuthnProbe_ProvisionAction" xml:space="preserve"><value>Provision test credential</value></data>
+  <data name="WebAuthnProbe_VerifyOnlineAction" xml:space="preserve"><value>Verify online credential</value></data>
+  <data name="WebAuthnProbe_OfflineTitle" xml:space="preserve"><value>Test after a cold offline start</value></data>
+  <data name="WebAuthnProbe_OfflineBody" xml:space="preserve"><value>Kill the installed app, enable Airplane Mode, reopen it from the app icon, return here from Landing, then tap the button. Device authentication never starts automatically.</value></data>
+  <data name="WebAuthnProbe_OfflineAction" xml:space="preserve"><value>Test offline device unlock</value></data>
+  <data name="WebAuthnProbe_OpenAction" xml:space="preserve"><value>Open device unlock capability probe</value></data>
+  <data name="WebAuthnProbe_CleanupNote" xml:space="preserve"><value>Removing probe metadata removes only this app’s harmless test values. The test passkey may need to be removed manually from Apple Passwords, Google Password Manager or your device credential settings.</value></data>
+  <data name="WebAuthnProbe_RemoveMetadataAction" xml:space="preserve"><value>Remove probe metadata</value></data>
+  <data name="WebAuthnProbe_LeaveAction" xml:space="preserve"><value>Leave probe</value></data>
+  <data name="WebAuthnProbe_WebAuthnAvailable" xml:space="preserve"><value>WebAuthn API available</value></data>
+  <data name="WebAuthnProbe_PlatformAvailable" xml:space="preserve"><value>Platform authenticator available</value></data>
+  <data name="WebAuthnProbe_CreateSucceeded" xml:space="preserve"><value>CREATE succeeded</value></data>
+  <data name="WebAuthnProbe_CreatePrfEnabled" xml:space="preserve"><value>PRF enabled on CREATE</value></data>
+  <data name="WebAuthnProbe_CreatePrfResult" xml:space="preserve"><value>PRF result on CREATE</value></data>
+  <data name="WebAuthnProbe_ImmediateGetSucceeded" xml:space="preserve"><value>Immediate GET succeeded</value></data>
+  <data name="WebAuthnProbe_GetSucceeded" xml:space="preserve"><value>GET succeeded</value></data>
+  <data name="WebAuthnProbe_UserVerified" xml:space="preserve"><value>User verification true</value></data>
+  <data name="WebAuthnProbe_GetPrfReported" xml:space="preserve"><value>PRF extension reported on GET</value></data>
+  <data name="WebAuthnProbe_GetPrfResult" xml:space="preserve"><value>PRF result on GET</value></data>
+  <data name="WebAuthnProbe_PayloadVerified" xml:space="preserve"><value>Harmless payload decrypted</value></data>
+  <data name="WebAuthnProbe_OfflineAtInvocation" xml:space="preserve"><value>Offline at invocation</value></data>
+  <data name="WebAuthnProbe_Outcome" xml:space="preserve"><value>Outcome</value></data>
+  <data name="WebAuthnProbe_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="WebAuthnProbe_No" xml:space="preserve"><value>No</value></data>
+  <data name="WebAuthnProbe_NotReported" xml:space="preserve"><value>Not reported</value></data>
+  <data name="WebAuthnProbe_Outcome_unknown" xml:space="preserve"><value>Not run</value></data>
+  <data name="WebAuthnProbe_Outcome_ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="WebAuthnProbe_Outcome_unsupported" xml:space="preserve"><value>WebAuthn is not supported</value></data>
+  <data name="WebAuthnProbe_Outcome_platform-unavailable" xml:space="preserve"><value>No platform authenticator is available</value></data>
+  <data name="WebAuthnProbe_Outcome_provisioned" xml:space="preserve"><value>Provisioning completed</value></data>
+  <data name="WebAuthnProbe_Outcome_verified-online" xml:space="preserve"><value>Online verification completed</value></data>
+  <data name="WebAuthnProbe_Outcome_retrieved" xml:space="preserve"><value>Credential retrieval completed</value></data>
+  <data name="WebAuthnProbe_Outcome_missing-metadata" xml:space="preserve"><value>No probe metadata is stored</value></data>
+  <data name="WebAuthnProbe_Outcome_cancelled" xml:space="preserve"><value>Device authentication was cancelled</value></data>
+  <data name="WebAuthnProbe_Outcome_failed" xml:space="preserve"><value>The capability check failed</value></data>
 </root>

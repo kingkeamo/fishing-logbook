@@ -31,6 +31,16 @@ else if (_isAnonymous)
                 <MudStack Spacing="2" Class="landing-actions">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginCreateAccount" id="landing-create-account">@Loc["Auth_CreateAccount"]</MudButton>
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginSignIn" id="landing-sign-in">@Loc["Auth_SignIn"]</MudButton>
+                    @if (_showWebAuthnProbeAction)
+                    {
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Secondary"
+                                   FullWidth="true"
+                                   OnClick="OpenWebAuthnProbe"
+                                   id="landing-webauthn-probe-action">
+                            @Loc["WebAuthnProbe_OfflineAction"]
+                        </MudButton>
+                    }
                 </MudStack>
             </MudStack>
         </MudContainer>
