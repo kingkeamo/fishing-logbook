@@ -51,7 +51,7 @@ describe('production offline access entitlement', () => {
         expect(JSON.stringify(persisted)).not.toContain(identity.userId);
     });
 
-    it('fails closed when GET returns different PRF material', async () => {
+    it('uses GET material when CREATE returns different PRF material', async () => {
         Object.defineProperty(navigator, 'credentials', { configurable: true, value: {
             create: vi.fn(async () => credential(new Uint8Array(32).fill(1).buffer)),
             get: vi.fn(async () => assertion(new Uint8Array(32).fill(2).buffer))
@@ -59,8 +59,51 @@ describe('production offline access entitlement', () => {
 
         const result = await setupDevice(identity);
 
-        expect(result.state).toBe('failed');
+        expect(result.state).toBe('ready');
+        expect(result.stage).toBe('EntitlementReady');
+        expect(result.createPrfMatchesGet).toBe(false);
+        expect((await getDeviceStatus(identity)).state).toBe('ready');
+    });
+
+    it('reports the safe stage when GET does not return PRF material', async () => {
+        Object.defineProperty(navigator, 'credentials', { configurable: true, value: {
+            create: vi.fn(async () => credential(new Uint8Array(32).fill(1).buffer)),
+            get: vi.fn(async () => assertion(null))
+        }});
+
+        const result = await setupDevice(identity);
+
+        expect(result).toMatchObject({
+            state: 'repair',
+            stage: 'PrfGetAvailable',
+            errorName: 'MissingPrfResult'
+        });
+        expect(result).not.toHaveProperty('prf');
         expect((await getDeviceStatus(identity)).state).toBe('repair');
+    });
+
+    it('reports a safe decrypt stage without exposing identity or PRF material', async () => {
+        const prf = new Uint8Array(32).fill(6).buffer;
+        Object.defineProperty(navigator, 'credentials', { configurable: true, value: {
+            create: vi.fn(async () => credential(prf)),
+            get: vi.fn(async () => assertion(prf))
+        }});
+        const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const operationError = new Error('AES-GCM operation failed.');
+        operationError.name = 'OperationError';
+        vi.spyOn(webcrypto.subtle, 'decrypt').mockRejectedValueOnce(operationError);
+
+        const result = await setupDevice(identity);
+
+        expect(result).toMatchObject({
+            state: 'failed',
+            stage: 'EntitlementDecrypted',
+            errorName: 'OperationError'
+        });
+        const diagnostic = JSON.stringify([result, warning.mock.calls]);
+        expect(diagnostic).not.toContain(identity.subject);
+        expect(diagnostic).not.toContain(identity.userId);
+        expect(diagnostic).not.toContain(new Uint8Array(prf).toString());
     });
 
     it('removes only the matching owner record', async () => {
