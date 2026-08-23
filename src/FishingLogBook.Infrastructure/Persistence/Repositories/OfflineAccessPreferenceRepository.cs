@@ -55,7 +55,10 @@ public sealed class OfflineAccessPreferenceRepository : IOfflineAccessPreference
             const string sql = """
                 UPDATE "User"
                 SET "OfflineAccessEnabled" = @Enabled,
-                    "OfflineAccessEnabledAt" = CASE WHEN @Enabled THEN CURRENT_TIMESTAMP ELSE NULL END
+                    "OfflineAccessEnabledAt" = CASE
+                        WHEN @Enabled THEN CURRENT_TIMESTAMP
+                        ELSE "OfflineAccessEnabledAt"
+                    END
                 WHERE "Id" = @UserId
                 RETURNING "OfflineAccessEnabled" AS "Enabled",
                           "OfflineAccessEnabledAt" AS "EnabledAt";

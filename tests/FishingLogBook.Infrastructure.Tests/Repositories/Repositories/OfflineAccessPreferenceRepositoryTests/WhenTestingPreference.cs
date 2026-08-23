@@ -15,7 +15,7 @@ public class WhenTestingPreference
         _connectionFactory = new NpgsqlConnectionFactory(fixture.ConnectionString);
 
     [Fact]
-    public async Task ItShouldDefaultDisabledAndUseAServerTimestampOnlyWhileEnabled()
+    public async Task ItShouldDefaultDisabledAndPreserveTheMostRecentServerEnablementTimestamp()
     {
         var user = new UserBuilder().Build();
         var identity = new UserIdentityBuilder().ForUser(user).Build();
@@ -30,12 +30,16 @@ public class WhenTestingPreference
         var initial = await sut.GetAsync(user.Id, CancellationToken.None);
         var enabled = await sut.SetAsync(user.Id, true, CancellationToken.None);
         var disabled = await sut.SetAsync(user.Id, false, CancellationToken.None);
+        await Task.Delay(10);
+        var reenabled = await sut.SetAsync(user.Id, true, CancellationToken.None);
 
         initial.Value.Enabled.Should().BeFalse();
         initial.Value.EnabledAt.Should().BeNull();
         enabled.Value.Enabled.Should().BeTrue();
         enabled.Value.EnabledAt.Should().NotBeNull();
         disabled.Value.Enabled.Should().BeFalse();
-        disabled.Value.EnabledAt.Should().BeNull();
+        disabled.Value.EnabledAt.Should().Be(enabled.Value.EnabledAt);
+        reenabled.Value.Enabled.Should().BeTrue();
+        reenabled.Value.EnabledAt.Should().BeAfter(enabled.Value.EnabledAt!.Value);
     }
 }
