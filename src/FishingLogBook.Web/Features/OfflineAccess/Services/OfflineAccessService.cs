@@ -36,7 +36,7 @@ public sealed class OfflineAccessService : IOfflineAccessService
         var identity = await IdentityAsync(cancellationToken);
         var device = await _deviceService.SetupAsync(identity, cancellationToken);
         if (device.State == "ready") await _preferenceClient.SetAsync(true, cancellationToken);
-        return new OfflineAccessStatusModel(device.State == "ready", device.State);
+        return new OfflineAccessStatusModel(device.State == "ready", device.State, device);
     }
 
     public async Task<OfflineAccessStatusModel> RemoveFromDeviceAsync(CancellationToken cancellationToken)

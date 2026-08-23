@@ -17,6 +17,12 @@
         else
         {
             <MudAlert Severity="@StatusSeverity" id="offline-access-status">@StatusText</MudAlert>
+            @if (_status?.Diagnostic is { State: not "ready", Stage: not null } diagnostic)
+            {
+                <MudText Typo="Typo.caption" id="offline-access-diagnostic">
+                    @Loc["OfflineAccess_Diagnostic", diagnostic.Stage, DiagnosticError(diagnostic)]
+                </MudText>
+            }
             @if (_status?.IsReady == true)
             {
                 <MudButton Variant="Variant.Outlined" OnClick="RemoveAsync" Disabled="_busy" id="offline-access-remove-device">
@@ -86,6 +92,9 @@
         "unsupported" or "install-required" or "repair" or "failed" => Severity.Warning,
         _ => Severity.Info
     };
+
+    private static string DiagnosticError(FishingLogBook.Web.Features.OfflineAccess.Models.OfflineAccessDeviceResultModel diagnostic) =>
+        string.Join(": ", new[] { diagnostic.ErrorName, diagnostic.ErrorMessage }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
     private IOfflineAccessService Service => Services.GetRequiredService<IOfflineAccessService>();
 
