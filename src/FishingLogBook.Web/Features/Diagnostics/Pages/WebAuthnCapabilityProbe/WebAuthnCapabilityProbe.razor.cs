@@ -58,6 +58,7 @@ public partial class WebAuthnCapabilityProbe : ComponentBase
         try
         {
             _onlineVerificationResult = await Probe.VerifyOnlineAsync(CancellationToken.None);
+            _status = _onlineVerificationResult;
         }
         finally
         {
@@ -95,5 +96,27 @@ public partial class WebAuthnCapabilityProbe : ComponentBase
     private string OutcomeLabel(string outcome)
     {
         return Loc[$"WebAuthnProbe_Outcome_{outcome}"];
+    }
+
+    private string PrfResultBranchLabel(string branch)
+    {
+        return Loc[$"WebAuthnProbe_PrfResultBranch_{branch}"];
+    }
+
+    private string PayloadVerificationOutcomeLabel(string outcome)
+    {
+        return Loc[$"WebAuthnProbe_PayloadVerificationOutcome_{outcome}"];
+    }
+
+    private string LengthLabel(int? length)
+    {
+        return length.HasValue ? Loc["WebAuthnProbe_Bytes", length.Value] : Loc["WebAuthnProbe_NotReported"];
+    }
+
+    private string NetworkHintLabel(bool browserReportsOnline)
+    {
+        return browserReportsOnline
+            ? Loc["WebAuthnProbe_NetworkHintOnline"]
+            : Loc["WebAuthnProbe_NetworkHintOffline"];
     }
 }

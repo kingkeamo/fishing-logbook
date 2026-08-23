@@ -19,6 +19,7 @@ public class BaseWebAuthnCapabilityProbeTest
             WebAuthnAvailable = true,
             PlatformAuthenticatorAvailable = true,
             HasProbeMetadata = true,
+            PayloadEnvelopeAvailable = true,
             Outcome = "ready"
         });
 

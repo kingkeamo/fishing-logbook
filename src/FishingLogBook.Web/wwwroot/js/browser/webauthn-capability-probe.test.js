@@ -127,7 +127,7 @@ describe('WebAuthn capability probe', () => {
         expect(JSON.stringify(result)).not.toContain('99');
         expect(JSON.stringify(verified)).not.toContain('99');
         expect(Object.keys(stored).sort()).toEqual([
-            'ciphertext', 'credentialId', 'iv', 'prfSalt', 'transports', 'version'
+            'ciphertext', 'credentialId', 'iv', 'prfFingerprint', 'prfSalt', 'transports', 'version'
         ]);
         expect(stored).not.toHaveProperty('prfResult');
         for (const spy of consoleSpies) {
@@ -146,7 +146,12 @@ describe('WebAuthn capability probe', () => {
         expect(result.userVerified).toBe(true);
         expect(result.getPrfExtensionReported).toBe(true);
         expect(result.getPrfResultReturned).toBe(true);
+        expect(result.prfResultLength).toBe(32);
+        expect(result.prfResultBranch).toBe('array-buffer');
+        expect(result.prfFingerprintMatches).toBe(true);
+        expect(result.payloadEnvelopeAvailable).toBe(true);
         expect(result.testPayloadVerified).toBe(true);
+        expect(result.payloadVerificationOutcome).toBe('verified');
         expect(result.outcome).toBe('verified-online');
         expect(get).toHaveBeenCalledTimes(1);
         expect(get.mock.calls[0][0].publicKey.userVerification).toBe('required');
@@ -188,9 +193,68 @@ describe('WebAuthn capability probe', () => {
         expect(result.getSucceeded).toBe(true);
         expect(result.userVerified).toBe(true);
         expect(result.getPrfResultReturned).toBe(true);
+        expect(result.prfFingerprintMatches).toBe(true);
         expect(result.testPayloadVerified).toBe(true);
+        expect(result.payloadVerificationOutcome).toBe('verified');
         expect(result.outcome).toBe('retrieved');
         expect(get).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not claim payload readiness until online verification creates the envelope', async () => {
+        await provisionTestCredential();
+
+        expect((await getProbeStatus()).payloadEnvelopeAvailable).toBe(false);
+
+        const prematureResult = await testOfflineUnlock();
+        expect(prematureResult.testPayloadVerified).toBe(false);
+        expect(prematureResult.payloadVerificationOutcome).toBe('missing-envelope');
+
+        await verifyOnlineCredential();
+
+        expect((await getProbeStatus()).payloadEnvelopeAvailable).toBe(true);
+    });
+
+    it('distinguishes different offline PRF material without exposing it', async () => {
+        const get = vi.fn()
+            .mockResolvedValueOnce(assertion({ result: prfResult(7) }))
+            .mockResolvedValueOnce(assertion({ result: prfResult(8) }));
+        configureWebAuthn({ get });
+        await provisionTestCredential();
+        await verifyOnlineCredential();
+
+        const result = await testOfflineUnlock();
+
+        expect(result.getPrfResultReturned).toBe(true);
+        expect(result.prfFingerprintMatches).toBe(false);
+        expect(result.testPayloadVerified).toBe(false);
+        expect(result.payloadVerificationOutcome).toBe('prf-mismatch');
+        expect(JSON.stringify(result)).not.toContain(new Uint8Array(prfResult(8)).toString());
+    });
+
+    it('distinguishes invalid persisted envelope encoding from a PRF mismatch', async () => {
+        await provisionTestCredential();
+        await verifyOnlineCredential();
+        const key = localStorage.key(0);
+        const metadata = JSON.parse(localStorage.getItem(key));
+        metadata.iv = '';
+        localStorage.setItem(key, JSON.stringify(metadata));
+
+        const result = await testOfflineUnlock();
+
+        expect(result.prfFingerprintMatches).toBe(true);
+        expect(result.testPayloadVerified).toBe(false);
+        expect(result.payloadVerificationOutcome).toBe('invalid-envelope');
+    });
+
+    it('records a typed-array PRF result representation', async () => {
+        configureWebAuthn({ get: vi.fn(async () => assertion({ result: new Uint8Array(32).fill(7) })) });
+        await provisionTestCredential();
+
+        const result = await verifyOnlineCredential();
+
+        expect(result.prfResultBranch).toBe('typed-array');
+        expect(result.prfResultLength).toBe(32);
+        expect(result.testPayloadVerified).toBe(true);
     });
 
     it('reports missing metadata without invoking GET', async () => {
