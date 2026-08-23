@@ -61,4 +61,3 @@ public sealed class FakeWebAuthnCapabilityProbeJsRuntime : IJSRuntime, IJSObject
         return ValueTask.CompletedTask;
     }
 }
-

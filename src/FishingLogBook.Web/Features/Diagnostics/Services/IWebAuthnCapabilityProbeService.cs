@@ -16,4 +16,3 @@ public interface IWebAuthnCapabilityProbeService
 
     Task RemoveMetadataAsync(CancellationToken cancellationToken);
 }
-

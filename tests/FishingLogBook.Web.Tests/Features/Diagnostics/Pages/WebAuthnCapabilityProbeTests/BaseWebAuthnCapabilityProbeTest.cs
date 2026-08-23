@@ -32,4 +32,3 @@ public class BaseWebAuthnCapabilityProbeTest
         return context;
     }
 }
-

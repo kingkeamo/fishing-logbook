@@ -13,13 +13,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="App_Name" xml:space="preserve">
-    <value>Catch But Donâ€™t Forget</value>
+    <value>Catch But Don’t Forget</value>
   </data>
   <data name="SystemStatus_PageTitle" xml:space="preserve">
-    <value>FishingLogBook - Ã‰tat du systÃ¨me</value>
+    <value>FishingLogBook - État du système</value>
   </data>
   <data name="SystemStatus_Subtitle" xml:space="preserve">
-    <value>Ã‰tat du systÃ¨me</value>
+    <value>État du système</value>
   </data>
   <data name="Status_Web" xml:space="preserve">
     <value>Web</value>
@@ -28,7 +28,7 @@
     <value>API</value>
   </data>
   <data name="Status_Database" xml:space="preserve">
-    <value>Base de donnÃ©es</value>
+    <value>Base de données</value>
   </data>
   <data name="Status_Online" xml:space="preserve">
     <value>En ligne</value>
@@ -37,10 +37,10 @@
     <value>Hors ligne</value>
   </data>
   <data name="Status_Degraded" xml:space="preserve">
-    <value>DÃ©gradÃ©</value>
+    <value>Dégradé</value>
   </data>
   <data name="Status_Checking" xml:space="preserve">
-    <value>VÃ©rification...</value>
+    <value>Vérification...</value>
   </data>
   <data name="Action_Refresh" xml:space="preserve">
     <value>Actualiser</value>
@@ -55,13 +55,13 @@
     <value>Le contenu que vous recherchez n'existe pas.</value>
   </data>
   <data name="Action_GoHome" xml:space="preserve">
-    <value>Retour Ã  l'accueil</value>
+    <value>Retour à l'accueil</value>
   </data>
   <data name="Theme_ToggleLight" xml:space="preserve">
-    <value>Passer au thÃ¨me clair</value>
+    <value>Passer au thème clair</value>
   </data>
   <data name="Theme_ToggleDark" xml:space="preserve">
-    <value>Passer au thÃ¨me sombre</value>
+    <value>Passer au thème sombre</value>
   </data>
   <data name="Language_Label" xml:space="preserve">
     <value>Langue</value>
@@ -70,10 +70,10 @@
     <value>English</value>
   </data>
   <data name="Language_French" xml:space="preserve">
-    <value>FranÃ§ais</value>
+    <value>Français</value>
   </data>
   <data name="SyncStatus_SavedLocally" xml:space="preserve">
-    <value>EnregistrÃ©e localement â€” pas encore synchronisÃ©e</value>
+    <value>Enregistrée localement — pas encore synchronisée</value>
   </data>
   <data name="SyncStatus_WaitingToSynchronise" xml:space="preserve">
     <value>En attente de synchronisation</value>
@@ -82,40 +82,40 @@
     <value>Synchronisation en cours</value>
   </data>
   <data name="SyncStatus_Synchronised" xml:space="preserve">
-    <value>SynchronisÃ©e</value>
+    <value>Synchronisée</value>
   </data>
   <data name="SyncStatus_FailedToSynchronise" xml:space="preserve">
-    <value>Ã‰chec de la synchronisation</value>
+    <value>Échec de la synchronisation</value>
   </data>
   <data name="Catch_SyncRetry" xml:space="preserve">
-    <value>RÃ©essayer</value>
+    <value>Réessayer</value>
   </data>
   <data name="Catch_SyncNow" xml:space="preserve">
     <value>Synchroniser maintenant</value>
   </data>
   <data name="Catch_SyncFailureReassurance" xml:space="preserve">
-    <value>Votre prise reste enregistrÃ©e sur cet appareil.</value>
+    <value>Votre prise reste enregistrée sur cet appareil.</value>
   </data>
   <data name="Catch_SyncPendingReassurance" xml:space="preserve">
-    <value>EnregistrÃ©e sur cet appareil. Elle se synchronisera automatiquement.</value>
+    <value>Enregistrée sur cet appareil. Elle se synchronisera automatiquement.</value>
   </data>
   <data name="Diagnostics_PageTitle" xml:space="preserve">
     <value>Diagnostics</value>
   </data>
   <data name="Diagnostics_Title" xml:space="preserve">
-    <value>Ã‰tat des diagnostics</value>
+    <value>État des diagnostics</value>
   </data>
   <data name="Diagnostics_Nav" xml:space="preserve">
     <value>Diagnostics</value>
   </data>
   <data name="Diagnostics_QueuedCount" xml:space="preserve">
-    <value>Ã‰vÃ©nements en file</value>
+    <value>Événements en file</value>
   </data>
   <data name="Diagnostics_LastError" xml:space="preserve">
-    <value>DerniÃ¨re erreur de diagnostic</value>
+    <value>Dernière erreur de diagnostic</value>
   </data>
   <data name="Diagnostics_Online" xml:space="preserve">
-    <value>Ã‰tat de connexion</value>
+    <value>État de connexion</value>
   </data>
   <data name="Diagnostics_OnlineYes" xml:space="preserve">
     <value>En ligne</value>
@@ -142,25 +142,25 @@
     <value>Indisponible</value>
   </data>
   <data name="Diagnostics_EmptyQueue" xml:space="preserve">
-    <value>Aucun Ã©vÃ©nement de diagnostic nâ€™est en file</value>
+    <value>Aucun événement de diagnostic n’est en file</value>
   </data>
   <data name="Diagnostics_QueueUnavailable" xml:space="preserve">
     <value>Impossible de lire la file</value>
   </data>
   <data name="Diagnostics_LastOperation" xml:space="preserve">
-    <value>DerniÃ¨re opÃ©ration</value>
+    <value>Dernière opération</value>
   </data>
   <data name="Diagnostics_ProductionProbe" xml:space="preserve">
     <value>Sonde de production (FishingLogBookDiagnostics)</value>
   </data>
   <data name="Diagnostics_ProductionProbeFailed" xml:space="preserve">
-    <value>Ã‰chec de la sonde de production Ã </value>
+    <value>Échec de la sonde de production à</value>
   </data>
   <data name="Diagnostics_RetryProbe" xml:space="preserve">
-    <value>RÃ©essayer la sonde de diagnostic</value>
+    <value>Réessayer la sonde de diagnostic</value>
   </data>
   <data name="Diagnostics_ProductionNotInitialised" xml:space="preserve">
-    <value>Base de donnÃ©es de diagnostic de production non initialisÃ©e</value>
+    <value>Base de données de diagnostic de production non initialisée</value>
   </data>
   <data name="Nav_Menu" xml:space="preserve">
     <value>Ouvrir le menu</value>
@@ -202,7 +202,7 @@
     <value>Photo {0} sur {1}</value>
   </data>
   <data name="Catch_PreviousPhoto" xml:space="preserve">
-    <value>Photo prÃ©cÃ©dente</value>
+    <value>Photo précédente</value>
   </data>
   <data name="Catch_NextPhoto" xml:space="preserve">
     <value>Photo suivante</value>
@@ -220,16 +220,16 @@
     <value>Enregistrement</value>
   </data>
   <data name="Catch_Saved" xml:space="preserve">
-    <value>Prise enregistrÃ©e sur cet appareil</value>
+    <value>Prise enregistrée sur cet appareil</value>
   </data>
   <data name="Catch_SaveFailed" xml:space="preserve">
-    <value>La prise n'a pas pu Ãªtre enregistrÃ©e. RÃ©essayez.</value>
+    <value>La prise n'a pas pu être enregistrée. Réessayez.</value>
   </data>
   <data name="Catch_LocationExplainer" xml:space="preserve">
-    <value>La localisation peut aider Ã  se souvenir de l'endroit de la prise.</value>
+    <value>La localisation peut aider à se souvenir de l'endroit de la prise.</value>
   </data>
   <data name="Catch_LocationPrivacy" xml:space="preserve">
-    <value>Votre spot de pÃªche exact reste privÃ© par dÃ©faut.</value>
+    <value>Votre spot de pêche exact reste privé par défaut.</value>
   </data>
   <data name="Catch_LocationAllow" xml:space="preserve">
     <value>Autoriser la localisation</value>
@@ -238,13 +238,13 @@
     <value>Pas maintenant</value>
   </data>
   <data name="Catch_LocationTryAgain" xml:space="preserve">
-    <value>RÃ©essayer la localisation</value>
+    <value>Réessayer la localisation</value>
   </data>
   <data name="Catch_LocationSaved" xml:space="preserve">
-    <value>Localisation enregistrÃ©e</value>
+    <value>Localisation enregistrée</value>
   </data>
   <data name="Catch_LocationOnPrivate" xml:space="preserve">
-    <value>Localisation activÃ©e Â· PrivÃ©e</value>
+    <value>Localisation activée · Privée</value>
   </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Prises</value>
@@ -253,28 +253,28 @@
     <value>Prises</value>
   </data>
   <data name="Catch_LogbookSubtitle" xml:space="preserve">
-    <value>EnregistrÃ©es sur cet appareil</value>
+    <value>Enregistrées sur cet appareil</value>
   </data>
   <data name="Catch_LogbookEmpty" xml:space="preserve">
     <value>Aucune prise dans votre carnet pour le moment</value>
   </data>
   <data name="Catch_RecordFirstCatch" xml:space="preserve">
-    <value>Enregistrez votre premiÃ¨re prise</value>
+    <value>Enregistrez votre première prise</value>
   </data>
   <data name="Catch_LoadFailed" xml:space="preserve">
-    <value>Les prises n'ont pas pu Ãªtre chargÃ©es.</value>
+    <value>Les prises n'ont pas pu être chargées.</value>
   </data>
   <data name="Catch_UnknownSpecies" xml:space="preserve">
     <value>Prise</value>
   </data>
   <data name="Catch_RecordedForAnotherAngler" xml:space="preserve">
-    <value>EnregistrÃ©e pour un autre pÃªcheur</value>
+    <value>Enregistrée pour un autre pêcheur</value>
   </data>
   <data name="Catch_RecordedBySomeoneElse" xml:space="preserve">
-    <value>EnregistrÃ©e par quelqu'un d'autre</value>
+    <value>Enregistrée par quelqu'un d'autre</value>
   </data>
   <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
-    <value>ConfidentialitÃ© de la localisation</value>
+    <value>Confidentialité de la localisation</value>
   </data>
   <data name="Catch_MoreActions" xml:space="preserve">
     <value>Plus d'actions</value>
@@ -295,10 +295,10 @@
     <value>Toutes</value>
   </data>
   <data name="Catch_FilterSpecies" xml:space="preserve">
-    <value>EspÃ¨ce</value>
+    <value>Espèce</value>
   </data>
   <data name="Catch_FilterDateRange" xml:space="preserve">
-    <value>PÃ©riode</value>
+    <value>Période</value>
   </data>
   <data name="Catch_DateRange_Today" xml:space="preserve">
     <value>Aujourd'hui</value>
@@ -322,13 +322,13 @@
     <value>{0} prises</value>
   </data>
   <data name="Catch_NoSearchResults" xml:space="preserve">
-    <value>Aucune prise ne correspond Ã  votre recherche ou vos filtres.</value>
+    <value>Aucune prise ne correspond à votre recherche ou vos filtres.</value>
   </data>
   <data name="Catch_ClearSearchOrFilters" xml:space="preserve">
     <value>Effacer la recherche et les filtres</value>
   </data>
   <data name="Catch_Edit" xml:space="preserve">
-    <value>Modifier les dÃ©tails</value>
+    <value>Modifier les détails</value>
   </data>
   <data name="Catch_EditPageTitle" xml:space="preserve">
     <value>FishingLogBook - Modifier la prise</value>
@@ -337,10 +337,10 @@
     <value>Modifier la prise</value>
   </data>
   <data name="Catch_EditSubtitle" xml:space="preserve">
-    <value>Ajoutez des dÃ©tails facultatifs. Une prise enregistrÃ©e avec une photo peut rester telle quelle.</value>
+    <value>Ajoutez des détails facultatifs. Une prise enregistrée avec une photo peut rester telle quelle.</value>
   </data>
   <data name="Catch_EditSpecies" xml:space="preserve">
-    <value>EspÃ¨ce</value>
+    <value>Espèce</value>
   </data>
   <data name="Catch_EditWeight" xml:space="preserve">
     <value>Poids</value>
@@ -361,10 +361,10 @@
     <value>po</value>
   </data>
   <data name="Catch_EditMethod" xml:space="preserve">
-    <value>MÃ©thode de pÃªche</value>
+    <value>Méthode de pêche</value>
   </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
-    <value>AppÃ¢t ou leurre</value>
+    <value>Appât ou leurre</value>
   </data>
   <data name="Catch_EditNotes" xml:space="preserve">
     <value>Notes</value>
@@ -373,25 +373,25 @@
     <value>Date et heure de la prise</value>
   </data>
   <data name="Catch_EditSave" xml:space="preserve">
-    <value>Enregistrer les dÃ©tails</value>
+    <value>Enregistrer les détails</value>
   </data>
   <data name="Catch_EditSaving" xml:space="preserve">
     <value>Enregistrement</value>
   </data>
   <data name="Catch_EditSaved" xml:space="preserve">
-    <value>DÃ©tails enregistrÃ©s sur cet appareil</value>
+    <value>Détails enregistrés sur cet appareil</value>
   </data>
   <data name="Catch_EditSaveFailed" xml:space="preserve">
-    <value>Les dÃ©tails n'ont pas pu Ãªtre enregistrÃ©s. RÃ©essayez.</value>
+    <value>Les détails n'ont pas pu être enregistrés. Réessayez.</value>
   </data>
   <data name="Catch_EditLoadFailed" xml:space="preserve">
-    <value>Cette prise n'a pas pu Ãªtre chargÃ©e.</value>
+    <value>Cette prise n'a pas pu être chargée.</value>
   </data>
   <data name="Catch_EditWeightInvalid" xml:space="preserve">
-    <value>Le poids doit Ãªtre supÃ©rieur Ã  0 {0} et d'au plus {1} {0}.</value>
+    <value>Le poids doit être supérieur à 0 {0} et d'au plus {1} {0}.</value>
   </data>
   <data name="Catch_EditLengthInvalid" xml:space="preserve">
-    <value>La longueur doit Ãªtre supÃ©rieure Ã  0 {0} et d'au plus {1} {0}.</value>
+    <value>La longueur doit être supérieure à 0 {0} et d'au plus {1} {0}.</value>
   </data>
   <data name="Catch_EditCaughtOnInvalid" xml:space="preserve">
     <value>Saisissez une heure de prise valide qui n'est pas dans le futur.</value>
@@ -403,40 +403,40 @@
     <value>Photographies</value>
   </data>
   <data name="Catch_EditDetailsSection" xml:space="preserve">
-    <value>DÃ©tails de la prise</value>
+    <value>Détails de la prise</value>
   </data>
   <data name="Catch_EditCannotRemoveLastPhoto" xml:space="preserve">
     <value>Une prise doit avoir au moins une photographie.</value>
   </data>
   <data name="Catch_EditPhotoActionFailed" xml:space="preserve">
-    <value>Cela n'a pas pu Ãªtre enregistrÃ©. RÃ©essayez.</value>
+    <value>Cela n'a pas pu être enregistré. Réessayez.</value>
   </data>
   <data name="Catch_EditRemovePhotoTitle" xml:space="preserve">
     <value>Supprimer la photographie ?</value>
   </data>
   <data name="Catch_EditRemovePhotoMessage" xml:space="preserve">
-    <value>Cette photographie sera supprimÃ©e dÃ¨s qu'elle pourra se synchroniser avec le serveur.</value>
+    <value>Cette photographie sera supprimée dès qu'elle pourra se synchroniser avec le serveur.</value>
   </data>
   <data name="Catch_EditRemovePhotoConfirm" xml:space="preserve">
     <value>Supprimer</value>
   </data>
   <data name="Catch_EditLoadOfflineFailed" xml:space="preserve">
-    <value>Cette prise n'est pas encore enregistrÃ©e sur cet appareil. Connectez-vous Ã  Internet et rÃ©essayez.</value>
+    <value>Cette prise n'est pas encore enregistrée sur cet appareil. Connectez-vous à Internet et réessayez.</value>
   </data>
   <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
-    <value>FishingLogBook - ConfidentialitÃ© de la localisation</value>
+    <value>FishingLogBook - Confidentialité de la localisation</value>
   </data>
   <data name="Catch_LocationPrivacyTitle" xml:space="preserve">
-    <value>ConfidentialitÃ© de la localisation</value>
+    <value>Confidentialité de la localisation</value>
   </data>
   <data name="Catch_LocationPrivacySubtitle" xml:space="preserve">
-    <value>Choisissez ce que les autres pÃªcheurs peuvent voir de ce spot.</value>
+    <value>Choisissez ce que les autres pêcheurs peuvent voir de ce spot.</value>
   </data>
   <data name="Catch_LocationPrivacyLoadFailed" xml:space="preserve">
-    <value>Cette prise n'a pas pu Ãªtre chargÃ©e.</value>
+    <value>Cette prise n'a pas pu être chargée.</value>
   </data>
   <data name="Catch_LocationPrivacyNoLocation" xml:space="preserve">
-    <value>Cette prise n'a pas de localisation enregistrÃ©e.</value>
+    <value>Cette prise n'a pas de localisation enregistrée.</value>
   </data>
   <data name="Catch_LocationVisibilityPrivate" xml:space="preserve">
     <value>Moi uniquement</value>
@@ -448,37 +448,37 @@
     <value>Zone approximative</value>
   </data>
   <data name="Catch_LocationVisibilityApproximateHelp" xml:space="preserve">
-    <value>Les autres peuvent voir une zone gÃ©nÃ©rale, pas l'endroit exact.</value>
+    <value>Les autres peuvent voir une zone générale, pas l'endroit exact.</value>
   </data>
   <data name="Catch_LocationVisibilityFishingVenueOnly" xml:space="preserve">
-    <value>Site de pÃªche uniquement</value>
+    <value>Site de pêche uniquement</value>
   </data>
   <data name="Catch_LocationVisibilityFishingVenueOnlyHelp" xml:space="preserve">
-    <value>Les autres peuvent voir le site associÃ©, pas les coordonnÃ©es prÃ©cises.</value>
+    <value>Les autres peuvent voir le site associé, pas les coordonnées précises.</value>
   </data>
   <data name="Catch_LocationVisibilityPublic" xml:space="preserve">
     <value>Position exacte publique</value>
   </data>
   <data name="Catch_LocationVisibilityPublicHelp" xml:space="preserve">
-    <value>L'emplacement prÃ©cis peut Ãªtre visible publiquement.</value>
+    <value>L'emplacement précis peut être visible publiquement.</value>
   </data>
   <data name="Catch_LocationVisibilityPublicWarning" xml:space="preserve">
-    <value>Toute personne pouvant voir cette prise pourra voir le spot de pÃªche exact.</value>
+    <value>Toute personne pouvant voir cette prise pourra voir le spot de pêche exact.</value>
   </data>
   <data name="Catch_LocationPrivacySave" xml:space="preserve">
-    <value>Enregistrer la confidentialitÃ©</value>
+    <value>Enregistrer la confidentialité</value>
   </data>
   <data name="Catch_LocationPrivacySaving" xml:space="preserve">
     <value>Enregistrement</value>
   </data>
   <data name="Catch_LocationPrivacySaved" xml:space="preserve">
-    <value>ConfidentialitÃ© de la localisation enregistrÃ©e sur cet appareil</value>
+    <value>Confidentialité de la localisation enregistrée sur cet appareil</value>
   </data>
   <data name="Catch_LocationPrivacySaveFailed" xml:space="preserve">
-    <value>La confidentialitÃ© n'a pas pu Ãªtre enregistrÃ©e. RÃ©essayez.</value>
+    <value>La confidentialité n'a pas pu être enregistrée. Réessayez.</value>
   </data>
   <data name="Catch_LocationPrivacySavedPendingSync" xml:space="preserve">
-    <value>ConfidentialitÃ© enregistrÃ©e sur cet appareil. Elle sera mise Ã  jour lorsque la synchronisation sera disponible.</value>
+    <value>Confidentialité enregistrée sur cet appareil. Elle sera mise à jour lorsque la synchronisation sera disponible.</value>
   </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profil</value>
@@ -487,34 +487,34 @@
     <value>FishingLogBook - Profil</value>
   </data>
   <data name="Profile_PublicPageTitle" xml:space="preserve">
-    <value>FishingLogBook - Profil pÃªcheur</value>
+    <value>FishingLogBook - Profil pêcheur</value>
   </data>
   <data name="Profile_Title" xml:space="preserve">
     <value>Votre profil</value>
   </data>
   <data name="Profile_PublicTitle" xml:space="preserve">
-    <value>Profil pÃªcheur</value>
+    <value>Profil pêcheur</value>
   </data>
   <data name="Profile_Subtitle" xml:space="preserve">
-    <value>Choisissez ce que les autres pÃªcheurs peuvent voir.</value>
+    <value>Choisissez ce que les autres pêcheurs peuvent voir.</value>
   </data>
   <data name="Profile_DisplayName" xml:space="preserve">
-    <value>Nom affichÃ©</value>
+    <value>Nom affiché</value>
   </data>
   <data name="Profile_ShowDisplayName" xml:space="preserve">
-    <value>Afficher le nom aux autres pÃªcheurs</value>
+    <value>Afficher le nom aux autres pêcheurs</value>
   </data>
   <data name="Profile_HomeRegion" xml:space="preserve">
-    <value>RÃ©gion dâ€™origine</value>
+    <value>Région d’origine</value>
   </data>
   <data name="Profile_ShowHomeRegion" xml:space="preserve">
-    <value>Afficher la rÃ©gion dâ€™origine aux autres pÃªcheurs</value>
+    <value>Afficher la région d’origine aux autres pêcheurs</value>
   </data>
   <data name="Profile_ShowPreferredFishingMethods" xml:space="preserve">
-    <value>Afficher les mÃ©thodes de pÃªche prÃ©fÃ©rÃ©es aux autres pÃªcheurs</value>
+    <value>Afficher les méthodes de pêche préférées aux autres pêcheurs</value>
   </data>
   <data name="Profile_ShowPreferredSpecies" xml:space="preserve">
-    <value>Afficher les espÃ¨ces prÃ©fÃ©rÃ©es aux autres pÃªcheurs</value>
+    <value>Afficher les espèces préférées aux autres pêcheurs</value>
   </data>
   <data name="Profile_ChoosePhoto" xml:space="preserve">
     <value>Choisir une photo de profil</value>
@@ -523,10 +523,10 @@
     <value>Photo de profil</value>
   </data>
   <data name="Profile_ShowPhotograph" xml:space="preserve">
-    <value>Afficher la photo de profil aux autres pÃªcheurs</value>
+    <value>Afficher la photo de profil aux autres pêcheurs</value>
   </data>
   <data name="Profile_LocationPrivacy" xml:space="preserve">
-    <value>Activer la localisation de lâ€™appareil ou rejoindre un club ne partage pas vos coordonnÃ©es prÃ©cises.</value>
+    <value>Activer la localisation de l’appareil ou rejoindre un club ne partage pas vos coordonnées précises.</value>
   </data>
   <data name="Profile_Save" xml:space="preserve">
     <value>Enregistrer le profil</value>
@@ -538,28 +538,28 @@
     <value>Impossible de charger le profil.</value>
   </data>
   <data name="Profile_SaveFailed" xml:space="preserve">
-    <value>Impossible dâ€™enregistrer le profil.</value>
+    <value>Impossible d’enregistrer le profil.</value>
   </data>
   <data name="Profile_FishingMethods" xml:space="preserve">
-    <value>MÃ©thodes de pÃªche prÃ©fÃ©rÃ©es</value>
+    <value>Méthodes de pêche préférées</value>
   </data>
   <data name="Profile_FishingMethod_SetDefault" xml:space="preserve">
-    <value>DÃ©finir comme mÃ©thode par dÃ©fautÂ :</value>
+    <value>Définir comme méthode par défaut :</value>
   </data>
   <data name="Profile_FishingMethod_Default" xml:space="preserve">
-    <value>DÃ©faut</value>
+    <value>Défaut</value>
   </data>
   <data name="Profile_FishingMethod_Species" xml:space="preserve">
-    <value>EspÃ¨ces prÃ©fÃ©rÃ©es pour {0}</value>
+    <value>Espèces préférées pour {0}</value>
   </data>
   <data name="Profile_FishingSpecies_SetDefault" xml:space="preserve">
-    <value>DÃ©finir comme espÃ¨ce par dÃ©fautÂ :</value>
+    <value>Définir comme espèce par défaut :</value>
   </data>
   <data name="Profile_FishingSpecies_Remove" xml:space="preserve">
     <value>Retirer {0}</value>
   </data>
   <data name="Profile_WeightUnit" xml:space="preserve">
-    <value>UnitÃ© de poids prÃ©fÃ©rÃ©e</value>
+    <value>Unité de poids préférée</value>
   </data>
   <data name="Profile_WeightUnit_Kg" xml:space="preserve">
     <value>Kilogrammes (kg)</value>
@@ -568,10 +568,10 @@
     <value>Livres (lb)</value>
   </data>
   <data name="Profile_LengthUnit" xml:space="preserve">
-    <value>UnitÃ© de longueur prÃ©fÃ©rÃ©e</value>
+    <value>Unité de longueur préférée</value>
   </data>
   <data name="Profile_LengthUnit_Cm" xml:space="preserve">
-    <value>CentimÃ¨tres (cm)</value>
+    <value>Centimètres (cm)</value>
   </data>
   <data name="Profile_LengthUnit_In" xml:space="preserve">
     <value>Pouces (in)</value>
@@ -580,10 +580,10 @@
     <value>Connexion</value>
   </data>
   <data name="Auth_CreateAccount" xml:space="preserve">
-    <value>CrÃ©er un compte</value>
+    <value>Créer un compte</value>
   </data>
   <data name="Auth_SignOut" xml:space="preserve">
-    <value>DÃ©connexion</value>
+    <value>Déconnexion</value>
   </data>
   <data name="Auth_UserMenu" xml:space="preserve">
     <value>Menu du compte</value>
@@ -598,123 +598,123 @@
     <value>Rechercher</value>
   </data>
   <data name="Modal_NoMatches" xml:space="preserve">
-    <value>Aucun rÃ©sultat.</value>
+    <value>Aucun résultat.</value>
   </data>
   <data name="Common_More" xml:space="preserve">
-    <value>Plusâ€¦</value>
+    <value>Plus…</value>
   </data>
   <data name="Catch_CatalogueUnavailable" xml:space="preserve">
-    <value>Les suggestions sont indisponibles hors ligne. Vous pouvez toujours saisir une mÃ©thode et une espÃ¨ce.</value>
+    <value>Les suggestions sont indisponibles hors ligne. Vous pouvez toujours saisir une méthode et une espèce.</value>
   </data>
   <data name="App_UnhandledErrorTitle" xml:space="preserve">
-    <value>Un problÃ¨me est survenu</value>
+    <value>Un problème est survenu</value>
   </data>
   <data name="App_UnhandledErrorMessage" xml:space="preserve">
-    <value>Nous n'avons pas pu charger cet Ã©cran. RÃ©essayez ou revenez Ã  l'accueil.</value>
+    <value>Nous n'avons pas pu charger cet écran. Réessayez ou revenez à l'accueil.</value>
   </data>
   <data name="App_UnhandledErrorSnackbar" xml:space="preserve">
-    <value>Un problÃ¨me est survenu. Veuillez rÃ©essayer.</value>
+    <value>Un problème est survenu. Veuillez réessayer.</value>
   </data>
   <data name="Action_TryAgain" xml:space="preserve">
-    <value>RÃ©essayer</value>
+    <value>Réessayer</value>
   </data>
   <data name="Common_Loading" xml:space="preserve"><value>Chargement</value></data>
-  <data name="Brand_LogoAlt" xml:space="preserve"><value>Catch But Donâ€™t Forget â€” Catch Â· Release Â· Remember</value></data>
+  <data name="Brand_LogoAlt" xml:space="preserve"><value>Catch But Don’t Forget — Catch · Release · Remember</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Bienvenue</value></data>
   <data name="Onboarding_WelcomeStep" xml:space="preserve"><value>Bienvenue</value></data>
-  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Bienvenue dans Catch But Donâ€™t Forget</value></data>
-  <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Catch Â· Release Â· Remember. Configurez votre carnet de pÃªche privÃ©, utilisable hors ligne, en une minute environ.</value></data>
-  <data name="Onboarding_PreferencesStep" xml:space="preserve"><value>PrÃ©fÃ©rences</value></data>
-  <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>DÃ©finissez vos prÃ©fÃ©rences de pÃªche</value></data>
-  <data name="Onboarding_PreferencesBody" xml:space="preserve"><value>Choisissez votre type de pÃªche, les espÃ¨ces recherchÃ©es et vos unitÃ©s de mesure. Vous pourrez les modifier dans votre profil.</value></data>
-  <data name="Onboarding_FishingType" xml:space="preserve"><value>Type de pÃªche prÃ©fÃ©rÃ©</value></data>
-  <data name="Onboarding_PreferredSpecies" xml:space="preserve"><value>EspÃ¨ce prÃ©fÃ©rÃ©e</value></data>
+  <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Bienvenue dans Catch But Don’t Forget</value></data>
+  <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Configurez votre carnet de pêche privé, utilisable hors ligne, en une minute environ.</value></data>
+  <data name="Onboarding_PreferencesStep" xml:space="preserve"><value>Préférences</value></data>
+  <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>Définissez vos préférences de pêche</value></data>
+  <data name="Onboarding_PreferencesBody" xml:space="preserve"><value>Choisissez votre type de pêche, les espèces recherchées et vos unités de mesure. Vous pourrez les modifier dans votre profil.</value></data>
+  <data name="Onboarding_FishingType" xml:space="preserve"><value>Type de pêche préféré</value></data>
+  <data name="Onboarding_PreferredSpecies" xml:space="preserve"><value>Espèce préférée</value></data>
   <data name="Onboarding_LocationStep" xml:space="preserve"><value>Position</value></data>
   <data name="Onboarding_LocationTitle" xml:space="preserve"><value>Souvenez-vous du lieu de capture</value></data>
-  <data name="Onboarding_LocationBody" xml:space="preserve"><value>Autorisez la position uniquement pour enregistrer le lieu dâ€™une prise. Vous pouvez passer cette Ã©tape.</value></data>
-  <data name="Onboarding_LocationPrivacy" xml:space="preserve"><value>Les nouvelles positions sont privÃ©es par dÃ©faut. Le navigateur demande lâ€™autorisation uniquement aprÃ¨s votre choix.</value></data>
+  <data name="Onboarding_LocationBody" xml:space="preserve"><value>Autorisez la position uniquement pour enregistrer le lieu d’une prise. Vous pouvez passer cette étape.</value></data>
+  <data name="Onboarding_LocationPrivacy" xml:space="preserve"><value>Les nouvelles positions sont privées par défaut. Le navigateur demande l’autorisation uniquement après votre choix.</value></data>
   <data name="Onboarding_AllowLocation" xml:space="preserve"><value>Autoriser la position</value></data>
-  <data name="Onboarding_LocationHandled" xml:space="preserve"><value>Votre choix est enregistrÃ© et ne bloque pas la configuration.</value></data>
+  <data name="Onboarding_LocationHandled" xml:space="preserve"><value>Votre choix est enregistré et ne bloque pas la configuration.</value></data>
   <data name="Onboarding_InstallStep" xml:space="preserve"><value>Installer</value></data>
-  <data name="Onboarding_InstallNav" xml:space="preserve"><value>Installer lâ€™application</value></data>
-  <data name="Onboarding_InstallTitle" xml:space="preserve"><value>Gardez votre carnet Ã  portÃ©e de main</value></data>
-  <data name="Onboarding_AlreadyInstalled" xml:space="preserve"><value>Lâ€™application est dÃ©jÃ  installÃ©e sur cet appareil.</value></data>
-  <data name="Onboarding_InstallPromptBody" xml:space="preserve"><value>Installez lâ€™application pour un accÃ¨s rapide et plus fiable au bord de lâ€™eau.</value></data>
-  <data name="Onboarding_InstallAction" xml:space="preserve"><value>Installer lâ€™application</value></data>
-  <data name="Onboarding_InstallIos" xml:space="preserve"><value>Dans Safari, touchez Partager, puis Sur lâ€™Ã©cran dâ€™accueil.</value></data>
-  <data name="Onboarding_InstallAndroid" xml:space="preserve"><value>Ouvrez le menu du navigateur et choisissez Installer lâ€™application ou Ajouter Ã  lâ€™Ã©cran dâ€™accueil.</value></data>
+  <data name="Onboarding_InstallNav" xml:space="preserve"><value>Installer l’application</value></data>
+  <data name="Onboarding_InstallTitle" xml:space="preserve"><value>Gardez votre carnet à portée de main</value></data>
+  <data name="Onboarding_AlreadyInstalled" xml:space="preserve"><value>L’application est déjà installée sur cet appareil.</value></data>
+  <data name="Onboarding_InstallPromptBody" xml:space="preserve"><value>Installez l’application pour un accès rapide et plus fiable au bord de l’eau.</value></data>
+  <data name="Onboarding_InstallAction" xml:space="preserve"><value>Installer l’application</value></data>
+  <data name="Onboarding_InstallIos" xml:space="preserve"><value>Dans Safari, touchez Partager, puis Sur l’écran d’accueil.</value></data>
+  <data name="Onboarding_InstallAndroid" xml:space="preserve"><value>Ouvrez le menu du navigateur et choisissez Installer l’application ou Ajouter à l’écran d’accueil.</value></data>
   <data name="Onboarding_InstallUnavailable" xml:space="preserve"><value>Vous pouvez continuer et installer plus tard depuis le menu du navigateur.</value></data>
-  <data name="Onboarding_SaveFailed" xml:space="preserve"><value>Enregistrement impossible. VÃ©rifiez votre connexion et rÃ©essayez.</value></data>
+  <data name="Onboarding_SaveFailed" xml:space="preserve"><value>Enregistrement impossible. Vérifiez votre connexion et réessayez.</value></data>
   <data name="Onboarding_Finish" xml:space="preserve"><value>Ouvrir mon carnet</value></data>
   <data name="Action_NotNow" xml:space="preserve"><value>Pas maintenant</value></data>
   <data name="Action_Back" xml:space="preserve"><value>Retour</value></data>
   <data name="Action_Next" xml:space="preserve"><value>Suivant</value></data>
-  <data name="Landing_PageTitle" xml:space="preserve"><value>Catch But Donâ€™t Forget</value></data>
-  <data name="Landing_Tagline" xml:space="preserve"><value>Catch Â· Release Â· Remember</value></data>
-  <data name="Landing_Heading" xml:space="preserve"><value>Votre carnet de pÃªche privÃ©</value></data>
-  <data name="Landing_Introduction" xml:space="preserve"><value>Conservez chaque prise, photo et souvenir au mÃªme endroit, oÃ¹ que vous pÃªchiez.</value></data>
+  <data name="Landing_PageTitle" xml:space="preserve"><value>Catch But Don’t Forget</value></data>
+  <data name="Landing_Tagline" xml:space="preserve"><value>Catch · Release · Remember</value></data>
+  <data name="Landing_Heading" xml:space="preserve"><value>Votre carnet de pêche privé</value></data>
+  <data name="Landing_Introduction" xml:space="preserve"><value>Conservez chaque prise, photo et souvenir au même endroit, où que vous pêchiez.</value></data>
   <data name="Landing_BenefitRecord" xml:space="preserve"><value>Enregistrez rapidement prises et photos</value></data>
-  <data name="Landing_BenefitPrivate" xml:space="preserve"><value>Vos lieux de pÃªche restent privÃ©s par dÃ©faut</value></data>
-  <data name="Landing_BenefitOffline" xml:space="preserve"><value>ConÃ§u pour les zones sans rÃ©seau ou hors ligne</value></data>
+  <data name="Landing_BenefitPrivate" xml:space="preserve"><value>Vos lieux de pêche restent privés par défaut</value></data>
+  <data name="Landing_BenefitOffline" xml:space="preserve"><value>Conçu pour les zones sans réseau ou hors ligne</value></data>
   <data name="Modal_Save" xml:space="preserve"><value>Enregistrer</value></data>
-  <data name="Modal_Selected" xml:space="preserve"><value>SÃ©lection</value></data>
+  <data name="Modal_Selected" xml:space="preserve"><value>Sélection</value></data>
   <data name="Modal_Available" xml:space="preserve"><value>Options disponibles</value></data>
-  <data name="Modal_NoneSelected" xml:space="preserve"><value>Aucune sÃ©lection</value></data>
+  <data name="Modal_NoneSelected" xml:space="preserve"><value>Aucune sélection</value></data>
   <data name="Modal_ShowingLimited" xml:space="preserve"><value>Affichage de {0} sur {1} {2}. Recherchez pour en trouver davantage.</value></data>
-  <data name="Modal_Species" xml:space="preserve"><value>espÃ¨ces</value></data>
-  <data name="Modal_FishingMethods" xml:space="preserve"><value>mÃ©thodes de pÃªche</value></data>
-  <data name="Install_Title" xml:space="preserve"><value>Installer Catch But Donâ€™t Forget</value></data>
-  <data name="Install_Benefit" xml:space="preserve"><value>Installez lâ€™application pour y accÃ©der rapidement depuis votre appareil et profiter dâ€™une expÃ©rience plus fiable lorsque vous pÃªchez.</value></data>
-  <data name="Install_NativeAvailable" xml:space="preserve"><value>Votre navigateur peut installer lâ€™application pour vous.</value></data>
-  <data name="Install_Action" xml:space="preserve"><value>Installer lâ€™application</value></data>
-  <data name="Install_Dismissed" xml:space="preserve"><value>Lâ€™application nâ€™a pas Ã©tÃ© installÃ©e. Vous pouvez rÃ©essayer ou suivre les Ã©tapes correspondant Ã  votre appareil ci-dessous.</value></data>
-  <data name="Install_ManualIntro" xml:space="preserve"><value>Choisissez votre appareil ci-dessous pour obtenir les Ã©tapes dÃ©taillÃ©es.</value></data>
-  <data name="Install_InstalledTitle" xml:space="preserve"><value>Lâ€™application est installÃ©e</value></data>
-  <data name="Install_InstalledBody" xml:space="preserve"><value>Vous utilisez lâ€™application installÃ©e. Ouvrez lâ€™application Catch But Donâ€™t Forget depuis votre Ã©cran dâ€™accueil chaque fois que vous partez pÃªcher.</value></data>
-  <data name="Install_InstalledDesktop" xml:space="preserve"><value>Vous utilisez lâ€™application installÃ©e. Ouvrez lâ€™application Catch But Donâ€™t Forget depuis le menu DÃ©marrer, le Dock ou votre liste dâ€™applications, et Ã©pinglez-la oÃ¹ vous le souhaitez.</value></data>
-  <data name="Install_InstalledOtherDevices" xml:space="preserve"><value>Vous installez lâ€™application sur un autre tÃ©lÃ©phone, une tablette ou un ordinateur ? Les Ã©tapes pour chaque appareil se trouvent ci-dessous.</value></data>
+  <data name="Modal_Species" xml:space="preserve"><value>espèces</value></data>
+  <data name="Modal_FishingMethods" xml:space="preserve"><value>méthodes de pêche</value></data>
+  <data name="Install_Title" xml:space="preserve"><value>Installer Catch But Don’t Forget</value></data>
+  <data name="Install_Benefit" xml:space="preserve"><value>Installez l’application pour y accéder rapidement depuis votre appareil et profiter d’une expérience plus fiable lorsque vous pêchez.</value></data>
+  <data name="Install_NativeAvailable" xml:space="preserve"><value>Votre navigateur peut installer l’application pour vous.</value></data>
+  <data name="Install_Action" xml:space="preserve"><value>Installer l’application</value></data>
+  <data name="Install_Dismissed" xml:space="preserve"><value>L’application n’a pas été installée. Vous pouvez réessayer ou suivre les étapes correspondant à votre appareil ci-dessous.</value></data>
+  <data name="Install_ManualIntro" xml:space="preserve"><value>Choisissez votre appareil ci-dessous pour obtenir les étapes détaillées.</value></data>
+  <data name="Install_InstalledTitle" xml:space="preserve"><value>L’application est installée</value></data>
+  <data name="Install_InstalledBody" xml:space="preserve"><value>Vous utilisez l’application installée. Ouvrez l’application Catch But Don’t Forget depuis votre écran d’accueil chaque fois que vous partez pêcher.</value></data>
+  <data name="Install_InstalledDesktop" xml:space="preserve"><value>Vous utilisez l’application installée. Ouvrez l’application Catch But Don’t Forget depuis le menu Démarrer, le Dock ou votre liste d’applications, et épinglez-la où vous le souhaitez.</value></data>
+  <data name="Install_InstalledOtherDevices" xml:space="preserve"><value>Vous installez l’application sur un autre téléphone, une tablette ou un ordinateur ? Les étapes pour chaque appareil se trouvent ci-dessous.</value></data>
   <data name="Install_IosPanel" xml:space="preserve"><value>iPhone / iPad</value></data>
   <data name="Install_AndroidPanel" xml:space="preserve"><value>Android</value></data>
   <data name="Install_ComputerPanel" xml:space="preserve"><value>Ordinateur</value></data>
-  <data name="Install_IosHeading" xml:space="preserve"><value>Ajouter lâ€™application Ã  lâ€™Ã©cran dâ€™accueil</value></data>
-  <data name="Install_IosUseSafari" xml:space="preserve"><value>Vous nâ€™utilisez pas Safari. Ouvrez dâ€™abord Catch But Donâ€™t Forget dans Safari, puis suivez les Ã©tapes ci-dessous.</value></data>
+  <data name="Install_IosHeading" xml:space="preserve"><value>Ajouter l’application à l’écran d’accueil</value></data>
+  <data name="Install_IosUseSafari" xml:space="preserve"><value>Vous n’utilisez pas Safari. Ouvrez d’abord Catch But Don’t Forget dans Safari, puis suivez les étapes ci-dessous.</value></data>
   <data name="Install_IphoneHeading" xml:space="preserve"><value>iPhone</value></data>
-  <data name="Install_IphoneStep1" xml:space="preserve"><value>Ouvrez Catch But Donâ€™t Forget dans Safari.</value></data>
-  <data name="Install_IphoneStep2" xml:space="preserve"><value>Touchez â‹¯ Plus dans la barre dâ€™outils de Safari.</value></data>
+  <data name="Install_IphoneStep1" xml:space="preserve"><value>Ouvrez Catch But Don’t Forget dans Safari.</value></data>
+  <data name="Install_IphoneStep2" xml:space="preserve"><value>Touchez ⋯ Plus dans la barre d’outils de Safari.</value></data>
   <data name="Install_IphoneStep3" xml:space="preserve"><value>Touchez Partager.</value></data>
-  <data name="Install_IphoneStep4" xml:space="preserve"><value>Si le bouton Partager est dÃ©jÃ  visible dans votre prÃ©sentation Safari, vous pouvez le toucher directement.</value></data>
-  <data name="Install_IphoneStep5" xml:space="preserve"><value>Choisissez Sur lâ€™Ã©cran dâ€™accueil.</value></data>
-  <data name="Install_IphoneStep6" xml:space="preserve"><value>Si Safari affiche Ouvrir comme app web, vÃ©rifiez que lâ€™option est activÃ©e.</value></data>
+  <data name="Install_IphoneStep4" xml:space="preserve"><value>Si le bouton Partager est déjà visible dans votre présentation Safari, vous pouvez le toucher directement.</value></data>
+  <data name="Install_IphoneStep5" xml:space="preserve"><value>Choisissez Sur l’écran d’accueil.</value></data>
+  <data name="Install_IphoneStep6" xml:space="preserve"><value>Si Safari affiche Ouvrir comme app web, vérifiez que l’option est activée.</value></data>
   <data name="Install_IphoneStep7" xml:space="preserve"><value>Touchez Ajouter.</value></data>
-  <data name="Install_IphoneStep8" xml:space="preserve"><value>Ouvrez lâ€™application Catch But Donâ€™t Forget depuis la nouvelle icÃ´ne sur lâ€™Ã©cran dâ€™accueil.</value></data>
+  <data name="Install_IphoneStep8" xml:space="preserve"><value>Ouvrez l’application Catch But Don’t Forget depuis la nouvelle icône sur l’écran d’accueil.</value></data>
   <data name="Install_IpadHeading" xml:space="preserve"><value>iPad</value></data>
-  <data name="Install_IpadStep1" xml:space="preserve"><value>Ouvrez Catch But Donâ€™t Forget dans Safari.</value></data>
-  <data name="Install_IpadStep2" xml:space="preserve"><value>Touchez Partager dans la barre dâ€™outils supÃ©rieure.</value></data>
-  <data name="Install_IpadStep3" xml:space="preserve"><value>Choisissez Sur lâ€™Ã©cran dâ€™accueil. Si Safari lâ€™affiche dans Plus, ouvrez dâ€™abord Plus.</value></data>
-  <data name="Install_IpadStep4" xml:space="preserve"><value>Si Safari affiche Ouvrir comme app web, vÃ©rifiez que lâ€™option est activÃ©e.</value></data>
+  <data name="Install_IpadStep1" xml:space="preserve"><value>Ouvrez Catch But Don’t Forget dans Safari.</value></data>
+  <data name="Install_IpadStep2" xml:space="preserve"><value>Touchez Partager dans la barre d’outils supérieure.</value></data>
+  <data name="Install_IpadStep3" xml:space="preserve"><value>Choisissez Sur l’écran d’accueil. Si Safari l’affiche dans Plus, ouvrez d’abord Plus.</value></data>
+  <data name="Install_IpadStep4" xml:space="preserve"><value>Si Safari affiche Ouvrir comme app web, vérifiez que l’option est activée.</value></data>
   <data name="Install_IpadStep5" xml:space="preserve"><value>Touchez Ajouter.</value></data>
-  <data name="Install_IpadStep6" xml:space="preserve"><value>Ouvrez lâ€™application Catch But Donâ€™t Forget depuis votre Ã©cran dâ€™accueil.</value></data>
-  <data name="Install_IosFallbackHeading" xml:space="preserve"><value>Aucune option Sur lâ€™Ã©cran dâ€™accueil ?</value></data>
-  <data name="Install_IosFallbackBody" xml:space="preserve"><value>Vous avez probablement ouvert la page dans un autre navigateur, ou dans une autre application comme une messagerie. Choisissez Ouvrir dans Safari si lâ€™option est proposÃ©e, ou copiez lâ€™adresse web, collez-la dans Safari, puis suivez les Ã©tapes iPhone ou iPad ci-dessus.</value></data>
+  <data name="Install_IpadStep6" xml:space="preserve"><value>Ouvrez l’application Catch But Don’t Forget depuis votre écran d’accueil.</value></data>
+  <data name="Install_IosFallbackHeading" xml:space="preserve"><value>Aucune option Sur l’écran d’accueil ?</value></data>
+  <data name="Install_IosFallbackBody" xml:space="preserve"><value>Vous avez probablement ouvert la page dans un autre navigateur, ou dans une autre application comme une messagerie. Choisissez Ouvrir dans Safari si l’option est proposée, ou copiez l’adresse web, collez-la dans Safari, puis suivez les étapes iPhone ou iPad ci-dessus.</value></data>
   <data name="Install_AndroidHeading" xml:space="preserve"><value>Installer avec Chrome ou un autre navigateur Chromium</value></data>
-  <data name="Install_AndroidStep1" xml:space="preserve"><value>Ouvrez le menu du navigateur, les trois points (â‹®) en haut de lâ€™Ã©cran.</value></data>
-  <data name="Install_AndroidStep2" xml:space="preserve"><value>Choisissez Installer lâ€™application, ou Ajouter Ã  lâ€™Ã©cran dâ€™accueil selon le libellÃ© affichÃ©.</value></data>
-  <data name="Install_AndroidStep3" xml:space="preserve"><value>Confirmez lâ€™installation lorsque le navigateur vous le demande.</value></data>
-  <data name="Install_AndroidStep4" xml:space="preserve"><value>Ouvrez lâ€™application Catch But Donâ€™t Forget depuis sa nouvelle icÃ´ne sur lâ€™Ã©cran dâ€™accueil.</value></data>
+  <data name="Install_AndroidStep1" xml:space="preserve"><value>Ouvrez le menu du navigateur, les trois points (⋮) en haut de l’écran.</value></data>
+  <data name="Install_AndroidStep2" xml:space="preserve"><value>Choisissez Installer l’application, ou Ajouter à l’écran d’accueil selon le libellé affiché.</value></data>
+  <data name="Install_AndroidStep3" xml:space="preserve"><value>Confirmez l’installation lorsque le navigateur vous le demande.</value></data>
+  <data name="Install_AndroidStep4" xml:space="preserve"><value>Ouvrez l’application Catch But Don’t Forget depuis sa nouvelle icône sur l’écran d’accueil.</value></data>
   <data name="Install_SamsungHeading" xml:space="preserve"><value>Samsung Internet</value></data>
-  <data name="Install_SamsungStep1" xml:space="preserve"><value>Ouvrez le menu du navigateur en bas de lâ€™Ã©cran.</value></data>
-  <data name="Install_SamsungStep2" xml:space="preserve"><value>Choisissez Ajouter la page Ã .</value></data>
-  <data name="Install_SamsungStep3" xml:space="preserve"><value>Choisissez Ã‰cran dâ€™accueil, puis confirmez.</value></data>
+  <data name="Install_SamsungStep1" xml:space="preserve"><value>Ouvrez le menu du navigateur en bas de l’écran.</value></data>
+  <data name="Install_SamsungStep2" xml:space="preserve"><value>Choisissez Ajouter la page à.</value></data>
+  <data name="Install_SamsungStep3" xml:space="preserve"><value>Choisissez Écran d’accueil, puis confirmez.</value></data>
   <data name="Install_ComputerHeading" xml:space="preserve"><value>Installer sur votre ordinateur</value></data>
-  <data name="Install_ComputerStep1" xml:space="preserve"><value>Dans Chrome ou Edge, recherchez lâ€™icÃ´ne dâ€™installation Ã  droite de la barre dâ€™adresse et sÃ©lectionnez-la.</value></data>
-  <data name="Install_ComputerStep2" xml:space="preserve"><value>Aucune icÃ´ne dans Chrome ? Ouvrez le menu du navigateur (â‹®), puis choisissez Diffuser, enregistrer et partager, puis Installer la page en tant quâ€™application.</value></data>
-  <data name="Install_ComputerStep3" xml:space="preserve"><value>Dans Edge, ouvrez le menu du navigateur, puis choisissez Applications, puis Installer ce site en tant quâ€™application.</value></data>
-  <data name="Install_ComputerStep4" xml:space="preserve"><value>Confirmez lâ€™installation, puis ouvrez lâ€™application Catch But Donâ€™t Forget depuis le menu DÃ©marrer, le Dock ou votre liste dâ€™applications.</value></data>
-  <data name="Install_Later" xml:space="preserve"><value>Lâ€™installation est facultative. Vous pouvez continuer et retrouver ces instructions plus tard depuis le menu de lâ€™application.</value></data>
-  <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une mÃ©thode de pÃªche.</value></data>
-  <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espÃ¨ce pour {0}.</value></data>
-  <data name="Onboarding_ValidationSpeciesForMethods" xml:space="preserve"><value>Choisissez au moins une espÃ¨ce pour chacune de ces mÃ©thodes de pÃªche : {0}.</value></data>
-  <data name="Build_About" xml:space="preserve"><value>Ã€ propos</value></data>
+  <data name="Install_ComputerStep1" xml:space="preserve"><value>Dans Chrome ou Edge, recherchez l’icône d’installation à droite de la barre d’adresse et sélectionnez-la.</value></data>
+  <data name="Install_ComputerStep2" xml:space="preserve"><value>Aucune icône dans Chrome ? Ouvrez le menu du navigateur (⋮), puis choisissez Diffuser, enregistrer et partager, puis Installer la page en tant qu’application.</value></data>
+  <data name="Install_ComputerStep3" xml:space="preserve"><value>Dans Edge, ouvrez le menu du navigateur, puis choisissez Applications, puis Installer ce site en tant qu’application.</value></data>
+  <data name="Install_ComputerStep4" xml:space="preserve"><value>Confirmez l’installation, puis ouvrez l’application Catch But Don’t Forget depuis le menu Démarrer, le Dock ou votre liste d’applications.</value></data>
+  <data name="Install_Later" xml:space="preserve"><value>L’installation est facultative. Vous pouvez continuer et retrouver ces instructions plus tard depuis le menu de l’application.</value></data>
+  <data name="Onboarding_ValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
+  <data name="Onboarding_ValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espèce pour {0}.</value></data>
+  <data name="Onboarding_ValidationSpeciesForMethods" xml:space="preserve"><value>Choisissez au moins une espèce pour chacune de ces méthodes de pêche : {0}.</value></data>
+  <data name="Build_About" xml:space="preserve"><value>À propos</value></data>
   <data name="Build_App" xml:space="preserve"><value>Application</value></data>
   <data name="Build_Api" xml:space="preserve"><value>API</value></data>
   <data name="Build_Version" xml:space="preserve"><value>Version</value></data>
@@ -722,54 +722,53 @@
   <data name="Build_Environment" xml:space="preserve"><value>Environnement</value></data>
   <data name="Build_Unavailable" xml:space="preserve"><value>Indisponible</value></data>
   <data name="Update_BannerTitle" xml:space="preserve"><value>Nouvelle version disponible</value></data>
-  <data name="Update_BannerBody" xml:space="preserve"><value>Obtenez les derniers correctifs et nouveautÃ©s.</value></data>
-  <data name="Update_Action" xml:space="preserve"><value>Mettre Ã  jour</value></data>
-  <data name="Update_ActivatingTitle" xml:space="preserve"><value>Mise Ã  jour en cours</value></data>
-  <data name="Update_ActivatingBody" xml:space="preserve"><value>Lâ€™application va rouvrir sur la nouvelle version dans un instant.</value></data>
-  <data name="Update_FailedTitle" xml:space="preserve"><value>La mise Ã  jour nâ€™a pas pu Ãªtre effectuÃ©e</value></data>
-  <data name="Update_FailedBody" xml:space="preserve"><value>Vous pouvez continuer Ã  utiliser lâ€™application normalement et rÃ©essayer.</value></data>
-  <data name="Update_StatusLabel" xml:space="preserve"><value>Mise Ã  jour</value></data>
-  <data name="Update_StatusCurrent" xml:space="preserve"><value>Ã€ jour</value></data>
+  <data name="Update_BannerBody" xml:space="preserve"><value>Obtenez les derniers correctifs et nouveautés.</value></data>
+  <data name="Update_Action" xml:space="preserve"><value>Mettre à jour</value></data>
+  <data name="Update_ActivatingTitle" xml:space="preserve"><value>Mise à jour en cours</value></data>
+  <data name="Update_ActivatingBody" xml:space="preserve"><value>L’application va rouvrir sur la nouvelle version dans un instant.</value></data>
+  <data name="Update_FailedTitle" xml:space="preserve"><value>La mise à jour n’a pas pu être effectuée</value></data>
+  <data name="Update_FailedBody" xml:space="preserve"><value>Vous pouvez continuer à utiliser l’application normalement et réessayer.</value></data>
+  <data name="Update_StatusLabel" xml:space="preserve"><value>Mise à jour</value></data>
+  <data name="Update_StatusCurrent" xml:space="preserve"><value>À jour</value></data>
   <data name="Update_StatusAvailable" xml:space="preserve"><value>Nouvelle version disponible</value></data>
-  <data name="WebAuthnProbe_PageTitle" xml:space="preserve"><value>Test de capacitÃ© WebAuthn</value></data>
-  <data name="WebAuthnProbe_Title" xml:space="preserve"><value>Test de capacitÃ© de dÃ©verrouillage hors ligne</value></data>
-  <data name="WebAuthnProbe_Scope" xml:space="preserve"><value>Ce diagnostic temporaire vÃ©rifie uniquement lâ€™authentification de lâ€™appareil. Il ne peut pas vous connecter, accÃ©der aux donnÃ©es de pÃªche ni appeler lâ€™API.</value></data>
+  <data name="WebAuthnProbe_PageTitle" xml:space="preserve"><value>Test de capacité WebAuthn</value></data>
+  <data name="WebAuthnProbe_Title" xml:space="preserve"><value>Test de capacité de déverrouillage hors ligne</value></data>
+  <data name="WebAuthnProbe_Scope" xml:space="preserve"><value>Ce diagnostic temporaire vérifie uniquement l’authentification de l’appareil. Il ne peut pas vous connecter, accéder aux données de pêche ni appeler l’API.</value></data>
   <data name="WebAuthnProbe_ProvisionTitle" xml:space="preserve"><value>Configurer en ligne</value></data>
-  <data name="WebAuthnProbe_ProvisionBody" xml:space="preserve"><value>Effectuez ce test dans lâ€™application installÃ©e lorsque vous Ãªtes en ligne. CrÃ©ez dâ€™abord lâ€™identifiant de test, puis appuyez sur VÃ©rifier lâ€™identifiant en ligne afin que chaque authentification de lâ€™appareil ait sa propre action explicite.</value></data>
-  <data name="WebAuthnProbe_ProvisionAction" xml:space="preserve"><value>Configurer lâ€™identifiant de test</value></data>
-  <data name="WebAuthnProbe_VerifyOnlineAction" xml:space="preserve"><value>VÃ©rifier lâ€™identifiant en ligne</value></data>
-  <data name="WebAuthnProbe_OfflineTitle" xml:space="preserve"><value>Tester aprÃ¨s un dÃ©marrage Ã  froid hors ligne</value></data>
-  <data name="WebAuthnProbe_OfflineBody" xml:space="preserve"><value>Fermez complÃ¨tement lâ€™application installÃ©e, activez le mode Avion, rouvrez-la depuis son icÃ´ne, revenez ici depuis lâ€™accueil, puis appuyez sur le bouton. Lâ€™authentification de lâ€™appareil ne dÃ©marre jamais automatiquement.</value></data>
-  <data name="WebAuthnProbe_OfflineAction" xml:space="preserve"><value>Tester le dÃ©verrouillage hors ligne</value></data>
-  <data name="WebAuthnProbe_OpenAction" xml:space="preserve"><value>Ouvrir le test de dÃ©verrouillage de lâ€™appareil</value></data>
-  <data name="WebAuthnProbe_CleanupNote" xml:space="preserve"><value>La suppression des mÃ©tadonnÃ©es du test retire uniquement les valeurs de test inoffensives de lâ€™application. La clÃ© dâ€™accÃ¨s de test devra peut-Ãªtre Ãªtre supprimÃ©e manuellement dans Mots de passe Apple, Google Password Manager ou les rÃ©glages dâ€™identifiants de votre appareil.</value></data>
-  <data name="WebAuthnProbe_RemoveMetadataAction" xml:space="preserve"><value>Supprimer les mÃ©tadonnÃ©es du test</value></data>
+  <data name="WebAuthnProbe_ProvisionBody" xml:space="preserve"><value>Effectuez ce test dans l’application installée lorsque vous êtes en ligne. Créez d’abord l’identifiant de test, puis appuyez sur Vérifier l’identifiant en ligne afin que chaque authentification de l’appareil ait sa propre action explicite.</value></data>
+  <data name="WebAuthnProbe_ProvisionAction" xml:space="preserve"><value>Configurer l’identifiant de test</value></data>
+  <data name="WebAuthnProbe_VerifyOnlineAction" xml:space="preserve"><value>Vérifier l’identifiant en ligne</value></data>
+  <data name="WebAuthnProbe_OfflineTitle" xml:space="preserve"><value>Tester après un démarrage à froid hors ligne</value></data>
+  <data name="WebAuthnProbe_OfflineBody" xml:space="preserve"><value>Fermez complètement l’application installée, activez le mode Avion, rouvrez-la depuis son icône, revenez ici depuis l’accueil, puis appuyez sur le bouton. L’authentification de l’appareil ne démarre jamais automatiquement.</value></data>
+  <data name="WebAuthnProbe_OfflineAction" xml:space="preserve"><value>Tester le déverrouillage hors ligne</value></data>
+  <data name="WebAuthnProbe_OpenAction" xml:space="preserve"><value>Ouvrir le test de déverrouillage de l’appareil</value></data>
+  <data name="WebAuthnProbe_CleanupNote" xml:space="preserve"><value>La suppression des métadonnées du test retire uniquement les valeurs de test inoffensives de l’application. La clé d’accès de test devra peut-être être supprimée manuellement dans Mots de passe Apple, Google Password Manager ou les réglages d’identifiants de votre appareil.</value></data>
+  <data name="WebAuthnProbe_RemoveMetadataAction" xml:space="preserve"><value>Supprimer les métadonnées du test</value></data>
   <data name="WebAuthnProbe_LeaveAction" xml:space="preserve"><value>Quitter le test</value></data>
   <data name="WebAuthnProbe_WebAuthnAvailable" xml:space="preserve"><value>API WebAuthn disponible</value></data>
   <data name="WebAuthnProbe_PlatformAvailable" xml:space="preserve"><value>Authentificateur de plateforme disponible</value></data>
-  <data name="WebAuthnProbe_CreateSucceeded" xml:space="preserve"><value>CREATE rÃ©ussi</value></data>
-  <data name="WebAuthnProbe_CreatePrfEnabled" xml:space="preserve"><value>PRF activÃ©e lors de CREATE</value></data>
-  <data name="WebAuthnProbe_CreatePrfResult" xml:space="preserve"><value>RÃ©sultat PRF lors de CREATE</value></data>
-  <data name="WebAuthnProbe_ImmediateGetSucceeded" xml:space="preserve"><value>GET immÃ©diat rÃ©ussi</value></data>
-  <data name="WebAuthnProbe_GetSucceeded" xml:space="preserve"><value>GET rÃ©ussi</value></data>
-  <data name="WebAuthnProbe_UserVerified" xml:space="preserve"><value>VÃ©rification de lâ€™utilisateur confirmÃ©e</value></data>
-  <data name="WebAuthnProbe_GetPrfReported" xml:space="preserve"><value>Extension PRF indiquÃ©e lors de GET</value></data>
-  <data name="WebAuthnProbe_GetPrfResult" xml:space="preserve"><value>RÃ©sultat PRF lors de GET</value></data>
-  <data name="WebAuthnProbe_PayloadVerified" xml:space="preserve"><value>Contenu inoffensif dÃ©chiffrÃ©</value></data>
+  <data name="WebAuthnProbe_CreateSucceeded" xml:space="preserve"><value>CREATE réussi</value></data>
+  <data name="WebAuthnProbe_CreatePrfEnabled" xml:space="preserve"><value>PRF activée lors de CREATE</value></data>
+  <data name="WebAuthnProbe_CreatePrfResult" xml:space="preserve"><value>Résultat PRF lors de CREATE</value></data>
+  <data name="WebAuthnProbe_ImmediateGetSucceeded" xml:space="preserve"><value>GET immédiat réussi</value></data>
+  <data name="WebAuthnProbe_GetSucceeded" xml:space="preserve"><value>GET réussi</value></data>
+  <data name="WebAuthnProbe_UserVerified" xml:space="preserve"><value>Vérification de l’utilisateur confirmée</value></data>
+  <data name="WebAuthnProbe_GetPrfReported" xml:space="preserve"><value>Extension PRF indiquée lors de GET</value></data>
+  <data name="WebAuthnProbe_GetPrfResult" xml:space="preserve"><value>Résultat PRF lors de GET</value></data>
+  <data name="WebAuthnProbe_PayloadVerified" xml:space="preserve"><value>Contenu inoffensif déchiffré</value></data>
   <data name="WebAuthnProbe_OfflineAtInvocation" xml:space="preserve"><value>Hors ligne lors du lancement</value></data>
-  <data name="WebAuthnProbe_Outcome" xml:space="preserve"><value>RÃ©sultat</value></data>
+  <data name="WebAuthnProbe_Outcome" xml:space="preserve"><value>Résultat</value></data>
   <data name="WebAuthnProbe_Yes" xml:space="preserve"><value>Oui</value></data>
   <data name="WebAuthnProbe_No" xml:space="preserve"><value>Non</value></data>
-  <data name="WebAuthnProbe_NotReported" xml:space="preserve"><value>Non indiquÃ©</value></data>
-  <data name="WebAuthnProbe_Outcome_unknown" xml:space="preserve"><value>Non exÃ©cutÃ©</value></data>
-  <data name="WebAuthnProbe_Outcome_ready" xml:space="preserve"><value>PrÃªt</value></data>
-  <data name="WebAuthnProbe_Outcome_unsupported" xml:space="preserve"><value>WebAuthn nâ€™est pas pris en charge</value></data>
-  <data name="WebAuthnProbe_Outcome_platform-unavailable" xml:space="preserve"><value>Aucun authentificateur de plateforme nâ€™est disponible</value></data>
-  <data name="WebAuthnProbe_Outcome_provisioned" xml:space="preserve"><value>Configuration terminÃ©e</value></data>
-  <data name="WebAuthnProbe_Outcome_verified-online" xml:space="preserve"><value>VÃ©rification en ligne terminÃ©e</value></data>
-  <data name="WebAuthnProbe_Outcome_retrieved" xml:space="preserve"><value>RÃ©cupÃ©ration de lâ€™identifiant terminÃ©e</value></data>
-  <data name="WebAuthnProbe_Outcome_missing-metadata" xml:space="preserve"><value>Aucune mÃ©tadonnÃ©e de test nâ€™est enregistrÃ©e</value></data>
-  <data name="WebAuthnProbe_Outcome_cancelled" xml:space="preserve"><value>Lâ€™authentification de lâ€™appareil a Ã©tÃ© annulÃ©e</value></data>
-  <data name="WebAuthnProbe_Outcome_failed" xml:space="preserve"><value>Le test de capacitÃ© a Ã©chouÃ©</value></data>
+  <data name="WebAuthnProbe_NotReported" xml:space="preserve"><value>Non indiqué</value></data>
+  <data name="WebAuthnProbe_Outcome_unknown" xml:space="preserve"><value>Non exécuté</value></data>
+  <data name="WebAuthnProbe_Outcome_ready" xml:space="preserve"><value>Prêt</value></data>
+  <data name="WebAuthnProbe_Outcome_unsupported" xml:space="preserve"><value>WebAuthn n’est pas pris en charge</value></data>
+  <data name="WebAuthnProbe_Outcome_platform-unavailable" xml:space="preserve"><value>Aucun authentificateur de plateforme n’est disponible</value></data>
+  <data name="WebAuthnProbe_Outcome_provisioned" xml:space="preserve"><value>Configuration terminée</value></data>
+  <data name="WebAuthnProbe_Outcome_verified-online" xml:space="preserve"><value>Vérification en ligne terminée</value></data>
+  <data name="WebAuthnProbe_Outcome_retrieved" xml:space="preserve"><value>Récupération de l’identifiant terminée</value></data>
+  <data name="WebAuthnProbe_Outcome_missing-metadata" xml:space="preserve"><value>Aucune métadonnée de test n’est enregistrée</value></data>
+  <data name="WebAuthnProbe_Outcome_cancelled" xml:space="preserve"><value>L’authentification de l’appareil a été annulée</value></data>
+  <data name="WebAuthnProbe_Outcome_failed" xml:space="preserve"><value>Le test de capacité a échoué</value></data>
 </root>
-

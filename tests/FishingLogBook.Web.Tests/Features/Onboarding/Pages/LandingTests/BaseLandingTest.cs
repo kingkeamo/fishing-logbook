@@ -94,4 +94,3 @@ public class BaseLandingTest
         return onboarding;
     }
 }
-

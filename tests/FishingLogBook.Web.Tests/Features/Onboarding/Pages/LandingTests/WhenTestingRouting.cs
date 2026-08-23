@@ -267,4 +267,3 @@ public class WhenTestingRouting : BaseLandingTest
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 }
-

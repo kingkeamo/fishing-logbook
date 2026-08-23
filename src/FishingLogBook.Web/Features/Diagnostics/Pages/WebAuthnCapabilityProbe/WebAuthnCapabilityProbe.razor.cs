@@ -97,4 +97,3 @@ public partial class WebAuthnCapabilityProbe : ComponentBase
         return Loc[$"WebAuthnProbe_Outcome_{outcome}"];
     }
 }
-
