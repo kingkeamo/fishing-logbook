@@ -108,4 +108,28 @@ public class WhenTestingServerCatches : BaseCatchListTest
             Arg.Any<HttpRequestException>(),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldShowLocalCatchesWithoutCallingTheApiWhenOffline()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var localId = Guid.NewGuid();
+        var local = StoredCatch(localId, DateTimeOffset.UtcNow, speciesName: "Brown Trout");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(new[] { local });
+        var catchClient = Substitute.For<ICatchClient>();
+        var network = OnlineNetwork(isOnline: false);
+        await using var context = CreateContext(store, catchClient: catchClient, network: network);
+
+        // Act
+        var cut = context.Render<CatchList>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#catch-card-species-{localId:D}").TextContent.Should().Contain("Brown Trout"));
+        await network.Received(1).IsOnlineAsync(Arg.Any<CancellationToken>());
+        await catchClient.DidNotReceive().GetAllAsync(Arg.Any<CancellationToken>());
+    }
 }

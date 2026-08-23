@@ -29,12 +29,40 @@ test('registers independent disposable-container teardown', async () => {
     assert.match(teardown, /docker', \['rm', '--force'/);
 });
 
+test('uses IPv4 for deterministic local Cognito metadata retrieval', async () => {
+    const stack = await readFile(new URL('../support/start-stack.mjs', import.meta.url), 'utf8');
+
+    assert.match(stack, /DOTNET_SYSTEM_NET_DISABLEIPV6: '1'/);
+});
+
+test('keeps the offline journey inside the loaded app shell', async () => {
+    const journey = await readFile(new URL('../support/catch-journey.mjs', import.meta.url), 'utf8');
+    const offlineSpec = await readFile(new URL('../specs/catch-offline.spec.mjs', import.meta.url), 'utf8');
+    const offlineSection = offlineSpec.split('await context.setOffline(true);')[1]
+        .split('await context.setOffline(false);')[0];
+
+    assert.match(journey, /#catch-record-link/);
+    assert.doesNotMatch(offlineSection, /page\.goto/);
+});
+
 test('onboards the dedicated Cognito user through the real UI for each disposable database', async () => {
     const setup = await readFile(new URL('../support/auth.setup.mjs', import.meta.url), 'utf8');
 
     assert.match(setup, /completeOnboardingWhenRequired/);
+    assert.match(setup, /const landingRouteTimeout = 90_000/);
+    assert.match(setup, /\['\/catches', '\/onboarding'\]\.includes\(url\.pathname\)/);
     assert.match(setup, /#onboarding-method-Fly/);
     assert.match(setup, /#catalogue-picker-modal-option-BrownTrout/);
     assert.match(setup, /#onboarding-finish/);
     assert.doesNotMatch(setup, /must complete onboarding before running/);
+});
+
+test('shows the authentication setup browser when Playwright debug mode is enabled', async () => {
+    const setup = await readFile(new URL('../support/auth.setup.mjs', import.meta.url), 'utf8');
+
+    assert.match(setup, /process\.env\.PWDEBUG === '1'/);
+    assert.match(setup, /headless: !debugging/);
+    assert.match(setup, /message\.text\(\)\.startsWith\('\[FLB\]'\)/);
+    assert.match(setup, /page\.on\('pageerror'/);
+    assert.doesNotMatch(setup, /E2E auth diagnostic/);
 });

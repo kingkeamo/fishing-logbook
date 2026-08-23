@@ -1,6 +1,7 @@
 using System.Globalization;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
@@ -44,6 +45,9 @@ public partial class CatchList : ComponentBase, IDisposable
 
     [Inject]
     private ICatchClient CatchClient { get; set; } = default!;
+
+    [Inject]
+    private INetworkService Network { get; set; } = default!;
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
@@ -123,6 +127,11 @@ public partial class CatchList : ComponentBase, IDisposable
         IReadOnlyList<CatchViewDto> remote;
         try
         {
+            if (!await Network.IsOnlineAsync(cancellationToken))
+            {
+                return [];
+            }
+
             remote = await CatchClient.GetAllAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

@@ -72,7 +72,9 @@ const migration = spawnSync('dotnet', ['run', '--', '--run'], {
 if (migration.status !== 0) throw new Error(`E2E migrations failed.\n${migration.stdout}\n${migration.stderr}`);
 
 run('dotnet', ['run', '--project', 'src/FishingLogBook.Api', '--launch-profile', 'https'], {
-    ASPNETCORE_ENVIRONMENT: 'Development', ConnectionStrings__Postgres: connection
+    ASPNETCORE_ENVIRONMENT: 'Development',
+    ConnectionStrings__Postgres: connection,
+    DOTNET_SYSTEM_NET_DISABLEIPV6: '1'
 });
 await waitFor('http://localhost:5110/health', 'API');
 

@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
@@ -35,7 +36,8 @@ public class BaseCatchListTest
         ITimeService? time = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
         ILoggingService? logging = null,
-        ICatchClient? catchClient = null)
+        ICatchClient? catchClient = null,
+        INetworkService? network = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -49,6 +51,7 @@ public class BaseCatchListTest
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(catchClient ?? EmptyCatchClient());
+        context.Services.AddSingleton(network ?? OnlineNetwork());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton<ICatchDateGroupingService, CatchDateGroupingService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
@@ -61,6 +64,13 @@ public class BaseCatchListTest
         client.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns((IReadOnlyList<CatchViewDto>)[]);
         return client;
+    }
+
+    protected static INetworkService OnlineNetwork(bool isOnline = true)
+    {
+        var network = Substitute.For<INetworkService>();
+        network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(isOnline);
+        return network;
     }
 
     protected static ILocalCatchOwnerService SignedInOwner(Guid? userId = null)

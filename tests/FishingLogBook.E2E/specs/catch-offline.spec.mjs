@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures.mjs';
-import { recordCatch, testName } from '../support/catch-journey.mjs';
+import { recordCatch, reloadServerCatches, testName } from '../support/catch-journey.mjs';
 
 test('records and edits locally offline, then synchronises once after reconnect', async ({ page, context }) => {
     await page.goto('/catches');
@@ -8,18 +8,17 @@ test('records and edits locally offline, then synchronises once after reconnect'
     await context.setOffline(true);
     const notes = testName('offline-edited');
     const id = await recordCatch(page, notes);
-    await page.goto('/catches');
     await expect(page.locator(`#catch-card-${id}`)).toContainText(notes);
     await expect(page.locator(`#catch-card-${id}`)).toContainText(/saved|device|sync/i);
 
-    await context.setOffline(false);
-    const responsePromise = page.waitForResponse(response =>
+    const synchronised = page.waitForResponse(response =>
         response.url().endsWith('/api/catches')
-        && response.request().method() === 'GET'
+        && ['POST', 'PUT'].includes(response.request().method())
         && response.ok());
-    await page.reload();
-    const serverCatches = await (await responsePromise).json();
-    expect(serverCatches.filter(catchRecord => catchRecord.id === id)).toHaveLength(1);
+    await context.setOffline(false);
+    await synchronised;
+    const persisted = await reloadServerCatches(page);
+    expect(persisted.filter(catchRecord => catchRecord.id === id)).toHaveLength(1);
     await expect(page.locator(`#catch-card-${id}`)).toContainText(notes);
     await expect(page.locator(`#catch-card-${id} [id^="catch-card-synchronising-"]`)).toHaveCount(0, { timeout: 30_000 });
     await expect(page.locator(`#catch-card-${id}`)).toHaveCount(1);

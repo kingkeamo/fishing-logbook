@@ -6,12 +6,25 @@ export function testName(label) {
     return `E2E-${process.env.GITHUB_RUN_ID ?? Date.now()}-${label}`;
 }
 
+export async function reloadServerCatches(page) {
+    const catches = page.waitForResponse(response =>
+        response.url().endsWith('/api/catches')
+        && response.request().method() === 'GET'
+        && response.ok())
+        .then(response => response.json());
+    await page.reload();
+    return catches;
+}
+
 export async function recordCatch(page, notes, waitForServer = false) {
-    await page.goto('/catches');
+    if (new URL(page.url()).pathname !== '/catches') {
+        await page.goto('/catches');
+    }
+    await expect(page.locator('#catch-list-title')).toBeVisible();
     await expect(page.locator('#catch-list-loading')).toBeHidden();
     const existingIds = new Set(await page.locator('.catch-card').evaluateAll(cards =>
         cards.map(card => card.id.replace('catch-card-', ''))));
-    await page.goto('/catches/record');
+    await page.locator('#catch-record-link').click();
     await expect(page.locator('#record-catch-title')).toBeVisible();
     await page.locator('#record-catch-method-Fly').click();
     await page.locator('#record-catch-species-BrownTrout').click();
@@ -45,5 +58,7 @@ export async function recordCatch(page, notes, waitForServer = false) {
         await save.click();
     }
     await expect(page.locator('#catch-edit-saved')).toBeVisible();
+    await page.locator('a[href="/catches"]').first().click();
+    await expect(page.locator('#catch-list-title')).toBeVisible();
     return id;
 }

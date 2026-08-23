@@ -2,10 +2,16 @@ import { chromium } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+const landingRouteTimeout = 90_000;
+
 export default async function authenticate(config) {
     const username = required('E2E_COGNITO_USERNAME');
     const password = required('E2E_COGNITO_PASSWORD');
-    const browser = await chromium.launch();
+    const debugging = process.env.PWDEBUG === '1';
+    const browser = await chromium.launch({
+        headless: !debugging,
+        slowMo: debugging ? 100 : 0
+    });
     const context = await browser.newContext({
         baseURL: config.projects[0].use.baseURL,
         ignoreHTTPSErrors: true,
@@ -14,6 +20,14 @@ export default async function authenticate(config) {
 
     try {
         const page = await context.newPage();
+        page.on('console', message => {
+            if (message.type() === 'error' && message.text().startsWith('[FLB]')) {
+                console.error(`[E2E browser] ${message.text()}`);
+            }
+        });
+        page.on('pageerror', error => {
+            console.error(`[E2E browser page error] ${error.message}`);
+        });
         await page.goto('/');
         await page.locator('#landing-sign-in').click();
         await page.waitForURL(url => !url.hostname.includes('localhost'));
@@ -24,6 +38,9 @@ export default async function authenticate(config) {
         await page.waitForURL(url =>
             url.origin === applicationOrigin
             && !url.pathname.includes('/authentication/login-callback'), { timeout: 45_000 });
+        await page.waitForURL(url =>
+            url.origin === applicationOrigin
+            && ['/catches', '/onboarding'].includes(url.pathname), { timeout: landingRouteTimeout });
         await completeOnboardingWhenRequired(page);
 
         await mkdir(resolve('.auth'), { recursive: true });
@@ -41,10 +58,10 @@ export default async function authenticate(config) {
 }
 
 async function completeOnboardingWhenRequired(page) {
-    await page.goto('/onboarding');
-    await page.locator('#onboarding-loading').waitFor({ state: 'hidden' });
     if (new URL(page.url()).pathname === '/catches') return;
 
+    await page.locator('#onboarding-loading').waitFor({ state: 'hidden' });
+    await page.locator('#onboarding-next').waitFor({ state: 'visible' });
     await page.locator('#onboarding-next').click();
     await page.locator('#onboarding-method-Fly').click();
     await page.locator('#onboarding-species-more-Fly').click();
