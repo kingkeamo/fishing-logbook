@@ -39,6 +39,14 @@
                    id="retry-diagnostics-probe-button">
             @Loc["Diagnostics_RetryProbe"]
         </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   FullWidth="true"
+                   Href="/diagnostics/webauthn-capability-probe"
+                   StartIcon="@Icons.Material.Filled.Fingerprint"
+                   id="webauthn-capability-probe-link">
+            @Loc["WebAuthnProbe_OpenAction"]
+        </MudButton>
         @if (ShowEmptyQueue)
         {
             <MudText Typo="Typo.body2" Class="mud-text-secondary" id="diagnostic-queue-empty">

@@ -83,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();
         services.AddScoped<IDiagnosticLogger, DiagnosticLogger>();
         services.AddScoped<IDiagnosticSynchroniser, DiagnosticSynchroniser>();
+        services.AddScoped<IWebAuthnCapabilityProbeService, WebAuthnCapabilityProbeService>();
         services.AddLocalization();
         services.AddScoped<ICatalogueLocalizer, CatalogueLocalizer>();
         services.AddScoped<ICultureService, CultureService>();

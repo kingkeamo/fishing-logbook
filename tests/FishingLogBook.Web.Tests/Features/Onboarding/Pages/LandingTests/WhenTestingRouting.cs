@@ -62,6 +62,43 @@ public class WhenTestingRouting : BaseLandingTest
     }
 
     [Fact]
+    public void ItShouldNotShowTheProbeActionWithoutProvisionedMetadata()
+    {
+        // Arrange
+        using var context = CreateContext(Onboarding(false), isAuthenticated: false);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.FindAll("#landing-webauthn-probe-action").Should().BeEmpty();
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().NotContain("webauthn-capability-probe");
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheProvisionedProbeWithoutNavigatingUntilTapped()
+    {
+        // Arrange
+        var probe = Probe(hasMetadata: true);
+        await using var context = CreateContext(Onboarding(false), isAuthenticated: false, probe);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.Find("#landing-webauthn-probe-action").TextContent.Should().Contain("Test offline device unlock");
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().NotContain("webauthn-capability-probe");
+        await probe.Received(1).HasMetadataAsync(Arg.Any<CancellationToken>());
+
+        // Act
+        await cut.Find("#landing-webauthn-probe-action").ClickAsync();
+
+        // Assert
+        context.Services.GetRequiredService<NavigationManager>().Uri
+            .Should().EndWith("/diagnostics/webauthn-capability-probe");
+    }
+
+    [Fact]
     public async Task ItShouldRouteAnIncompleteUserToOnboarding()
     {
         // Arrange
