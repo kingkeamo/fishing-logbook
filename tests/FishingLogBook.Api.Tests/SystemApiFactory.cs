@@ -32,6 +32,9 @@ public class SystemApiFactory : WebApplicationFactory<Program>
 
     public IUserIdentityRepository UserIdentityRepository { get; } = Substitute.For<IUserIdentityRepository>();
 
+    public IOfflineAccessPreferenceRepository OfflineAccessPreferenceRepository { get; } =
+        Substitute.For<IOfflineAccessPreferenceRepository>();
+
     public IProfileRepository ProfileRepository { get; } = Substitute.For<IProfileRepository>();
 
     public ICatchRepository CatchRepository { get; } = Substitute.For<ICatchRepository>();
@@ -66,6 +69,14 @@ public class SystemApiFactory : WebApplicationFactory<Program>
         UserIdentityRepository
             .UpdateEmailAsync(Arg.Any<User>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
+        OfflineAccessPreferenceRepository
+            .GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(new FishingLogBook.Shared.Dtos.OfflineAccessPreferenceDto(false)));
+        OfflineAccessPreferenceRepository
+            .SetAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(new FishingLogBook.Shared.Dtos.OfflineAccessPreferenceDto(
+                call.ArgAt<bool>(1),
+                call.ArgAt<bool>(1) ? DateTimeOffset.Parse("2026-08-23T12:00:00Z") : null)));
         ProfileRepository
             .UserExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(true));
@@ -195,6 +206,8 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(_ => ObjectStorage);
             services.RemoveAll<IUserIdentityRepository>();
             services.AddSingleton(UserIdentityRepository);
+            services.RemoveAll<IOfflineAccessPreferenceRepository>();
+            services.AddSingleton(OfflineAccessPreferenceRepository);
             services.RemoveAll<IProfileRepository>();
             services.AddSingleton(ProfileRepository);
             services.RemoveAll<ICatchRepository>();

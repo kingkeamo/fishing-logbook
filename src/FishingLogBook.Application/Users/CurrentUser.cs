@@ -8,9 +8,13 @@ public sealed class CurrentUser : ICurrentUser
 
     public string Email { get; private set; } = string.Empty;
 
+    public string Provider { get; private set; } = string.Empty;
+
+    public string Subject { get; private set; } = string.Empty;
+
     public bool IsResolved { get; private set; }
 
-    public void Assign(Guid userId, string email)
+    public void Assign(Guid userId, string email, string provider, string subject)
     {
         if (userId == Guid.Empty)
         {
@@ -22,8 +26,15 @@ public sealed class CurrentUser : ICurrentUser
             throw new InvalidOperationException("Authenticated email is missing.");
         }
 
+        if (string.IsNullOrWhiteSpace(provider) || string.IsNullOrWhiteSpace(subject))
+        {
+            throw new InvalidOperationException("Authenticated identity is missing.");
+        }
+
         UserId = userId;
         Email = email;
+        Provider = provider;
+        Subject = subject;
         IsResolved = true;
     }
 }

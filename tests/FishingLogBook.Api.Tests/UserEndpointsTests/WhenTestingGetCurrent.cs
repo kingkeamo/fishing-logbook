@@ -166,6 +166,8 @@ public class WhenTestingGetCurrent : IClassFixture<SystemApiFactory>
         body.Should().NotBeNull();
         body!.UserId.Should().NotBe(Guid.Empty);
         body.Email.Should().Be(TestJwt.Email);
+        body.Provider.Should().Be(IdentityProviderConstants.Cognito);
+        body.Subject.Should().Be(TestJwt.Subject);
         await _factory.UserIdentityRepository.Received(1).FindUserIdAsync(
             Arg.Is<FindUserIdentityArgs>(args =>
                 args.Provider == IdentityProviderConstants.Cognito
@@ -392,6 +394,42 @@ public class WhenTestingGetCurrent : IClassFixture<SystemApiFactory>
             Arg.Any<CancellationToken>());
         await _factory.UserIdentityRepository.DidNotReceive().UpdateEmailAsync(
             Arg.Any<User>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnTheCurrentUsersOfflineAccessPreference()
+    {
+        _factory.OfflineAccessPreferenceRepository.ClearReceivedCalls();
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.GetAsync("/api/users/current/offline-access-preference");
+        var body = await response.Content.ReadFromJsonAsync<OfflineAccessPreferenceDto>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().Be(new OfflineAccessPreferenceDto(false));
+        await _factory.OfflineAccessPreferenceRepository.Received(1).GetAsync(
+            Arg.Is<Guid>(value => value != Guid.Empty),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldEnableOfflineAccessUsingServerControlledIdentityAndTimestamp()
+    {
+        _factory.OfflineAccessPreferenceRepository.ClearReceivedCalls();
+        var client = _factory.CreateAuthenticatedClient();
+
+        var response = await client.PutAsJsonAsync(
+            "/api/users/current/offline-access-preference",
+            new OfflineAccessPreferenceDto(true, DateTimeOffset.MinValue));
+        var body = await response.Content.ReadFromJsonAsync<OfflineAccessPreferenceDto>();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body!.Enabled.Should().BeTrue();
+        body.EnabledAt.Should().Be(DateTimeOffset.Parse("2026-08-23T12:00:00Z"));
+        await _factory.OfflineAccessPreferenceRepository.Received(1).SetAsync(
+            Arg.Is<Guid>(value => value != Guid.Empty),
+            true,
             Arg.Any<CancellationToken>());
     }
 }

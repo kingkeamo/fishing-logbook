@@ -47,7 +47,9 @@ public class WhenTestingGetCurrent : BaseCurrentUserClientTest
         // Arrange
         var expected = new CurrentUserDto(
             Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            "owner@example.test");
+            "owner@example.test",
+            "Cognito",
+            "owner-subject");
         var json = JsonSerializer.Serialize(expected, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         var apiHandler = new RecordingHandler(HttpStatusCode.OK, json);
         var client = CreateClient(apiHandler);
