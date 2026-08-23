@@ -139,3 +139,4 @@ public static class ServiceCollectionExtensions
         options.ProviderOptions.AdditionalProviderParameters["resource"] = authConfig.ApiResource;
     }
 }
+

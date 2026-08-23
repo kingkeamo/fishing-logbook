@@ -41,3 +41,4 @@ public class WhenTestingProbe : BaseDiagnosticsInspectorTest
         await store.DidNotReceive().EnqueueAsync(Arg.Any<DiagnosticEventModel>(), Arg.Any<CancellationToken>());
     }
 }
+

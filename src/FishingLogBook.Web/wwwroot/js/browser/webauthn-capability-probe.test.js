@@ -236,3 +236,4 @@ describe('WebAuthn capability probe', () => {
         expect((await getProbeStatus()).hasProbeMetadata).toBe(false);
     });
 });
+

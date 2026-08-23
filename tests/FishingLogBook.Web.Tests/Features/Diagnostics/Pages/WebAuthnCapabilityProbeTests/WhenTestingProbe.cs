@@ -122,7 +122,7 @@ public class WhenTestingProbe : BaseWebAuthnCapabilityProbeTest
 
         // Assert
         cut.Find("#webauthn-probe-title").TextContent
-            .Should().Contain("Test de capacité de déverrouillage hors ligne");
+            .Should().Contain("Test de capacitÃ© de dÃ©verrouillage hors ligne");
         cut.Find("#webauthn-probe-cleanup-note").TextContent.Should().Contain("Google Password Manager");
     }
 
@@ -146,3 +146,4 @@ public class WhenTestingProbe : BaseWebAuthnCapabilityProbeTest
         cut.Find("#remove-webauthn-probe-metadata-button").HasAttribute("disabled").Should().BeTrue();
     }
 }
+

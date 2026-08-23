@@ -57,3 +57,4 @@ public sealed class WebAuthnCapabilityProbeService : IWebAuthnCapabilityProbeSer
         return _jsRuntime.InvokeAsync<IJSObjectReference>("import", cancellationToken, ModulePath);
     }
 }
+

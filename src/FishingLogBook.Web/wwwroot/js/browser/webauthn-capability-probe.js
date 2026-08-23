@@ -198,7 +198,7 @@ export async function provisionTestCredential() {
         const credential = await navigator.credentials.create({
             publicKey: {
                 challenge: randomBytes(32),
-                rp: { name: 'Catch But Don’t Forget' },
+                rp: { name: 'Catch But Donâ€™t Forget' },
                 user: {
                     id: randomBytes(32),
                     name: 'webauthn-capability-probe',
@@ -331,3 +331,4 @@ export async function testOfflineUnlock() {
 export function removeProbeMetadata() {
     localStorage.removeItem(storageKey);
 }
+

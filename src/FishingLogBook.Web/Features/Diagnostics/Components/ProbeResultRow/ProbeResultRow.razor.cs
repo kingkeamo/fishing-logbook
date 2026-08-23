@@ -10,3 +10,4 @@ public partial class ProbeResultRow : ComponentBase
     [Parameter, EditorRequired]
     public string Value { get; set; } = string.Empty;
 }
+

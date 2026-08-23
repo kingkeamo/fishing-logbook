@@ -1,17 +1,25 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using FishingLogBook.Web.Features.Authentication.Components.RedirectToLogin
 
 <AppErrorBoundary>
     <CascadingAuthenticationState>
         <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(FishingLogBook.Web.Pages.NotFound.NotFound)">
             <Found Context="routeData">
-                <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
-                    <NotAuthorized>
-                        <RedirectToLogin />
-                    </NotAuthorized>
-                </AuthorizeRouteView>
+                @if (routeData.PageType == typeof(FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing))
+                {
+                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+                }
+                else
+                {
+                    <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                        <NotAuthorized>
+                            <RedirectToLogin />
+                        </NotAuthorized>
+                    </AuthorizeRouteView>
+                }
                 <FocusOnNavigate RouteData="@routeData" Selector="h1" />
             </Found>
         </Router>
     </CascadingAuthenticationState>
 </AppErrorBoundary>
+

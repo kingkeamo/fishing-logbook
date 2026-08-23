@@ -28,3 +28,4 @@ public sealed record WebAuthnCapabilityProbeResultModel
 
     public string Outcome { get; init; } = "unknown";
 }
+
