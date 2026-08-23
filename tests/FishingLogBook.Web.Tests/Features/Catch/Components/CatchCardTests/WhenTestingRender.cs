@@ -12,6 +12,22 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Components.CatchCardTests;
 public class WhenTestingRender : BaseCatchCardTest
 {
     [Fact]
+    public async Task ItShouldPositionTheActionsMenuRelativeToTheCard()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(component => component.Catch, StoredCatch(catchId)));
+
+        // Assert
+        cut.Find(".catch-card-positioner").Should().NotBeNull();
+        cut.Find($"#catch-card-menu-{catchId:D}").Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task ItShouldRenderThePhotographThumbnail()
     {
         // Arrange

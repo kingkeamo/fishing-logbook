@@ -4,6 +4,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
@@ -24,6 +25,9 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    [Inject]
+    private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 
     [Inject]
     private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
@@ -103,6 +107,12 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private async Task SynchroniseAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
+        if (!ShouldSynchroniseCurrentRoute()
+            || (await AuthenticationStateProvider.GetAuthenticationStateAsync()).User.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
         try
         {
             await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
@@ -134,6 +144,14 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
                 exception,
                 CancellationToken.None);
         }
+    }
+
+    private bool ShouldSynchroniseCurrentRoute()
+    {
+        var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        return !string.IsNullOrEmpty(path)
+            && !path.Equals("onboarding", StringComparison.OrdinalIgnoreCase)
+            && !path.StartsWith("authentication/", StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs args)

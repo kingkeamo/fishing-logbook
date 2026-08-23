@@ -1,0 +1,14 @@
+{
+  "name": "fishing-logbook-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:browsers": "playwright install chromium",
+    "test:config": "node --test tests/config.test.mjs",
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1"
+  }
+}

@@ -3,6 +3,9 @@
 [Oo]bj/
 [Oo]ut/
 artifacts/
+tests/FishingLogBook.E2E/.auth/
+tests/FishingLogBook.E2E/.runtime/
+tests/FishingLogBook.E2E/artifacts/
 *.user
 *.suo
 *.userosscache
