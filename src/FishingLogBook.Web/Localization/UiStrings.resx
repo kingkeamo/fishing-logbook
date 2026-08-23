@@ -800,6 +800,7 @@
   <data name="OfflineAccess_Repair" xml:space="preserve"><value>Offline access needs to be set up again on this device.</value></data>
   <data name="OfflineAccess_Cancelled" xml:space="preserve"><value>Device verification was cancelled. You can try again or continue without offline access.</value></data>
   <data name="OfflineAccess_Failed" xml:space="preserve"><value>Offline access could not be set up. Please try again.</value></data>
+  <data name="OfflineAccess_Diagnostic" xml:space="preserve"><value>Validation stage: {0}. Safe error: {1}</value></data>
   <data name="OfflineAccess_RemoveDevice" xml:space="preserve"><value>Remove from this device</value></data>
   <data name="OfflineAccess_TurnOffAccount" xml:space="preserve"><value>Turn off for my account</value></data>
   <data name="Onboarding_OfflineAccessStep" xml:space="preserve"><value>Offline Access</value></data>
