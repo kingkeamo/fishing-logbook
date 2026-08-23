@@ -12,8 +12,6 @@ namespace FishingLogBook.Web.Features.Onboarding.Pages.Landing;
 public partial class Landing : ComponentBase, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private bool _isResolvingAuthentication = true;
-    private bool _isAnonymous;
     private bool _showWebAuthnProbeAction;
 
     [Inject] private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
@@ -21,28 +19,66 @@ public partial class Landing : ComponentBase, IDisposable
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
     [Inject] private IWebAuthnCapabilityProbeService WebAuthnProbe { get; set; } = default!;
+    [Inject] private ILoggingService Logging { get; set; } = default!;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
+        _ = LoadProbeAvailabilityAsync();
+        _ = ResolveAuthenticationAsync();
+    }
+
+    private async Task LoadProbeAvailabilityAsync()
+    {
+        var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            _showWebAuthnProbeAction = await WebAuthnProbe.HasMetadataAsync(_cancellationTokenSource.Token);
+            var showAction = await WebAuthnProbe.HasMetadataAsync(cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await InvokeAsync(() =>
+            {
+                _showWebAuthnProbeAction = showAction;
+                StateHasChanged();
+            });
         }
         catch (JSException)
         {
-            _showWebAuthnProbeAction = false;
         }
-
-        var authentication = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        if (authentication.User.Identity?.IsAuthenticated != true)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _isAnonymous = true;
-            _isResolvingAuthentication = false;
-            return;
         }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("landing probe availability", exception, CancellationToken.None);
+        }
+    }
 
-        var completed = await Onboarding.IsCompletedAsync(_cancellationTokenSource.Token);
-        Navigation.NavigateTo(completed ? "/catches" : "/onboarding", replace: true);
+    private async Task ResolveAuthenticationAsync()
+    {
+        var cancellationToken = _cancellationTokenSource.Token;
+        try
+        {
+            var authentication = await AuthenticationStateProvider
+                .GetAuthenticationStateAsync()
+                .WaitAsync(cancellationToken);
+            if (authentication.User.Identity?.IsAuthenticated != true)
+            {
+                return;
+            }
+
+            var completed = await Onboarding.IsCompletedAsync(cancellationToken);
+            Navigation.NavigateTo(completed ? "/catches" : "/onboarding", replace: true);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("landing authentication resolution", exception, CancellationToken.None);
+        }
     }
 
     private void BeginCreateAccount()

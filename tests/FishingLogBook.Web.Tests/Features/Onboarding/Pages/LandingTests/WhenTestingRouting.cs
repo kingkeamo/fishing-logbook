@@ -1,6 +1,10 @@
+using System.Security.Claims;
 using AwesomeAssertions;
 using Bunit;
+using FishingLogBook.Web.Features.Diagnostics.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using LandingPage = FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing;
@@ -9,6 +13,133 @@ namespace FishingLogBook.Web.Tests.Features.Onboarding.Pages.LandingTests;
 
 public class WhenTestingRouting : BaseLandingTest
 {
+    [Fact]
+    public async Task ItShouldRenderLandingThroughTheRouterWhileAuthenticationIsPending()
+    {
+        // Arrange
+        var authentication = new TaskCompletionSource<AuthenticationState>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var context = CreateContext(
+            Onboarding(false),
+            authenticationStateProvider: Authentication(authentication.Task));
+        AddApplicationShell(context);
+
+        // Act
+        var cut = context.Render<App>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#public-landing-page").Should().NotBeNull());
+        cut.Markup.Should().NotContain("Authorizing...");
+    }
+
+    [Fact]
+    public void ItShouldKeepApplicationPagesProtected()
+    {
+        // Arrange
+        Type[] protectedPages =
+        [
+            typeof(FishingLogBook.Web.Features.Catch.Pages.CatchList.CatchList),
+            typeof(FishingLogBook.Web.Features.Catch.Pages.RecordCatch.RecordCatch),
+            typeof(FishingLogBook.Web.Features.Catch.Pages.CatchEdit.CatchEdit),
+            typeof(FishingLogBook.Web.Features.Profile.Pages.Profile.Profile),
+            typeof(FishingLogBook.Web.Features.Onboarding.Pages.Onboarding.Onboarding)
+        ];
+
+        // Act
+        var attributes = protectedPages.ToDictionary(
+            page => page,
+            page => page.GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true));
+
+        // Assert
+        attributes.Should().OnlyContain(entry => entry.Value.Length == 1);
+    }
+
+    [Fact]
+    public async Task ItShouldRenderThePublicFrontDoorWhileAuthenticationIsPending()
+    {
+        // Arrange
+        var authentication = new TaskCompletionSource<AuthenticationState>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var onboarding = Onboarding(false);
+        await using var context = CreateContext(
+            onboarding,
+            authenticationStateProvider: Authentication(authentication.Task));
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.Find("#public-landing-page").Should().NotBeNull();
+        cut.FindAll("#landing-loading").Should().BeEmpty();
+        await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheProbeAvailableWhileAuthenticationIsPending()
+    {
+        // Arrange
+        var authentication = new TaskCompletionSource<AuthenticationState>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = Probe(hasMetadata: true);
+        await using var context = CreateContext(
+            Onboarding(false),
+            probe: probe,
+            authenticationStateProvider: Authentication(authentication.Task));
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#landing-webauthn-probe-action").Should().NotBeNull());
+        await probe.Received(1).HasMetadataAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepThePublicFrontDoorWhenAuthenticationFails()
+    {
+        // Arrange
+        var exception = new InvalidOperationException("OIDC unavailable");
+        var logging = Substitute.For<ILoggingService>();
+        var onboarding = Onboarding(false);
+        await using var context = CreateContext(
+            onboarding,
+            authenticationStateProvider: Authentication(Task.FromException<AuthenticationState>(exception)),
+            logging: logging);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.Find("#public-landing-page").Should().NotBeNull();
+        await logging.Received(1).LogErrorAsync(
+            "landing authentication resolution",
+            exception,
+            CancellationToken.None);
+        await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRedirectAfterPendingAuthenticationResolvesForACompletedUser()
+    {
+        // Arrange
+        var authentication = new TaskCompletionSource<AuthenticationState>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var onboarding = Onboarding(true);
+        await using var context = CreateContext(
+            onboarding,
+            authenticationStateProvider: Authentication(authentication.Task));
+        var cut = context.Render<LandingPage>();
+
+        // Act
+        authentication.SetResult(Authenticated());
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/catches"));
+        await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task ItShouldRenderThePublicFrontDoorWithoutLoadingAProfile()
     {
@@ -126,5 +257,13 @@ public class WhenTestingRouting : BaseLandingTest
         // Assert
         context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/catches");
         await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    private static AuthenticationState Authenticated()
+    {
+        var identity = new ClaimsIdentity(
+            [new Claim(ClaimTypes.Name, "angler@example.test")],
+            "Test");
+        return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 }

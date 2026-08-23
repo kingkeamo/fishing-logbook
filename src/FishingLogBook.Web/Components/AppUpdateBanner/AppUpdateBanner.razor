@@ -2,27 +2,29 @@
 
 @if (IsVisible)
 {
-    <MudPaper Class="app-update-banner" Elevation="1" Outlined="true" role="status" aria-live="polite" id="app-update-banner">
-        <div class="app-update-banner-content">
-            <MudIcon Icon="@Icons.Material.Filled.SystemUpdate" Color="Color.Primary" Size="Size.Small" aria-hidden="true" />
-            <div class="app-update-banner-text">
-                <MudText Typo="Typo.subtitle1" id="app-update-banner-title">@Title</MudText>
-                <MudText Typo="Typo.body2" Class="mud-text-secondary" id="app-update-banner-body">@Body</MudText>
+    <div class="app-update-banner-host">
+        <MudPaper Class="app-update-banner" Elevation="1" Outlined="true" role="status" aria-live="polite" id="app-update-banner">
+            <div class="app-update-banner-content">
+                <MudIcon Icon="@Icons.Material.Filled.SystemUpdate" Color="Color.Primary" Size="Size.Small" aria-hidden="true" />
+                <div class="app-update-banner-text">
+                    <MudText Typo="Typo.subtitle1" id="app-update-banner-title">@Title</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary" id="app-update-banner-body">@Body</MudText>
+                </div>
             </div>
-        </div>
-        @if (ShowAction)
-        {
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       Size="Size.Medium"
-                       StartIcon="@Icons.Material.Filled.SystemUpdate"
-                       OnClick="UpdateAsync"
-                       Disabled="IsActivating"
-                       Class="app-update-banner-action"
-                       aria-label="@Loc["Update_Action"]"
-                       id="app-update-banner-action">
-                @Loc["Update_Action"]
-            </MudButton>
-        }
-    </MudPaper>
+            @if (ShowAction)
+            {
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Medium"
+                           StartIcon="@Icons.Material.Filled.SystemUpdate"
+                           OnClick="UpdateAsync"
+                           Disabled="IsActivating"
+                           Class="app-update-banner-action"
+                           aria-label="@Loc["Update_Action"]"
+                           id="app-update-banner-action">
+                    @Loc["Update_Action"]
+                </MudButton>
+            }
+        </MudPaper>
+    </div>
 }

@@ -1,8 +1,11 @@
-.app-update-banner {
+.app-update-banner-host {
+    margin: 0.75rem;
+}
+
+.app-update-banner-host ::deep .app-update-banner {
     display: flex;
     flex-direction: column;
     gap: 0.625rem;
-    margin: 0.75rem;
     padding: 0.75rem;
 }
 
@@ -19,21 +22,24 @@
     min-width: 0;
 }
 
-.app-update-banner-action {
+.app-update-banner-host ::deep .app-update-banner-action {
     min-height: 2.75rem;
     width: 100%;
 }
 
 @media (min-width: 600px) {
-    .app-update-banner {
+    .app-update-banner-host {
+        margin: 0.75rem 1.5rem;
+    }
+
+    .app-update-banner-host ::deep .app-update-banner {
         align-items: center;
         flex-direction: row;
         justify-content: space-between;
-        margin: 0.75rem 1.5rem;
         padding: 0.625rem 0.875rem;
     }
 
-    .app-update-banner-action {
+    .app-update-banner-host ::deep .app-update-banner-action {
         flex-shrink: 0;
         width: auto;
     }
