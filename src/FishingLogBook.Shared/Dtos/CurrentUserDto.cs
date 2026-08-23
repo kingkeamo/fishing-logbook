@@ -1,3 +1,3 @@
 namespace FishingLogBook.Shared.Dtos;
 
-public sealed record CurrentUserDto(Guid UserId, string Email);
+public sealed record CurrentUserDto(Guid UserId, string Email, string Provider, string Subject);

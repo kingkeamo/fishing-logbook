@@ -1,7 +1,7 @@
 using Bunit;
 using Bunit.TestDoubles;
-using FishingLogBook.Web.Features.Authentication.Components.UserMenu;
 using FishingLogBook.Web.Configuration;
+using FishingLogBook.Web.Features.Authentication.Components.UserMenu;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;

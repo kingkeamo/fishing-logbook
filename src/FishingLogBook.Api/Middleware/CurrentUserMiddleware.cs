@@ -47,7 +47,7 @@ public sealed class CurrentUserMiddleware
                     Email = authenticatedEmail
                 },
                 context.RequestAborted);
-            if (!TryAssignCurrentUser(context, currentUser, response, authenticatedEmail))
+            if (!TryAssignCurrentUser(context, currentUser, response, authenticatedEmail, subject))
             {
                 return;
             }
@@ -71,7 +71,8 @@ public sealed class CurrentUserMiddleware
         HttpContext context,
         ICurrentUser currentUser,
         ResolveCurrentUserResponse response,
-        string email)
+        string email,
+        string subject)
     {
         if (response.IsFailure)
         {
@@ -81,7 +82,7 @@ public sealed class CurrentUserMiddleware
             return false;
         }
 
-        currentUser.Assign(response.UserId, email);
+        currentUser.Assign(response.UserId, email, IdentityProviderConstants.Cognito, subject);
         return true;
     }
 

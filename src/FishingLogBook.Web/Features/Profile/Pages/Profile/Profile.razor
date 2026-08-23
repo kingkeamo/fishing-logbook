@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using FishingLogBook.Shared.Dtos
 @using FishingLogBook.Shared.Enums
+@using FishingLogBook.Web.Features.OfflineAccess.Components
 @attribute [Authorize]
 
 <PageTitle>@Loc["Profile_PageTitle"]</PageTitle>
@@ -213,4 +214,5 @@
             </MudPaper>
         }
     </MudStack>
+    <OfflineAccessSetup />
 </MudContainer>

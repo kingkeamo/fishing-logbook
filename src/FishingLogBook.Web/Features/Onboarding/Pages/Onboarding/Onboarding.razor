@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using FishingLogBook.Shared.Enums
 @using FishingLogBook.Web.Browser.Install
+@using FishingLogBook.Web.Features.OfflineAccess.Components
 @attribute [Authorize]
 
 <PageTitle>@Loc["Onboarding_PageTitle"]</PageTitle>
@@ -132,6 +133,14 @@
                                 <InstallGuidance ShowInstallLaterMessage="true" />
                             </div>
                         </MudStep>
+                        <MudStep Title="@Loc["Onboarding_OfflineAccessStep"]">
+                            <div class="py-4">
+                                <OfflineAccessSetup ReadyChanged="OnOfflineAccessReadyChanged" />
+                                <MudText Typo="Typo.caption" Class="mt-3 mud-text-secondary" id="onboarding-offline-optional">
+                                    @Loc["Onboarding_OfflineAccessOptional"]
+                                </MudText>
+                            </div>
+                        </MudStep>
                     </ChildContent>
                     <ActionContent></ActionContent>
                 </MudStepper>
@@ -151,13 +160,15 @@
                     {
                         <MudButton Variant="Variant.Text" OnClick="Previous" id="onboarding-previous">@Loc["Action_Back"]</MudButton>
                     }
-                    @if (_activeStep < 3)
+                    @if (_activeStep < 4)
                     {
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextAsync" Disabled="@(_isSaving || (_activeStep == 2 && !_locationHandled))" id="onboarding-next">@Loc["Action_Next"]</MudButton>
                     }
                     else
                     {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync" Disabled="_isSaving" id="onboarding-finish">@Loc["Onboarding_Finish"]</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync" Disabled="_isSaving" id="onboarding-finish">
+                            @Loc[_offlineAccessReady ? "Onboarding_Finish" : "Action_NotNow"]
+                        </MudButton>
                     }
                 </MudStack>
             </MudStack>

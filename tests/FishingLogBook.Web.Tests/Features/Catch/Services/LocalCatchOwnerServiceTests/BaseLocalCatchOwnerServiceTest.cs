@@ -27,7 +27,7 @@ public class BaseLocalCatchOwnerServiceTest
     {
         var client = Substitute.For<ICurrentUserClient>();
         client.GetCurrentAsync(Arg.Any<CancellationToken>())
-            .Returns(new CurrentUserDto(userId, email));
+            .Returns(new CurrentUserDto(userId, email, "Cognito", OwnerSubject));
         return client;
     }
 

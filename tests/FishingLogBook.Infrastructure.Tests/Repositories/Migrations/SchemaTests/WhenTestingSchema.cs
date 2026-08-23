@@ -110,4 +110,24 @@ public class WhenTestingSchema
         // Assert
         nullable.Should().Be("YES");
     }
+
+    [Fact]
+    public async Task ItShouldExposeOfflineAccessPreferenceAndServerTimestamp()
+    {
+        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
+        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+
+        var columns = await connection.QueryAsync<(string Name, string Nullable)>(
+            """
+            SELECT "column_name" AS "Name", "is_nullable" AS "Nullable"
+            FROM information_schema.columns
+            WHERE "table_schema" = 'public' AND "table_name" = 'User'
+              AND "column_name" IN ('OfflineAccessEnabled', 'OfflineAccessEnabledAt');
+            """);
+
+        columns.Should().Contain(column =>
+            column.Name == "OfflineAccessEnabled" && column.Nullable == "NO");
+        columns.Should().Contain(column =>
+            column.Name == "OfflineAccessEnabledAt" && column.Nullable == "YES");
+    }
 }

@@ -789,4 +789,19 @@
   <data name="WebAuthnProbe_Outcome_missing-metadata" xml:space="preserve"><value>Aucune métadonnée de test n’est enregistrée</value></data>
   <data name="WebAuthnProbe_Outcome_cancelled" xml:space="preserve"><value>L’authentification de l’appareil a été annulée</value></data>
   <data name="WebAuthnProbe_Outcome_failed" xml:space="preserve"><value>Le test de capacité a échoué</value></data>
+  <data name="OfflineAccess_Title" xml:space="preserve"><value>Accès hors ligne</value></data>
+  <data name="OfflineAccess_Description" xml:space="preserve"><value>Configurez cet appareil pour ouvrir en toute sécurité vos propres données de pêche enregistrées sans connexion. Votre appareil vous demandera de confirmer votre identité.</value></data>
+  <data name="OfflineAccess_Setup" xml:space="preserve"><value>Configurer l’accès hors ligne</value></data>
+  <data name="OfflineAccess_Ready" xml:space="preserve"><value>L’accès hors ligne est prêt sur cet appareil.</value></data>
+  <data name="OfflineAccess_NotConfigured" xml:space="preserve"><value>L’accès hors ligne n’est pas configuré sur cet appareil.</value></data>
+  <data name="OfflineAccess_EnabledOtherDevice" xml:space="preserve"><value>L’accès hors ligne est activé pour votre compte. Configurez cet appareil pour l’utiliser ici.</value></data>
+  <data name="OfflineAccess_Unsupported" xml:space="preserve"><value>Cet appareil ou navigateur ne permet pas de configurer un accès hors ligne sécurisé.</value></data>
+  <data name="OfflineAccess_InstallRequired" xml:space="preserve"><value>Sur iPhone ou iPad, installez d’abord Catch But Don’t Forget et ouvrez l’app depuis votre écran d’accueil. Vous pourrez ensuite configurer l’accès hors ligne ici.</value></data>
+  <data name="OfflineAccess_Repair" xml:space="preserve"><value>L’accès hors ligne doit être reconfiguré sur cet appareil.</value></data>
+  <data name="OfflineAccess_Cancelled" xml:space="preserve"><value>La vérification de l’appareil a été annulée. Vous pouvez réessayer ou continuer sans accès hors ligne.</value></data>
+  <data name="OfflineAccess_Failed" xml:space="preserve"><value>Impossible de configurer l’accès hors ligne. Veuillez réessayer.</value></data>
+  <data name="OfflineAccess_RemoveDevice" xml:space="preserve"><value>Supprimer de cet appareil</value></data>
+  <data name="OfflineAccess_TurnOffAccount" xml:space="preserve"><value>Désactiver pour mon compte</value></data>
+  <data name="Onboarding_OfflineAccessStep" xml:space="preserve"><value>Accès hors ligne</value></data>
+  <data name="Onboarding_OfflineAccessOptional" xml:space="preserve"><value>L’accès hors ligne est facultatif. Choisissez Ouvrir mon carnet pour continuer sans le configurer.</value></data>
 </root>

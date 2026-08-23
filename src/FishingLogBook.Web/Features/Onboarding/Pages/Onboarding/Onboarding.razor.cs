@@ -20,6 +20,7 @@ public partial class Onboarding : ComponentBase, IDisposable
     private bool _isSaving;
     private bool _saveFailed;
     private bool _locationHandled;
+    private bool _offlineAccessReady;
     private string? _preferenceValidationMessage;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
@@ -340,6 +341,8 @@ public partial class Onboarding : ComponentBase, IDisposable
             _isSaving = false;
         }
     }
+
+    private void OnOfflineAccessReadyChanged(bool ready) => _offlineAccessReady = ready;
 
     public void Dispose()
     {

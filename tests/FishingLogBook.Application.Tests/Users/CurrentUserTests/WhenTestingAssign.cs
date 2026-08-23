@@ -9,7 +9,7 @@ public class WhenTestingAssign : BaseCurrentUserTest
     public void ItShouldRejectAnEmptyUserId()
     {
         // Arrange
-        var act = () => Sut.Assign(Guid.Empty, "eamonn@example.test");
+        var act = () => Sut.Assign(Guid.Empty, "eamonn@example.test", "Cognito", "subject");
 
         // Act
         // Assert
@@ -25,7 +25,7 @@ public class WhenTestingAssign : BaseCurrentUserTest
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var act = () => Sut.Assign(userId, "  ");
+        var act = () => Sut.Assign(userId, "  ", "Cognito", "subject");
 
         // Act
         // Assert
@@ -44,13 +44,27 @@ public class WhenTestingAssign : BaseCurrentUserTest
         const string email = "eamonn@example.test";
 
         // Act
-        Sut.Assign(userId, email);
+        Sut.Assign(userId, email, "Cognito", "subject");
 
         // Assert
         Sut.IsResolved.Should().BeTrue();
         Sut.UserId.Should().Be(userId);
         Sut.UserId.Should().NotBe(Guid.Empty);
         Sut.Email.Should().Be(email);
+        Sut.Provider.Should().Be("Cognito");
+        Sut.Subject.Should().Be("subject");
         typeof(ICurrentUser).GetProperty(nameof(ICurrentUser.Email)).Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData("", "subject")]
+    [InlineData("Cognito", "")]
+    public void ItShouldRejectMissingTrustedIdentity(string provider, string subject)
+    {
+        var act = () => Sut.Assign(Guid.NewGuid(), "eamonn@example.test", provider, subject);
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Authenticated identity is missing.");
+        Sut.IsResolved.Should().BeFalse();
     }
 }

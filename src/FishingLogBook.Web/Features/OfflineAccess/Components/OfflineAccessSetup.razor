@@ -1,0 +1,107 @@
+@using FishingLogBook.Web.Features.OfflineAccess.Services
+@using FishingLogBook.Web.Browser.Install
+@using FishingLogBook.Web.Localization
+@using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider Services
+@inject IStringLocalizer<UiStrings> Loc
+
+<MudPaper Class="pa-4" Elevation="1" id="offline-access-setup">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h5">@Loc["OfflineAccess_Title"]</MudText>
+        <MudText>@Loc["OfflineAccess_Description"]</MudText>
+        @if (_loading)
+        {
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" id="offline-access-loading" />
+        }
+        else
+        {
+            <MudAlert Severity="@StatusSeverity" id="offline-access-status">@StatusText</MudAlert>
+            @if (_status?.IsReady == true)
+            {
+                <MudButton Variant="Variant.Outlined" OnClick="RemoveAsync" Disabled="_busy" id="offline-access-remove-device">
+                    @Loc["OfflineAccess_RemoveDevice"]
+                </MudButton>
+                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="TurnOffAsync" Disabled="_busy" id="offline-access-turn-off">
+                    @Loc["OfflineAccess_TurnOffAccount"]
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Fingerprint"
+                           OnClick="SetupAsync" Disabled="@(_busy || _installRequired)" id="offline-access-enable">
+                    @Loc["OfflineAccess_Setup"]
+                </MudButton>
+            }
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public EventCallback<bool> ReadyChanged { get; set; }
+
+    private FishingLogBook.Web.Features.OfflineAccess.Models.OfflineAccessStatusModel? _status;
+    private bool _loading = true;
+    private bool _busy;
+    private bool _installRequired;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var installService = Services.GetService<IInstallService>();
+            if (installService is not null)
+            {
+                var install = await installService.GetStateAsync(CancellationToken.None);
+                _installRequired = install.IsIos && !install.IsInstalled;
+            }
+
+            _status = _installRequired
+                ? new(false, "install-required")
+                : await Service.GetStatusAsync(CancellationToken.None);
+        }
+        catch { _status = new(false, "failed"); }
+        finally
+        {
+            _loading = false;
+            await ReadyChanged.InvokeAsync(_status?.IsReady == true);
+        }
+    }
+
+    private string StatusText => _status?.DeviceState switch
+    {
+        "ready" => Loc["OfflineAccess_Ready"],
+        "unsupported" => Loc["OfflineAccess_Unsupported"],
+        "install-required" => Loc["OfflineAccess_InstallRequired"],
+        "repair" => Loc["OfflineAccess_Repair"],
+        "cancelled" => Loc["OfflineAccess_Cancelled"],
+        "failed" => Loc["OfflineAccess_Failed"],
+        _ when _status?.AccountEnabled == true => Loc["OfflineAccess_EnabledOtherDevice"],
+        _ => Loc["OfflineAccess_NotConfigured"]
+    };
+
+    private Severity StatusSeverity => _status?.DeviceState switch
+    {
+        "ready" => Severity.Success,
+        "unsupported" or "install-required" or "repair" or "failed" => Severity.Warning,
+        _ => Severity.Info
+    };
+
+    private IOfflineAccessService Service => Services.GetRequiredService<IOfflineAccessService>();
+
+    private async Task SetupAsync() => await RunAsync(() => Service.SetupAsync(CancellationToken.None));
+    private async Task RemoveAsync() => await RunAsync(() => Service.RemoveFromDeviceAsync(CancellationToken.None));
+    private async Task TurnOffAsync() => await RunAsync(() => Service.TurnOffAccountAsync(CancellationToken.None));
+
+    private async Task RunAsync(Func<Task<FishingLogBook.Web.Features.OfflineAccess.Models.OfflineAccessStatusModel>> action)
+    {
+        _busy = true;
+        try
+        {
+            _status = await action();
+            await ReadyChanged.InvokeAsync(_status.IsReady);
+        }
+        catch { _status = new(_status?.AccountEnabled == true, "failed"); }
+        finally { _busy = false; }
+    }
+}

@@ -32,7 +32,7 @@ public class WhenTestingGetUserId : BaseLocalCatchOwnerServiceTest
         // Arrange
         var currentUser = Substitute.For<ICurrentUserClient>();
         currentUser.GetCurrentAsync(Arg.Any<CancellationToken>())
-            .Returns(new CurrentUserDto(Guid.Empty, "owner@example.test"));
+            .Returns(new CurrentUserDto(Guid.Empty, "owner@example.test", "Cognito", OwnerSubject));
         var jsRuntime = new MemoryJsRuntime();
         var sut = CreateSut(Authenticated(OwnerSubject), currentUser, jsRuntime);
 
