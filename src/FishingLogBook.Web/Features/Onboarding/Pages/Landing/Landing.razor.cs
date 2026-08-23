@@ -30,9 +30,10 @@ public partial class Landing : ComponentBase, IDisposable
 
     protected override void OnInitialized()
     {
+        AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         _ = LoadOfflineAvailabilityAsync();
         _ = LoadProbeAvailabilityAsync();
-        _ = ResolveAuthenticationAsync();
+        _ = ResolveAuthenticationAsync(AuthenticationStateProvider.GetAuthenticationStateAsync());
     }
 
     private async Task LoadOfflineAvailabilityAsync()
@@ -123,14 +124,17 @@ public partial class Landing : ComponentBase, IDisposable
         }
     }
 
-    private async Task ResolveAuthenticationAsync()
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> authenticationState)
+    {
+        _ = ResolveAuthenticationAsync(authenticationState);
+    }
+
+    private async Task ResolveAuthenticationAsync(Task<AuthenticationState> authenticationState)
     {
         var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            var authentication = await AuthenticationStateProvider
-                .GetAuthenticationStateAsync()
-                .WaitAsync(cancellationToken);
+            var authentication = await authenticationState.WaitAsync(cancellationToken);
             if (authentication.User.Identity?.IsAuthenticated != true)
             {
                 return;
@@ -165,6 +169,7 @@ public partial class Landing : ComponentBase, IDisposable
 
     public void Dispose()
     {
+        AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }

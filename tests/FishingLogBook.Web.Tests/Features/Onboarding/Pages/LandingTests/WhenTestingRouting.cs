@@ -233,6 +233,28 @@ public class WhenTestingRouting : BaseLandingTest
     }
 
     [Fact]
+    public async Task ItShouldRedirectWhenAuthenticationChangesAfterLandingInitiallyLoadsAnonymous()
+    {
+        // Arrange
+        var authentication = new MutableAuthenticationStateProvider(Anonymous());
+        var onboarding = Onboarding(true);
+        await using var context = CreateContext(
+            onboarding,
+            isAuthenticated: false,
+            authenticationStateProvider: authentication);
+        var cut = context.Render<LandingPage>();
+        var navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.Uri.Should().EndWith("/");
+
+        // Act
+        authentication.SetAuthenticationState(Authenticated());
+
+        // Assert
+        cut.WaitForAssertion(() => navigation.Uri.Should().EndWith("/catches"));
+        await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldRenderThePublicFrontDoorWithoutLoadingAProfile()
     {
         // Arrange
@@ -357,5 +379,22 @@ public class WhenTestingRouting : BaseLandingTest
             [new Claim(ClaimTypes.Name, "angler@example.test")],
             "Test");
         return new AuthenticationState(new ClaimsPrincipal(identity));
+    }
+
+    private static AuthenticationState Anonymous() => new(new ClaimsPrincipal(new ClaimsIdentity()));
+
+    private sealed class MutableAuthenticationStateProvider(AuthenticationState authenticationState)
+        : AuthenticationStateProvider
+    {
+        private AuthenticationState _authenticationState = authenticationState;
+
+        public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
+            Task.FromResult(_authenticationState);
+
+        public void SetAuthenticationState(AuthenticationState authenticationState)
+        {
+            _authenticationState = authenticationState;
+            NotifyAuthenticationStateChanged(Task.FromResult(authenticationState));
+        }
     }
 }
