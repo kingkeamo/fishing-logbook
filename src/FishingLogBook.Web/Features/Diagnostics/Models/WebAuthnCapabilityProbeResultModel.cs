@@ -10,6 +10,8 @@ public sealed record WebAuthnCapabilityProbeResultModel
 
     public bool HasProbeMetadata { get; init; }
 
+    public bool PayloadEnvelopeAvailable { get; init; }
+
     public bool CredentialCreated { get; init; }
 
     public bool? CreatePrfEnabled { get; init; }
@@ -24,7 +26,15 @@ public sealed record WebAuthnCapabilityProbeResultModel
 
     public bool GetPrfResultReturned { get; init; }
 
+    public int? PrfResultLength { get; init; }
+
+    public string PrfResultBranch { get; init; } = "missing";
+
+    public bool? PrfFingerprintMatches { get; init; }
+
     public bool TestPayloadVerified { get; init; }
+
+    public string PayloadVerificationOutcome { get; init; } = "not-attempted";
 
     public string Outcome { get; init; } = "unknown";
 }

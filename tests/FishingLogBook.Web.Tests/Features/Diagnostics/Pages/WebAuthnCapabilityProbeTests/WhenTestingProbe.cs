@@ -62,7 +62,12 @@ public class WhenTestingProbe : BaseWebAuthnCapabilityProbeTest
             UserVerified = true,
             GetPrfExtensionReported = true,
             GetPrfResultReturned = true,
+            PrfResultLength = 32,
+            PrfResultBranch = "array-buffer",
+            PrfFingerprintMatches = true,
+            PayloadEnvelopeAvailable = true,
             TestPayloadVerified = true,
+            PayloadVerificationOutcome = "verified",
             Outcome = "verified-online"
         });
         await using var context = CreateContext(probe);
@@ -84,8 +89,30 @@ public class WhenTestingProbe : BaseWebAuthnCapabilityProbeTest
         var getResults = cut.Find("#webauthn-online-verification-results").TextContent;
         getResults.Should().Contain("Immediate GET succeeded");
         getResults.Should().Contain("PRF extension reported on GET");
+        getResults.Should().Contain("32 bytes");
+        getResults.Should().Contain("ArrayBuffer");
         getResults.Should().Contain("Harmless payload decrypted");
         await probe.Received(1).VerifyOnlineAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRequireOnlineVerificationBeforeOfferingOfflineDecryption()
+    {
+        // Arrange
+        var probe = Substitute.For<IWebAuthnCapabilityProbeService>();
+        await using var context = CreateContext(probe, new WebAuthnCapabilityProbeResultModel
+        {
+            HasProbeMetadata = true,
+            PayloadEnvelopeAvailable = false,
+            Outcome = "ready"
+        });
+
+        // Act
+        var cut = context.Render<WebAuthnCapabilityProbe>();
+
+        // Assert
+        cut.Find("#test-offline-webauthn-button").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("#verify-online-webauthn-probe-button").HasAttribute("disabled").Should().BeFalse();
     }
 
     [Fact]

@@ -756,7 +756,25 @@
   <data name="WebAuthnProbe_GetPrfReported" xml:space="preserve"><value>Extension PRF indiquée lors de GET</value></data>
   <data name="WebAuthnProbe_GetPrfResult" xml:space="preserve"><value>Résultat PRF lors de GET</value></data>
   <data name="WebAuthnProbe_PayloadVerified" xml:space="preserve"><value>Contenu inoffensif déchiffré</value></data>
-  <data name="WebAuthnProbe_OfflineAtInvocation" xml:space="preserve"><value>Hors ligne lors du lancement</value></data>
+  <data name="WebAuthnProbe_NetworkHint" xml:space="preserve"><value>Indication réseau du navigateur</value></data>
+  <data name="WebAuthnProbe_NetworkHintOnline" xml:space="preserve"><value>En ligne (signalé par le navigateur, non fiable)</value></data>
+  <data name="WebAuthnProbe_NetworkHintOffline" xml:space="preserve"><value>Hors ligne (signalé par le navigateur)</value></data>
+  <data name="WebAuthnProbe_PayloadEnvelopeAvailable" xml:space="preserve"><value>Contenu chiffré prêt</value></data>
+  <data name="WebAuthnProbe_PrfResultBranch" xml:space="preserve"><value>Représentation du résultat PRF</value></data>
+  <data name="WebAuthnProbe_PrfResultBranch_array-buffer" xml:space="preserve"><value>ArrayBuffer</value></data>
+  <data name="WebAuthnProbe_PrfResultBranch_typed-array" xml:space="preserve"><value>Vue de tableau typé</value></data>
+  <data name="WebAuthnProbe_PrfResultBranch_missing" xml:space="preserve"><value>Non renvoyé</value></data>
+  <data name="WebAuthnProbe_PrfResultLength" xml:space="preserve"><value>Longueur du résultat PRF</value></data>
+  <data name="WebAuthnProbe_Bytes" xml:space="preserve"><value>{0} octets</value></data>
+  <data name="WebAuthnProbe_PrfFingerprintMatches" xml:space="preserve"><value>Empreinte de comparaison PRF identique</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome" xml:space="preserve"><value>Détail de la vérification du contenu</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome_not-attempted" xml:space="preserve"><value>Non tenté</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome_missing-envelope" xml:space="preserve"><value>Exécutez d’abord la vérification en ligne</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome_prf-mismatch" xml:space="preserve"><value>Le matériel PRF diffère de la vérification en ligne</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome_invalid-envelope" xml:space="preserve"><value>Les métadonnées du contenu enregistré sont invalides</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome_decrypt-failed" xml:space="preserve"><value>Le déchiffrement AES-GCM a échoué</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome_plaintext-mismatch" xml:space="preserve"><value>Le contenu déchiffré ne correspond pas</value></data>
+  <data name="WebAuthnProbe_PayloadVerificationOutcome_verified" xml:space="preserve"><value>Contenu déchiffré et conforme</value></data>
   <data name="WebAuthnProbe_Outcome" xml:space="preserve"><value>Résultat</value></data>
   <data name="WebAuthnProbe_Yes" xml:space="preserve"><value>Oui</value></data>
   <data name="WebAuthnProbe_No" xml:space="preserve"><value>Non</value></data>

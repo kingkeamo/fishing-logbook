@@ -1,5 +1,6 @@
 const storageKey = 'fishingLogBook.webAuthnCapabilityProbe.v1';
 const payload = new TextEncoder().encode('cbdf-webauthn-capability-probe');
+const fingerprintLength = 12;
 
 const outcomes = Object.freeze({
     unknown: 'unknown',
@@ -20,6 +21,7 @@ function emptyResult(outcome = outcomes.unknown) {
         platformAuthenticatorAvailable: null,
         isOnlineAtInvocation: navigator.onLine,
         hasProbeMetadata: hasProbeMetadata(),
+        payloadEnvelopeAvailable: hasPayloadEnvelope(),
         credentialCreated: false,
         createPrfEnabled: null,
         createPrfResultReturned: false,
@@ -27,7 +29,11 @@ function emptyResult(outcome = outcomes.unknown) {
         userVerified: false,
         getPrfExtensionReported: false,
         getPrfResultReturned: false,
+        prfResultLength: null,
+        prfResultBranch: 'missing',
+        prfFingerprintMatches: null,
         testPayloadVerified: false,
+        payloadVerificationOutcome: 'not-attempted',
         outcome
     };
 }
@@ -74,14 +80,20 @@ function fromBase64Url(value) {
 function getPrfDetails(credential) {
     const prf = credential.getClientExtensionResults?.().prf;
     const first = prf?.results?.first;
+    const result = first instanceof ArrayBuffer
+        ? new Uint8Array(first)
+        : ArrayBuffer.isView(first)
+            ? new Uint8Array(first.buffer, first.byteOffset, first.byteLength)
+            : null;
     return {
         reported: prf !== undefined,
         enabled: typeof prf?.enabled === 'boolean' ? prf.enabled : null,
-        result: first instanceof ArrayBuffer
-            ? new Uint8Array(first)
+        result,
+        branch: first instanceof ArrayBuffer
+            ? 'array-buffer'
             : ArrayBuffer.isView(first)
-                ? new Uint8Array(first.buffer, first.byteOffset, first.byteLength)
-                : null
+                ? 'typed-array'
+                : 'missing'
     };
 }
 
@@ -114,6 +126,18 @@ function writeMetadata(metadata) {
     localStorage.setItem(storageKey, JSON.stringify(metadata));
 }
 
+function hasPayloadEnvelope(metadata = readMetadata()) {
+    return metadata !== null
+        && typeof metadata.iv === 'string'
+        && typeof metadata.ciphertext === 'string'
+        && typeof metadata.prfFingerprint === 'string';
+}
+
+async function fingerprint(value) {
+    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', value));
+    return toBase64Url(digest.slice(0, fingerprintLength));
+}
+
 async function createPayloadEnvelope(prfResult) {
     const key = await crypto.subtle.importKey('raw', prfResult, 'AES-GCM', false, ['encrypt', 'decrypt']);
     const iv = randomBytes(12);
@@ -124,24 +148,52 @@ async function createPayloadEnvelope(prfResult) {
     return {
         iv: toBase64Url(iv),
         ciphertext: toBase64Url(ciphertext),
+        prfFingerprint: await fingerprint(prfResult),
         verified
     };
 }
 
 async function verifyPayloadEnvelope(metadata, prfResult) {
-    if (typeof metadata.iv !== 'string' || typeof metadata.ciphertext !== 'string') {
-        return false;
+    if (!hasPayloadEnvelope(metadata)) {
+        return { verified: false, fingerprintMatches: null, outcome: 'missing-envelope' };
+    }
+
+    let fingerprintMatches = null;
+    try {
+        fingerprintMatches = await fingerprint(prfResult) === metadata.prfFingerprint;
+        if (!fingerprintMatches) {
+            return { verified: false, fingerprintMatches: false, outcome: 'prf-mismatch' };
+        }
+    } catch {
+        return { verified: false, fingerprintMatches, outcome: 'decrypt-failed' };
+    }
+
+    let iv;
+    let ciphertext;
+    try {
+        iv = fromBase64Url(metadata.iv);
+        ciphertext = fromBase64Url(metadata.ciphertext);
+        if (iv.byteLength !== 12 || ciphertext.byteLength <= 16) {
+            return { verified: false, fingerprintMatches: true, outcome: 'invalid-envelope' };
+        }
+    } catch {
+        return { verified: false, fingerprintMatches: true, outcome: 'invalid-envelope' };
     }
 
     try {
         const key = await crypto.subtle.importKey('raw', prfResult, 'AES-GCM', false, ['decrypt']);
         const plaintext = await crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv: fromBase64Url(metadata.iv) },
+            { name: 'AES-GCM', iv },
             key,
-            fromBase64Url(metadata.ciphertext));
-        return new TextDecoder().decode(plaintext) === new TextDecoder().decode(payload);
+            ciphertext);
+        const verified = new TextDecoder().decode(plaintext) === new TextDecoder().decode(payload);
+        return {
+            verified,
+            fingerprintMatches: true,
+            outcome: verified ? 'verified' : 'plaintext-mismatch'
+        };
     } catch {
-        return false;
+        return { verified: false, fingerprintMatches: true, outcome: 'decrypt-failed' };
     }
 }
 
@@ -275,13 +327,19 @@ export async function verifyOnlineCredential() {
         const getPrf = getPrfDetails(assertion);
         result.getPrfExtensionReported = getPrf.reported;
         result.getPrfResultReturned = getPrf.result !== null;
+        result.prfResultLength = getPrf.result?.byteLength ?? null;
+        result.prfResultBranch = getPrf.branch;
 
         if (getPrf.result !== null) {
             const envelope = await createPayloadEnvelope(getPrf.result);
             metadata.iv = envelope.iv;
             metadata.ciphertext = envelope.ciphertext;
+            metadata.prfFingerprint = envelope.prfFingerprint;
             writeMetadata(metadata);
+            result.payloadEnvelopeAvailable = true;
+            result.prfFingerprintMatches = true;
             result.testPayloadVerified = envelope.verified;
+            result.payloadVerificationOutcome = envelope.verified ? 'verified' : 'plaintext-mismatch';
         }
 
         result.outcome = outcomes.verifiedOnline;
@@ -318,8 +376,15 @@ export async function testOfflineUnlock() {
         const getPrf = getPrfDetails(assertion);
         result.getPrfExtensionReported = getPrf.reported;
         result.getPrfResultReturned = getPrf.result !== null;
-        result.testPayloadVerified = getPrf.result !== null
-            && await verifyPayloadEnvelope(metadata, getPrf.result);
+        result.prfResultLength = getPrf.result?.byteLength ?? null;
+        result.prfResultBranch = getPrf.branch;
+        result.payloadEnvelopeAvailable = hasPayloadEnvelope(metadata);
+        if (getPrf.result !== null) {
+            const verification = await verifyPayloadEnvelope(metadata, getPrf.result);
+            result.testPayloadVerified = verification.verified;
+            result.prfFingerprintMatches = verification.fingerprintMatches;
+            result.payloadVerificationOutcome = verification.outcome;
+        }
         result.outcome = outcomes.retrieved;
         return result;
     } catch (error) {

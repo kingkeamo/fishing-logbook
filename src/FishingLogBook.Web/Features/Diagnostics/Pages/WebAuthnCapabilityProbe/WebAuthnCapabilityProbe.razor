@@ -48,7 +48,11 @@
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_UserVerified"]" Value="@BooleanLabel(_onlineVerificationResult.UserVerified)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_GetPrfReported"]" Value="@BooleanLabel(_onlineVerificationResult.GetPrfExtensionReported)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_GetPrfResult"]" Value="@BooleanLabel(_onlineVerificationResult.GetPrfResultReturned)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PrfResultBranch"]" Value="@PrfResultBranchLabel(_onlineVerificationResult.PrfResultBranch)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PrfResultLength"]" Value="@LengthLabel(_onlineVerificationResult.PrfResultLength)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PayloadEnvelopeAvailable"]" Value="@BooleanLabel(_onlineVerificationResult.PayloadEnvelopeAvailable)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_PayloadVerified"]" Value="@BooleanLabel(_onlineVerificationResult.TestPayloadVerified)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PayloadVerificationOutcome"]" Value="@PayloadVerificationOutcomeLabel(_onlineVerificationResult.PayloadVerificationOutcome)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_Outcome"]" Value="@OutcomeLabel(_onlineVerificationResult.Outcome)" />
                     </div>
                 }
@@ -62,7 +66,7 @@
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Secondary"
                            StartIcon="@Icons.Material.Filled.LockOpen"
-                           Disabled="@(_isBusy || _status?.HasProbeMetadata != true)"
+                           Disabled="@(_isBusy || _status?.PayloadEnvelopeAvailable != true)"
                            OnClick="TestOfflineUnlockAsync"
                            id="test-offline-webauthn-button">
                     @Loc["WebAuthnProbe_OfflineAction"]
@@ -70,12 +74,16 @@
                 @if (_offlineResult is not null)
                 {
                     <div id="webauthn-offline-results">
-                        <ProbeResultRow Label="@Loc["WebAuthnProbe_OfflineAtInvocation"]" Value="@BooleanLabel(!_offlineResult.IsOnlineAtInvocation)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_NetworkHint"]" Value="@NetworkHintLabel(_offlineResult.IsOnlineAtInvocation)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_GetSucceeded"]" Value="@BooleanLabel(_offlineResult.GetSucceeded)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_UserVerified"]" Value="@BooleanLabel(_offlineResult.UserVerified)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_GetPrfReported"]" Value="@BooleanLabel(_offlineResult.GetPrfExtensionReported)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_GetPrfResult"]" Value="@BooleanLabel(_offlineResult.GetPrfResultReturned)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PrfResultBranch"]" Value="@PrfResultBranchLabel(_offlineResult.PrfResultBranch)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PrfResultLength"]" Value="@LengthLabel(_offlineResult.PrfResultLength)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PrfFingerprintMatches"]" Value="@NullableBooleanLabel(_offlineResult.PrfFingerprintMatches)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_PayloadVerified"]" Value="@BooleanLabel(_offlineResult.TestPayloadVerified)" />
+                        <ProbeResultRow Label="@Loc["WebAuthnProbe_PayloadVerificationOutcome"]" Value="@PayloadVerificationOutcomeLabel(_offlineResult.PayloadVerificationOutcome)" />
                         <ProbeResultRow Label="@Loc["WebAuthnProbe_Outcome"]" Value="@OutcomeLabel(_offlineResult.Outcome)" />
                     </div>
                 }
