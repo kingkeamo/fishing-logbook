@@ -1,25 +1,33 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using FishingLogBook.Web.Features.Authentication.Components.RedirectToLogin
+@using FishingLogBook.Web.Features.OfflineAccess.Components.OfflineRouteView
 
 <AppErrorBoundary>
-    <CascadingAuthenticationState>
-        <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(FishingLogBook.Web.Pages.NotFound.NotFound)">
-            <Found Context="routeData">
-                @if (routeData.PageType == typeof(FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing)
+    <Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(FishingLogBook.Web.Pages.NotFound.NotFound)">
+        <Found Context="routeData">
+            @if (IsOfflineRoute(routeData.PageType))
+            {
+                <OfflineRouteView RouteData="routeData" />
+            }
+            else
+            {
+                <CascadingAuthenticationState>
+                    @if (routeData.PageType == typeof(FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing)
                     || routeData.PageType == typeof(FishingLogBook.Web.Features.Diagnostics.Pages.WebAuthnCapabilityProbe.WebAuthnCapabilityProbe))
-                {
-                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-                }
-                else
-                {
-                    <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
-                        <NotAuthorized>
-                            <RedirectToLogin />
-                        </NotAuthorized>
-                    </AuthorizeRouteView>
-                }
-                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-            </Found>
-        </Router>
-    </CascadingAuthenticationState>
+                    {
+                        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+                    }
+                    else
+                    {
+                        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                            <NotAuthorized>
+                                <RedirectToLogin />
+                            </NotAuthorized>
+                        </AuthorizeRouteView>
+                    }
+                </CascadingAuthenticationState>
+            }
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
 </AppErrorBoundary>

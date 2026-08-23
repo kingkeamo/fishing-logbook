@@ -6,6 +6,7 @@ using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
+using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
@@ -25,7 +26,8 @@ public class BaseLandingTest
         bool isAuthenticated = true,
         IWebAuthnCapabilityProbeService? probe = null,
         AuthenticationStateProvider? authenticationStateProvider = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        IOfflineAccessDeviceService? offlineAccessDevice = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -34,6 +36,8 @@ public class BaseLandingTest
         context.Services.AddSingleton(onboarding);
         context.Services.AddSingleton(probe ?? Probe(hasMetadata: false));
         context.Services.AddSingleton(logging ?? Substitute.For<ILoggingService>());
+        context.Services.AddSingleton(offlineAccessDevice ?? OfflineAccessDevice(hasReadyEntitlement: false));
+        context.Services.AddScoped<IOfflineOwnerContextService, OfflineOwnerContextService>();
         var authorization = context.AddAuthorization();
         if (isAuthenticated)
         {
@@ -85,6 +89,13 @@ public class BaseLandingTest
         var probe = Substitute.For<IWebAuthnCapabilityProbeService>();
         probe.HasMetadataAsync(Arg.Any<CancellationToken>()).Returns(hasMetadata);
         return probe;
+    }
+
+    protected static IOfflineAccessDeviceService OfflineAccessDevice(bool hasReadyEntitlement)
+    {
+        var device = Substitute.For<IOfflineAccessDeviceService>();
+        device.HasReadyEntitlementAsync(Arg.Any<CancellationToken>()).Returns(hasReadyEntitlement);
+        return device;
     }
 
     protected static IOnboardingService Onboarding(bool completed)

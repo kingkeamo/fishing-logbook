@@ -39,6 +39,12 @@ public partial class CatchCard : ComponentBase
     [Parameter]
     public EventCallback<Guid> OnLocationPrivacy { get; set; }
 
+    [Parameter]
+    public string EditHrefPrefix { get; set; } = "/catches";
+
+    [Parameter]
+    public bool ShowOnlineActions { get; set; } = true;
+
     [Inject]
     private IMeasurementService Measurement { get; set; } = default!;
 
@@ -57,7 +63,7 @@ public partial class CatchCard : ComponentBase
                 photograph.RemoteUrl))
             .ToArray();
 
-    private string EditHref => $"/catches/{Catch.Id:D}/edit";
+    private string EditHref => $"{EditHrefPrefix}/{Catch.Id:D}/edit";
 
     private string SpeciesLabel => string.IsNullOrWhiteSpace(Catch.SpeciesName)
         ? Loc["Catch_UnknownSpecies"]

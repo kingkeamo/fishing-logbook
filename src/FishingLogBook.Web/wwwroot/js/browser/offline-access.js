@@ -11,6 +11,38 @@ export async function getDeviceStatus(identity) {
     return { state: record?.state === 'ready' ? 'ready' : record ? 'repair' : 'not-configured' };
 }
 
+export async function hasReadyEntitlement() {
+    if (!isSupported()) return false;
+    const records = await getAllRecords();
+    return records.some(isReadyRecord);
+}
+
+export async function unlockDevice() {
+    if (!isSupported()) return { state: 'unsupported' };
+    try {
+        const readyRecords = (await getAllRecords()).filter(isReadyRecord);
+        if (readyRecords.length === 0) return { state: 'not-configured' };
+
+        const assertion = await getCredentialForRecords(readyRecords);
+        if (!assertion || !userVerified(assertion)) return { state: 'failed' };
+
+        const credentialId = toBase64Url(assertion.rawId);
+        const matchingRecords = readyRecords.filter(record => record.credentialId === credentialId);
+        if (matchingRecords.length !== 1) return { state: 'failed' };
+
+        const prf = getPrfResult(assertion);
+        if (!prf) return { state: 'failed' };
+
+        const record = matchingRecords[0];
+        const entitlement = await decryptEntitlement(record, prf);
+        if (!await isValidEntitlement(record, entitlement)) return { state: 'failed' };
+
+        return { state: 'unlocked', userId: entitlement.userId, version: entitlement.version };
+    } catch (error) {
+        return { state: error?.name === 'NotAllowedError' ? 'cancelled' : 'failed' };
+    }
+}
+
 export async function setupDevice(identity) {
     if (!isSupported()) return { state: 'unsupported' };
     const ownerKey = await createOwnerKey(identity.provider, identity.subject);
@@ -83,6 +115,23 @@ async function getCredential(record) {
     }});
 }
 
+async function getCredentialForRecords(records) {
+    return await navigator.credentials.get({ publicKey: {
+        challenge: randomBytes(32),
+        allowCredentials: records.map(record => ({
+            id: fromBase64Url(record.credentialId),
+            type: 'public-key',
+            transports: record.transports
+        })),
+        userVerification: 'required',
+        timeout: 60000,
+        extensions: { prf: { evalByCredential: Object.fromEntries(records.map(record => [
+            record.credentialId,
+            { first: fromBase64Url(record.prfSalt) }
+        ])) } }
+    }});
+}
+
 async function encryptCandidate(identity, ownerKey, credential, salt, prf) {
     const iv = randomBytes(12);
     const aad = new TextEncoder().encode(`${purpose}:${envelopeVersion}:${ownerKey}:${toBase64Url(credential.rawId)}`);
@@ -121,6 +170,28 @@ function sameIdentity(expected, actual) {
     return actual?.version === envelopeVersion && actual?.purpose === purpose
         && actual.provider === expected.provider && actual.subject === expected.subject
         && actual.userId === expected.userId;
+}
+
+function isReadyRecord(record) {
+    return record?.state === 'ready'
+        && record.version === envelopeVersion
+        && typeof record.ownerKey === 'string'
+        && typeof record.credentialId === 'string'
+        && typeof record.prfSalt === 'string'
+        && typeof record.iv === 'string'
+        && typeof record.ciphertext === 'string';
+}
+
+async function isValidEntitlement(record, entitlement) {
+    return entitlement?.version === envelopeVersion
+        && entitlement.purpose === purpose
+        && typeof entitlement.provider === 'string'
+        && entitlement.provider.length > 0
+        && typeof entitlement.subject === 'string'
+        && entitlement.subject.length > 0
+        && typeof entitlement.userId === 'string'
+        && entitlement.userId.length > 0
+        && await createOwnerKey(entitlement.provider, entitlement.subject) === record.ownerKey;
 }
 
 function getPrfResult(credential) {
@@ -177,5 +248,6 @@ async function transact(mode, action) {
 }
 
 function getRecord(ownerKey) { return transact('readonly', store => store.get(ownerKey)); }
+function getAllRecords() { return transact('readonly', store => store.getAll()); }
 function putRecord(record) { return transact('readwrite', store => store.put(record)); }
 function deleteRecord(ownerKey) { return transact('readwrite', store => store.delete(ownerKey)); }

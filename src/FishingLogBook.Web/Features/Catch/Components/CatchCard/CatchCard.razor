@@ -18,7 +18,7 @@
                     @Loc["Catch_Edit"]
                 </MudMenuItem>
 
-                @if (Catch.Location is not null)
+                @if (ShowOnlineActions && Catch.Location is not null)
                 {
                     <MudMenuItem Icon="@Icons.Material.Filled.LocationOn"
                                  OnClick="LocationPrivacyAsync"
@@ -135,14 +135,17 @@
                 </MudText>
             </MudAlert>
 
-            <MudButton Variant="Variant.Text"
-                       Color="Color.Primary"
-                       Size="Size.Small"
-                       Disabled="IsRetrying"
-                       OnClick="RetryAsync"
-                       id="@($"catch-sync-retry-{Catch.Id:D}")">
-                @RetryLabel
-            </MudButton>
+            @if (ShowOnlineActions)
+            {
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           Disabled="IsRetrying"
+                           OnClick="RetryAsync"
+                           id="@($"catch-sync-retry-{Catch.Id:D}")">
+                    @RetryLabel
+                </MudButton>
+            }
         </MudCardActions>
     }
 </MudCard>

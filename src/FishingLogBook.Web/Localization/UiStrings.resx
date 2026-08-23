@@ -811,4 +811,8 @@
   <data name="OfflineAccess_TurnOffAccountHelpLabel" xml:space="preserve"><value>About turning off offline access for your account</value></data>
   <data name="Onboarding_OfflineAccessStep" xml:space="preserve"><value>Offline Access</value></data>
   <data name="Onboarding_OfflineAccessOptional" xml:space="preserve"><value>Offline access is optional. Choose Open my Logbook to continue without setting it up.</value></data>
+  <data name="OfflineAccess_OpenOffline" xml:space="preserve"><value>Open offline</value></data>
+  <data name="OfflineAccess_UnlockFailed" xml:space="preserve"><value>Offline access could not be opened. Try again, or sign in when you have a connection.</value></data>
+  <data name="OfflineAccess_Mode" xml:space="preserve"><value>Offline mode</value></data>
+  <data name="OfflineAccess_Lock" xml:space="preserve"><value>Lock offline access</value></data>
 </root>

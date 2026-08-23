@@ -23,6 +23,25 @@
             <MudStack Spacing="2" Class="landing-actions">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginCreateAccount" id="landing-create-account">@Loc["Auth_CreateAccount"]</MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginSignIn" id="landing-sign-in">@Loc["Auth_SignIn"]</MudButton>
+                @if (_showOfflineAction)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               Size="Size.Large"
+                               FullWidth="true"
+                               Disabled="_unlocking"
+                               OnClick="OpenOfflineAsync"
+                               StartIcon="@Icons.Material.Filled.LockOpen"
+                               id="landing-open-offline">
+                        @Loc["OfflineAccess_OpenOffline"]
+                    </MudButton>
+                }
+                @if (_offlineUnlockFailed)
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" id="landing-offline-error">
+                        @Loc["OfflineAccess_UnlockFailed"]
+                    </MudAlert>
+                }
                 @if (_showWebAuthnProbeAction)
                 {
                     <MudButton Variant="Variant.Text"

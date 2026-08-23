@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Clients;
+using FishingLogBook.Web.Features.Catch.Components.RecordCatchEditor;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -271,12 +272,13 @@ public class WhenTestingSave : BaseRecordCatchTest
     {
         // Arrange
         // Act
-        var injected = typeof(RecordCatch)
+        var injected = new[] { typeof(RecordCatch), typeof(RecordCatchEditor) }
+            .SelectMany(type => type
             .GetProperties(System.Reflection.BindingFlags.Instance
                 | System.Reflection.BindingFlags.Public
                 | System.Reflection.BindingFlags.NonPublic)
             .Where(property => property.GetCustomAttributes(typeof(Microsoft.AspNetCore.Components.InjectAttribute), true).Length > 0)
-            .Select(property => property.PropertyType)
+            .Select(property => property.PropertyType))
             .ToArray();
 
         // Assert

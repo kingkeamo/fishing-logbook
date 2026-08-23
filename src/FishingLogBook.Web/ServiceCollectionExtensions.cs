@@ -75,6 +75,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOfflineAccessPreferenceClient, OfflineAccessPreferenceClient>();
         services.AddScoped<IOfflineAccessDeviceService, OfflineAccessDeviceService>();
         services.AddScoped<IOfflineAccessService, OfflineAccessService>();
+        services.AddScoped<IOfflineOwnerContextService, OfflineOwnerContextService>();
         services.AddScoped<ITimeService, TimeService>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
         services.AddScoped<ICatchSynchroniser, CatchSynchroniser>();

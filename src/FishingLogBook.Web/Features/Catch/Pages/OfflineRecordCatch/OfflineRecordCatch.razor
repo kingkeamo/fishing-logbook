@@ -1,0 +1,16 @@
+@page "/offline/record"
+@attribute [OfflineRoute]
+@layout OfflineLayout
+@using FishingLogBook.Web.Features.Catch.Components.RecordCatchEditor
+@using FishingLogBook.Web.Features.OfflineAccess
+
+@if (_isLoading)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary" id="offline-record-loading" />
+}
+else
+{
+    <RecordCatchEditor OwnerUserId="_ownerUserId"
+                       Preferences="_preferences"
+                       ViewCatchesHref="/offline/catches" />
+}

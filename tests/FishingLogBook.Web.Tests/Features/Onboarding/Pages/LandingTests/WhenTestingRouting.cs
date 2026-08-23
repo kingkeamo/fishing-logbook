@@ -2,6 +2,8 @@ using System.Security.Claims;
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.OfflineAccess.Models;
+using FishingLogBook.Web.Features.OfflineAccess.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -147,6 +149,46 @@ public class WhenTestingRouting : BaseLandingTest
             exception,
             CancellationToken.None);
         await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldOfferOfflineUnlockWithoutWaitingForAuthentication()
+    {
+        // Arrange
+        var authentication = new TaskCompletionSource<AuthenticationState>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var device = OfflineAccessDevice(hasReadyEntitlement: true);
+        await using var context = CreateContext(
+            Onboarding(false),
+            authenticationStateProvider: Authentication(authentication.Task),
+            offlineAccessDevice: device);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+        await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldUnlockOnlyAfterTheExplicitAction()
+    {
+        // Arrange
+        var device = OfflineAccessDevice(hasReadyEntitlement: true);
+        device.UnlockAsync(Arg.Any<CancellationToken>()).Returns(
+            new OfflineAccessUnlockResultModel("unlocked", Guid.Parse("11111111-1111-1111-1111-111111111111"), 1));
+        await using var context = CreateContext(Onboarding(false), isAuthenticated: false, offlineAccessDevice: device);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#landing-open-offline").ClickAsync();
+
+        // Assert
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/offline/catches");
+        context.Services.GetRequiredService<IOfflineOwnerContextService>().Owner?.EntitlementVersion.Should().Be(1);
+        await device.Received(1).UnlockAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

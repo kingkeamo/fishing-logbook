@@ -1,0 +1,56 @@
+@page "/offline/catches"
+@attribute [OfflineRoute]
+@layout OfflineLayout
+@using FishingLogBook.Web.Features.Catch.Components.CatchCard
+@using FishingLogBook.Web.Features.OfflineAccess
+
+<PageTitle>@Loc["Catch_LogbookPageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Gutters="false" Class="catch-list-container">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap" Spacing="2">
+            <MudText Typo="Typo.h4" id="offline-catch-list-title">@Loc["Catch_LogbookTitle"]</MudText>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Href="/offline/record"
+                       StartIcon="@Icons.Material.Filled.AddAPhoto"
+                       id="offline-catch-record-link">
+                @Loc["Catch_RecordNav"]
+            </MudButton>
+        </MudStack>
+
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="offline-catch-list-load-failed">@Loc["Catch_LoadFailed"]</MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center" id="offline-catch-list-loading" />
+        }
+        else if (_catches.Count == 0)
+        {
+            <MudStack Spacing="2" AlignItems="AlignItems.Center" Class="catch-list-empty-state" id="offline-catch-list-empty">
+                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Large" Class="mud-text-secondary" aria-hidden="true" />
+                <MudText Typo="Typo.body1" Align="Align.Center">@Loc["Catch_LogbookEmpty"]</MudText>
+            </MudStack>
+        }
+        else
+        {
+            <MudGrid Spacing="2" id="offline-catch-list">
+                @foreach (var catchRecord in _catches)
+                {
+                    <MudItem xs="12" md="6">
+                        <CatchCard Catch="catchRecord"
+                                   LocalCaughtOn="catchRecord.CaughtOn.LocalDateTime"
+                                   LocalToday="DateTime.Today"
+                                   WeightUnit="_weightUnit"
+                                   LengthUnit="_lengthUnit"
+                                   CurrentUserId="_ownerUserId"
+                                   EditHrefPrefix="/offline/catches"
+                                   ShowOnlineActions="false" />
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </MudStack>
+</MudContainer>
