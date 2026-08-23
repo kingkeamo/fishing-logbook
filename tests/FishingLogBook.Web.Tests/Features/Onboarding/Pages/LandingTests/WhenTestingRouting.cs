@@ -34,6 +34,35 @@ public class WhenTestingRouting : BaseLandingTest
     }
 
     [Fact]
+    public async Task ItShouldRenderTheOfflineProbeThroughTheRouterWhileAuthenticationIsPending()
+    {
+        // Arrange
+        var authentication = new TaskCompletionSource<AuthenticationState>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = Probe(hasMetadata: true);
+        probe.GetStatusAsync(Arg.Any<CancellationToken>()).Returns(
+            new FishingLogBook.Web.Features.Diagnostics.Models.WebAuthnCapabilityProbeResultModel
+            {
+                HasProbeMetadata = true,
+                Outcome = "ready"
+            });
+        await using var context = CreateContext(
+            Onboarding(false),
+            probe: probe,
+            authenticationStateProvider: Authentication(authentication.Task));
+        AddApplicationShell(context);
+        context.Services.GetRequiredService<NavigationManager>()
+            .NavigateTo("/diagnostics/webauthn-capability-probe");
+
+        // Act
+        var cut = context.Render<App>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#test-offline-webauthn-button").Should().NotBeNull());
+        cut.Markup.Should().NotContain("Authorizing...");
+    }
+
+    [Fact]
     public void ItShouldKeepApplicationPagesProtected()
     {
         // Arrange
