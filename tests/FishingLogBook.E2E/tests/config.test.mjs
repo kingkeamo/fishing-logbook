@@ -28,3 +28,13 @@ test('registers independent disposable-container teardown', async () => {
     assert.match(teardown, /\^fishing-logbook-e2e-/);
     assert.match(teardown, /docker', \['rm', '--force'/);
 });
+
+test('onboards the dedicated Cognito user through the real UI for each disposable database', async () => {
+    const setup = await readFile(new URL('../support/auth.setup.mjs', import.meta.url), 'utf8');
+
+    assert.match(setup, /completeOnboardingWhenRequired/);
+    assert.match(setup, /#onboarding-method-Fly/);
+    assert.match(setup, /#catalogue-picker-modal-option-BrownTrout/);
+    assert.match(setup, /#onboarding-finish/);
+    assert.doesNotMatch(setup, /must complete onboarding before running/);
+});

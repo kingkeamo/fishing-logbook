@@ -9,8 +9,8 @@ Playwright storage/service-worker harness under `src/FishingLogBook.Web/BrowserT
 - .NET 10 SDK
 - Docker Desktop running Linux containers
 - trusted local .NET development certificate (`dotnet dev-certs https --trust`)
-- a dedicated DEV Cognito E2E user that has completed onboarding and has no MFA/CAPTCHA
-  requirement
+- a dedicated DEV Cognito E2E user with no MFA/CAPTCHA requirement; the setup completes
+  onboarding through the real UI in each disposable database
 - `http://localhost:5019/authentication/login-callback` configured for the DEV Cognito client
 
 Set credentials only in the current shell or an approved secret store:

@@ -20,10 +20,11 @@ export default async function authenticate(config) {
         await page.locator('input[name="username"], #signInFormUsername').fill(username);
         await page.locator('input[name="password"], #signInFormPassword').fill(password);
         await page.locator('button[type="submit"], input[type="submit"]').first().click();
-        await page.waitForURL(/localhost:5019\/(catches|onboarding)/, { timeout: 45_000 });
-        if (page.url().includes('/onboarding')) {
-            throw new Error('The dedicated E2E Cognito user must complete onboarding before running E2E tests.');
-        }
+        const applicationOrigin = new URL(config.projects[0].use.baseURL).origin;
+        await page.waitForURL(url =>
+            url.origin === applicationOrigin
+            && !url.pathname.includes('/authentication/login-callback'), { timeout: 45_000 });
+        await completeOnboardingWhenRequired(page);
 
         await mkdir(resolve('.auth'), { recursive: true });
         await context.storageState({ path: resolve('.auth/e2e-user.json') });
@@ -37,6 +38,23 @@ export default async function authenticate(config) {
         await context.close();
         await browser.close();
     }
+}
+
+async function completeOnboardingWhenRequired(page) {
+    await page.goto('/onboarding');
+    await page.locator('#onboarding-loading').waitFor({ state: 'hidden' });
+    if (new URL(page.url()).pathname === '/catches') return;
+
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-method-Fly').click();
+    await page.locator('#onboarding-species-more-Fly').click();
+    await page.locator('#catalogue-picker-modal-option-BrownTrout').click();
+    await page.locator('#catalogue-picker-modal-save').click();
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-skip-location').click();
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-finish').click();
+    await page.waitForURL(url => new URL(url).pathname === '/catches', { timeout: 30_000 });
 }
 
 function required(name) {
