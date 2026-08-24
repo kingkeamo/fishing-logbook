@@ -34,8 +34,6 @@ public class WhenTestingProbe : BaseDiagnosticsInspectorTest
                 .Contain(DiagnosticsInspector.StageCountReturned);
             cut.Find("#retry-diagnostics-probe-button").TextContent.Should()
                 .Contain("Retry diagnostic probe");
-            cut.Find("#webauthn-capability-probe-link").GetAttribute("href").Should()
-                .Be("/diagnostics/webauthn-capability-probe");
         });
         await store.Received(1).InspectExistingAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().EnqueueAsync(Arg.Any<DiagnosticEventModel>(), Arg.Any<CancellationToken>());

@@ -25,7 +25,6 @@ public class BaseLandingTest
     protected static BunitContext CreateContext(
         IOnboardingService onboarding,
         bool isAuthenticated = true,
-        IWebAuthnCapabilityProbeService? probe = null,
         AuthenticationStateProvider? authenticationStateProvider = null,
         ILoggingService? logging = null,
         IOfflineAccessDeviceService? offlineAccessDevice = null)
@@ -35,7 +34,6 @@ public class BaseLandingTest
         context.Services.AddMudServices();
         context.Services.AddLocalization();
         context.Services.AddSingleton(onboarding);
-        context.Services.AddSingleton(probe ?? Probe(hasMetadata: false));
         context.Services.AddSingleton(logging ?? Substitute.For<ILoggingService>());
         context.Services.AddSingleton(offlineAccessDevice ?? OfflineAccessDevice(hasReadyEntitlement: false));
         context.Services.AddScoped<IOfflineOwnerContextService, OfflineOwnerContextService>();
@@ -83,13 +81,6 @@ public class BaseLandingTest
         profile.GetAsync(Arg.Any<CancellationToken>()).Returns(ProfileSummaryModel.Empty);
         context.Services.AddSingleton(profile);
         context.Services.AddTransient<MudLocalizer, FishingLogBookMudLocalizer>();
-    }
-
-    protected static IWebAuthnCapabilityProbeService Probe(bool hasMetadata)
-    {
-        var probe = Substitute.For<IWebAuthnCapabilityProbeService>();
-        probe.HasMetadataAsync(Arg.Any<CancellationToken>()).Returns(hasMetadata);
-        return probe;
     }
 
     protected static IOfflineAccessDeviceService OfflineAccessDevice(bool hasReadyEntitlement)

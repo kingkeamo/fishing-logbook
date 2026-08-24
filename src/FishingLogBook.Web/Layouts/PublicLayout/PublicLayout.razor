@@ -1,0 +1,15 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout id="public-layout">
+    <AppShellHeader IsDarkMode="_isDarkMode" OnToggleTheme="ToggleDarkMode" />
+    <MudMainContent>
+        <div class="app-shell-content" id="public-shell-content">
+            @Body
+        </div>
+    </MudMainContent>
+</MudLayout>

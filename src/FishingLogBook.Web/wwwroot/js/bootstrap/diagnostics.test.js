@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createDiagnosticsApi, installDiagnostics } from './diagnostics.js';
+import { createDiagnosticsApi, inspectOfflineStartup, installDiagnostics } from './diagnostics.js';
 
 function createTargetWindow({ storageThrows = false, platform = 'Win32', userAgent = 'Mozilla/5.0' } = {}) {
     const storage = {};
@@ -108,5 +108,57 @@ describe('diagnostics bootstrap', () => {
         targetWindow.fishingLogBookDiagnostics.setSessionId('session-2');
 
         expect(targetWindow.fishingLogBookDiagnostics.getSessionId()).toBe('session-2');
+    });
+
+    it('reports the controlling worker and exact cached offline module', async () => {
+        const response = {
+            headers: { get: vi.fn().mockReturnValue('application/javascript') },
+            status: 200,
+            redirected: false
+        };
+        const targetWindow = {
+            document: { baseURI: 'https://dev.test/' },
+            location: { href: 'https://dev.test/' },
+            navigator: {
+                serviceWorker: {
+                    controller: { scriptURL: 'https://dev.test/service-worker.js' },
+                    getRegistration: vi.fn().mockResolvedValue({
+                        active: { state: 'activated', scriptURL: 'https://dev.test/service-worker.js' },
+                        waiting: null
+                    })
+                }
+            },
+            caches: {
+                keys: vi.fn().mockResolvedValue(['offline-cache-v1']),
+                open: vi.fn().mockResolvedValue({ match: vi.fn().mockResolvedValue(response) })
+            },
+            indexedDB: { databases: vi.fn().mockResolvedValue([]) }
+        };
+
+        const result = await inspectOfflineStartup(targetWindow);
+
+        expect(result.resolvedModuleUrl).toBe('https://dev.test/js/browser/offline-access.js');
+        expect(result.controllerPresent).toBe(true);
+        expect(result.activeWorkerState).toBe('activated');
+        expect(result.moduleCached).toBe(true);
+        expect(result.matchingCacheName).toBe('offline-cache-v1');
+        expect(result.moduleContentType).toBe('application/javascript');
+        expect(result.entitlementDatabaseState).toBe('not-found');
+    });
+
+    it('reports a cache inspection failure without throwing', async () => {
+        const targetWindow = {
+            document: { baseURI: 'https://dev.test/' },
+            location: { href: 'https://dev.test/' },
+            navigator: {},
+            caches: { keys: vi.fn().mockRejectedValue(new TypeError('cache unavailable')) },
+            indexedDB: { databases: vi.fn().mockResolvedValue([]) }
+        };
+
+        const result = await inspectOfflineStartup(targetWindow);
+
+        expect(result.failedStage).toBe('cache-storage-read');
+        expect(result.errorType).toBe('TypeError');
+        expect(result.errorMessage).toBe('cache unavailable');
     });
 });

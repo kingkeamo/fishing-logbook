@@ -21,6 +21,14 @@ self.addEventListener('message', event => {
     if (event.data?.type === 'SkipWaiting') {
         activationRequestedByClient = true;
         self.skipWaiting();
+        return;
+    }
+
+    if (event.data?.type === 'InspectOfflineCache') {
+        event.ports[0]?.postMessage({
+            cacheName,
+            manifestVersion: self.assetsManifest.version
+        });
     }
 });
 self.addEventListener('error', event => notifyServiceWorkerError(event.message || 'error'));

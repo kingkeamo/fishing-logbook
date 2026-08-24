@@ -1,0 +1,3 @@
+.app-shell-content {
+    min-height: calc(100vh - var(--mud-appbar-height));
+}

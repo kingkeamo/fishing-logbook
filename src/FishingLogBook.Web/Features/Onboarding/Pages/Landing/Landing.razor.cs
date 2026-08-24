@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.Localization;
-using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Features.Onboarding.Pages.Landing;
 
@@ -22,7 +21,6 @@ public partial class Landing : ComponentBase, IDisposable
     }
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private bool _showWebAuthnProbeAction;
     private OfflineAvailabilityState _offlineAvailability = OfflineAvailabilityState.Checking;
     private bool _checkingOfflineAvailability;
     private bool _offlineUnlockFailed;
@@ -32,7 +30,6 @@ public partial class Landing : ComponentBase, IDisposable
     [Inject] private IOnboardingService Onboarding { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
-    [Inject] private IWebAuthnCapabilityProbeService WebAuthnProbe { get; set; } = default!;
     [Inject] private IOfflineAccessDeviceService OfflineAccessDevice { get; set; } = default!;
     [Inject] private IOfflineOwnerContextService OfflineOwnerContext { get; set; } = default!;
     [Inject] private ILoggingService Logging { get; set; } = default!;
@@ -41,7 +38,6 @@ public partial class Landing : ComponentBase, IDisposable
     {
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
         _ = LoadOfflineAvailabilityAsync();
-        _ = LoadProbeAvailabilityAsync();
         _ = ResolveAuthenticationAsync(AuthenticationStateProvider.GetAuthenticationStateAsync());
     }
 
@@ -97,6 +93,10 @@ public partial class Landing : ComponentBase, IDisposable
         finally
         {
             _checkingOfflineAvailability = false;
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
         }
     }
 
@@ -129,35 +129,6 @@ public partial class Landing : ComponentBase, IDisposable
         finally
         {
             _unlocking = false;
-        }
-    }
-
-    private async Task LoadProbeAvailabilityAsync()
-    {
-        var cancellationToken = _cancellationTokenSource.Token;
-        try
-        {
-            var showAction = await WebAuthnProbe.HasMetadataAsync(cancellationToken);
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-
-            await InvokeAsync(() =>
-            {
-                _showWebAuthnProbeAction = showAction;
-                StateHasChanged();
-            });
-        }
-        catch (JSException)
-        {
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            await Logging.LogErrorAsync("landing probe availability", exception, CancellationToken.None);
         }
     }
 
@@ -197,11 +168,6 @@ public partial class Landing : ComponentBase, IDisposable
     private void BeginSignIn()
     {
         Navigation.NavigateToLogin("authentication/login");
-    }
-
-    private void OpenWebAuthnProbe()
-    {
-        Navigation.NavigateTo("/diagnostics/webauthn-capability-probe");
     }
 
     public void Dispose()

@@ -1,8 +1,11 @@
 using System.Reflection;
 using AwesomeAssertions;
+using FishingLogBook.Web.Common.Routing;
 using FishingLogBook.Web.Features.OfflineAccess;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
+using OfflineDiagnosticsPage = FishingLogBook.Web.Features.Diagnostics.Pages.OfflineDiagnostics.OfflineDiagnostics;
+using PublicDiagnosticsLayout = FishingLogBook.Web.Layouts.PublicLayout.PublicLayout;
 
 namespace FishingLogBook.Web.Tests.Features.OfflineAccess.OfflineArchitectureTests;
 
@@ -54,6 +57,35 @@ public class WhenTestingDependencies : BaseOfflineArchitectureTest
         // Assert
         offlineMarkers.Should().NotContainNulls();
         onlineAuthorization.Should().OnlyContain(attribute => attribute == null);
+    }
+
+    [Fact]
+    public void ItShouldKeepOfflineDiagnosticsPublicLocalAndIndependentOfOfflineUnlock()
+    {
+        // Arrange
+        Type[] surfaceTypes = [typeof(OfflineDiagnosticsPage), typeof(PublicDiagnosticsLayout)];
+        var pageType = surfaceTypes[0];
+        var injectedTypes = surfaceTypes
+            .SelectMany(type => type
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(property => property.GetCustomAttribute<InjectAttribute>() is not null))
+            .Select(property => property.PropertyType)
+            .ToArray();
+
+        // Act
+        var isPublic = pageType.GetCustomAttribute<PublicRouteAttribute>() is not null;
+        var isOfflineOwnerRoute = pageType.GetCustomAttribute<OfflineRouteAttribute>() is not null;
+        var requiresAuthorization = pageType.GetCustomAttribute<AuthorizeAttribute>() is not null;
+        var forbidden = injectedTypes.Where(type =>
+            type.Name == "IOfflineOwnerContextService"
+            || ForbiddenDependencyNames.Contains(type.Name)
+            || IsOnlineDependencyCategory(type));
+
+        // Assert
+        isPublic.Should().BeTrue();
+        isOfflineOwnerRoute.Should().BeFalse();
+        requiresAuthorization.Should().BeFalse();
+        forbidden.Should().BeEmpty();
     }
 
     private static bool IsOnlineDependencyCategory(Type type)

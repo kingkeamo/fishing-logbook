@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Common.Routing;
 using FishingLogBook.Web.Features.OfflineAccess;
 using Microsoft.AspNetCore.Components;
 
@@ -9,5 +10,9 @@ public partial class App : ComponentBase
     {
         return Attribute.IsDefined(pageType, typeof(OfflineRouteAttribute));
     }
-}
 
+    private static bool IsPublicRoute(Type pageType)
+    {
+        return Attribute.IsDefined(pageType, typeof(PublicRouteAttribute));
+    }
+}

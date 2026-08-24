@@ -117,8 +117,8 @@ function createWorker({ assets = [], cacheKeys = [], match, fetch: fetchImplemen
         return activation;
     }
 
-    function dispatchMessage(data) {
-        listeners.message({ data });
+    function dispatchMessage(data, ports = []) {
+        listeners.message({ data, ports });
     }
 
     return {
@@ -193,6 +193,19 @@ describe('published service worker', () => {
 
         expect(() => worker.dispatchMessage(null)).not.toThrow();
         expect(worker.serviceWorker.skipWaiting).not.toHaveBeenCalled();
+    });
+
+    it('reports the controlling cache generation without reading application data', () => {
+        const worker = createWorker();
+        const postMessage = vi.fn();
+
+        worker.dispatchMessage({ type: 'InspectOfflineCache' }, [{ postMessage }]);
+
+        expect(postMessage).toHaveBeenCalledWith({
+            cacheName: 'offline-cache-test',
+            manifestVersion: 'test'
+        });
+        expect(worker.cache.match).not.toHaveBeenCalled();
     });
 
     it('leaves the reload to the app when the app requested the takeover', async () => {
