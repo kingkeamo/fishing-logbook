@@ -166,6 +166,8 @@ public class WhenTestingRouting : BaseLandingTest
         // Assert
         cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
         cut.FindAll("#landing-offline-not-configured").Should().BeEmpty();
+        cut.FindAll("#landing-create-account").Should().BeEmpty();
+        cut.FindAll("#landing-sign-in").Should().BeEmpty();
         await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
         await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
         await network.Received(1).StartMonitoringAsync(Arg.Any<CancellationToken>());
@@ -213,6 +215,8 @@ public class WhenTestingRouting : BaseLandingTest
                 .Should().Contain("Offline access isn't set up on this device"));
         cut.FindAll("#landing-open-offline").Should().BeEmpty();
         cut.FindAll("#landing-offline-availability-failed").Should().BeEmpty();
+        cut.FindAll("#landing-create-account").Should().BeEmpty();
+        cut.FindAll("#landing-sign-in").Should().BeEmpty();
         await network.Received(1).StartMonitoringAsync(Arg.Any<CancellationToken>());
         await network.Received(1).IsOnlineAsync(Arg.Any<CancellationToken>());
         await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
@@ -272,6 +276,8 @@ public class WhenTestingRouting : BaseLandingTest
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#landing-offline-not-configured").Should().NotBeNull());
+        cut.FindAll("#landing-create-account").Should().BeEmpty();
+        cut.FindAll("#landing-sign-in").Should().BeEmpty();
         await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
         await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
     }
@@ -295,6 +301,8 @@ public class WhenTestingRouting : BaseLandingTest
 
         // Assert
         cut.WaitForAssertion(() => cut.FindAll("#landing-offline-not-configured").Should().BeEmpty());
+        cut.Find("#landing-create-account").Should().NotBeNull();
+        cut.Find("#landing-sign-in").Should().NotBeNull();
         await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
         await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
     }
@@ -323,6 +331,8 @@ public class WhenTestingRouting : BaseLandingTest
             cut.Find("#landing-offline-availability-failed").TextContent
                 .Should().Contain("couldn't check offline access"));
         cut.FindAll("#landing-offline-not-configured").Should().BeEmpty();
+        cut.FindAll("#landing-create-account").Should().BeEmpty();
+        cut.FindAll("#landing-sign-in").Should().BeEmpty();
 
         // Act
         await cut.Find("#landing-offline-availability-retry").ClickAsync();
