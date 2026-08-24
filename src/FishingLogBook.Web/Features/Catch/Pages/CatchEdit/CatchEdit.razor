@@ -53,7 +53,11 @@
                 </MudExpansionPanel>
             </MudExpansionPanels>
 
-            <CatchEditEditor Catch="_catch" Preferences="_preferences" IdPrefix="catch-edit" Saved="OnDetailsSavedAsync" />
+            <CatchEditEditor Catch="_catch"
+                             Preferences="_preferences"
+                             IdPrefix="catch-edit"
+                             Saved="OnDetailsSavedAsync"
+                             BindingFailed="OnEditorBindingFailed" />
 
             <MudExpansionPanels Elevation="1" MultiExpansion="true" id="catch-edit-location-sections">
                 <MudExpansionPanel Text="@Loc["Catch_ManageLocationPrivacy"]" id="catch-edit-location-panel">

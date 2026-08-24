@@ -85,5 +85,9 @@ public partial class OfflineCatchEdit : ComponentBase
         Navigation.NavigateTo("/offline/catches");
         return Task.CompletedTask;
     }
-}
 
+    private void OnEditorBindingFailed()
+    {
+        _loadFailed = true;
+    }
+}

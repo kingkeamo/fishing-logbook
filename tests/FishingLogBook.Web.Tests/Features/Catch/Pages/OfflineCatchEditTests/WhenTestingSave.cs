@@ -53,6 +53,27 @@ public class WhenTestingSave : BaseOfflineCatchEditTest
     }
 
     [Fact]
+    public async Task ItShouldShowLoadFailedWhenTheCaughtOnCannotBeBound()
+    {
+        // Arrange
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>()).Returns(Catch(OwnerUserId));
+        var time = Substitute.For<FishingLogBook.Web.Browser.Time.ITimeService>();
+        time.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns("   ");
+        await using var context = CreateContext(store, time: time);
+
+        // Act
+        var cut = context.Render<OfflineCatchEdit>(parameters => parameters.Add(page => page.CatchId, CatchId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#offline-catch-edit-load-failed").Should().NotBeNull());
+        cut.FindAll("#offline-catch-edit-caught-on").Should().BeEmpty();
+        cut.FindAll("#offline-catch-edit-save").Should().BeEmpty();
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldSaveMetadataLocallyForTheUnlockedOwner()
     {
         // Arrange

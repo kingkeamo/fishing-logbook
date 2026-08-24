@@ -24,7 +24,10 @@ public class BaseOfflineCatchEditTest
     protected static readonly Guid OtherUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     protected static readonly Guid CatchId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
-    protected static BunitContext CreateContext(ICatchStore catchStore, ILoggingService? logging = null)
+    protected static BunitContext CreateContext(
+        ICatchStore catchStore,
+        ILoggingService? logging = null,
+        ITimeService? time = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -32,12 +35,16 @@ public class BaseOfflineCatchEditTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(catchStore);
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
-        var time = Substitute.For<ITimeService>();
-        time.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
-            .Returns(call => call.Arg<DateTimeOffset>().ToString("yyyy-MM-ddTHH:mm"));
-        time.FromDateTimeLocalValueAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(call => DateTimeOffset.Parse(call.Arg<string>()));
-        context.Services.AddSingleton(time);
+        var timeService = time ?? Substitute.For<ITimeService>();
+        if (time is null)
+        {
+            timeService.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+                .Returns(call => call.Arg<DateTimeOffset>().ToString("yyyy-MM-ddTHH:mm"));
+            timeService.FromDateTimeLocalValueAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(call => DateTimeOffset.Parse(call.Arg<string>()));
+        }
+
+        context.Services.AddSingleton(timeService);
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(Substitute.For<IModalService>());
         var preferences = Substitute.For<IAnglerPreferencesStore>();

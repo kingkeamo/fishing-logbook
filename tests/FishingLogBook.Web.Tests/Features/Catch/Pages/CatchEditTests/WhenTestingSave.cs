@@ -45,6 +45,38 @@ public class WhenTestingSave : BaseCatchEditTest
     }
 
     [Fact]
+    public async Task ItShouldShowLoadFailedWhenTheSavedCatchCannotBeRebound()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(catchId));
+        var synchroniser = QuietSynchroniser();
+        var time = Substitute.For<FishingLogBook.Web.Browser.Time.ITimeService>();
+        time.ToDateTimeLocalValueAsync(StoredCaughtOn, Arg.Any<CancellationToken>())
+            .Returns("2026-08-17T08:00", "2026-08-17T08:00", null!);
+        time.FromDateTimeLocalValueAsync("2026-08-17T08:00", Arg.Any<CancellationToken>())
+            .Returns(StoredCaughtOn);
+        await using var context = CreateContext(store, synchroniser: synchroniser, time: time);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-save").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#catch-edit-save").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-load-failed").TextContent.Should().Contain("could not be loaded"));
+        cut.FindAll("#catch-edit-saved").Should().BeEmpty();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.Id == catchId),
+            Arg.Any<CancellationToken>());
+        await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldRejectAFutureCaughtOnWithoutSaving()
     {
         // Arrange

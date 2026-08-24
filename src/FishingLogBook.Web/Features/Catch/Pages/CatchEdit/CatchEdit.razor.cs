@@ -108,6 +108,11 @@ public partial class CatchEdit : ComponentBase, IDisposable
         return Task.CompletedTask;
     }
 
+    private void OnEditorBindingFailed()
+    {
+        _loadFailed = true;
+    }
+
     private void TryToSynchronisePending()
     {
         _ = SafeSynchronisePendingAsync();

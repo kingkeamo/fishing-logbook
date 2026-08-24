@@ -46,6 +46,9 @@ public partial class CatchEditEditor : ComponentBase
     [Parameter]
     public EventCallback<CatchEditSavedModel> Saved { get; set; }
 
+    [Parameter]
+    public EventCallback BindingFailed { get; set; }
+
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
 
@@ -139,7 +142,12 @@ public partial class CatchEditEditor : ComponentBase
 
         _boundCatchId = Catch.Id;
         _catch = Catch;
-        await BindFormAsync(Catch);
+        if (!await BindFormAsync(Catch))
+        {
+            await BindingFailed.InvokeAsync();
+            return;
+        }
+
         ApplyProfileDefaultsToEmptyFields();
     }
 
@@ -250,7 +258,12 @@ public partial class CatchEditEditor : ComponentBase
 
             await CatchStore.SaveAsync(built.Catch, CancellationToken.None);
             _catch = built.Catch;
-            await BindFormAsync(built.Catch);
+            if (!await BindFormAsync(built.Catch))
+            {
+                await BindingFailed.InvokeAsync();
+                return;
+            }
+
             _saved = true;
             await Saved.InvokeAsync(built);
         }
@@ -347,7 +360,7 @@ public partial class CatchEditEditor : ComponentBase
             || _catch.CaughtOn != caughtOn;
     }
 
-    private async Task BindFormAsync(CatchModel catchRecord)
+    private async Task<bool> BindFormAsync(CatchModel catchRecord)
     {
         _speciesName = catchRecord.SpeciesName ?? string.Empty;
         _speciesIsExplicit = !string.IsNullOrWhiteSpace(catchRecord.SpeciesName);
@@ -358,8 +371,14 @@ public partial class CatchEditEditor : ComponentBase
         _method = catchRecord.Method ?? string.Empty;
         _baitOrLure = catchRecord.BaitOrLure ?? string.Empty;
         _notes = catchRecord.Notes ?? string.Empty;
-        _caughtOnLocal = await Time.ToDateTimeLocalValueAsync(catchRecord.CaughtOn, CancellationToken.None)
-            ?? string.Empty;
+        var caughtOnLocal = await Time.ToDateTimeLocalValueAsync(catchRecord.CaughtOn, CancellationToken.None);
+        if (string.IsNullOrWhiteSpace(caughtOnLocal))
+        {
+            return false;
+        }
+
+        _caughtOnLocal = caughtOnLocal;
+        return true;
     }
 
     private async Task<DateTimeOffset?> TryParseCaughtOnAsync()
