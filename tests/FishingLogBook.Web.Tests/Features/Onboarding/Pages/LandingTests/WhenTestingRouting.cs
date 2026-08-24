@@ -229,6 +229,39 @@ public class WhenTestingRouting : BaseLandingTest
     }
 
     [Fact]
+    public async Task ItShouldTreatAnUnexpectedOfflineAvailabilityStateAsARetryableFailure()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var device = Substitute.For<IOfflineAccessDeviceService>();
+        device.HasReadyEntitlementAsync(Arg.Any<CancellationToken>())
+            .Returns(
+                _ => new OfflineAccessAvailabilityModel("future-state", "ignored-detail"),
+                _ => new OfflineAccessAvailabilityModel("ready", "ready-record-found"));
+        var logging = Substitute.For<ILoggingService>();
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            logging: logging,
+            offlineAccessDevice: device);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() => cut.Find("#landing-offline-availability-failed").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#landing-offline-availability-retry").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+        cut.FindAll("#landing-offline-availability-failed").Should().BeEmpty();
+        await device.Received(2).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "landing offline availability",
+            Arg.Is<OfflineAccessDiscoveryException>(exception => exception.Message == "unexpected-state"),
+            CancellationToken.None);
+    }
+
+    [Fact]
     public async Task ItShouldUnlockOnlyAfterTheExplicitAction()
     {
         // Arrange

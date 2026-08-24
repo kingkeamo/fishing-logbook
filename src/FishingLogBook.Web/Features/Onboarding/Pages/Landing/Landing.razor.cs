@@ -57,22 +57,25 @@ public partial class Landing : ComponentBase, IDisposable
                 return;
             }
 
-            if (availability.State == "check-failed")
+            var state = availability.State switch
+            {
+                "ready" => OfflineAvailabilityState.Ready,
+                "not-configured" => OfflineAvailabilityState.NotConfigured,
+                "check-failed" => OfflineAvailabilityState.CheckFailed,
+                _ => OfflineAvailabilityState.CheckFailed
+            };
+            if (state == OfflineAvailabilityState.CheckFailed)
             {
                 await Logging.LogErrorAsync(
                     "landing offline availability",
-                    new OfflineAccessDiscoveryException(availability.Detail),
+                    new OfflineAccessDiscoveryException(
+                        availability.State == "check-failed" ? availability.Detail : "unexpected-state"),
                     CancellationToken.None);
             }
 
             await InvokeAsync(() =>
             {
-                _offlineAvailability = availability.State switch
-                {
-                    "ready" => OfflineAvailabilityState.Ready,
-                    "check-failed" => OfflineAvailabilityState.CheckFailed,
-                    _ => OfflineAvailabilityState.NotConfigured
-                };
+                _offlineAvailability = state;
                 StateHasChanged();
             });
         }
