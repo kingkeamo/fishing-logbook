@@ -54,7 +54,7 @@ When asked to implement a GitHub issue:
 16. Fix BLOCKER and SHOULD FIX findings from the self-review.
 17. Run the **full applicable validation again**. A test run from before the self-review fixes does not count as final validation.
 18. Report any Acceptance Criterion that cannot be satisfied rather than pretending it is complete.
-19. A pull request should reference the GitHub issue. The PR description and completion report must include the Self Review section from **`self-review.md`**.
-20. Do not mark an issue complete, and do not treat the PR as ready for review, unless every Acceptance Criterion is satisfied **and** the self-review (including fixes and final validation) is complete.
+19. A pull request should reference the GitHub issue. For a normal implementation issue that the PR fully completes, use GitHub's normal closing reference (for example `Closes #123`). For an issue explicitly marked as a **living**, **ongoing**, **tracking**, **epic**, or **backlog** issue that must remain open across multiple PRs, never use `Closes`, `Fixes`, `Resolves`, or another auto-closing keyword. Reference it with non-closing wording such as `Contributes to #123` or `Part of #123` instead. The PR description and completion report must include the Self Review section from **`self-review.md`**.
+20. Do not mark an issue complete, and do not treat the PR as ready for review, unless every Acceptance Criterion is satisfied **and** the self-review (including fixes and final validation) is complete. For living/ongoing/tracking/backlog issues, this means only the scoped journey/items selected for that PR; update the tracking issue and leave it open.
 
 Do not stop at “Implementation complete. All tests pass.”
