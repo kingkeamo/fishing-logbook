@@ -20,6 +20,14 @@ test('requires explicit enablement and dedicated Cognito secrets', async () => {
     assert.match(workflow, /secrets\.E2E_COGNITO_PASSWORD/);
 });
 
+test('provides project-local headed, debug and single-test commands', async () => {
+    const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+
+    assert.equal(packageJson.scripts['test-e2e'], 'playwright test --headed --workers=1');
+    assert.equal(packageJson.scripts['test-e2e-debug'], 'playwright test --debug --workers=1');
+    assert.equal(packageJson.scripts['test-e2e-single'], 'playwright test --headed --workers=1 --grep');
+});
+
 test('registers independent disposable-container teardown', async () => {
     const config = await readFile(new URL('../playwright.config.mjs', import.meta.url), 'utf8');
     const teardown = await readFile(new URL('../support/teardown.mjs', import.meta.url), 'utf8');
