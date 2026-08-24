@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@using FishingLogBook.Web.Features.OfflineAccess.Enums
 
 <MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -36,6 +37,45 @@
     </MudDrawer>
     <MudMainContent>
         <div class="offline-mode-banner" id="offline-mode-banner">@Loc["OfflineAccess_Mode"]</div>
+        @if (OfflineReconnect.State is OfflineReconnectStateEnum.ConnectivityRestored
+             or OfflineReconnectStateEnum.RecoveringAuthentication
+             or OfflineReconnectStateEnum.VerifyingOwner
+             or OfflineReconnectStateEnum.Synchronising)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="offline-reconnect-status" id="offline-reconnect-progress">
+                @(OfflineReconnect.State == OfflineReconnectStateEnum.Synchronising
+                    ? Loc["OfflineReconnect_Synchronising"]
+                    : Loc["OfflineReconnect_Reconnecting"])
+            </MudAlert>
+        }
+        @if (OfflineReconnect.State == OfflineReconnectStateEnum.AuthenticationRequired)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="offline-reconnect-status" id="offline-reconnect-authentication-required">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.body2">@Loc["OfflineReconnect_AuthenticationRequired"]</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SignInToSynchronise" id="offline-reconnect-sign-in">
+                        @Loc["OfflineReconnect_SignIn"]
+                    </MudButton>
+                </MudStack>
+            </MudAlert>
+        }
+        @if (OfflineReconnect.State == OfflineReconnectStateEnum.OwnerMismatch)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="offline-reconnect-status" id="offline-reconnect-owner-mismatch">
+                @Loc["OfflineReconnect_OwnerMismatch"]
+            </MudAlert>
+        }
+        @if (OfflineReconnect.State == OfflineReconnectStateEnum.RetryableFailure)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="offline-reconnect-status" id="offline-reconnect-failed">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.body2">@Loc["OfflineReconnect_Failed"]</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="RetryReconnectAsync" id="offline-reconnect-retry">
+                        @Loc["Action_TryAgain"]
+                    </MudButton>
+                </MudStack>
+            </MudAlert>
+        }
         <div class="app-shell-content" id="offline-shell-content">
             @Body
         </div>

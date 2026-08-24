@@ -6,3 +6,8 @@
     padding: 0.35rem 0.75rem;
     text-align: center;
 }
+
+.offline-reconnect-status {
+    border-radius: 0;
+    margin: 0;
+}

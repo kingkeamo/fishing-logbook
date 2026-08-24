@@ -765,6 +765,12 @@
   <data name="OfflineAccess_OpenOffline" xml:space="preserve"><value>Ouvrir hors ligne</value></data>
   <data name="OfflineAccess_UnlockFailed" xml:space="preserve"><value>Impossible d’ouvrir l’accès hors ligne. Réessayez ou connectez-vous lorsque vous avez une connexion.</value></data>
   <data name="OfflineAccess_Mode" xml:space="preserve"><value>Mode hors ligne</value></data>
+  <data name="OfflineReconnect_Reconnecting" xml:space="preserve"><value>Connexion rétablie. Reconnexion en cours…</value></data>
+  <data name="OfflineReconnect_Synchronising" xml:space="preserve"><value>Synchronisation de vos prises enregistrées…</value></data>
+  <data name="OfflineReconnect_AuthenticationRequired" xml:space="preserve"><value>Vous êtes de nouveau en ligne. Connectez-vous pour synchroniser vos prises.</value></data>
+  <data name="OfflineReconnect_SignIn" xml:space="preserve"><value>Se connecter pour synchroniser</value></data>
+  <data name="OfflineReconnect_OwnerMismatch" xml:space="preserve"><value>Vous avez enregistré ces prises avec un autre compte hors ligne. Connectez-vous avec le compte correspondant pour les synchroniser.</value></data>
+  <data name="OfflineReconnect_Failed" xml:space="preserve"><value>Nous n’avons pas encore pu nous reconnecter. Vos prises sont toujours enregistrées sur cet appareil.</value></data>
   <data name="OfflineAccess_Lock" xml:space="preserve"><value>Verrouiller l’accès hors ligne</value></data>
   <data name="OfflineDiagnostics_PageTitle" xml:space="preserve"><value>Diagnostic hors ligne</value></data>
   <data name="OfflineDiagnostics_Title" xml:space="preserve"><value>Diagnostic hors ligne</value></data>
