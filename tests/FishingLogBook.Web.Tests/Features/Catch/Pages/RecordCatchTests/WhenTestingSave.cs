@@ -305,24 +305,37 @@ public class WhenTestingSave : BaseRecordCatchTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
+        var exception = new InvalidOperationException("The current user is not signed in.");
         var store = Substitute.For<ICatchStore>();
         var owner = Substitute.For<ILocalCatchOwnerService>();
         owner.GetUserIdAsync(Arg.Any<CancellationToken>())
-            .ThrowsAsync(new InvalidOperationException("The current user is not signed in."));
+            .ThrowsAsync(exception);
         var synchroniser = QuietSynchroniser();
-        await using var context = CreateContext(store, owner: owner, synchroniser: synchroniser);
-        var cut = context.Render<RecordCatch>();
-        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+        var logging = QuietLogging();
+        var preferences = QuietAnglerPreferences();
+        await using var context = CreateContext(
+            store,
+            owner: owner,
+            synchroniser: synchroniser,
+            logging: logging,
+            anglerPreferences: preferences);
 
         // Act
-        await cut.Find("#save-catch-button").ClickAsync();
+        var cut = context.Render<RecordCatch>();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#catch-save-failed").TextContent.Should().Contain("could not be saved"));
-        cut.FindAll("#catch-saved").Should().BeEmpty();
+        cut.WaitForAssertion(() => cut.Find("#record-catch-owner-failed").TextContent
+            .Should().Contain("could not confirm who is recording this catch"));
+        cut.FindComponents<RecordCatchEditor>().Should().BeEmpty();
+        cut.FindAll("#save-catch-button").Should().BeEmpty();
         await owner.Received(1).GetUserIdAsync(Arg.Any<CancellationToken>());
+        await preferences.DidNotReceive().GetAsync(Arg.Any<CancellationToken>());
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
         await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "resolving the catch owner",
+            Arg.Is<Exception>(caught => ReferenceEquals(caught, exception)),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -8,7 +8,16 @@
 }
 else
 {
-    <RecordCatchEditor OwnerUserId="_ownerUserId"
-                       Preferences="_preferences"
-                       Saved="OnSavedAsync" />
+    @if (_ownerResolutionFailed)
+    {
+        <MudAlert Severity="Severity.Error" id="record-catch-owner-failed">
+            @Loc["Catch_RecordOwnerUnavailable"]
+        </MudAlert>
+    }
+    else
+    {
+        <RecordCatchEditor OwnerUserId="_ownerUserId"
+                           Preferences="_preferences"
+                           Saved="OnSavedAsync" />
+    }
 }

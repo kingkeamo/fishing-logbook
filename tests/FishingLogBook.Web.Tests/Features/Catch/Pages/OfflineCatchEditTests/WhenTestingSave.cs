@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Components.CatchEditEditor;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.OfflineCatchEdit;
@@ -60,7 +61,8 @@ public class WhenTestingSave : BaseOfflineCatchEditTest
         await using var context = CreateContext(store);
         var cut = context.Render<OfflineCatchEdit>(parameters => parameters.Add(page => page.CatchId, CatchId));
         cut.WaitForAssertion(() => cut.Find("#offline-catch-edit-notes").Should().NotBeNull());
-        cut.Find("#offline-catch-edit-notes").Change("After");
+        cut.FindComponent<CatchEditEditor>().Should().NotBeNull();
+        cut.Find("#offline-catch-edit-notes").Input("After");
 
         // Act
         await cut.Find("#offline-catch-edit-save").ClickAsync();
@@ -94,7 +96,7 @@ public class WhenTestingSave : BaseOfflineCatchEditTest
         // Assert
         cut.WaitForAssertion(() => cut.Find("#offline-catch-edit-save-failed").Should().NotBeNull());
         await logging.Received(1).LogErrorAsync(
-            "saving an offline catch edit",
+            "saving catch details",
             exception,
             Arg.Any<CancellationToken>());
     }

@@ -1,7 +1,7 @@
 @page "/offline/catches/{CatchId:guid}/edit"
 @attribute [OfflineRoute]
 @layout OfflineLayout
-@using FishingLogBook.Shared.Constants
+@using FishingLogBook.Web.Features.Catch.Components.CatchEditEditor
 @using FishingLogBook.Web.Features.OfflineAccess
 
 <PageTitle>@Loc["Catch_EditPageTitle"]</PageTitle>
@@ -19,48 +19,15 @@
         }
         else if (_catch is not null)
         {
-            <MudExpansionPanels Elevation="1" MultiExpansion="true">
+            <MudExpansionPanels Elevation="1" MultiExpansion="true" id="offline-catch-edit-photo-sections">
                 <MudExpansionPanel Text="@Loc["Catch_EditPhotographsSection"]" Expanded="true">
                     <CatchPhotographCarousel Photographs="CarouselPhotographs" Editable="false" IdPrefix="offline-catch-edit" />
                 </MudExpansionPanel>
-                <MudExpansionPanel Text="@Loc["Catch_EditDetailsSection"]" Expanded="true">
-                    <MudStack Spacing="4">
-                        <MudStack Spacing="2">
-                            <MudText Typo="Typo.caption">@Loc["Catch_EditMethod"]</MudText>
-                            <MudStack Row="true" Spacing="1" Class="flex-wrap" id="offline-catch-edit-method-chips">
-                                @foreach (var method in MethodOptions)
-                                {
-                                    <MudChip T="string" Color="@(method.Name == _method ? Color.Primary : Color.Default)" Variant="@(method.Name == _method ? Variant.Filled : Variant.Outlined)" OnClick="@(() => _method = method.Name)" id="@($"offline-catch-edit-method-{method.Code}")">@method.Name</MudChip>
-                                }
-                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ChooseMethodAsync" id="offline-catch-edit-method-more">@Loc["Common_More"]</MudButton>
-                            </MudStack>
-                        </MudStack>
-                        <MudStack Spacing="2">
-                            <MudText Typo="Typo.caption">@Loc["Catch_EditSpecies"]</MudText>
-                            <MudStack Row="true" Spacing="1" Class="flex-wrap" id="offline-catch-edit-species-chips">
-                                @foreach (var species in SpeciesOptions)
-                                {
-                                    <MudChip T="string" Color="@(species.Name == _species ? Color.Primary : Color.Default)" Variant="@(species.Name == _species ? Variant.Filled : Variant.Outlined)" OnClick="@(() => _species = species.Name)" id="@($"offline-catch-edit-species-{species.Code}")">@species.Name</MudChip>
-                                }
-                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ChooseSpeciesAsync" id="offline-catch-edit-species-more">@Loc["Common_More"]</MudButton>
-                            </MudStack>
-                        </MudStack>
-                        <MudNumericField T="decimal?" @bind-Value="_weight" Label="@WeightLabel" id="offline-catch-edit-weight" />
-                        <MudNumericField T="decimal?" @bind-Value="_length" Label="@LengthLabel" id="offline-catch-edit-length" />
-                        <MudTextField @bind-Value="_baitOrLure" Label="@Loc["Catch_EditBaitOrLure"]" MaxLength="@CatchDetailConstants.MaxBaitOrLureLength" id="offline-catch-edit-bait" />
-                        <MudTextField @bind-Value="_notes" Label="@Loc["Catch_EditNotes"]" MaxLength="@CatchDetailConstants.MaxNotesLength" Lines="4" id="offline-catch-edit-notes" />
-                    </MudStack>
-                </MudExpansionPanel>
             </MudExpansionPanels>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="_isSaving" OnClick="SaveAsync" id="offline-catch-edit-save">@(_isSaving ? Loc["Catch_EditSaving"] : Loc["Catch_EditSave"])</MudButton>
-            @if (_validationMessage is not null)
-            {
-                <MudAlert Severity="Severity.Warning" id="offline-catch-edit-validation">@_validationMessage</MudAlert>
-            }
-            @if (_saveFailed)
-            {
-                <MudAlert Severity="Severity.Error" id="offline-catch-edit-save-failed">@Loc["Catch_EditSaveFailed"]</MudAlert>
-            }
+            <CatchEditEditor Catch="_catch"
+                             Preferences="_preferences"
+                             IdPrefix="offline-catch-edit"
+                             Saved="OnSavedAsync" />
         }
     </MudStack>
 </MudContainer>

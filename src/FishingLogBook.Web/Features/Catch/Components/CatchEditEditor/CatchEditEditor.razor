@@ -1,0 +1,106 @@
+@using FishingLogBook.Shared.Constants
+
+<MudExpansionPanels Elevation="1" MultiExpansion="true" id="@(IdPrefix + "-sections")">
+    <MudExpansionPanel Text="@Loc["Catch_EditDetailsSection"]"
+                       Expanded="true"
+                       id="@(IdPrefix + "-details-panel")">
+        <MudStack Spacing="4">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.caption">@Loc["Catch_EditMethod"]</MudText>
+                <MudStack Row="true" Spacing="1" Class="flex-wrap" id="@(IdPrefix + "-method-chips")">
+                    @foreach (var method in MethodOptions)
+                    {
+                        var selected = string.Equals(method.Name, _method, StringComparison.OrdinalIgnoreCase);
+                        <MudChip T="string"
+                                 Color="@(selected ? Color.Primary : Color.Default)"
+                                 Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => SelectMethod(method.Name))"
+                                 id="@($"{IdPrefix}-method-{method.Code}")">
+                            @method.Name
+                        </MudChip>
+                    }
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               OnClick="ChooseMethodAsync"
+                               id="@(IdPrefix + "-method-more")">
+                        @Loc["Common_More"]
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.caption">@Loc["Catch_EditSpecies"]</MudText>
+                <MudStack Row="true" Spacing="1" Class="flex-wrap" id="@(IdPrefix + "-species-chips")">
+                    @foreach (var species in SpeciesOptions)
+                    {
+                        var selected = string.Equals(species.Name, _speciesName, StringComparison.OrdinalIgnoreCase);
+                        <MudChip T="string"
+                                 Color="@(selected ? Color.Primary : Color.Default)"
+                                 Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => SelectSpecies(species.Name))"
+                                 id="@($"{IdPrefix}-species-{species.Code}")">
+                            @species.Name
+                        </MudChip>
+                    }
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               OnClick="ChooseSpeciesAsync"
+                               id="@(IdPrefix + "-species-more")">
+                        @Loc["Common_More"]
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+
+            <MudTextField @bind-Value="_weightText"
+                          Label="@WeightLabel"
+                          Immediate="true"
+                          InputType="InputType.Number"
+                          id="@(IdPrefix + "-weight")" />
+            <MudTextField @bind-Value="_lengthText"
+                          Label="@LengthLabel"
+                          Immediate="true"
+                          InputType="InputType.Number"
+                          id="@(IdPrefix + "-length")" />
+            <MudTextField @bind-Value="_baitOrLure"
+                          Label="@Loc["Catch_EditBaitOrLure"]"
+                          MaxLength="@CatchDetailConstants.MaxBaitOrLureLength"
+                          Immediate="true"
+                          id="@(IdPrefix + "-bait")" />
+            <MudTextField @bind-Value="_notes"
+                          Label="@Loc["Catch_EditNotes"]"
+                          MaxLength="@CatchDetailConstants.MaxNotesLength"
+                          Immediate="true"
+                          Lines="4"
+                          id="@(IdPrefix + "-notes")" />
+            <MudTextField @bind-Value="_caughtOnLocal"
+                          Label="@Loc["Catch_EditCaughtOn"]"
+                          Immediate="true"
+                          InputType="InputType.DateTimeLocal"
+                          id="@(IdPrefix + "-caught-on")" />
+        </MudStack>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@if (_validationMessage is not null)
+{
+    <MudAlert Severity="Severity.Warning" id="@(IdPrefix + "-validation")">@_validationMessage</MudAlert>
+}
+
+<MudButton Variant="Variant.Filled"
+           Color="Color.Primary"
+           FullWidth="true"
+           Disabled="_isSaving"
+           OnClick="SaveAsync"
+           id="@(IdPrefix + "-save")">
+    @(_isSaving ? Loc["Catch_EditSaving"] : Loc["Catch_EditSave"])
+</MudButton>
+
+@if (_saveFailed)
+{
+    <MudAlert Severity="Severity.Error" id="@(IdPrefix + "-save-failed")">@Loc["Catch_EditSaveFailed"]</MudAlert>
+}
+
+@if (_saved)
+{
+    <MudAlert Severity="Severity.Success" id="@(IdPrefix + "-saved")">@Loc["Catch_EditSaved"]</MudAlert>
+}

@@ -27,11 +27,15 @@ public class WhenTestingDependencies : BaseOfflineArchitectureTest
         var injectedTypes = OfflineSurfaceTypes
             .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             .Where(property => property.GetCustomAttribute<InjectAttribute>() is not null)
-            .Select(property => property.PropertyType.Name)
+            .Select(property => property.PropertyType)
             .ToArray();
 
         // Act
-        var forbidden = injectedTypes.Intersect(ForbiddenDependencyNames).ToArray();
+        var forbidden = injectedTypes
+            .Where(type => ForbiddenDependencyNames.Contains(type.Name)
+                || IsOnlineDependencyCategory(type))
+            .Select(type => type.FullName)
+            .ToArray();
 
         // Assert
         forbidden.Should().BeEmpty();
@@ -41,7 +45,7 @@ public class WhenTestingDependencies : BaseOfflineArchitectureTest
     public void ItShouldMarkEveryOfflinePageForTheDedicatedGuardWithoutOnlineAuthorization()
     {
         // Arrange
-        var pages = OfflineSurfaceTypes.Where(type => type != typeof(FishingLogBook.Web.Layouts.OfflineLayout.OfflineLayout)).ToArray();
+        var pages = OfflinePageTypes;
 
         // Act
         var offlineMarkers = pages.Select(type => type.GetCustomAttribute<OfflineRouteAttribute>()).ToArray();
@@ -50,5 +54,18 @@ public class WhenTestingDependencies : BaseOfflineArchitectureTest
         // Assert
         offlineMarkers.Should().NotContainNulls();
         onlineAuthorization.Should().OnlyContain(attribute => attribute == null);
+    }
+
+    private static bool IsOnlineDependencyCategory(Type type)
+    {
+        var namespaceName = type.Namespace ?? string.Empty;
+        return type.Name.EndsWith("Client", StringComparison.Ordinal)
+            || type.Name.EndsWith("Synchroniser", StringComparison.Ordinal)
+            || namespaceName.Contains(".Clients", StringComparison.Ordinal)
+            || namespaceName.Contains(".Synchronisers", StringComparison.Ordinal)
+            || namespaceName.Contains(".Authentication", StringComparison.Ordinal)
+            || namespaceName.Contains(".Authorization", StringComparison.Ordinal)
+            || namespaceName.Contains(".Browser.Network", StringComparison.Ordinal)
+            || namespaceName.Contains(".Providers", StringComparison.Ordinal);
     }
 }

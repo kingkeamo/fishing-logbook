@@ -25,14 +25,6 @@ public partial class CatchEdit
                 return;
             }
 
-            if (!await BindFormAsync(_catch))
-            {
-                _loadFailed = true;
-                _catch = null;
-                return;
-            }
-
-            ApplyProfileDefaultsToEmptyFields();
         }
         catch (Exception exception)
         {
@@ -148,13 +140,6 @@ public partial class CatchEdit
 
     private async Task LoadPreferencesAsync()
     {
-        var anglerPreferences = await AnglerPreferences.GetAsync(_cancellationTokenSource.Token);
-        _weightUnit = anglerPreferences.WeightUnit;
-        _lengthUnit = anglerPreferences.LengthUnit;
-        _catalogueMethods = anglerPreferences.Catalogue.Methods;
-        _catalogueSpecies = anglerPreferences.Catalogue.AllSpecies;
-        _preferences = anglerPreferences.Preferences;
-        _catalogueUnavailable = !anglerPreferences.HasCatalogue;
+        _preferences = await AnglerPreferences.GetAsync(_cancellationTokenSource.Token);
     }
 }
-

@@ -3,7 +3,9 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 
@@ -13,25 +15,30 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private Guid _ownerUserId;
     private AnglerPreferencesModel _preferences = AnglerPreferencesModel.Empty;
     private bool _isLoading = true;
+    private bool _ownerResolutionFailed;
 
     [Inject] private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
     [Inject] private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
     [Inject] private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
     [Inject] private ILoggingService Logging { get; set; } = default!;
+    [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            try
-            {
-                _ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
-            }
-            catch (Exception)
-            {
-                _ownerUserId = Guid.Empty;
-            }
+            _ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("resolving the catch owner", exception, CancellationToken.None);
+            _ownerResolutionFailed = true;
+            _isLoading = false;
+            return;
+        }
 
+        try
+        {
             _preferences = await AnglerPreferences.GetAsync(_cancellationTokenSource.Token);
         }
         finally

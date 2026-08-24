@@ -180,6 +180,9 @@
   <data name="Catch_RecordTitle" xml:space="preserve">
     <value>Record catch</value>
   </data>
+  <data name="Catch_RecordOwnerUnavailable" xml:space="preserve">
+    <value>We could not confirm who is recording this catch. Please sign in again and retry.</value>
+  </data>
   <data name="Catch_TakePhoto" xml:space="preserve">
     <value>Take photo</value>
   </data>

@@ -78,6 +78,39 @@ public class WhenTestingPhotographs : BaseCatchEditTest
     }
 
     [Fact]
+    public async Task ItShouldKeepAnAddedPhotographWhenSharedDetailsAreSaved()
+    {
+        // Arrange
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(CatchId));
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        await using var context = CreateContext(store);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, CatchId));
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-photo-camera").Should().NotBeNull());
+        cut.FindComponents<InputFile>()[0].UploadFiles(
+            InputFileContent.CreateFromBinary(
+                [0xFF, 0xD8, 0xFF],
+                "photo.jpg",
+                contentType: PhotographContentTypeConstants.Jpeg));
+        cut.WaitForAssertion(() => store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.Photographs.Count == 2),
+            Arg.Any<CancellationToken>()));
+        cut.Find("#catch-edit-notes").Input("Updated after adding a photo");
+
+        // Act
+        await cut.Find("#catch-edit-save").ClickAsync();
+
+        // Assert
+        await store.Received(2).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.Photographs.Count == 2),
+            Arg.Any<CancellationToken>());
+        var lastSaved = (CatchModel)store.ReceivedCalls().Last().GetArguments()[0]!;
+        lastSaved.Notes.Should().Be("Updated after adding a photo");
+    }
+
+    [Fact]
     public async Task ItShouldPreventRemovingTheLastPhotograph()
     {
         // Arrange

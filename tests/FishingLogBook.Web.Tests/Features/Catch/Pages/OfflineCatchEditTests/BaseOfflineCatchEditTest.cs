@@ -1,6 +1,7 @@
 using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -31,6 +32,12 @@ public class BaseOfflineCatchEditTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(catchStore);
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
+        var time = Substitute.For<ITimeService>();
+        time.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<DateTimeOffset>().ToString("yyyy-MM-ddTHH:mm"));
+        time.FromDateTimeLocalValueAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => DateTimeOffset.Parse(call.Arg<string>()));
+        context.Services.AddSingleton(time);
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(Substitute.For<IModalService>());
         var preferences = Substitute.For<IAnglerPreferencesStore>();

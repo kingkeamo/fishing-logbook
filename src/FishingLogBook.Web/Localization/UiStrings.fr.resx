@@ -180,6 +180,9 @@
   <data name="Catch_RecordTitle" xml:space="preserve">
     <value>Enregistrer une prise</value>
   </data>
+  <data name="Catch_RecordOwnerUnavailable" xml:space="preserve">
+    <value>Nous n’avons pas pu confirmer qui enregistre cette prise. Reconnectez-vous, puis réessayez.</value>
+  </data>
   <data name="Catch_TakePhoto" xml:space="preserve">
     <value>Prendre une photo</value>
   </data>
