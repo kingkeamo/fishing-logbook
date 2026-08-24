@@ -7,7 +7,10 @@
     "test:watch": "vitest --config src/FishingLogBook.Web/vitest.config.js",
     "test:browser": "playwright test --config src/FishingLogBook.Web/BrowserTests/playwright.config.js",
     "test-local-browser": "playwright test --config src/FishingLogBook.Web/BrowserTests/playwright.config.js --project=chromium",
-    "test-coverage": "vitest run --config src/FishingLogBook.Web/vitest.config.js --coverage"
+    "test-coverage": "vitest run --config src/FishingLogBook.Web/vitest.config.js --coverage",
+    "test-e2e": "npm --prefix tests/FishingLogBook.E2E run test-e2e",
+    "test-e2e-debug": "npm --prefix tests/FishingLogBook.E2E run test-e2e-debug",
+    "test-e2e-single": "npm --prefix tests/FishingLogBook.E2E run test-e2e-single --"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
