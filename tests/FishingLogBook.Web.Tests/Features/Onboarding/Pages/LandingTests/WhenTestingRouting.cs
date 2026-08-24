@@ -35,36 +35,31 @@ public class WhenTestingRouting : BaseLandingTest
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#public-landing-page").Should().NotBeNull());
+        cut.Find("#offline-diagnostics-button").GetAttribute("href").Should().Be("/offline-diagnostics");
         cut.Markup.Should().NotContain("Authorizing...");
     }
 
     [Fact]
-    public async Task ItShouldRenderTheOfflineProbeThroughTheRouterWhileAuthenticationIsPending()
+    public async Task ItShouldRenderOfflineDiagnosticsWithoutWaitingForAuthenticationOrOfflineUnlock()
     {
         // Arrange
         var authentication = new TaskCompletionSource<AuthenticationState>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        var probe = Probe(hasMetadata: true);
-        probe.GetStatusAsync(Arg.Any<CancellationToken>()).Returns(
-            new FishingLogBook.Web.Features.Diagnostics.Models.WebAuthnCapabilityProbeResultModel
-            {
-                HasProbeMetadata = true,
-                Outcome = "ready"
-            });
+        var authenticationStateProvider = Authentication(authentication.Task);
         await using var context = CreateContext(
             Onboarding(false),
-            probe: probe,
-            authenticationStateProvider: Authentication(authentication.Task));
+            authenticationStateProvider: authenticationStateProvider);
         AddApplicationShell(context);
-        context.Services.GetRequiredService<NavigationManager>()
-            .NavigateTo("/diagnostics/webauthn-capability-probe");
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/offline-diagnostics");
 
         // Act
         var cut = context.Render<App>();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#test-offline-webauthn-button").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("#offline-diagnostics-page").Should().NotBeNull());
         cut.Markup.Should().NotContain("Authorizing...");
+        context.Services.GetRequiredService<IOfflineOwnerContextService>().IsUnlocked.Should().BeFalse();
+        await authenticationStateProvider.DidNotReceive().GetAuthenticationStateAsync();
     }
 
     [Fact]
@@ -107,27 +102,6 @@ public class WhenTestingRouting : BaseLandingTest
         cut.Find("#public-landing-page").Should().NotBeNull();
         cut.FindAll("#landing-loading").Should().BeEmpty();
         await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldKeepTheProbeAvailableWhileAuthenticationIsPending()
-    {
-        // Arrange
-        var authentication = new TaskCompletionSource<AuthenticationState>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-        var probe = Probe(hasMetadata: true);
-        await using var context = CreateContext(
-            Onboarding(false),
-            probe: probe,
-            authenticationStateProvider: Authentication(authentication.Task));
-
-        // Act
-        var cut = context.Render<LandingPage>();
-
-        // Assert
-        cut.WaitForAssertion(() =>
-            cut.Find("#landing-webauthn-probe-action").Should().NotBeNull());
-        await probe.Received(1).HasMetadataAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -394,43 +368,6 @@ public class WhenTestingRouting : BaseLandingTest
         // Assert
         context.Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("authentication/login");
         await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public void ItShouldNotShowTheProbeActionWithoutProvisionedMetadata()
-    {
-        // Arrange
-        using var context = CreateContext(Onboarding(false), isAuthenticated: false);
-
-        // Act
-        var cut = context.Render<LandingPage>();
-
-        // Assert
-        cut.FindAll("#landing-webauthn-probe-action").Should().BeEmpty();
-        context.Services.GetRequiredService<NavigationManager>().Uri.Should().NotContain("webauthn-capability-probe");
-    }
-
-    [Fact]
-    public async Task ItShouldShowTheProvisionedProbeWithoutNavigatingUntilTapped()
-    {
-        // Arrange
-        var probe = Probe(hasMetadata: true);
-        await using var context = CreateContext(Onboarding(false), isAuthenticated: false, probe);
-
-        // Act
-        var cut = context.Render<LandingPage>();
-
-        // Assert
-        cut.Find("#landing-webauthn-probe-action").TextContent.Should().Contain("Test offline device unlock");
-        context.Services.GetRequiredService<NavigationManager>().Uri.Should().NotContain("webauthn-capability-probe");
-        await probe.Received(1).HasMetadataAsync(Arg.Any<CancellationToken>());
-
-        // Act
-        await cut.Find("#landing-webauthn-probe-action").ClickAsync();
-
-        // Assert
-        context.Services.GetRequiredService<NavigationManager>().Uri
-            .Should().EndWith("/diagnostics/webauthn-capability-probe");
     }
 
     [Fact]

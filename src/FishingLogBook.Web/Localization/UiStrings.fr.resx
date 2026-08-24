@@ -740,64 +740,6 @@
   <data name="Update_StatusLabel" xml:space="preserve"><value>Mise à jour</value></data>
   <data name="Update_StatusCurrent" xml:space="preserve"><value>À jour</value></data>
   <data name="Update_StatusAvailable" xml:space="preserve"><value>Nouvelle version disponible</value></data>
-  <data name="WebAuthnProbe_PageTitle" xml:space="preserve"><value>Test de capacité WebAuthn</value></data>
-  <data name="WebAuthnProbe_Title" xml:space="preserve"><value>Test de capacité de déverrouillage hors ligne</value></data>
-  <data name="WebAuthnProbe_Scope" xml:space="preserve"><value>Ce diagnostic temporaire vérifie uniquement l’authentification de l’appareil. Il ne peut pas vous connecter, accéder aux données de pêche ni appeler l’API.</value></data>
-  <data name="WebAuthnProbe_ProvisionTitle" xml:space="preserve"><value>Configurer en ligne</value></data>
-  <data name="WebAuthnProbe_ProvisionBody" xml:space="preserve"><value>Effectuez ce test dans l’application installée lorsque vous êtes en ligne. Créez d’abord l’identifiant de test, puis appuyez sur Vérifier l’identifiant en ligne afin que chaque authentification de l’appareil ait sa propre action explicite.</value></data>
-  <data name="WebAuthnProbe_ProvisionAction" xml:space="preserve"><value>Configurer l’identifiant de test</value></data>
-  <data name="WebAuthnProbe_VerifyOnlineAction" xml:space="preserve"><value>Vérifier l’identifiant en ligne</value></data>
-  <data name="WebAuthnProbe_OfflineTitle" xml:space="preserve"><value>Tester après un démarrage à froid hors ligne</value></data>
-  <data name="WebAuthnProbe_OfflineBody" xml:space="preserve"><value>Fermez complètement l’application installée, activez le mode Avion, rouvrez-la depuis son icône, revenez ici depuis l’accueil, puis appuyez sur le bouton. L’authentification de l’appareil ne démarre jamais automatiquement.</value></data>
-  <data name="WebAuthnProbe_OfflineAction" xml:space="preserve"><value>Tester le déverrouillage hors ligne</value></data>
-  <data name="WebAuthnProbe_OpenAction" xml:space="preserve"><value>Ouvrir le test de déverrouillage de l’appareil</value></data>
-  <data name="WebAuthnProbe_CleanupNote" xml:space="preserve"><value>La suppression des métadonnées du test retire uniquement les valeurs de test inoffensives de l’application. La clé d’accès de test devra peut-être être supprimée manuellement dans Mots de passe Apple, Google Password Manager ou les réglages d’identifiants de votre appareil.</value></data>
-  <data name="WebAuthnProbe_RemoveMetadataAction" xml:space="preserve"><value>Supprimer les métadonnées du test</value></data>
-  <data name="WebAuthnProbe_LeaveAction" xml:space="preserve"><value>Quitter le test</value></data>
-  <data name="WebAuthnProbe_WebAuthnAvailable" xml:space="preserve"><value>API WebAuthn disponible</value></data>
-  <data name="WebAuthnProbe_PlatformAvailable" xml:space="preserve"><value>Authentificateur de plateforme disponible</value></data>
-  <data name="WebAuthnProbe_CreateSucceeded" xml:space="preserve"><value>CREATE réussi</value></data>
-  <data name="WebAuthnProbe_CreatePrfEnabled" xml:space="preserve"><value>PRF activée lors de CREATE</value></data>
-  <data name="WebAuthnProbe_CreatePrfResult" xml:space="preserve"><value>Résultat PRF lors de CREATE</value></data>
-  <data name="WebAuthnProbe_ImmediateGetSucceeded" xml:space="preserve"><value>GET immédiat réussi</value></data>
-  <data name="WebAuthnProbe_GetSucceeded" xml:space="preserve"><value>GET réussi</value></data>
-  <data name="WebAuthnProbe_UserVerified" xml:space="preserve"><value>Vérification de l’utilisateur confirmée</value></data>
-  <data name="WebAuthnProbe_GetPrfReported" xml:space="preserve"><value>Extension PRF indiquée lors de GET</value></data>
-  <data name="WebAuthnProbe_GetPrfResult" xml:space="preserve"><value>Résultat PRF lors de GET</value></data>
-  <data name="WebAuthnProbe_PayloadVerified" xml:space="preserve"><value>Contenu inoffensif déchiffré</value></data>
-  <data name="WebAuthnProbe_NetworkHint" xml:space="preserve"><value>Indication réseau du navigateur</value></data>
-  <data name="WebAuthnProbe_NetworkHintOnline" xml:space="preserve"><value>En ligne (signalé par le navigateur, non fiable)</value></data>
-  <data name="WebAuthnProbe_NetworkHintOffline" xml:space="preserve"><value>Hors ligne (signalé par le navigateur)</value></data>
-  <data name="WebAuthnProbe_PayloadEnvelopeAvailable" xml:space="preserve"><value>Contenu chiffré prêt</value></data>
-  <data name="WebAuthnProbe_PrfResultBranch" xml:space="preserve"><value>Représentation du résultat PRF</value></data>
-  <data name="WebAuthnProbe_PrfResultBranch_array-buffer" xml:space="preserve"><value>ArrayBuffer</value></data>
-  <data name="WebAuthnProbe_PrfResultBranch_typed-array" xml:space="preserve"><value>Vue de tableau typé</value></data>
-  <data name="WebAuthnProbe_PrfResultBranch_missing" xml:space="preserve"><value>Non renvoyé</value></data>
-  <data name="WebAuthnProbe_PrfResultLength" xml:space="preserve"><value>Longueur du résultat PRF</value></data>
-  <data name="WebAuthnProbe_Bytes" xml:space="preserve"><value>{0} octets</value></data>
-  <data name="WebAuthnProbe_PrfFingerprintMatches" xml:space="preserve"><value>Empreinte de comparaison PRF identique</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome" xml:space="preserve"><value>Détail de la vérification du contenu</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome_not-attempted" xml:space="preserve"><value>Non tenté</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome_missing-envelope" xml:space="preserve"><value>Exécutez d’abord la vérification en ligne</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome_prf-mismatch" xml:space="preserve"><value>Le matériel PRF diffère de la vérification en ligne</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome_invalid-envelope" xml:space="preserve"><value>Les métadonnées du contenu enregistré sont invalides</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome_decrypt-failed" xml:space="preserve"><value>Le déchiffrement AES-GCM a échoué</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome_plaintext-mismatch" xml:space="preserve"><value>Le contenu déchiffré ne correspond pas</value></data>
-  <data name="WebAuthnProbe_PayloadVerificationOutcome_verified" xml:space="preserve"><value>Contenu déchiffré et conforme</value></data>
-  <data name="WebAuthnProbe_Outcome" xml:space="preserve"><value>Résultat</value></data>
-  <data name="WebAuthnProbe_Yes" xml:space="preserve"><value>Oui</value></data>
-  <data name="WebAuthnProbe_No" xml:space="preserve"><value>Non</value></data>
-  <data name="WebAuthnProbe_NotReported" xml:space="preserve"><value>Non indiqué</value></data>
-  <data name="WebAuthnProbe_Outcome_unknown" xml:space="preserve"><value>Non exécuté</value></data>
-  <data name="WebAuthnProbe_Outcome_ready" xml:space="preserve"><value>Prêt</value></data>
-  <data name="WebAuthnProbe_Outcome_unsupported" xml:space="preserve"><value>WebAuthn n’est pas pris en charge</value></data>
-  <data name="WebAuthnProbe_Outcome_platform-unavailable" xml:space="preserve"><value>Aucun authentificateur de plateforme n’est disponible</value></data>
-  <data name="WebAuthnProbe_Outcome_provisioned" xml:space="preserve"><value>Configuration terminée</value></data>
-  <data name="WebAuthnProbe_Outcome_verified-online" xml:space="preserve"><value>Vérification en ligne terminée</value></data>
-  <data name="WebAuthnProbe_Outcome_retrieved" xml:space="preserve"><value>Récupération de l’identifiant terminée</value></data>
-  <data name="WebAuthnProbe_Outcome_missing-metadata" xml:space="preserve"><value>Aucune métadonnée de test n’est enregistrée</value></data>
-  <data name="WebAuthnProbe_Outcome_cancelled" xml:space="preserve"><value>L’authentification de l’appareil a été annulée</value></data>
-  <data name="WebAuthnProbe_Outcome_failed" xml:space="preserve"><value>Le test de capacité a échoué</value></data>
   <data name="OfflineAccess_Title" xml:space="preserve"><value>Accès hors ligne</value></data>
   <data name="OfflineAccess_Description" xml:space="preserve"><value>Configurez cet appareil pour ouvrir en toute sécurité vos propres données de pêche enregistrées sans connexion. Votre appareil vous demandera de confirmer votre identité.</value></data>
   <data name="OfflineAccess_Setup" xml:space="preserve"><value>Configurer l’accès hors ligne</value></data>
@@ -821,4 +763,28 @@
   <data name="OfflineAccess_UnlockFailed" xml:space="preserve"><value>Impossible d’ouvrir l’accès hors ligne. Réessayez ou connectez-vous lorsque vous avez une connexion.</value></data>
   <data name="OfflineAccess_Mode" xml:space="preserve"><value>Mode hors ligne</value></data>
   <data name="OfflineAccess_Lock" xml:space="preserve"><value>Verrouiller l’accès hors ligne</value></data>
+  <data name="OfflineDiagnostics_PageTitle" xml:space="preserve"><value>Diagnostic hors ligne</value></data>
+  <data name="OfflineDiagnostics_Title" xml:space="preserve"><value>Diagnostic hors ligne</value></data>
+  <data name="OfflineDiagnostics_Description" xml:space="preserve"><value>Ces informations en lecture seule aident à diagnostiquer le démarrage hors ligne sur cet appareil. Elles ne vous connectent pas, ne déverrouillent pas l’accès hors ligne et ne contactent pas l’API.</value></data>
+  <data name="OfflineDiagnostics_BaseUri" xml:space="preserve"><value>Adresse de base du document</value></data>
+  <data name="OfflineDiagnostics_CurrentUrl" xml:space="preserve"><value>Adresse actuelle</value></data>
+  <data name="OfflineDiagnostics_ModuleUrl" xml:space="preserve"><value>Adresse résolue du module hors ligne</value></data>
+  <data name="OfflineDiagnostics_ServiceWorkerSupported" xml:space="preserve"><value>Service workers pris en charge</value></data>
+  <data name="OfflineDiagnostics_Controller" xml:space="preserve"><value>Service worker contrôlant cette page</value></data>
+  <data name="OfflineDiagnostics_ControllerScript" xml:space="preserve"><value>Script du contrôleur</value></data>
+  <data name="OfflineDiagnostics_ControllerCache" xml:space="preserve"><value>Génération du cache du contrôleur</value></data>
+  <data name="OfflineDiagnostics_ControllerManifest" xml:space="preserve"><value>Version du manifeste des ressources du contrôleur</value></data>
+  <data name="OfflineDiagnostics_ActiveWorker" xml:space="preserve"><value>Service worker actif</value></data>
+  <data name="OfflineDiagnostics_WaitingWorker" xml:space="preserve"><value>Service worker en attente</value></data>
+  <data name="OfflineDiagnostics_InstallingWorker" xml:space="preserve"><value>Service worker en cours d’installation</value></data>
+  <data name="OfflineDiagnostics_Caches" xml:space="preserve"><value>Générations du cache</value></data>
+  <data name="OfflineDiagnostics_ModuleCached" xml:space="preserve"><value>Module hors ligne dans le cache</value></data>
+  <data name="OfflineDiagnostics_MatchingCache" xml:space="preserve"><value>Cache correspondant</value></data>
+  <data name="OfflineDiagnostics_ModuleResponse" xml:space="preserve"><value>Réponse du module en cache</value></data>
+  <data name="OfflineDiagnostics_EntitlementDatabase" xml:space="preserve"><value>Base de données d’accès hors ligne</value></data>
+  <data name="OfflineDiagnostics_EntitlementStore" xml:space="preserve"><value>Stockage d’accès présent</value></data>
+  <data name="OfflineDiagnostics_EntitlementRecords" xml:space="preserve"><value>Nombre et états des enregistrements d’accès</value></data>
+  <data name="OfflineDiagnostics_LastError" xml:space="preserve"><value>Dernière erreur enregistrée</value></data>
+  <data name="OfflineDiagnostics_FailedStage" xml:space="preserve"><value>Étape ayant échoué</value></data>
+  <data name="OfflineDiagnostics_Error" xml:space="preserve"><value>Erreur sûre</value></data>
 </root>

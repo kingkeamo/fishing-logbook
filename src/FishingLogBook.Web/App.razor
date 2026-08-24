@@ -9,11 +9,14 @@
             {
                 <OfflineRouteView RouteData="routeData" />
             }
+            else if (IsPublicRoute(routeData.PageType))
+            {
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            }
             else
             {
                 <CascadingAuthenticationState>
-                    @if (routeData.PageType == typeof(FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing)
-                    || routeData.PageType == typeof(FishingLogBook.Web.Features.Diagnostics.Pages.WebAuthnCapabilityProbe.WebAuthnCapabilityProbe))
+                    @if (routeData.PageType == typeof(FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing))
                     {
                         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
                     }

@@ -57,16 +57,6 @@
                         @Loc["OfflineAccess_UnlockFailed"]
                     </MudAlert>
                 }
-                @if (_showWebAuthnProbeAction)
-                {
-                    <MudButton Variant="Variant.Text"
-                               Color="Color.Secondary"
-                               FullWidth="true"
-                               OnClick="OpenWebAuthnProbe"
-                               id="landing-webauthn-probe-action">
-                        @Loc["WebAuthnProbe_OfflineAction"]
-                    </MudButton>
-                }
             </MudStack>
         </MudStack>
     </MudContainer>

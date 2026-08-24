@@ -21,6 +21,7 @@ public class WhenTestingRender : BaseOfflineLayoutTest
         cut.Find("#app-brand-mark").Should().NotBeNull();
         cut.Find("#language-menu-button").Should().NotBeNull();
         cut.Find("#theme-toggle-button").Should().NotBeNull();
+        cut.Find("#offline-diagnostics-button").GetAttribute("href").Should().Be("/offline-diagnostics");
         cut.Find("#offline-catches-nav-link").Should().NotBeNull();
         cut.Find("#offline-record-nav-link").Should().NotBeNull();
         cut.FindAll("#profile-nav-link").Should().BeEmpty();

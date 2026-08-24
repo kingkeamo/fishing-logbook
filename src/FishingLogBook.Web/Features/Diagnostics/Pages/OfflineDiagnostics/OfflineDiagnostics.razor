@@ -1,0 +1,53 @@
+@page "/offline-diagnostics"
+@attribute [FishingLogBook.Web.Common.Routing.PublicRoute]
+@layout FishingLogBook.Web.Layouts.PublicLayout.PublicLayout
+
+<PageTitle>@Loc["OfflineDiagnostics_PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-4" id="offline-diagnostics-page">
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4">@Loc["OfflineDiagnostics_Title"]</MudText>
+        <MudAlert Severity="Severity.Info" Dense="true">@Loc["OfflineDiagnostics_Description"]</MudAlert>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="RefreshAsync"
+                   Disabled="_loading"
+                   id="offline-diagnostics-refresh">
+            @Loc["Action_Refresh"]
+        </MudButton>
+
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" id="offline-diagnostics-loading" />
+        }
+        else if (_snapshot is not null)
+        {
+            <MudPaper Outlined="true" Class="pa-4" id="offline-diagnostics-results">
+                <MudStack Spacing="2">
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_BaseUri"]" Value="@_snapshot.DocumentBaseUri" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_CurrentUrl"]" Value="@_snapshot.CurrentUrl" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ModuleUrl"]" Value="@_snapshot.ResolvedModuleUrl" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ServiceWorkerSupported"]" Value="@YesNo(_snapshot.ServiceWorkerSupported)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_Controller"]" Value="@YesNo(_snapshot.ControllerPresent)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ControllerScript"]" Value="@Value(_snapshot.ControllerScriptUrl)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ControllerCache"]" Value="@Value(_snapshot.ControllerCacheName)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ControllerManifest"]" Value="@Value(_snapshot.ControllerManifestVersion)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ActiveWorker"]" Value="@Worker(_snapshot.ActiveWorkerState, _snapshot.ActiveWorkerScriptUrl)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_WaitingWorker"]" Value="@Worker(_snapshot.WaitingWorkerState, _snapshot.WaitingWorkerScriptUrl)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_InstallingWorker"]" Value="@Worker(_snapshot.InstallingWorkerState, _snapshot.InstallingWorkerScriptUrl)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_Caches"]" Value="@List(_snapshot.CacheNames)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ModuleCached"]" Value="@YesNo(_snapshot.ModuleCached)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_MatchingCache"]" Value="@Value(_snapshot.MatchingCacheName)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_ModuleResponse"]" Value="@ModuleResponse" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_EntitlementDatabase"]" Value="@Value(_snapshot.EntitlementDatabaseState)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_EntitlementStore"]" Value="@YesNo(_snapshot.EntitlementStorePresent)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_EntitlementRecords"]" Value="@EntitlementRecords" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_LastError"]" Value="@LastError" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_FailedStage"]" Value="@Value(_snapshot.FailedStage)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_Error"]" Value="@Error" />
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+</MudContainer>

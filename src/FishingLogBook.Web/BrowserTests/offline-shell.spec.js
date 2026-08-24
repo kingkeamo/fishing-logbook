@@ -38,6 +38,24 @@ test.describe('Published offline application shell', () => {
         expect(apiGuard.requests).toEqual([]);
     });
 
+    test('opens read-only offline diagnostics from the shared header during cold offline startup', async ({ context, page }) => {
+        const apiGuard = guardOfflineApiRequests(context);
+
+        await cachePublishedShell(page);
+        apiGuard.enable();
+        await context.setOffline(true);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await expect(page.locator('#public-landing-page')).toBeVisible({ timeout: 15000 });
+
+        await page.locator('#offline-diagnostics-button').click();
+
+        await expect(page).toHaveURL(/\/offline-diagnostics$/);
+        await expect(page.locator('#offline-diagnostics-results')).toBeVisible();
+        await expect(page.locator('#offline-diagnostics-results')).toContainText('offline-access.js');
+        expect(await credentialGetCalls(page)).toBe(0);
+        expect(apiGuard.requests).toEqual([]);
+    });
+
     test('shows and retries an offline entitlement discovery failure without unlocking or using the API', async ({ context, page }) => {
         const apiGuard = guardOfflineApiRequests(context);
         await addPrfAuthenticator(page);
