@@ -70,6 +70,7 @@ async function completeOnboardingWhenRequired(page) {
     await page.locator('#onboarding-next').click();
     await page.locator('#onboarding-skip-location').click();
     await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-next').click();
     await page.locator('#onboarding-finish').click();
     await page.waitForURL(url => new URL(url).pathname === '/catches', { timeout: 30_000 });
 }

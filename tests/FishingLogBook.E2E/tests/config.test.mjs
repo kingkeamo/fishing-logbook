@@ -54,6 +54,9 @@ test('onboards the dedicated Cognito user through the real UI for each disposabl
     assert.match(setup, /#onboarding-method-Fly/);
     assert.match(setup, /#catalogue-picker-modal-option-BrownTrout/);
     assert.match(setup, /#onboarding-finish/);
+    const afterLocation = setup.slice(setup.indexOf('#onboarding-skip-location'));
+    assert.equal(afterLocation.match(/#onboarding-next/g)?.length, 2);
+    assert.ok(afterLocation.lastIndexOf('#onboarding-next') < afterLocation.indexOf('#onboarding-finish'));
     assert.doesNotMatch(setup, /must complete onboarding before running/);
 });
 
