@@ -35,6 +35,7 @@
                     <DiagnosticRow Label="@Loc["OfflineDiagnostics_ControllerManifest"]" Value="@Value(_snapshot.ControllerManifestVersion)" />
                     <DiagnosticRow Label="@Loc["OfflineDiagnostics_ActiveWorker"]" Value="@Worker(_snapshot.ActiveWorkerState, _snapshot.ActiveWorkerScriptUrl)" />
                     <DiagnosticRow Label="@Loc["OfflineDiagnostics_WaitingWorker"]" Value="@Worker(_snapshot.WaitingWorkerState, _snapshot.WaitingWorkerScriptUrl)" />
+                    <DiagnosticRow Label="@Loc["OfflineDiagnostics_InstallingWorker"]" Value="@Worker(_snapshot.InstallingWorkerState, _snapshot.InstallingWorkerScriptUrl)" />
                     <DiagnosticRow Label="@Loc["OfflineDiagnostics_Caches"]" Value="@List(_snapshot.CacheNames)" />
                     <DiagnosticRow Label="@Loc["OfflineDiagnostics_ModuleCached"]" Value="@YesNo(_snapshot.ModuleCached)" />
                     <DiagnosticRow Label="@Loc["OfflineDiagnostics_MatchingCache"]" Value="@Value(_snapshot.MatchingCacheName)" />

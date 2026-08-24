@@ -58,6 +58,8 @@ export async function inspectOfflineStartup(targetWindow) {
         activeWorkerScriptUrl: null,
         waitingWorkerState: null,
         waitingWorkerScriptUrl: null,
+        installingWorkerState: null,
+        installingWorkerScriptUrl: null,
         cacheNames: [],
         matchingCacheName: null,
         moduleCached: false,
@@ -107,6 +109,8 @@ async function inspectServiceWorker(targetWindow, result) {
         result.activeWorkerScriptUrl = registration?.active?.scriptURL ?? null;
         result.waitingWorkerState = registration?.waiting?.state ?? null;
         result.waitingWorkerScriptUrl = registration?.waiting?.scriptURL ?? null;
+        result.installingWorkerState = registration?.installing?.state ?? null;
+        result.installingWorkerScriptUrl = registration?.installing?.scriptURL ?? null;
         if (targetWindow.navigator.serviceWorker.controller) {
             const controllerDetails = await inspectController(targetWindow, targetWindow.navigator.serviceWorker.controller);
             result.controllerCacheName = controllerDetails?.cacheName ?? null;

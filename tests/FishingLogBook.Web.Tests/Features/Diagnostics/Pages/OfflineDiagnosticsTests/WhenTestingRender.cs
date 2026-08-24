@@ -25,6 +25,8 @@ public class WhenTestingRender : BaseOfflineDiagnosticsTest
         cut.WaitForAssertion(() => cut.Find("#offline-diagnostics-results").TextContent.Should()
             .Contain("offline-cache-v1")
             .And.Contain("application/javascript")
+            .And.Contain("installing")
+            .And.Contain("service-worker-next.js")
             .And.Contain("ready"));
         context.JSInterop.VerifyInvoke("fishingLogBookDiagnostics.inspectOfflineStartup", 1);
     }

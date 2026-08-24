@@ -30,7 +30,10 @@ public partial class OfflineDiagnostics : ComponentBase
         ? Loc["Diagnostics_UnavailableValue"]
         : $"{_snapshot.LastErrorSource} · {Value(_snapshot.LastErrorType)} · {Value(_snapshot.LastErrorMessage)}";
 
-    protected override Task OnInitializedAsync() => RefreshAsync();
+    protected override Task OnInitializedAsync()
+    {
+        return RefreshAsync();
+    }
 
     private async Task RefreshAsync()
     {
@@ -55,16 +58,22 @@ public partial class OfflineDiagnostics : ComponentBase
         }
     }
 
-    private string YesNo(bool? value) => value switch
+    private string YesNo(bool? value)
     {
-        true => Loc["Diagnostics_OnlineYes"],
-        false => Loc["Diagnostics_OnlineNo"],
-        _ => Loc["Diagnostics_Unknown"]
-    };
+        return value switch
+        {
+            true => Loc["Diagnostics_OnlineYes"],
+            false => Loc["Diagnostics_OnlineNo"],
+            _ => Loc["Diagnostics_Unknown"]
+        };
+    }
 
-    private string Value(object? value) => string.IsNullOrWhiteSpace(value?.ToString())
-        ? Loc["Diagnostics_UnavailableValue"]
-        : value.ToString()!;
+    private string Value(object? value)
+    {
+        return string.IsNullOrWhiteSpace(value?.ToString())
+            ? Loc["Diagnostics_UnavailableValue"]
+            : value.ToString()!;
+    }
 
     private string List(IEnumerable<string> values)
     {
@@ -72,8 +81,10 @@ public partial class OfflineDiagnostics : ComponentBase
         return items.Length == 0 ? Loc["Diagnostics_UnavailableValue"] : string.Join(", ", items);
     }
 
-    private string Worker(string? state, string? scriptUrl) =>
-        string.IsNullOrWhiteSpace(state) && string.IsNullOrWhiteSpace(scriptUrl)
+    private string Worker(string? state, string? scriptUrl)
+    {
+        return string.IsNullOrWhiteSpace(state) && string.IsNullOrWhiteSpace(scriptUrl)
             ? Loc["Diagnostics_UnavailableValue"]
             : $"{Value(state)} · {Value(scriptUrl)}";
+    }
 }

@@ -14,6 +14,8 @@ public sealed class OfflineDiagnosticsSnapshotModel
     public string? ActiveWorkerScriptUrl { get; set; }
     public string? WaitingWorkerState { get; set; }
     public string? WaitingWorkerScriptUrl { get; set; }
+    public string? InstallingWorkerState { get; set; }
+    public string? InstallingWorkerScriptUrl { get; set; }
     public string[] CacheNames { get; set; } = [];
     public string? MatchingCacheName { get; set; }
     public bool ModuleCached { get; set; }

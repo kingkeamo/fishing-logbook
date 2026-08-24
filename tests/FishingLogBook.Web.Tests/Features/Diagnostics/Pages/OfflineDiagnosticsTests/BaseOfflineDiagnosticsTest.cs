@@ -20,27 +20,32 @@ public class BaseOfflineDiagnosticsTest
         return context;
     }
 
-    protected static OfflineDiagnosticsSnapshotModel Snapshot() => new()
+    protected static OfflineDiagnosticsSnapshotModel Snapshot()
     {
-        DocumentBaseUri = "https://dev.test/",
-        CurrentUrl = "https://dev.test/offline-diagnostics",
-        ResolvedModuleUrl = "https://dev.test/js/browser/offline-access.js",
-        ServiceWorkerSupported = true,
-        ControllerPresent = true,
-        ControllerScriptUrl = "https://dev.test/service-worker.js",
-        ControllerCacheName = "offline-cache-v1",
-        ControllerManifestVersion = "v1",
-        ActiveWorkerState = "activated",
-        ActiveWorkerScriptUrl = "https://dev.test/service-worker.js",
-        CacheNames = ["offline-cache-v1"],
-        MatchingCacheName = "offline-cache-v1",
-        ModuleCached = true,
-        ModuleContentType = "application/javascript",
-        ModuleStatus = 200,
-        ModuleRedirected = false,
-        EntitlementDatabaseState = "found",
-        EntitlementStorePresent = true,
-        EntitlementRecordCount = 1,
-        EntitlementRecordStates = ["ready"]
-    };
+        return new OfflineDiagnosticsSnapshotModel
+        {
+            DocumentBaseUri = "https://dev.test/",
+            CurrentUrl = "https://dev.test/offline-diagnostics",
+            ResolvedModuleUrl = "https://dev.test/js/browser/offline-access.js",
+            ServiceWorkerSupported = true,
+            ControllerPresent = true,
+            ControllerScriptUrl = "https://dev.test/service-worker.js",
+            ControllerCacheName = "offline-cache-v1",
+            ControllerManifestVersion = "v1",
+            ActiveWorkerState = "activated",
+            ActiveWorkerScriptUrl = "https://dev.test/service-worker.js",
+            InstallingWorkerState = "installing",
+            InstallingWorkerScriptUrl = "https://dev.test/service-worker-next.js",
+            CacheNames = ["offline-cache-v1"],
+            MatchingCacheName = "offline-cache-v1",
+            ModuleCached = true,
+            ModuleContentType = "application/javascript",
+            ModuleStatus = 200,
+            ModuleRedirected = false,
+            EntitlementDatabaseState = "found",
+            EntitlementStorePresent = true,
+            EntitlementRecordCount = 1,
+            EntitlementRecordStates = ["ready"]
+        };
+    }
 }

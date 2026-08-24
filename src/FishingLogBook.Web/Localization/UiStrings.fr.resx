@@ -776,6 +776,7 @@
   <data name="OfflineDiagnostics_ControllerManifest" xml:space="preserve"><value>Version du manifeste des ressources du contrôleur</value></data>
   <data name="OfflineDiagnostics_ActiveWorker" xml:space="preserve"><value>Service worker actif</value></data>
   <data name="OfflineDiagnostics_WaitingWorker" xml:space="preserve"><value>Service worker en attente</value></data>
+  <data name="OfflineDiagnostics_InstallingWorker" xml:space="preserve"><value>Service worker en cours d’installation</value></data>
   <data name="OfflineDiagnostics_Caches" xml:space="preserve"><value>Générations du cache</value></data>
   <data name="OfflineDiagnostics_ModuleCached" xml:space="preserve"><value>Module hors ligne dans le cache</value></data>
   <data name="OfflineDiagnostics_MatchingCache" xml:space="preserve"><value>Cache correspondant</value></data>

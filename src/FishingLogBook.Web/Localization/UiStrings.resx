@@ -776,6 +776,7 @@
   <data name="OfflineDiagnostics_ControllerManifest" xml:space="preserve"><value>Controller asset manifest version</value></data>
   <data name="OfflineDiagnostics_ActiveWorker" xml:space="preserve"><value>Active service worker</value></data>
   <data name="OfflineDiagnostics_WaitingWorker" xml:space="preserve"><value>Waiting service worker</value></data>
+  <data name="OfflineDiagnostics_InstallingWorker" xml:space="preserve"><value>Installing service worker</value></data>
   <data name="OfflineDiagnostics_Caches" xml:space="preserve"><value>Cache generations</value></data>
   <data name="OfflineDiagnostics_ModuleCached" xml:space="preserve"><value>Offline module in cache</value></data>
   <data name="OfflineDiagnostics_MatchingCache" xml:space="preserve"><value>Matching cache</value></data>
