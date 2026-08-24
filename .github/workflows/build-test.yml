@@ -80,6 +80,14 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore Web dependencies
+        run: dotnet restore src/FishingLogBook.Web/FishingLogBook.Web.csproj
+
       - name: Install JavaScript dependencies
         run: npm ci
 
@@ -130,3 +138,4 @@ jobs:
       - name: Test pre-token generation Lambda
         run: node --test
         working-directory: infrastructure/terraform/modules/cognito/lambda
+

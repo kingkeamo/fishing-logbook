@@ -26,7 +26,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private Guid? _activePhotographId;
     private string _selectedMethod = string.Empty;
     private string _selectedSpecies = string.Empty;
-    private bool _methodIsExplicit;
     private bool _speciesIsExplicit;
     private string? _carriedMethod;
     private string? _carriedSpecies;
@@ -97,7 +96,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         }
 
         _selectedMethod = defaultMethod.Name;
-        _methodIsExplicit = false;
         _selectedSpecies = defaultMethod.Species.FirstOrDefault(species => species.IsDefault)?.Name
             ?? string.Empty;
         _speciesIsExplicit = false;
@@ -140,7 +138,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private void SelectMethod(string method)
     {
         _selectedMethod = method;
-        _methodIsExplicit = !string.IsNullOrWhiteSpace(method);
         ApplyDefaultSpeciesForMethod();
     }
 
@@ -368,7 +365,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _locationCaptureStarted = false;
         _locationSaved = false;
         _selectedMethod = _carriedMethod ?? string.Empty;
-        _methodIsExplicit = _carriedMethod is not null;
         _selectedSpecies = _carriedSpecies ?? string.Empty;
         _speciesIsExplicit = _carriedSpeciesWasExplicit;
     }
@@ -466,3 +462,4 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
 
     private sealed record PendingPhotograph(Guid Id, string ContentType, byte[] Bytes);
 }
+

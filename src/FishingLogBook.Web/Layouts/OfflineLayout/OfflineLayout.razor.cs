@@ -16,9 +16,15 @@ public partial class OfflineLayout : LayoutComponentBase
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
-    private void ToggleDarkMode() => _isDarkMode = !_isDarkMode;
+    private void ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
 
-    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
 
     private void Lock()
     {
@@ -26,3 +32,4 @@ public partial class OfflineLayout : LayoutComponentBase
         Navigation.NavigateTo("/", replace: true);
     }
 }
+

@@ -5,6 +5,9 @@ namespace FishingLogBook.Web;
 
 public partial class App : ComponentBase
 {
-    private static bool IsOfflineRoute(Type pageType) =>
-        Attribute.IsDefined(pageType, typeof(OfflineRouteAttribute));
+    private static bool IsOfflineRoute(Type pageType)
+    {
+        return Attribute.IsDefined(pageType, typeof(OfflineRouteAttribute));
+    }
 }
+

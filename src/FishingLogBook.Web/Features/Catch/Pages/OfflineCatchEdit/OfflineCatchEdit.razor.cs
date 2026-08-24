@@ -200,10 +200,16 @@ public partial class OfflineCatchEdit : ComponentBase
         }
     }
 
-    private static string? TrimToNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static string? TrimToNull(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
 
-    private static SyncStatus PendingOverallStatus(SyncStatus current) =>
-        current is SyncStatus.Synchronised or SyncStatus.FailedToSynchronise or SyncStatus.Synchronising
+    private static SyncStatus PendingOverallStatus(SyncStatus current)
+    {
+        return current is SyncStatus.Synchronised or SyncStatus.FailedToSynchronise or SyncStatus.Synchronising
             ? SyncStatus.WaitingToSynchronise
             : current;
+    }
 }
+

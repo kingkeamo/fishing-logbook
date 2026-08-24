@@ -8,7 +8,14 @@ public sealed class OfflineOwnerContextService : IOfflineOwnerContextService
 
     public bool IsUnlocked => Owner is not null;
 
-    public void Unlock(OfflineOwnerModel owner) => Owner = owner;
+    public void Unlock(OfflineOwnerModel owner)
+    {
+        Owner = owner;
+    }
 
-    public void Lock() => Owner = null;
+    public void Lock()
+    {
+        Owner = null;
+    }
 }
+
