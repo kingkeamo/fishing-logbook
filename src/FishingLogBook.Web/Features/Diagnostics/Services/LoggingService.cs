@@ -10,6 +10,7 @@ public sealed class LoggingService : ILoggingService
 {
     private const string SetLastError = "fishingLogBookDiagnostics.setLastError";
     private const string GetLastError = "fishingLogBookDiagnostics.getLastError";
+    private const string WriteDiagnostic = "fishingLogBookDiagnostics.console";
     private const int MaxMessageLength = 500;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -67,7 +68,19 @@ public sealed class LoggingService : ILoggingService
             Message = DiagnosticMetadata.Truncate(message, MaxMessageLength)
         };
 
-        Console.Error.WriteLine($"[FLB] {lastError.Source}: {lastError.ErrorType}: {lastError.Message}");
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync(
+                WriteDiagnostic,
+                cancellationToken,
+                "Error",
+                lastError.Source,
+                $"{lastError.ErrorType}: {lastError.Message}");
+        }
+        catch
+        {
+            // Diagnostics must never replace the original application failure.
+        }
 
         try
         {
@@ -78,6 +91,7 @@ public sealed class LoggingService : ILoggingService
         }
         catch
         {
+            // Persisting diagnostics is best effort and must not recurse into logging.
         }
     }
 }

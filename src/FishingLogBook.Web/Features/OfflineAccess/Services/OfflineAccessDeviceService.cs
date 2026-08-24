@@ -10,10 +10,10 @@ public sealed class OfflineAccessDeviceService : IOfflineAccessDeviceService
 
     public OfflineAccessDeviceService(IJSRuntime jsRuntime) => _jsRuntime = jsRuntime;
 
-    public async Task<bool> HasReadyEntitlementAsync(CancellationToken cancellationToken)
+    public async Task<OfflineAccessAvailabilityModel> HasReadyEntitlementAsync(CancellationToken cancellationToken)
     {
         var module = await ImportAsync(cancellationToken);
-        return await module.InvokeAsync<bool>("hasReadyEntitlement", cancellationToken);
+        return await module.InvokeAsync<OfflineAccessAvailabilityModel>("hasReadyEntitlement", cancellationToken);
     }
 
     public async Task<OfflineAccessUnlockResultModel> UnlockAsync(CancellationToken cancellationToken)

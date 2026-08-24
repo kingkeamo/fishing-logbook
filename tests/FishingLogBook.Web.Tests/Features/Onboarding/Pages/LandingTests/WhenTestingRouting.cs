@@ -4,12 +4,15 @@ using Bunit;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
+using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.JSInterop;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using LandingPage = FishingLogBook.Web.Features.Onboarding.Pages.Landing.Landing;
 
 namespace FishingLogBook.Web.Tests.Features.Onboarding.Pages.LandingTests;
@@ -169,6 +172,93 @@ public class WhenTestingRouting : BaseLandingTest
         cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
         await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
         await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotShowOfflineAvailabilityFailureWhenNoEntitlementExists()
+    {
+        // Arrange
+        var device = OfflineAccessDevice(hasReadyEntitlement: false);
+        await using var context = CreateContext(Onboarding(false), isAuthenticated: false, offlineAccessDevice: device);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#landing-offline-availability-failed").Should().BeEmpty());
+        cut.FindAll("#landing-open-offline").Should().BeEmpty();
+        await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldLogAndRecoverWhenOfflineAvailabilityDiscoveryFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var failure = new JSException("indexeddb-read:UnknownError");
+        var device = Substitute.For<IOfflineAccessDeviceService>();
+        device.HasReadyEntitlementAsync(Arg.Any<CancellationToken>())
+            .Returns(
+                _ => throw failure,
+                _ => new OfflineAccessAvailabilityModel("ready", "ready-record-found"));
+        var logging = Substitute.For<ILoggingService>();
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            logging: logging,
+            offlineAccessDevice: device);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() =>
+            cut.Find("#landing-offline-availability-failed").TextContent
+                .Should().Contain("couldn't check offline access"));
+
+        // Act
+        await cut.Find("#landing-offline-availability-retry").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+        cut.FindAll("#landing-offline-availability-failed").Should().BeEmpty();
+        await device.Received(2).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "landing offline availability",
+            Arg.Is<Exception>(exception => ReferenceEquals(exception, failure)),
+            CancellationToken.None);
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/");
+    }
+
+    [Fact]
+    public async Task ItShouldTreatAnUnexpectedOfflineAvailabilityStateAsARetryableFailure()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var device = Substitute.For<IOfflineAccessDeviceService>();
+        device.HasReadyEntitlementAsync(Arg.Any<CancellationToken>())
+            .Returns(
+                _ => new OfflineAccessAvailabilityModel("future-state", "ignored-detail"),
+                _ => new OfflineAccessAvailabilityModel("ready", "ready-record-found"));
+        var logging = Substitute.For<ILoggingService>();
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            logging: logging,
+            offlineAccessDevice: device);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() => cut.Find("#landing-offline-availability-failed").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#landing-offline-availability-retry").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+        cut.FindAll("#landing-offline-availability-failed").Should().BeEmpty();
+        await device.Received(2).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "landing offline availability",
+            Arg.Is<OfflineAccessDiscoveryException>(exception => exception.Message == "unexpected-state"),
+            CancellationToken.None);
     }
 
     [Fact]

@@ -93,7 +93,7 @@ describe('production offline access entitlement', () => {
         const available = await hasReadyEntitlement();
         const result = await unlockDevice();
 
-        expect(available).toBe(true);
+        expect(available).toEqual({ state: 'ready', detail: 'ready-record-found' });
         expect(result).toEqual({ state: 'unlocked', userId: identity.userId, version: 1 });
         expect(navigator.credentials.get).toHaveBeenCalledOnce();
         expect(navigator.credentials.get.mock.calls[0][0].publicKey.allowCredentials).toHaveLength(1);
@@ -181,8 +181,42 @@ describe('production offline access entitlement', () => {
         const available = await hasReadyEntitlement();
         const result = await unlockDevice();
 
-        expect(available).toBe(false);
+        expect(available).toEqual({ state: 'not-configured', detail: 'records-present-none-ready' });
         expect(result.state).toBe('not-configured');
+    });
+
+    it('discovers a ready record without requiring WebAuthn setup APIs', async () => {
+        const prf = new Uint8Array(32).fill(5).buffer;
+        Object.defineProperty(navigator, 'credentials', { configurable: true, value: {
+            create: vi.fn(async () => credential(prf)),
+            get: vi.fn(async () => assertion(prf))
+        }});
+        await setupDevice(identity);
+        vi.stubGlobal('PublicKeyCredential', undefined);
+        Object.defineProperty(navigator, 'credentials', { configurable: true, value: undefined });
+
+        const available = await hasReadyEntitlement();
+
+        expect(available).toEqual({ state: 'ready', detail: 'ready-record-found' });
+    });
+
+    it('reports no entitlement only after a successful empty database read', async () => {
+        const available = await hasReadyEntitlement();
+
+        expect(available).toEqual({ state: 'not-configured', detail: 'no-records' });
+    });
+
+    it('throws a safe stage-specific error when IndexedDB discovery fails', async () => {
+        vi.spyOn(indexedDB, 'open').mockImplementation(() => {
+            const failure = new Error('browser detail must not escape');
+            failure.name = 'UnknownError';
+            throw failure;
+        });
+
+        await expect(hasReadyEntitlement()).resolves.toEqual({
+            state: 'check-failed',
+            detail: 'indexeddb-read:UnknownError'
+        });
     });
 });
 

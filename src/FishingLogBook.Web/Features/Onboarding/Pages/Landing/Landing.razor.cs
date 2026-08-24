@@ -13,9 +13,18 @@ namespace FishingLogBook.Web.Features.Onboarding.Pages.Landing;
 
 public partial class Landing : ComponentBase, IDisposable
 {
+    private enum OfflineAvailabilityState
+    {
+        Checking,
+        Ready,
+        NotConfigured,
+        CheckFailed
+    }
+
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private bool _showWebAuthnProbeAction;
-    private bool _showOfflineAction;
+    private OfflineAvailabilityState _offlineAvailability = OfflineAvailabilityState.Checking;
+    private bool _checkingOfflineAvailability;
     private bool _offlineUnlockFailed;
     private bool _unlocking;
 
@@ -39,22 +48,36 @@ public partial class Landing : ComponentBase, IDisposable
     private async Task LoadOfflineAvailabilityAsync()
     {
         var cancellationToken = _cancellationTokenSource.Token;
+        _checkingOfflineAvailability = true;
         try
         {
-            var showAction = await OfflineAccessDevice.HasReadyEntitlementAsync(cancellationToken);
+            var availability = await OfflineAccessDevice.HasReadyEntitlementAsync(cancellationToken);
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
+            var state = availability.State switch
+            {
+                "ready" => OfflineAvailabilityState.Ready,
+                "not-configured" => OfflineAvailabilityState.NotConfigured,
+                "check-failed" => OfflineAvailabilityState.CheckFailed,
+                _ => OfflineAvailabilityState.CheckFailed
+            };
+            if (state == OfflineAvailabilityState.CheckFailed)
+            {
+                await Logging.LogErrorAsync(
+                    "landing offline availability",
+                    new OfflineAccessDiscoveryException(
+                        availability.State == "check-failed" ? availability.Detail : "unexpected-state"),
+                    CancellationToken.None);
+            }
+
             await InvokeAsync(() =>
             {
-                _showOfflineAction = showAction;
+                _offlineAvailability = state;
                 StateHasChanged();
             });
-        }
-        catch (JSException)
-        {
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -62,8 +85,22 @@ public partial class Landing : ComponentBase, IDisposable
         catch (Exception exception)
         {
             await Logging.LogErrorAsync("landing offline availability", exception, CancellationToken.None);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await InvokeAsync(() =>
+                {
+                    _offlineAvailability = OfflineAvailabilityState.CheckFailed;
+                    StateHasChanged();
+                });
+            }
+        }
+        finally
+        {
+            _checkingOfflineAvailability = false;
         }
     }
+
+    private Task RetryOfflineAvailabilityAsync() => LoadOfflineAvailabilityAsync();
 
     private async Task OpenOfflineAsync()
     {
