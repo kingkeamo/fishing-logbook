@@ -6,5 +6,7 @@ public interface ICatchSynchroniser
 
     Task SynchronisePendingAsync(CancellationToken cancellationToken);
 
+    Task SynchronisePendingAsync(Guid ownerUserId, CancellationToken cancellationToken);
+
     Task RetryAsync(Guid catchId, CancellationToken cancellationToken);
 }

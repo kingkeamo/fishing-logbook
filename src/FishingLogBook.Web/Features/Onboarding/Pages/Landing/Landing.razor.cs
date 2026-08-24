@@ -15,10 +15,10 @@ public partial class Landing : ComponentBase, IDisposable
 {
     private enum OfflineAvailabilityState
     {
-        Checking,
-        Ready,
-        NotConfigured,
-        CheckFailed
+        Checking = 0,
+        Ready = 1,
+        NotConfigured = 2,
+        CheckFailed = 3
     }
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
@@ -36,6 +36,9 @@ public partial class Landing : ComponentBase, IDisposable
     [Inject] private IOfflineOwnerContextService OfflineOwnerContext { get; set; } = default!;
     [Inject] private ILoggingService Logging { get; set; } = default!;
     [Inject] private INetworkService Network { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "reconnect")]
+    public string? Reconnect { get; set; }
 
     protected override void OnInitialized()
     {
@@ -195,6 +198,11 @@ public partial class Landing : ComponentBase, IDisposable
         {
             var authentication = await authenticationState.WaitAsync(cancellationToken);
             if (authentication.User.Identity?.IsAuthenticated != true)
+            {
+                return;
+            }
+
+            if (string.Equals(Reconnect, "offline", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

@@ -44,7 +44,28 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
     {
         try
         {
-            await SynchronisePendingCoreAsync(cancellationToken);
+            var ownerUserId = await TryGetOwnerUserIdAsync(cancellationToken);
+            if (ownerUserId is not null)
+            {
+                await SynchronisePendingCoreAsync(ownerUserId.Value, cancellationToken);
+            }
+        }
+        finally
+        {
+            StateChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public async Task SynchronisePendingAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (ownerUserId == Guid.Empty)
+            {
+                throw new ArgumentException("The catch owner is required.", nameof(ownerUserId));
+            }
+
+            await SynchronisePendingCoreAsync(ownerUserId, cancellationToken);
         }
         finally
         {
@@ -64,15 +85,11 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         }
     }
 
-    private async Task SynchronisePendingCoreAsync(CancellationToken cancellationToken)
+    private async Task SynchronisePendingCoreAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
     {
-        var ownerUserId = await TryGetOwnerUserIdAsync(cancellationToken);
-        if (ownerUserId is null)
-        {
-            return;
-        }
-
-        var catches = await _store.GetAllAsync(ownerUserId.Value, cancellationToken);
+        var catches = await _store.GetAllAsync(ownerUserId, cancellationToken);
         catches = await RecoverInterruptedAsync(catches, cancellationToken);
         var pending = catches.Where(NeedsSynchronisation).ToArray();
         if (!await _networkService.IsOnlineAsync(cancellationToken))
@@ -90,7 +107,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                await SynchroniseGuardedAsync(ownerUserId.Value, catchRecord.Id, cancellationToken);
+                await SynchroniseGuardedAsync(ownerUserId, catchRecord.Id, cancellationToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
