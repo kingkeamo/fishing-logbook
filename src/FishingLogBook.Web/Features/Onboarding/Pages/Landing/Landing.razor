@@ -51,6 +51,12 @@
                         </MudStack>
                     </MudAlert>
                 }
+                @if (_isOnline == false && _offlineAvailability == OfflineAvailabilityState.NotConfigured)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" id="landing-offline-not-configured">
+                        @Loc["OfflineAccess_NotConfiguredOffline"]
+                    </MudAlert>
+                }
                 @if (_offlineUnlockFailed)
                 {
                     <MudAlert Severity="Severity.Error" Dense="true" id="landing-offline-error">

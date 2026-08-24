@@ -1,5 +1,6 @@
 using Bunit;
 using Bunit.TestDoubles;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Update;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
@@ -27,7 +28,8 @@ public class BaseLandingTest
         bool isAuthenticated = true,
         AuthenticationStateProvider? authenticationStateProvider = null,
         ILoggingService? logging = null,
-        IOfflineAccessDeviceService? offlineAccessDevice = null)
+        IOfflineAccessDeviceService? offlineAccessDevice = null,
+        INetworkService? network = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -36,6 +38,7 @@ public class BaseLandingTest
         context.Services.AddSingleton(onboarding);
         context.Services.AddSingleton(logging ?? Substitute.For<ILoggingService>());
         context.Services.AddSingleton(offlineAccessDevice ?? OfflineAccessDevice(hasReadyEntitlement: false));
+        context.Services.AddSingleton(network ?? Network(isOnline: true));
         context.Services.AddScoped<IOfflineOwnerContextService, OfflineOwnerContextService>();
         var authorization = context.AddAuthorization();
         if (isAuthenticated)
@@ -91,6 +94,13 @@ public class BaseLandingTest
                 hasReadyEntitlement ? "ready" : "not-configured",
                 hasReadyEntitlement ? "ready-record-found" : "no-records"));
         return device;
+    }
+
+    protected static INetworkService Network(bool isOnline)
+    {
+        var network = Substitute.For<INetworkService>();
+        network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(isOnline);
+        return network;
     }
 
     protected static IOnboardingService Onboarding(bool completed)

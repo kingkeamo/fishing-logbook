@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
@@ -23,6 +24,7 @@ public partial class Landing : ComponentBase, IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private OfflineAvailabilityState _offlineAvailability = OfflineAvailabilityState.Checking;
     private bool _checkingOfflineAvailability;
+    private bool? _isOnline;
     private bool _offlineUnlockFailed;
     private bool _unlocking;
 
@@ -33,12 +35,56 @@ public partial class Landing : ComponentBase, IDisposable
     [Inject] private IOfflineAccessDeviceService OfflineAccessDevice { get; set; } = default!;
     [Inject] private IOfflineOwnerContextService OfflineOwnerContext { get; set; } = default!;
     [Inject] private ILoggingService Logging { get; set; } = default!;
+    [Inject] private INetworkService Network { get; set; } = default!;
 
     protected override void OnInitialized()
     {
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        Network.ConnectivityChanged += OnConnectivityChanged;
         _ = LoadOfflineAvailabilityAsync();
+        _ = LoadConnectivityAsync();
         _ = ResolveAuthenticationAsync(AuthenticationStateProvider.GetAuthenticationStateAsync());
+    }
+
+    private async Task LoadConnectivityAsync()
+    {
+        var cancellationToken = _cancellationTokenSource.Token;
+        try
+        {
+            await Network.StartMonitoringAsync(cancellationToken);
+            var isOnline = await Network.IsOnlineAsync(cancellationToken);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await UpdateConnectivityAsync(isOnline);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("landing connectivity", exception, CancellationToken.None);
+        }
+    }
+
+    private void OnConnectivityChanged(bool isOnline)
+    {
+        _ = UpdateConnectivityAsync(isOnline);
+    }
+
+    private async Task UpdateConnectivityAsync(bool isOnline)
+    {
+        if (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            _isOnline = isOnline;
+            StateHasChanged();
+        });
     }
 
     private async Task LoadOfflineAvailabilityAsync()
@@ -77,6 +123,7 @@ public partial class Landing : ComponentBase, IDisposable
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            return;
         }
         catch (Exception exception)
         {
@@ -100,7 +147,10 @@ public partial class Landing : ComponentBase, IDisposable
         }
     }
 
-    private Task RetryOfflineAvailabilityAsync() => LoadOfflineAvailabilityAsync();
+    private Task RetryOfflineAvailabilityAsync()
+    {
+        return LoadOfflineAvailabilityAsync();
+    }
 
     private async Task OpenOfflineAsync()
     {
@@ -120,6 +170,7 @@ public partial class Landing : ComponentBase, IDisposable
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
+            return;
         }
         catch (Exception exception)
         {
@@ -153,6 +204,7 @@ public partial class Landing : ComponentBase, IDisposable
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            return;
         }
         catch (Exception exception)
         {
@@ -173,6 +225,7 @@ public partial class Landing : ComponentBase, IDisposable
     public void Dispose()
     {
         AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        Network.ConnectivityChanged -= OnConnectivityChanged;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }
