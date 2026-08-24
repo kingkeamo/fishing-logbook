@@ -26,6 +26,7 @@ public class WhenTestingLogError
         lastError.ErrorType.Should().Be(nameof(TimeoutException));
         lastError.Message.Should().Be("queue read timed out");
         js.SetCalls.Should().Be(2);
+        js.ConsoleCalls.Should().Be(2);
     }
 
     [Fact]
@@ -58,6 +59,8 @@ public class WhenTestingLogError
     {
         public int SetCalls { get; private set; }
 
+        public int ConsoleCalls { get; private set; }
+
         public bool ThrowOnSet { get; init; }
 
         private string? _json;
@@ -78,6 +81,12 @@ public class WhenTestingLogError
 
                 SetCalls++;
                 _json = args?[0] as string;
+                return default!;
+            }
+
+            if (identifier == "fishingLogBookDiagnostics.console")
+            {
+                ConsoleCalls++;
                 return default!;
             }
 

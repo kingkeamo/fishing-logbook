@@ -4,7 +4,7 @@ namespace FishingLogBook.Web.Features.OfflineAccess.Services;
 
 public interface IOfflineAccessDeviceService
 {
-    Task<bool> HasReadyEntitlementAsync(CancellationToken cancellationToken);
+    Task<OfflineAccessAvailabilityModel> HasReadyEntitlementAsync(CancellationToken cancellationToken);
     Task<OfflineAccessUnlockResultModel> UnlockAsync(CancellationToken cancellationToken);
     Task<OfflineAccessDeviceResultModel> GetStatusAsync(OfflineAccessIdentityModel identity, CancellationToken cancellationToken);
     Task<OfflineAccessDeviceResultModel> SetupAsync(OfflineAccessIdentityModel identity, CancellationToken cancellationToken);

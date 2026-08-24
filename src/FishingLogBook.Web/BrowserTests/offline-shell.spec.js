@@ -38,6 +38,42 @@ test.describe('Published offline application shell', () => {
         expect(apiGuard.requests).toEqual([]);
     });
 
+    test('shows and retries an offline entitlement discovery failure without unlocking or using the API', async ({ context, page }) => {
+        const apiGuard = guardOfflineApiRequests(context);
+        await addPrfAuthenticator(page);
+        await cachePublishedShell(page);
+        await provisionOfflineOwner(page);
+        await context.addInitScript(() => {
+            window.__failOfflineEntitlementDiscovery = true;
+            const originalOpen = indexedDB.open.bind(indexedDB);
+            Object.defineProperty(indexedDB, 'open', {
+                configurable: true,
+                value: (...args) => {
+                    if (window.__failOfflineEntitlementDiscovery
+                        && args[0] === 'FishingLogBookOfflineAccess') {
+                        throw new DOMException('Simulated discovery failure', 'UnknownError');
+                    }
+                    return originalOpen(...args);
+                }
+            });
+        });
+
+        apiGuard.enable();
+        await reopenColdOffline(context, page);
+        await expect(page.locator('#landing-offline-availability-failed')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('#landing-open-offline')).toHaveCount(0);
+        expect(await credentialGetCalls(page)).toBe(0);
+        expect(apiGuard.requests).toEqual([]);
+
+        await page.evaluate(() => { window.__failOfflineEntitlementDiscovery = false; });
+        await page.locator('#landing-offline-availability-retry').click();
+
+        await expect(page.locator('#landing-open-offline')).toBeVisible();
+        await expect(page.locator('#landing-offline-availability-failed')).toHaveCount(0);
+        expect(await credentialGetCalls(page)).toBe(0);
+        expect(apiGuard.requests).toEqual([]);
+    });
+
     test('unlocks explicitly, keeps owner data isolated, and records and edits across cold offline reloads', async ({ context, page }) => {
         test.setTimeout(120000);
         const apiGuard = guardOfflineApiRequests(context);

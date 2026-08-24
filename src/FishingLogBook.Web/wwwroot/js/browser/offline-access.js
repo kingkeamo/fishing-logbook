@@ -12,9 +12,13 @@ export async function getDeviceStatus(identity) {
 }
 
 export async function hasReadyEntitlement() {
-    if (!isSupported()) return false;
-    const records = await getAllRecords();
-    return records.some(isReadyRecord);
+    try {
+        const records = await getAllRecords();
+        if (records.some(isReadyRecord)) return discoveryResult('ready', 'ready-record-found');
+        return discoveryResult('not-configured', records.length === 0 ? 'no-records' : 'records-present-none-ready');
+    } catch (error) {
+        return discoveryResult('check-failed', discoveryFailureDetail('indexeddb-read', error));
+    }
 }
 
 export async function unlockDevice() {
@@ -232,7 +236,18 @@ async function openDatabase() {
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
+        request.onblocked = () => reject(new Error('database-open-blocked'));
     });
+}
+
+function discoveryResult(state, detail) {
+    console.info(`[FLB] OfflineAccessDiscovery: ${detail}`);
+    return { state, detail };
+}
+
+function discoveryFailureDetail(stage, error) {
+    const safeType = typeof error?.name === 'string' && error.name.length > 0 ? error.name : 'Error';
+    return `${stage}:${safeType}`;
 }
 
 async function transact(mode, action) {

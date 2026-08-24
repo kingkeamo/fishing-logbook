@@ -9,14 +9,34 @@ public class WhenTestingDiscoveryAndUnlock : BaseOfflineAccessDeviceServiceTest
     public async Task ItShouldDiscoverReadyEntitlementsWithoutRequestingUnlock()
     {
         // Arrange
-        var js = new FakeOfflineAccessJsRuntime { HasReadyEntitlement = true };
+        var expected = new OfflineAccessAvailabilityModel("ready", "ready-record-found");
+        var js = new FakeOfflineAccessJsRuntime { Availability = expected };
         var sut = CreateSut(js);
 
         // Act
         var available = await sut.HasReadyEntitlementAsync(CancellationToken.None);
 
         // Assert
-        available.Should().BeTrue();
+        available.Should().Be(expected);
+        available.IsReady.Should().BeTrue();
+        js.Invocations.Should().Equal("import", "hasReadyEntitlement");
+    }
+
+    [Fact]
+    public async Task ItShouldReturnSafeDiscoveryFailuresFromTheBrowserModule()
+    {
+        // Arrange
+        var js = new FakeOfflineAccessJsRuntime
+        {
+            Availability = new OfflineAccessAvailabilityModel("check-failed", "indexeddb-read:UnknownError")
+        };
+        var sut = CreateSut(js);
+
+        // Act
+        var result = await sut.HasReadyEntitlementAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(js.Availability);
         js.Invocations.Should().Equal("import", "hasReadyEntitlement");
     }
 

@@ -6,6 +6,7 @@ using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
+using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -94,7 +95,10 @@ public class BaseLandingTest
     protected static IOfflineAccessDeviceService OfflineAccessDevice(bool hasReadyEntitlement)
     {
         var device = Substitute.For<IOfflineAccessDeviceService>();
-        device.HasReadyEntitlementAsync(Arg.Any<CancellationToken>()).Returns(hasReadyEntitlement);
+        device.HasReadyEntitlementAsync(Arg.Any<CancellationToken>()).Returns(
+            new OfflineAccessAvailabilityModel(
+                hasReadyEntitlement ? "ready" : "not-configured",
+                hasReadyEntitlement ? "ready-record-found" : "no-records"));
         return device;
     }
 

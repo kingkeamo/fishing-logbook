@@ -23,7 +23,7 @@
             <MudStack Spacing="2" Class="landing-actions">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginCreateAccount" id="landing-create-account">@Loc["Auth_CreateAccount"]</MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginSignIn" id="landing-sign-in">@Loc["Auth_SignIn"]</MudButton>
-                @if (_showOfflineAction)
+                @if (_offlineAvailability == OfflineAvailabilityState.Ready)
                 {
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Secondary"
@@ -35,6 +35,21 @@
                                id="landing-open-offline">
                         @Loc["OfflineAccess_OpenOffline"]
                     </MudButton>
+                }
+                @if (_offlineAvailability == OfflineAvailabilityState.CheckFailed)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" id="landing-offline-availability-failed">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.body2">@Loc["OfflineAccess_AvailabilityCheckFailed"]</MudText>
+                            <MudButton Variant="Variant.Text"
+                                       Color="Color.Primary"
+                                       Disabled="_checkingOfflineAvailability"
+                                       OnClick="RetryOfflineAvailabilityAsync"
+                                       id="landing-offline-availability-retry">
+                                @Loc["Action_TryAgain"]
+                            </MudButton>
+                        </MudStack>
+                    </MudAlert>
                 }
                 @if (_offlineUnlockFailed)
                 {

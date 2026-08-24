@@ -11,7 +11,7 @@ public class BaseOfflineAccessDeviceServiceTest
     {
         private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);
 
-        public bool HasReadyEntitlement { get; set; }
+        public OfflineAccessAvailabilityModel Availability { get; set; } = new("not-configured", "no-records");
         public OfflineAccessUnlockResultModel UnlockResult { get; set; } = new("not-configured", null, null);
         public List<string> Invocations { get; } = [];
 
@@ -28,7 +28,7 @@ public class BaseOfflineAccessDeviceServiceTest
 
             object result = identifier switch
             {
-                "hasReadyEntitlement" => HasReadyEntitlement,
+                "hasReadyEntitlement" => Availability,
                 "unlockDevice" => UnlockResult,
                 _ => throw new InvalidOperationException(identifier)
             };
