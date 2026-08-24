@@ -40,21 +40,22 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
     }
 
     [Fact]
-    public void ItShouldResolveServicesInjectedByComponents()
+    public async Task ItShouldResolveServicesInjectedByComponents()
     {
         // Arrange
         var injectedTypes = GetComponentInjectedServiceTypes();
 
         // Act
-        Action resolve = () =>
+        async Task ResolveAsync()
         {
-            using var provider = CreateProvider();
-            using var scope = provider.CreateScope();
+            await using var provider = CreateProvider();
+            await using var scope = provider.CreateAsyncScope();
             foreach (var type in injectedTypes)
             {
                 scope.ServiceProvider.GetRequiredService(type);
             }
-        };
+        }
+        Func<Task> resolve = ResolveAsync;
 
         // Assert
         injectedTypes.Should().Contain(typeof(ISystemStatusClient));
@@ -69,7 +70,7 @@ public class WhenTestingContainer : BaseDependencyInjectionTest
         injectedTypes.Should().Contain(typeof(ICatchSynchroniser));
         injectedTypes.Should().Contain(typeof(IModalService));
         injectedTypes.Should().Contain(typeof(IStringLocalizer<UiStrings>));
-        resolve.Should().NotThrow();
+        await resolve.Should().NotThrowAsync();
     }
 
     [Fact]

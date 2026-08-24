@@ -627,6 +627,9 @@
   <data name="OfflineAccess_AvailabilityCheckFailed" xml:space="preserve">
     <value>Nous n'avons pas pu vérifier l'accès hors ligne sur cet appareil. Veuillez réessayer.</value>
   </data>
+  <data name="OfflineAccess_NotConfiguredOffline" xml:space="preserve">
+    <value>L'accès hors ligne n'est pas configuré sur cet appareil. Lorsque vous serez de nouveau en ligne, vous pourrez l'activer depuis votre profil.</value>
+  </data>
   <data name="Common_Loading" xml:space="preserve"><value>Chargement</value></data>
   <data name="Brand_LogoAlt" xml:space="preserve"><value>Catch But Don’t Forget — Catch · Release · Remember</value></data>
   <data name="Onboarding_PageTitle" xml:space="preserve"><value>Bienvenue</value></data>

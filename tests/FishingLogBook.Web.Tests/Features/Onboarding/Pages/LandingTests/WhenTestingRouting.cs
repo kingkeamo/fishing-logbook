@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using AwesomeAssertions;
 using Bunit;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
@@ -134,18 +135,23 @@ public class WhenTestingRouting : BaseLandingTest
         // Arrange
         var authentication = new TaskCompletionSource<AuthenticationState>(TaskCreationOptions.RunContinuationsAsynchronously);
         var device = OfflineAccessDevice(hasReadyEntitlement: true);
+        var network = Network(isOnline: false);
         await using var context = CreateContext(
             Onboarding(false),
             authenticationStateProvider: Authentication(authentication.Task),
-            offlineAccessDevice: device);
+            offlineAccessDevice: device,
+            network: network);
 
         // Act
         var cut = context.Render<LandingPage>();
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+        cut.FindAll("#landing-offline-not-configured").Should().BeEmpty();
         await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
         await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+        await network.Received(1).StartMonitoringAsync(Arg.Any<CancellationToken>());
+        await network.Received(1).IsOnlineAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -161,6 +167,116 @@ public class WhenTestingRouting : BaseLandingTest
         // Assert
         cut.WaitForAssertion(() => cut.FindAll("#landing-offline-availability-failed").Should().BeEmpty());
         cut.FindAll("#landing-open-offline").Should().BeEmpty();
+        cut.FindAll("#landing-offline-not-configured").Should().BeEmpty();
+        await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldExplainUnconfiguredOfflineAccessOnlyWhenOffline()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var device = OfflineAccessDevice(hasReadyEntitlement: false);
+        var network = Network(isOnline: false);
+        var onboarding = Onboarding(false);
+        await using var context = CreateContext(
+            onboarding,
+            isAuthenticated: false,
+            offlineAccessDevice: device,
+            network: network);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#landing-offline-not-configured").TextContent
+                .Should().Contain("Offline access isn't set up on this device"));
+        cut.FindAll("#landing-open-offline").Should().BeEmpty();
+        cut.FindAll("#landing-offline-availability-failed").Should().BeEmpty();
+        await network.Received(1).StartMonitoringAsync(Arg.Any<CancellationToken>());
+        await network.Received(1).IsOnlineAsync(Arg.Any<CancellationToken>());
+        await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().SetupAsync(
+            Arg.Any<OfflineAccessIdentityModel>(),
+            Arg.Any<CancellationToken>());
+        await device.DidNotReceive().RemoveAsync(
+            Arg.Any<OfflineAccessIdentityModel>(),
+            Arg.Any<CancellationToken>());
+        await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldLogConnectivityDiscoveryFailureWithoutShowingOfflineSetupGuidance()
+    {
+        // Arrange
+        var failure = new JSException("network-state-unavailable");
+        var network = Substitute.For<INetworkService>();
+        network.StartMonitoringAsync(Arg.Any<CancellationToken>()).ThrowsAsync(failure);
+        var logging = Substitute.For<ILoggingService>();
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            logging: logging,
+            network: network);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#landing-offline-not-configured").Should().BeEmpty());
+        await logging.Received(1).LogErrorAsync(
+            "landing connectivity",
+            Arg.Is<Exception>(exception => ReferenceEquals(exception, failure)),
+            CancellationToken.None);
+        await network.Received(1).StartMonitoringAsync(Arg.Any<CancellationToken>());
+        await network.DidNotReceive().IsOnlineAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowGuidanceWhenConnectivityChangesToOffline()
+    {
+        // Arrange
+        var device = OfflineAccessDevice(hasReadyEntitlement: false);
+        var network = Network(isOnline: true);
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            offlineAccessDevice: device,
+            network: network);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() => cut.FindAll("#landing-offline-not-configured").Should().BeEmpty());
+
+        // Act
+        network.ConnectivityChanged += Raise.Event<Action<bool>>(false);
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#landing-offline-not-configured").Should().NotBeNull());
+        await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldHideGuidanceWhenConnectivityChangesToOnline()
+    {
+        // Arrange
+        var device = OfflineAccessDevice(hasReadyEntitlement: false);
+        var network = Network(isOnline: false);
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            offlineAccessDevice: device,
+            network: network);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() => cut.Find("#landing-offline-not-configured").Should().NotBeNull());
+
+        // Act
+        network.ConnectivityChanged += Raise.Event<Action<bool>>(true);
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#landing-offline-not-configured").Should().BeEmpty());
         await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
         await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
     }
@@ -177,15 +293,18 @@ public class WhenTestingRouting : BaseLandingTest
                 _ => throw failure,
                 _ => new OfflineAccessAvailabilityModel("ready", "ready-record-found"));
         var logging = Substitute.For<ILoggingService>();
+        var network = Network(isOnline: false);
         await using var context = CreateContext(
             Onboarding(false),
             isAuthenticated: false,
             logging: logging,
-            offlineAccessDevice: device);
+            offlineAccessDevice: device,
+            network: network);
         var cut = context.Render<LandingPage>();
         cut.WaitForAssertion(() =>
             cut.Find("#landing-offline-availability-failed").TextContent
                 .Should().Contain("couldn't check offline access"));
+        cut.FindAll("#landing-offline-not-configured").Should().BeEmpty();
 
         // Act
         await cut.Find("#landing-offline-availability-retry").ClickAsync();
@@ -199,7 +318,32 @@ public class WhenTestingRouting : BaseLandingTest
             "landing offline availability",
             Arg.Is<Exception>(exception => ReferenceEquals(exception, failure)),
             CancellationToken.None);
+        await network.Received(1).IsOnlineAsync(Arg.Any<CancellationToken>());
         context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/");
+    }
+
+    [Fact]
+    public async Task ItShouldShowFrenchOfflineSetupGuidance()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.French);
+        var device = OfflineAccessDevice(hasReadyEntitlement: false);
+        var network = Network(isOnline: false);
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            offlineAccessDevice: device,
+            network: network);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#landing-offline-not-configured").TextContent
+                .Should().Contain("L'accès hors ligne n'est pas configuré"));
+        await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

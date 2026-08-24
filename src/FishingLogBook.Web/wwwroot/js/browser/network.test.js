@@ -34,6 +34,47 @@ describe('network', () => {
         expect(helper.invokeMethodAsync).toHaveBeenCalledWith('OnBrowserOnline');
     });
 
+    it('reports online and offline changes until monitoring stops', () => {
+        const handlers = {};
+        const helper = { invokeMethodAsync: vi.fn() };
+        const targetWindow = {
+            navigator: { onLine: true },
+            addEventListener(name, callback) {
+                handlers[name] = callback;
+            },
+            removeEventListener: vi.fn()
+        };
+        const api = createNetworkApi(targetWindow);
+        api.startMonitoring(helper);
+
+        targetWindow.navigator.onLine = false;
+        handlers.offline();
+        targetWindow.navigator.onLine = true;
+        handlers.online();
+        api.stopMonitoring();
+
+        expect(helper.invokeMethodAsync).toHaveBeenNthCalledWith(1, 'OnBrowserConnectivityChanged', false);
+        expect(helper.invokeMethodAsync).toHaveBeenNthCalledWith(2, 'OnBrowserConnectivityChanged', true);
+        expect(targetWindow.removeEventListener).toHaveBeenCalledWith('online', handlers.online);
+        expect(targetWindow.removeEventListener).toHaveBeenCalledWith('offline', handlers.offline);
+    });
+
+    it('registers only one connectivity monitor', () => {
+        const handlers = {};
+        const helper = { invokeMethodAsync: vi.fn() };
+        const targetWindow = {
+            navigator: { onLine: true },
+            addEventListener: vi.fn((name, callback) => { handlers[name] = callback; }),
+            removeEventListener() { }
+        };
+        const api = createNetworkApi(targetWindow);
+
+        api.startMonitoring(helper);
+        api.startMonitoring(helper);
+
+        expect(targetWindow.addEventListener).toHaveBeenCalledTimes(2);
+    });
+
     it('invokes the helper when the page resumes or becomes visible', () => {
         const windowHandlers = {};
         const documentHandlers = {};

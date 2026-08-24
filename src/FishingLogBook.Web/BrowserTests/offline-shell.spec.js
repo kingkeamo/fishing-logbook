@@ -23,6 +23,12 @@ test.describe('Published offline application shell', () => {
 
     test('renders Landing promptly after a cold offline reload without auth, API, or automatic WebAuthn', async ({ context, page }) => {
         const apiGuard = guardOfflineApiRequests(context);
+        await context.addInitScript(() => {
+            Object.defineProperty(Navigator.prototype, 'onLine', {
+                configurable: true,
+                get: () => false
+            });
+        });
 
         await cachePublishedShell(page);
         apiGuard.enable();
@@ -30,6 +36,9 @@ test.describe('Published offline application shell', () => {
         const started = Date.now();
         await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.locator('#public-landing-page')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('#landing-offline-not-configured')).toBeVisible();
+        await expect(page.locator('#landing-open-offline')).toHaveCount(0);
+        await expect(page.locator('#landing-offline-availability-failed')).toHaveCount(0);
         const elapsed = Date.now() - started;
 
         expect(elapsed).toBeLessThan(15000);
