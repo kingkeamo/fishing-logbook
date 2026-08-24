@@ -62,6 +62,7 @@ public class WhenTestingSave : BaseCatchEditTest
         await using var context = CreateContext(store, synchroniser: synchroniser, time: time);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-save").Should().NotBeNull());
+        cut.Find("#catch-edit-notes").Input("Changed before rebind failure");
 
         // Act
         await cut.Find("#catch-edit-save").ClickAsync();
@@ -71,9 +72,11 @@ public class WhenTestingSave : BaseCatchEditTest
             cut.Find("#catch-edit-load-failed").TextContent.Should().Contain("could not be loaded"));
         cut.FindAll("#catch-edit-saved").Should().BeEmpty();
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.Id == catchId),
+            Arg.Is<CatchModel>(catchRecord => catchRecord.Id == catchId
+                && catchRecord.Notes == "Changed before rebind failure"
+                && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
             Arg.Any<CancellationToken>());
-        await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -466,4 +469,3 @@ public class WhenTestingSave : BaseCatchEditTest
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 }
-

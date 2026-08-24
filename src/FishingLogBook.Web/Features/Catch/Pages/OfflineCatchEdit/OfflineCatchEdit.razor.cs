@@ -86,7 +86,7 @@ public partial class OfflineCatchEdit : ComponentBase
         return Task.CompletedTask;
     }
 
-    private void OnEditorBindingFailed()
+    private void OnEditorBindingFailed(CatchEditSavedModel? saved)
     {
         _loadFailed = true;
     }

@@ -47,7 +47,7 @@ public partial class CatchEditEditor : ComponentBase
     public EventCallback<CatchEditSavedModel> Saved { get; set; }
 
     [Parameter]
-    public EventCallback BindingFailed { get; set; }
+    public EventCallback<CatchEditSavedModel?> BindingFailed { get; set; }
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
@@ -144,7 +144,7 @@ public partial class CatchEditEditor : ComponentBase
         _catch = Catch;
         if (!await BindFormAsync(Catch))
         {
-            await BindingFailed.InvokeAsync();
+            await BindingFailed.InvokeAsync(null);
             return;
         }
 
@@ -260,7 +260,7 @@ public partial class CatchEditEditor : ComponentBase
             _catch = built.Catch;
             if (!await BindFormAsync(built.Catch))
             {
-                await BindingFailed.InvokeAsync();
+                await BindingFailed.InvokeAsync(built);
                 return;
             }
 

@@ -108,8 +108,17 @@ public partial class CatchEdit : ComponentBase, IDisposable
         return Task.CompletedTask;
     }
 
-    private void OnEditorBindingFailed()
+    private void OnEditorBindingFailed(CatchEditSavedModel? saved)
     {
+        if (saved is not null)
+        {
+            _catch = saved.Catch;
+            if (saved.MetadataChanged)
+            {
+                TryToSynchronisePending();
+            }
+        }
+
         _loadFailed = true;
     }
 
