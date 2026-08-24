@@ -78,22 +78,6 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         return SynchroniseAsync();
     }
 
-    private string ThemeToggleIcon
-    {
-        get
-        {
-            return _isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode;
-        }
-    }
-
-    private string ThemeToggleLabel
-    {
-        get
-        {
-            return _isDarkMode ? Loc["Theme_ToggleLight"] : Loc["Theme_ToggleDark"];
-        }
-    }
-
     private void ToggleDarkMode()
     {
         _isDarkMode = !_isDarkMode;

@@ -8,7 +8,7 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const container = `fishing-logbook-e2e-${randomUUID().slice(0, 8)}`;
 const port = process.env.E2E_POSTGRES_PORT ?? '55433';
 const password = randomUUID();
-const connection = `Host=localhost;Port=${port};Database=postgres;Username=postgres;Password=${password}`;
+const connection = `Host=127.0.0.1;Port=${port};Database=postgres;Username=postgres;Password=${password}`;
 const children = [];
 const runtimeDirectory = resolve(projectRoot, 'tests/FishingLogBook.E2E/.runtime');
 const containerFile = resolve(runtimeDirectory, 'container-name');

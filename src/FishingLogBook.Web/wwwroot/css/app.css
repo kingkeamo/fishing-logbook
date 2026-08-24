@@ -139,3 +139,23 @@ html, body {
 .app-brand-name {
     white-space: nowrap;
 }
+.mud-main-content {
+    min-height: 100vh;
+}
+
+.app-shell-content {
+    box-sizing: border-box;
+    margin-inline: auto;
+    max-width: 100%;
+    overflow-x: hidden;
+    padding: 1rem 0.75rem 2rem;
+    width: 100%;
+}
+
+@media (min-width: 600px) {
+    .app-shell-content { padding: 1.25rem 1.5rem 2.5rem; }
+}
+
+@media (min-width: 1280px) {
+    .app-shell-content { padding: 1.5rem 2.5rem 3rem; }
+}

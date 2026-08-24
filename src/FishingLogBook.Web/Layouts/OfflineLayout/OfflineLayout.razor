@@ -1,0 +1,43 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout id="offline-layout">
+    <AppShellHeader IsDarkMode="_isDarkMode" OnToggleTheme="ToggleDarkMode">
+        <MenuContent>
+            <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                           Color="Color.Inherit"
+                           Edge="Edge.Start"
+                           Class="d-md-none"
+                           OnClick="ToggleDrawer"
+                           aria-label="@Loc["Nav_Menu"]"
+                           id="offline-menu-button" />
+        </MenuContent>
+        <TrailingContent>
+            <MudTooltip Text="@Loc["OfflineAccess_Mode"]">
+                <MudIcon Icon="@Icons.Material.Filled.CloudOff" Color="Color.Inherit" id="offline-mode-icon" />
+            </MudTooltip>
+        </TrailingContent>
+    </AppShellHeader>
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md"
+               ClipMode="DrawerClipMode.Always"
+               Elevation="1"
+               id="offline-drawer">
+        <MudNavMenu>
+            <MudNavLink Href="/offline/catches" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.MenuBook" id="offline-catches-nav-link">@Loc["Catch_LogbookNav"]</MudNavLink>
+            <MudNavLink Href="/offline/record" Icon="@Icons.Material.Filled.AddAPhoto" id="offline-record-nav-link">@Loc["Catch_RecordNav"]</MudNavLink>
+            <MudNavLink OnClick="Lock" Icon="@Icons.Material.Filled.Lock" id="offline-lock-nav-link">@Loc["OfflineAccess_Lock"]</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent>
+        <div class="offline-mode-banner" id="offline-mode-banner">@Loc["OfflineAccess_Mode"]</div>
+        <div class="app-shell-content" id="offline-shell-content">
+            @Body
+        </div>
+    </MudMainContent>
+</MudLayout>

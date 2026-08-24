@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
@@ -139,6 +140,31 @@ public class WhenTestingRender : BaseCatchEditTest
             cut.Find("#catch-edit-load-failed").TextContent.Should().Contain("could not be loaded"));
         cut.FindAll("#catch-edit-save").Should().BeEmpty();
         await store.Received(1).GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowLoadFailedWhenTheCaughtOnCannotBeBound()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(catchId));
+        var time = Substitute.For<ITimeService>();
+        time.ToDateTimeLocalValueAsync(StoredCaughtOn, Arg.Any<CancellationToken>())
+            .Returns((string)null!);
+        await using var context = CreateContext(store, time: time);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-load-failed").TextContent.Should().Contain("could not be loaded"));
+        cut.FindAll("#catch-edit-caught-on").Should().BeEmpty();
+        cut.FindAll("#catch-edit-save").Should().BeEmpty();
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 

@@ -1,0 +1,8 @@
+.offline-mode-banner {
+    background: var(--mud-palette-warning-lighten);
+    color: var(--mud-palette-warning-darken);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.35rem 0.75rem;
+    text-align: center;
+}

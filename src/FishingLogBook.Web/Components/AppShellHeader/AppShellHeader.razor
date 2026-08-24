@@ -1,0 +1,20 @@
+<MudAppBar Elevation="1" Dense="true">
+    @MenuContent
+    <MudLink Href="/"
+             Underline="Underline.None"
+             Color="Color.Inherit"
+             Class="app-brand"
+             aria-label="@Loc["App_Name"]"
+             id="app-brand">
+        <img src="images/brand/brand-mark-transparent.png" class="app-brand-mark" alt="" aria-hidden="true" id="app-brand-mark" />
+        <MudText Typo="Typo.h6" Class="app-brand-name d-none d-sm-flex" id="app-brand-name">@Loc["App_Name"]</MudText>
+    </MudLink>
+    <MudSpacer />
+    <LanguageSwitcher />
+    <MudIconButton Icon="@ThemeToggleIcon"
+                   Color="Color.Inherit"
+                   OnClick="OnToggleTheme"
+                   aria-label="@ThemeToggleLabel"
+                   id="theme-toggle-button" />
+    @TrailingContent
+</MudAppBar>

@@ -1,0 +1,34 @@
+@page "/offline/catches/{CatchId:guid}/edit"
+@attribute [OfflineRoute]
+@layout OfflineLayout
+@using FishingLogBook.Web.Features.Catch.Components.CatchEditEditor
+@using FishingLogBook.Web.Features.OfflineAccess
+
+<PageTitle>@Loc["Catch_EditPageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudText Typo="Typo.h4" Align="Align.Center" id="offline-catch-edit-title">@Loc["Catch_EditTitle"]</MudText>
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="offline-catch-edit-load-failed">@Loc["Catch_EditLoadFailed"]</MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center" id="offline-catch-edit-loading" />
+        }
+        else if (_catch is not null)
+        {
+            <MudExpansionPanels Elevation="1" MultiExpansion="true" id="offline-catch-edit-photo-sections">
+                <MudExpansionPanel Text="@Loc["Catch_EditPhotographsSection"]" Expanded="true">
+                    <CatchPhotographCarousel Photographs="CarouselPhotographs" Editable="false" IdPrefix="offline-catch-edit" />
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+            <CatchEditEditor Catch="_catch"
+                             Preferences="_preferences"
+                             IdPrefix="offline-catch-edit"
+                             Saved="OnSavedAsync"
+                             BindingFailed="OnEditorBindingFailed" />
+        }
+    </MudStack>
+</MudContainer>

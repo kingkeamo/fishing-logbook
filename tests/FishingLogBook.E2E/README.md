@@ -23,6 +23,21 @@ npm --prefix tests/FishingLogBook.E2E run install:browsers
 npm --prefix tests/FishingLogBook.E2E test
 ```
 
+From the repository root, use the convenience scripts:
+
+```powershell
+npm run test-e2e
+npm run test-e2e-debug
+npm run test-e2e-single -- "records and edits locally offline"
+```
+
+`test-e2e` runs the complete suite in visible Chromium with one worker.
+`test-e2e-debug` opens the Playwright Inspector and also makes the authentication
+setup browser visible. `test-e2e-single` uses Playwright's title matching, so supply a
+distinctive full or partial test title after `--`.
+
+The same commands are also available directly inside `tests/FishingLogBook.E2E`.
+
 The default command starts a disposable PostgreSQL 18 container on port `55433`, applies
 the real migrations, and starts the API and Web projects. Override the port with
 `E2E_POSTGRES_PORT`. To use an already-running stack, set `E2E_EXTERNAL_STACK=true` and

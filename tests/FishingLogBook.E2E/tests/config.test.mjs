@@ -20,6 +20,18 @@ test('requires explicit enablement and dedicated Cognito secrets', async () => {
     assert.match(workflow, /secrets\.E2E_COGNITO_PASSWORD/);
 });
 
+test('provides project-local headed, debug and single-test commands', async () => {
+    const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+    const rootPackageJson = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8'));
+
+    assert.equal(packageJson.scripts['test-e2e'], 'playwright test --headed --workers=1');
+    assert.equal(packageJson.scripts['test-e2e-debug'], 'playwright test --debug --workers=1');
+    assert.equal(packageJson.scripts['test-e2e-single'], 'playwright test --headed --workers=1 --grep');
+    assert.equal(rootPackageJson.scripts['test-e2e'], 'npm --prefix tests/FishingLogBook.E2E run test-e2e');
+    assert.equal(rootPackageJson.scripts['test-e2e-debug'], 'npm --prefix tests/FishingLogBook.E2E run test-e2e-debug');
+    assert.equal(rootPackageJson.scripts['test-e2e-single'], 'npm --prefix tests/FishingLogBook.E2E run test-e2e-single --');
+});
+
 test('registers independent disposable-container teardown', async () => {
     const config = await readFile(new URL('../playwright.config.mjs', import.meta.url), 'utf8');
     const teardown = await readFile(new URL('../support/teardown.mjs', import.meta.url), 'utf8');
@@ -33,6 +45,7 @@ test('uses IPv4 for deterministic local Cognito metadata retrieval', async () =>
     const stack = await readFile(new URL('../support/start-stack.mjs', import.meta.url), 'utf8');
 
     assert.match(stack, /DOTNET_SYSTEM_NET_DISABLEIPV6: '1'/);
+    assert.match(stack, /Host=127\.0\.0\.1/);
 });
 
 test('keeps the offline journey inside the loaded app shell', async () => {
@@ -54,6 +67,9 @@ test('onboards the dedicated Cognito user through the real UI for each disposabl
     assert.match(setup, /#onboarding-method-Fly/);
     assert.match(setup, /#catalogue-picker-modal-option-BrownTrout/);
     assert.match(setup, /#onboarding-finish/);
+    const afterLocation = setup.slice(setup.indexOf('#onboarding-skip-location'));
+    assert.equal(afterLocation.match(/#onboarding-next/g)?.length, 2);
+    assert.ok(afterLocation.lastIndexOf('#onboarding-next') < afterLocation.indexOf('#onboarding-finish'));
     assert.doesNotMatch(setup, /must complete onboarding before running/);
 });
 

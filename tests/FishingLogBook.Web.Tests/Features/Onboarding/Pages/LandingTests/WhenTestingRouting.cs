@@ -2,6 +2,8 @@ using System.Security.Claims;
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.OfflineAccess.Models;
+using FishingLogBook.Web.Features.OfflineAccess.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -150,6 +152,46 @@ public class WhenTestingRouting : BaseLandingTest
     }
 
     [Fact]
+    public async Task ItShouldOfferOfflineUnlockWithoutWaitingForAuthentication()
+    {
+        // Arrange
+        var authentication = new TaskCompletionSource<AuthenticationState>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var device = OfflineAccessDevice(hasReadyEntitlement: true);
+        await using var context = CreateContext(
+            Onboarding(false),
+            authenticationStateProvider: Authentication(authentication.Task),
+            offlineAccessDevice: device);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+        await device.Received(1).HasReadyEntitlementAsync(Arg.Any<CancellationToken>());
+        await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldUnlockOnlyAfterTheExplicitAction()
+    {
+        // Arrange
+        var device = OfflineAccessDevice(hasReadyEntitlement: true);
+        device.UnlockAsync(Arg.Any<CancellationToken>()).Returns(
+            new OfflineAccessUnlockResultModel("unlocked", Guid.Parse("11111111-1111-1111-1111-111111111111"), 1));
+        await using var context = CreateContext(Onboarding(false), isAuthenticated: false, offlineAccessDevice: device);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#landing-open-offline").ClickAsync();
+
+        // Assert
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/offline/catches");
+        context.Services.GetRequiredService<IOfflineOwnerContextService>().Owner?.EntitlementVersion.Should().Be(1);
+        await device.Received(1).UnlockAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldRedirectAfterPendingAuthenticationResolvesForACompletedUser()
     {
         // Arrange
@@ -187,6 +229,28 @@ public class WhenTestingRouting : BaseLandingTest
 
         // Assert
         navigation.Uri.Should().EndWith("/catches");
+        await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRedirectWhenAuthenticationChangesAfterLandingInitiallyLoadsAnonymous()
+    {
+        // Arrange
+        var authentication = new MutableAuthenticationStateProvider(Anonymous());
+        var onboarding = Onboarding(true);
+        await using var context = CreateContext(
+            onboarding,
+            isAuthenticated: false,
+            authenticationStateProvider: authentication);
+        var cut = context.Render<LandingPage>();
+        var navigation = context.Services.GetRequiredService<NavigationManager>();
+        navigation.Uri.Should().EndWith("/");
+
+        // Act
+        authentication.SetAuthenticationState(Authenticated());
+
+        // Assert
+        cut.WaitForAssertion(() => navigation.Uri.Should().EndWith("/catches"));
         await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
     }
 
@@ -315,5 +379,22 @@ public class WhenTestingRouting : BaseLandingTest
             [new Claim(ClaimTypes.Name, "angler@example.test")],
             "Test");
         return new AuthenticationState(new ClaimsPrincipal(identity));
+    }
+
+    private static AuthenticationState Anonymous() => new(new ClaimsPrincipal(new ClaimsIdentity()));
+
+    private sealed class MutableAuthenticationStateProvider(AuthenticationState authenticationState)
+        : AuthenticationStateProvider
+    {
+        private AuthenticationState _authenticationState = authenticationState;
+
+        public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
+            Task.FromResult(_authenticationState);
+
+        public void SetAuthenticationState(AuthenticationState authenticationState)
+        {
+            _authenticationState = authenticationState;
+            NotifyAuthenticationStateChanged(Task.FromResult(authenticationState));
+        }
     }
 }
