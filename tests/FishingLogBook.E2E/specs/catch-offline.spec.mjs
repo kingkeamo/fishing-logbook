@@ -2,8 +2,13 @@ import { test, expect } from '../support/fixtures.mjs';
 import { recordCatch, reloadServerCatches, testName } from '../support/catch-journey.mjs';
 
 test('records and edits locally offline, then synchronises once after reconnect', async ({ page, context }) => {
+    await page.goto('/catches/record');
+    await expect(page.locator('#record-catch-title')).toBeVisible();
+    await expect(page.locator('#record-catch-method-Fly')).toBeVisible();
+    await expect(page.locator('#record-catch-species-BrownTrout')).toBeVisible();
     await page.goto('/catches');
     await expect(page.locator('#catch-list-title')).toBeVisible();
+    await expect(page.locator('#catch-list-loading')).toBeHidden();
     await page.evaluate(() => navigator.serviceWorker?.ready);
     await context.setOffline(true);
     const notes = testName('offline-edited');
