@@ -33,6 +33,7 @@ test('uses IPv4 for deterministic local Cognito metadata retrieval', async () =>
     const stack = await readFile(new URL('../support/start-stack.mjs', import.meta.url), 'utf8');
 
     assert.match(stack, /DOTNET_SYSTEM_NET_DISABLEIPV6: '1'/);
+    assert.match(stack, /Host=127\.0\.0\.1/);
 });
 
 test('keeps the offline journey inside the loaded app shell', async () => {
