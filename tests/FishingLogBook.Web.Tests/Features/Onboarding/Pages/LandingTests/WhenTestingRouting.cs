@@ -130,6 +130,24 @@ public class WhenTestingRouting : BaseLandingTest
     }
 
     [Fact]
+    public async Task ItShouldRequireExplicitOfflineUnlockAfterReconnectSignInReturns()
+    {
+        // Arrange
+        var onboarding = Onboarding(true);
+        await using var context = CreateContext(onboarding, isAuthenticated: true);
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/?reconnect=offline");
+
+        // Act
+        var cut = context.Render<LandingPage>();
+        await Task.Yield();
+
+        // Assert
+        cut.Find("#public-landing-page").Should().NotBeNull();
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/?reconnect=offline");
+        await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldOfferOfflineUnlockWithoutWaitingForAuthentication()
     {
         // Arrange

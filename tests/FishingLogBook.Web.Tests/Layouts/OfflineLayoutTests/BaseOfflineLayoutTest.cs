@@ -10,7 +10,9 @@ namespace FishingLogBook.Web.Tests.Layouts.OfflineLayoutTests;
 
 public class BaseOfflineLayoutTest
 {
-    protected static BunitContext CreateContext(out OfflineOwnerContextService owner)
+    protected static BunitContext CreateContext(
+        out OfflineOwnerContextService owner,
+        IOfflineReconnectService? reconnect = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -21,6 +23,7 @@ public class BaseOfflineLayoutTest
         owner = new OfflineOwnerContextService();
         owner.Unlock(new OfflineOwnerModel(Guid.Parse("11111111-1111-1111-1111-111111111111"), 1));
         context.Services.AddSingleton<IOfflineOwnerContextService>(owner);
+        context.Services.AddSingleton(reconnect ?? Substitute.For<IOfflineReconnectService>());
         return context;
     }
 }

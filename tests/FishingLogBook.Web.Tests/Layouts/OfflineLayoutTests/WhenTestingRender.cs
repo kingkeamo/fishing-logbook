@@ -1,8 +1,12 @@
 using AwesomeAssertions;
 using Bunit;
+using Bunit.TestDoubles;
+using FishingLogBook.Web.Features.OfflineAccess.Enums;
+using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Layouts.OfflineLayout;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Layouts.OfflineLayoutTests;
 
@@ -41,5 +45,93 @@ public class WhenTestingRender : BaseOfflineLayoutTest
         // Assert
         owner.IsUnlocked.Should().BeFalse();
         context.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/");
+    }
+
+    [Fact]
+    public async Task ItShouldStartReconnectMonitoringWithoutStartingOnlineLayoutHooks()
+    {
+        // Arrange
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        await using var context = CreateContext(out _, reconnect);
+
+        // Act
+        context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+        await Task.Yield();
+
+        // Assert
+        await reconnect.Received(1).StartAsync(Arg.Any<CancellationToken>());
+        await reconnect.DidNotReceive().AttemptAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepOfflineNavigationAvailableWhenAuthenticationIsRequired()
+    {
+        // Arrange
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        reconnect.State.Returns(OfflineReconnectStateEnum.AuthenticationRequired);
+        await using var context = CreateContext(out _, reconnect);
+
+        // Act
+        var cut = context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+
+        // Assert
+        cut.Find("#offline-reconnect-authentication-required").Should().NotBeNull();
+        cut.Find("#offline-reconnect-sign-in").Should().NotBeNull();
+        cut.Find("#offline-catches-nav-link").Should().NotBeNull();
+        cut.Find("#offline-record-nav-link").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldUseNormalSignInAndReturnForAnExplicitOfflineUnlock()
+    {
+        // Arrange
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        reconnect.State.Returns(OfflineReconnectStateEnum.AuthenticationRequired);
+        await using var context = CreateContext(out _, reconnect);
+        var cut = context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+
+        // Act
+        await cut.Find("#offline-reconnect-sign-in").ClickAsync();
+
+        // Assert
+        var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
+        navigation.Uri.Should().Contain("authentication/login");
+        navigation.History.Should().ContainSingle();
+        navigation.History.Single().Options.HistoryEntryState.Should().Contain("reconnect=offline");
+        await reconnect.DidNotReceive().AttemptAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNavigateOnlyAfterTheCoordinatorReportsSafeCompletion()
+    {
+        // Arrange
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        reconnect.State.Returns(OfflineReconnectStateEnum.Synchronising);
+        await using var context = CreateContext(out _, reconnect);
+        context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+
+        // Act
+        reconnect.State.Returns(OfflineReconnectStateEnum.Synchronising);
+        reconnect.StateChanged += Raise.Event<EventHandler>();
+        await Task.Yield();
+
+        // Assert
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/");
+
+        // Act
+        reconnect.State.Returns(OfflineReconnectStateEnum.Online);
+        reconnect.StateChanged += Raise.Event<EventHandler>();
+        await Task.Yield();
+
+        // Assert
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/catches");
     }
 }

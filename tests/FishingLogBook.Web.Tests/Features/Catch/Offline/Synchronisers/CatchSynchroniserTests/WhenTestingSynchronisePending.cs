@@ -12,6 +12,33 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Offline.Synchronisers.CatchSyn
 public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
 {
     [Fact]
+    public async Task ItShouldSynchroniseOnlyTheExplicitlyVerifiedOwnerPartition()
+    {
+        // Arrange
+        var ownerCatch = CreateCatch();
+        var otherCatch = CreateCatch(
+            catchId: Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+            userId: OtherUserId);
+        var store = await CreateStoreAsync(ownerCatch, otherCatch);
+        MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OtherUserId);
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockLocalCatchOwner.DidNotReceive().GetUserIdAsync(Arg.Any<CancellationToken>());
+        await MockCatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(dto => dto.UserId == OwnerUserId && dto.Id == ownerCatch.Id),
+            Arg.Any<CancellationToken>());
+        await MockCatchClient.DidNotReceive().UpsertAsync(
+            Arg.Is<CatchDto>(dto => dto.UserId == OtherUserId),
+            Arg.Any<CancellationToken>());
+        var untouched = await store.GetAsync(OtherUserId, otherCatch.Id, CancellationToken.None);
+        untouched!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
+    }
+
+    [Fact]
     public async Task ItShouldNotCallTheServerWhenOffline()
     {
         // Arrange

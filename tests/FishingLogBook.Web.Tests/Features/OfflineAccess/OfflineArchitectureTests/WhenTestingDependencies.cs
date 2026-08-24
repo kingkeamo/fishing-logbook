@@ -5,6 +5,7 @@ using FishingLogBook.Web.Features.OfflineAccess;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using OfflineDiagnosticsPage = FishingLogBook.Web.Features.Diagnostics.Pages.OfflineDiagnostics.OfflineDiagnostics;
+using OfflineLayoutPage = FishingLogBook.Web.Layouts.OfflineLayout.OfflineLayout;
 using PublicDiagnosticsLayout = FishingLogBook.Web.Layouts.PublicLayout.PublicLayout;
 
 namespace FishingLogBook.Web.Tests.Features.OfflineAccess.OfflineArchitectureTests;
@@ -24,10 +25,11 @@ public class WhenTestingDependencies : BaseOfflineArchitectureTest
     ];
 
     [Fact]
-    public void ItShouldKeepTheOfflineSurfaceFreeOfOnlineAuthenticationApiAndSyncDependencies()
+    public void ItShouldKeepOfflinePagesAndEditorsFreeOfOnlineAuthenticationApiAndSyncDependencies()
     {
         // Arrange
         var injectedTypes = OfflineSurfaceTypes
+            .Where(type => type != typeof(OfflineLayoutPage))
             .SelectMany(type => type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
             .Where(property => property.GetCustomAttribute<InjectAttribute>() is not null)
             .Select(property => property.PropertyType)
@@ -42,6 +44,26 @@ public class WhenTestingDependencies : BaseOfflineArchitectureTest
 
         // Assert
         forbidden.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ItShouldLimitTheOfflineLayoutToTheReconnectGateway()
+    {
+        // Arrange
+        var injectedTypes = typeof(OfflineLayoutPage)
+            .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(property => property.GetCustomAttribute<InjectAttribute>() is not null)
+            .Select(property => property.PropertyType)
+            .ToArray();
+
+        // Act
+        var directOnlineDependencies = injectedTypes.Where(type =>
+            IsOnlineDependencyCategory(type)
+            && type.Name != "IOfflineReconnectService");
+
+        // Assert
+        directOnlineDependencies.Should().BeEmpty();
+        injectedTypes.Should().Contain(type => type.Name == "IOfflineReconnectService");
     }
 
     [Fact]
