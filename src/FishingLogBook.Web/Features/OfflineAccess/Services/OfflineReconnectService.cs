@@ -17,7 +17,10 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
     private readonly IOfflineOwnerContextService _offlineOwnerContext;
     private readonly ILoggingService _logging;
     private readonly INetworkService _networkService;
+    private readonly object _attemptLock = new();
+    private CancellationTokenSource? _activeAttemptCancellationTokenSource;
     private CancellationTokenSource? _monitoringCancellationTokenSource;
+    private long _attemptGeneration;
     private int _automaticAttempted;
     private int _attempting;
     private bool _monitoring;
@@ -77,32 +80,35 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
             return;
         }
 
+        var attempt = BeginAttempt(cancellationToken);
         try
         {
-            await AttemptCoreAsync(cancellationToken);
+            await AttemptCoreAsync(attempt.Generation, attempt.CancellationTokenSource.Token);
         }
         finally
         {
+            CompleteAttempt(attempt);
             Interlocked.Exchange(ref _attempting, 0);
         }
     }
 
     public void Stop()
     {
-        if (!_monitoring)
+        InvalidateActiveAttempt();
+        if (_monitoring)
         {
-            return;
+            _networkService.ConnectivityChanged -= OnConnectivityChanged;
+            _monitoringCancellationTokenSource?.Cancel();
+            _monitoringCancellationTokenSource?.Dispose();
+            _monitoringCancellationTokenSource = null;
+            Interlocked.Exchange(ref _automaticAttempted, 0);
+            _monitoring = false;
         }
 
-        _networkService.ConnectivityChanged -= OnConnectivityChanged;
-        _monitoringCancellationTokenSource?.Cancel();
-        _monitoringCancellationTokenSource?.Dispose();
-        _monitoringCancellationTokenSource = null;
-        Interlocked.Exchange(ref _automaticAttempted, 0);
-        _monitoring = false;
+        SetState(OfflineReconnectStateEnum.Offline);
     }
 
-    private async Task AttemptCoreAsync(CancellationToken cancellationToken)
+    private async Task AttemptCoreAsync(long generation, CancellationToken cancellationToken)
     {
         var offlineOwner = _offlineOwnerContext.Owner;
         if (offlineOwner is null)
@@ -111,8 +117,11 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
             return;
         }
 
-        SetState(OfflineReconnectStateEnum.ConnectivityRestored);
-        SetState(OfflineReconnectStateEnum.RecoveringAuthentication);
+        if (!TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.ConnectivityRestored)
+            || !TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.RecoveringAuthentication))
+        {
+            return;
+        }
 
         AuthenticationState authentication;
         try
@@ -126,17 +135,26 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
         }
         catch (Exception exception)
         {
-            await FailAsync("offline reconnect authentication", exception);
+            await FailAttemptAsync(generation, cancellationToken, "offline reconnect authentication", exception);
+            return;
+        }
+
+        if (!IsCurrentAttempt(generation, cancellationToken))
+        {
             return;
         }
 
         if (authentication.User.Identity?.IsAuthenticated != true)
         {
-            SetState(OfflineReconnectStateEnum.AuthenticationRequired);
+            TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.AuthenticationRequired);
             return;
         }
 
-        SetState(OfflineReconnectStateEnum.VerifyingOwner);
+        if (!TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.VerifyingOwner))
+        {
+            return;
+        }
+
         Guid authenticatedUserId;
         try
         {
@@ -153,31 +171,44 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
         }
         catch (Exception exception) when (IsAuthenticationRequired(exception))
         {
-            SetState(OfflineReconnectStateEnum.AuthenticationRequired);
+            TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.AuthenticationRequired);
             return;
         }
         catch (Exception exception)
         {
-            await FailAsync("offline reconnect owner verification", exception);
+            await FailAttemptAsync(generation, cancellationToken, "offline reconnect owner verification", exception);
+            return;
+        }
+
+        if (!IsCurrentAttempt(generation, cancellationToken))
+        {
             return;
         }
 
         if (authenticatedUserId != offlineOwner.UserId)
         {
-            SetState(OfflineReconnectStateEnum.OwnerMismatch);
+            TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.OwnerMismatch);
             return;
         }
 
         if (!HasSameUnlockedOwner(offlineOwner.UserId))
         {
-            SetState(OfflineReconnectStateEnum.Offline);
+            TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.Offline);
             return;
         }
 
-        SetState(OfflineReconnectStateEnum.Synchronising);
         try
         {
-            await _catchSynchroniser.SynchronisePendingAsync(authenticatedUserId, cancellationToken);
+            if (!TryStartSynchronisation(
+                    generation,
+                    cancellationToken,
+                    authenticatedUserId,
+                    out var synchronisation))
+            {
+                return;
+            }
+
+            await synchronisation;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -185,18 +216,11 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
         }
         catch (Exception exception)
         {
-            await FailAsync("offline reconnect synchronisation", exception);
+            await FailAttemptAsync(generation, cancellationToken, "offline reconnect synchronisation", exception);
             return;
         }
 
-        if (!HasSameUnlockedOwner(offlineOwner.UserId))
-        {
-            SetState(OfflineReconnectStateEnum.Offline);
-            return;
-        }
-
-        _offlineOwnerContext.Lock();
-        SetState(OfflineReconnectStateEnum.Online);
+        TryCompleteOnline(generation, cancellationToken, offlineOwner.UserId);
     }
 
     private void OnConnectivityChanged(bool isOnline)
@@ -208,6 +232,7 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
             return;
         }
 
+        InvalidateActiveAttempt();
         Interlocked.Exchange(ref _automaticAttempted, 0);
         SetState(OfflineReconnectStateEnum.Offline);
     }
@@ -227,6 +252,120 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
         return _offlineOwnerContext.Owner?.UserId == userId;
     }
 
+    private AttemptLifecycle BeginAttempt(CancellationToken cancellationToken)
+    {
+        lock (_attemptLock)
+        {
+            var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _activeAttemptCancellationTokenSource = cancellationTokenSource;
+            _attemptGeneration++;
+            return new AttemptLifecycle(_attemptGeneration, cancellationTokenSource);
+        }
+    }
+
+    private void CompleteAttempt(AttemptLifecycle attempt)
+    {
+        lock (_attemptLock)
+        {
+            if (ReferenceEquals(_activeAttemptCancellationTokenSource, attempt.CancellationTokenSource))
+            {
+                _activeAttemptCancellationTokenSource = null;
+            }
+        }
+
+        attempt.CancellationTokenSource.Dispose();
+    }
+
+    private void InvalidateActiveAttempt()
+    {
+        CancellationTokenSource? cancellationTokenSource;
+        lock (_attemptLock)
+        {
+            _attemptGeneration++;
+            cancellationTokenSource = _activeAttemptCancellationTokenSource;
+            _activeAttemptCancellationTokenSource = null;
+        }
+
+        cancellationTokenSource?.Cancel();
+    }
+
+    private bool IsCurrentAttempt(long generation, CancellationToken cancellationToken)
+    {
+        lock (_attemptLock)
+        {
+            return !cancellationToken.IsCancellationRequested
+                && generation == _attemptGeneration;
+        }
+    }
+
+    private bool TrySetAttemptState(
+        long generation,
+        CancellationToken cancellationToken,
+        OfflineReconnectStateEnum state)
+    {
+        if (!IsCurrentAttempt(generation, cancellationToken))
+        {
+            return false;
+        }
+
+        SetState(state);
+        return true;
+    }
+
+    private bool TryCompleteOnline(long generation, CancellationToken cancellationToken, Guid ownerUserId)
+    {
+        lock (_attemptLock)
+        {
+            if (cancellationToken.IsCancellationRequested
+                || generation != _attemptGeneration
+                || !HasSameUnlockedOwner(ownerUserId))
+            {
+                return false;
+            }
+
+            _offlineOwnerContext.Lock();
+            SetState(OfflineReconnectStateEnum.Online);
+            return true;
+        }
+    }
+
+    private bool TryStartSynchronisation(
+        long generation,
+        CancellationToken cancellationToken,
+        Guid ownerUserId,
+        out Task synchronisation)
+    {
+        lock (_attemptLock)
+        {
+            if (cancellationToken.IsCancellationRequested
+                || generation != _attemptGeneration
+                || !HasSameUnlockedOwner(ownerUserId))
+            {
+                synchronisation = Task.CompletedTask;
+                return false;
+            }
+
+            SetState(OfflineReconnectStateEnum.Synchronising);
+            synchronisation = _catchSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
+            return true;
+        }
+    }
+
+    private async Task FailAttemptAsync(
+        long generation,
+        CancellationToken cancellationToken,
+        string operation,
+        Exception exception)
+    {
+        if (!IsCurrentAttempt(generation, cancellationToken))
+        {
+            return;
+        }
+
+        await _logging.LogErrorAsync(operation, exception, CancellationToken.None);
+        TrySetAttemptState(generation, cancellationToken, OfflineReconnectStateEnum.RetryableFailure);
+    }
+
     private async Task FailAsync(string operation, Exception exception)
     {
         await _logging.LogErrorAsync(operation, exception, CancellationToken.None);
@@ -244,4 +383,8 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
         return exception is AccessTokenNotAvailableException
             || exception is HttpRequestException { StatusCode: HttpStatusCode.Unauthorized };
     }
+
+    private sealed record AttemptLifecycle(
+        long Generation,
+        CancellationTokenSource CancellationTokenSource);
 }
