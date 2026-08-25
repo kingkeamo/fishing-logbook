@@ -42,19 +42,32 @@ export async function createCatch(page, waitForServer = false, options = {}) {
     const speciesCode = options.speciesCode ?? 'BrownTrout';
     await selectCatalogueValue(page, 'method', methodCode);
     await selectCatalogueValue(page, 'species', speciesCode);
-    await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles({
-        name: 'e2e-catch.png', mimeType: 'image/png', buffer: png
-    });
+    const photoCount = options.photoCount ?? 1;
+    await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles(
+        Array.from({ length: photoCount }, (_, index) => ({
+            name: `e2e-catch-${index + 1}.png`, mimeType: 'image/png', buffer: png
+        })));
+    if (options.allowLocation) {
+        await page.locator('#catch-location-allow').click();
+    }
+    if (options.allowLocation || options.waitForLocation) {
+        await page.waitForFunction(() => globalThis.e2eLocationCompleted === true);
+    }
+    let uploadedPhotographs = 0;
     const synchronised = waitForServer
         ? Promise.all([
             page.waitForResponse(response =>
                 response.url().endsWith('/api/catches')
                 && response.request().method() === 'POST'
                 && response.ok()),
-            page.waitForResponse(response =>
-                /\/api\/catches\/[0-9a-f-]+\/photographs$/i.test(new URL(response.url()).pathname)
-                && response.request().method() === 'POST'
-                && response.ok())
+            page.waitForResponse(response => {
+                const isPhotographUpload =
+                    /\/api\/catches\/[0-9a-f-]+\/photographs$/i.test(new URL(response.url()).pathname)
+                    && response.request().method() === 'POST'
+                    && response.ok();
+                if (isPhotographUpload) uploadedPhotographs += 1;
+                return isPhotographUpload && uploadedPhotographs === photoCount;
+            })
         ])
         : null;
     await page.locator('#save-catch-button').click();
