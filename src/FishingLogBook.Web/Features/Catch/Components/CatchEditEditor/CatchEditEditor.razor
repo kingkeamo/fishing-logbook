@@ -1,4 +1,5 @@
 @using FishingLogBook.Shared.Constants
+@using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor
 
 <MudExpansionPanels Elevation="1" MultiExpansion="true" id="@(IdPrefix + "-sections")">
     <MudExpansionPanel Text="@Loc["Catch_EditDetailsSection"]"
@@ -51,16 +52,20 @@
                 </MudStack>
             </MudStack>
 
-            <MudTextField @bind-Value="_weightText"
-                          Label="@WeightLabel"
-                          Immediate="true"
-                          InputType="InputType.Number"
-                          id="@(IdPrefix + "-weight")" />
-            <MudTextField @bind-Value="_lengthText"
-                          Label="@LengthLabel"
-                          Immediate="true"
-                          InputType="InputType.Number"
-                          id="@(IdPrefix + "-length")" />
+            <MudStack Row="true" Spacing="2" Class="catch-edit-measurements">
+                <MeasurementField IsWeight="true"
+                                  Value="_weight"
+                                  ValueChanged="SetWeight"
+                                  WeightUnit="Preferences.WeightUnit"
+                                  LengthUnit="Preferences.LengthUnit"
+                                  Id="@(IdPrefix + "-weight")" />
+                <MeasurementField IsWeight="false"
+                                  Value="_length"
+                                  ValueChanged="SetLength"
+                                  WeightUnit="Preferences.WeightUnit"
+                                  LengthUnit="Preferences.LengthUnit"
+                                  Id="@(IdPrefix + "-length")" />
+            </MudStack>
             <MudTextField @bind-Value="_baitOrLure"
                           Label="@Loc["Catch_EditBaitOrLure"]"
                           MaxLength="@CatchDetailConstants.MaxBaitOrLureLength"

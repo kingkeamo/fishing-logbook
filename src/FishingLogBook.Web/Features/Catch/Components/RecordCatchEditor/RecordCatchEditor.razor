@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Components.Forms
+@using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor
 
 <PageTitle>@Loc["Catch_RecordPageTitle"]</PageTitle>
 
@@ -70,6 +71,20 @@
                         </MudStack>
                     </MudStack>
 
+                    @if (_photographs.Count > 0)
+                    {
+                        <div id="catch-photo-carousel">
+                            <CatchPhotographCarousel Photographs="CarouselPhotographs"
+                                                      Editable="@(!_isSaved)"
+                                                      ActivePhotographId="_activePhotographId"
+                                                      ActivePhotographIdChanged="OnActivePhotographChanged"
+                                                      OnRemovePhotograph="RemovePhotograph"
+                                                      ShowSinglePhotographCount="true"
+                                                      IdPrefix="catch" />
+                        </div>
+                        <MudText Typo="Typo.body2" id="catch-caught-on">@CaughtOnDisplay</MudText>
+                    }
+
                     @if (!_isSaved)
                     {
                         <div class="record-catch-photo-actions">
@@ -95,6 +110,26 @@
                                        id="catch-photo-gallery" />
                         </div>
                     }
+
+                    @if (_unsupportedFormat && !_isSaved)
+                    {
+                        <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
+                    }
+
+                    <MudStack Row="true" Spacing="2" Class="record-catch-measurements">
+                        <MeasurementField IsWeight="true"
+                                          Value="_weight"
+                                          ValueChanged="SetWeight"
+                                          WeightUnit="Preferences.WeightUnit"
+                                          LengthUnit="Preferences.LengthUnit"
+                                          Id="record-catch-weight" />
+                        <MeasurementField IsWeight="false"
+                                          Value="_length"
+                                          ValueChanged="SetLength"
+                                          WeightUnit="Preferences.WeightUnit"
+                                          LengthUnit="Preferences.LengthUnit"
+                                          Id="record-catch-length" />
+                    </MudStack>
 
                     @if (!_isSaved && _locationPrompt.ShowExplainer)
                     {
@@ -136,25 +171,6 @@
                                    id="catch-location-try-again">
                             @Loc["Catch_LocationTryAgain"]
                         </MudButton>
-                    }
-
-                    @if (_unsupportedFormat && !_isSaved)
-                    {
-                        <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
-                    }
-
-                    @if (_photographs.Count > 0)
-                    {
-                        <div id="catch-photo-carousel">
-                            <CatchPhotographCarousel Photographs="CarouselPhotographs"
-                                                      Editable="@(!_isSaved)"
-                                                      ActivePhotographId="_activePhotographId"
-                                                      ActivePhotographIdChanged="OnActivePhotographChanged"
-                                                      OnRemovePhotograph="RemovePhotograph"
-                                                      ShowSinglePhotographCount="true"
-                                                      IdPrefix="catch" />
-                        </div>
-                        <MudText Typo="Typo.body2" id="catch-caught-on">@CaughtOnDisplay</MudText>
                     }
 
                     @if (_isSaved)

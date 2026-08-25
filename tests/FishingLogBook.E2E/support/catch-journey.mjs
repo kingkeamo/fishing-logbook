@@ -42,6 +42,12 @@ export async function createCatch(page, waitForServer = false, options = {}) {
     const speciesCode = options.speciesCode ?? 'BrownTrout';
     await selectCatalogueValue(page, 'method', methodCode);
     await selectCatalogueValue(page, 'species', speciesCode);
+    if (options.weight !== undefined) {
+        await setMeasurement(page, 'record-catch', 'weight', options.weight);
+    }
+    if (options.length !== undefined) {
+        await setMeasurement(page, 'record-catch', 'length', options.length);
+    }
     const photoCount = options.photoCount ?? 1;
     await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles(
         Array.from({ length: photoCount }, (_, index) => ({
@@ -107,7 +113,11 @@ export async function editCatch(page, id, changes, waitForServer = false) {
     await page.locator(`#catch-card-edit-${id}`).click();
     await expect(page.locator('#catch-edit-loading')).toBeHidden();
     for (const [field, value] of Object.entries(changes)) {
-        await page.locator(`#catch-edit-${field}`).fill(value);
+        if (field === 'weight' || field === 'length') {
+            await setMeasurement(page, 'catch-edit', field, value);
+        } else {
+            await page.locator(`#catch-edit-${field}`).fill(value);
+        }
     }
     const save = page.locator('#catch-edit-save');
     if (waitForServer) {
@@ -122,4 +132,17 @@ export async function editCatch(page, id, changes, waitForServer = false) {
         await save.click();
     }
     await expect(page.locator('#catch-edit-saved')).toBeVisible();
+}
+
+export async function setMeasurement(page, prefix, type, value) {
+    await page.locator(`#${prefix}-${type}`).click();
+    await expect(page.locator('#measurement-editor-modal')).toBeVisible();
+    if (typeof value === 'object') {
+        await page.locator('#measurement-exact-pounds input, #measurement-exact-pounds').fill(String(value.pounds));
+        await page.locator('#measurement-exact-ounces input, #measurement-exact-ounces').fill(String(value.ounces));
+    } else {
+        await page.locator('#measurement-exact-value').fill(String(value));
+    }
+    await page.locator('#measurement-apply').click();
+    await expect(page.locator('#measurement-editor-modal')).toBeHidden();
 }

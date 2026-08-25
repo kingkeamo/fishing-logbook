@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Features.Catch.Models;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
@@ -31,10 +32,8 @@ public class WhenTestingUnits : BaseCatchEditTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#catch-edit-weight").GetAttribute("value").Should().Be("2.041");
-            cut.Find("#catch-edit-length").GetAttribute("value").Should().Be("46.36");
-            cut.Markup.Should().Contain("Weight (kg)");
-            cut.Markup.Should().Contain("Length (cm)");
+            cut.Find("#catch-edit-weight-value").TextContent.Should().Be("2.04 kg");
+            cut.Find("#catch-edit-length-value").TextContent.Should().Be("46.36 cm");
         });
     }
 
@@ -55,16 +54,14 @@ public class WhenTestingUnits : BaseCatchEditTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#catch-edit-weight").GetAttribute("value").Should().Be("4.50");
-            cut.Find("#catch-edit-length").GetAttribute("value").Should().Be("18.25");
-            cut.Markup.Should().Contain("Weight (lb)");
-            cut.Markup.Should().Contain("Length (in)");
+            cut.Find("#catch-edit-weight-value").TextContent.Should().Be("4 lb 8 oz");
+            cut.Find("#catch-edit-length-value").TextContent.Should().Be("18.25 in");
         });
         await preferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldStateTheWeightLimitInTheAnglersPreferredUnit()
+    public async Task ItShouldNotChangeTheWeightWhenTheMeasurementEditorIsCancelled()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -75,15 +72,16 @@ public class WhenTestingUnits : BaseCatchEditTest
         await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-weight"));
-        cut.Find("#catch-edit-weight").Input("5000");
+        await cut.Find("#catch-edit-weight").ClickAsync();
 
         // Act
         await cut.Find("#catch-edit-save").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#catch-edit-validation").TextContent
-            .Should().Contain("Weight must be greater than 0 lb and at most 2204.62 lb."));
-        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-saved").Should().NotBeNull());
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.Weight == 2.041m),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -96,11 +94,14 @@ public class WhenTestingUnits : BaseCatchEditTest
             .Returns(StoredCatch(EditedCatchId));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         var preferences = QuietAnglerPreferences(weightUnit: WeightUnitEnum.Lb, lengthUnit: LengthUnitEnum.In);
-        await using var context = CreateContext(store, anglerPreferences: preferences);
+        var modal = Substitute.For<IModalService>();
+        AnswerMeasurement(modal, true, 2.041m);
+        AnswerMeasurement(modal, false, 46.36m);
+        await using var context = CreateContext(store, anglerPreferences: preferences, modalService: modal);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, EditedCatchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-weight"));
-        cut.Find("#catch-edit-weight").Input("4.50");
-        cut.Find("#catch-edit-length").Input("18.25");
+        await cut.Find("#catch-edit-weight").ClickAsync();
+        await cut.Find("#catch-edit-length").ClickAsync();
 
         // Act
         await cut.Find("#catch-edit-save").ClickAsync();
@@ -162,8 +163,8 @@ public class WhenTestingUnits : BaseCatchEditTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Markup.Should().Contain("(lb)");
-            cut.Markup.Should().Contain("(po)");
+            cut.Find("#catch-edit-weight-value").TextContent.Should().Be("4 lb 8 oz");
+            cut.Find("#catch-edit-length-value").TextContent.Should().Contain("18,25");
         });
     }
 }

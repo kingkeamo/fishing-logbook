@@ -1,0 +1,115 @@
+.measurement-editor {
+    padding-top: 0.25rem;
+}
+
+.measurement-visual {
+    position: relative;
+    display: flex;
+    min-height: 8rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 1rem;
+    background: var(--mud-palette-background-gray);
+    color: var(--mud-palette-primary);
+}
+
+.measurement-dial {
+    position: absolute;
+    inset: 0.1rem auto auto;
+    width: min(15rem, 82%);
+    height: 7.8rem;
+}
+
+.measurement-scale-handle,
+.measurement-scale-neck,
+.measurement-scale-case,
+.measurement-scale-stem {
+    fill: var(--mud-palette-primary);
+}
+
+.measurement-scale-case {
+    opacity: 0.92;
+}
+
+.measurement-scale-hook {
+    fill: none;
+    stroke: var(--mud-palette-primary);
+    stroke-linecap: round;
+    stroke-width: 5;
+}
+
+.measurement-dial-face {
+    fill: var(--mud-palette-surface);
+    stroke: color-mix(in srgb, var(--mud-palette-primary) 28%, transparent);
+    stroke-width: 2;
+}
+
+.measurement-dial-tick {
+    stroke: var(--mud-palette-primary);
+    stroke-linecap: round;
+    stroke-width: 3;
+}
+
+.measurement-dial-needle {
+    stroke: var(--mud-palette-primary);
+    stroke-linecap: round;
+    stroke-width: 3.5;
+    transition: transform 180ms ease-out;
+}
+
+.measurement-dial-pin {
+    fill: var(--mud-palette-primary);
+}
+
+.measurement-tape-visual {
+    position: absolute;
+    inset: 0.65rem auto auto;
+    width: min(21rem, 94%);
+    height: 5.4rem;
+}
+
+.measurement-tape-case {
+    fill: var(--mud-palette-primary);
+    opacity: 0.92;
+}
+
+.measurement-tape-logo {
+    pointer-events: none;
+}
+
+.measurement-tape-strip {
+    fill: color-mix(in srgb, var(--mud-palette-primary) 14%, var(--mud-palette-surface));
+    stroke: var(--mud-palette-primary);
+    stroke-width: 1.5;
+    transition: width 180ms ease-out;
+}
+
+.measurement-tape-tick {
+    stroke: color-mix(in srgb, var(--mud-palette-primary) 70%, var(--mud-palette-text-primary));
+    stroke-width: 1.5;
+}
+
+.measurement-tape-hook {
+    fill: var(--mud-palette-primary);
+    transition: d 180ms ease-out;
+}
+
+.measurement-fine-controls {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr 3.25rem;
+    align-items: center;
+    gap: 1rem;
+}
+
+::deep .measurement-fine-controls .mud-icon-button {
+    width: 3.25rem;
+    height: 3.25rem;
+}
+
+@media (max-width: 480px) {
+    .measurement-visual {
+        min-height: 7.5rem;
+    }
+}

@@ -1,1 +1,9 @@
+.catch-edit-measurements > * {
+    flex: 1 1 0;
+}
 
+@media (max-width: 340px) {
+    .catch-edit-measurements {
+        flex-direction: column;
+    }
+}

@@ -5,6 +5,7 @@ using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
@@ -34,6 +35,7 @@ public class BaseOfflineRecordCatchTest
         context.Services.AddSingleton(preferencesStore);
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(Substitute.For<IModalService>());
+        context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         var location = Substitute.For<ILocationService>();
         location.GetPromptStatusAsync(Arg.Any<CancellationToken>()).Returns(new LocationPromptStatus(false, false, false));
         context.Services.AddSingleton(location);

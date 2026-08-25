@@ -354,6 +354,9 @@
   <data name="Catch_WeightUnitShort_Lb" xml:space="preserve">
     <value>lb</value>
   </data>
+  <data name="Catch_WeightUnitShort_Oz" xml:space="preserve">
+    <value>oz</value>
+  </data>
   <data name="Catch_EditLength" xml:space="preserve">
     <value>Length</value>
   </data>
@@ -796,4 +799,46 @@
   <data name="OfflineDiagnostics_LastError" xml:space="preserve"><value>Last recorded error</value></data>
   <data name="OfflineDiagnostics_FailedStage" xml:space="preserve"><value>Failed stage</value></data>
   <data name="OfflineDiagnostics_Error" xml:space="preserve"><value>Safe error</value></data>
+  <data name="Catch_MeasurementNotRecorded" xml:space="preserve">
+    <value>Not recorded</value>
+  </data>
+  <data name="Catch_MeasurementOpen" xml:space="preserve">
+    <value>Edit {0}. Current value: {1}</value>
+  </data>
+  <data name="Catch_MeasurementPounds" xml:space="preserve">
+    <value>Pounds</value>
+  </data>
+  <data name="Catch_MeasurementOunces" xml:space="preserve">
+    <value>Ounces</value>
+  </data>
+  <data name="Catch_MeasurementExactWithUnit" xml:space="preserve">
+    <value>Exact value ({0})</value>
+  </data>
+  <data name="Catch_MeasurementCoarseAdjustment" xml:space="preserve">
+    <value>Slide to adjust</value>
+  </data>
+  <data name="Catch_MeasurementSliderLabel" xml:space="preserve">
+    <value>Adjust {0}</value>
+  </data>
+  <data name="Catch_MeasurementOneOunceStep" xml:space="preserve">
+    <value>1 oz at a time</value>
+  </data>
+  <data name="Catch_MeasurementStep" xml:space="preserve">
+    <value>{0} {1} at a time</value>
+  </data>
+  <data name="Catch_MeasurementDecrease" xml:space="preserve">
+    <value>Decrease by {0}</value>
+  </data>
+  <data name="Catch_MeasurementIncrease" xml:space="preserve">
+    <value>Increase by {0}</value>
+  </data>
+  <data name="Catch_MeasurementInvalid" xml:space="preserve">
+    <value>Enter a measurement greater than zero and within the supported range.</value>
+  </data>
+  <data name="Catch_MeasurementClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Catch_MeasurementApply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
 </root>

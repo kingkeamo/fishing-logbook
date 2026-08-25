@@ -7,6 +7,7 @@ using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Clients;
+using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -88,6 +89,14 @@ public class BaseCatchEditTest
     protected static IModalService QuietModalService()
     {
         return Substitute.For<IModalService>();
+    }
+
+    protected static void AnswerMeasurement(IModalService modal, bool isWeight, decimal? canonicalValue)
+    {
+        modal.ShowAsync<MeasurementEditorModal, MeasurementEditorModel, MeasurementEditorResult>(
+                Arg.Is<MeasurementEditorModel>(model => model.IsWeight == isWeight),
+                Arg.Any<CancellationToken>())
+            .Returns(new MeasurementEditorResult(canonicalValue));
     }
 
     protected static FishingCatalogueDto SampleCatalogue()

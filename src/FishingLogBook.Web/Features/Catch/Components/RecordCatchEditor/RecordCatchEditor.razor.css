@@ -4,6 +4,16 @@
     gap: 0.75rem;
 }
 
+.record-catch-measurements > * {
+    flex: 1 1 0;
+}
+
+@media (max-width: 340px) {
+    .record-catch-measurements {
+        flex-direction: column;
+    }
+}
+
 .record-catch-photo-picker {
     flex: 1;
     display: inline-flex;

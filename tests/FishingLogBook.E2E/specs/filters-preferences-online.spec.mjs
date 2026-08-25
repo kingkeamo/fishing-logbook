@@ -51,8 +51,14 @@ test('uses saved Profile measurement units when editing a catch', async ({ page 
 
         const id = await createCatch(page, true);
         await openCatchEdit(page, id);
-        await expect(page.locator('label[for="catch-edit-weight"]')).toContainText('lb');
-        await expect(page.locator('label[for="catch-edit-length"]')).toContainText('cm');
+        await page.locator('#catch-edit-weight').click();
+        await expect(page.locator('#measurement-exact-pounds')).toBeVisible();
+        await page.locator('#measurement-cancel').click();
+        await page.locator('#catch-edit-length').click();
+        await expect(page.locator('#measurement-exact-value')
+            .locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " mud-input-control ")]'))
+            .toContainText('Exact value (cm)');
+        await page.locator('#measurement-cancel').click();
     });
 });
 
@@ -110,4 +116,5 @@ async function saveProfile(page) {
             && response.ok()),
         page.locator('#profile-save-button').click()
     ]);
+    await expect(page.locator('#profile-save-button')).toBeEnabled();
 }

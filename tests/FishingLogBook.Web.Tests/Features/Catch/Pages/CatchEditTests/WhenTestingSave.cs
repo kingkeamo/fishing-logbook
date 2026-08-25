@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -24,12 +25,11 @@ public class WhenTestingSave : BaseCatchEditTest
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
-            .Returns(StoredCatch(catchId, SyncStatus.Synchronised, SyncStatus.Synchronised));
+            .Returns(StoredCatch(catchId, SyncStatus.Synchronised, SyncStatus.Synchronised, weight: 0m));
         var synchroniser = QuietSynchroniser();
         await using var context = CreateContext(store, synchroniser: synchroniser);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-weight").Should().NotBeNull());
-        cut.Find("#catch-edit-weight").Input("0");
 
         // Act
         await cut.Find("#catch-edit-save").ClickAsync();
@@ -38,7 +38,7 @@ public class WhenTestingSave : BaseCatchEditTest
         cut.WaitForAssertion(() =>
             cut.Find("#catch-edit-validation").TextContent
                 .Should()
-                .Contain("Weight must be greater than 0 kg"));
+                .Contain("Enter a measurement greater than zero"));
         cut.FindAll("#catch-edit-saved").Should().BeEmpty();
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
         await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
@@ -346,16 +346,20 @@ public class WhenTestingSave : BaseCatchEditTest
         var synchroniser = QuietSynchroniser();
         var time = UtcTime();
         var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        var modal = Substitute.For<IModalService>();
+        AnswerMeasurement(modal, true, 2.5m);
+        AnswerMeasurement(modal, false, 64m);
         await using var context = CreateContext(
             store,
             synchroniser: synchroniser,
             time: time,
-            anglerPreferences: preferences);
+            anglerPreferences: preferences,
+            modalService: modal);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Spinning"));
         await cut.Find("#catch-edit-method-Spinning").ClickAsync();
-        cut.Find("#catch-edit-weight").Input("2.5");
-        cut.Find("#catch-edit-length").Input("64");
+        await cut.Find("#catch-edit-weight").ClickAsync();
+        await cut.Find("#catch-edit-length").ClickAsync();
         cut.Find("#catch-edit-bait").Input("Spinner");
         cut.Find("#catch-edit-notes").Input("Weedline");
         cut.Find("#catch-edit-caught-on").Input("2026-08-17T09:15");
@@ -409,10 +413,13 @@ public class WhenTestingSave : BaseCatchEditTest
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException());
         var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());
+        var modal = Substitute.For<IModalService>();
+        AnswerMeasurement(modal, true, 1.5m);
         await using var context = CreateContext(
             store,
             synchroniser: synchroniser,
-            anglerPreferences: preferences);
+            anglerPreferences: preferences,
+            modalService: modal);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-method-Spinning"));
         await cut.Find("#catch-edit-method-Spinning").ClickAsync();
@@ -452,7 +459,7 @@ public class WhenTestingSave : BaseCatchEditTest
             anglerPreferences: preferences);
         var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, catchId));
         cut.WaitForAssertion(() => cut.Find("#catch-edit-species-BrownTrout"));
-        cut.Find("#catch-edit-weight").Input("1.5");
+        await cut.Find("#catch-edit-weight").ClickAsync();
 
         // Act
         await cut.Find("#catch-edit-save").ClickAsync();

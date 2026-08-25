@@ -1,0 +1,105 @@
+@namespace FishingLogBook.Web.Features.Catch.Components.MeasurementEditor
+
+<MudDialog id="measurement-editor-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="measurement-editor-title">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" Class="measurement-editor">
+            <div class="measurement-visual @(Model.IsWeight ? "measurement-scale" : "measurement-tape")"
+                 aria-hidden="true">
+                @if (Model.IsWeight)
+                {
+                    <svg class="measurement-dial" viewBox="0 0 240 150">
+                        <path class="measurement-scale-handle" d="M 98 18 C 98 1, 142 1, 142 18 L 135 18 C 135 9, 105 9, 105 18 Z" />
+                        <rect class="measurement-scale-neck" x="112" y="14" width="16" height="10" rx="4" />
+                        <circle class="measurement-scale-case" cx="120" cy="70" r="53" />
+                        <circle class="measurement-dial-face" cx="120" cy="70" r="46" />
+                        @foreach (var angle in DialTickAngles)
+                        {
+                            <line class="measurement-dial-tick"
+                                  x1="120" y1="24" x2="120" y2="@(IsMajorDialTick(angle) ? 36 : 31)"
+                                  transform="rotate(@angle 120 70)" />
+                        }
+                        <line class="measurement-dial-needle" x1="120" y1="70" x2="120" y2="37"
+                              transform="rotate(@DialAngle 120 70)" />
+                        <circle class="measurement-dial-pin" cx="120" cy="70" r="6" />
+                        <rect class="measurement-scale-stem" x="114" y="121" width="12" height="9" rx="3" />
+                        <path class="measurement-scale-hook" d="M 120 128 v 5 c 0 9 15 9 15 0 v -2" />
+                    </svg>
+                }
+                else
+                {
+                    <svg class="measurement-tape-visual" viewBox="0 0 240 92" preserveAspectRatio="none">
+                        <rect class="measurement-tape-case" x="10" y="16" width="48" height="60" rx="12" />
+                        <image class="measurement-tape-logo" href="images/brand/brand-mark-transparent.png"
+                               x="17" y="27" width="34" height="38" preserveAspectRatio="xMidYMid meet" />
+                        <rect class="measurement-tape-strip" x="50" y="27" width="@TapeWidth" height="38" rx="3" />
+                        @foreach (var tick in TapeTickPositions)
+                        {
+                            <line class="measurement-tape-tick"
+                                  x1="@tick" y1="27" x2="@tick" y2="@(IsMajorTapeTick(tick) ? 48 : 40)" />
+                        }
+                        <path class="measurement-tape-hook" d="@TapeHookPath" />
+                    </svg>
+                }
+            </div>
+
+            @if (IsImperialWeight)
+            {
+                <MudStack Row="true" Spacing="2">
+                    <MudNumericField T="int" Value="_pounds" ValueChanged="SetPounds"
+                                     Min="0" Label="@Loc["Catch_MeasurementPounds"]"
+                                     Variant="Variant.Outlined" Immediate="true"
+                                     id="measurement-exact-pounds" />
+                    <MudNumericField T="int" Value="_ounces" ValueChanged="SetOunces"
+                                     Min="0" Max="15" Label="@Loc["Catch_MeasurementOunces"]"
+                                     Variant="Variant.Outlined" Immediate="true"
+                                     id="measurement-exact-ounces" />
+                </MudStack>
+            }
+            else
+            {
+                <MudTextField T="string" Value="_exactText" ValueChanged="SetExactValue"
+                              Label="@ExactLabel" InputType="InputType.Number"
+                              Variant="Variant.Outlined" Immediate="true"
+                              id="measurement-exact-value" />
+            }
+
+            <MudText Typo="Typo.subtitle2">@Loc["Catch_MeasurementCoarseAdjustment"]</MudText>
+            <MudSlider T="decimal" Value="SliderValue" ValueChanged="SetSliderValue"
+                       Min="0" Max="SliderMaximum" Step="SliderStep"
+                       ValueLabel="true" Immediate="true"
+                       aria-label="@Loc["Catch_MeasurementSliderLabel", Title]"
+                       id="measurement-slider" />
+
+            <div class="measurement-fine-controls">
+                <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Large"
+                               Color="Color.Primary" Variant="Variant.Outlined"
+                               OnClick="Decrease" aria-label="@DecreaseLabel"
+                               id="measurement-decrease" />
+                <MudText Typo="Typo.body1" Align="Align.Center" id="measurement-step-label">
+                    @FineStepDisplay
+                </MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Large"
+                               Color="Color.Primary" Variant="Variant.Outlined"
+                               OnClick="Increase" aria-label="@IncreaseLabel"
+                               id="measurement-increase" />
+            </div>
+
+            @if (_validationMessage is not null)
+            {
+                <MudAlert Severity="Severity.Warning" id="measurement-validation">@_validationMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="Clear"
+                   id="measurement-clear">@Loc["Catch_MeasurementClear"]</MudButton>
+        <MudSpacer />
+        <MudButton Variant="Variant.Text" OnClick="Cancel"
+                   id="measurement-cancel">@Loc["Modal_Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Apply"
+                   id="measurement-apply">@Loc["Catch_MeasurementApply"]</MudButton>
+    </DialogActions>
+</MudDialog>
