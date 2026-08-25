@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures.mjs';
 import { createCatch, reloadServerCatches, testName } from '../support/catch-journey.mjs';
+import { withRestoredProfileState } from '../support/profile-state.mjs';
 
 test('records multiple photographs and retains their association after reload', async ({ page }) => {
     const id = await createCatch(page, true, { photoCount: 2 });
@@ -44,34 +45,30 @@ test('keeps Record Catch usable when browser location is denied', async ({ page 
 });
 
 test('publishes only the Profile details selected by the angler', async ({ page }) => {
-    const profileResponse = page.waitForResponse(response =>
-        response.url().endsWith('/api/profiles/me')
-        && response.request().method() === 'GET'
-        && response.ok());
-    await page.goto('/profile');
-    const profile = await profileResponse.then(response => response.json());
-    await expect(page.locator('#profile-loading')).toBeHidden();
-    const displayName = testName('public-angler');
-    const homeRegion = testName('public-water');
-    await page.locator('#profile-display-name').fill(displayName);
-    await page.locator('#profile-home-region').fill(homeRegion);
-    await ensureChecked(page.locator('#profile-show-display-name'));
-    await ensureChecked(page.locator('#profile-show-home-region'));
-    await Promise.all([
-        page.waitForResponse(response =>
-            response.url().endsWith('/api/profiles/me/fishing-preferences')
-            && response.request().method() === 'PUT'
-            && response.ok()),
-        page.locator('#profile-save-button').click()
-    ]);
+    await withRestoredProfileState(page, async snapshot => {
+        const profile = snapshot.profile;
+        const displayName = testName('public-angler');
+        const homeRegion = testName('public-water');
+        await page.locator('#profile-display-name').fill(displayName);
+        await page.locator('#profile-home-region').fill(homeRegion);
+        await ensureChecked(page.locator('#profile-show-display-name'));
+        await ensureChecked(page.locator('#profile-show-home-region'));
+        await Promise.all([
+            page.waitForResponse(response =>
+                response.url().endsWith('/api/profiles/me/fishing-preferences')
+                && response.request().method() === 'PUT'
+                && response.ok()),
+            page.locator('#profile-save-button').click()
+        ]);
 
-    await page.goto(`/profile/${profile.userId}`);
-    await expect(page.locator('#public-profile-loading')).toBeHidden();
-    await expect(page.locator('#public-profile-display-name')).toHaveText(displayName);
-    await expect(page.locator('#public-profile-home-region')).toHaveText(homeRegion);
-    await expect(page.locator('#public-profile-photo')).toHaveCount(0);
-    await expect(page.locator('#public-profile-fishing-methods')).toHaveCount(0);
-    await expect(page.locator('#public-profile-preferred-species')).toHaveCount(0);
+        await page.goto(`/profile/${profile.userId}`);
+        await expect(page.locator('#public-profile-loading')).toBeHidden();
+        await expect(page.locator('#public-profile-display-name')).toHaveText(displayName);
+        await expect(page.locator('#public-profile-home-region')).toHaveText(homeRegion);
+        await expect(page.locator('#public-profile-photo')).toHaveCount(0);
+        await expect(page.locator('#public-profile-fishing-methods')).toHaveCount(0);
+        await expect(page.locator('#public-profile-preferred-species')).toHaveCount(0);
+    });
 });
 
 async function openCatchEdit(page, id) {

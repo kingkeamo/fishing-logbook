@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "install:browsers": "playwright install chromium",
-    "test:config": "node --test tests/config.test.mjs",
+    "test:config": "node --test tests/config.test.mjs tests/profile-state.test.mjs",
     "test": "playwright test",
     "test:smoke": "playwright test --grep @smoke",
     "test-e2e": "playwright test --headed --workers=1",

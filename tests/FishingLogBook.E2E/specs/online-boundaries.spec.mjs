@@ -5,6 +5,7 @@ import {
     reloadServerCatches,
     testName
 } from '../support/catch-journey.mjs';
+import { withRestoredProfileState } from '../support/profile-state.mjs';
 
 test('prevents an incomplete catch from being saved', async ({ page }) => {
     await page.goto('/catches');
@@ -70,34 +71,34 @@ test('editing one catch does not change another catch', async ({ page }) => {
 });
 
 test('saved Profile method and species preferences appear in Record Catch', async ({ page }) => {
-    await page.goto('/profile');
-    await expect(page.locator('#profile-loading')).toBeHidden();
-    await page.locator('#profile-fishing-details-section').click();
-    if (await page.locator('#profile-species-section-Bait').count() === 0) {
-        await page.locator('#profile-method-Bait').click();
-    }
-    if (await page.locator('#profile-species-pill-Bait-Tench').count() === 0) {
-        await page.locator('#profile-species-more-Bait').click();
-        await page.locator('#catalogue-picker-modal-search').fill('Tench');
-        await page.locator('#catalogue-picker-modal-option-Tench').click();
-        await page.locator('#catalogue-picker-modal-save').click();
-    }
-    await Promise.all([
-        page.waitForResponse(response =>
-            response.url().endsWith('/api/profiles/me/fishing-preferences')
-            && response.request().method() === 'PUT'
-            && response.ok()),
-        page.locator('#profile-save-button').click()
-    ]);
+    await withRestoredProfileState(page, async () => {
+        await page.locator('#profile-fishing-details-section').click();
+        if (await page.locator('#profile-species-section-Bait').count() === 0) {
+            await page.locator('#profile-method-Bait').click();
+        }
+        if (await page.locator('#profile-species-pill-Bait-Tench').count() === 0) {
+            await page.locator('#profile-species-more-Bait').click();
+            await page.locator('#catalogue-picker-modal-search').fill('Tench');
+            await page.locator('#catalogue-picker-modal-option-Tench').click();
+            await page.locator('#catalogue-picker-modal-save').click();
+        }
+        await Promise.all([
+            page.waitForResponse(response =>
+                response.url().endsWith('/api/profiles/me/fishing-preferences')
+                && response.request().method() === 'PUT'
+                && response.ok()),
+            page.locator('#profile-save-button').click()
+        ]);
 
-    await page.reload();
-    await expect(page.locator('#profile-loading')).toBeHidden();
-    await page.locator('#profile-fishing-details-section').click();
-    await expect(page.locator('#profile-species-pill-Bait-Tench')).toBeVisible();
-    await page.goto('/catches/record');
-    await expect(page.locator('#record-catch-title')).toBeVisible();
-    await page.locator('#record-catch-method-Bait').click();
-    await expect(page.locator('#record-catch-species-Tench')).toBeVisible();
+        await page.reload();
+        await expect(page.locator('#profile-loading')).toBeHidden();
+        await page.locator('#profile-fishing-details-section').click();
+        await expect(page.locator('#profile-species-pill-Bait-Tench')).toBeVisible();
+        await page.goto('/catches/record');
+        await expect(page.locator('#record-catch-title')).toBeVisible();
+        await page.locator('#record-catch-method-Bait').click();
+        await expect(page.locator('#record-catch-species-Tench')).toBeVisible();
+    });
 });
 
 async function openCatchEdit(page, id) {

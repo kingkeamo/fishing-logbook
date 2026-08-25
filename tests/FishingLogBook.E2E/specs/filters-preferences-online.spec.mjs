@@ -1,5 +1,6 @@
 import { test, expect } from '../support/fixtures.mjs';
 import { createCatch, reloadServerCatches } from '../support/catch-journey.mjs';
+import { withRestoredProfileState } from '../support/profile-state.mjs';
 
 test('filters the Catch List by fishing method and clears the filter', async ({ page }) => {
     const flyId = await createCatch(page, true);
@@ -42,39 +43,39 @@ test('filters an older catch out of the Today view without changing its date', a
 });
 
 test('uses saved Profile measurement units when editing a catch', async ({ page }) => {
-    await page.goto('/profile');
-    await expect(page.locator('#profile-loading')).toBeHidden();
-    await page.locator('#profile-fishing-details-section').click();
-    await chooseSelectOption(page, '#profile-weight-unit', 'Pounds (lb)');
-    await chooseSelectOption(page, '#profile-length-unit', 'Centimetres (cm)');
-    await saveProfile(page);
+    await withRestoredProfileState(page, async () => {
+        await page.locator('#profile-fishing-details-section').click();
+        await chooseSelectOption(page, '#profile-weight-unit', 'Pounds (lb)');
+        await chooseSelectOption(page, '#profile-length-unit', 'Centimetres (cm)');
+        await saveProfile(page);
 
-    const id = await createCatch(page, true);
-    await openCatchEdit(page, id);
-    await expect(page.locator('label[for="catch-edit-weight"]')).toContainText('lb');
-    await expect(page.locator('label[for="catch-edit-length"]')).toContainText('cm');
+        const id = await createCatch(page, true);
+        await openCatchEdit(page, id);
+        await expect(page.locator('label[for="catch-edit-weight"]')).toContainText('lb');
+        await expect(page.locator('label[for="catch-edit-length"]')).toContainText('cm');
+    });
 });
 
 test('cancelling the Profile species picker preserves the saved selection', async ({ page }) => {
-    await page.goto('/profile');
-    await expect(page.locator('#profile-loading')).toBeHidden();
-    await page.locator('#profile-fishing-details-section').click();
-    if (await page.locator('#profile-species-section-Bait').count() === 0) {
-        await page.locator('#profile-method-Bait').click();
-    }
-    if (await page.locator('#profile-species-pill-Bait-Tench').count() === 0) {
+    await withRestoredProfileState(page, async () => {
+        await page.locator('#profile-fishing-details-section').click();
+        if (await page.locator('#profile-species-section-Bait').count() === 0) {
+            await page.locator('#profile-method-Bait').click();
+        }
+        if (await page.locator('#profile-species-pill-Bait-Tench').count() === 0) {
+            await page.locator('#profile-species-more-Bait').click();
+            await page.locator('#catalogue-picker-modal-search').fill('Tench');
+            await page.locator('#catalogue-picker-modal-option-Tench').click();
+            await page.locator('#catalogue-picker-modal-save').click();
+            await saveProfile(page);
+        }
+
         await page.locator('#profile-species-more-Bait').click();
         await page.locator('#catalogue-picker-modal-search').fill('Tench');
         await page.locator('#catalogue-picker-modal-option-Tench').click();
-        await page.locator('#catalogue-picker-modal-save').click();
-        await saveProfile(page);
-    }
-
-    await page.locator('#profile-species-more-Bait').click();
-    await page.locator('#catalogue-picker-modal-search').fill('Tench');
-    await page.locator('#catalogue-picker-modal-option-Tench').click();
-    await page.locator('#catalogue-picker-modal-cancel').click();
-    await expect(page.locator('#profile-species-pill-Bait-Tench')).toBeVisible();
+        await page.locator('#catalogue-picker-modal-cancel').click();
+        await expect(page.locator('#profile-species-pill-Bait-Tench')).toBeVisible();
+    });
 });
 
 async function openCatchEdit(page, id) {
