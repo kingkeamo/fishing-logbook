@@ -20,15 +20,17 @@ test('requires explicit enablement and dedicated Cognito secrets', async () => {
     assert.match(workflow, /secrets\.E2E_COGNITO_PASSWORD/);
 });
 
-test('provides project-local headed, debug and single-test commands', async () => {
+test('provides project-local headed, debug, report and single-test commands', async () => {
     const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
     const rootPackageJson = JSON.parse(await readFile(new URL('../../../package.json', import.meta.url), 'utf8'));
 
     assert.equal(packageJson.scripts['test-e2e'], 'playwright test --headed --workers=1');
     assert.equal(packageJson.scripts['test-e2e-debug'], 'playwright test --debug --workers=1');
+    assert.equal(packageJson.scripts['test-e2e-report'], 'playwright show-report artifacts/report');
     assert.equal(packageJson.scripts['test-e2e-single'], 'playwright test --headed --workers=1 --grep');
     assert.equal(rootPackageJson.scripts['test-e2e'], 'npm --prefix tests/FishingLogBook.E2E run test-e2e');
     assert.equal(rootPackageJson.scripts['test-e2e-debug'], 'npm --prefix tests/FishingLogBook.E2E run test-e2e-debug');
+    assert.equal(rootPackageJson.scripts['test-e2e-report'], 'npm --prefix tests/FishingLogBook.E2E run test-e2e-report');
     assert.equal(rootPackageJson.scripts['test-e2e-single'], 'npm --prefix tests/FishingLogBook.E2E run test-e2e-single --');
 });
 
