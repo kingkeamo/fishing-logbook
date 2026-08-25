@@ -198,6 +198,9 @@
   <data name="Catch_PhotoUnsupported" xml:space="preserve">
     <value>Ce format de photo n'est pas pris en charge. Utilisez JPEG, PNG ou WebP.</value>
   </data>
+  <data name="Catch_PhotoNotPrepared" xml:space="preserve">
+    <value>Cette photo n’a pas pu être préparée pour l’enregistrement et n’a pas été ajoutée. Veuillez essayer une autre photo.</value>
+  </data>
   <data name="Catch_RemovePhoto" xml:space="preserve">
     <value>Retirer la photo</value>
   </data>

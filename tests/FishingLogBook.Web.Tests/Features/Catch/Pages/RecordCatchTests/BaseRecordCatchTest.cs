@@ -79,6 +79,24 @@ public class BaseRecordCatchTest
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
         photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(PhotoMetadataModel.Empty);
+        PassThroughSanitisation(photoMetadata);
+        return photoMetadata;
+    }
+
+    protected static void PassThroughSanitisation(IPhotoMetadataService photoMetadata)
+    {
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
+            .Returns(call => call.ArgAt<byte[]>(0));
+    }
+
+    protected static IPhotoMetadataService SanitisingPhotoMetadata(
+        PhotoMetadataModel metadata,
+        byte[] sanitised)
+    {
+        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(metadata);
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns(sanitised);
         return photoMetadata;
     }
 
@@ -94,6 +112,7 @@ public class BaseRecordCatchTest
                     bytes.Length > 0 && bytes[0] == photograph.Marker);
                 return Task.FromResult(match.Metadata ?? PhotoMetadataModel.Empty);
             });
+        PassThroughSanitisation(photoMetadata);
         return photoMetadata;
     }
 

@@ -142,6 +142,11 @@
                         <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
                     }
 
+                    @if (_unpreparablePhotograph && !_isSaved)
+                    {
+                        <MudAlert Severity="Severity.Error" id="catch-photo-unpreparable">@Loc["Catch_PhotoNotPrepared"]</MudAlert>
+                    }
+
                     <MudStack Row="true" Spacing="2" Class="record-catch-measurements">
                         <MeasurementField IsWeight="true"
                                           Value="_weight"

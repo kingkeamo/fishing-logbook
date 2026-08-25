@@ -47,6 +47,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private bool _isSaved;
     private bool _saveFailed;
     private bool _unsupportedFormat;
+    private bool _unpreparablePhotograph;
     private bool _catalogueUnavailable;
     private bool _locationCaptureStarted;
     private bool _locationSaved;
@@ -247,6 +248,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         }
 
         var rejectedUnsupported = false;
+        var rejectedUnpreparable = false;
         foreach (var file in args.GetMultipleFiles(MaxSelectedPhotographs))
         {
             if (!PhotographContentTypeConstants.IsAllowed(file.ContentType))
@@ -255,15 +257,19 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
                 continue;
             }
 
-            await AddPhotographAsync(file, fromCamera);
+            if (!await AddPhotographAsync(file, fromCamera))
+            {
+                rejectedUnpreparable = true;
+            }
         }
 
         _unsupportedFormat = rejectedUnsupported;
+        _unpreparablePhotograph = rejectedUnpreparable;
         await ApplyPhotoMetadataAsync();
         TryStartOpportunisticCapture();
     }
 
-    private async Task AddPhotographAsync(IBrowserFile file, bool fromCamera)
+    private async Task<bool> AddPhotographAsync(IBrowserFile file, bool fromCamera)
     {
         await using var stream = file.OpenReadStream(MaxPhotographBytes);
         using var buffer = new MemoryStream();
@@ -273,16 +279,23 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         var metadata = fromCamera
             ? PhotoMetadataModel.Empty
             : await ReadPhotoMetadataAsync(bytes, contentType);
+        var sanitised = await SanitisePhotographAsync(bytes, contentType);
+        if (sanitised is null)
+        {
+            return false;
+        }
+
         _fallbackCaughtOn ??= DateTimeOffset.UtcNow;
         var photograph = new PendingPhotograph(
             Guid.NewGuid(),
             contentType,
-            bytes,
+            sanitised,
             metadata,
             fromCamera);
         _photographs.Add(photograph);
         _activePhotographId = photograph.Id;
         _saveFailed = false;
+        return true;
     }
 
     private async Task<PhotoMetadataModel> ReadPhotoMetadataAsync(byte[] bytes, string contentType)
@@ -293,8 +306,27 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("reading photograph metadata", exception, CancellationToken.None);
+            await Logging.LogErrorAsync(
+                "reading photograph metadata",
+                $"Photograph metadata could not be read ({exception.GetType().Name}).",
+                CancellationToken.None);
             return PhotoMetadataModel.Empty;
+        }
+    }
+
+    private async Task<byte[]?> SanitisePhotographAsync(byte[] bytes, string contentType)
+    {
+        try
+        {
+            return PhotoMetadata.Sanitise(bytes, contentType);
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "removing photograph metadata",
+                $"Photograph metadata could not be removed ({exception.GetType().Name}).",
+                CancellationToken.None);
+            return null;
         }
     }
 
@@ -535,6 +567,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _isSaved = false;
         _saveFailed = false;
         _unsupportedFormat = false;
+        _unpreparablePhotograph = false;
         _capturedLocation = null;
         _photoLocationApplied = false;
         _locationCaptureStarted = false;

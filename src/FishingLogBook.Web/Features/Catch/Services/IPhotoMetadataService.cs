@@ -8,4 +8,6 @@ public interface IPhotoMetadataService
         byte[] bytes,
         string contentType,
         CancellationToken cancellationToken);
+
+    byte[] Sanitise(byte[] bytes, string contentType);
 }

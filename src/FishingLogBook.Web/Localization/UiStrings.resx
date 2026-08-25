@@ -198,6 +198,9 @@
   <data name="Catch_PhotoUnsupported" xml:space="preserve">
     <value>This photo format isn't supported. Please use JPEG, PNG or WebP.</value>
   </data>
+  <data name="Catch_PhotoNotPrepared" xml:space="preserve">
+    <value>This photo could not be prepared for saving and was not added. Please try another photo.</value>
+  </data>
   <data name="Catch_RemovePhoto" xml:space="preserve">
     <value>Remove photo</value>
   </data>

@@ -22,7 +22,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         DateTimeOffset.Parse("2025-06-14T06:32:10Z");
 
     [Fact]
-    public async Task ItShouldKeepRecordCatchUsableWhenMetadataExtractionFails()
+    public async Task ItShouldStillRecordThePhotographAndLogSafelyWhenMetadataExtractionFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -31,18 +31,20 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
         photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns<Task<PhotoMetadataModel>>(_ => throw new InvalidOperationException("corrupt"));
+            .Returns<Task<PhotoMetadataModel>>(_ =>
+                throw new InvalidOperationException("EXIF GPS 53.2707,-9.0568 at offset 42 in beach.jpg"));
+        PassThroughSanitisation(photoMetadata);
         var logging = QuietLogging();
         await using var context = CreateContext(store, logging: logging, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
         // Act
-        cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("a.jpg", FirstPhotograph));
+        cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("beach.jpg", FirstPhotograph));
 
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#catch-caught-on").GetAttribute("value").Should().NotBeNullOrWhiteSpace());
-        cut.FindAll("#catch-photo-date-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-unpreparable").Should().BeEmpty();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -52,7 +54,117 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             Arg.Any<CancellationToken>());
         await logging.Received(1).LogErrorAsync(
             "reading photograph metadata",
+            "Photograph metadata could not be read (InvalidOperationException).",
+            Arg.Any<CancellationToken>());
+        await logging.DidNotReceive().LogErrorAsync(
+            Arg.Any<string>(),
             Arg.Any<Exception>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotAddAPhotographThatCannotHaveItsMetadataRemoved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(PhotoMetadataModel.Empty);
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
+            .Returns<byte[]>(_ => throw new InvalidOperationException("GPS 53.2707 at offset 42"));
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, logging: logging, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("a.jpg", FirstPhotograph));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-photo-unpreparable").TextContent.Should()
+                .Contain("could not be prepared"));
+        cut.FindAll("#catch-photo-carousel").Should().BeEmpty();
+        cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeTrue();
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "removing photograph metadata",
+            "Photograph metadata could not be removed (InvalidOperationException).",
+            Arg.Any<CancellationToken>());
+        await logging.DidNotReceive().LogErrorAsync(
+            Arg.Any<string>(),
+            Arg.Any<Exception>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistTheSanitisedBytesRatherThanTheSelectedOnes()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var sanitisedBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xD9 };
+        var photoMetadata = SanitisingPhotoMetadata(
+            new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568),
+            sanitisedBytes);
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("a.jpg", FirstPhotograph, SecondPhotograph));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32"));
+        await cut.Find("#save-catch-button").ClickAsync();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.Photographs.Count == 1
+                && catchRecord.Photographs[0].Bytes!.SequenceEqual(sanitisedBytes)
+                && !catchRecord.Photographs[0].Bytes!.SequenceEqual(new byte[] { FirstPhotograph, SecondPhotograph })
+                && catchRecord.CaughtOn == HistoricCapture
+                && catchRecord.Location!.Latitude == 53.2707),
+            Arg.Any<CancellationToken>());
+        photoMetadata.Received(1).Sanitise(
+            Arg.Is<byte[]>(bytes => bytes.SequenceEqual(new byte[] { FirstPhotograph, SecondPhotograph })),
+            "image/jpeg");
+    }
+
+    [Fact]
+    public async Task ItShouldRemoveMetadataFromCameraPhotographsToo()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var sanitisedBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xD9 };
+        var photoMetadata = SanitisingPhotoMetadata(
+            new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568),
+            sanitisedBytes);
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("now.jpg", FirstPhotograph));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse());
+        await cut.Find("#save-catch-button").ClickAsync();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.Photographs[0].Bytes!.SequenceEqual(sanitisedBytes)
+                && catchRecord.CaughtOn > DateTimeOffset.UtcNow.AddMinutes(-5)
+                && catchRecord.Location == null),
+            Arg.Any<CancellationToken>());
+        photoMetadata.Received(1).Sanitise(
+            Arg.Is<byte[]>(bytes => bytes.SequenceEqual(new byte[] { FirstPhotograph })),
+            "image/jpeg");
+        await photoMetadata.DidNotReceive().ReadAsync(
+            Arg.Any<byte[]>(),
+            Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
 
