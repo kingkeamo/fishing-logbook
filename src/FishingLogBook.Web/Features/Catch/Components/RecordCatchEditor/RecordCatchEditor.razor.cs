@@ -23,6 +23,8 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly List<PendingPhotograph> _photographs = [];
     private DateTimeOffset? _caughtOn;
+    private decimal? _weight;
+    private decimal? _length;
     private Guid? _activePhotographId;
     private string _selectedMethod = string.Empty;
     private string _selectedSpecies = string.Empty;
@@ -326,7 +328,9 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
                     SyncStatus.SavedLocally,
                     OwnerUserId,
                     OwnerUserId,
-                    Method: method),
+                    Method: method,
+                    Weight: _weight,
+                    Length: _length),
                 _cancellationTokenSource.Token);
             _carriedMethod = method;
             _carriedSpecies = species;
@@ -357,6 +361,8 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     {
         _photographs.Clear();
         _caughtOn = null;
+        _weight = null;
+        _length = null;
         _activePhotographId = null;
         _isSaved = false;
         _saveFailed = false;
@@ -367,6 +373,16 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _selectedMethod = _carriedMethod ?? string.Empty;
         _selectedSpecies = _carriedSpecies ?? string.Empty;
         _speciesIsExplicit = _carriedSpeciesWasExplicit;
+    }
+
+    private void SetWeight(decimal? value)
+    {
+        _weight = value;
+    }
+
+    private void SetLength(decimal? value)
+    {
+        _length = value;
     }
 
     private async Task AllowLocationAsync()
@@ -462,4 +478,3 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
 
     private sealed record PendingPhotograph(Guid Id, string ContentType, byte[] Bytes);
 }
-

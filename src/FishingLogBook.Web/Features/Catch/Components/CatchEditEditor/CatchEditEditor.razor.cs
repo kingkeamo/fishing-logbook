@@ -1,4 +1,3 @@
-using System.Globalization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
@@ -22,8 +21,8 @@ public partial class CatchEditEditor : ComponentBase
     private Guid _boundCatchId;
     private CatchModel _catch = default!;
     private string _speciesName = string.Empty;
-    private string _weightText = string.Empty;
-    private string _lengthText = string.Empty;
+    private decimal? _weight;
+    private decimal? _length;
     private string _method = string.Empty;
     private string _baitOrLure = string.Empty;
     private string _notes = string.Empty;
@@ -66,42 +65,6 @@ public partial class CatchEditEditor : ComponentBase
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
-
-    private string WeightUnitLabel
-    {
-        get
-        {
-            return Preferences.WeightUnit == WeightUnitEnum.Lb
-                ? Loc["Catch_WeightUnitShort_Lb"]
-                : Loc["Catch_WeightUnitShort_Kg"];
-        }
-    }
-
-    private string LengthUnitLabel
-    {
-        get
-        {
-            return Preferences.LengthUnit == LengthUnitEnum.In
-                ? Loc["Catch_LengthUnitShort_In"]
-                : Loc["Catch_LengthUnitShort_Cm"];
-        }
-    }
-
-    private string WeightLabel
-    {
-        get
-        {
-            return $"{Loc["Catch_EditWeight"]} ({WeightUnitLabel})";
-        }
-    }
-
-    private string LengthLabel
-    {
-        get
-        {
-            return $"{Loc["Catch_EditLength"]} ({LengthUnitLabel})";
-        }
-    }
 
     private IReadOnlyList<CatchChipOptionModel> MethodOptions
     {
@@ -287,29 +250,15 @@ public partial class CatchEditEditor : ComponentBase
             return null;
         }
 
-        if (!TryParseMeasurement(_weightText, out var displayWeight))
+        if (!CatchDetailConstants.IsWeightValid(_weight))
         {
-            _validationMessage = Loc["Catch_EditWeightInvalid", WeightUnitLabel, Measurement.MaxDisplayWeight(Preferences.WeightUnit)];
+            _validationMessage = Loc["Catch_MeasurementInvalid"];
             return null;
         }
 
-        var weight = Measurement.ToCanonicalWeight(displayWeight, Preferences.WeightUnit, _catch.Weight);
-        if (!CatchDetailConstants.IsWeightValid(weight))
+        if (!CatchDetailConstants.IsLengthValid(_length))
         {
-            _validationMessage = Loc["Catch_EditWeightInvalid", WeightUnitLabel, Measurement.MaxDisplayWeight(Preferences.WeightUnit)];
-            return null;
-        }
-
-        if (!TryParseMeasurement(_lengthText, out var displayLength))
-        {
-            _validationMessage = Loc["Catch_EditLengthInvalid", LengthUnitLabel, Measurement.MaxDisplayLength(Preferences.LengthUnit)];
-            return null;
-        }
-
-        var length = Measurement.ToCanonicalLength(displayLength, Preferences.LengthUnit, _catch.Length);
-        if (!CatchDetailConstants.IsLengthValid(length))
-        {
-            _validationMessage = Loc["Catch_EditLengthInvalid", LengthUnitLabel, Measurement.MaxDisplayLength(Preferences.LengthUnit)];
+            _validationMessage = Loc["Catch_MeasurementInvalid"];
             return null;
         }
 
@@ -326,12 +275,12 @@ public partial class CatchEditEditor : ComponentBase
             return null;
         }
 
-        var metadataChanged = HasDetailsChanged(speciesName, weight, length, method, baitOrLure, notes, caughtOn.Value);
+        var metadataChanged = HasDetailsChanged(speciesName, _weight, _length, method, baitOrLure, notes, caughtOn.Value);
         var updated = _catch with
         {
             SpeciesName = speciesName,
-            Weight = weight,
-            Length = length,
+            Weight = _weight,
+            Length = _length,
             Method = method,
             BaitOrLure = baitOrLure,
             Notes = notes,
@@ -364,10 +313,8 @@ public partial class CatchEditEditor : ComponentBase
     {
         _speciesName = catchRecord.SpeciesName ?? string.Empty;
         _speciesIsExplicit = !string.IsNullOrWhiteSpace(catchRecord.SpeciesName);
-        var displayWeight = Measurement.ToDisplayWeight(catchRecord.Weight, Preferences.WeightUnit);
-        var displayLength = Measurement.ToDisplayLength(catchRecord.Length, Preferences.LengthUnit);
-        _weightText = displayWeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-        _lengthText = displayLength?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        _weight = catchRecord.Weight;
+        _length = catchRecord.Length;
         _method = catchRecord.Method ?? string.Empty;
         _baitOrLure = catchRecord.BaitOrLure ?? string.Empty;
         _notes = catchRecord.Notes ?? string.Empty;
@@ -401,22 +348,14 @@ public partial class CatchEditEditor : ComponentBase
             : null;
     }
 
-    private static bool TryParseMeasurement(string text, out decimal? value)
+    private void SetWeight(decimal? value)
     {
-        value = null;
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return true;
-        }
+        _weight = value;
+    }
 
-        if (!decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)
-            && !decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out parsed))
-        {
-            return false;
-        }
-
-        value = parsed;
-        return true;
+    private void SetLength(decimal? value)
+    {
+        _length = value;
     }
 
     private static string? TrimToNull(string? value)

@@ -1,0 +1,13 @@
+<button type="button"
+        class="measurement-field"
+        aria-label="@AccessibleLabel"
+        @onclick="OpenAsync"
+        id="@Id">
+    <span class="measurement-field-copy">
+        <MudText Typo="Typo.caption">@Label</MudText>
+        <MudText Typo="Typo.body2" Class="measurement-field-value" id="@(Id + "-value")">
+            @DisplayValue
+        </MudText>
+    </span>
+    <MudIcon Icon="@Icon" Color="Color.Primary" Size="Size.Small" aria-hidden="true" />
+</button>

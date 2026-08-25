@@ -5,6 +5,7 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
+using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
@@ -51,6 +52,7 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
+        context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
@@ -97,6 +99,15 @@ public class BaseRecordCatchTest
                     model.Options.Any(option => option.Code == offeredOptionCode)),
                 Arg.Any<CancellationToken>())
             .Returns(new CataloguePickerModalResult(chosen));
+    }
+
+    protected static void AnswerMeasurement(IModalService modalService, bool isWeight, decimal? canonicalValue)
+    {
+        modalService
+            .ShowAsync<MeasurementEditorModal, MeasurementEditorModel, MeasurementEditorResult>(
+                Arg.Is<MeasurementEditorModel>(model => model.IsWeight == isWeight),
+                Arg.Any<CancellationToken>())
+            .Returns(new MeasurementEditorResult(canonicalValue));
     }
 
     protected static string SelectedMethod(IRenderedComponent<RecordCatch> cut)
