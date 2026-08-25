@@ -16,7 +16,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var sut = new PhotoMetadataService(time);
 
         // Act
-        var metadata = await sut.ReadAsync([], PhotographContentTypeConstants.Jpeg, CancellationToken.None);
+        var metadata = await sut.ReadAsync([], PhotographContentTypeConstants.Jpeg, null, CancellationToken.None);
 
         // Assert
         metadata.Should().Be(PhotoMetadataModel.Empty);
@@ -34,7 +34,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
 
         // Act
-        var metadata = await sut.ReadAsync(bytes, "image/heic", CancellationToken.None);
+        var metadata = await sut.ReadAsync(bytes, "image/heic", null, CancellationToken.None);
 
         // Assert
         metadata.Should().Be(PhotoMetadataModel.Empty);
@@ -54,6 +54,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             JpegWithoutExif(),
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -79,6 +80,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -97,6 +99,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes[..(bytes.Length / 2)],
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -119,6 +122,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -140,6 +144,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -166,6 +171,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -195,6 +201,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -213,6 +220,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -231,6 +239,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -249,6 +258,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -268,6 +278,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -291,6 +302,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -319,6 +331,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -347,6 +360,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -372,6 +386,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -393,6 +408,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -419,6 +435,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -441,6 +458,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -464,6 +482,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Png,
+            null,
             CancellationToken.None);
 
         // Assert
@@ -488,6 +507,7 @@ public class WhenTestingReadAsync : BasePhotoMetadataServiceTest
         var metadata = await sut.ReadAsync(
             bytes,
             PhotographContentTypeConstants.Webp,
+            null,
             CancellationToken.None);
 
         // Assert

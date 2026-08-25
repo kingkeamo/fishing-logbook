@@ -1,13 +1,18 @@
 import { test, expect } from '../support/fixtures.mjs';
-import { createCatch, reloadServerCatches } from '../support/catch-journey.mjs';
+import { createCatch, reloadServerCatches, showPhoto } from '../support/catch-journey.mjs';
 import { jpegWithExif, jpegWithoutExif } from '../support/exif-image.mjs';
+import { mkdir, utimes, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 test.use({ timezoneId: 'Europe/Dublin' });
 
 const historicWallClock = '2025:06:14 07:32:10';
 const historicInstant = '2025-06-14T06:32:10+00:00';
+const mayWallClock = '2025:05:02 15:10:00';
 const corribLatitude = 53.2707;
 const corribLongitude = -9.0568;
+const leeLatitude = 51.8985;
+const leeLongitude = -8.4756;
 
 function photograph(name, options) {
     return { name, mimeType: 'image/jpeg', buffer: jpegWithExif(options) };
@@ -33,7 +38,7 @@ test('shows the proposed historical date in Record Catch before saving', async (
     ]);
 
     await expect(page.locator('#catch-caught-on')).toHaveValue('2025-06-14T07:32');
-    await expect(page.locator('#catch-photo-date-conflict')).toBeHidden();
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeHidden();
 });
 
 test('persists photograph coordinates with the photo metadata source', async ({ page }) => {
@@ -90,34 +95,55 @@ test('records one catch from several compatible photographs of the same fish', a
     expect(catchRecord.location.longitude).toBeCloseTo(-9.0570, 3);
 });
 
-test('warns about conflicting capture dates and persists the date the angler confirms', async ({ page }) => {
+test('shows each photograph its own capture details while the angler chooses one', async ({ page }) => {
     await page.goto('/catches/record');
     await expect(page.locator('#record-catch-title')).toBeVisible();
     await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles([
-        photograph('june.jpg', { capturedOn: historicWallClock }),
-        photograph('may.jpg', { capturedOn: '2025:05:02 15:10:00' })
+        photograph('june.jpg', { capturedOn: historicWallClock, latitude: corribLatitude, longitude: corribLongitude }),
+        photograph('may.jpg', { capturedOn: mayWallClock })
     ]);
 
-    await expect(page.locator('#catch-photo-date-conflict')).toBeVisible();
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
     await expect(page.locator('#save-catch-button')).toBeDisabled();
 
+    await showPhoto(page, 1, 2);
+    await expect(page.locator('#catch-photo-current-date')).toHaveAttribute('data-captured-on', '2025-06-14T07:32');
+    await expect(page.locator('#catch-photo-current-location')).toContainText('GPS location available');
+
+    await showPhoto(page, 2, 2);
+    await expect(page.locator('#catch-photo-current-date')).toHaveAttribute('data-captured-on', '2025-05-02T15:10');
+    await expect(page.locator('#catch-photo-current-location')).toContainText('No photo location available');
+    await expect(page.locator('#catch-caught-on')).toHaveValue('2025-05-02T15:10');
+    await expect(page.locator('#save-catch-button')).toBeDisabled();
+
+    await page.locator('#catch-photo-use-details').click();
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeHidden();
+    await expect(page.locator('#save-catch-button')).toBeEnabled();
+    await expect(page.locator('#catch-photo-current-metadata')).toBeVisible();
+
+    await showPhoto(page, 1, 2);
+    await page.locator('#catch-photo-use-details').click();
+    await expect(page.locator('#catch-caught-on')).toHaveValue('2025-06-14T07:32');
+    await expect(page.locator('#catch-location-from-photo')).toBeVisible();
+});
+
+test('persists the capture date of the photograph the angler chooses as representative', async ({ page }) => {
     const id = await createCatch(page, true, {
         files: [
             photograph('june.jpg', { capturedOn: historicWallClock }),
-            photograph('may.jpg', { capturedOn: '2025:05:02 15:10:00' })
+            photograph('may.jpg', { capturedOn: mayWallClock })
         ],
-        resolveDateConflict: true
+        representativePhoto: 1
     });
 
     const persisted = await reloadServerCatches(page);
     const catchRecord = persisted.find(candidate => candidate.id === id);
     expect(persisted.filter(candidate => candidate.id === id)).toHaveLength(1);
     expect(catchRecord.photographs).toHaveLength(2);
-    expect(new Date(catchRecord.caughtOn).toISOString())
-        .toBe(new Date('2025-05-02T14:10:00+00:00').toISOString());
+    expect(new Date(catchRecord.caughtOn).toISOString()).toBe(new Date(historicInstant).toISOString());
 });
 
-test('warns about conflicting photograph locations and persists no location', async ({ page }) => {
+test('warns about conflicting photograph locations and persists no location until one is chosen', async ({ page }) => {
     const id = await createCatch(page, true, {
         files: [
             photograph('galway.jpg', {
@@ -127,8 +153,8 @@ test('warns about conflicting photograph locations and persists no location', as
             }),
             photograph('cork.jpg', {
                 capturedOn: '2025:06:14 07:34:00',
-                latitude: 51.8985,
-                longitude: -8.4756
+                latitude: leeLatitude,
+                longitude: leeLongitude
             })
         ]
     });
@@ -137,6 +163,87 @@ test('warns about conflicting photograph locations and persists no location', as
     const catchRecord = persisted.find(candidate => candidate.id === id);
     expect(catchRecord.photographs).toHaveLength(2);
     expect(catchRecord.location).toBeNull();
+});
+
+test('persists only the chosen photographs coordinates when photograph locations conflict', async ({ page }) => {
+    const id = await createCatch(page, true, {
+        files: [
+            photograph('galway.jpg', {
+                capturedOn: historicWallClock,
+                latitude: corribLatitude,
+                longitude: corribLongitude
+            }),
+            photograph('cork.jpg', {
+                capturedOn: '2025:06:14 07:34:00',
+                latitude: leeLatitude,
+                longitude: leeLongitude
+            })
+        ],
+        representativePhoto: 2
+    });
+
+    const persisted = await reloadServerCatches(page);
+    const location = persisted.find(candidate => candidate.id === id)?.location;
+    expect(location.source).toBe('PhotoMetadata');
+    expect(location.visibility).toBe('Private');
+    expect(location.latitude).toBeCloseTo(leeLatitude, 3);
+    expect(location.longitude).toBeCloseTo(leeLongitude, 3);
+    expect(location.latitude).not.toBeCloseTo(corribLatitude, 3);
+});
+
+test('keeps an explicitly chosen device location while the angler moves between photographs', async ({ page, context }) => {
+    const deviceLatitude = 53.3498;
+    const deviceLongitude = -6.2603;
+    await context.grantPermissions(['geolocation'], { origin: 'http://localhost:5019' });
+    await context.setGeolocation({ latitude: deviceLatitude, longitude: deviceLongitude, accuracy: 8 });
+    await page.addInitScript(() => {
+        globalThis.e2eLocationCompleted = false;
+        const original = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+        navigator.geolocation.getCurrentPosition = (success, error, options) => original(
+            position => {
+                globalThis.e2eLocationCompleted = true;
+                success(position);
+            },
+            error,
+            options);
+    });
+    await page.goto('/catches/record');
+    await expect(page.locator('#record-catch-title')).toBeVisible();
+    await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles([
+        photograph('galway.jpg', {
+            capturedOn: historicWallClock,
+            latitude: corribLatitude,
+            longitude: corribLongitude
+        }),
+        photograph('cork.jpg', {
+            capturedOn: '2025:06:14 07:34:00',
+            latitude: leeLatitude,
+            longitude: leeLongitude
+        })
+    ]);
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
+    await expect(page.locator('#catch-location-from-photo')).toHaveCount(0);
+    await page.locator('#catch-location-use-current').click();
+    await page.waitForFunction(() => globalThis.e2eLocationCompleted === true);
+
+    await showPhoto(page, 1, 2);
+    await showPhoto(page, 2, 2);
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
+    await expect(page.locator('#catch-location-from-photo')).toHaveCount(0);
+
+    const saved = page.waitForResponse(response =>
+        response.url().endsWith('/api/catches')
+        && response.request().method() === 'POST'
+        && response.ok()).then(response => response.request().postDataJSON());
+    await page.locator('#save-catch-button').click();
+    await expect(page.locator('#catch-saved')).toBeVisible();
+    const request = await saved;
+
+    const persisted = await reloadServerCatches(page);
+    const location = persisted.find(candidate => candidate.id === request.id)?.location;
+    expect(location.source).toBe('DeviceGps');
+    expect(location.latitude).toBeCloseTo(deviceLatitude, 3);
+    expect(location.longitude).toBeCloseTo(deviceLongitude, 3);
 });
 
 test('keeps current-catch behaviour when a photograph is captured through the camera', async ({ page }) => {
@@ -211,4 +318,26 @@ test('keeps no photograph EXIF metadata in the persisted image bytes', async ({ 
     const catchRecord = (await reloadServerCatches(page)).find(candidate => candidate.id === id);
     expect(catchRecord.location.source).toBe('PhotoMetadata');
     expect(catchRecord.location.latitude).toBeCloseTo(corribLatitude, 3);
+});
+
+test('proposes the file timestamp when a gallery photograph carries no capture date', async ({ page }) => {
+    const modifiedOn = new Date('2026-08-22T10:28:43.000Z');
+    const fixtureDirectory = resolve('artifacts/fixtures');
+    await mkdir(fixtureDirectory, { recursive: true });
+    const fixture = resolve(fixtureDirectory, 'historic-without-exif.jpg');
+    await writeFile(fixture, jpegWithoutExif());
+    await utimes(fixture, modifiedOn, modifiedOn);
+
+    await page.goto('/catches/record');
+    await expect(page.locator('#record-catch-title')).toBeVisible();
+    await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles([fixture]);
+    await expect(page.locator('#catch-caught-on')).toHaveValue('2026-08-22T11:28');
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeHidden();
+
+    const id = await createCatch(page, true, { files: [fixture] });
+
+    const persisted = await reloadServerCatches(page);
+    const catchRecord = persisted.find(candidate => candidate.id === id);
+    expect(new Date(catchRecord.caughtOn).toISOString()).toBe(modifiedOn.toISOString());
+    expect(catchRecord.location).toBeNull();
 });

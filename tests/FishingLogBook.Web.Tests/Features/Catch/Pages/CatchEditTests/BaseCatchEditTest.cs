@@ -44,7 +44,8 @@ public class BaseCatchEditTest
         ITimeService? time = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
         IModalService? modalService = null,
-        ICatchClient? catchClient = null)
+        ICatchClient? catchClient = null,
+        IPhotoMetadataService? photoMetadata = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -58,9 +59,32 @@ public class BaseCatchEditTest
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddSingleton(catchClient ?? QuietCatchClient());
+        context.Services.AddSingleton(photoMetadata ?? PassThroughPhotoMetadata());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static IPhotoMetadataService PassThroughPhotoMetadata()
+    {
+        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
+            .Returns(call => call.ArgAt<byte[]>(0));
+        return photoMetadata;
+    }
+
+    protected static IPhotoMetadataService SanitisingPhotoMetadata(byte[] sanitised)
+    {
+        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns(sanitised);
+        return photoMetadata;
+    }
+
+    protected static IPhotoMetadataService UnsanitisablePhotoMetadata()
+    {
+        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns((byte[]?)null);
+        return photoMetadata;
     }
 
     protected static ICatchClient QuietCatchClient()

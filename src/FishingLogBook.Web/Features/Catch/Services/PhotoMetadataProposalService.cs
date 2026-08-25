@@ -34,7 +34,7 @@ public sealed class PhotoMetadataProposalService : IPhotoMetadataProposalService
             return photograph;
         }
 
-        return photograph with { CapturedOn = null };
+        return photograph.WithoutCapturedOn();
     }
 
     private static (DateTimeOffset? CaughtOn, bool Conflict) ProposeCaughtOn(
@@ -42,15 +42,20 @@ public sealed class PhotoMetadataProposalService : IPhotoMetadataProposalService
     {
         var captured = photographs
             .Where(photograph => photograph.CapturedOn.HasValue)
-            .Select(photograph => photograph.CapturedOn!.Value)
             .ToArray();
         if (captured.Length == 0)
         {
             return (null, false);
         }
 
-        var earliest = captured.Min();
-        return (earliest, captured.Max() - earliest > SameCatchWindow);
+        var trustworthy = captured
+            .Where(photograph => photograph.HasTrustworthyCapturedOn)
+            .Select(photograph => photograph.CapturedOn!.Value)
+            .ToArray();
+        var comparable = trustworthy.Length > 0
+            ? trustworthy
+            : [.. captured.Select(photograph => photograph.CapturedOn!.Value)];
+        return (comparable.Min(), comparable.Max() - comparable.Min() > SameCatchWindow);
     }
 
     private static (PhotoMetadataModel? Coordinates, bool Conflict) ProposeCoordinates(

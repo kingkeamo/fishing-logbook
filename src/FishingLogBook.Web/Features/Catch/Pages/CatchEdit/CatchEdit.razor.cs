@@ -29,6 +29,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private bool _loadFailed;
     private bool _offlineUnavailable;
     private bool _unsupportedFormat;
+    private bool _unpreparablePhotograph;
     private bool _cannotRemoveLastPhoto;
     private bool _addPhotoFailed;
     private bool _removePhotoFailed;
@@ -59,6 +60,9 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
+
+    [Inject]
+    private IPhotoMetadataService PhotoMetadata { get; set; } = default!;
 
     private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs
     {

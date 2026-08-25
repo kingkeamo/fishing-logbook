@@ -1,3 +1,4 @@
+using System.Globalization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
@@ -30,9 +31,9 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private string _caughtOnLocal = string.Empty;
     private bool _caughtOnResolvedByAngler;
     private bool _caughtOnInvalid;
-    private bool _dateConflict;
-    private bool _coordinateConflict;
-    private bool _photoLocationApplied;
+    private bool _deviceLocationChosen;
+    private Guid? _representativePhotographId;
+    private PhotoMetadataProposalModel _proposal = PhotoMetadataProposalModel.Empty;
     private decimal? _weight;
     private decimal? _length;
     private Guid? _activePhotographId;
@@ -217,8 +218,79 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     {
         get
         {
-            return !_isSaved && _photographs.Count > 0 && !_isSaving && !_dateConflict;
+            return !_isSaved && _photographs.Count > 0 && !_isSaving && !DateConflict;
         }
+    }
+
+    private bool DateConflict =>
+        _proposal.HasConflictingDates
+        && !_caughtOnResolvedByAngler
+        && _representativePhotographId is null;
+
+    private bool CoordinateConflict =>
+        _proposal.HasConflictingCoordinates && _representativePhotographId is null;
+
+    private bool MetadataConflict => DateConflict || CoordinateConflict;
+
+    private bool ShowPhotographChooser =>
+        _proposal.HasConflictingDates || _proposal.HasConflictingCoordinates;
+
+    private bool CurrentPhotographIsRepresentative =>
+        _representativePhotographId is { } photographId
+        && CurrentPhotograph?.Id == photographId;
+
+    private bool PhotoLocationApplied =>
+        _capturedLocation is not null
+        && string.Equals(
+            _capturedLocation.Source,
+            LocationDefaults.PhotoMetadata,
+            StringComparison.Ordinal);
+
+    private bool DeviceLocationApplied =>
+        _capturedLocation is not null
+        && string.Equals(
+            _capturedLocation.Source,
+            LocationDefaults.DeviceGps,
+            StringComparison.Ordinal);
+
+    private PendingPhotograph? CurrentPhotograph =>
+        _photographs.Count == 0
+            ? null
+            : _photographs.FirstOrDefault(photograph => photograph.Id == _activePhotographId)
+                ?? _photographs[0];
+
+    private PendingPhotograph? RepresentativePhotograph =>
+        _representativePhotographId is { } photographId
+            ? _photographs.FirstOrDefault(photograph => photograph.Id == photographId)
+            : null;
+
+    private string CurrentPhotographCapturedOnValue =>
+        CurrentPhotograph?.CapturedOnLocal ?? string.Empty;
+
+    private string CurrentPhotographCapturedOnLabel =>
+        string.IsNullOrEmpty(CurrentPhotographCapturedOnValue)
+            ? Loc["Catch_PhotoCapturedOnUnknown"]
+            : FormatLocalDateTime(CurrentPhotographCapturedOnValue);
+
+    private string CurrentPhotographLocationLabel =>
+        CurrentPhotograph?.Metadata.HasCoordinates == true
+            ? Loc["Catch_PhotoLocationAvailable"]
+            : Loc["Catch_PhotoLocationUnavailable"];
+
+    private bool CanUseCurrentPhotographDetails =>
+        CurrentPhotograph is { } photograph
+        && (photograph.Metadata.CapturedOn.HasValue || photograph.Metadata.HasCoordinates);
+
+    private static string FormatLocalDateTime(string localValue)
+    {
+        return DateTime.TryParseExact(
+            localValue,
+            ["yyyy-MM-ddTHH:mm", "yyyy-MM-ddTHH:mm:ss"],
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsed)
+            ? parsed.ToString("g", CultureInfo.CurrentCulture)
+            : localValue;
     }
 
     private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs =>
@@ -278,7 +350,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         var contentType = file.ContentType;
         var metadata = fromCamera
             ? PhotoMetadataModel.Empty
-            : await ReadPhotoMetadataAsync(bytes, contentType);
+            : await ReadPhotoMetadataAsync(bytes, contentType, file.LastModified);
         var sanitised = await SanitisePhotographAsync(bytes, contentType);
         if (sanitised is null)
         {
@@ -291,18 +363,26 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             contentType,
             sanitised,
             metadata,
-            fromCamera);
+            fromCamera,
+            await ToLocalValueAsync(metadata.CapturedOn));
         _photographs.Add(photograph);
         _activePhotographId = photograph.Id;
         _saveFailed = false;
         return true;
     }
 
-    private async Task<PhotoMetadataModel> ReadPhotoMetadataAsync(byte[] bytes, string contentType)
+    private async Task<PhotoMetadataModel> ReadPhotoMetadataAsync(
+        byte[] bytes,
+        string contentType,
+        DateTimeOffset fileLastModified)
     {
         try
         {
-            return await PhotoMetadata.ReadAsync(bytes, contentType, _cancellationTokenSource.Token);
+            return await PhotoMetadata.ReadAsync(
+                bytes,
+                contentType,
+                fileLastModified,
+                _cancellationTokenSource.Token);
         }
         catch (Exception exception)
         {
@@ -330,6 +410,13 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         }
     }
 
+    private async Task<string?> ToLocalValueAsync(DateTimeOffset? instant)
+    {
+        return instant is null
+            ? null
+            : await Time.ToDateTimeLocalValueAsync(instant.Value, _cancellationTokenSource.Token);
+    }
+
     private async Task ApplyPhotoMetadataAsync()
     {
         if (_photographs.Count == 0)
@@ -339,67 +426,102 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             return;
         }
 
-        var proposal = _photographs.Any(photograph => photograph.FromCamera)
+        var hasCameraPhotograph = _photographs.Any(photograph => photograph.FromCamera);
+        if (hasCameraPhotograph || RepresentativePhotograph is null)
+        {
+            _representativePhotographId = null;
+        }
+
+        _proposal = hasCameraPhotograph
             ? PhotoMetadataProposalModel.Empty
             : PhotoMetadataProposal.Propose(
                 [.. _photographs.Select(photograph => photograph.Metadata)],
                 DateTimeOffset.UtcNow);
-        _dateConflict = proposal.HasConflictingDates && !_caughtOnResolvedByAngler;
-        _coordinateConflict = proposal.HasConflictingCoordinates;
-        await ApplyProposedCaughtOnAsync(proposal);
-        ApplyProposedLocation(proposal);
+        await ApplyCaughtOnAsync();
+        ApplyLocation();
     }
 
-    private async Task ApplyProposedCaughtOnAsync(PhotoMetadataProposalModel proposal)
+    private async Task ApplyCaughtOnAsync()
     {
         if (_caughtOnResolvedByAngler)
         {
             return;
         }
 
-        var instant = proposal.CaughtOn ?? _fallbackCaughtOn ?? DateTimeOffset.UtcNow;
+        var instant = ProposedCaughtOn() ?? _fallbackCaughtOn ?? DateTimeOffset.UtcNow;
         _proposedCaughtOn = instant;
         _caughtOnLocal = await Time.ToDateTimeLocalValueAsync(instant, _cancellationTokenSource.Token);
     }
 
-    private void ApplyProposedLocation(PhotoMetadataProposalModel proposal)
+    private DateTimeOffset? ProposedCaughtOn()
     {
-        if (proposal.HasCoordinates)
+        return _representativePhotographId is null
+            ? _proposal.CaughtOn
+            : RepresentativePhotograph?.Metadata.CapturedOn;
+    }
+
+    private void ApplyLocation()
+    {
+        if (_deviceLocationChosen && DeviceLocationApplied)
         {
-            _capturedLocation = new CatchLocationModel(
-                proposal.Latitude!.Value,
-                proposal.Longitude!.Value,
-                null,
-                proposal.CoordinatesCapturedOn
-                    ?? proposal.CaughtOn
-                    ?? _fallbackCaughtOn
-                    ?? DateTimeOffset.UtcNow,
-                LocationDefaults.PhotoMetadata,
-                LocationDefaults.Private,
-                LocationDefaults.ConsentVersion);
-            _photoLocationApplied = true;
             return;
         }
 
-        if (proposal.HasConflictingCoordinates)
+        if (RepresentativePhotograph is { } representative)
+        {
+            ApplyPhotographCoordinates(representative.Metadata);
+            return;
+        }
+
+        if (CoordinateConflict)
         {
             _capturedLocation = null;
-            _photoLocationApplied = false;
+            return;
+        }
+
+        if (_proposal.HasCoordinates)
+        {
+            ApplyPhotoLocation(
+                _proposal.Latitude!.Value,
+                _proposal.Longitude!.Value,
+                _proposal.CoordinatesCapturedOn ?? _proposal.CaughtOn);
             return;
         }
 
         ClearPhotoLocation();
     }
 
+    private void ApplyPhotographCoordinates(PhotoMetadataModel metadata)
+    {
+        if (!metadata.HasCoordinates)
+        {
+            ClearPhotoLocation();
+            return;
+        }
+
+        ApplyPhotoLocation(metadata.Latitude!.Value, metadata.Longitude!.Value, metadata.CapturedOn);
+    }
+
+    private void ApplyPhotoLocation(double latitude, double longitude, DateTimeOffset? capturedOn)
+    {
+        _capturedLocation = new CatchLocationModel(
+            latitude,
+            longitude,
+            null,
+            capturedOn ?? _fallbackCaughtOn ?? DateTimeOffset.UtcNow,
+            LocationDefaults.PhotoMetadata,
+            LocationDefaults.Private,
+            LocationDefaults.ConsentVersion);
+    }
+
     private void ClearPhotoLocation()
     {
-        if (!_photoLocationApplied)
+        if (!PhotoLocationApplied)
         {
             return;
         }
 
         _capturedLocation = null;
-        _photoLocationApplied = false;
     }
 
     private void ResetPhotoMetadataState()
@@ -409,8 +531,8 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _caughtOnLocal = string.Empty;
         _caughtOnResolvedByAngler = false;
         _caughtOnInvalid = false;
-        _dateConflict = false;
-        _coordinateConflict = false;
+        _representativePhotographId = null;
+        _proposal = PhotoMetadataProposalModel.Empty;
     }
 
     private void OnCaughtOnChanged(string value)
@@ -418,13 +540,27 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _caughtOnLocal = value;
         _caughtOnResolvedByAngler = true;
         _caughtOnInvalid = false;
-        _dateConflict = false;
     }
 
-    private void ConfirmCaughtOn()
+    private async Task UseCurrentPhotographDetailsAsync()
     {
-        _caughtOnResolvedByAngler = true;
-        _dateConflict = false;
+        if (CurrentPhotograph is not { } photograph || !CanUseCurrentPhotographDetails)
+        {
+            return;
+        }
+
+        _representativePhotographId = photograph.Id;
+        if (photograph.Metadata.CapturedOn.HasValue)
+        {
+            _caughtOnResolvedByAngler = false;
+        }
+
+        if (photograph.Metadata.HasCoordinates)
+        {
+            _deviceLocationChosen = false;
+        }
+
+        await ApplyPhotoMetadataAsync();
     }
 
     private async Task RemovePhotographAsync(Guid photographId)
@@ -569,7 +705,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _unsupportedFormat = false;
         _unpreparablePhotograph = false;
         _capturedLocation = null;
-        _photoLocationApplied = false;
+        _deviceLocationChosen = false;
         _locationCaptureStarted = false;
         _locationSaved = false;
         _selectedMethod = _carriedMethod ?? string.Empty;
@@ -637,8 +773,8 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             || _locationCaptureStarted
             || _photographs.Count == 0
             || !_locationPrompt.WillCaptureOnSave
-            || _photoLocationApplied
-            || _coordinateConflict)
+            || PhotoLocationApplied
+            || CoordinateConflict)
         {
             return;
         }
@@ -656,10 +792,14 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
                 _cancellationTokenSource.Token);
             if (location is not null
                 && CatchLocationConstants.AreCoordinatesValid(location.Latitude, location.Longitude)
-                && (replacePhotoLocation || (!_photoLocationApplied && !_coordinateConflict)))
+                && (replacePhotoLocation
+                    || (!PhotoLocationApplied && (userRequested || !CoordinateConflict))))
             {
                 _capturedLocation = location;
-                _photoLocationApplied = false;
+                if (userRequested)
+                {
+                    _deviceLocationChosen = true;
+                }
             }
         }
         catch (Exception)
@@ -697,5 +837,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         string ContentType,
         byte[] Bytes,
         PhotoMetadataModel Metadata,
-        bool FromCamera);
+        bool FromCamera,
+        string? CapturedOnLocal);
 }

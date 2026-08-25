@@ -54,10 +54,11 @@ export async function createCatch(page, waitForServer = false, options = {}) {
     const photoCount = files.length;
     const input = options.useCamera ? '#catch-photo-camera' : '#catch-photo-gallery';
     await page.locator(`${input} input, ${input}`).setInputFiles(files);
-    if (options.resolveDateConflict) {
-        await expect(page.locator('#catch-photo-date-conflict')).toBeVisible();
-        await page.locator('#catch-photo-date-conflict-confirm').click();
-        await expect(page.locator('#catch-photo-date-conflict')).toBeHidden();
+    if (options.representativePhoto !== undefined) {
+        await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
+        await showPhoto(page, options.representativePhoto, photoCount);
+        await page.locator('#catch-photo-use-details').click();
+        await expect(page.locator('#catch-photo-metadata-conflict')).toBeHidden();
     }
     if (options.caughtOn) {
         await page.locator('#catch-caught-on').fill(options.caughtOn);
@@ -98,6 +99,20 @@ export async function createCatch(page, waitForServer = false, options = {}) {
     const card = page.locator(`#catch-card-${id}`);
     await expect(card).toBeVisible();
     return id;
+}
+
+export async function showPhoto(page, photoNumber, photoCount) {
+    await expect(page.locator('#catch-photo-navigation')).toBeVisible();
+    for (let step = 0; step < photoCount; step++) {
+        if (await page.locator(`#catch-photo-${photoNumber - 1}`).count() > 0) {
+            await expect(page.locator(`#catch-photo-${photoNumber - 1}`)).toBeVisible();
+            return;
+        }
+
+        await page.locator('#catch-photo-next').click();
+    }
+
+    throw new Error(`Photograph ${photoNumber} of ${photoCount} could not be shown.`);
 }
 
 async function selectCatalogueValue(page, type, code) {

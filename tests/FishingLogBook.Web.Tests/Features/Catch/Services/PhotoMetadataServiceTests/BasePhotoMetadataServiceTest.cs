@@ -208,6 +208,15 @@ public class BasePhotoMetadataServiceTest
         return [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x04, 0x00, 0x00, 0xFF, 0xD9];
     }
 
+    protected static byte[] PngWithoutMetadata()
+    {
+        var bytes = new List<byte> { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        AppendPngChunk(bytes, "IHDR", [0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0]);
+        AppendPngChunk(bytes, "IDAT", [0x78, 0x9C, 0x63, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01]);
+        AppendPngChunk(bytes, "IEND", []);
+        return [.. bytes];
+    }
+
     protected static byte[] Png(ExifContent content)
     {
         var bytes = new List<byte> { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
@@ -475,7 +484,7 @@ public class BasePhotoMetadataServiceTest
         return bigEndian ? BigEndian(value) : LittleEndian(value);
     }
 
-    private static byte[] BigEndian(ushort value)
+    protected static byte[] BigEndian(ushort value)
     {
         return [(byte)(value >> 8), (byte)value];
     }

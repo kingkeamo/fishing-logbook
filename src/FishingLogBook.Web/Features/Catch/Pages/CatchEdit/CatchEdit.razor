@@ -41,6 +41,10 @@
                         {
                             <MudAlert Severity="Severity.Error" id="catch-edit-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
                         }
+                        @if (_unpreparablePhotograph)
+                        {
+                            <MudAlert Severity="Severity.Error" id="catch-edit-photo-unpreparable">@Loc["Catch_PhotoNotPrepared"]</MudAlert>
+                        }
                         @if (_cannotRemoveLastPhoto)
                         {
                             <MudAlert Severity="Severity.Warning" id="catch-edit-photo-last">@Loc["Catch_EditCannotRemoveLastPhoto"]</MudAlert>

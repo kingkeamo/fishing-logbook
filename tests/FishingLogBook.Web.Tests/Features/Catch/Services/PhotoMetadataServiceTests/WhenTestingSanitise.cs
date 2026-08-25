@@ -21,7 +21,7 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, "image/heic");
 
         // Assert
-        sanitised.Should().BeSameAs(bytes);
+        sanitised.Should().BeNull();
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Jpeg);
 
         // Assert
-        sanitised.Should().BeSameAs(bytes);
+        sanitised.Should().BeNull();
     }
 
     [Fact]
@@ -49,22 +49,24 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
             Latitude = 53.2707,
             Longitude = -9.0568
         });
-        var original = await sut.ReadAsync(bytes, PhotographContentTypeConstants.Jpeg, CancellationToken.None);
+        var original = await sut.ReadAsync(bytes, PhotographContentTypeConstants.Jpeg, null, CancellationToken.None);
 
         // Act
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Jpeg);
 
         // Assert
+        sanitised!.Should().NotBeNull();
         original.CapturedOn.Should().NotBeNull();
         original.HasCoordinates.Should().BeTrue();
         var reread = await sut.ReadAsync(
             sanitised,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
         reread.Should().Be(PhotoMetadataModel.Empty);
-        Encoding.ASCII.GetString(sanitised).Should().NotContain("Exif");
-        sanitised.Should().StartWith([(byte)0xFF, (byte)0xD8]);
-        sanitised.Length.Should().BeLessThan(bytes.Length);
+        Encoding.ASCII.GetString(sanitised!).Should().NotContain("Exif");
+        sanitised!.Should().StartWith([(byte)0xFF, (byte)0xD8]);
+        sanitised!.Length.Should().BeLessThan(bytes.Length);
     }
 
     [Fact]
@@ -82,13 +84,15 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Jpeg);
 
         // Assert
-        var text = Encoding.ASCII.GetString(sanitised);
+        sanitised!.Should().NotBeNull();
+        var text = Encoding.ASCII.GetString(sanitised!);
         text.Should().NotContain("GPS 53.2707");
         text.Should().NotContain("Photoshop");
         text.Should().NotContain("adobe:ns:meta");
         var reread = await sut.ReadAsync(
             sanitised,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
         reread.HasCoordinates.Should().BeFalse();
     }
@@ -107,10 +111,11 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Jpeg);
 
         // Assert
-        Encoding.ASCII.GetString(sanitised).Should().Contain("ICC_PROFILE");
-        Encoding.ASCII.GetString(sanitised).Should().Contain("JFIF");
-        sanitised.Should().EndWith([(byte)0xFF, (byte)0xD9]);
-        var scan = ScanPayload(sanitised);
+        sanitised!.Should().NotBeNull();
+        Encoding.ASCII.GetString(sanitised!).Should().Contain("ICC_PROFILE");
+        Encoding.ASCII.GetString(sanitised!).Should().Contain("JFIF");
+        sanitised!.Should().EndWith([(byte)0xFF, (byte)0xD9]);
+        var scan = ScanPayload(sanitised!);
         scan.Should().NotBeEmpty();
         scan.Should().Equal(ScanPayload(bytes));
     }
@@ -132,10 +137,12 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Jpeg);
 
         // Assert
-        ReadOrientationTag(sanitised, PhotographContentTypeConstants.Jpeg).Should().Be(6);
+        sanitised!.Should().NotBeNull();
+        ReadOrientationTag(sanitised!, PhotographContentTypeConstants.Jpeg).Should().Be(6);
         var reread = await sut.ReadAsync(
             sanitised,
             PhotographContentTypeConstants.Jpeg,
+            null,
             CancellationToken.None);
         reread.CapturedOn.Should().BeNull();
         reread.HasCoordinates.Should().BeFalse();
@@ -156,7 +163,8 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Jpeg);
 
         // Assert
-        Encoding.ASCII.GetString(sanitised).Should().NotContain("Exif");
+        sanitised!.Should().NotBeNull();
+        Encoding.ASCII.GetString(sanitised!).Should().NotContain("Exif");
     }
 
     [Fact]
@@ -175,15 +183,17 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Png);
 
         // Assert
+        sanitised!.Should().NotBeNull();
         var reread = await sut.ReadAsync(
             sanitised,
             PhotographContentTypeConstants.Png,
+            null,
             CancellationToken.None);
         reread.Should().Be(PhotoMetadataModel.Empty);
-        Encoding.ASCII.GetString(sanitised).Should().NotContain("eXIf");
-        Encoding.ASCII.GetString(sanitised).Should().NotContain("tEXt");
-        PngChunkTypes(sanitised).Should().Contain("IHDR").And.Contain("IDAT").And.Contain("IEND");
-        PngChunksAreWellFormed(sanitised).Should().BeTrue();
+        Encoding.ASCII.GetString(sanitised!).Should().NotContain("eXIf");
+        Encoding.ASCII.GetString(sanitised!).Should().NotContain("tEXt");
+        PngChunkTypes(sanitised!).Should().Contain("IHDR").And.Contain("IDAT").And.Contain("IEND");
+        PngChunksAreWellFormed(sanitised!).Should().BeTrue();
     }
 
     [Fact]
@@ -201,9 +211,10 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Png);
 
         // Assert
-        ReadOrientationTag(sanitised, PhotographContentTypeConstants.Png).Should().Be(8);
-        PngChunksAreWellFormed(sanitised).Should().BeTrue();
-        PngChunkTypes(sanitised).Should().EndWith(["eXIf", "IEND"]);
+        sanitised!.Should().NotBeNull();
+        ReadOrientationTag(sanitised!, PhotographContentTypeConstants.Png).Should().Be(8);
+        PngChunksAreWellFormed(sanitised!).Should().BeTrue();
+        PngChunkTypes(sanitised!).Should().EndWith(["eXIf", "IEND"]);
     }
 
     [Fact]
@@ -222,14 +233,16 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Webp);
 
         // Assert
+        sanitised!.Should().NotBeNull();
         var reread = await sut.ReadAsync(
             sanitised,
             PhotographContentTypeConstants.Webp,
+            null,
             CancellationToken.None);
         reread.Should().Be(PhotoMetadataModel.Empty);
-        Encoding.ASCII.GetString(sanitised).Should().NotContain("EXIF");
-        WebpRiffSizeMatches(sanitised).Should().BeTrue();
-        WebpChunkTypes(sanitised).Should().Contain("VP8 ");
+        Encoding.ASCII.GetString(sanitised!).Should().NotContain("EXIF");
+        WebpRiffSizeMatches(sanitised!).Should().BeTrue();
+        WebpChunkTypes(sanitised!).Should().Contain("VP8 ");
     }
 
     [Fact]
@@ -245,9 +258,10 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Webp);
 
         // Assert
+        sanitised!.Should().NotBeNull();
         WebpExtendedFlags(bytes).Should().Be(0x0C);
-        WebpExtendedFlags(sanitised).Should().Be(0x00);
-        WebpRiffSizeMatches(sanitised).Should().BeTrue();
+        WebpExtendedFlags(sanitised!).Should().Be(0x00);
+        WebpRiffSizeMatches(sanitised!).Should().BeTrue();
     }
 
     [Fact]
@@ -263,9 +277,10 @@ public class WhenTestingSanitise : BasePhotoMetadataServiceTest
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Webp);
 
         // Assert
-        ReadOrientationTag(sanitised, PhotographContentTypeConstants.Webp).Should().Be(3);
-        (WebpExtendedFlags(sanitised) & 0x08).Should().Be(0x08);
-        (WebpExtendedFlags(sanitised) & 0x04).Should().Be(0x00);
-        WebpRiffSizeMatches(sanitised).Should().BeTrue();
+        sanitised!.Should().NotBeNull();
+        ReadOrientationTag(sanitised!, PhotographContentTypeConstants.Webp).Should().Be(3);
+        (WebpExtendedFlags(sanitised!) & 0x08).Should().Be(0x08);
+        (WebpExtendedFlags(sanitised!) & 0x04).Should().Be(0x00);
+        WebpRiffSizeMatches(sanitised!).Should().BeTrue();
     }
 }

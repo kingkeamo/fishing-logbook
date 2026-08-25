@@ -7,7 +7,8 @@ public interface IPhotoMetadataService
     Task<PhotoMetadataModel> ReadAsync(
         byte[] bytes,
         string contentType,
+        DateTimeOffset? fileLastModified,
         CancellationToken cancellationToken);
 
-    byte[] Sanitise(byte[] bytes, string contentType);
+    byte[]? Sanitise(byte[] bytes, string contentType);
 }

@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
@@ -30,7 +31,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns<Task<PhotoMetadataModel>>(_ =>
                 throw new InvalidOperationException("EXIF GPS 53.2707,-9.0568 at offset 42 in beach.jpg"));
         PassThroughSanitisation(photoMetadata);
@@ -69,10 +70,10 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
             .Returns(PhotoMetadataModel.Empty);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
-            .Returns<byte[]>(_ => throw new InvalidOperationException("GPS 53.2707 at offset 42"));
+            .Returns<byte[]?>(_ => throw new InvalidOperationException("GPS 53.2707 at offset 42"));
         var logging = QuietLogging();
         await using var context = CreateContext(store, logging: logging, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
@@ -165,6 +166,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         await photoMetadata.DidNotReceive().ReadAsync(
             Arg.Any<byte[]>(),
             Arg.Any<string>(),
+            Arg.Any<DateTimeOffset?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -211,7 +213,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse());
-        cut.FindAll("#catch-photo-date-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -221,6 +223,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         await photoMetadata.Received(1).ReadAsync(
             Arg.Is<byte[]>(bytes => bytes.SequenceEqual(new byte[] { FirstPhotograph })),
             "image/jpeg",
+            Arg.Any<DateTimeOffset?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -243,8 +246,8 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-photo-date-conflict").TextContent.Should()
-                .Contain("taken at different times"));
+            cut.Find("#catch-photo-metadata-conflict").TextContent.Should()
+                .Contain("different capture details"));
         cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-05T06:32");
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeTrue();
         await cut.Find("#save-catch-button").ClickAsync();
@@ -252,7 +255,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
     }
 
     [Fact]
-    public async Task ItShouldSaveOneCatchAfterTheAnglerConfirmsTheConflictingDate()
+    public async Task ItShouldSaveOneCatchAfterTheAnglerChoosesTheRepresentativePhotograph()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -267,13 +270,13 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         cut.FindComponents<InputFile>()[1].UploadFiles(
             JpegFile("a.jpg", FirstPhotograph),
             JpegFile("b.jpg", SecondPhotograph));
-        cut.WaitForAssertion(() => cut.Find("#catch-photo-date-conflict-confirm").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-use-details").Should().NotBeNull());
 
         // Act
-        await cut.Find("#catch-photo-date-conflict-confirm").ClickAsync();
+        await cut.Find("#catch-photo-use-details").ClickAsync();
 
         // Assert
-        cut.FindAll("#catch-photo-date-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
@@ -284,7 +287,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
     }
 
     [Fact]
-    public async Task ItShouldWarnAndAttachNoLocationWhenCoordinatesMateriallyDisagree()
+    public async Task ItShouldWarnAndAttachNoLocationWhileConflictingCoordinatesAreUnresolved()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -305,8 +308,8 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-photo-location-conflict").TextContent.Should()
-                .Contain("taken in different places"));
+            cut.Find("#catch-photo-metadata-conflict").TextContent.Should()
+                .Contain("different capture details"));
         cut.FindAll("#catch-location-from-photo").Should().BeEmpty();
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse();
         await cut.Find("#save-catch-button").ClickAsync();
@@ -318,7 +321,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
     }
 
     [Fact]
-    public async Task ItShouldAttachNoLocationAtAllWhenPhotographCoordinatesConflict()
+    public async Task ItShouldAttachNoLocationAtAllWhilePhotographCoordinatesConflict()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -341,7 +344,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             JpegFile("c.jpg", ThirdPhotograph));
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#catch-photo-location-conflict").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull());
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -444,7 +447,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         // Assert
         cut.WaitForAssertion(() => cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse());
         cut.FindAll("#catch-location-from-photo").Should().BeEmpty();
-        cut.FindAll("#catch-photo-date-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -454,6 +457,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         await photoMetadata.DidNotReceive().ReadAsync(
             Arg.Any<byte[]>(),
             Arg.Any<string>(),
+            Arg.Any<DateTimeOffset?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -600,8 +604,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32"));
-        cut.FindAll("#catch-photo-date-conflict").Should().BeEmpty();
-        cut.FindAll("#catch-photo-location-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
         cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 3 of 3");
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
@@ -638,8 +641,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32"));
-        cut.FindAll("#catch-photo-date-conflict").Should().BeEmpty();
-        cut.FindAll("#catch-photo-location-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
@@ -669,10 +671,79 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-photo-date-conflict").TextContent.Should()
-                .Contain("prises à des moments différents"));
-        cut.Find("#catch-photo-location-conflict").TextContent.Should()
-            .Contain("endroits différents");
+            cut.Find("#catch-photo-metadata-conflict").TextContent.Should()
+                .Contain("mêmes détails de prise de vue"));
+        cut.Find("#catch-photo-use-details").TextContent.Should()
+            .Contain("Utiliser les détails de cette photo");
+        cut.Find("#catch-photo-current-location").TextContent.Should()
+            .Contain("Position GPS disponible");
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldProposeTheFileTimestampWhenAGalleryPhotographHasNoCaptureDate()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var lastModified = DateTimeOffset.Parse("2026-08-22T10:28:43+00:00");
+        var photoMetadata = RealPhotoMetadata();
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[1].UploadFiles(
+            PhotographFileModifiedOn(
+                "capture_260822_102830.png",
+                PhotographContentTypeConstants.Png,
+                lastModified,
+                MinimalPng()));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2026-08-22T10:28"));
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        await cut.Find("#save-catch-button").ClickAsync();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.CaughtOn == lastModified
+                && catchRecord.Location == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotGiveACameraPhotographHistoricalSemanticsFromItsFileTimestamp()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var lastModified = DateTimeOffset.Parse("2026-08-22T10:28:43+00:00");
+        var photoMetadata = RealPhotoMetadata();
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[0].UploadFiles(
+            PhotographFileModifiedOn(
+                "now.jpg",
+                PhotographContentTypeConstants.Jpeg,
+                lastModified,
+                MinimalJpeg()));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse());
+        await cut.Find("#save-catch-button").ClickAsync();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.CaughtOn > DateTimeOffset.UtcNow.AddMinutes(-5)
+                && catchRecord.CaughtOn != lastModified),
+            Arg.Any<CancellationToken>());
+        await store.DidNotReceive().SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtOn == lastModified),
+            Arg.Any<CancellationToken>());
     }
 }

@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Features.Catch.Enums;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Services;
 
@@ -11,7 +12,20 @@ public class BasePhotoMetadataProposalServiceTest
 
     protected static PhotoMetadataModel Dated(string capturedOn)
     {
-        return new PhotoMetadataModel(DateTimeOffset.Parse(capturedOn), null, null);
+        return new PhotoMetadataModel(
+            DateTimeOffset.Parse(capturedOn),
+            null,
+            null,
+            PhotoCapturedOnSourceEnum.ExifOriginal);
+    }
+
+    protected static PhotoMetadataModel FileDated(string lastModified)
+    {
+        return new PhotoMetadataModel(
+            DateTimeOffset.Parse(lastModified),
+            null,
+            null,
+            PhotoCapturedOnSourceEnum.FileLastModified);
     }
 
     protected static PhotoMetadataModel Located(double latitude, double longitude)
@@ -21,6 +35,10 @@ public class BasePhotoMetadataProposalServiceTest
 
     protected static PhotoMetadataModel DatedAndLocated(string capturedOn, double latitude, double longitude)
     {
-        return new PhotoMetadataModel(DateTimeOffset.Parse(capturedOn), latitude, longitude);
+        return new PhotoMetadataModel(
+            DateTimeOffset.Parse(capturedOn),
+            latitude,
+            longitude,
+            PhotoCapturedOnSourceEnum.ExifOriginal);
     }
 }

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Features.Catch.Enums;
 using FishingLogBook.Web.Features.Catch.Models;
 
 namespace FishingLogBook.Web.Features.Catch.Services;
@@ -59,25 +60,48 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
     public async Task<PhotoMetadataModel> ReadAsync(
         byte[] bytes,
         string contentType,
+        DateTimeOffset? fileLastModified,
         CancellationToken cancellationToken)
     {
         var tiffOffset = FindTiffOffset(bytes, contentType);
-        if (tiffOffset < 0)
+        var values = tiffOffset < 0 ? null : ReadExifValues(bytes, tiffOffset);
+        var capturedOn = values is null
+            ? null
+            : await ResolveCapturedOnAsync(values, cancellationToken);
+        if (capturedOn is not null)
         {
-            return PhotoMetadataModel.Empty;
+            return new PhotoMetadataModel(
+                capturedOn,
+                values!.Latitude,
+                values.Longitude,
+                values.UsedDigitized
+                    ? PhotoCapturedOnSourceEnum.ExifDigitized
+                    : PhotoCapturedOnSourceEnum.ExifOriginal);
         }
 
-        var values = ReadExifValues(bytes, tiffOffset);
-        if (values is null)
-        {
-            return PhotoMetadataModel.Empty;
-        }
-
-        var capturedOn = await ResolveCapturedOnAsync(values, cancellationToken);
-        return new PhotoMetadataModel(capturedOn, values.Latitude, values.Longitude);
+        var fallback = PlausibleFileTimestamp(fileLastModified);
+        return new PhotoMetadataModel(
+            fallback,
+            values?.Latitude,
+            values?.Longitude,
+            fallback is null
+                ? PhotoCapturedOnSourceEnum.None
+                : PhotoCapturedOnSourceEnum.FileLastModified);
     }
 
-    public byte[] Sanitise(byte[] bytes, string contentType)
+    private static DateTimeOffset? PlausibleFileTimestamp(DateTimeOffset? fileLastModified)
+    {
+        if (fileLastModified is null
+            || fileLastModified.Value == default
+            || !IsPlausible(fileLastModified.Value.Year))
+        {
+            return null;
+        }
+
+        return fileLastModified.Value.ToUniversalTime();
+    }
+
+    public byte[]? Sanitise(byte[] bytes, string contentType)
     {
         var orientation = ReadOrientation(bytes, contentType);
         if (string.Equals(contentType, PhotographContentTypeConstants.Jpeg, StringComparison.OrdinalIgnoreCase))
@@ -95,7 +119,7 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
             return SanitiseWebp(bytes, orientation);
         }
 
-        return bytes;
+        return null;
     }
 
     private static ushort? ReadOrientation(byte[] bytes, string contentType)
@@ -116,17 +140,19 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
         return orientation is >= 1 and <= 8 ? orientation : null;
     }
 
-    private static byte[] SanitiseJpeg(byte[] bytes, ushort? orientation)
+    private static byte[]? SanitiseJpeg(byte[] bytes, ushort? orientation)
     {
-        if (!TryReadJpegLayout(bytes, out var segments, out var tailStart))
+        if (!TryReadJpegLayout(bytes, out var parts))
         {
-            return bytes;
+            return null;
         }
 
-        var retained = segments.Where(segment => IsRetainedJpegMarker(segment.Marker)).ToArray();
+        var retained = parts
+            .Where(part => part.IsEntropy || IsRetainedJpegMarker(part.Marker))
+            .ToArray();
         var output = new List<byte>(bytes.Length) { 0xFF, 0xD8 };
         var index = 0;
-        if (retained.Length > 0 && retained[0].Marker == App0Marker)
+        if (retained.Length > 0 && !retained[0].IsEntropy && retained[0].Marker == App0Marker)
         {
             output.AddRange(bytes.AsSpan(retained[0].Start, retained[0].TotalLength));
             index = 1;
@@ -138,7 +164,6 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
             output.AddRange(bytes.AsSpan(retained[index].Start, retained[index].TotalLength));
         }
 
-        output.AddRange(bytes.AsSpan(tailStart));
         return [.. output];
     }
 
@@ -171,11 +196,11 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
         return marker is App0Marker or App2Marker or App14Marker;
     }
 
-    private static byte[] SanitisePng(byte[] bytes, ushort? orientation)
+    private static byte[]? SanitisePng(byte[] bytes, ushort? orientation)
     {
         if (!TryReadPngChunks(bytes, out var chunks))
         {
-            return bytes;
+            return null;
         }
 
         var output = new List<byte>(bytes.Length);
@@ -214,11 +239,11 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
         output.AddRange(BigEndianBytes(Crc32([.. chunk])));
     }
 
-    private static byte[] SanitiseWebp(byte[] bytes, ushort? orientation)
+    private static byte[]? SanitiseWebp(byte[] bytes, ushort? orientation)
     {
         if (!TryReadWebpChunks(bytes, out var chunks))
         {
-            return bytes;
+            return null;
         }
 
         var keepOrientation = orientation is not (null or DefaultOrientation)
@@ -345,17 +370,18 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
 
     private static int FindJpegTiffOffset(byte[] bytes)
     {
-        if (!TryReadJpegLayout(bytes, out var segments, out _))
+        if (!TryReadJpegLayout(bytes, out var parts))
         {
             return -1;
         }
 
-        foreach (var segment in segments)
+        foreach (var part in parts)
         {
-            if (segment.Marker == App1Marker
-                && StartsWithExifIdentifier(bytes, segment.PayloadStart, segment.PayloadLength))
+            if (!part.IsEntropy
+                && part.Marker == App1Marker
+                && StartsWithExifIdentifier(bytes, part.PayloadStart, part.PayloadLength))
             {
-                return segment.PayloadStart + ExifIdentifierLength;
+                return part.PayloadStart + ExifIdentifierLength;
             }
         }
 
@@ -398,10 +424,9 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
         return -1;
     }
 
-    private static bool TryReadJpegLayout(byte[] bytes, out List<JpegSegment> segments, out int tailStart)
+    private static bool TryReadJpegLayout(byte[] bytes, out List<JpegPart> parts)
     {
-        segments = [];
-        tailStart = -1;
+        parts = [];
         if (bytes.Length < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8)
         {
             return false;
@@ -422,14 +447,15 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
                 continue;
             }
 
-            if (marker is StartOfScanMarker or EndOfImageMarker)
+            if (marker == EndOfImageMarker)
             {
-                tailStart = position;
+                parts.Add(JpegPart.Segment(marker, position, 2, position + 2, 0));
                 return true;
             }
 
             if (IsStandaloneMarker(marker))
             {
+                parts.Add(JpegPart.Segment(marker, position, 2, position + 2, 0));
                 position += 2;
                 continue;
             }
@@ -445,12 +471,39 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
                 return false;
             }
 
-            segments.Add(new JpegSegment(marker, position, 2 + length, position + 4, length - 2));
+            parts.Add(JpegPart.Segment(marker, position, 2 + length, position + 4, length - 2));
             position += 2 + length;
+            if (marker != StartOfScanMarker)
+            {
+                continue;
+            }
+
+            var entropyStart = position;
+            position = FindNextJpegMarker(bytes, position);
+            parts.Add(JpegPart.Entropy(entropyStart, position - entropyStart));
         }
 
-        tailStart = bytes.Length;
-        return true;
+        return false;
+    }
+
+    private static int FindNextJpegMarker(byte[] bytes, int position)
+    {
+        while (position + 1 < bytes.Length)
+        {
+            if (bytes[position] == 0xFF && !IsEntropyFollower(bytes[position + 1]))
+            {
+                return position;
+            }
+
+            position++;
+        }
+
+        return bytes.Length;
+    }
+
+    private static bool IsEntropyFollower(byte value)
+    {
+        return value == 0x00 || value == 0xFF || value is >= 0xD0 and <= 0xD7;
     }
 
     private static bool IsStandaloneMarker(byte marker)
@@ -554,11 +607,11 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
         var root = ReadIfd(bytes, tiffOffset, firstIfdOffset, bigEndian);
         var exif = ReadPointedIfd(bytes, tiffOffset, root, ExifIfdPointerTag, bigEndian);
         var gps = ReadPointedIfd(bytes, tiffOffset, root, GpsIfdPointerTag, bigEndian);
-        var (wallClockText, offsetText) = ReadCaptureText(bytes, tiffOffset, exif, bigEndian);
+        var (wallClockText, offsetText, usedDigitized) = ReadCaptureText(bytes, tiffOffset, exif, bigEndian);
         var (latitude, longitude) = ReadCoordinates(bytes, tiffOffset, gps, bigEndian);
         return wallClockText is null && latitude is null
             ? null
-            : new ExifValues(wallClockText, offsetText, latitude, longitude);
+            : new ExifValues(wallClockText, offsetText, usedDigitized, latitude, longitude);
     }
 
     private static bool TryReadTiffHeader(
@@ -644,7 +697,7 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
         return ReadIfd(bytes, tiffOffset, ReadUInt32(bytes, pointer.ValuePosition, bigEndian), bigEndian);
     }
 
-    private static (string? WallClockText, string? OffsetText) ReadCaptureText(
+    private static (string? WallClockText, string? OffsetText, bool UsedDigitized) ReadCaptureText(
         byte[] bytes,
         int tiffOffset,
         Dictionary<ushort, IfdEntry> exif,
@@ -653,13 +706,13 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
         var original = ReadAscii(bytes, tiffOffset, exif, DateTimeOriginalTag, bigEndian);
         if (original is not null)
         {
-            return (original, ReadAscii(bytes, tiffOffset, exif, OffsetTimeOriginalTag, bigEndian));
+            return (original, ReadAscii(bytes, tiffOffset, exif, OffsetTimeOriginalTag, bigEndian), false);
         }
 
         var digitized = ReadAscii(bytes, tiffOffset, exif, DateTimeDigitizedTag, bigEndian);
         return digitized is null
-            ? (null, null)
-            : (digitized, ReadAscii(bytes, tiffOffset, exif, OffsetTimeDigitizedTag, bigEndian));
+            ? (null, null, false)
+            : (digitized, ReadAscii(bytes, tiffOffset, exif, OffsetTimeDigitizedTag, bigEndian), true);
     }
 
     private static (double? Latitude, double? Longitude) ReadCoordinates(
@@ -894,12 +947,29 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
 
     private readonly record struct IfdEntry(ushort Type, uint Count, int ValuePosition);
 
-    private readonly record struct JpegSegment(
+    private readonly record struct JpegPart(
         byte Marker,
         int Start,
         int TotalLength,
         int PayloadStart,
-        int PayloadLength);
+        int PayloadLength,
+        bool IsEntropy)
+    {
+        public static JpegPart Segment(
+            byte marker,
+            int start,
+            int totalLength,
+            int payloadStart,
+            int payloadLength)
+        {
+            return new JpegPart(marker, start, totalLength, payloadStart, payloadLength, false);
+        }
+
+        public static JpegPart Entropy(int start, int length)
+        {
+            return new JpegPart(0, start, length, start, length, true);
+        }
+    }
 
     private readonly record struct PngChunk(
         string Type,
@@ -918,6 +988,7 @@ public sealed class PhotoMetadataService : IPhotoMetadataService
     private sealed record ExifValues(
         string? WallClockText,
         string? OffsetText,
+        bool UsedDigitized,
         double? Latitude,
         double? Longitude);
 }

@@ -90,18 +90,55 @@
                                       InputType="InputType.DateTimeLocal"
                                       Disabled="_isSaved"
                                       id="catch-caught-on" />
-                        @if (_dateConflict)
+                        @if (ShowPhotographChooser && !_isSaved)
                         {
-                            <MudAlert Severity="Severity.Warning" id="catch-photo-date-conflict">
-                                @Loc["Catch_PhotoDateConflict"]
-                            </MudAlert>
-                            <MudButton Variant="Variant.Outlined"
-                                       Size="Size.Small"
-                                       Color="Color.Primary"
-                                       OnClick="ConfirmCaughtOn"
-                                       id="catch-photo-date-conflict-confirm">
-                                @Loc["Catch_PhotoDateConflictConfirm"]
-                            </MudButton>
+                            @if (MetadataConflict)
+                            {
+                                <MudAlert Severity="Severity.Warning" id="catch-photo-metadata-conflict">
+                                    @Loc["Catch_PhotoMetadataConflict"]
+                                </MudAlert>
+                            }
+                            <MudStack Spacing="1"
+                                      id="catch-photo-current-metadata"
+                                      data-photograph-id="@CurrentPhotograph?.Id">
+                                <MudStack Row="true"
+                                          Spacing="2"
+                                          Justify="Justify.SpaceBetween"
+                                          AlignItems="AlignItems.Baseline"
+                                          Class="record-catch-photo-detail">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                        @Loc["Catch_PhotoCapturedOn"]
+                                    </MudText>
+                                    <MudText Typo="Typo.body2"
+                                             Align="Align.Right"
+                                             id="catch-photo-current-date"
+                                             data-captured-on="@CurrentPhotographCapturedOnValue">
+                                        @CurrentPhotographCapturedOnLabel
+                                    </MudText>
+                                </MudStack>
+                                <MudStack Row="true"
+                                          Spacing="2"
+                                          Justify="Justify.SpaceBetween"
+                                          AlignItems="AlignItems.Baseline"
+                                          Class="record-catch-photo-detail">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                        @Loc["Catch_PhotoLocation"]
+                                    </MudText>
+                                    <MudText Typo="Typo.body2"
+                                             Align="Align.Right"
+                                             id="catch-photo-current-location">
+                                        @CurrentPhotographLocationLabel
+                                    </MudText>
+                                </MudStack>
+                                <MudButton Variant="@(CurrentPhotographIsRepresentative ? Variant.Filled : Variant.Outlined)"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           Disabled="@(!CanUseCurrentPhotographDetails)"
+                                           OnClick="UseCurrentPhotographDetailsAsync"
+                                           id="catch-photo-use-details">
+                                    @Loc["Catch_PhotoUseTheseDetails"]
+                                </MudButton>
+                            </MudStack>
                         }
                         @if (_caughtOnInvalid)
                         {
@@ -162,19 +199,17 @@
                                           Id="record-catch-length" />
                     </MudStack>
 
-                    @if (_coordinateConflict && !_isSaved)
+                    @if ((PhotoLocationApplied || CoordinateConflict) && !_isSaved)
                     {
-                        <MudAlert Severity="Severity.Warning" id="catch-photo-location-conflict">
-                            @Loc["Catch_PhotoLocationConflict"]
-                        </MudAlert>
-                    }
-
-                    @if (_photoLocationApplied && !_isSaved)
-                    {
-                        <MudStack Spacing="1" id="catch-location-from-photo">
-                            <MudText Typo="Typo.caption" Color="Color.Success">
-                                @Loc["Catch_LocationFromPhoto"]
-                            </MudText>
+                        <MudStack Spacing="1" id="catch-location-photo-actions">
+                            @if (PhotoLocationApplied)
+                            {
+                                <MudText Typo="Typo.caption"
+                                         Color="Color.Success"
+                                         id="catch-location-from-photo">
+                                    @Loc["Catch_LocationFromPhoto"]
+                                </MudText>
+                            }
                             <MudButton Variant="Variant.Text"
                                        Size="Size.Small"
                                        Color="Color.Primary"

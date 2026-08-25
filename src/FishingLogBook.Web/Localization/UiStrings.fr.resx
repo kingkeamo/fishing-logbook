@@ -252,14 +252,26 @@
   <data name="Catch_LocationOnPrivate" xml:space="preserve">
     <value>Localisation activée · Privée</value>
   </data>
-  <data name="Catch_PhotoDateConflict" xml:space="preserve">
-    <value>Ces photos semblent avoir été prises à des moments différents. Choisissez la date de la prise.</value>
+  <data name="Catch_PhotoMetadataConflict" xml:space="preserve">
+    <value>Ces photos n’ont pas les mêmes détails de prise de vue. Choisissez la photo qui représente le mieux cette prise.</value>
   </data>
-  <data name="Catch_PhotoDateConflictConfirm" xml:space="preserve">
-    <value>Utiliser cette date</value>
+  <data name="Catch_PhotoUseTheseDetails" xml:space="preserve">
+    <value>Utiliser les détails de cette photo</value>
   </data>
-  <data name="Catch_PhotoLocationConflict" xml:space="preserve">
-    <value>Ces photos ont été prises à des endroits différents ; aucune position n’a donc été ajoutée.</value>
+  <data name="Catch_PhotoCapturedOn" xml:space="preserve">
+    <value>Date et heure de la prise</value>
+  </data>
+  <data name="Catch_PhotoCapturedOnUnknown" xml:space="preserve">
+    <value>Aucune date de photo disponible</value>
+  </data>
+  <data name="Catch_PhotoLocation" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="Catch_PhotoLocationAvailable" xml:space="preserve">
+    <value>Position GPS disponible</value>
+  </data>
+  <data name="Catch_PhotoLocationUnavailable" xml:space="preserve">
+    <value>Aucune position de photo disponible</value>
   </data>
   <data name="Catch_LocationFromPhoto" xml:space="preserve">
     <value>Position de la photo · Privée</value>

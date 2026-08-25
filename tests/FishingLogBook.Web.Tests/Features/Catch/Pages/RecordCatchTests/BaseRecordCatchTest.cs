@@ -74,10 +74,33 @@ public class BaseRecordCatchTest
         return TestTimeService.WithOffset(offset);
     }
 
+    protected static IPhotoMetadataService RealPhotoMetadata()
+    {
+        return new PhotoMetadataService(TestTimeService.WithOffset(TimeSpan.Zero));
+    }
+
+    protected static byte[] MinimalJpeg()
+    {
+        return
+        [
+            0xFF, 0xD8,
+            0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00,
+            0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+            0xFF, 0xDB, 0x00, 0x05, 0x00, 0x01, 0x02,
+            0xFF, 0xDA, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3F, 0x00,
+            0x9A, 0x2B, 0x7C,
+            0xFF, 0xD9
+        ];
+    }
+
     protected static IPhotoMetadataService NoPhotoMetadata()
     {
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(
+                Arg.Any<byte[]>(),
+                Arg.Any<string>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<CancellationToken>())
             .Returns(PhotoMetadataModel.Empty);
         PassThroughSanitisation(photoMetadata);
         return photoMetadata;
@@ -94,7 +117,11 @@ public class BaseRecordCatchTest
         byte[] sanitised)
     {
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(
+                Arg.Any<byte[]>(),
+                Arg.Any<string>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<CancellationToken>())
             .Returns(metadata);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns(sanitised);
         return photoMetadata;
@@ -104,7 +131,11 @@ public class BaseRecordCatchTest
         params (byte Marker, PhotoMetadataModel Metadata)[] photographs)
     {
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(
+                Arg.Any<byte[]>(),
+                Arg.Any<string>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<CancellationToken>())
             .Returns(call =>
             {
                 var bytes = call.ArgAt<byte[]>(0);
@@ -326,11 +357,43 @@ public class BaseRecordCatchTest
         return PhotographFile(name, PhotographContentTypeConstants.Jpeg, bytes);
     }
 
+    protected static InputFileContent PhotographFileModifiedOn(
+        string name,
+        string contentType,
+        DateTimeOffset lastModified,
+        params byte[] bytes)
+    {
+        return InputFileContent.CreateFromBinary(bytes, name, lastModified, contentType);
+    }
+
+    protected static byte[] MinimalPng()
+    {
+        return
+        [
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89,
+            0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54,
+            0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01,
+            0x0D, 0x0A, 0x2D, 0xB4,
+            0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+        ];
+    }
+
     protected static Guid VisiblePhotographId(IRenderedComponent<RecordCatch> cut)
     {
         var photographId = cut.Find("#catch-photo-carousel img")
             .GetAttribute("data-photograph-id");
         return Guid.Parse(photographId
             ?? throw new InvalidOperationException("The visible photograph has no photograph id."));
+    }
+
+    protected static Guid CurrentMetadataPhotographId(IRenderedComponent<RecordCatch> cut)
+    {
+        var photographId = cut.Find("#catch-photo-current-metadata")
+            .GetAttribute("data-photograph-id");
+        return Guid.Parse(photographId
+            ?? throw new InvalidOperationException("The displayed metadata has no photograph id."));
     }
 }

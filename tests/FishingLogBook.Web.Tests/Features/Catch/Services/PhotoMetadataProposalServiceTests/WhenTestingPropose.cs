@@ -105,6 +105,28 @@ public class WhenTestingPropose : BasePhotoMetadataProposalServiceTest
     }
 
     [Fact]
+    public void ItShouldFlagBothConflictsWhenDatesAndCoordinatesDisagree()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            DatedAndLocated("2026-08-20T07:00:00Z", 53.2707, -9.0568),
+            DatedAndLocated("2026-08-14T15:10:00Z", 51.8985, -8.4756)
+        };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.HasConflictingDates.Should().BeTrue();
+        proposal.HasConflictingCoordinates.Should().BeTrue();
+        proposal.HasCoordinates.Should().BeFalse();
+        proposal.Latitude.Should().BeNull();
+        proposal.Longitude.Should().BeNull();
+        proposal.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-14T15:10:00Z"));
+    }
+
+    [Fact]
     public void ItShouldNotFlagPhotographsThatSimplyLackMetadata()
     {
         // Arrange
@@ -244,5 +266,130 @@ public class WhenTestingPropose : BasePhotoMetadataProposalServiceTest
         proposal.Longitude.Should().Be(-9.0570);
         proposal.CoordinatesCapturedOn.Should().BeNull();
         proposal.HasConflictingCoordinates.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ItShouldTreatACompatibleFileTimestampAsOneCatchWithoutWarning()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            Dated("2026-08-22T10:28:00Z"),
+            FileDated("2026-08-22T10:29:00Z")
+        };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.HasConflictingDates.Should().BeFalse();
+        proposal.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-22T10:28:00Z"));
+    }
+
+    [Fact]
+    public void ItShouldNotLetAnIncompatibleFileTimestampOverruleTheExifDate()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            Dated("2026-08-22T10:28:00Z"),
+            FileDated("2026-08-10T09:00:00Z")
+        };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.HasConflictingDates.Should().BeFalse();
+        proposal.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-22T10:28:00Z"));
+    }
+
+    [Fact]
+    public void ItShouldFlagAConflictBetweenFileTimestampsWhenNoPhotographCarriesExifEvidence()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            FileDated("2026-08-22T10:28:00Z"),
+            FileDated("2026-08-10T09:00:00Z")
+        };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.HasConflictingDates.Should().BeTrue();
+        proposal.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-10T09:00:00Z"));
+    }
+
+    [Fact]
+    public void ItShouldNotFlagAConflictWhenOnlyAMetadatalessPhotographCarriesAFileTimestamp()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            DatedAndLocated("2026-08-22T10:28:00Z", 53.2707, -9.0568),
+            Dated("2026-08-22T10:29:30Z"),
+            FileDated("2026-08-25T11:59:00Z")
+        };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.HasConflictingDates.Should().BeFalse();
+        proposal.HasConflictingCoordinates.Should().BeFalse();
+        proposal.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-22T10:28:00Z"));
+        proposal.Latitude.Should().Be(53.2707);
+    }
+
+    [Fact]
+    public void ItShouldPreferTheExifDateOverAnEarlierFileTimestamp()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            FileDated("2026-08-22T10:28:00Z"),
+            Dated("2026-08-22T10:28:30Z")
+        };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.HasConflictingDates.Should().BeFalse();
+        proposal.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-22T10:28:30Z"));
+    }
+
+    [Fact]
+    public void ItShouldUseTheEarliestFileTimestampWhenNoPhotographCarriesExifEvidence()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            FileDated("2026-08-22T10:29:00Z"),
+            FileDated("2026-08-22T10:28:43Z")
+        };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.CaughtOn.Should().Be(DateTimeOffset.Parse("2026-08-22T10:28:43Z"));
+        proposal.HasConflictingDates.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ItShouldIgnoreAFileTimestampBeyondTheAllowedFutureSkew()
+    {
+        // Arrange
+        var photographs = new[] { FileDated("2026-08-25T13:00:00Z") };
+
+        // Act
+        var proposal = Sut.Propose(photographs, Now);
+
+        // Assert
+        proposal.CaughtOn.Should().BeNull();
+        proposal.HasConflictingDates.Should().BeFalse();
     }
 }

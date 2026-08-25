@@ -17,7 +17,9 @@ public partial class CatchEdit
         }
 
         _addPhotoFailed = false;
+        _unpreparablePhotograph = false;
         var rejectedUnsupported = false;
+        var rejectedUnpreparable = false;
         var updated = _catch;
         foreach (var file in args.GetMultipleFiles(10))
         {
@@ -27,10 +29,18 @@ public partial class CatchEdit
                 continue;
             }
 
-            updated = await AppendPhotographAsync(updated, file);
+            var appended = await AppendPhotographAsync(updated, file);
+            if (appended is null)
+            {
+                rejectedUnpreparable = true;
+                continue;
+            }
+
+            updated = appended;
         }
 
         _unsupportedFormat = rejectedUnsupported;
+        _unpreparablePhotograph = rejectedUnpreparable;
         if (ReferenceEquals(updated, _catch))
         {
             return;
@@ -49,21 +59,43 @@ public partial class CatchEdit
         }
     }
 
-    private async Task<CatchModel> AppendPhotographAsync(CatchModel current, IBrowserFile file)
+    private async Task<CatchModel?> AppendPhotographAsync(CatchModel current, IBrowserFile file)
     {
         await using var stream = file.OpenReadStream(MaxPhotographBytes);
         using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer, _cancellationTokenSource.Token);
+        var sanitised = await SanitisePhotographAsync(buffer.ToArray(), file.ContentType);
+        if (sanitised is null)
+        {
+            return null;
+        }
+
         var photograph = new CatchPhotographModel(
             Guid.NewGuid(),
             current.Id,
             file.ContentType,
-            buffer.ToArray());
+            sanitised);
         return current with
         {
             Photographs = [.. current.Photographs, photograph],
             SyncStatus = PendingOverallStatus(current.SyncStatus)
         };
+    }
+
+    private async Task<byte[]?> SanitisePhotographAsync(byte[] bytes, string contentType)
+    {
+        try
+        {
+            return PhotoMetadata.Sanitise(bytes, contentType);
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "removing photograph metadata",
+                $"Photograph metadata could not be removed ({exception.GetType().Name}).",
+                CancellationToken.None);
+            return null;
+        }
     }
 
     private async Task OnRemovePhotographAsync(Guid photographId)

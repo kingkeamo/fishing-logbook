@@ -54,7 +54,11 @@ public class BaseOfflineRecordCatchTest
     protected static IPhotoMetadataService NoPhotoMetadata()
     {
         var photoMetadata = Substitute.For<IPhotoMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(
+                Arg.Any<byte[]>(),
+                Arg.Any<string>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<CancellationToken>())
             .Returns(PhotoMetadataModel.Empty);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
             .Returns(call => call.ArgAt<byte[]>(0));
