@@ -17,6 +17,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
+using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using NSubstitute;
@@ -109,10 +110,7 @@ public class BaseCatchListTest
 
     protected static ITimeService OffsetTime(TimeSpan offset)
     {
-        var time = Substitute.For<ITimeService>();
-        time.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
-            .Returns(call => ToDateTimeLocal(call.Arg<DateTimeOffset>(), offset));
-        return time;
+        return TestTimeService.WithOffset(offset);
     }
 
     protected static ITimeService FixedTodayTime(string localToday)
@@ -127,12 +125,6 @@ public class BaseCatchListTest
                     : instant.UtcDateTime.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
             });
         return time;
-    }
-
-    private static string ToDateTimeLocal(DateTimeOffset instant, TimeSpan offset)
-    {
-        return instant.ToUniversalTime().UtcDateTime.Add(offset)
-            .ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
     }
 
     protected static CatchModel StoredCatch(

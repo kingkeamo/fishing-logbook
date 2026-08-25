@@ -249,6 +249,21 @@
   <data name="Catch_LocationOnPrivate" xml:space="preserve">
     <value>Localisation activée · Privée</value>
   </data>
+  <data name="Catch_PhotoDateConflict" xml:space="preserve">
+    <value>Ces photos semblent avoir été prises à des moments différents. Choisissez la date de la prise.</value>
+  </data>
+  <data name="Catch_PhotoDateConflictConfirm" xml:space="preserve">
+    <value>Utiliser cette date</value>
+  </data>
+  <data name="Catch_PhotoLocationConflict" xml:space="preserve">
+    <value>Ces photos ont été prises à des endroits différents ; aucune position n’a donc été ajoutée.</value>
+  </data>
+  <data name="Catch_LocationFromPhoto" xml:space="preserve">
+    <value>Position de la photo · Privée</value>
+  </data>
+  <data name="Catch_LocationUseCurrent" xml:space="preserve">
+    <value>Utiliser plutôt ma position actuelle</value>
+  </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Prises</value>
   </data>

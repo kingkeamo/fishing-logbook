@@ -249,6 +249,21 @@
   <data name="Catch_LocationOnPrivate" xml:space="preserve">
     <value>Location on · Private</value>
   </data>
+  <data name="Catch_PhotoDateConflict" xml:space="preserve">
+    <value>These photos appear to have been taken at different times. Choose the catch date.</value>
+  </data>
+  <data name="Catch_PhotoDateConflictConfirm" xml:space="preserve">
+    <value>Use this date</value>
+  </data>
+  <data name="Catch_PhotoLocationConflict" xml:space="preserve">
+    <value>These photos were taken in different places, so no location has been added.</value>
+  </data>
+  <data name="Catch_LocationFromPhoto" xml:space="preserve">
+    <value>Location from photo · Private</value>
+  </data>
+  <data name="Catch_LocationUseCurrent" xml:space="preserve">
+    <value>Use my current location instead</value>
+  </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Catches</value>
   </data>

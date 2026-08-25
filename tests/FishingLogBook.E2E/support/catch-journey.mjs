@@ -48,11 +48,20 @@ export async function createCatch(page, waitForServer = false, options = {}) {
     if (options.length !== undefined) {
         await setMeasurement(page, 'record-catch', 'length', options.length);
     }
-    const photoCount = options.photoCount ?? 1;
-    await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles(
-        Array.from({ length: photoCount }, (_, index) => ({
-            name: `e2e-catch-${index + 1}.png`, mimeType: 'image/png', buffer: png
-        })));
+    const files = options.files ?? Array.from({ length: options.photoCount ?? 1 }, (_, index) => ({
+        name: `e2e-catch-${index + 1}.png`, mimeType: 'image/png', buffer: png
+    }));
+    const photoCount = files.length;
+    const input = options.useCamera ? '#catch-photo-camera' : '#catch-photo-gallery';
+    await page.locator(`${input} input, ${input}`).setInputFiles(files);
+    if (options.resolveDateConflict) {
+        await expect(page.locator('#catch-photo-date-conflict')).toBeVisible();
+        await page.locator('#catch-photo-date-conflict-confirm').click();
+        await expect(page.locator('#catch-photo-date-conflict')).toBeHidden();
+    }
+    if (options.caughtOn) {
+        await page.locator('#catch-caught-on').fill(options.caughtOn);
+    }
     if (options.allowLocation) {
         await page.locator('#catch-location-allow').click();
     }

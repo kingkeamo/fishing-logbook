@@ -47,7 +47,8 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("a.jpg", 0xFF, 0xD8, 0xFF));
         var photographId = VisiblePhotographId(cut);
-        var caughtOn = cut.Find("#catch-caught-on").TextContent;
+        var caughtOn = cut.Find("#catch-caught-on").GetAttribute("value");
+        caughtOn.Should().NotBeNullOrWhiteSpace();
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(
@@ -58,7 +59,7 @@ public class WhenTestingPhotograph : BaseRecordCatchTest
             cut.Find("#catch-photo-unsupported").TextContent.Should().Contain("This photo format isn't supported"));
         VisiblePhotographId(cut).Should().Be(photographId);
         cut.Find("#catch-photo-count").TextContent.Should().Contain("Photo 1 of 1");
-        cut.Find("#catch-caught-on").TextContent.Should().Be(caughtOn);
+        cut.Find("#catch-caught-on").GetAttribute("value").Should().Be(caughtOn);
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(

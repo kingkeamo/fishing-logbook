@@ -3,9 +3,10 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Location;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
-using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
@@ -15,6 +16,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
+using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -39,7 +41,9 @@ public class BaseRecordCatchTest
         ICatchSynchroniser? synchroniser = null,
         ILoggingService? logging = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        ITimeService? time = null,
+        IPhotoMetadataService? photoMetadata = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -52,9 +56,45 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
+        context.Services.AddSingleton(time ?? UtcTime());
+        context.Services.AddSingleton(photoMetadata ?? NoPhotoMetadata());
+        context.Services.AddSingleton<IPhotoMetadataProposalService, PhotoMetadataProposalService>();
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static ITimeService UtcTime()
+    {
+        return TestTimeService.WithOffset(TimeSpan.Zero);
+    }
+
+    protected static ITimeService OffsetTime(TimeSpan offset)
+    {
+        return TestTimeService.WithOffset(offset);
+    }
+
+    protected static IPhotoMetadataService NoPhotoMetadata()
+    {
+        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(PhotoMetadataModel.Empty);
+        return photoMetadata;
+    }
+
+    protected static IPhotoMetadataService PhotoMetadataFor(
+        params (byte Marker, PhotoMetadataModel Metadata)[] photographs)
+    {
+        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var bytes = call.ArgAt<byte[]>(0);
+                var match = photographs.FirstOrDefault(photograph =>
+                    bytes.Length > 0 && bytes[0] == photograph.Marker);
+                return Task.FromResult(match.Metadata ?? PhotoMetadataModel.Empty);
+            });
+        return photoMetadata;
     }
 
     protected static ILoggingService QuietLogging()
@@ -194,6 +234,16 @@ public class BaseRecordCatchTest
             .Returns(new LocationPromptStatus(false, false, true));
         location.TryCaptureAsync(false, Arg.Any<CancellationToken>())
             .Returns(captured[0], captured.Skip(1).ToArray());
+        return location;
+    }
+
+    protected static ILocationService GrantedLocationOnRequest(CatchLocationModel captured)
+    {
+        var location = Substitute.For<ILocationService>();
+        location.GetPromptStatusAsync(Arg.Any<CancellationToken>())
+            .Returns(new LocationPromptStatus(false, false, true));
+        location.TryCaptureAsync(true, Arg.Any<CancellationToken>()).Returns(captured);
+        location.TryCaptureAsync(false, Arg.Any<CancellationToken>()).Returns((CatchLocationModel?)null);
         return location;
     }
 

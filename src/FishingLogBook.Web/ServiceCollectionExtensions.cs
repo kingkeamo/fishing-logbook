@@ -85,6 +85,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILocalCatchOwnerService, LocalCatchOwnerService>();
         services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddScoped<ICatchDateGroupingService, CatchDateGroupingService>();
+        services.AddScoped<IPhotoMetadataService, PhotoMetadataService>();
+        services.AddScoped<IPhotoMetadataProposalService, PhotoMetadataProposalService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
         services.AddScoped<IDiagnosticEventStore, IndexedDbDiagnosticEventStore>();
