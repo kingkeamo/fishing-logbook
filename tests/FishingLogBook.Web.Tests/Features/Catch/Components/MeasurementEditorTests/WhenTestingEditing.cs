@@ -23,6 +23,42 @@ public class WhenTestingEditing : BaseMeasurementEditorTest
     }
 
     [Fact]
+    public async Task ItShouldKeepTheWeightVisualWithinRangeForANegativeExactValue()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var (cut, dialog) = await ShowAsync(context, Weight());
+
+        // Act
+        cut.Find("#measurement-exact-value").Input("-5");
+        await cut.Find("#measurement-apply").ClickAsync();
+
+        // Assert
+        cut.Find("#measurement-validation").Should().NotBeNull();
+        cut.Find("#measurement-slider").GetAttribute("value").Should().Be("0");
+        cut.Find(".measurement-dial-needle").GetAttribute("transform").Should().Be("rotate(0 120 70)");
+        dialog.Result.IsCompleted.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheLengthVisualWithinRangeForANegativeExactValue()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var (cut, dialog) = await ShowAsync(context, Length());
+
+        // Act
+        cut.Find("#measurement-exact-value").Input("-5");
+        await cut.Find("#measurement-apply").ClickAsync();
+
+        // Assert
+        cut.Find("#measurement-validation").Should().NotBeNull();
+        cut.Find("#measurement-slider").GetAttribute("value").Should().Be("0");
+        cut.Find(".measurement-tape-strip").GetAttribute("width").Should().Be("12");
+        dialog.Result.IsCompleted.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ItShouldRenderTheWeightDialAtTheCurrentValue()
     {
         // Arrange

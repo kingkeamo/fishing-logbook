@@ -60,7 +60,7 @@ public partial class MeasurementEditorModal : ComponentBase
         }
     }
 
-    private decimal SliderValue => Math.Min(DisplayValue ?? 0m, SliderMaximum);
+    private decimal SliderValue => Math.Clamp(DisplayValue ?? 0m, 0m, SliderMaximum);
 
     private static IEnumerable<int> DialTickAngles => Enumerable.Range(0, 24).Select(index => index * 15);
 
