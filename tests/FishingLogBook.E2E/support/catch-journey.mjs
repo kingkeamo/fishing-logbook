@@ -28,7 +28,7 @@ export async function recordCatch(page, notes, waitForServer = false) {
     return id;
 }
 
-export async function createCatch(page, waitForServer = false) {
+export async function createCatch(page, waitForServer = false, options = {}) {
     if (new URL(page.url()).pathname !== '/catches') {
         await page.goto('/catches');
     }
@@ -38,8 +38,10 @@ export async function createCatch(page, waitForServer = false) {
         cards.map(card => card.id.replace('catch-card-', ''))));
     await page.locator('#catch-record-link').click();
     await expect(page.locator('#record-catch-title')).toBeVisible();
-    await page.locator('#record-catch-method-Fly').click();
-    await page.locator('#record-catch-species-BrownTrout').click();
+    const methodCode = options.methodCode ?? 'Fly';
+    const speciesCode = options.speciesCode ?? 'BrownTrout';
+    await selectCatalogueValue(page, 'method', methodCode);
+    await selectCatalogueValue(page, 'species', speciesCode);
     await page.locator('#catch-photo-gallery input, #catch-photo-gallery').setInputFiles({
         name: 'e2e-catch.png', mimeType: 'image/png', buffer: png
     });
@@ -68,6 +70,19 @@ export async function createCatch(page, waitForServer = false) {
     const card = page.locator(`#catch-card-${id}`);
     await expect(card).toBeVisible();
     return id;
+}
+
+async function selectCatalogueValue(page, type, code) {
+    const chip = page.locator(`#record-catch-${type}-${code}`);
+    if (await chip.count() > 0) {
+        await chip.click();
+        return;
+    }
+
+    await page.locator(`#record-catch-${type}-more`).click();
+    await page.locator('#catalogue-picker-modal-search').fill(code);
+    await page.locator(`#catalogue-picker-modal-option-${code}`).click();
+    await page.locator('#catalogue-picker-modal-save').click();
 }
 
 export async function editCatch(page, id, changes, waitForServer = false) {
