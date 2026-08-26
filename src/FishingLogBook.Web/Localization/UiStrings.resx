@@ -183,34 +183,34 @@
   <data name="Catch_RecordOwnerUnavailable" xml:space="preserve">
     <value>We could not confirm who is recording this catch. Please sign in again and retry.</value>
   </data>
-  <data name="Catch_TakePhoto" xml:space="preserve">
+  <data name="Photograph_TakePhoto" xml:space="preserve">
     <value>Take photo</value>
   </data>
-  <data name="Catch_ChoosePhoto" xml:space="preserve">
+  <data name="Photograph_ChoosePhoto" xml:space="preserve">
     <value>Choose photo</value>
   </data>
-  <data name="Catch_PhotographAlt" xml:space="preserve">
+  <data name="Photograph_Alt" xml:space="preserve">
     <value>Catch photograph</value>
   </data>
-  <data name="Catch_PhotographAltNumbered" xml:space="preserve">
+  <data name="Photograph_AltNumbered" xml:space="preserve">
     <value>Catch photograph {0} of {1}</value>
   </data>
-  <data name="Catch_PhotoUnsupported" xml:space="preserve">
+  <data name="Photograph_Unsupported" xml:space="preserve">
     <value>This photo format isn't supported. Please use JPEG, PNG or WebP.</value>
   </data>
-  <data name="Catch_PhotoNotPrepared" xml:space="preserve">
+  <data name="Photograph_NotPrepared" xml:space="preserve">
     <value>This photo could not be prepared for saving and was not added. Please try another photo.</value>
   </data>
-  <data name="Catch_RemovePhoto" xml:space="preserve">
+  <data name="Photograph_Remove" xml:space="preserve">
     <value>Remove photo</value>
   </data>
-  <data name="Catch_PhotoPosition" xml:space="preserve">
+  <data name="Photograph_Position" xml:space="preserve">
     <value>Photo {0} of {1}</value>
   </data>
-  <data name="Catch_PreviousPhoto" xml:space="preserve">
+  <data name="Photograph_Previous" xml:space="preserve">
     <value>Previous photo</value>
   </data>
-  <data name="Catch_NextPhoto" xml:space="preserve">
+  <data name="Photograph_Next" xml:space="preserve">
     <value>Next photo</value>
   </data>
   <data name="Catch_RecordAnother" xml:space="preserve">
@@ -255,22 +255,22 @@
   <data name="Catch_PhotoMetadataConflict" xml:space="preserve">
     <value>These photos have different capture details. Choose the photo that best represents this catch.</value>
   </data>
-  <data name="Catch_PhotoUseTheseDetails" xml:space="preserve">
+  <data name="Photograph_UseTheseDetails" xml:space="preserve">
     <value>Use this photo's details</value>
   </data>
-  <data name="Catch_PhotoCapturedOn" xml:space="preserve">
+  <data name="Photograph_CapturedOn" xml:space="preserve">
     <value>Caught date and time</value>
   </data>
-  <data name="Catch_PhotoCapturedOnUnknown" xml:space="preserve">
+  <data name="Photograph_CapturedOnUnknown" xml:space="preserve">
     <value>No photo date available</value>
   </data>
-  <data name="Catch_PhotoLocation" xml:space="preserve">
+  <data name="Photograph_Location" xml:space="preserve">
     <value>Location</value>
   </data>
-  <data name="Catch_PhotoLocationAvailable" xml:space="preserve">
+  <data name="Photograph_LocationAvailable" xml:space="preserve">
     <value>GPS location available</value>
   </data>
-  <data name="Catch_PhotoLocationUnavailable" xml:space="preserve">
+  <data name="Photograph_LocationUnavailable" xml:space="preserve">
     <value>No photo location available</value>
   </data>
   <data name="Catch_LocationFromPhoto" xml:space="preserve">
@@ -312,7 +312,7 @@
   <data name="Catch_MoreActions" xml:space="preserve">
     <value>More actions</value>
   </data>
-  <data name="Catch_NoPhotograph" xml:space="preserve">
+  <data name="Photograph_None" xml:space="preserve">
     <value>No photograph</value>
   </data>
   <data name="Catch_Search" xml:space="preserve">

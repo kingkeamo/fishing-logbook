@@ -7,6 +7,8 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.Forms;
 using NSubstitute;
@@ -30,9 +32,9 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
-            .Returns<Task<PhotoMetadataModel>>(_ =>
+            .Returns<Task<PhotographMetadataModel>>(_ =>
                 throw new InvalidOperationException("EXIF GPS 53.2707,-9.0568 at offset 42 in beach.jpg"));
         PassThroughSanitisation(photoMetadata);
         var logging = QuietLogging();
@@ -69,9 +71,9 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
-            .Returns(PhotoMetadataModel.Empty);
+            .Returns(PhotographMetadataModel.Empty);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
             .Returns<byte[]?>(_ => throw new InvalidOperationException("GPS 53.2707 at offset 42"));
         var logging = QuietLogging();
@@ -108,7 +110,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var sanitisedBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xD9 };
         var photoMetadata = SanitisingPhotoMetadata(
-            new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568),
+            new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568),
             sanitisedBytes);
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
@@ -143,7 +145,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var sanitisedBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xD9 };
         var photoMetadata = SanitisingPhotoMetadata(
-            new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568),
+            new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568),
             sanitisedBytes);
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
@@ -179,7 +181,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, null, null)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -234,8 +236,8 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, null, null)),
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture.AddDays(-9), null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, null, null)),
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture.AddDays(-9), null, null)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -263,8 +265,8 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, null, null)),
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture.AddDays(-9), null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, null, null)),
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture.AddDays(-9), null, null)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -296,8 +298,8 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var location = GrantedLocation(SampleLocation());
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)),
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture.AddMinutes(2), 51.8985, -8.4756)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)),
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture.AddMinutes(2), 51.8985, -8.4756)));
         await using var context = CreateContext(store, location: location, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -330,9 +332,9 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var location = GrantedLocation(SampleLocation(51.5074, -0.1278));
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, PhotoMetadataModel.Empty),
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)),
-            (ThirdPhotograph, new PhotoMetadataModel(HistoricCapture.AddMinutes(2), 51.8985, -8.4756)));
+            (FirstPhotograph, PhotographMetadataModel.Empty),
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)),
+            (ThirdPhotograph, new PhotographMetadataModel(HistoricCapture.AddMinutes(2), 51.8985, -8.4756)));
         await using var context = CreateContext(store, location: location, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("a.jpg", FirstPhotograph));
@@ -361,7 +363,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)));
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("camera.jpg", FirstPhotograph));
@@ -406,7 +408,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         location.TryCaptureAsync(false, Arg.Any<CancellationToken>())
             .Returns((CatchLocationModel?)null);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, null, null)));
         await using var context = CreateContext(store, location: location, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("a.jpg", FirstPhotograph));
@@ -437,7 +439,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -471,7 +473,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var location = GrantedLocation(SampleLocation(51.5074, -0.1278));
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)));
         await using var context = CreateContext(store, location: location, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -505,7 +507,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var location = GrantedLocationOnRequest(SampleLocation(51.5074, -0.1278));
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)));
         await using var context = CreateContext(store, location: location, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("a.jpg", FirstPhotograph));
@@ -534,7 +536,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, null, null)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("a.jpg", FirstPhotograph));
@@ -561,7 +563,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -589,9 +591,9 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture.AddSeconds(90), 53.2710, -9.0568)),
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0570)),
-            (ThirdPhotograph, PhotoMetadataModel.Empty));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture.AddSeconds(90), 53.2710, -9.0568)),
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0570)),
+            (ThirdPhotograph, PhotographMetadataModel.Empty));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -626,9 +628,9 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, PhotoMetadataModel.Empty),
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)),
-            (ThirdPhotograph, PhotoMetadataModel.Empty));
+            (FirstPhotograph, PhotographMetadataModel.Empty),
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)),
+            (ThirdPhotograph, PhotographMetadataModel.Empty));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -659,8 +661,8 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.French);
         var store = Substitute.For<ICatchStore>();
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(HistoricCapture, 53.2707, -9.0568)),
-            (SecondPhotograph, new PhotoMetadataModel(HistoricCapture.AddDays(-9), 51.8985, -8.4756)));
+            (FirstPhotograph, new PhotographMetadataModel(HistoricCapture, 53.2707, -9.0568)),
+            (SecondPhotograph, new PhotographMetadataModel(HistoricCapture.AddDays(-9), 51.8985, -8.4756)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 

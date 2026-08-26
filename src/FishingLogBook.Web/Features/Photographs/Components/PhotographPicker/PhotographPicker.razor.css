@@ -1,0 +1,43 @@
+.photograph-picker {
+    display: flex;
+    position: relative;
+    gap: 0.75rem;
+}
+
+.photograph-picker-action {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--mud-default-borderradius);
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+}
+
+.photograph-picker-action-primary {
+    border: 1px solid var(--mud-palette-primary);
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+.photograph-picker-action-secondary {
+    border: 1px solid var(--mud-palette-lines-default);
+    background-color: transparent;
+    color: var(--mud-palette-text-primary);
+    font-weight: 400;
+}
+
+::deep .photograph-picker-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

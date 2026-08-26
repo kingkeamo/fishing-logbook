@@ -1,15 +1,16 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
-using Microsoft.AspNetCore.Components.Forms;
+using FishingLogBook.Web.Features.Photographs.Models;
 
 namespace FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
 
 public partial class CatchEdit
 {
-    private async Task OnAddPhotographsSelected(InputFileChangeEventArgs args)
+    private async Task OnPhotographsPreparedAsync(IReadOnlyList<PreparedPhotographModel> prepared)
     {
         if (_catch is null)
         {
@@ -17,33 +18,12 @@ public partial class CatchEdit
         }
 
         _addPhotoFailed = false;
-        _unpreparablePhotograph = false;
-        var rejectedUnsupported = false;
-        var rejectedUnpreparable = false;
         var updated = _catch;
-        foreach (var file in args.GetMultipleFiles(10))
+        foreach (var photograph in prepared)
         {
-            if (!PhotographContentTypeConstants.IsAllowed(file.ContentType))
-            {
-                rejectedUnsupported = true;
-                continue;
-            }
-
-            var appended = await AppendPhotographAsync(updated, file);
-            if (appended is null)
-            {
-                rejectedUnpreparable = true;
-                continue;
-            }
-
-            updated = appended;
-        }
-
-        _unsupportedFormat = rejectedUnsupported;
-        _unpreparablePhotograph = rejectedUnpreparable;
-        if (ReferenceEquals(updated, _catch))
-        {
-            return;
+            _preparedPhotographs.Add(photograph);
+            updated = Append(updated, photograph);
+            _activePhotographId = photograph.Id;
         }
 
         try
@@ -59,42 +39,68 @@ public partial class CatchEdit
         }
     }
 
-    private async Task<CatchModel?> AppendPhotographAsync(CatchModel current, IBrowserFile file)
+    private static CatchModel Append(CatchModel current, PreparedPhotographModel photograph)
     {
-        await using var stream = file.OpenReadStream(MaxPhotographBytes);
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer, _cancellationTokenSource.Token);
-        var sanitised = await SanitisePhotographAsync(buffer.ToArray(), file.ContentType);
-        if (sanitised is null)
-        {
-            return null;
-        }
-
-        var photograph = new CatchPhotographModel(
-            Guid.NewGuid(),
-            current.Id,
-            file.ContentType,
-            sanitised);
         return current with
         {
-            Photographs = [.. current.Photographs, photograph],
+            Photographs =
+            [
+                .. current.Photographs,
+                new CatchPhotographModel(
+                    photograph.Id,
+                    current.Id,
+                    photograph.ContentType,
+                    photograph.Bytes)
+            ],
             SyncStatus = PendingOverallStatus(current.SyncStatus)
         };
     }
 
-    private async Task<byte[]?> SanitisePhotographAsync(byte[] bytes, string contentType)
+    private PreparedPhotographModel? CurrentPreparedPhotograph =>
+        _activePhotographId is { } photographId
+            ? _preparedPhotographs.FirstOrDefault(photograph => photograph.Id == photographId)
+            : null;
+
+    private bool ShowPhotographDetails => CurrentPreparedPhotograph is not null;
+
+    private bool CurrentPhotographIsApplied =>
+        _appliedPhotographId is { } applied && CurrentPreparedPhotograph?.Id == applied;
+
+    private Task OnActivePhotographChangedAsync(Guid? photographId)
     {
-        try
+        _activePhotographId = photographId;
+        return Task.CompletedTask;
+    }
+
+    private async Task UseCurrentPhotographDetailsAsync()
+    {
+        if (_catch is null || CurrentPreparedPhotograph is not { } photograph)
         {
-            return PhotoMetadata.Sanitise(bytes, contentType);
+            return;
         }
-        catch (Exception exception)
+
+        var metadata = photograph.Metadata;
+        if (!metadata.CapturedOn.HasValue && !metadata.HasCoordinates)
         {
-            await Logging.LogErrorAsync(
-                "removing photograph metadata",
-                $"Photograph metadata could not be removed ({exception.GetType().Name}).",
-                CancellationToken.None);
-            return null;
+            return;
+        }
+
+        _appliedPhotographId = photograph.Id;
+        if (metadata.CapturedOn is { } capturedOn && _editor is not null)
+        {
+            await _editor.ApplyCaughtOnAsync(capturedOn);
+        }
+
+        if (metadata.HasCoordinates)
+        {
+            _appliedLocation = new CatchLocationModel(
+                metadata.Latitude!.Value,
+                metadata.Longitude!.Value,
+                null,
+                metadata.CapturedOn ?? _catch.CaughtOn,
+                LocationDefaults.PhotoMetadata,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion);
         }
     }
 
@@ -131,22 +137,22 @@ public partial class CatchEdit
 
         var updated = _catch with
         {
-            Photographs = _catch.Photographs
-                .Select(photograph => photograph.Id == photographId
-                    ? photograph with { SyncStatus = SyncStatus.PendingDeletion }
-                    : photograph)
-                .ToArray(),
+            Photographs = [.. _catch.Photographs.Select(photograph => photograph.Id == photographId
+                ? photograph with { SyncStatus = SyncStatus.PendingDeletion }
+                : photograph)],
             SyncStatus = PendingOverallStatus(_catch.SyncStatus)
         };
+
         try
         {
             await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
             _catch = updated;
+            ForgetRemovedPhotograph(photographId);
             TryToSynchronisePending();
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("removing a photograph from a catch", exception, CancellationToken.None);
+            await Logging.LogErrorAsync("removing a catch photograph", exception, CancellationToken.None);
             _removePhotoFailed = true;
         }
     }
@@ -172,5 +178,22 @@ public partial class CatchEdit
         {
             _catch = reloaded;
         }
+    }
+
+    private void ForgetRemovedPhotograph(Guid photographId)
+    {
+        _preparedPhotographs.RemoveAll(photograph => photograph.Id == photographId);
+        if (_appliedPhotographId == photographId)
+        {
+            _appliedPhotographId = null;
+        }
+
+        var remaining = CarouselPhotographs;
+        if (_activePhotographId != photographId)
+        {
+            return;
+        }
+
+        _activePhotographId = remaining.Count == 0 ? null : remaining[^1].Id;
     }
 }

@@ -10,6 +10,8 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
 using FishingLogBook.Web.Localization;
@@ -35,11 +37,16 @@ public class BaseOfflineRecordCatchTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(catchStore);
         context.Services.AddSingleton(preferencesStore);
-        context.Services.AddSingleton(logging ?? QuietLogging());
+        var loggingService = logging ?? QuietLogging();
+        var timeService = TestTimeService.WithOffset(TimeSpan.Zero);
+        var metadata = NoPhotoMetadata();
+        context.Services.AddSingleton(loggingService);
         context.Services.AddSingleton(Substitute.For<IModalService>());
-        context.Services.AddSingleton(TestTimeService.WithOffset(TimeSpan.Zero));
-        context.Services.AddSingleton(NoPhotoMetadata());
-        context.Services.AddSingleton<IPhotoMetadataProposalService, PhotoMetadataProposalService>();
+        context.Services.AddSingleton(timeService);
+        context.Services.AddSingleton(metadata);
+        context.Services.AddSingleton<IPhotographPreparationService>(
+            new PhotographPreparationService(metadata, timeService, loggingService));
+        context.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         var location = Substitute.For<ILocationService>();
         location.GetPromptStatusAsync(Arg.Any<CancellationToken>()).Returns(new LocationPromptStatus(false, false, false));
@@ -51,15 +58,15 @@ public class BaseOfflineRecordCatchTest
         return context;
     }
 
-    protected static IPhotoMetadataService NoPhotoMetadata()
+    protected static IPhotographMetadataService NoPhotoMetadata()
     {
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.ReadAsync(
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
                 Arg.Any<CancellationToken>())
-            .Returns(PhotoMetadataModel.Empty);
+            .Returns(PhotographMetadataModel.Empty);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
             .Returns(call => call.ArgAt<byte[]>(0));
         return photoMetadata;

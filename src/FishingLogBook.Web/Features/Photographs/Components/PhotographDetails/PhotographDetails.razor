@@ -1,0 +1,36 @@
+@namespace FishingLogBook.Web.Features.Photographs.Components.PhotographDetails
+
+<MudStack Spacing="1" id="@ContainerElementId" data-photograph-id="@PhotographId">
+    <MudStack Row="true"
+              Spacing="2"
+              Justify="Justify.SpaceBetween"
+              AlignItems="AlignItems.Baseline"
+              Class="photograph-details-row">
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Photograph_CapturedOn"]</MudText>
+        <MudText Typo="Typo.body2"
+                 Align="Align.Right"
+                 id="@CapturedOnElementId"
+                 data-captured-on="@CapturedOnValue">
+            @CapturedOnLabel
+        </MudText>
+    </MudStack>
+    <MudStack Row="true"
+              Spacing="2"
+              Justify="Justify.SpaceBetween"
+              AlignItems="AlignItems.Baseline"
+              Class="photograph-details-row">
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Photograph_Location"]</MudText>
+        <MudText Typo="Typo.body2" Align="Align.Right" id="@LocationElementId">@LocationLabel</MudText>
+    </MudStack>
+    @if (ShowUseDetails)
+    {
+        <MudButton Variant="@(IsChosen ? Variant.Filled : Variant.Outlined)"
+                   Size="Size.Small"
+                   Color="Color.Primary"
+                   Disabled="@(!CanUseDetails)"
+                   OnClick="OnUseDetailsAsync"
+                   id="@UseDetailsElementId">
+            @Loc["Photograph_UseTheseDetails"]
+        </MudButton>
+    }
+</MudStack>

@@ -1,4 +1,3 @@
-using System.Globalization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
@@ -10,6 +9,7 @@ using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
@@ -20,12 +20,11 @@ namespace FishingLogBook.Web.Features.Catch.Components.RecordCatchEditor;
 
 public partial class RecordCatchEditor : ComponentBase, IDisposable
 {
-    private const long MaxPhotographBytes = 10 * 1024 * 1024;
     private const int MaxSelectedPhotographs = 10;
     private const int MaxChipOptions = 6;
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly List<PendingPhotograph> _photographs = [];
+    private readonly List<PreparedPhotographModel> _photographs = [];
     private DateTimeOffset? _fallbackCaughtOn;
     private DateTimeOffset? _proposedCaughtOn;
     private string _caughtOnLocal = string.Empty;
@@ -33,7 +32,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private bool _caughtOnInvalid;
     private bool _deviceLocationChosen;
     private Guid? _representativePhotographId;
-    private PhotoMetadataProposalModel _proposal = PhotoMetadataProposalModel.Empty;
+    private CatchPhotographProposalModel _proposal = CatchPhotographProposalModel.Empty;
     private decimal? _weight;
     private decimal? _length;
     private Guid? _activePhotographId;
@@ -47,8 +46,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private bool _isSaving;
     private bool _isSaved;
     private bool _saveFailed;
-    private bool _unsupportedFormat;
-    private bool _unpreparablePhotograph;
     private bool _catalogueUnavailable;
     private bool _locationCaptureStarted;
     private bool _locationSaved;
@@ -68,10 +65,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private ITimeService Time { get; set; } = default!;
 
     [Inject]
-    private IPhotoMetadataService PhotoMetadata { get; set; } = default!;
-
-    [Inject]
-    private IPhotoMetadataProposalService PhotoMetadataProposal { get; set; } = default!;
+    private ICatchPhotographProposalService PhotographProposal { get; set; } = default!;
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
@@ -253,168 +247,47 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             LocationDefaults.DeviceGps,
             StringComparison.Ordinal);
 
-    private PendingPhotograph? CurrentPhotograph =>
+    private PreparedPhotographModel? CurrentPhotograph =>
         _photographs.Count == 0
             ? null
             : _photographs.FirstOrDefault(photograph => photograph.Id == _activePhotographId)
                 ?? _photographs[0];
 
-    private PendingPhotograph? RepresentativePhotograph =>
+    private PreparedPhotographModel? RepresentativePhotograph =>
         _representativePhotographId is { } photographId
             ? _photographs.FirstOrDefault(photograph => photograph.Id == photographId)
             : null;
-
-    private string CurrentPhotographCapturedOnValue =>
-        CurrentPhotograph?.CapturedOnLocal ?? string.Empty;
-
-    private string CurrentPhotographCapturedOnLabel =>
-        string.IsNullOrEmpty(CurrentPhotographCapturedOnValue)
-            ? Loc["Catch_PhotoCapturedOnUnknown"]
-            : FormatLocalDateTime(CurrentPhotographCapturedOnValue);
-
-    private string CurrentPhotographLocationLabel =>
-        CurrentPhotograph?.Metadata.HasCoordinates == true
-            ? Loc["Catch_PhotoLocationAvailable"]
-            : Loc["Catch_PhotoLocationUnavailable"];
 
     private bool CanUseCurrentPhotographDetails =>
         CurrentPhotograph is { } photograph
         && (photograph.Metadata.CapturedOn.HasValue || photograph.Metadata.HasCoordinates);
 
-    private static string FormatLocalDateTime(string localValue)
-    {
-        return DateTime.TryParseExact(
-            localValue,
-            ["yyyy-MM-ddTHH:mm", "yyyy-MM-ddTHH:mm:ss"],
-            CultureInfo.InvariantCulture,
-            DateTimeStyles.None,
-            out var parsed)
-            ? parsed.ToString("g", CultureInfo.CurrentCulture)
-            : localValue;
-    }
-
-    private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs =>
+    private IReadOnlyList<PhotographCarouselItemModel> CarouselPhotographs =>
         _photographs
-            .Select(photograph => new CatchPhotographCarouselItemModel(
+            .Select(photograph => new PhotographCarouselItemModel(
                 photograph.Id,
                 photograph.ContentType,
                 photograph.Bytes,
                 null))
             .ToArray();
 
-    private Task OnCameraPhotographSelected(InputFileChangeEventArgs args)
-    {
-        return AddSelectedPhotographsAsync(args, fromCamera: true);
-    }
-
-    private Task OnGalleryPhotographSelected(InputFileChangeEventArgs args)
-    {
-        return AddSelectedPhotographsAsync(args, fromCamera: false);
-    }
-
-    private async Task AddSelectedPhotographsAsync(InputFileChangeEventArgs args, bool fromCamera)
+    private async Task OnPhotographsPreparedAsync(IReadOnlyList<PreparedPhotographModel> prepared)
     {
         if (_isSaved)
         {
             return;
         }
 
-        var rejectedUnsupported = false;
-        var rejectedUnpreparable = false;
-        foreach (var file in args.GetMultipleFiles(MaxSelectedPhotographs))
+        foreach (var photograph in prepared)
         {
-            if (!PhotographContentTypeConstants.IsAllowed(file.ContentType))
-            {
-                rejectedUnsupported = true;
-                continue;
-            }
-
-            if (!await AddPhotographAsync(file, fromCamera))
-            {
-                rejectedUnpreparable = true;
-            }
+            _fallbackCaughtOn ??= DateTimeOffset.UtcNow;
+            _photographs.Add(photograph);
+            _activePhotographId = photograph.Id;
         }
 
-        _unsupportedFormat = rejectedUnsupported;
-        _unpreparablePhotograph = rejectedUnpreparable;
+        _saveFailed = false;
         await ApplyPhotoMetadataAsync();
         TryStartOpportunisticCapture();
-    }
-
-    private async Task<bool> AddPhotographAsync(IBrowserFile file, bool fromCamera)
-    {
-        await using var stream = file.OpenReadStream(MaxPhotographBytes);
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer, _cancellationTokenSource.Token);
-        var bytes = buffer.ToArray();
-        var contentType = file.ContentType;
-        var metadata = fromCamera
-            ? PhotoMetadataModel.Empty
-            : await ReadPhotoMetadataAsync(bytes, contentType, file.LastModified);
-        var sanitised = await SanitisePhotographAsync(bytes, contentType);
-        if (sanitised is null)
-        {
-            return false;
-        }
-
-        _fallbackCaughtOn ??= DateTimeOffset.UtcNow;
-        var photograph = new PendingPhotograph(
-            Guid.NewGuid(),
-            contentType,
-            sanitised,
-            metadata,
-            fromCamera,
-            await ToLocalValueAsync(metadata.CapturedOn));
-        _photographs.Add(photograph);
-        _activePhotographId = photograph.Id;
-        _saveFailed = false;
-        return true;
-    }
-
-    private async Task<PhotoMetadataModel> ReadPhotoMetadataAsync(
-        byte[] bytes,
-        string contentType,
-        DateTimeOffset fileLastModified)
-    {
-        try
-        {
-            return await PhotoMetadata.ReadAsync(
-                bytes,
-                contentType,
-                fileLastModified,
-                _cancellationTokenSource.Token);
-        }
-        catch (Exception exception)
-        {
-            await Logging.LogErrorAsync(
-                "reading photograph metadata",
-                $"Photograph metadata could not be read ({exception.GetType().Name}).",
-                CancellationToken.None);
-            return PhotoMetadataModel.Empty;
-        }
-    }
-
-    private async Task<byte[]?> SanitisePhotographAsync(byte[] bytes, string contentType)
-    {
-        try
-        {
-            return PhotoMetadata.Sanitise(bytes, contentType);
-        }
-        catch (Exception exception)
-        {
-            await Logging.LogErrorAsync(
-                "removing photograph metadata",
-                $"Photograph metadata could not be removed ({exception.GetType().Name}).",
-                CancellationToken.None);
-            return null;
-        }
-    }
-
-    private async Task<string?> ToLocalValueAsync(DateTimeOffset? instant)
-    {
-        return instant is null
-            ? null
-            : await Time.ToDateTimeLocalValueAsync(instant.Value, _cancellationTokenSource.Token);
     }
 
     private async Task ApplyPhotoMetadataAsync()
@@ -433,8 +306,8 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         }
 
         _proposal = hasCameraPhotograph
-            ? PhotoMetadataProposalModel.Empty
-            : PhotoMetadataProposal.Propose(
+            ? CatchPhotographProposalModel.Empty
+            : PhotographProposal.Propose(
                 [.. _photographs.Select(photograph => photograph.Metadata)],
                 DateTimeOffset.UtcNow);
         await ApplyCaughtOnAsync();
@@ -491,7 +364,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         ClearPhotoLocation();
     }
 
-    private void ApplyPhotographCoordinates(PhotoMetadataModel metadata)
+    private void ApplyPhotographCoordinates(PhotographMetadataModel metadata)
     {
         if (!metadata.HasCoordinates)
         {
@@ -532,7 +405,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _caughtOnResolvedByAngler = false;
         _caughtOnInvalid = false;
         _representativePhotographId = null;
-        _proposal = PhotoMetadataProposalModel.Empty;
+        _proposal = CatchPhotographProposalModel.Empty;
     }
 
     private void OnCaughtOnChanged(string value)
@@ -702,8 +575,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _activePhotographId = null;
         _isSaved = false;
         _saveFailed = false;
-        _unsupportedFormat = false;
-        _unpreparablePhotograph = false;
         _capturedLocation = null;
         _deviceLocationChosen = false;
         _locationCaptureStarted = false;
@@ -831,12 +702,4 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }
-
-    private sealed record PendingPhotograph(
-        Guid Id,
-        string ContentType,
-        byte[] Bytes,
-        PhotoMetadataModel Metadata,
-        bool FromCamera,
-        string? CapturedOnLocal);
 }

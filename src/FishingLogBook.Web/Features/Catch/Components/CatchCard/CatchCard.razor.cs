@@ -3,6 +3,7 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -54,9 +55,9 @@ public partial class CatchCard : ComponentBase
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
-    private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs =>
+    private IReadOnlyList<PhotographCarouselItemModel> CarouselPhotographs =>
         Catch.Photographs
-            .Select(photograph => new CatchPhotographCarouselItemModel(
+            .Select(photograph => new PhotographCarouselItemModel(
                 photograph.Id,
                 photograph.ContentType,
                 photograph.Bytes,

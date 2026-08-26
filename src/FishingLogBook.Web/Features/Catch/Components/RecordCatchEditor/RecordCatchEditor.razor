@@ -74,7 +74,7 @@
                     @if (_photographs.Count > 0)
                     {
                         <div id="catch-photo-carousel">
-                            <CatchPhotographCarousel Photographs="CarouselPhotographs"
+                            <PhotographCarousel Photographs="CarouselPhotographs"
                                                       Editable="@(!_isSaved)"
                                                       ActivePhotographId="_activePhotographId"
                                                       ActivePhotographIdChanged="OnActivePhotographChanged"
@@ -98,47 +98,13 @@
                                     @Loc["Catch_PhotoMetadataConflict"]
                                 </MudAlert>
                             }
-                            <MudStack Spacing="1"
-                                      id="catch-photo-current-metadata"
-                                      data-photograph-id="@CurrentPhotograph?.Id">
-                                <MudStack Row="true"
-                                          Spacing="2"
-                                          Justify="Justify.SpaceBetween"
-                                          AlignItems="AlignItems.Baseline"
-                                          Class="record-catch-photo-detail">
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                        @Loc["Catch_PhotoCapturedOn"]
-                                    </MudText>
-                                    <MudText Typo="Typo.body2"
-                                             Align="Align.Right"
-                                             id="catch-photo-current-date"
-                                             data-captured-on="@CurrentPhotographCapturedOnValue">
-                                        @CurrentPhotographCapturedOnLabel
-                                    </MudText>
-                                </MudStack>
-                                <MudStack Row="true"
-                                          Spacing="2"
-                                          Justify="Justify.SpaceBetween"
-                                          AlignItems="AlignItems.Baseline"
-                                          Class="record-catch-photo-detail">
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                        @Loc["Catch_PhotoLocation"]
-                                    </MudText>
-                                    <MudText Typo="Typo.body2"
-                                             Align="Align.Right"
-                                             id="catch-photo-current-location">
-                                        @CurrentPhotographLocationLabel
-                                    </MudText>
-                                </MudStack>
-                                <MudButton Variant="@(CurrentPhotographIsRepresentative ? Variant.Filled : Variant.Outlined)"
-                                           Size="Size.Small"
-                                           Color="Color.Primary"
-                                           Disabled="@(!CanUseCurrentPhotographDetails)"
-                                           OnClick="UseCurrentPhotographDetailsAsync"
-                                           id="catch-photo-use-details">
-                                    @Loc["Catch_PhotoUseTheseDetails"]
-                                </MudButton>
-                            </MudStack>
+                            <PhotographDetails IdPrefix="catch"
+                                               PhotographId="CurrentPhotograph?.Id"
+                                               Metadata="CurrentPhotograph?.Metadata"
+                                               CapturedOnLocal="@(CurrentPhotograph?.CapturedOnLocal)"
+                                               ShowUseDetails="true"
+                                               IsChosen="CurrentPhotographIsRepresentative"
+                                               OnUseDetails="UseCurrentPhotographDetailsAsync" />
                         }
                         @if (_caughtOnInvalid)
                         {
@@ -150,38 +116,9 @@
 
                     @if (!_isSaved)
                     {
-                        <div class="record-catch-photo-actions">
-                            <label for="catch-photo-camera"
-                                   class="record-catch-photo-picker record-catch-photo-picker-primary"
-                                   id="catch-take-photo">
-                                @Loc["Catch_TakePhoto"]
-                            </label>
-                            <label for="catch-photo-gallery"
-                                   class="record-catch-photo-picker record-catch-photo-picker-secondary"
-                                   id="catch-choose-photo">
-                                @Loc["Catch_ChoosePhoto"]
-                            </label>
-                            <InputFile OnChange="OnCameraPhotographSelected"
-                                       accept="image/*"
-                                       capture="environment"
-                                       class="record-catch-photo-input"
-                                       id="catch-photo-camera" />
-                            <InputFile OnChange="OnGalleryPhotographSelected"
-                                       accept="image/*"
-                                       multiple
-                                       class="record-catch-photo-input"
-                                       id="catch-photo-gallery" />
-                        </div>
-                    }
-
-                    @if (_unsupportedFormat && !_isSaved)
-                    {
-                        <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
-                    }
-
-                    @if (_unpreparablePhotograph && !_isSaved)
-                    {
-                        <MudAlert Severity="Severity.Error" id="catch-photo-unpreparable">@Loc["Catch_PhotoNotPrepared"]</MudAlert>
+                        <PhotographPicker IdPrefix="catch"
+                                          MaxPhotographs="MaxSelectedPhotographs"
+                                          PhotographsPrepared="OnPhotographsPreparedAsync" />
                     }
 
                     <MudStack Row="true" Spacing="2" Class="record-catch-measurements">

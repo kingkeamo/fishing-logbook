@@ -13,6 +13,8 @@ using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
@@ -43,8 +45,11 @@ public class BaseRecordCatchTest
         IAnglerPreferencesProvider? anglerPreferences = null,
         IModalService? modalService = null,
         ITimeService? time = null,
-        IPhotoMetadataService? photoMetadata = null)
+        IPhotographMetadataService? photoMetadata = null)
     {
+        var metadata = photoMetadata ?? NoPhotoMetadata();
+        var timeService = time ?? UtcTime();
+        var loggingService = logging ?? QuietLogging();
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
@@ -53,12 +58,14 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton(location ?? QuietLocation());
         context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
-        context.Services.AddSingleton(logging ?? QuietLogging());
+        context.Services.AddSingleton(loggingService);
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
-        context.Services.AddSingleton(time ?? UtcTime());
-        context.Services.AddSingleton(photoMetadata ?? NoPhotoMetadata());
-        context.Services.AddSingleton<IPhotoMetadataProposalService, PhotoMetadataProposalService>();
+        context.Services.AddSingleton(timeService);
+        context.Services.AddSingleton(metadata);
+        context.Services.AddSingleton<IPhotographPreparationService>(
+            new PhotographPreparationService(metadata, timeService, loggingService));
+        context.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
@@ -74,9 +81,9 @@ public class BaseRecordCatchTest
         return TestTimeService.WithOffset(offset);
     }
 
-    protected static IPhotoMetadataService RealPhotoMetadata()
+    protected static IPhotographMetadataService RealPhotoMetadata()
     {
-        return new PhotoMetadataService(TestTimeService.WithOffset(TimeSpan.Zero));
+        return new PhotographMetadataService(TestTimeService.WithOffset(TimeSpan.Zero));
     }
 
     protected static byte[] MinimalJpeg()
@@ -93,30 +100,30 @@ public class BaseRecordCatchTest
         ];
     }
 
-    protected static IPhotoMetadataService NoPhotoMetadata()
+    protected static IPhotographMetadataService NoPhotoMetadata()
     {
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.ReadAsync(
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
                 Arg.Any<CancellationToken>())
-            .Returns(PhotoMetadataModel.Empty);
+            .Returns(PhotographMetadataModel.Empty);
         PassThroughSanitisation(photoMetadata);
         return photoMetadata;
     }
 
-    protected static void PassThroughSanitisation(IPhotoMetadataService photoMetadata)
+    protected static void PassThroughSanitisation(IPhotographMetadataService photoMetadata)
     {
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
             .Returns(call => call.ArgAt<byte[]>(0));
     }
 
-    protected static IPhotoMetadataService SanitisingPhotoMetadata(
-        PhotoMetadataModel metadata,
+    protected static IPhotographMetadataService SanitisingPhotoMetadata(
+        PhotographMetadataModel metadata,
         byte[] sanitised)
     {
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.ReadAsync(
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
@@ -127,10 +134,10 @@ public class BaseRecordCatchTest
         return photoMetadata;
     }
 
-    protected static IPhotoMetadataService PhotoMetadataFor(
-        params (byte Marker, PhotoMetadataModel Metadata)[] photographs)
+    protected static IPhotographMetadataService PhotoMetadataFor(
+        params (byte Marker, PhotographMetadataModel Metadata)[] photographs)
     {
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.ReadAsync(
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
@@ -141,7 +148,7 @@ public class BaseRecordCatchTest
                 var bytes = call.ArgAt<byte[]>(0);
                 var match = photographs.FirstOrDefault(photograph =>
                     bytes.Length > 0 && bytes[0] == photograph.Marker);
-                return Task.FromResult(match.Metadata ?? PhotoMetadataModel.Empty);
+                return Task.FromResult(match.Metadata ?? PhotographMetadataModel.Empty);
             });
         PassThroughSanitisation(photoMetadata);
         return photoMetadata;

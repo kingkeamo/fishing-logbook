@@ -11,6 +11,7 @@ using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
@@ -21,15 +22,17 @@ namespace FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
 
 public partial class CatchEdit : ComponentBase, IDisposable
 {
-    private const long MaxPhotographBytes = 10 * 1024 * 1024;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private readonly List<PreparedPhotographModel> _preparedPhotographs = [];
+    private Components.CatchEditEditor.CatchEditEditor? _editor;
+    private CatchLocationModel? _appliedLocation;
+    private Guid? _appliedPhotographId;
+    private Guid? _activePhotographId;
     private CatchModel? _catch;
     private AnglerPreferencesModel _preferences = AnglerPreferencesModel.Empty;
     private bool _isLoading = true;
     private bool _loadFailed;
     private bool _offlineUnavailable;
-    private bool _unsupportedFormat;
-    private bool _unpreparablePhotograph;
     private bool _cannotRemoveLastPhoto;
     private bool _addPhotoFailed;
     private bool _removePhotoFailed;
@@ -61,10 +64,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
     [Inject]
     private IModalService ModalService { get; set; } = default!;
 
-    [Inject]
-    private IPhotoMetadataService PhotoMetadata { get; set; } = default!;
-
-    private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs
+    private IReadOnlyList<PhotographCarouselItemModel> CarouselPhotographs
     {
         get
         {
@@ -72,7 +72,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
                 ? []
                 : _catch.Photographs
                     .Where(photograph => photograph.SyncStatus != SyncStatus.PendingDeletion)
-                    .Select(photograph => new CatchPhotographCarouselItemModel(
+                    .Select(photograph => new PhotographCarouselItemModel(
                         photograph.Id,
                         photograph.ContentType,
                         photograph.Bytes,

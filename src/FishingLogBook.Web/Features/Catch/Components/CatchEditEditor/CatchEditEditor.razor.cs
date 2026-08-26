@@ -27,6 +27,7 @@ public partial class CatchEditEditor : ComponentBase
     private string _baitOrLure = string.Empty;
     private string _notes = string.Empty;
     private string _caughtOnLocal = string.Empty;
+    private DateTimeOffset? _appliedCaughtOn;
     private string? _validationMessage;
     private bool _isSaving;
     private bool _saveFailed;
@@ -41,6 +42,9 @@ public partial class CatchEditEditor : ComponentBase
 
     [Parameter, EditorRequired]
     public string IdPrefix { get; set; } = string.Empty;
+
+    [Parameter]
+    public CatchLocationModel? AppliedLocation { get; set; }
 
     [Parameter]
     public EventCallback<CatchEditSavedModel> Saved { get; set; }
@@ -112,6 +116,22 @@ public partial class CatchEditEditor : ComponentBase
         }
 
         ApplyProfileDefaultsToEmptyFields();
+    }
+
+    public async Task<bool> ApplyCaughtOnAsync(DateTimeOffset capturedOn)
+    {
+        var caughtOnLocal = await Time.ToDateTimeLocalValueAsync(capturedOn, CancellationToken.None);
+        if (string.IsNullOrWhiteSpace(caughtOnLocal))
+        {
+            return false;
+        }
+
+        _appliedCaughtOn = capturedOn;
+        _caughtOnLocal = caughtOnLocal;
+        _saved = false;
+        _validationMessage = null;
+        StateHasChanged();
+        return true;
     }
 
     private void SelectMethod(string method)
@@ -275,7 +295,10 @@ public partial class CatchEditEditor : ComponentBase
             return null;
         }
 
-        var metadataChanged = HasDetailsChanged(speciesName, _weight, _length, method, baitOrLure, notes, caughtOn.Value);
+        var location = AppliedLocation ?? _catch.Location;
+        var metadataChanged =
+            HasDetailsChanged(speciesName, _weight, _length, method, baitOrLure, notes, caughtOn.Value)
+            || location != _catch.Location;
         var updated = _catch with
         {
             SpeciesName = speciesName,
@@ -285,6 +308,7 @@ public partial class CatchEditEditor : ComponentBase
             BaitOrLure = baitOrLure,
             Notes = notes,
             CaughtOn = caughtOn.Value,
+            Location = location,
             MetadataSyncStatus = metadataChanged ? SyncStatus.WaitingToSynchronise : _catch.MetadataSyncStatus,
             SyncStatus = metadataChanged ? PendingOverallStatus(_catch.SyncStatus) : _catch.SyncStatus
         };
@@ -341,6 +365,14 @@ public partial class CatchEditEditor : ComponentBase
         if (string.Equals(originalLocal, _caughtOnLocal, StringComparison.Ordinal))
         {
             caughtOn = _catch.CaughtOn.ToUniversalTime();
+        }
+        else if (_appliedCaughtOn is { } applied)
+        {
+            var appliedLocal = await Time.ToDateTimeLocalValueAsync(applied, CancellationToken.None);
+            if (string.Equals(appliedLocal, _caughtOnLocal, StringComparison.Ordinal))
+            {
+                caughtOn = applied.ToUniversalTime();
+            }
         }
 
         return CatchDetailConstants.IsCaughtOnValid(caughtOn, DateTimeOffset.UtcNow)

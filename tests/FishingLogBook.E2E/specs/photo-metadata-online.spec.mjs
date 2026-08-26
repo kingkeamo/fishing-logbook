@@ -341,3 +341,90 @@ test('proposes the file timestamp when a gallery photograph carries no capture d
     expect(new Date(catchRecord.caughtOn).toISOString()).toBe(modifiedOn.toISOString());
     expect(catchRecord.location).toBeNull();
 });
+
+test('does not change an existing catch until the angler applies an added photograph', async ({ page }) => {
+    const id = await createCatch(page, true, { caughtOn: '2026-08-20T09:15' });
+
+    await page.locator(`#catch-card-menu-${id}`).click();
+    await page.locator(`#catch-card-edit-${id}`).click();
+    await expect(page.locator('#catch-edit-loading')).toBeHidden();
+    await expect(page.locator('#catch-edit-caught-on')).toHaveValue('2026-08-20T09:15');
+
+    await page.locator('#catch-edit-photo-gallery input, #catch-edit-photo-gallery').setInputFiles([
+        photograph('historic.jpg', {
+            capturedOn: historicWallClock,
+            latitude: corribLatitude,
+            longitude: corribLongitude
+        })
+    ]);
+
+    await expect(page.locator('#catch-edit-photo-current-date'))
+        .toHaveAttribute('data-captured-on', '2025-06-14T07:32');
+    await expect(page.locator('#catch-edit-photo-current-location')).toContainText('GPS location available');
+    await expect(page.locator('#catch-edit-caught-on')).toHaveValue('2026-08-20T09:15');
+
+    await page.locator('#catch-edit-photo-use-details').click();
+    await expect(page.locator('#catch-edit-caught-on')).toHaveValue('2025-06-14T07:32');
+    await Promise.all([
+        page.waitForResponse(response =>
+            response.url().endsWith('/api/catches')
+            && response.request().method() === 'POST'
+            && response.ok()),
+        page.locator('#catch-edit-save').click()
+    ]);
+    await expect(page.locator('#catch-edit-saved')).toBeVisible();
+
+    const persisted = await reloadServerCatches(page);
+    const catchRecord = persisted.find(candidate => candidate.id === id);
+    expect(catchRecord.photographs).toHaveLength(2);
+    expect(new Date(catchRecord.caughtOn).toISOString()).toBe(new Date(historicInstant).toISOString());
+    expect(catchRecord.location.source).toBe('PhotoMetadata');
+    expect(catchRecord.location.visibility).toBe('Private');
+    expect(catchRecord.location.latitude).toBeCloseTo(corribLatitude, 3);
+    expect(catchRecord.location.longitude).toBeCloseTo(corribLongitude, 3);
+});
+
+test('keeps no photograph EXIF metadata in bytes added through Edit Catch', async ({ page }) => {
+    const id = await createCatch(page, true, {});
+
+    await page.locator(`#catch-card-menu-${id}`).click();
+    await page.locator(`#catch-card-edit-${id}`).click();
+    await expect(page.locator('#catch-edit-loading')).toBeHidden();
+    await page.locator('#catch-edit-photo-gallery input, #catch-edit-photo-gallery').setInputFiles([
+        photograph('located.jpg', {
+            capturedOn: historicWallClock,
+            latitude: corribLatitude,
+            longitude: corribLongitude
+        })
+    ]);
+    await expect(page.locator('#catch-edit-photo-current-location')).toContainText('GPS location available');
+
+    const stored = await page.evaluate(async catchId => {
+        const db = await new Promise((resolve, reject) => {
+            const request = indexedDB.open('FishingLogBook', 4);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        const records = await new Promise((resolve, reject) => {
+            const request = db.transaction('catchPhotographs', 'readonly')
+                .objectStore('catchPhotographs')
+                .getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+        db.close();
+        return records
+            .filter(record => record.catchId === catchId)
+            .map(record => {
+                const value = record.bytes ?? record.bytesBase64;
+                return typeof value === 'string'
+                    ? Array.from(atob(value), character => character.charCodeAt(0))
+                    : Array.from(new Uint8Array(value));
+            });
+    }, id);
+
+    expect(stored).toHaveLength(2);
+    const text = stored.map(bytes => Buffer.from(bytes).toString('latin1')).join('');
+    expect(text).not.toContain('Exif');
+    expect(text).not.toContain('2025:06:14');
+});

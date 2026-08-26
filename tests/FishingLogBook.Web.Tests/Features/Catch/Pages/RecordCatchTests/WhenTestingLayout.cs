@@ -83,9 +83,9 @@ public class WhenTestingLayout : BaseRecordCatchTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#catch-take-photo").ClassList
-                .Should().Contain("record-catch-photo-picker-primary");
+                .Should().Contain("photograph-picker-action-primary");
             cut.Find("#catch-choose-photo").ClassList
-                .Should().Contain("record-catch-photo-picker-secondary");
+                .Should().Contain("photograph-picker-action-secondary");
         });
         cut.Find("#catch-take-photo").TextContent.Trim().Should().Be("Take photo");
         cut.Find("#catch-choose-photo").TextContent.Trim().Should().Be("Choose photo");

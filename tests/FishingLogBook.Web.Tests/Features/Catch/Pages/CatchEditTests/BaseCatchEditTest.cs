@@ -14,6 +14,8 @@ using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
@@ -45,8 +47,12 @@ public class BaseCatchEditTest
         IAnglerPreferencesProvider? anglerPreferences = null,
         IModalService? modalService = null,
         ICatchClient? catchClient = null,
-        IPhotoMetadataService? photoMetadata = null)
+        IPhotographMetadataService? photoMetadata = null,
+        IPhotographPreparationService? preparation = null)
     {
+        var metadata = photoMetadata ?? PassThroughPhotoMetadata();
+        var timeService = time ?? UtcTime();
+        var loggingService = logging ?? QuietLogging();
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
@@ -54,35 +60,37 @@ public class BaseCatchEditTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
-        context.Services.AddSingleton(logging ?? QuietLogging());
-        context.Services.AddSingleton(time ?? UtcTime());
+        context.Services.AddSingleton(loggingService);
+        context.Services.AddSingleton(timeService);
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddSingleton(catchClient ?? QuietCatchClient());
-        context.Services.AddSingleton(photoMetadata ?? PassThroughPhotoMetadata());
+        context.Services.AddSingleton(metadata);
+        context.Services.AddSingleton(preparation
+            ?? new PhotographPreparationService(metadata, timeService, loggingService));
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
 
-    protected static IPhotoMetadataService PassThroughPhotoMetadata()
+    protected static IPhotographMetadataService PassThroughPhotoMetadata()
     {
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
             .Returns(call => call.ArgAt<byte[]>(0));
         return photoMetadata;
     }
 
-    protected static IPhotoMetadataService SanitisingPhotoMetadata(byte[] sanitised)
+    protected static IPhotographMetadataService SanitisingPhotoMetadata(byte[] sanitised)
     {
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns(sanitised);
         return photoMetadata;
     }
 
-    protected static IPhotoMetadataService UnsanitisablePhotoMetadata()
+    protected static IPhotographMetadataService UnsanitisablePhotoMetadata()
     {
-        var photoMetadata = Substitute.For<IPhotoMetadataService>();
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns((byte[]?)null);
         return photoMetadata;
     }

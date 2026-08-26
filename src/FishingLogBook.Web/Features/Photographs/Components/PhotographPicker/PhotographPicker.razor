@@ -1,0 +1,37 @@
+@namespace FishingLogBook.Web.Features.Photographs.Components.PhotographPicker
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="photograph-picker">
+    <label for="@CameraElementId"
+           class="photograph-picker-action photograph-picker-action-primary"
+           id="@TakeElementId">
+        @Loc["Photograph_TakePhoto"]
+    </label>
+    <label for="@GalleryElementId"
+           class="photograph-picker-action photograph-picker-action-secondary"
+           id="@ChooseElementId">
+        @Loc["Photograph_ChoosePhoto"]
+    </label>
+    <InputFile OnChange="OnCameraSelectedAsync"
+               accept="image/*"
+               capture="environment"
+               class="photograph-picker-input"
+               aria-label="@Loc["Photograph_TakePhoto"]"
+               id="@CameraElementId" />
+    <InputFile OnChange="OnGallerySelectedAsync"
+               accept="image/*"
+               multiple
+               class="photograph-picker-input"
+               aria-label="@Loc["Photograph_ChoosePhoto"]"
+               id="@GalleryElementId" />
+</div>
+
+@if (_unsupportedFormat)
+{
+    <MudAlert Severity="Severity.Error" id="@UnsupportedElementId">@Loc["Photograph_Unsupported"]</MudAlert>
+}
+
+@if (_unpreparablePhotograph)
+{
+    <MudAlert Severity="Severity.Error" id="@UnpreparableElementId">@Loc["Photograph_NotPrepared"]</MudAlert>
+}

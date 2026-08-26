@@ -5,6 +5,8 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.Forms;
 using NSubstitute;
@@ -32,9 +34,9 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, CorribLatitude, CorribLongitude)),
-            (ThirdPhotograph, PhotoMetadataModel.Empty));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, CorribLatitude, CorribLongitude)),
+            (ThirdPhotograph, PhotographMetadataModel.Empty));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
 
@@ -61,8 +63,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, CorribLatitude, CorribLongitude)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, CorribLatitude, CorribLongitude)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -91,8 +93,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, null, null)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -126,8 +128,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, null, null)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -159,8 +161,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -269,8 +271,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
             .Returns(Task.CompletedTask);
         var location = GrantedLocationOnRequest(SampleLocation(51.5074, -0.1278));
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, null, null)));
         await using var context = CreateContext(store, location: location, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -305,8 +307,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -341,8 +343,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -449,8 +451,8 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -484,9 +486,9 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(MayCapture, LeeLatitude, LeeLongitude)),
-            (ThirdPhotograph, new PhotoMetadataModel(MayCapture.AddDays(-20), null, null)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)),
+            (ThirdPhotograph, new PhotographMetadataModel(MayCapture.AddDays(-20), null, null)));
         await using var context = CreateContext(store, photoMetadata: photoMetadata);
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[1].UploadFiles(
@@ -510,10 +512,10 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 
-    private static IPhotoMetadataService ConflictingCoordinates()
+    private static IPhotographMetadataService ConflictingCoordinates()
     {
         return PhotoMetadataFor(
-            (FirstPhotograph, new PhotoMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
-            (SecondPhotograph, new PhotoMetadataModel(JuneCapture.AddMinutes(2), LeeLatitude, LeeLongitude)));
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(JuneCapture.AddMinutes(2), LeeLatitude, LeeLongitude)));
     }
 }
