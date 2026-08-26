@@ -10,6 +10,7 @@ using FishingLogBook.Application.FishingPreferences.Services;
 using FishingLogBook.Application.OfflineAccess.Services;
 using FishingLogBook.Application.Profiles.Services;
 using FishingLogBook.Application.SystemStatus;
+using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Application.Users;
 using FishingLogBook.Application.Users.Commands;
 using FishingLogBook.Application.Users.Services;
@@ -52,6 +53,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ICatchService, CatchService>();
+        services.AddScoped<ITripService, TripService>();
         services.AddScoped<ICatchPhotographService, CatchPhotographService>();
         services.AddScoped<ICatchLocationPrivacyService, CatchLocationPrivacyService>();
         services.AddScoped<IPlatformCapabilityService, PlatformCapabilityService>();
@@ -81,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserIdentityRepository, UserIdentityRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<ICatchRepository, CatchRepository>();
+        services.AddScoped<ITripRepository, TripRepository>();
         services.AddScoped<IUserPlatformCapabilityRepository, UserPlatformCapabilityRepository>();
         services.AddScoped<IFishingCatalogueRepository, FishingCatalogueRepository>();
         services.AddScoped<IFishingPreferenceRepository, FishingPreferenceRepository>();

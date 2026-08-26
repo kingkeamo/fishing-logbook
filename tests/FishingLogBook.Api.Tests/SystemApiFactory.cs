@@ -9,6 +9,7 @@ using FishingLogBook.Domain.Catalogue;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Profiles;
+using FishingLogBook.Domain.Trips;
 using FishingLogBook.Domain.Users;
 using FishingLogBook.Tests.Common.TestSupport;
 using FluentResults;
@@ -38,6 +39,8 @@ public class SystemApiFactory : WebApplicationFactory<Program>
     public IProfileRepository ProfileRepository { get; } = Substitute.For<IProfileRepository>();
 
     public ICatchRepository CatchRepository { get; } = Substitute.For<ICatchRepository>();
+
+    public ITripRepository TripRepository { get; } = Substitute.For<ITripRepository>();
 
     public IUserPlatformCapabilityRepository UserPlatformCapabilityRepository { get; } =
         Substitute.For<IUserPlatformCapabilityRepository>();
@@ -102,6 +105,18 @@ public class SystemApiFactory : WebApplicationFactory<Program>
         CatchRepository
             .UpdateLocationVisibilityAsync(Arg.Any<PersistCatchLocationVisibilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
+        TripRepository
+            .UpsertAsync(Arg.Any<Trip>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Trip>(0)));
+        TripRepository
+            .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(null));
+        TripRepository
+            .GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(null));
+        TripRepository
+            .GetByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<Trip>>([]));
         UserPlatformCapabilityRepository
             .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(false));
@@ -212,6 +227,8 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(ProfileRepository);
             services.RemoveAll<ICatchRepository>();
             services.AddSingleton(CatchRepository);
+            services.RemoveAll<ITripRepository>();
+            services.AddSingleton(TripRepository);
             services.RemoveAll<IFishingCatalogueRepository>();
             services.AddSingleton(FishingCatalogueRepository);
             services.RemoveAll<IFishingPreferenceRepository>();
