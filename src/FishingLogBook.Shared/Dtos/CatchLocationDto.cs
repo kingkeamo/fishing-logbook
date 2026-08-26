@@ -13,6 +13,8 @@ public static class LocationDefaults
 {
     public const string DeviceGps = "DeviceGps";
 
+    public const string PhotoMetadata = "PhotoMetadata";
+
     public const string Private = "Private";
 
     public const string Approximate = "Approximate";

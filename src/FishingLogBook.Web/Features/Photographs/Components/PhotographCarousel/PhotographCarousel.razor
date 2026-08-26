@@ -1,4 +1,4 @@
-@namespace FishingLogBook.Web.Features.Catch.Components.CatchPhotographCarousel
+@namespace FishingLogBook.Web.Features.Photographs.Components.PhotographCarousel
 
 <div class="@ContainerClass"
      tabindex="0"
@@ -22,7 +22,7 @@
         {
             <div class="catch-photograph-carousel-placeholder"
                  role="img"
-                 aria-label="@Loc["Catch_NoPhotograph"]"
+                 aria-label="@Loc["Photograph_None"]"
                  id="@NoPhotoElementId">
                 <MudIcon Icon="@Icons.Material.Filled.PhotoCamera"
                          aria-hidden="true" />
@@ -40,7 +40,7 @@
                 <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
                                Size="Size.Small"
                                OnClick="PreviousPhotographAsync"
-                               aria-label="@Loc["Catch_PreviousPhoto"]"
+                               aria-label="@Loc["Photograph_Previous"]"
                                id="@PreviousElementId" />
             }
 
@@ -49,7 +49,7 @@
                 <MudText Typo="Typo.caption"
                          Class="catch-photograph-carousel-count"
                          id="@CountElementId">
-                    @Loc["Catch_PhotoPosition", CurrentPhotographNumber, PhotographCount]
+                    @Loc["Photograph_Position", CurrentPhotographNumber, PhotographCount]
                 </MudText>
             }
 
@@ -58,7 +58,7 @@
                 <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
                                Size="Size.Small"
                                OnClick="NextPhotographAsync"
-                               aria-label="@Loc["Catch_NextPhoto"]"
+                               aria-label="@Loc["Photograph_Next"]"
                                id="@NextElementId" />
             }
 
@@ -68,7 +68,7 @@
                                Size="Size.Small"
                                Color="Color.Error"
                                OnClick="RemoveCurrentPhotographAsync"
-                               aria-label="@Loc["Catch_RemovePhoto"]"
+                               aria-label="@Loc["Photograph_Remove"]"
                                id="@RemoveElementId" />
             }
         </div>

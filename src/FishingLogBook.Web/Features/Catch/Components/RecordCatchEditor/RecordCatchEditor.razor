@@ -74,46 +74,51 @@
                     @if (_photographs.Count > 0)
                     {
                         <div id="catch-photo-carousel">
-                            <CatchPhotographCarousel Photographs="CarouselPhotographs"
+                            <PhotographCarousel Photographs="CarouselPhotographs"
                                                       Editable="@(!_isSaved)"
                                                       ActivePhotographId="_activePhotographId"
                                                       ActivePhotographIdChanged="OnActivePhotographChanged"
-                                                      OnRemovePhotograph="RemovePhotograph"
+                                                      OnRemovePhotograph="RemovePhotographAsync"
                                                       ShowSinglePhotographCount="true"
                                                       IdPrefix="catch" />
                         </div>
-                        <MudText Typo="Typo.body2" id="catch-caught-on">@CaughtOnDisplay</MudText>
+                        <MudTextField T="string"
+                                      Value="_caughtOnLocal"
+                                      ValueChanged="OnCaughtOnChanged"
+                                      Label="@Loc["Catch_EditCaughtOn"]"
+                                      Immediate="true"
+                                      InputType="InputType.DateTimeLocal"
+                                      Disabled="_isSaved"
+                                      id="catch-caught-on" />
+                        @if (ShowPhotographChooser && !_isSaved)
+                        {
+                            @if (MetadataConflict)
+                            {
+                                <MudAlert Severity="Severity.Warning" id="catch-photo-metadata-conflict">
+                                    @Loc["Catch_PhotoMetadataConflict"]
+                                </MudAlert>
+                            }
+                            <PhotographDetails IdPrefix="catch"
+                                               PhotographId="CurrentPhotograph?.Id"
+                                               Metadata="CurrentPhotograph?.Metadata"
+                                               CapturedOnLocal="@(CurrentPhotograph?.CapturedOnLocal)"
+                                               ShowUseDetails="true"
+                                               IsChosen="CurrentPhotographIsRepresentative"
+                                               OnUseDetails="UseCurrentPhotographDetailsAsync" />
+                        }
+                        @if (_caughtOnInvalid)
+                        {
+                            <MudAlert Severity="Severity.Error" id="catch-caught-on-invalid">
+                                @Loc["Catch_EditCaughtOnInvalid"]
+                            </MudAlert>
+                        }
                     }
 
                     @if (!_isSaved)
                     {
-                        <div class="record-catch-photo-actions">
-                            <label for="catch-photo-camera"
-                                   class="record-catch-photo-picker record-catch-photo-picker-primary"
-                                   id="catch-take-photo">
-                                @Loc["Catch_TakePhoto"]
-                            </label>
-                            <label for="catch-photo-gallery"
-                                   class="record-catch-photo-picker record-catch-photo-picker-secondary"
-                                   id="catch-choose-photo">
-                                @Loc["Catch_ChoosePhoto"]
-                            </label>
-                            <InputFile OnChange="OnPhotographSelected"
-                                       accept="image/*"
-                                       capture="environment"
-                                       class="record-catch-photo-input"
-                                       id="catch-photo-camera" />
-                            <InputFile OnChange="OnPhotographSelected"
-                                       accept="image/*"
-                                       multiple
-                                       class="record-catch-photo-input"
-                                       id="catch-photo-gallery" />
-                        </div>
-                    }
-
-                    @if (_unsupportedFormat && !_isSaved)
-                    {
-                        <MudAlert Severity="Severity.Error" id="catch-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
+                        <PhotographPicker IdPrefix="catch"
+                                          MaxPhotographs="MaxSelectedPhotographs"
+                                          PhotographsPrepared="OnPhotographsPreparedAsync" />
                     }
 
                     <MudStack Row="true" Spacing="2" Class="record-catch-measurements">
@@ -131,7 +136,27 @@
                                           Id="record-catch-length" />
                     </MudStack>
 
-                    @if (!_isSaved && _locationPrompt.ShowExplainer)
+                    @if ((PhotoLocationApplied || CoordinateConflict) && !_isSaved)
+                    {
+                        <MudStack Spacing="1" id="catch-location-photo-actions">
+                            @if (PhotoLocationApplied)
+                            {
+                                <MudText Typo="Typo.caption"
+                                         Color="Color.Success"
+                                         id="catch-location-from-photo">
+                                    @Loc["Catch_LocationFromPhoto"]
+                                </MudText>
+                            }
+                            <MudButton Variant="Variant.Text"
+                                       Size="Size.Small"
+                                       Color="Color.Primary"
+                                       OnClick="UseCurrentLocationAsync"
+                                       id="catch-location-use-current">
+                                @Loc["Catch_LocationUseCurrent"]
+                            </MudButton>
+                        </MudStack>
+                    }
+                    else if (!_isSaved && _locationPrompt.ShowExplainer)
                     {
                         <MudStack Spacing="1" id="catch-location-explainer">
                             <MudText Typo="Typo.caption">@Loc["Catch_LocationExplainer"]</MudText>

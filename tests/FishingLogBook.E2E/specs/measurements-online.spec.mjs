@@ -41,7 +41,7 @@ test('edits existing catch measurements and retains the updates', async ({ page 
 
 test('uses metric Profile preferences for measurement entry', async ({ page }) => {
     await withRestoredProfileState(page, async () => {
-        await setProfileUnits(page, 'Kilograms (kg)', 'Centimetres (cm)');
+        await setProfileUnits(page, 'Kilograms (kg)', 'Centimetres (cm)', 'Kg', 'Cm');
 
         const id = await createCatch(page, true, { weight: '5.2', length: '91' });
         const persisted = await reloadServerCatches(page);
@@ -53,7 +53,7 @@ test('uses metric Profile preferences for measurement entry', async ({ page }) =
 
 test('uses natural imperial Profile preferences while retaining canonical values', async ({ page }) => {
     await withRestoredProfileState(page, async () => {
-        await setProfileUnits(page, 'Pounds (lb)', 'Inches (in)');
+        await setProfileUnits(page, 'Pounds (lb)', 'Inches (in)', 'Lb', 'In');
 
         const id = await createCatch(page, true, {
             weight: { pounds: 3, ounces: 12 },
@@ -82,10 +82,10 @@ async function openCatchEdit(page, id) {
     await expect(page.locator('#catch-edit-loading')).toBeHidden();
 }
 
-async function setProfileUnits(page, weight, length) {
+async function setProfileUnits(page, weight, length, weightValue, lengthValue) {
     await page.locator('#profile-fishing-details-section').click();
-    await chooseSelectOption(page, '#profile-weight-unit', weight);
-    await chooseSelectOption(page, '#profile-length-unit', length);
+    await chooseSelectOption(page, '#profile-weight-unit', weight, weightValue);
+    await chooseSelectOption(page, '#profile-length-unit', length, lengthValue);
     await Promise.all([
         page.waitForResponse(response =>
             response.url().endsWith('/api/profiles/me/fishing-preferences')
@@ -93,12 +93,14 @@ async function setProfileUnits(page, weight, length) {
             && response.ok()),
         page.locator('#profile-save-button').click()
     ]);
+    await expect(page.locator('#profile-save-spinner')).toBeHidden();
     await expect(page.locator('#profile-save-button')).toBeEnabled();
 }
 
-async function chooseSelectOption(page, selector, optionName) {
+async function chooseSelectOption(page, selector, optionName, expectedValue) {
     await page.locator(selector)
         .locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " mud-input-control ")]')
         .click();
     await page.getByRole('option', { name: optionName, exact: true }).click();
+    await expect(page.locator(selector)).toHaveValue(expectedValue);
 }

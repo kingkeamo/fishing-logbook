@@ -2,6 +2,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
 using FishingLogBook.Web.Localization;
@@ -38,12 +39,12 @@ public partial class OfflineCatchEdit : ComponentBase
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
 
-    private IReadOnlyList<CatchPhotographCarouselItemModel> CarouselPhotographs
+    private IReadOnlyList<PhotographCarouselItemModel> CarouselPhotographs
     {
         get
         {
             return _catch?.Photographs
-                .Select(photo => new CatchPhotographCarouselItemModel(
+                .Select(photo => new PhotographCarouselItemModel(
                     photo.Id,
                     photo.ContentType,
                     photo.Bytes,

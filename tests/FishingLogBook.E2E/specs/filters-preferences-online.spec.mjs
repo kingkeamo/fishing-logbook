@@ -45,8 +45,8 @@ test('filters an older catch out of the Today view without changing its date', a
 test('uses saved Profile measurement units when editing a catch', async ({ page }) => {
     await withRestoredProfileState(page, async () => {
         await page.locator('#profile-fishing-details-section').click();
-        await chooseSelectOption(page, '#profile-weight-unit', 'Pounds (lb)');
-        await chooseSelectOption(page, '#profile-length-unit', 'Centimetres (cm)');
+        await chooseSelectOption(page, '#profile-weight-unit', 'Pounds (lb)', 'Lb');
+        await chooseSelectOption(page, '#profile-length-unit', 'Centimetres (cm)', 'Cm');
         await saveProfile(page);
 
         const id = await createCatch(page, true);
@@ -101,11 +101,12 @@ async function saveCatchEdit(page) {
     await expect(page.locator('#catch-edit-saved')).toBeVisible();
 }
 
-async function chooseSelectOption(page, selector, optionName) {
+async function chooseSelectOption(page, selector, optionName, expectedValue) {
     await page.locator(selector)
         .locator('xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " mud-input-control ")]')
         .click();
     await page.getByRole('option', { name: optionName, exact: true }).click();
+    await expect(page.locator(selector)).toHaveValue(expectedValue);
 }
 
 async function saveProfile(page) {
@@ -116,5 +117,6 @@ async function saveProfile(page) {
             && response.ok()),
         page.locator('#profile-save-button').click()
     ]);
+    await expect(page.locator('#profile-save-spinner')).toBeHidden();
     await expect(page.locator('#profile-save-button')).toBeEnabled();
 }

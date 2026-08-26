@@ -183,31 +183,34 @@
   <data name="Catch_RecordOwnerUnavailable" xml:space="preserve">
     <value>Nous n’avons pas pu confirmer qui enregistre cette prise. Reconnectez-vous, puis réessayez.</value>
   </data>
-  <data name="Catch_TakePhoto" xml:space="preserve">
+  <data name="Photograph_TakePhoto" xml:space="preserve">
     <value>Prendre une photo</value>
   </data>
-  <data name="Catch_ChoosePhoto" xml:space="preserve">
+  <data name="Photograph_ChoosePhoto" xml:space="preserve">
     <value>Choisir une photo</value>
   </data>
-  <data name="Catch_PhotographAlt" xml:space="preserve">
+  <data name="Photograph_Alt" xml:space="preserve">
     <value>Photographie de la prise</value>
   </data>
-  <data name="Catch_PhotographAltNumbered" xml:space="preserve">
+  <data name="Photograph_AltNumbered" xml:space="preserve">
     <value>Photographie de la prise {0} sur {1}</value>
   </data>
-  <data name="Catch_PhotoUnsupported" xml:space="preserve">
+  <data name="Photograph_Unsupported" xml:space="preserve">
     <value>Ce format de photo n'est pas pris en charge. Utilisez JPEG, PNG ou WebP.</value>
   </data>
-  <data name="Catch_RemovePhoto" xml:space="preserve">
+  <data name="Photograph_NotPrepared" xml:space="preserve">
+    <value>Cette photo n’a pas pu être préparée pour l’enregistrement et n’a pas été ajoutée. Veuillez essayer une autre photo.</value>
+  </data>
+  <data name="Photograph_Remove" xml:space="preserve">
     <value>Retirer la photo</value>
   </data>
-  <data name="Catch_PhotoPosition" xml:space="preserve">
+  <data name="Photograph_Position" xml:space="preserve">
     <value>Photo {0} sur {1}</value>
   </data>
-  <data name="Catch_PreviousPhoto" xml:space="preserve">
+  <data name="Photograph_Previous" xml:space="preserve">
     <value>Photo précédente</value>
   </data>
-  <data name="Catch_NextPhoto" xml:space="preserve">
+  <data name="Photograph_Next" xml:space="preserve">
     <value>Photo suivante</value>
   </data>
   <data name="Catch_RecordAnother" xml:space="preserve">
@@ -249,6 +252,33 @@
   <data name="Catch_LocationOnPrivate" xml:space="preserve">
     <value>Localisation activée · Privée</value>
   </data>
+  <data name="Catch_PhotoMetadataConflict" xml:space="preserve">
+    <value>Ces photos n’ont pas les mêmes détails de prise de vue. Choisissez la photo qui représente le mieux cette prise.</value>
+  </data>
+  <data name="Photograph_UseTheseDetails" xml:space="preserve">
+    <value>Utiliser les détails de cette photo</value>
+  </data>
+  <data name="Photograph_CapturedOn" xml:space="preserve">
+    <value>Date et heure de la prise</value>
+  </data>
+  <data name="Photograph_CapturedOnUnknown" xml:space="preserve">
+    <value>Aucune date de photo disponible</value>
+  </data>
+  <data name="Photograph_Location" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="Photograph_LocationAvailable" xml:space="preserve">
+    <value>Position GPS disponible</value>
+  </data>
+  <data name="Photograph_LocationUnavailable" xml:space="preserve">
+    <value>Aucune position de photo disponible</value>
+  </data>
+  <data name="Catch_LocationFromPhoto" xml:space="preserve">
+    <value>Position de la photo · Privée</value>
+  </data>
+  <data name="Catch_LocationUseCurrent" xml:space="preserve">
+    <value>Utiliser plutôt ma position actuelle</value>
+  </data>
   <data name="Catch_LogbookPageTitle" xml:space="preserve">
     <value>FishingLogBook - Prises</value>
   </data>
@@ -282,7 +312,7 @@
   <data name="Catch_MoreActions" xml:space="preserve">
     <value>Plus d'actions</value>
   </data>
-  <data name="Catch_NoPhotograph" xml:space="preserve">
+  <data name="Photograph_None" xml:space="preserve">
     <value>Aucune photo</value>
   </data>
   <data name="Catch_Search" xml:space="preserve">

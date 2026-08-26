@@ -1,12 +1,12 @@
-using FishingLogBook.Web.Features.Catch.Models;
+using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Localization;
 
-namespace FishingLogBook.Web.Features.Catch.Components.CatchPhotographCarousel;
+namespace FishingLogBook.Web.Features.Photographs.Components.PhotographCarousel;
 
-public partial class CatchPhotographCarousel : ComponentBase
+public partial class PhotographCarousel : ComponentBase
 {
     private const double SwipeThresholdPixels = 40;
 
@@ -16,7 +16,7 @@ public partial class CatchPhotographCarousel : ComponentBase
     private double _pointerStartX;
 
     [Parameter, EditorRequired]
-    public IReadOnlyList<CatchPhotographCarouselItemModel> Photographs { get; set; } = [];
+    public IReadOnlyList<PhotographCarouselItemModel> Photographs { get; set; } = [];
 
     [Parameter]
     public bool Editable { get; set; }
@@ -75,7 +75,7 @@ public partial class CatchPhotographCarousel : ComponentBase
         }
     }
 
-    private static string ToPhotoUrl(CatchPhotographCarouselItemModel photograph)
+    private static string ToPhotoUrl(PhotographCarouselItemModel photograph)
     {
         if (photograph.Bytes is { Length: > 0 })
         {
@@ -138,10 +138,10 @@ public partial class CatchPhotographCarousel : ComponentBase
     private string CurrentPhotographAlt =>
         HasMultiplePhotographs
             ? Loc[
-                "Catch_PhotographAltNumbered",
+                "Photograph_AltNumbered",
                 CurrentPhotographNumber,
                 PhotographCount]
-            : Loc["Catch_PhotographAlt"];
+            : Loc["Photograph_Alt"];
 
     private Task PreviousPhotographAsync()
     {

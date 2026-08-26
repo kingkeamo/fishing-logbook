@@ -131,7 +131,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         var cut = context.Render<RecordCatch>();
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
         var photographId = VisiblePhotographId(cut);
-        var caughtOn = cut.Find("#catch-caught-on").TextContent;
+        var caughtOn = cut.Find("#catch-caught-on").GetAttribute("value");
 
         // Act
         await cut.Find("#save-catch-button").ClickAsync();
@@ -154,7 +154,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             cut.Find("#catch-saved").TextContent.Should().Contain("Catch saved on this device");
             cut.Find("#catch-photo-carousel").Should().NotBeNull();
             VisiblePhotographId(cut).Should().Be(photographId);
-            cut.Find("#catch-caught-on").TextContent.Should().Be(caughtOn);
+            cut.Find("#catch-caught-on").GetAttribute("value").Should().Be(caughtOn);
             cut.Find("#catch-record-another").Should().NotBeNull();
             cut.Find("#catch-view-catches").Should().NotBeNull();
             cut.Find("#catch-view-catches").GetAttribute("href").Should().Be("/catches");

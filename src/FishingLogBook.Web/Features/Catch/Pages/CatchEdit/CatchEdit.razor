@@ -30,17 +30,24 @@
             <MudExpansionPanels Elevation="1" MultiExpansion="true" id="catch-edit-photo-sections">
                 <MudExpansionPanel Text="@Loc["Catch_EditPhotographsSection"]" Expanded="true" id="catch-edit-photos-panel">
                     <MudStack Spacing="2">
-                        <CatchPhotographCarousel Photographs="CarouselPhotographs" Editable="true" IdPrefix="catch-edit" OnRemovePhotograph="OnRemovePhotographAsync" />
-                        <div class="catch-edit-photo-actions">
-                            <label for="catch-edit-photo-camera" class="catch-edit-photo-picker catch-edit-photo-picker-primary" id="catch-edit-take-photo">@Loc["Catch_TakePhoto"]</label>
-                            <label for="catch-edit-photo-gallery" class="catch-edit-photo-picker catch-edit-photo-picker-secondary" id="catch-edit-choose-photo">@Loc["Catch_ChoosePhoto"]</label>
-                            <InputFile OnChange="OnAddPhotographsSelected" accept="image/*" capture="environment" class="catch-edit-photo-input" id="catch-edit-photo-camera" />
-                            <InputFile OnChange="OnAddPhotographsSelected" accept="image/*" multiple class="catch-edit-photo-input" id="catch-edit-photo-gallery" />
-                        </div>
-                        @if (_unsupportedFormat)
+                        <PhotographCarousel Photographs="CarouselPhotographs"
+                                            Editable="true"
+                                            IdPrefix="catch-edit"
+                                            ActivePhotographId="_activePhotographId"
+                                            ActivePhotographIdChanged="OnActivePhotographChangedAsync"
+                                            OnRemovePhotograph="OnRemovePhotographAsync" />
+                        @if (ShowPhotographDetails)
                         {
-                            <MudAlert Severity="Severity.Error" id="catch-edit-photo-unsupported">@Loc["Catch_PhotoUnsupported"]</MudAlert>
+                            <PhotographDetails IdPrefix="catch-edit"
+                                               PhotographId="CurrentPreparedPhotograph?.Id"
+                                               Metadata="CurrentPreparedPhotograph?.Metadata"
+                                               CapturedOnLocal="@(CurrentPreparedPhotograph?.CapturedOnLocal)"
+                                               ShowUseDetails="true"
+                                               IsChosen="CurrentPhotographIsApplied"
+                                               OnUseDetails="UseCurrentPhotographDetailsAsync" />
                         }
+                        <PhotographPicker IdPrefix="catch-edit"
+                                          PhotographsPrepared="OnPhotographsPreparedAsync" />
                         @if (_cannotRemoveLastPhoto)
                         {
                             <MudAlert Severity="Severity.Warning" id="catch-edit-photo-last">@Loc["Catch_EditCannotRemoveLastPhoto"]</MudAlert>
@@ -53,8 +60,10 @@
                 </MudExpansionPanel>
             </MudExpansionPanels>
 
-            <CatchEditEditor Catch="_catch"
+            <CatchEditEditor @ref="_editor"
+                             Catch="_catch"
                              Preferences="_preferences"
+                             AppliedLocation="_appliedLocation"
                              IdPrefix="catch-edit"
                              Saved="OnDetailsSavedAsync"
                              BindingFailed="OnEditorBindingFailed" />

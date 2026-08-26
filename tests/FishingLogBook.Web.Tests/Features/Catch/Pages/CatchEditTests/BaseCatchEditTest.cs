@@ -14,9 +14,12 @@ using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
+using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using NSubstitute;
@@ -43,8 +46,13 @@ public class BaseCatchEditTest
         ITimeService? time = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
         IModalService? modalService = null,
-        ICatchClient? catchClient = null)
+        ICatchClient? catchClient = null,
+        IPhotographMetadataService? photoMetadata = null,
+        IPhotographPreparationService? preparation = null)
     {
+        var metadata = photoMetadata ?? PassThroughPhotoMetadata();
+        var timeService = time ?? UtcTime();
+        var loggingService = logging ?? QuietLogging();
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
@@ -52,14 +60,39 @@ public class BaseCatchEditTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(owner ?? SignedInOwner());
         context.Services.AddSingleton(synchroniser ?? QuietSynchroniser());
-        context.Services.AddSingleton(logging ?? QuietLogging());
-        context.Services.AddSingleton(time ?? UtcTime());
+        context.Services.AddSingleton(loggingService);
+        context.Services.AddSingleton(timeService);
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddSingleton(catchClient ?? QuietCatchClient());
+        context.Services.AddSingleton(metadata);
+        context.Services.AddSingleton(preparation
+            ?? new PhotographPreparationService(metadata, timeService, loggingService));
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static IPhotographMetadataService PassThroughPhotoMetadata()
+    {
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
+            .Returns(call => call.ArgAt<byte[]>(0));
+        return photoMetadata;
+    }
+
+    protected static IPhotographMetadataService SanitisingPhotoMetadata(byte[] sanitised)
+    {
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns(sanitised);
+        return photoMetadata;
+    }
+
+    protected static IPhotographMetadataService UnsanitisablePhotoMetadata()
+    {
+        var photoMetadata = Substitute.For<IPhotographMetadataService>();
+        photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns((byte[]?)null);
+        return photoMetadata;
     }
 
     protected static ICatchClient QuietCatchClient()
@@ -203,32 +236,6 @@ public class BaseCatchEditTest
 
     private static ITimeService OffsetTime(TimeSpan offset)
     {
-        var time = Substitute.For<ITimeService>();
-        time.ToDateTimeLocalValueAsync(Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
-            .Returns(call => ToDateTimeLocal(call.Arg<DateTimeOffset>(), offset));
-        time.FromDateTimeLocalValueAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(call => FromDateTimeLocal(call.Arg<string>(), offset));
-        return time;
-    }
-
-    private static string ToDateTimeLocal(DateTimeOffset instant, TimeSpan offset)
-    {
-        return instant.ToUniversalTime().UtcDateTime.Add(offset)
-            .ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
-    }
-
-    private static DateTimeOffset? FromDateTimeLocal(string localValue, TimeSpan offset)
-    {
-        if (!DateTime.TryParse(
-                localValue,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out var parsed))
-        {
-            return null;
-        }
-
-        var utc = DateTime.SpecifyKind(parsed, DateTimeKind.Unspecified).Subtract(offset);
-        return new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc));
+        return TestTimeService.WithOffset(offset);
     }
 }

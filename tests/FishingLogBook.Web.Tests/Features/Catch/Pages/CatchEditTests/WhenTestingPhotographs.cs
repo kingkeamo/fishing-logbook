@@ -45,6 +45,74 @@ public class WhenTestingPhotographs : BaseCatchEditTest
     }
 
     [Fact]
+    public async Task ItShouldNotAddAPhotographThatCannotHaveItsMetadataRemoved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(CatchId, SyncStatus.Synchronised, SyncStatus.Synchronised, SyncStatus.Synchronised));
+        var synchroniser = QuietSynchroniser();
+        await using var context = CreateContext(
+            store,
+            synchroniser: synchroniser,
+            photoMetadata: UnsanitisablePhotoMetadata());
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, CatchId));
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-photo-camera").Should().NotBeNull());
+
+        // Act
+        cut.FindComponents<InputFile>()[0].UploadFiles(
+            InputFileContent.CreateFromBinary(
+                [0xFF, 0xD8, 0xFF],
+                "photo.jpg",
+                contentType: PhotographContentTypeConstants.Jpeg));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-edit-photo-unpreparable").TextContent.Should()
+                .Contain("could not be prepared"));
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+        await synchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldStoreOnlyTheSanitisedBytesOfAnAddedPhotograph()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var selectedBytes = new byte[] { 0xFF, 0xD8, 0x45, 0x78, 0x69, 0x66 };
+        var sanitisedBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xD9 };
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(CatchId, SyncStatus.Synchronised, SyncStatus.Synchronised, SyncStatus.Synchronised));
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var photoMetadata = SanitisingPhotoMetadata(sanitisedBytes);
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, CatchId));
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-photo-camera").Should().NotBeNull());
+
+        // Act
+        cut.FindComponents<InputFile>()[0].UploadFiles(
+            InputFileContent.CreateFromBinary(
+                selectedBytes,
+                "photo.jpg",
+                contentType: PhotographContentTypeConstants.Jpeg));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#catch-edit-photo-unpreparable").Should().BeEmpty());
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.Photographs.Count == 2
+                && catchRecord.Photographs[1].Bytes!.SequenceEqual(sanitisedBytes)
+                && !catchRecord.Photographs[1].Bytes!.SequenceEqual(selectedBytes)),
+            Arg.Any<CancellationToken>());
+        photoMetadata.Received(1).Sanitise(
+            Arg.Is<byte[]>(bytes => bytes.SequenceEqual(selectedBytes)),
+            PhotographContentTypeConstants.Jpeg);
+    }
+
+    [Fact]
     public async Task ItShouldAddAValidPhotographAndSynchroniseImmediately()
     {
         // Arrange

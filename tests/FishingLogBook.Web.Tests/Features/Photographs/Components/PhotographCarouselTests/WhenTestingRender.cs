@@ -1,14 +1,15 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common;
-using FishingLogBook.Web.Features.Catch.Components.CatchPhotographCarousel;
 using FishingLogBook.Web.Features.Catch.Models;
+using FishingLogBook.Web.Features.Photographs.Components.PhotographCarousel;
+using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.Web;
 
-namespace FishingLogBook.Web.Tests.Features.Catch.Components.CatchPhotographCarouselTests;
+namespace FishingLogBook.Web.Tests.Features.Photographs.Components.PhotographCarouselTests;
 
-public class WhenTestingRender : BaseCatchPhotographCarouselTest
+public class WhenTestingRender : BasePhotographCarouselTest
 {
     [Fact]
     public async Task ItShouldRenderAPlaceholderWhenThereAreNoPhotographs()
@@ -18,7 +19,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         await using var context = CreateContext();
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, [])
             .Add(carousel => carousel.IdPrefix, "carousel"));
 
@@ -37,7 +38,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         var photographs = Photographs(1);
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel"));
 
@@ -55,7 +56,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         await using var context = CreateContext();
         var photographs = new[]
         {
-            new CatchPhotographCarouselItemModel(
+            new PhotographCarouselItemModel(
                 Guid.NewGuid(),
                 "image/jpeg",
                 [1, 2, 3],
@@ -63,7 +64,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         };
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel"));
 
@@ -80,14 +81,14 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         await using var context = CreateContext();
         var photographs = new[]
         {
-            new CatchPhotographCarouselItemModel(
+            new PhotographCarouselItemModel(
                 Guid.NewGuid(),
                 "image/jpeg",
                 RemoteUrl: "https://r2.test/signed-download")
         };
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel"));
 
@@ -102,10 +103,10 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         using var culture = TestCulture.Use(CultureNames.English);
         await using var context = CreateContext();
         var photographId = Guid.NewGuid();
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs,
             [
-                new CatchPhotographCarouselItemModel(
+                new PhotographCarouselItemModel(
                     photographId,
                     "image/jpeg",
                     RemoteUrl: "https://r2.test/first-url")
@@ -116,7 +117,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         cut.Render(parameters => parameters
             .Add(carousel => carousel.Photographs,
             [
-                new CatchPhotographCarouselItemModel(
+                new PhotographCarouselItemModel(
                     photographId,
                     "image/jpeg",
                     RemoteUrl: "https://r2.test/refreshed-url")
@@ -135,7 +136,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         await using var context = CreateContext();
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, Photographs(2))
             .Add(carousel => carousel.IdPrefix, "carousel"));
 
@@ -152,7 +153,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         var photographs = Photographs(3);
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel"));
         var firstSrc = cut.Find("#carousel-photo-0").GetAttribute("src");
@@ -186,7 +187,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         await using var context = CreateContext();
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, Photographs(3))
             .Add(carousel => carousel.IdPrefix, "carousel"));
 
@@ -209,7 +210,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         await using var context = CreateContext();
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, Photographs(3))
             .Add(carousel => carousel.IdPrefix, "carousel"));
         var carousel = cut.Find(".catch-photograph-carousel");
@@ -235,7 +236,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         var photographs = Photographs(1);
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel")
             .Add(carousel => carousel.Editable, false));
@@ -254,7 +255,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         Guid? removedId = null;
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel")
             .Add(carousel => carousel.Editable, true)
@@ -276,7 +277,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         var photographs = Photographs(1);
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel")
             .Add(carousel => carousel.Editable, true));
@@ -297,7 +298,7 @@ public class WhenTestingRender : BaseCatchPhotographCarouselTest
         var photographs = Photographs(2);
 
         // Act
-        var cut = context.Render<CatchPhotographCarousel>(parameters => parameters
+        var cut = context.Render<PhotographCarousel>(parameters => parameters
             .Add(carousel => carousel.Photographs, photographs)
             .Add(carousel => carousel.IdPrefix, "carousel")
             .Add(carousel => carousel.Compact, compact));

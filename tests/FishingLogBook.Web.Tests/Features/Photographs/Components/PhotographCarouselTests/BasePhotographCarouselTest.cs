@@ -1,12 +1,13 @@
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Features.Catch.Models;
+using FishingLogBook.Web.Features.Photographs.Models;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
-namespace FishingLogBook.Web.Tests.Features.Catch.Components.CatchPhotographCarouselTests;
+namespace FishingLogBook.Web.Tests.Features.Photographs.Components.PhotographCarouselTests;
 
-public class BaseCatchPhotographCarouselTest
+public class BasePhotographCarouselTest
 {
     protected static BunitContext CreateContext()
     {
@@ -17,10 +18,10 @@ public class BaseCatchPhotographCarouselTest
         return context;
     }
 
-    protected static CatchPhotographCarouselItemModel[] Photographs(int count)
+    protected static PhotographCarouselItemModel[] Photographs(int count)
     {
         return [.. Enumerable.Range(0, count)
-            .Select(index => new CatchPhotographCarouselItemModel(
+            .Select(index => new PhotographCarouselItemModel(
                 Guid.NewGuid(),
                 PhotographContentTypeConstants.Jpeg,
                 [(byte)index, 2, 3]))];
