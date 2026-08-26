@@ -4,6 +4,8 @@ using Bunit.TestDoubles;
 using FishingLogBook.Web.Features.OfflineAccess.Enums;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Layouts.OfflineLayout;
+using FishingLogBook.Web.Localization;
+using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -28,8 +30,13 @@ public class WhenTestingRender : BaseOfflineLayoutTest
         cut.Find("#offline-diagnostics-button").GetAttribute("href").Should().Be("/offline-diagnostics");
         cut.Find("#offline-catches-nav-link").Should().NotBeNull();
         cut.Find("#offline-record-nav-link").Should().NotBeNull();
+        cut.Find("#offline-lock-nav-link").Should().NotBeNull();
         cut.FindAll("#profile-nav-link").Should().BeEmpty();
         cut.FindAll("#app-update-banner").Should().BeEmpty();
+        cut.FindAll("#user-menu-button").Should().BeEmpty();
+        cut.FindAll("#auth-sign-in-button").Should().BeEmpty();
+        cut.FindAll("#auth-create-account-button").Should().BeEmpty();
+        cut.FindAll("#app-menu-button").Should().BeEmpty();
     }
 
     [Fact]
@@ -86,12 +93,13 @@ public class WhenTestingRender : BaseOfflineLayoutTest
     }
 
     [Fact]
-    public async Task ItShouldUseNormalSignInAndReturnForAnExplicitOfflineUnlock()
+    public async Task ItShouldReturnToTheOriginatingCatchesRouteAfterSignInToSync()
     {
         // Arrange
         var reconnect = Substitute.For<IOfflineReconnectService>();
         reconnect.State.Returns(OfflineReconnectStateEnum.AuthenticationRequired);
         await using var context = CreateContext(out _, reconnect);
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/offline/catches");
         var cut = context.Render<OfflineLayout>(parameters => parameters.Add(
             layout => layout.Body,
             (RenderFragment)(_ => { })));
@@ -102,9 +110,88 @@ public class WhenTestingRender : BaseOfflineLayoutTest
         // Assert
         var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
         navigation.Uri.Should().Contain("authentication/login");
-        navigation.History.Should().ContainSingle();
-        navigation.History.Single().Options.HistoryEntryState.Should().Contain("reconnect=offline");
+        navigation.History.First().Options.HistoryEntryState.Should().Contain("\"returnUrl\":\"/catches\"");
+        navigation.History.First().Options.HistoryEntryState.Should().NotContain("reconnect=offline");
         await reconnect.DidNotReceive().AttemptAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnToTheOriginatingRecordRouteAfterSignInToSync()
+    {
+        // Arrange
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        reconnect.State.Returns(OfflineReconnectStateEnum.AuthenticationRequired);
+        await using var context = CreateContext(out _, reconnect);
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/offline/record");
+        var cut = context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+
+        // Act
+        await cut.Find("#offline-reconnect-sign-in").ClickAsync();
+
+        // Assert
+        var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
+        navigation.History.First().Options.HistoryEntryState.Should().Contain("\"returnUrl\":\"/catches/record\"");
+    }
+
+    [Fact]
+    public async Task ItShouldFallBackToCatchesWhenTheCurrentOfflineRouteIsUnrecognised()
+    {
+        // Arrange
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        reconnect.State.Returns(OfflineReconnectStateEnum.AuthenticationRequired);
+        await using var context = CreateContext(out _, reconnect);
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/offline/unexpected");
+        var cut = context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+
+        // Act
+        await cut.Find("#offline-reconnect-sign-in").ClickAsync();
+
+        // Assert
+        var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
+        navigation.History.First().Options.HistoryEntryState.Should().Contain("\"returnUrl\":\"/catches\"");
+    }
+
+    [Fact]
+    public async Task ItShouldNotClaimConnectionIsRestoredWhileVerifyingIt()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        reconnect.State.Returns(OfflineReconnectStateEnum.ConnectivityRestored);
+        await using var context = CreateContext(out _, reconnect);
+
+        // Act
+        var cut = context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+
+        // Assert
+        var text = cut.Find("#offline-reconnect-progress").TextContent;
+        text.Should().NotContain("restored");
+        text.Should().NotContain("Restored");
+    }
+
+    [Fact]
+    public async Task ItShouldNotClaimToBeOnlineWhenOnlyAskingForAuthentication()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var reconnect = Substitute.For<IOfflineReconnectService>();
+        reconnect.State.Returns(OfflineReconnectStateEnum.AuthenticationRequired);
+        await using var context = CreateContext(out _, reconnect);
+
+        // Act
+        var cut = context.Render<OfflineLayout>(parameters => parameters.Add(
+            layout => layout.Body,
+            (RenderFragment)(_ => { })));
+
+        // Assert
+        var text = cut.Find("#offline-reconnect-authentication-required").TextContent;
+        text.Should().NotContain("back online");
     }
 
     [Fact]
