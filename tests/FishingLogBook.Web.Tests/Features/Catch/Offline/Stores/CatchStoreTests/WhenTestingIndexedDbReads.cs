@@ -166,6 +166,40 @@ public class WhenTestingIndexedDbReads
         js.Identifiers.Should().Equal("getAllCatchesWithPhotographs");
     }
 
+    [Fact]
+    public async Task ItShouldRejectAnEmptyOwnerForCleanup()
+    {
+        // Arrange
+        var js = new RecordingJsRuntime();
+        var sut = CreateStore(js);
+
+        // Act
+        var act = () => sut.CleanupSyncedCacheAsync(Guid.Empty, DateTimeOffset.UtcNow, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        js.Invocations.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldInvokeCleanupWithTheOwnerAndAnIsoCutoff()
+    {
+        // Arrange
+        var js = new RecordingJsRuntime { CleanupResult = 2 };
+        var sut = CreateStore(js);
+        var cutoff = DateTimeOffset.Parse("2026-08-25T10:00:00Z");
+
+        // Act
+        var removed = await sut.CleanupSyncedCacheAsync(OwnerUserId, cutoff, CancellationToken.None);
+
+        // Assert
+        removed.Should().Be(2);
+        js.Invocations.Should().ContainSingle();
+        js.Invocations[0].Identifier.Should().Be("cleanupSyncedCatches");
+        js.Invocations[0].Arguments[0].Should().Be(OwnerUserId.ToString("D"));
+        js.Invocations[0].Arguments[1].Should().Be(cutoff.ToString("O"));
+    }
+
     private static IndexedDbCatchStore CreateStore(IJSRuntime js)
     {
         return new IndexedDbCatchStore(
@@ -214,6 +248,8 @@ public class WhenTestingIndexedDbReads
 
         public StoredCatchRecord[] ListRecords { get; set; } = [];
 
+        public int CleanupResult { get; set; }
+
         public IReadOnlyList<JsInvocation> Invocations => _invocations;
 
         public IReadOnlyList<string> Identifiers =>
@@ -240,6 +276,7 @@ public class WhenTestingIndexedDbReads
                 "getCatchWithPhotographs" => SingleRecord,
                 "getCatchMetadata" => ListRecords,
                 "getAllCatchesWithPhotographs" => ListRecords,
+                "cleanupSyncedCatches" => CleanupResult,
                 _ => null
             };
             return new ValueTask<TValue>((TValue)result!);

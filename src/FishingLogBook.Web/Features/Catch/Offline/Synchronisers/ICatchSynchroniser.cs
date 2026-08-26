@@ -9,4 +9,8 @@ public interface ICatchSynchroniser
     Task SynchronisePendingAsync(Guid ownerUserId, CancellationToken cancellationToken);
 
     Task RetryAsync(Guid catchId, CancellationToken cancellationToken);
+
+    Task CleanupSyncedCacheAsync(CancellationToken cancellationToken);
+
+    Task CleanupSyncedCacheAsync(Guid ownerUserId, CancellationToken cancellationToken);
 }

@@ -4,6 +4,7 @@ export {
     getCatchMetadata,
     getCatchMetadataById,
     getCatchWithPhotographs,
-    updateCatchMetadata
+    updateCatchMetadata,
+    cleanupSyncedCatches
 } from './storage/catch-store.js';
 export { getStorageEstimate } from './storage/indexed-db.js';

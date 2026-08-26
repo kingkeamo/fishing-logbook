@@ -38,7 +38,8 @@ internal static class CatchJson
             catchRecord.Length,
             catchRecord.Method,
             catchRecord.BaitOrLure,
-            catchRecord.Notes);
+            catchRecord.Notes,
+            catchRecord.SyncedAt);
         return JsonSerializer.Serialize(metadata, Options);
     }
 
@@ -68,7 +69,8 @@ internal static class CatchJson
             metadata.Length,
             metadata.Method,
             metadata.BaitOrLure,
-            metadata.Notes);
+            metadata.Notes,
+            metadata.SyncedAt);
     }
 
     public static CatchModel DeserializeMetadata(string json)
@@ -124,7 +126,8 @@ internal static class CatchJson
         decimal? Length = null,
         string? Method = null,
         string? BaitOrLure = null,
-        string? Notes = null);
+        string? Notes = null,
+        DateTimeOffset? SyncedAt = null);
 
     private sealed record CatchPhotographMetadata(
         Guid Id,

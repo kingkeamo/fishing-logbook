@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     CATCH_STORE_NAME,
     PHOTO_STORE_NAME,
+    cleanupSyncedCatches,
     getAllCatchesWithPhotographs,
     getCatchMetadata,
     getCatchMetadataById,
@@ -867,4 +868,194 @@ describe('Catch store read granularity', () => {
         expect(item.photographs).toHaveLength(1);
         expect(item.photographs[0].id).toBe('legacy-photo');
     });
+});
+
+describe('Catch store cleanup', () => {
+    const ownerUserId = '11111111-1111-1111-1111-111111111111';
+    const otherUserId = '22222222-2222-2222-2222-222222222222';
+    const now = Date.parse('2026-08-26T12:00:00Z');
+    const cutoffIso = new Date(now - (24 * 60 * 60 * 1000)).toISOString();
+
+    async function seedSyncedCatch(catchId, {
+        userId = ownerUserId,
+        syncStatus = 'synchronised',
+        metadataSyncStatus = 'synchronised',
+        photographSyncStatus = 'synchronised',
+        syncedAt
+    } = {}) {
+        const photographId = `${catchId.slice(0, 8)}-cccc-cccc-cccc-cccccccccccc`;
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId,
+                caughtOn: '2020-01-01T08:00:00+00:00',
+                syncStatus: 'savedLocally',
+                metadataSyncStatus: 'savedLocally',
+                photographs: [{ id: photographId, catchId, contentType: 'image/jpeg', syncStatus: 'savedLocally' }]
+            }),
+            [{ id: photographId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1, 2, 3]) }]);
+        await updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId,
+            syncStatus,
+            metadataSyncStatus,
+            syncedAt,
+            photographs: [{ id: photographId, catchId, syncStatus: photographSyncStatus }]
+        }));
+        return photographId;
+    }
+
+    it('removes an eligible synced Catch and its photograph without reading photograph bytes', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        await seedSyncedCatch(catchId, {
+            syncedAt: new Date(now - (25 * 60 * 60 * 1000)).toISOString()
+        });
+        const accesses = recordCleanupStoreAccess();
+
+        try {
+            const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+            const remaining = await getCatchMetadata(ownerUserId);
+
+            expect(removed).toBe(1);
+            expect(remaining).toHaveLength(0);
+            expect(accesses.get.filter((access) => access.store === PHOTO_STORE_NAME)).toHaveLength(0);
+            expect(accesses.get.filter((access) => access.store === CATCH_STORE_NAME)).toHaveLength(0);
+        } finally {
+            accesses.restore();
+        }
+    });
+
+    it('retains a synced Catch newer than the retention cutoff', async () => {
+        const catchId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await seedSyncedCatch(catchId, { syncedAt: new Date(now - (1 * 60 * 60 * 1000)).toISOString() });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+        const remaining = await getCatchMetadata(ownerUserId);
+
+        expect(removed).toBe(0);
+        expect(remaining).toHaveLength(1);
+    });
+
+    it('treats the exact retention boundary as eligible', async () => {
+        const catchId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        await seedSyncedCatch(catchId, { syncedAt: cutoffIso });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+
+        expect(removed).toBe(1);
+    });
+
+    it('never cleans up while offline-derived pending state is current, regardless of syncedAt age', async () => {
+        const catchId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+        await seedSyncedCatch(catchId, {
+            syncStatus: 'waitingToSynchronise',
+            metadataSyncStatus: 'waitingToSynchronise',
+            photographSyncStatus: 'waitingToSynchronise',
+            syncedAt: new Date(now - (240 * 60 * 60 * 1000)).toISOString()
+        });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+        const remaining = await getCatchMetadata(ownerUserId);
+
+        expect(removed).toBe(0);
+        expect(remaining).toHaveLength(1);
+    });
+
+    it('retains a failed/recoverable Catch regardless of age', async () => {
+        const catchId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+        await seedSyncedCatch(catchId, {
+            syncStatus: 'failedToSynchronise',
+            metadataSyncStatus: 'failedToSynchronise',
+            photographSyncStatus: 'failedToSynchronise',
+            syncedAt: new Date(now - (240 * 60 * 60 * 1000)).toISOString()
+        });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+
+        expect(removed).toBe(0);
+    });
+
+    it('retains a Catch whose photograph is still awaiting upload', async () => {
+        const catchId = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+        await seedSyncedCatch(catchId, {
+            photographSyncStatus: 'waitingToSynchronise',
+            syncedAt: new Date(now - (48 * 60 * 60 * 1000)).toISOString()
+        });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+
+        expect(removed).toBe(0);
+    });
+
+    it('never removes another owner Catch, even when eligible', async () => {
+        const ownerCatchId = '11111111-2222-3333-4444-555555555555';
+        const otherCatchId = '99999999-8888-7777-6666-555555555555';
+        await seedSyncedCatch(ownerCatchId, { syncedAt: new Date(now - (48 * 60 * 60 * 1000)).toISOString() });
+        await seedSyncedCatch(otherCatchId, {
+            userId: otherUserId,
+            syncedAt: new Date(now - (48 * 60 * 60 * 1000)).toISOString()
+        });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+        const ownerRemaining = await getCatchMetadata(ownerUserId);
+        const otherRemaining = await getCatchMetadata(otherUserId);
+
+        expect(removed).toBe(1);
+        expect(ownerRemaining).toHaveLength(0);
+        expect(otherRemaining).toHaveLength(1);
+    });
+
+    it('ignores an old CaughtOn when the Catch synced recently', async () => {
+        const catchId = '22222222-3333-4444-5555-666666666666';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                caughtOn: '2015-01-01T08:00:00+00:00',
+                syncStatus: 'savedLocally',
+                metadataSyncStatus: 'savedLocally',
+                photographs: [{ id: 'old-catch-photo', catchId, contentType: 'image/jpeg', syncStatus: 'savedLocally' }]
+            }),
+            [{ id: 'old-catch-photo', catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1]) }]);
+        await updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            syncStatus: 'synchronised',
+            metadataSyncStatus: 'synchronised',
+            syncedAt: new Date(now - (1 * 60 * 60 * 1000)).toISOString(),
+            photographs: [{ id: 'old-catch-photo', catchId, syncStatus: 'synchronised' }]
+        }));
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+
+        expect(removed).toBe(0);
+    });
+
+    it('does not treat a Catch with no recorded syncedAt as eligible', async () => {
+        const catchId = '33333333-4444-5555-6666-777777777777';
+        await seedSyncedCatch(catchId, { syncedAt: undefined });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+
+        expect(removed).toBe(0);
+    });
+
+    it('returns zero for an unknown owner without throwing', async () => {
+        const removed = await cleanupSyncedCatches('', cutoffIso);
+
+        expect(removed).toBe(0);
+    });
+
+    function recordCleanupStoreAccess() {
+        const accesses = { get: [] };
+        const originalGet = IDBObjectStore.prototype.get;
+        IDBObjectStore.prototype.get = function instrumentedGet(key) {
+            accesses.get.push({ store: this.name, key });
+            return originalGet.call(this, key);
+        };
+        accesses.restore = () => {
+            IDBObjectStore.prototype.get = originalGet;
+        };
+        return accesses;
+    }
 });

@@ -21,4 +21,9 @@ public interface ICatchStore
         CancellationToken cancellationToken);
 
     Task UpdateSyncStateAsync(CatchModel catchRecord, CancellationToken cancellationToken);
+
+    Task<int> CleanupSyncedCacheAsync(
+        Guid ownerUserId,
+        DateTimeOffset olderThan,
+        CancellationToken cancellationToken);
 }

@@ -155,6 +155,38 @@ public class WhenTestingStart : BaseOfflineReconnectServiceTest
     }
 
     [Fact]
+    public async Task ItShouldTriggerSyncedCacheCleanupOnceReconnectSettlesOnline()
+    {
+        // Arrange
+        MockNetworkService.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(true);
+
+        // Act
+        await Sut.StartAsync(CancellationToken.None);
+
+        // Assert
+        Sut.State.Should().Be(OfflineReconnectStateEnum.Online);
+        await MockCatchSynchroniser.Received(1).CleanupSyncedCacheAsync(
+            OfflineUserId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotTriggerSyncedCacheCleanupWhenReconnectDoesNotReachOnline()
+    {
+        // Arrange
+        MockNetworkService.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(false);
+
+        // Act
+        await Sut.StartAsync(CancellationToken.None);
+
+        // Assert
+        Sut.State.Should().Be(OfflineReconnectStateEnum.Offline);
+        await MockCatchSynchroniser.DidNotReceive().CleanupSyncedCacheAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldAttemptAutomaticallyOnlyOnceUntilConnectivityIsLostAgain()
     {
         // Arrange

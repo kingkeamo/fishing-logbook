@@ -9,6 +9,39 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Offline.CatchJsonTests;
 public class WhenTestingDeserialize : BaseCatchJsonTest
 {
     [Fact]
+    public void ItShouldRoundTripSyncedAt()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var syncedAt = DateTimeOffset.Parse("2026-08-25T10:15:30Z");
+        var model = new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographModel(catchId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
+            SyncedAt: syncedAt);
+
+        // Act
+        var json = CatchJson.SerializeMetadata(model);
+        var restored = CatchJson.DeserializeMetadata(json);
+
+        // Assert
+        restored.SyncedAt.Should().Be(syncedAt);
+    }
+
+    [Fact]
+    public void ItShouldDefaultSyncedAtToNullWhenMissingFromStoredJson()
+    {
+        // Arrange
+        const string json = """{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","caughtOn":"2026-08-17T08:00:00Z","photographs":[]}""";
+
+        // Act
+        var restored = CatchJson.DeserializeMetadata(json);
+
+        // Assert
+        restored.SyncedAt.Should().BeNull();
+    }
+
+    [Fact]
     public void ItShouldOrderPhotographsByMetadataRatherThanInputOrder()
     {
         // Arrange

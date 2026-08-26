@@ -193,6 +193,38 @@ public sealed class IndexedDbCatchStore : ICatchStore
             _logging);
     }
 
+    public async Task<int> CleanupSyncedCacheAsync(
+        Guid ownerUserId,
+        DateTimeOffset olderThan,
+        CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        return await OfflineOperation.ExecuteAsync(
+            "cleanup",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                return await module.InvokeAsync<int>(
+                    "cleanupSyncedCatches",
+                    token,
+                    ownerUserId.ToString("D"),
+                    olderThan.ToString("O"));
+            },
+            cancellationToken,
+            _logging);
+    }
+
     private async Task<IReadOnlyList<CatchModel>> ReadCatchesAsync(
         Guid ownerUserId,
         string jsFunction,
