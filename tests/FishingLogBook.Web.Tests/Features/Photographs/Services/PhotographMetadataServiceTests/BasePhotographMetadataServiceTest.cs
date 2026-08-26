@@ -13,6 +13,9 @@ public class BasePhotographMetadataServiceTest
     protected const ushort OffsetTimeOriginalTag = 0x9011;
     protected const ushort OffsetTimeDigitizedTag = 0x9012;
 
+    protected static readonly DateTimeOffset ReferenceNow =
+        DateTimeOffset.Parse("2026-08-26T12:00:00Z");
+
     protected static ITimeService BrowserTime(TimeSpan offset)
     {
         var time = Substitute.For<ITimeService>();

@@ -52,6 +52,7 @@ public class WhenTestingPhotographMetadata : BaseCatchEditTest
             Arg.Any<byte[]>(),
             Arg.Any<string>(),
             Arg.Any<DateTimeOffset?>(),
+            Arg.Any<DateTimeOffset>(),
             Arg.Any<CancellationToken>());
         metadata.DidNotReceive().Sanitise(Arg.Any<byte[]>(), Arg.Any<string>());
     }

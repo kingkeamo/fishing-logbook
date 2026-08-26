@@ -23,6 +23,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             JpegWithoutExif(),
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -43,6 +44,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             JpegWithoutExif(),
             PhotographContentTypeConstants.Jpeg,
             DateTimeOffset.Parse(lastModified),
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -61,6 +63,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             JpegWithoutExif(),
             PhotographContentTypeConstants.Jpeg,
             FileModified,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -79,6 +82,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             PngWithoutMetadata(),
             PhotographContentTypeConstants.Png,
             FileModified,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -97,6 +101,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             Webp(new ExifContent { Latitude = 53.2707, Longitude = -9.0568 }),
             PhotographContentTypeConstants.Webp,
             FileModified,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -117,6 +122,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             JpegWithoutExif(),
             PhotographContentTypeConstants.Jpeg,
             longAgo,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -136,6 +142,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             bytes,
             PhotographContentTypeConstants.Jpeg,
             FileModified,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -155,6 +162,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             bytes,
             PhotographContentTypeConstants.Jpeg,
             FileModified,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -180,6 +188,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
             bytes,
             PhotographContentTypeConstants.Jpeg,
             FileModified,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert

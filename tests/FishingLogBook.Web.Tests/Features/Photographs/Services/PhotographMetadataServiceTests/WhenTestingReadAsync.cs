@@ -18,7 +18,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
         var sut = new PhotographMetadataService(time);
 
         // Act
-        var metadata = await sut.ReadAsync([], PhotographContentTypeConstants.Jpeg, null, CancellationToken.None);
+        var metadata = await sut.ReadAsync([], PhotographContentTypeConstants.Jpeg, null, ReferenceNow, CancellationToken.None);
 
         // Assert
         metadata.Should().Be(PhotographMetadataModel.Empty);
@@ -36,7 +36,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
 
         // Act
-        var metadata = await sut.ReadAsync(bytes, "image/heic", null, CancellationToken.None);
+        var metadata = await sut.ReadAsync(bytes, "image/heic", null, ReferenceNow, CancellationToken.None);
 
         // Assert
         metadata.Should().Be(PhotographMetadataModel.Empty);
@@ -57,6 +57,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             JpegWithoutExif(),
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -83,6 +84,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -102,6 +104,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes[..(bytes.Length / 2)],
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -125,6 +128,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -147,6 +151,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -174,6 +179,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -204,6 +210,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -223,6 +230,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -242,6 +250,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -261,6 +270,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -281,6 +291,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -305,6 +316,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -334,6 +346,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -363,6 +376,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -389,6 +403,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -411,6 +426,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -438,6 +454,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -461,6 +478,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -485,6 +503,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Png,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert
@@ -510,6 +529,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
             bytes,
             PhotographContentTypeConstants.Webp,
             null,
+            ReferenceNow,
             CancellationToken.None);
 
         // Assert

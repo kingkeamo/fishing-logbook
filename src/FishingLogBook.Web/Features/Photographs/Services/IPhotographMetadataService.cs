@@ -8,6 +8,7 @@ public interface IPhotographMetadataService
         byte[] bytes,
         string contentType,
         DateTimeOffset? fileLastModified,
+        DateTimeOffset now,
         CancellationToken cancellationToken);
 
     byte[]? Sanitise(byte[] bytes, string contentType);

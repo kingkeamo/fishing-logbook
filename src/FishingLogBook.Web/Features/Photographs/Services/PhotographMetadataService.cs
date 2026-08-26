@@ -11,6 +11,7 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
 {
     private const double MaxLatitudeDegrees = 90;
     private const double MaxLongitudeDegrees = 180;
+    private static readonly TimeSpan MaxCaptureFutureSkew = TimeSpan.FromMinutes(15);
     private const int EarliestPlausibleCaptureYear = 1900;
     private const int TiffHeaderLength = 8;
     private const int IfdEntryLength = 12;
@@ -63,25 +64,26 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
         byte[] bytes,
         string contentType,
         DateTimeOffset? fileLastModified,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         var tiffOffset = FindTiffOffset(bytes, contentType);
         var values = tiffOffset < 0 ? null : ReadExifValues(bytes, tiffOffset);
-        var capturedOn = values is null
-            ? null
-            : await ResolveCapturedOnAsync(values, cancellationToken);
-        if (capturedOn is not null)
+        var exif = values is null
+            ? default
+            : await ResolveCapturedOnAsync(values, now, cancellationToken);
+        if (exif.CapturedOn is not null)
         {
             return new PhotographMetadataModel(
-                capturedOn,
+                exif.CapturedOn,
                 values!.Latitude,
                 values.Longitude,
-                values.UsedDigitized
+                exif.UsedDigitized
                     ? PhotographCapturedOnSourceEnum.ExifDigitized
                     : PhotographCapturedOnSourceEnum.ExifOriginal);
         }
 
-        var fallback = PlausibleFileTimestamp(fileLastModified);
+        var fallback = PlausibleFileTimestamp(fileLastModified, now);
         return new PhotographMetadataModel(
             fallback,
             values?.Latitude,
@@ -91,16 +93,17 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
                 : PhotographCapturedOnSourceEnum.FileLastModified);
     }
 
-    private static DateTimeOffset? PlausibleFileTimestamp(DateTimeOffset? fileLastModified)
+    private static DateTimeOffset? PlausibleFileTimestamp(
+        DateTimeOffset? fileLastModified,
+        DateTimeOffset now)
     {
-        if (fileLastModified is null
-            || fileLastModified.Value == default
-            || !IsPlausible(fileLastModified.Value.Year))
+        if (fileLastModified is null || fileLastModified.Value == default)
         {
             return null;
         }
 
-        return fileLastModified.Value.ToUniversalTime();
+        var instant = fileLastModified.Value.ToUniversalTime();
+        return IsPlausibleCapture(instant, now) ? instant : null;
     }
 
     public byte[]? Sanitise(byte[] bytes, string contentType)
@@ -309,45 +312,64 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
         ];
     }
 
-    private async Task<DateTimeOffset?> ResolveCapturedOnAsync(
+    private async Task<CaptureResult> ResolveCapturedOnAsync(
         ExifValues values,
+        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        if (values.WallClockText is null)
+        var original = await ResolveCaptureAsync(values.Original, now, cancellationToken);
+        if (original is not null)
+        {
+            return new CaptureResult(original, false);
+        }
+
+        var digitized = await ResolveCaptureAsync(values.Digitized, now, cancellationToken);
+        return new CaptureResult(digitized, digitized is not null);
+    }
+
+    private async Task<DateTimeOffset?> ResolveCaptureAsync(
+        ExifCapture? capture,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (capture is not { } candidate)
         {
             return null;
         }
 
-        if (values.OffsetText is not null
+        if (candidate.OffsetText is not null
             && DateTimeOffset.TryParseExact(
-                values.WallClockText + values.OffsetText,
+                candidate.WallClockText + candidate.OffsetText,
                 ExifWallClockWithOffsetFormat,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
                 out var withOffset))
         {
-            return IsPlausible(withOffset.Year) ? withOffset : null;
+            return IsPlausibleCapture(withOffset, now) ? withOffset : null;
         }
 
         if (!DateTime.TryParseExact(
-                values.WallClockText,
+                candidate.WallClockText,
                 ExifWallClockFormat,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
                 out var wallClock)
-            || !IsPlausible(wallClock.Year))
+            || wallClock.Year < EarliestPlausibleCaptureYear)
         {
             return null;
         }
 
-        return await _time.FromDateTimeLocalValueAsync(
+        var resolved = await _time.FromDateTimeLocalValueAsync(
             wallClock.ToString(DateTimeLocalFormat, CultureInfo.InvariantCulture),
             cancellationToken);
+        return resolved is not null && IsPlausibleCapture(resolved.Value, now) ? resolved : null;
     }
 
-    private static bool IsPlausible(int year)
+    private static bool IsPlausibleCapture(DateTimeOffset instant, DateTimeOffset now)
     {
-        return year >= EarliestPlausibleCaptureYear;
+        return instant != default
+            && instant.Year >= EarliestPlausibleCaptureYear
+            && instant <= now + MaxCaptureFutureSkew;
     }
 
     private static int FindTiffOffset(byte[] bytes, string contentType)
@@ -609,11 +631,11 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
         var root = ReadIfd(bytes, tiffOffset, firstIfdOffset, bigEndian);
         var exif = ReadPointedIfd(bytes, tiffOffset, root, ExifIfdPointerTag, bigEndian);
         var gps = ReadPointedIfd(bytes, tiffOffset, root, GpsIfdPointerTag, bigEndian);
-        var (wallClockText, offsetText, usedDigitized) = ReadCaptureText(bytes, tiffOffset, exif, bigEndian);
+        var (original, digitized) = ReadCaptureText(bytes, tiffOffset, exif, bigEndian);
         var (latitude, longitude) = ReadCoordinates(bytes, tiffOffset, gps, bigEndian);
-        return wallClockText is null && latitude is null
+        return original is null && digitized is null && latitude is null
             ? null
-            : new ExifValues(wallClockText, offsetText, usedDigitized, latitude, longitude);
+            : new ExifValues(original, digitized, latitude, longitude);
     }
 
     private static bool TryReadTiffHeader(
@@ -699,22 +721,25 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
         return ReadIfd(bytes, tiffOffset, ReadUInt32(bytes, pointer.ValuePosition, bigEndian), bigEndian);
     }
 
-    private static (string? WallClockText, string? OffsetText, bool UsedDigitized) ReadCaptureText(
+    private static (ExifCapture? Original, ExifCapture? Digitized) ReadCaptureText(
         byte[] bytes,
         int tiffOffset,
         Dictionary<ushort, IfdEntry> exif,
         bool bigEndian)
     {
         var original = ReadAscii(bytes, tiffOffset, exif, DateTimeOriginalTag, bigEndian);
-        if (original is not null)
-        {
-            return (original, ReadAscii(bytes, tiffOffset, exif, OffsetTimeOriginalTag, bigEndian), false);
-        }
-
         var digitized = ReadAscii(bytes, tiffOffset, exif, DateTimeDigitizedTag, bigEndian);
-        return digitized is null
-            ? (null, null, false)
-            : (digitized, ReadAscii(bytes, tiffOffset, exif, OffsetTimeDigitizedTag, bigEndian), true);
+        return (
+            original is null
+                ? null
+                : new ExifCapture(
+                    original,
+                    ReadAscii(bytes, tiffOffset, exif, OffsetTimeOriginalTag, bigEndian)),
+            digitized is null
+                ? null
+                : new ExifCapture(
+                    digitized,
+                    ReadAscii(bytes, tiffOffset, exif, OffsetTimeDigitizedTag, bigEndian)));
     }
 
     private static (double? Latitude, double? Longitude) ReadCoordinates(
@@ -988,9 +1013,12 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
         int DataLength);
 
     private sealed record ExifValues(
-        string? WallClockText,
-        string? OffsetText,
-        bool UsedDigitized,
+        ExifCapture? Original,
+        ExifCapture? Digitized,
         double? Latitude,
         double? Longitude);
+
+    private readonly record struct ExifCapture(string WallClockText, string? OffsetText);
+
+    private readonly record struct CaptureResult(DateTimeOffset? CapturedOn, bool UsedDigitized);
 }

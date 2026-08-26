@@ -51,7 +51,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
             Latitude = 53.2707,
             Longitude = -9.0568
         });
-        var original = await sut.ReadAsync(bytes, PhotographContentTypeConstants.Jpeg, null, CancellationToken.None);
+        var original = await sut.ReadAsync(bytes, PhotographContentTypeConstants.Jpeg, null, ReferenceNow, CancellationToken.None);
 
         // Act
         var sanitised = sut.Sanitise(bytes, PhotographContentTypeConstants.Jpeg);
@@ -64,6 +64,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
             sanitised,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
         reread.Should().Be(PhotographMetadataModel.Empty);
         Encoding.ASCII.GetString(sanitised!).Should().NotContain("Exif");
@@ -95,6 +96,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
             sanitised,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
         reread.HasCoordinates.Should().BeFalse();
     }
@@ -145,6 +147,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
             sanitised,
             PhotographContentTypeConstants.Jpeg,
             null,
+            ReferenceNow,
             CancellationToken.None);
         reread.CapturedOn.Should().BeNull();
         reread.HasCoordinates.Should().BeFalse();
@@ -190,6 +193,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
             sanitised,
             PhotographContentTypeConstants.Png,
             null,
+            ReferenceNow,
             CancellationToken.None);
         reread.Should().Be(PhotographMetadataModel.Empty);
         Encoding.ASCII.GetString(sanitised!).Should().NotContain("eXIf");
@@ -240,6 +244,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
             sanitised,
             PhotographContentTypeConstants.Webp,
             null,
+            ReferenceNow,
             CancellationToken.None);
         reread.Should().Be(PhotographMetadataModel.Empty);
         Encoding.ASCII.GetString(sanitised!).Should().NotContain("EXIF");

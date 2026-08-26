@@ -65,6 +65,7 @@ public class BaseOfflineRecordCatchTest
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
+                Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns(PhotographMetadataModel.Empty);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())

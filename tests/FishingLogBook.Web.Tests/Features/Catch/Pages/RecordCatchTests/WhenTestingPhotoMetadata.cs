@@ -33,7 +33,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var photoMetadata = Substitute.For<IPhotographMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns<Task<PhotographMetadataModel>>(_ =>
                 throw new InvalidOperationException("EXIF GPS 53.2707,-9.0568 at offset 42 in beach.jpg"));
         PassThroughSanitisation(photoMetadata);
@@ -72,7 +72,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         var photoMetadata = Substitute.For<IPhotographMetadataService>();
-        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<CancellationToken>())
+        photoMetadata.ReadAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns(PhotographMetadataModel.Empty);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
             .Returns<byte[]?>(_ => throw new InvalidOperationException("GPS 53.2707 at offset 42"));
@@ -169,6 +169,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             Arg.Any<byte[]>(),
             Arg.Any<string>(),
             Arg.Any<DateTimeOffset?>(),
+            Arg.Any<DateTimeOffset>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -226,6 +227,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             Arg.Is<byte[]>(bytes => bytes.SequenceEqual(new byte[] { FirstPhotograph })),
             "image/jpeg",
             Arg.Any<DateTimeOffset?>(),
+            Arg.Any<DateTimeOffset>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -460,6 +462,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
             Arg.Any<byte[]>(),
             Arg.Any<string>(),
             Arg.Any<DateTimeOffset?>(),
+            Arg.Any<DateTimeOffset>(),
             Arg.Any<CancellationToken>());
     }
 

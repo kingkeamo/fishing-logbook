@@ -32,6 +32,7 @@ public class WhenTestingPrepareAsync : BasePhotographPreparationServiceTest
             Arg.Any<byte[]>(),
             Arg.Any<string>(),
             Arg.Any<DateTimeOffset?>(),
+            Arg.Any<DateTimeOffset>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -45,6 +46,7 @@ public class WhenTestingPrepareAsync : BasePhotographPreparationServiceTest
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
+                Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns(PhotographMetadataModel.Empty);
         metadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns((byte[]?)null);
@@ -73,6 +75,7 @@ public class WhenTestingPrepareAsync : BasePhotographPreparationServiceTest
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
+                Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns(PhotographMetadataModel.Empty);
         metadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
@@ -133,6 +136,7 @@ public class WhenTestingPrepareAsync : BasePhotographPreparationServiceTest
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
+                Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns<Task<PhotographMetadataModel>>(_ =>
                 throw new InvalidOperationException("EXIF GPS 53.2707,-9.0568 at offset 42 in beach.jpg"));
@@ -220,6 +224,36 @@ public class WhenTestingPrepareAsync : BasePhotographPreparationServiceTest
     }
 
     [Fact]
+    public async Task ItShouldNeverHandOnAFutureCaptureDateToConsumers()
+    {
+        // Arrange
+        var sut = CreateSut();
+        var original = Jpeg(new ExifContent
+        {
+            ExifText =
+            {
+                [DateTimeOriginalTag] = "2099:01:01 09:00:00",
+                [OffsetTimeOriginalTag] = "+00:00"
+            },
+            Latitude = 53.2707,
+            Longitude = -9.0568
+        });
+
+        // Act
+        var result = await sut.PrepareAsync(
+            File(original, PhotographContentTypeConstants.Jpeg, DateTimeOffset.UtcNow.AddYears(5)),
+            PhotographSourceEnum.Gallery,
+            CancellationToken.None);
+
+        // Assert
+        result.Outcome.Should().Be(PhotographPreparationOutcomeEnum.Prepared);
+        result.Photograph!.Metadata.CapturedOn.Should().BeNull();
+        result.Photograph.Metadata.CapturedOnSource.Should().Be(PhotographCapturedOnSourceEnum.None);
+        result.Photograph.CapturedOnLocal.Should().BeNull();
+        result.Photograph.Metadata.HasCoordinates.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task ItShouldPreferTheDigitizedDateWhenNoOriginalDateExists()
     {
         // Arrange
@@ -298,6 +332,7 @@ public class WhenTestingPrepareAsync : BasePhotographPreparationServiceTest
                 result.Photograph.Bytes,
                 container.ContentType,
                 null,
+                ReferenceNow,
                 CancellationToken.None);
             reread.CapturedOn.Should().BeNull();
             reread.HasCoordinates.Should().BeFalse();

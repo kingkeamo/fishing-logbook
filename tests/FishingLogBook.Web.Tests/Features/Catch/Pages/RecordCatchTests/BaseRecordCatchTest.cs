@@ -107,6 +107,7 @@ public class BaseRecordCatchTest
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
+                Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns(PhotographMetadataModel.Empty);
         PassThroughSanitisation(photoMetadata);
@@ -128,6 +129,7 @@ public class BaseRecordCatchTest
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
+                Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns(metadata);
         photoMetadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>()).Returns(sanitised);
@@ -142,6 +144,7 @@ public class BaseRecordCatchTest
                 Arg.Any<byte[]>(),
                 Arg.Any<string>(),
                 Arg.Any<DateTimeOffset?>(),
+                Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns(call =>
             {

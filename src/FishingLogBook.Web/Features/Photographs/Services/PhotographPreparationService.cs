@@ -88,7 +88,12 @@ public sealed class PhotographPreparationService : IPhotographPreparationService
     {
         try
         {
-            return await _metadata.ReadAsync(bytes, contentType, fileLastModified, cancellationToken);
+            return await _metadata.ReadAsync(
+                bytes,
+                contentType,
+                fileLastModified,
+                DateTimeOffset.UtcNow,
+                cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
