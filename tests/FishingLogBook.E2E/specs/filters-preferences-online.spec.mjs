@@ -116,5 +116,6 @@ async function saveProfile(page) {
             && response.ok()),
         page.locator('#profile-save-button').click()
     ]);
+    await expect(page.locator('#profile-save-spinner')).toBeHidden();
     await expect(page.locator('#profile-save-button')).toBeEnabled();
 }

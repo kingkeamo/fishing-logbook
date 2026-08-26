@@ -93,6 +93,7 @@ async function setProfileUnits(page, weight, length) {
             && response.ok()),
         page.locator('#profile-save-button').click()
     ]);
+    await expect(page.locator('#profile-save-spinner')).toBeHidden();
     await expect(page.locator('#profile-save-button')).toBeEnabled();
 }
 
