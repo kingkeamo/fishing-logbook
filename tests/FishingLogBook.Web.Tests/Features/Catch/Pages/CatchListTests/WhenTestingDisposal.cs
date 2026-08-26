@@ -16,7 +16,7 @@ public class WhenTestingDisposal : BaseCatchListTest
     {
         // Arrange
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Array.Empty<CatchModel>());
         var synchroniser = Substitute.For<ICatchSynchroniser>();
         await using var context = CreateContext(store, synchroniser: synchroniser);
@@ -31,6 +31,6 @@ public class WhenTestingDisposal : BaseCatchListTest
 
         // Assert
         act.Should().NotThrow();
-        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await store.Received(1).GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 }

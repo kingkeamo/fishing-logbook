@@ -22,7 +22,7 @@ public class WhenTestingServerCatches : BaseCatchListTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Array.Empty<CatchModel>());
         var serverCatchId = Guid.NewGuid();
         var catchClient = Substitute.For<ICatchClient>();
@@ -54,7 +54,7 @@ public class WhenTestingServerCatches : BaseCatchListTest
         var sharedId = Guid.NewGuid();
         var local = StoredCatch(sharedId, DateTimeOffset.UtcNow, speciesName: "Local Pike");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(new[] { local });
         var catchClient = Substitute.For<ICatchClient>();
         catchClient.GetAllAsync(Arg.Any<CancellationToken>())
@@ -86,7 +86,7 @@ public class WhenTestingServerCatches : BaseCatchListTest
         var localId = Guid.NewGuid();
         var local = StoredCatch(localId, DateTimeOffset.UtcNow, speciesName: "Trout");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(new[] { local });
         var catchClient = Substitute.For<ICatchClient>();
         catchClient.GetAllAsync(Arg.Any<CancellationToken>())
@@ -117,7 +117,7 @@ public class WhenTestingServerCatches : BaseCatchListTest
         var localId = Guid.NewGuid();
         var local = StoredCatch(localId, DateTimeOffset.UtcNow, speciesName: "Brown Trout");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(new[] { local });
         var catchClient = Substitute.For<ICatchClient>();
         var network = OnlineNetwork(isOnline: false);

@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Bunit;
+using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -36,7 +37,7 @@ public class WhenTestingRender : BaseCatchListTest
         var yesterdayCatch = Guid.NewGuid();
         var olderCatch = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<CatchModel>>(
             [
                 StoredCatch(olderCatch, DateTimeOffset.Parse("2026-08-10T09:00:00Z"), speciesName: "Roach"),
@@ -68,7 +69,7 @@ public class WhenTestingRender : BaseCatchListTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([]));
         await using var context = CreateContext(store);
 
@@ -82,18 +83,21 @@ public class WhenTestingRender : BaseCatchListTest
             cut.Markup.Should().NotContain("Saved on this device");
             cut.FindAll("a[href='/catches/record']").Should().ContainSingle();
         });
-        await store.Received(1).GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await store.Received(1).GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldShowLoadFailedCopyWhenTheStoreFails()
+    public async Task ItShouldShowLoadFailedCopyOnlyWhenBothTheLocalStoreAndTheServerFail()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("IndexedDB failed."));
-        await using var context = CreateContext(store);
+        var catchClient = Substitute.For<ICatchClient>();
+        catchClient.GetAllAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("The API is unreachable."));
+        await using var context = CreateContext(store, catchClient: catchClient);
 
         // Act
         var cut = context.Render<CatchList>();
@@ -101,6 +105,9 @@ public class WhenTestingRender : BaseCatchListTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#catch-list-load-failed").TextContent.Should().Contain("could not be loaded"));
+        cut.Find("#catch-list-load-retry").TextContent.Should().Contain("Try again");
+        await store.Received(1).GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await catchClient.Received(1).GetAllAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -109,7 +116,7 @@ public class WhenTestingRender : BaseCatchListTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([]));
         await using var context = CreateContext(store);
 
@@ -128,10 +135,10 @@ public class WhenTestingRender : BaseCatchListTest
         using var culture = TestCulture.Use(CultureNames.English);
         var ownerCatchId = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>(
                 [StoredCatch(ownerCatchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"))]));
-        store.GetAllAsync(OtherUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OtherUserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([]));
         var owner = SignedInOwner(OtherUserId);
         await using var context = CreateContext(store, owner);
@@ -143,7 +150,7 @@ public class WhenTestingRender : BaseCatchListTest
         cut.WaitForAssertion(() =>
             cut.Find("#catch-list-empty").TextContent.Should().Contain("No catches in your Logbook yet"));
         cut.FindAll($"#catch-card-{ownerCatchId:D}").Should().BeEmpty();
-        await store.Received(1).GetAllAsync(OtherUserId, Arg.Any<CancellationToken>());
-        await store.DidNotReceive().GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await store.Received(1).GetMetadataAsync(OtherUserId, Arg.Any<CancellationToken>());
+        await store.DidNotReceive().GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 }

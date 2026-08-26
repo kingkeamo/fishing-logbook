@@ -4,8 +4,10 @@ import {
     executeTransaction,
     getStorageEstimate,
     openDatabase,
+    runMultiStoreTransaction,
     runTransaction
 } from './indexed-db.js';
+import { TimeoutError } from '../browser/timeout.js';
 
 function createMockDb() {
     let transaction;
@@ -152,7 +154,7 @@ describe('IndexedDB helper', () => {
 
     it('rejects when the transaction times out', async () => {
         vi.useFakeTimers();
-        const { db } = createMockDb();
+        const { db, getTransaction } = createMockDb();
         const promise = runTransaction(db, {
             storeName: 'items',
             mode: 'readwrite',
@@ -160,10 +162,77 @@ describe('IndexedDB helper', () => {
             timeoutLabel: 'IndexedDB write',
             execute: () => { }
         });
-        const assertion = expect(promise).rejects.toThrow('IndexedDB write timed out');
+        const assertion = expect(promise).rejects.toBeInstanceOf(TimeoutError);
+        const abort = vi.spyOn(getTransaction(), 'abort');
         await vi.advanceTimersByTimeAsync(40);
         await assertion;
         vi.useRealTimers();
+        expect(abort).toHaveBeenCalledOnce();
+        expect(db.closed).toBe(true);
+    });
+
+    it('calls the timeout callback only for an explicit timeout error', async () => {
+        vi.useFakeTimers();
+        const { db } = createMockDb();
+        const onTimedOut = vi.fn();
+        const promise = runTransaction(db, {
+            storeName: 'items',
+            mode: 'readonly',
+            timeoutMs: 40,
+            timeoutLabel: 'IndexedDB read',
+            onTimedOut,
+            execute: () => { }
+        });
+        const assertion = expect(promise).rejects.toBeInstanceOf(TimeoutError);
+
+        await vi.advanceTimersByTimeAsync(40);
+        await assertion;
+
+        expect(onTimedOut).toHaveBeenCalledOnce();
+    });
+
+    it('does not treat an ordinary error message as a timeout', async () => {
+        const { db, getTransaction } = createMockDb();
+        const onTimedOut = vi.fn();
+        const promise = runTransaction(db, {
+            storeName: 'items',
+            mode: 'readonly',
+            timeoutMs: 1000,
+            timeoutLabel: 'IndexedDB read',
+            onTimedOut,
+            execute: () => { }
+        });
+        const abort = vi.spyOn(getTransaction(), 'abort');
+
+        getTransaction().error = new Error('request timed out upstream');
+        getTransaction().onerror();
+
+        await expect(promise).rejects.toThrow('request timed out upstream');
+        expect(onTimedOut).not.toHaveBeenCalled();
+        expect(abort).not.toHaveBeenCalled();
+        expect(db.closed).toBe(true);
+    });
+
+    it('aborts a multi-store transaction and reports an explicit timeout', async () => {
+        vi.useFakeTimers();
+        const { db, getTransaction } = createMockDb();
+        const onTimedOut = vi.fn();
+        const promise = runMultiStoreTransaction(db, {
+            storeNames: ['items', 'photographs'],
+            mode: 'readwrite',
+            timeoutMs: 40,
+            timeoutLabel: 'IndexedDB multi-store write',
+            onTimedOut,
+            execute: () => { }
+        });
+        const assertion = expect(promise).rejects.toBeInstanceOf(TimeoutError);
+        const abort = vi.spyOn(getTransaction(), 'abort');
+
+        await vi.advanceTimersByTimeAsync(40);
+        await assertion;
+
+        expect(onTimedOut).toHaveBeenCalledOnce();
+        expect(abort).toHaveBeenCalledOnce();
         expect(db.closed).toBe(true);
     });
 

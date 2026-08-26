@@ -1,4 +1,4 @@
-import { withTimeout } from '../browser/timeout.js';
+import { TimeoutError, withTimeout } from '../browser/timeout.js';
 
 export { withTimeout };
 
@@ -49,7 +49,7 @@ export function openDatabase({
             reject(request.error);
         };
     }), timeoutMs, timeoutLabel).catch((error) => {
-        if (String(error?.message || '').includes('timed out')) {
+        if (error instanceof TimeoutError) {
             onTimedOut?.(error);
         }
 
@@ -68,10 +68,12 @@ export function executeTransaction(db, {
     onAborted,
     onError,
     onRequestSucceeded,
-    onClosed
+    onClosed,
+    onTransactionCreated
 }) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, mode);
+        onTransactionCreated?.(transaction);
         onStarted?.();
 
         let result;
@@ -129,12 +131,26 @@ export function executeTransaction(db, {
 }
 
 export function runTransaction(db, options) {
+    let transaction;
     return withTimeout(
-        executeTransaction(db, options),
+        executeTransaction(db, {
+            ...options,
+            onTransactionCreated: (created) => {
+                transaction = created;
+                options.onTransactionCreated?.(created);
+            }
+        }),
         options.timeoutMs,
         options.timeoutLabel
     ).catch((error) => {
-        options.onTimedOut?.(error);
+        if (error instanceof TimeoutError) {
+            options.onTimedOut?.(error);
+            try {
+                transaction?.abort();
+            } catch {
+                // The transaction already completed or aborted.
+            }
+        }
         if (options.closeWhenDone !== false) {
             closeDatabase(db);
         }
@@ -154,10 +170,12 @@ export function executeMultiStoreTransaction(db, {
     onAborted,
     onError,
     onRequestSucceeded,
-    onClosed
+    onClosed,
+    onTransactionCreated
 }) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeNames, mode);
+        onTransactionCreated?.(transaction);
         onStarted?.();
 
         let result;
@@ -215,12 +233,26 @@ export function executeMultiStoreTransaction(db, {
 }
 
 export function runMultiStoreTransaction(db, options) {
+    let transaction;
     return withTimeout(
-        executeMultiStoreTransaction(db, options),
+        executeMultiStoreTransaction(db, {
+            ...options,
+            onTransactionCreated: (created) => {
+                transaction = created;
+                options.onTransactionCreated?.(created);
+            }
+        }),
         options.timeoutMs,
         options.timeoutLabel
     ).catch((error) => {
-        options.onTimedOut?.(error);
+        if (error instanceof TimeoutError) {
+            options.onTimedOut?.(error);
+            try {
+                transaction?.abort();
+            } catch {
+                // The transaction already completed or aborted.
+            }
+        }
         if (options.closeWhenDone !== false) {
             closeDatabase(db);
         }

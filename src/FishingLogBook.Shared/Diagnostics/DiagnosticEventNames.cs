@@ -51,6 +51,8 @@ public static class DiagnosticEventNames
     public const string PhotographDeleteFailed = "PhotographDeleteFailed";
     public const string CatchSyncCompleted = "CatchSyncCompleted";
     public const string CatchSyncFailed = "CatchSyncFailed";
+    public const string CatchServerRecordMissing = "CatchServerRecordMissing";
+
     public const string AuthenticationUnavailable = "AuthenticationUnavailable";
 
     public const string ServiceWorkerError = "ServiceWorkerError";

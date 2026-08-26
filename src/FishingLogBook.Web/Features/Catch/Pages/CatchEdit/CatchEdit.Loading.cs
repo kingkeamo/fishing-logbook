@@ -17,7 +17,7 @@ public partial class CatchEdit
         {
             await LoadPreferencesAsync();
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
-            _catch = await CatchStore.GetAsync(ownerUserId, CatchId, _cancellationTokenSource.Token)
+            _catch = await TryLoadLocallyAsync(ownerUserId, _cancellationTokenSource.Token)
                 ?? await TryLocalizeFromServerAsync(ownerUserId, _cancellationTokenSource.Token);
             if (_catch is null)
             {
@@ -35,6 +35,25 @@ public partial class CatchEdit
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private async Task<CatchModel?> TryLoadLocallyAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await CatchStore.GetAsync(ownerUserId, CatchId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("reading a local catch for editing", exception, CancellationToken.None);
+            return null;
         }
     }
 
@@ -112,7 +131,6 @@ public partial class CatchEdit
         {
             await Logging.LogErrorAsync("saving a server catch for local editing", exception, CancellationToken.None);
             _offlineUnavailable = true;
-            return null;
         }
 
         return localized;

@@ -15,13 +15,13 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Pages.CatchListTests;
 public class WhenTestingErrorLogging : BaseCatchListTest
 {
     [Fact]
-    public async Task ItShouldLogTheUnexpectedExceptionWhenTheStoreFails()
+    public async Task ItShouldLogTheLocalReadFailureWithoutFailingTheWholeLoad()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = Substitute.For<ICatchStore>();
         var thrown = new InvalidOperationException("IndexedDB failed.");
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>()).ThrowsAsync(thrown);
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>()).ThrowsAsync(thrown);
         var logging = Substitute.For<ILoggingService>();
         logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -31,7 +31,8 @@ public class WhenTestingErrorLogging : BaseCatchListTest
         var cut = context.Render<CatchList>();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#catch-list-load-failed").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.FindAll("#catch-list-loading").Should().BeEmpty());
+        cut.FindAll("#catch-list-load-failed").Should().BeEmpty();
         await logging.Received(1).LogErrorAsync(
             Arg.Any<string>(),
             thrown,
@@ -61,7 +62,7 @@ public class WhenTestingErrorLogging : BaseCatchListTest
             Arg.Any<string>(),
             thrown,
             Arg.Any<CancellationToken>());
-        await store.DidNotReceive().GetAllAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await store.DidNotReceive().GetMetadataAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

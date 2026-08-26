@@ -8,6 +8,13 @@ public interface ICatchStore
 
     Task<IReadOnlyList<CatchModel>> GetAllAsync(Guid ownerUserId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<CatchModel>> GetMetadataAsync(Guid ownerUserId, CancellationToken cancellationToken);
+
+    Task<CatchModel?> GetMetadataAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        CancellationToken cancellationToken);
+
     Task<CatchModel?> GetAsync(
         Guid ownerUserId,
         Guid catchId,

@@ -26,9 +26,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>(
-                [LocatedCatch(catchId, location: null)]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId, location: null));
         var client = Substitute.For<ICatchClient>();
         await using var context = CreateContext(store, client);
         var (cut, dialog) = await ShowModalAsync(context, catchId);
@@ -53,8 +52,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId));
         var client = Substitute.For<ICatchClient>();
         await using var context = CreateContext(store, client);
         var (cut, dialog) = await ShowModalAsync(context, catchId);
@@ -84,8 +83,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var original = LocatedCatch(catchId);
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([original]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(original);
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("IndexedDB failed."));
         var client = Substitute.For<ICatchClient>();
@@ -125,8 +124,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var client = Substitute.For<ICatchClient>();
@@ -168,8 +167,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var apiHandler = new UnsynchronisedCatchHandler();
@@ -209,21 +208,18 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var capturedOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>(
-                [
-                    LocatedCatch(catchId, LocationDefaults.Public) with
-                    {
-                        SyncStatus = SyncStatus.Synchronised,
-                        MetadataSyncStatus = SyncStatus.Synchronised,
-                        Photographs = LocatedCatch(catchId).Photographs
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId, LocationDefaults.Public) with
+            {
+                SyncStatus = SyncStatus.Synchronised,
+                MetadataSyncStatus = SyncStatus.Synchronised,
+                Photographs = LocatedCatch(catchId).Photographs
                             .Select(photograph => photograph with
                             {
                                 SyncStatus = SyncStatus.Synchronised
                             })
                             .ToArray()
-                    }
-                ]));
+            });
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var client = Substitute.For<ICatchClient>();
@@ -271,8 +267,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId));
         var client = Substitute.For<ICatchClient>();
         await using var context = CreateContext(store, client);
         var (cut, dialog) = await ShowModalAsync(context, catchId);
@@ -301,8 +297,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var client = Substitute.For<ICatchClient>();
@@ -350,8 +346,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>([LocatedCatch(catchId)]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var client = Substitute.For<ICatchClient>();
@@ -390,15 +386,12 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<CatchModel>>(
-                [
-                    LocatedCatch(catchId, LocationDefaults.Private) with
-                    {
-                        SyncStatus = SyncStatus.Synchronised,
-                        MetadataSyncStatus = SyncStatus.Synchronised
-                    }
-                ]));
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId, LocationDefaults.Private) with
+            {
+                SyncStatus = SyncStatus.Synchronised,
+                MetadataSyncStatus = SyncStatus.Synchronised
+            });
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var client = Substitute.For<ICatchClient>();

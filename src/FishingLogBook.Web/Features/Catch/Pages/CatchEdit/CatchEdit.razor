@@ -13,7 +13,12 @@
         @if (_loadFailed)
         {
             <MudAlert Severity="Severity.Error" id="catch-edit-load-failed">
-                @(_offlineUnavailable ? Loc["Catch_EditLoadOfflineFailed"] : Loc["Catch_EditLoadFailed"])
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Justify="Justify.SpaceBetween">
+                    <span>@(_offlineUnavailable ? Loc["Catch_EditLoadOfflineFailed"] : Loc["Catch_EditLoadFailed"])</span>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small"
+                               OnClick="RetryLoadAsync" Disabled="_isLoading"
+                               id="catch-edit-load-retry">@Loc["Catch_LoadRetry"]</MudButton>
+                </MudStack>
             </MudAlert>
         }
         else if (_isLoading)

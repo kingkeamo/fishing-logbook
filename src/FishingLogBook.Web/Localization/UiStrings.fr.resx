@@ -294,6 +294,9 @@
   <data name="Catch_RecordFirstCatch" xml:space="preserve">
     <value>Enregistrez votre première prise</value>
   </data>
+  <data name="Catch_LoadRetry" xml:space="preserve">
+    <value>Réessayer</value>
+  </data>
   <data name="Catch_LoadFailed" xml:space="preserve">
     <value>Les prises n'ont pas pu être chargées.</value>
   </data>

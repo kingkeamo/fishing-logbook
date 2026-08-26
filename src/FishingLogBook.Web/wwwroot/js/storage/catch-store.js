@@ -184,9 +184,27 @@ export async function putCatchWithPhotographs(json, photographs) {
         const catchStore = transaction.objectStore(CATCH_STORE_NAME);
         const photoStore = transaction.objectStore(PHOTO_STORE_NAME);
         const incomingIds = new Set(photos.map((photograph) => photograph.id));
-        const catchRequest = catchStore.put(catchRecord);
-        catchRequest.onerror = () => fail(catchRequest.error);
-        catchRequest.onsuccess = () => {
+        const existingRequest = catchStore.get(catchRecord.id);
+        existingRequest.onerror = () => fail(existingRequest.error);
+        existingRequest.onsuccess = () => {
+            const existingPhotographs = existingRequest.result?.photographs;
+            const catchRequest = catchStore.put(catchRecord);
+            catchRequest.onerror = () => fail(catchRequest.error);
+
+            if (!existingRequest.result || Array.isArray(existingPhotographs)) {
+                for (const photograph of existingPhotographs ?? []) {
+                    if (!incomingIds.has(photograph.id)) {
+                        const deleteRequest = photoStore.delete(photograph.id);
+                        deleteRequest.onerror = () => fail(deleteRequest.error);
+                    }
+                }
+
+                writePhotographs(photoStore, photos, succeed, fail);
+                return;
+            }
+
+            // Records written before photograph metadata was embedded in the Catch
+            // require one compatibility scan. Current writes use direct photograph keys.
             const cursorRequest = photoStore.openCursor();
             cursorRequest.onerror = () => fail(cursorRequest.error);
             cursorRequest.onsuccess = () => {
@@ -244,6 +262,7 @@ export async function updateCatchMetadata(json) {
             const incomingPhotographs = new Map(
                 (catchRecord.photographs || []).map((photograph) => [photograph.id, photograph])
             );
+            const metadataChangedWhileSynchronising = hasMetadataDifference(existing, catchRecord);
             const photographs = (existing.photographs || []).map((photograph) => {
                 const incoming = incomingPhotographs.get(photograph.id);
                 if (!incoming) {
@@ -264,8 +283,12 @@ export async function updateCatchMetadata(json) {
 
             const updateRequest = store.put({
                 ...existing,
-                syncStatus: catchRecord.syncStatus,
-                metadataSyncStatus: catchRecord.metadataSyncStatus,
+                syncStatus: metadataChangedWhileSynchronising
+                    ? existing.syncStatus
+                    : catchRecord.syncStatus,
+                metadataSyncStatus: metadataChangedWhileSynchronising
+                    ? existing.metadataSyncStatus
+                    : catchRecord.metadataSyncStatus,
                 location,
                 photographs
             });
@@ -275,7 +298,29 @@ export async function updateCatchMetadata(json) {
     });
 }
 
+function hasMetadataDifference(existing, incoming) {
+    const metadataFields = [
+        'caughtOn',
+        'speciesName',
+        'anglerUserId',
+        'recordedByUserId',
+        'weight',
+        'length',
+        'method',
+        'baitOrLure',
+        'notes'
+    ];
+    return metadataFields.some((field) =>
+        Object.hasOwn(incoming, field)
+        && JSON.stringify(existing[field] ?? null) !== JSON.stringify(incoming[field] ?? null));
+}
+
 export async function getAllCatchesWithPhotographs(ownerUserId) {
+    const owner = normalisedUserId(ownerUserId);
+    if (!owner) {
+        return [];
+    }
+
     return runCatchWithPhotographsTransaction('readonly', 'read', (transaction, succeed, fail) => {
         const catchStore = transaction.objectStore(CATCH_STORE_NAME);
         const photoStore = transaction.objectStore(PHOTO_STORE_NAME);
@@ -285,13 +330,15 @@ export async function getAllCatchesWithPhotographs(ownerUserId) {
         catchRequest.onsuccess = () => {
             const cursor = catchRequest.result;
             if (cursor) {
-                catches.push(cursor.value);
+                if (normalisedUserId(cursor.value?.userId) === owner) {
+                    catches.push(cursor.value);
+                }
+
                 cursor.continue();
                 return;
             }
 
-            const visible = visibleCatchesForOwner(catches, ownerUserId);
-            const visibleIds = new Set(visible.map((item) => item.id));
+            const visibleIds = new Set(catches.map((item) => item.id));
             const photographs = [];
             const photoRequest = photoStore.openCursor();
             photoRequest.onerror = () => fail(photoRequest.error);
@@ -301,32 +348,140 @@ export async function getAllCatchesWithPhotographs(ownerUserId) {
                     if (visibleIds.has(photoCursor.value.catchId)) {
                         photographs.push(photoCursor.value);
                     }
+
                     photoCursor.continue();
                     return;
                 }
 
-                succeed(visible.map((item) => ({
-                    json: JSON.stringify(item),
-                    photographs: orderPhotographs(item, photographs)
-                        .map((photograph) => ({
-                            id: photograph.id,
-                            catchId: photograph.catchId,
-                            contentType: photograph.contentType,
-                            bytesBase64: uint8ToBase64(toUint8Array(photograph.bytes))
-                        }))
-                })));
+                succeed(catches.map((item) => toStoredResult(item, photographs)));
             };
         };
     });
 }
 
-function visibleCatchesForOwner(catches, ownerUserId) {
+export async function getCatchMetadata(ownerUserId) {
     const owner = normalisedUserId(ownerUserId);
     if (!owner) {
         return [];
     }
 
-    return catches.filter((item) => normalisedUserId(item?.userId) === owner);
+    return runCatchTransaction(CATCH_STORE_NAME, 'readonly', 'metadata-read', (store, succeed, fail) => {
+        const catches = [];
+        const request = store.openCursor();
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (cursor) {
+                if (normalisedUserId(cursor.value?.userId) === owner) {
+                    catches.push({ json: JSON.stringify(cursor.value), photographs: [] });
+                }
+
+                cursor.continue();
+                return;
+            }
+
+            succeed(catches);
+        };
+    });
+}
+
+export async function getCatchMetadataById(ownerUserId, catchId) {
+    const owner = normalisedUserId(ownerUserId);
+    if (!owner || typeof catchId !== 'string' || !catchId) {
+        return null;
+    }
+
+    return runCatchTransaction(CATCH_STORE_NAME, 'readonly', 'single-metadata-read', (store, succeed, fail) => {
+        const request = store.get(catchId);
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+            const record = request.result;
+            succeed(record && normalisedUserId(record.userId) === owner
+                ? { json: JSON.stringify(record), photographs: [] }
+                : null);
+        };
+    });
+}
+
+export async function getCatchWithPhotographs(ownerUserId, catchId) {
+    const owner = normalisedUserId(ownerUserId);
+    if (!owner || typeof catchId !== 'string' || !catchId) {
+        return null;
+    }
+
+    return runCatchWithPhotographsTransaction('readonly', 'single-read', (transaction, succeed, fail) => {
+        const catchStore = transaction.objectStore(CATCH_STORE_NAME);
+        const photoStore = transaction.objectStore(PHOTO_STORE_NAME);
+        const catchRequest = catchStore.get(catchId);
+        catchRequest.onerror = () => fail(catchRequest.error);
+        catchRequest.onsuccess = () => {
+            const record = catchRequest.result;
+            if (!record || normalisedUserId(record.userId) !== owner) {
+                succeed(null);
+                return;
+            }
+
+            const photographIds = (Array.isArray(record.photographs) ? record.photographs : [])
+                .map((photograph) => photograph?.id)
+                .filter((id) => typeof id === 'string' && id.length > 0);
+            if (photographIds.length === 0) {
+                readPhotographsByCatchId(photoStore, record, succeed, fail);
+                return;
+            }
+
+            readPhotographsByIds(photoStore, record, photographIds, succeed, fail);
+        };
+    });
+}
+
+function readPhotographsByIds(photoStore, record, photographIds, succeed, fail) {
+    const photographs = [];
+    let remaining = photographIds.length;
+    for (const photographId of photographIds) {
+        const request = photoStore.get(photographId);
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+            if (request.result && request.result.catchId === record.id) {
+                photographs.push(request.result);
+            }
+
+            remaining -= 1;
+            if (remaining === 0) {
+                succeed(toStoredResult(record, photographs));
+            }
+        };
+    }
+}
+
+function readPhotographsByCatchId(photoStore, record, succeed, fail) {
+    const photographs = [];
+    const request = photoStore.openCursor();
+    request.onerror = () => fail(request.error);
+    request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+            if (cursor.value?.catchId === record.id) {
+                photographs.push(cursor.value);
+            }
+
+            cursor.continue();
+            return;
+        }
+
+        succeed(toStoredResult(record, photographs));
+    };
+}
+
+function toStoredResult(record, photographs) {
+    return {
+        json: JSON.stringify(record),
+        photographs: orderPhotographs(record, photographs).map((photograph) => ({
+            id: photograph.id,
+            catchId: photograph.catchId,
+            contentType: photograph.contentType,
+            bytesBase64: uint8ToBase64(toUint8Array(photograph.bytes))
+        }))
+    };
 }
 
 function normalisedUserId(value) {
@@ -388,4 +543,3 @@ function uint8ToBase64(bytes) {
 
     return btoa(binary);
 }
-
