@@ -130,24 +130,6 @@ public class WhenTestingRouting : BaseLandingTest
     }
 
     [Fact]
-    public async Task ItShouldRequireExplicitOfflineUnlockAfterReconnectSignInReturns()
-    {
-        // Arrange
-        var onboarding = Onboarding(true);
-        await using var context = CreateContext(onboarding, isAuthenticated: true);
-        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/?reconnect=offline");
-
-        // Act
-        var cut = context.Render<LandingPage>();
-        await Task.Yield();
-
-        // Assert
-        cut.Find("#public-landing-page").Should().NotBeNull();
-        context.Services.GetRequiredService<NavigationManager>().Uri.Should().Be("http://localhost/?reconnect=offline");
-        await onboarding.DidNotReceive().IsCompletedAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task ItShouldOfferOfflineUnlockWithoutWaitingForAuthentication()
     {
         // Arrange
@@ -172,6 +154,49 @@ public class WhenTestingRouting : BaseLandingTest
         await device.DidNotReceive().UnlockAsync(Arg.Any<CancellationToken>());
         await network.Received(1).StartMonitoringAsync(Arg.Any<CancellationToken>());
         await network.Received(1).IsOnlineAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldHideOpenOfflineWhileOnlineEvenWhenConfigured()
+    {
+        // Arrange
+        var device = OfflineAccessDevice(hasReadyEntitlement: true);
+        var network = Network(isOnline: true);
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            offlineAccessDevice: device,
+            network: network);
+
+        // Act
+        var cut = context.Render<LandingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() => device.HasReadyEntitlementAsync(Arg.Any<CancellationToken>()));
+        cut.FindAll("#landing-open-offline").Should().BeEmpty();
+        cut.Find("#landing-create-account").Should().NotBeNull();
+        cut.Find("#landing-sign-in").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldHideOpenOfflineWhenConnectivityIsRestoredEvenIfStillConfigured()
+    {
+        // Arrange
+        var device = OfflineAccessDevice(hasReadyEntitlement: true);
+        var network = Network(isOnline: false);
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            offlineAccessDevice: device,
+            network: network);
+        var cut = context.Render<LandingPage>();
+        cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
+
+        // Act
+        network.ConnectivityChanged += Raise.Event<Action<bool>>(true);
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#landing-open-offline").Should().BeEmpty());
     }
 
     [Fact]
@@ -327,9 +352,8 @@ public class WhenTestingRouting : BaseLandingTest
             offlineAccessDevice: device,
             network: network);
         var cut = context.Render<LandingPage>();
-        cut.WaitForAssertion(() =>
-            cut.Find("#landing-offline-availability-failed").TextContent
-                .Should().Contain("couldn't check offline access"));
+        cut.WaitForAssertion(() => cut.Find("#landing-offline-availability-failed").TextContent
+            .Should().Contain("couldn't check offline access"));
         cut.FindAll("#landing-offline-not-configured").Should().BeEmpty();
         cut.FindAll("#landing-create-account").Should().BeEmpty();
         cut.FindAll("#landing-sign-in").Should().BeEmpty();
@@ -385,11 +409,13 @@ public class WhenTestingRouting : BaseLandingTest
                 _ => new OfflineAccessAvailabilityModel("future-state", "ignored-detail"),
                 _ => new OfflineAccessAvailabilityModel("ready", "ready-record-found"));
         var logging = Substitute.For<ILoggingService>();
+        var network = Network(isOnline: false);
         await using var context = CreateContext(
             Onboarding(false),
             isAuthenticated: false,
             logging: logging,
-            offlineAccessDevice: device);
+            offlineAccessDevice: device,
+            network: network);
         var cut = context.Render<LandingPage>();
         cut.WaitForAssertion(() => cut.Find("#landing-offline-availability-failed").Should().NotBeNull());
 
@@ -414,7 +440,11 @@ public class WhenTestingRouting : BaseLandingTest
         var device = OfflineAccessDevice(hasReadyEntitlement: true);
         device.UnlockAsync(Arg.Any<CancellationToken>()).Returns(
             new OfflineAccessUnlockResultModel("unlocked", Guid.Parse("11111111-1111-1111-1111-111111111111"), 1));
-        await using var context = CreateContext(Onboarding(false), isAuthenticated: false, offlineAccessDevice: device);
+        await using var context = CreateContext(
+            Onboarding(false),
+            isAuthenticated: false,
+            offlineAccessDevice: device,
+            network: Network(isOnline: false));
         var cut = context.Render<LandingPage>();
         cut.WaitForAssertion(() => cut.Find("#landing-open-offline").Should().NotBeNull());
 

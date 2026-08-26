@@ -21,6 +21,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
 
     private bool _isDarkMode;
     private bool _drawerOpen = true;
+    private bool _cleanupAttempted;
     private DotNetObjectReference<MainLayout>? _dotNetReference;
 
     [Inject]
@@ -100,6 +101,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         try
         {
             await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
+            TriggerSyncedCacheCleanupOnce(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -128,6 +130,17 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
                 exception,
                 CancellationToken.None);
         }
+    }
+
+    private void TriggerSyncedCacheCleanupOnce(CancellationToken cancellationToken)
+    {
+        if (_cleanupAttempted)
+        {
+            return;
+        }
+
+        _cleanupAttempted = true;
+        _ = CatchSynchroniser.CleanupSyncedCacheAsync(cancellationToken);
     }
 
     private bool ShouldSynchroniseCurrentRoute()

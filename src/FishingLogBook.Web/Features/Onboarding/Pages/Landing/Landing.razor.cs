@@ -37,9 +37,6 @@ public partial class Landing : ComponentBase, IDisposable
     [Inject] private ILoggingService Logging { get; set; } = default!;
     [Inject] private INetworkService Network { get; set; } = default!;
 
-    [SupplyParameterFromQuery(Name = "reconnect")]
-    public string? Reconnect { get; set; }
-
     protected override void OnInitialized()
     {
         AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
@@ -198,11 +195,6 @@ public partial class Landing : ComponentBase, IDisposable
         {
             var authentication = await authenticationState.WaitAsync(cancellationToken);
             if (authentication.User.Identity?.IsAuthenticated != true)
-            {
-                return;
-            }
-
-            if (string.Equals(Reconnect, "offline", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

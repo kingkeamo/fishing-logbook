@@ -11,3 +11,12 @@
     border-radius: 0;
     margin: 0;
 }
+
+.offline-reconnect-sign-in-alert :deep(.mud-alert-message) {
+    width: 100%;
+}
+
+.offline-reconnect-sign-in-button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}

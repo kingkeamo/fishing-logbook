@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Features.OfflineAccess;
 using FishingLogBook.Web.Features.OfflineAccess.Enums;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Localization;
@@ -68,12 +69,14 @@ public partial class OfflineLayout : LayoutComponentBase, IDisposable
 
     private void SignInToSynchronise()
     {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var returnRoute = OfflineReconnectReturnRoute.Resolve(currentPath);
         Navigation.NavigateToLogin(
             "authentication/login",
             new InteractiveRequestOptions
             {
                 Interaction = InteractionType.SignIn,
-                ReturnUrl = "/?reconnect=offline"
+                ReturnUrl = returnRoute
             });
     }
 

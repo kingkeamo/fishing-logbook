@@ -325,6 +325,7 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
 
             _offlineOwnerContext.Lock();
             SetState(OfflineReconnectStateEnum.Online);
+            _ = _catchSynchroniser.CleanupSyncedCacheAsync(ownerUserId, cancellationToken);
             return true;
         }
     }

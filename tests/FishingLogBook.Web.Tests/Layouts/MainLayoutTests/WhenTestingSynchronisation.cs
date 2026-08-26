@@ -38,6 +38,29 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldTriggerSyncedCacheCleanupOnlyOnceAcrossNavigationReentry()
+    {
+        // Arrange
+        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
+        var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
+        await using var context = CreateContext(
+            isAuthenticated: true,
+            catchSynchroniser,
+            diagnosticSynchroniser);
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
+        context.Render<MainLayout>();
+        await Task.Yield();
+
+        // Act
+        context.Services.GetRequiredService<NavigationManager>()
+            .NavigateTo("/profile");
+        await Task.Yield();
+
+        // Assert
+        await catchSynchroniser.Received(1).CleanupSyncedCacheAsync(Arg.Any<CancellationToken>());
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("onboarding")]

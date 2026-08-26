@@ -801,9 +801,9 @@
   <data name="OfflineAccess_OpenOffline" xml:space="preserve"><value>Open offline</value></data>
   <data name="OfflineAccess_UnlockFailed" xml:space="preserve"><value>Offline access could not be opened. Try again, or sign in when you have a connection.</value></data>
   <data name="OfflineAccess_Mode" xml:space="preserve"><value>Offline mode</value></data>
-  <data name="OfflineReconnect_Reconnecting" xml:space="preserve"><value>Connection restored. Reconnecting…</value></data>
+  <data name="OfflineReconnect_Reconnecting" xml:space="preserve"><value>Checking your connection…</value></data>
   <data name="OfflineReconnect_Synchronising" xml:space="preserve"><value>Synchronising your saved catches…</value></data>
-  <data name="OfflineReconnect_AuthenticationRequired" xml:space="preserve"><value>You’re back online. Sign in to sync your catches.</value></data>
+  <data name="OfflineReconnect_AuthenticationRequired" xml:space="preserve"><value>Sign in to sync your saved catches.</value></data>
   <data name="OfflineReconnect_SignIn" xml:space="preserve"><value>Sign in to sync</value></data>
   <data name="OfflineReconnect_OwnerMismatch" xml:space="preserve"><value>You recorded these catches using a different offline account. Sign in with the matching account to sync them.</value></data>
   <data name="OfflineReconnect_Failed" xml:space="preserve"><value>We couldn’t reconnect yet. Your catches are still saved on this device.</value></data>

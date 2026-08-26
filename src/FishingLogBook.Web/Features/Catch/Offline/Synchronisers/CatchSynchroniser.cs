@@ -74,6 +74,71 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         }
     }
 
+    private static readonly TimeSpan SyncedCacheRetentionWindow = TimeSpan.FromHours(24);
+
+    public async Task CleanupSyncedCacheAsync(CancellationToken cancellationToken)
+    {
+        var ownerUserId = await TryGetOwnerUserIdAsync(cancellationToken);
+        if (ownerUserId is not null)
+        {
+            await CleanupSyncedCacheCoreAsync(ownerUserId.Value, cancellationToken);
+        }
+    }
+
+    public async Task CleanupSyncedCacheAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            return;
+        }
+
+        await CleanupSyncedCacheCoreAsync(ownerUserId, cancellationToken);
+    }
+
+    private async Task CleanupSyncedCacheCoreAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!await _networkService.IsOnlineAsync(cancellationToken))
+            {
+                return;
+            }
+
+            await SafeLogAsync(
+                DiagnosticLevel.Debug,
+                DiagnosticEventNames.CatchCacheCleanupStarted,
+                "Synced local catch cache cleanup started.",
+                catchId: null,
+                photographId: null,
+                exception: null,
+                cancellationToken);
+            var olderThan = DateTimeOffset.UtcNow - SyncedCacheRetentionWindow;
+            await _store.CleanupSyncedCacheAsync(ownerUserId, olderThan, cancellationToken);
+            await SafeLogAsync(
+                DiagnosticLevel.Debug,
+                DiagnosticEventNames.CatchCacheCleanupCompleted,
+                "Synced local catch cache cleanup completed.",
+                catchId: null,
+                photographId: null,
+                exception: null,
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await SafeLogAsync(
+                DiagnosticLevel.Warning,
+                DiagnosticEventNames.CatchCacheCleanupFailed,
+                "Synced local catch cache cleanup failed.",
+                catchId: null,
+                photographId: null,
+                exception,
+                CancellationToken.None);
+        }
+    }
+
     public async Task RetryAsync(Guid catchId, CancellationToken cancellationToken)
     {
         try
@@ -229,7 +294,12 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                     cancellationToken);
         }
 
-        catchRecord = catchRecord with { SyncStatus = DeriveOverallStatus(catchRecord) };
+        var overallStatus = DeriveOverallStatus(catchRecord);
+        catchRecord = catchRecord with
+        {
+            SyncStatus = overallStatus,
+            SyncedAt = overallStatus == SyncStatus.Synchronised ? DateTimeOffset.UtcNow : catchRecord.SyncedAt
+        };
         await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
         await SafeLogAsync(
             catchRecord.SyncStatus == SyncStatus.Synchronised

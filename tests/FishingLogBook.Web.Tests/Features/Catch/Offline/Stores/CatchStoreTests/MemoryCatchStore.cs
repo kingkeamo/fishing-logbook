@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -166,6 +167,7 @@ public sealed class MemoryCatchStore : ICatchStore
         {
             SyncStatus = catchRecord.SyncStatus,
             MetadataSyncStatus = catchRecord.MetadataSyncStatus,
+            SyncedAt = catchRecord.SyncedAt,
             Photographs = existing.Photographs
                 .Select(photograph => incomingPhotographs.TryGetValue(
                     photograph.Id,
@@ -179,6 +181,42 @@ public sealed class MemoryCatchStore : ICatchStore
                 .ToArray()
         };
         return Task.CompletedTask;
+    }
+
+    public int CleanupCalls { get; private set; }
+
+    public Task<int> CleanupSyncedCacheAsync(
+        Guid ownerUserId,
+        DateTimeOffset olderThan,
+        CancellationToken cancellationToken)
+    {
+        CleanupCalls += 1;
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        var eligible = _catches.Values
+            .Where(catchRecord => catchRecord.UserId == ownerUserId)
+            .Where(catchRecord => catchRecord.SyncStatus == SyncStatus.Synchronised
+                && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised
+                && catchRecord.Photographs.All(
+                    photograph => photograph.SyncStatus == SyncStatus.Synchronised)
+                && catchRecord.SyncedAt is not null
+                && catchRecord.SyncedAt <= olderThan)
+            .ToArray();
+
+        foreach (var catchRecord in eligible)
+        {
+            foreach (var photograph in catchRecord.Photographs)
+            {
+                _photographBytes.Remove(photograph.Id);
+            }
+
+            _catches.Remove(catchRecord.Id);
+        }
+
+        return Task.FromResult(eligible.Length);
     }
 
     private CatchModel WithPhotographBytes(CatchModel catchRecord)

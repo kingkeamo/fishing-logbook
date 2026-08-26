@@ -289,6 +289,9 @@ export async function updateCatchMetadata(json) {
                 metadataSyncStatus: metadataChangedWhileSynchronising
                     ? existing.metadataSyncStatus
                     : catchRecord.metadataSyncStatus,
+                syncedAt: metadataChangedWhileSynchronising
+                    ? existing.syncedAt
+                    : catchRecord.syncedAt,
                 location,
                 photographs
             });
@@ -482,6 +485,59 @@ function toStoredResult(record, photographs) {
             bytesBase64: uint8ToBase64(toUint8Array(photograph.bytes))
         }))
     };
+}
+
+export async function cleanupSyncedCatches(ownerUserId, olderThanIso) {
+    const owner = normalisedUserId(ownerUserId);
+    const cutoff = Date.parse(olderThanIso);
+    if (!owner || Number.isNaN(cutoff)) {
+        return 0;
+    }
+
+    return runCatchWithPhotographsTransaction('readwrite', 'cleanup', (transaction, succeed, fail) => {
+        const catchStore = transaction.objectStore(CATCH_STORE_NAME);
+        const photoStore = transaction.objectStore(PHOTO_STORE_NAME);
+        let removed = 0;
+        const request = catchStore.openCursor();
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) {
+                succeed(removed);
+                return;
+            }
+
+            const record = cursor.value;
+            if (normalisedUserId(record?.userId) === owner && isEligibleForCleanup(record, cutoff)) {
+                for (const photograph of record.photographs || []) {
+                    photoStore.delete(photograph.id);
+                }
+
+                cursor.delete();
+                removed += 1;
+            }
+
+            cursor.continue();
+        };
+    });
+}
+
+function isEligibleForCleanup(record, cutoff) {
+    if (!isSynchronisedStatus(record.syncStatus) || !isSynchronisedStatus(record.metadataSyncStatus)) {
+        return false;
+    }
+
+    const photographs = Array.isArray(record.photographs) ? record.photographs : [];
+    if (!photographs.every((photograph) => isSynchronisedStatus(photograph.syncStatus))) {
+        return false;
+    }
+
+    const syncedAt = Date.parse(record.syncedAt);
+    return !Number.isNaN(syncedAt) && syncedAt <= cutoff;
+}
+
+function isSynchronisedStatus(status) {
+    return status === 'synchronised' || status === 3;
 }
 
 function normalisedUserId(value) {

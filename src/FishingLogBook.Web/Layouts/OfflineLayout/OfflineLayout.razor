@@ -50,10 +50,17 @@
         }
         @if (OfflineReconnect.State == OfflineReconnectStateEnum.AuthenticationRequired)
         {
-            <MudAlert Severity="Severity.Info" Dense="true" Class="offline-reconnect-status" id="offline-reconnect-authentication-required">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudAlert Severity="Severity.Info" Dense="true" Class="offline-reconnect-status offline-reconnect-sign-in-alert" id="offline-reconnect-authentication-required">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
                     <MudText Typo="Typo.body2">@Loc["OfflineReconnect_AuthenticationRequired"]</MudText>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SignInToSynchronise" id="offline-reconnect-sign-in">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Login"
+                               OnClick="SignInToSynchronise"
+                               Class="offline-reconnect-sign-in-button"
+                               aria-label="@Loc["OfflineReconnect_SignIn"]"
+                               id="offline-reconnect-sign-in">
                         @Loc["OfflineReconnect_SignIn"]
                     </MudButton>
                 </MudStack>

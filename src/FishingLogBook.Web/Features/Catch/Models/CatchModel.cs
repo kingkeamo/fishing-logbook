@@ -17,4 +17,5 @@ public sealed record CatchModel(
     decimal? Length = null,
     string? Method = null,
     string? BaitOrLure = null,
-    string? Notes = null);
+    string? Notes = null,
+    DateTimeOffset? SyncedAt = null);

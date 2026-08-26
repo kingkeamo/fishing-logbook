@@ -47,6 +47,19 @@ test.describe('Published offline application shell', () => {
         expect(apiGuard.requests).toEqual([]);
     });
 
+    test('does not offer Open Offline on Landing while genuinely online, even with offline access configured', async ({ page }) => {
+        await addPrfAuthenticator(page);
+        await cachePublishedShell(page);
+        await provisionOfflineOwner(page);
+
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await expect(page.locator('#public-landing-page')).toBeVisible({ timeout: 15000 });
+
+        await expect(page.locator('#landing-open-offline')).toHaveCount(0);
+        await expect(page.locator('#landing-create-account')).toBeVisible();
+        await expect(page.locator('#landing-sign-in')).toBeVisible();
+    });
+
     test('opens read-only offline diagnostics from the shared header during cold offline startup', async ({ context, page }) => {
         const apiGuard = guardOfflineApiRequests(context);
 
@@ -280,6 +293,12 @@ async function seedOtherOwnersCatch(page) {
 
 async function reopenColdOffline(context, page) {
     await page.goto('about:blank');
+    await context.addInitScript(() => {
+        Object.defineProperty(Navigator.prototype, 'onLine', {
+            configurable: true,
+            get: () => false
+        });
+    });
     await context.setOffline(true);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#public-landing-page')).toBeVisible({ timeout: 15000 });
