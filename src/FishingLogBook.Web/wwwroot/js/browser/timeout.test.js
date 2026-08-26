@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { withTimeout } from './timeout.js';
+import { TimeoutError, withTimeout } from './timeout.js';
 
 describe('withTimeout', () => {
     afterEach(() => {
@@ -18,7 +18,8 @@ describe('withTimeout', () => {
     it('rejects with a timeout error when the promise never settles', async () => {
         vi.useFakeTimers();
         const assertion = expect(withTimeout(new Promise(() => { }), 40, 'work'))
-            .rejects.toThrow('work timed out');
+            .rejects.toSatisfy((error) =>
+                error instanceof TimeoutError && error.message === 'work timed out');
         await vi.advanceTimersByTimeAsync(40);
         await assertion;
     });

@@ -12,20 +12,24 @@ public class WhenTestingDiagnosticEvents : BaseOfflineStoreTest
         var script = ReadOfflineStoreScript();
 
         // Act
+        var diagnosticScript = script[..script.IndexOf(
+            "export async function putCatchWithPhotographs",
+            StringComparison.Ordinal)];
+
         // Assert
-        script.Should().Contain(DiagnosticEventNames.OfflineDbOpenStarted);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbOpenCompleted);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbOpenFailed);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbTransactionStarted);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbRequestSucceeded);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbTransactionCompleted);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbTransactionAborted);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbTransactionError);
-        script.Should().Contain(DiagnosticEventNames.OfflineDbClosed);
-        script.Should().Contain("navigator.storage.estimate");
-        script.Should().Contain("elapsedMilliseconds");
-        script.Should().NotContain("species");
-        script.Should().NotContain("latitude");
-        script.Should().NotContain("base64,");
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbOpenStarted);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbOpenCompleted);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbOpenFailed);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbTransactionStarted);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbRequestSucceeded);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbTransactionCompleted);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbTransactionAborted);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbTransactionError);
+        diagnosticScript.Should().Contain(DiagnosticEventNames.OfflineDbClosed);
+        diagnosticScript.Should().Contain("navigator.storage.estimate");
+        diagnosticScript.Should().Contain("elapsedMilliseconds");
+        diagnosticScript.Should().NotContain("species");
+        diagnosticScript.Should().NotContain("latitude");
+        diagnosticScript.Should().NotContain("base64,");
     }
 }

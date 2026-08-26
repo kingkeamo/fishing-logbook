@@ -1,4 +1,4 @@
-import { withTimeout } from '../browser/timeout.js';
+import { TimeoutError, withTimeout } from '../browser/timeout.js';
 
 export { withTimeout };
 
@@ -49,7 +49,7 @@ export function openDatabase({
             reject(request.error);
         };
     }), timeoutMs, timeoutLabel).catch((error) => {
-        if (String(error?.message || '').includes('timed out')) {
+        if (error instanceof TimeoutError) {
             onTimedOut?.(error);
         }
 
@@ -143,7 +143,7 @@ export function runTransaction(db, options) {
         options.timeoutMs,
         options.timeoutLabel
     ).catch((error) => {
-        if (String(error?.message || '').includes('timed out')) {
+        if (error instanceof TimeoutError) {
             options.onTimedOut?.(error);
             try {
                 transaction?.abort();
@@ -245,7 +245,7 @@ export function runMultiStoreTransaction(db, options) {
         options.timeoutMs,
         options.timeoutLabel
     ).catch((error) => {
-        if (String(error?.message || '').includes('timed out')) {
+        if (error instanceof TimeoutError) {
             options.onTimedOut?.(error);
             try {
                 transaction?.abort();
