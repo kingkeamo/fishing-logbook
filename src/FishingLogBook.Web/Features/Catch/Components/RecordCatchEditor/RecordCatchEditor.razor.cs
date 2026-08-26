@@ -299,17 +299,14 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             return;
         }
 
-        var hasCameraPhotograph = _photographs.Any(photograph => photograph.FromCamera);
-        if (hasCameraPhotograph || RepresentativePhotograph is null)
+        if (RepresentativePhotograph is null)
         {
             _representativePhotographId = null;
         }
 
-        _proposal = hasCameraPhotograph
-            ? CatchPhotographProposalModel.Empty
-            : PhotographProposal.Propose(
-                [.. _photographs.Select(photograph => photograph.Metadata)],
-                DateTimeOffset.UtcNow);
+        _proposal = PhotographProposal.Propose(
+            [.. _photographs.Select(photograph => photograph.Metadata)],
+            DateTimeOffset.UtcNow);
         await ApplyCaughtOnAsync();
         ApplyLocation();
     }

@@ -300,7 +300,7 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
     }
 
     [Fact]
-    public async Task ItShouldDropTheChosenPhotographWhenACameraCaptureJoinsTheCatch()
+    public async Task ItShouldKeepTheChosenPhotographWhenACameraCaptureJoinsTheCatch()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -318,20 +318,23 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         cut.WaitForAssertion(() => cut.Find("#catch-photo-use-details").Should().NotBeNull());
         await cut.Find("#catch-photo-use-details").ClickAsync();
         cut.Find("#catch-location-from-photo").Should().NotBeNull();
+        cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-05-02T14:10");
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("now.jpg", ThirdPhotograph));
 
         // Assert
-        cut.WaitForAssertion(() => cut.FindAll("#catch-photo-current-metadata").Should().BeEmpty());
-        cut.FindAll("#catch-location-from-photo").Should().BeEmpty();
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull());
+        cut.Find("#catch-location-from-photo").Should().NotBeNull();
+        cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-05-02T14:10");
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Photographs.Count == 3
-                && catchRecord.CaughtOn > DateTimeOffset.UtcNow.AddMinutes(-5)
-                && catchRecord.CaughtOn != MayCapture
-                && catchRecord.Location == null),
+                && catchRecord.CaughtOn == MayCapture
+                && catchRecord.Location != null
+                && catchRecord.Location.Latitude == LeeLatitude
+                && catchRecord.Location.Longitude == LeeLongitude),
             Arg.Any<CancellationToken>());
     }
 

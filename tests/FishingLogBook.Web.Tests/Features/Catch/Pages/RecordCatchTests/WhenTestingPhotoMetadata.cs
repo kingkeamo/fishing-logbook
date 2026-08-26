@@ -357,7 +357,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
     }
 
     [Fact]
-    public async Task ItShouldReadGalleryMetadataAgainAfterTheCameraPhotographIsRemoved()
+    public async Task ItShouldKeepGalleryMetadataActiveBeforeAndAfterTheCameraPhotographIsRemoved()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -372,7 +372,8 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         var cameraPhotographId = VisiblePhotographId(cut);
         cut.FindComponents<InputFile>()[1].UploadFiles(JpegFile("gallery.jpg", SecondPhotograph));
         cut.WaitForAssertion(() =>
-            cut.Find("#catch-caught-on").GetAttribute("value").Should().NotBe("2025-06-14T06:32"));
+            cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32"));
+        cut.Find("#catch-location-from-photo").Should().NotBeNull();
 
         // Act
         await cut.Find("#catch-photo-previous").ClickAsync();
