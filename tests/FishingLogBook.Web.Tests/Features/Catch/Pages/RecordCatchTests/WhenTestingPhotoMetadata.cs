@@ -280,7 +280,7 @@ public class WhenTestingPhotoMetadata : BaseRecordCatchTest
         await cut.Find("#catch-photo-use-details").ClickAsync();
 
         // Assert
-        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.Find("#save-catch-button").HasAttribute("disabled").Should().BeFalse();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(

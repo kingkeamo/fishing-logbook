@@ -117,12 +117,13 @@ test('shows each photograph its own capture details while the angler chooses one
     await expect(page.locator('#save-catch-button')).toBeDisabled();
 
     await page.locator('#catch-photo-use-details').click();
-    await expect(page.locator('#catch-photo-metadata-conflict')).toBeHidden();
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
     await expect(page.locator('#save-catch-button')).toBeEnabled();
     await expect(page.locator('#catch-photo-current-metadata')).toBeVisible();
 
     await showPhoto(page, 1, 2);
     await page.locator('#catch-photo-use-details').click();
+    await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
     await expect(page.locator('#catch-caught-on')).toHaveValue('2025-06-14T07:32');
     await expect(page.locator('#catch-location-from-photo')).toBeVisible();
 });

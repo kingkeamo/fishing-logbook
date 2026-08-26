@@ -38,17 +38,20 @@
         </MudMenu>
     </Authorized>
     <NotAuthorized>
-        <MudButton Variant="Variant.Text"
-                   Color="Color.Inherit"
-                   OnClick="BeginSignIn"
-                   id="auth-sign-in-button">
-            @Loc["Auth_SignIn"]
-        </MudButton>
-        <MudButton Variant="Variant.Text"
-                   Color="Color.Inherit"
-                   OnClick="BeginSignIn"
-                   id="auth-create-account-button">
-            @Loc["Auth_CreateAccount"]
-        </MudButton>
+        @if (_isOnline != false)
+        {
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Inherit"
+                       OnClick="BeginSignIn"
+                       id="auth-sign-in-button">
+                @Loc["Auth_SignIn"]
+            </MudButton>
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Inherit"
+                       OnClick="BeginSignIn"
+                       id="auth-create-account-button">
+                @Loc["Auth_CreateAccount"]
+            </MudButton>
+        }
     </NotAuthorized>
 </AuthorizeView>
