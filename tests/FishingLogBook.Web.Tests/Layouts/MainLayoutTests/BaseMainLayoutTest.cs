@@ -1,5 +1,6 @@
 using Bunit;
 using Bunit.TestDoubles;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Update;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
@@ -26,7 +27,8 @@ public class BaseMainLayoutTest
         ICatchSynchroniser? catchSynchroniser = null,
         IDiagnosticSynchroniser? diagnosticSynchroniser = null,
         IProfileSummaryProvider? profileSummary = null,
-        IAppUpdateService? appUpdate = null)
+        IAppUpdateService? appUpdate = null,
+        INetworkService? network = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -60,6 +62,7 @@ public class BaseMainLayoutTest
         context.Services.AddSingleton(Substitute.For<ILoggingService>());
         context.Services.AddSingleton(appUpdate ?? Substitute.For<IAppUpdateService>());
         context.Services.AddSingleton(profileSummary ?? QuietProfileSummary());
+        context.Services.AddSingleton(network ?? Network(isOnline: true));
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
@@ -72,4 +75,10 @@ public class BaseMainLayoutTest
         return provider;
     }
 
+    protected static INetworkService Network(bool isOnline)
+    {
+        var network = Substitute.For<INetworkService>();
+        network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(isOnline);
+        return network;
+    }
 }

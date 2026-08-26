@@ -1,8 +1,10 @@
 using Bunit;
 using Bunit.TestDoubles;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Components.UserMenu;
 using FishingLogBook.Web.Features.Authentication.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
@@ -19,7 +21,8 @@ public class BaseUserMenuTest
 
     protected static BunitContext CreateContext(
         IProfileSummaryProvider profileSummary,
-        bool isAuthenticated = true)
+        bool isAuthenticated = true,
+        INetworkService? network = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -35,6 +38,8 @@ public class BaseUserMenuTest
             ApiResource = "https://api.test",
             ApiScope = "https://api.test/access"
         });
+        context.Services.AddSingleton(network ?? Network(isOnline: true));
+        context.Services.AddSingleton(Substitute.For<ILoggingService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         var authorization = context.AddAuthorization();
         if (isAuthenticated)
@@ -48,6 +53,13 @@ public class BaseUserMenuTest
         }
 
         return context;
+    }
+
+    protected static INetworkService Network(bool isOnline)
+    {
+        var network = Substitute.For<INetworkService>();
+        network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(isOnline);
+        return network;
     }
 
     protected static IProfileSummaryProvider ProfileSummary(ProfileSummaryModel? summary = null)

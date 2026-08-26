@@ -32,6 +32,77 @@ public class WhenTestingRender : BaseUserMenuTest
     }
 
     [Fact]
+    public async Task ItShouldHideSignInAndCreateAccountWhenGenuinelyOffline()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        await using var context = CreateContext(profileSummary, isAuthenticated: false, network: Network(isOnline: false));
+
+        // Act
+        var cut = context.Render<UserMenu>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#auth-sign-in-button").Should().BeEmpty());
+        cut.FindAll("#auth-create-account-button").Should().BeEmpty();
+        cut.FindAll("#user-menu-button").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldHideSignInAndCreateAccountWhenConnectivityChangesToOffline()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        var network = Network(isOnline: true);
+        await using var context = CreateContext(profileSummary, isAuthenticated: false, network: network);
+        var cut = context.Render<UserMenu>();
+        cut.WaitForAssertion(() => cut.Find("#auth-sign-in-button").Should().NotBeNull());
+
+        // Act
+        network.ConnectivityChanged += Raise.Event<Action<bool>>(false);
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#auth-sign-in-button").Should().BeEmpty());
+    }
+
+    [Fact]
+    public async Task ItShouldShowSignInAndCreateAccountAgainWhenConnectivityChangesToOnline()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        var network = Network(isOnline: false);
+        await using var context = CreateContext(profileSummary, isAuthenticated: false, network: network);
+        var cut = context.Render<UserMenu>();
+        cut.WaitForAssertion(() => cut.FindAll("#auth-sign-in-button").Should().BeEmpty());
+
+        // Act
+        network.ConnectivityChanged += Raise.Event<Action<bool>>(true);
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#auth-sign-in-button").Should().NotBeNull());
+        cut.Find("#auth-create-account-button").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheNormalAuthenticatedMenuRegardlessOfConnectivity()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var profileSummary = ProfileSummary();
+        await using var context = CreateContext(profileSummary, isAuthenticated: true, network: Network(isOnline: false));
+
+        // Act
+        var cut = context.Render<UserMenu>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#user-menu-button").Should().NotBeNull());
+        cut.FindAll("#auth-sign-in-button").Should().BeEmpty();
+        cut.FindAll("#auth-create-account-button").Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ItShouldActivateTheMenuStraightFromTheAvatarButton()
     {
         // Arrange
