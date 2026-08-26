@@ -17,7 +17,7 @@ public class WhenTestingSearch : BaseCatchListTest
         spinningPerch = Guid.NewGuid();
         wormRoach = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<CatchModel>>(
             [
                 StoredCatch(flyPike, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), speciesName: "Pike", method: "Fly"),

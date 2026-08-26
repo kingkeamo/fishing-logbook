@@ -15,6 +15,7 @@ namespace FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 public sealed class CatchSynchroniser : ICatchSynchroniser
 {
     private readonly ConcurrentDictionary<Guid, byte> _inFlight = new();
+    private readonly ConcurrentDictionary<Guid, byte> _rerunRequested = new();
     private readonly ICatchStore _store;
     private readonly ICatchClient _client;
     private readonly INetworkService _networkService;
@@ -89,9 +90,9 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
-        var catches = await _store.GetAllAsync(ownerUserId, cancellationToken);
+        var catches = await _store.GetMetadataAsync(ownerUserId, cancellationToken);
         catches = await RecoverInterruptedAsync(catches, cancellationToken);
-        var pending = catches.Where(NeedsSynchronisation).ToArray();
+        var pending = catches.Where(NeedsAutomaticSynchronisation).ToArray();
         if (!await _networkService.IsOnlineAsync(cancellationToken))
         {
             foreach (var catchRecord in pending)
@@ -153,6 +154,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
     {
         if (!_inFlight.TryAdd(catchId, 0))
         {
+            _rerunRequested.TryAdd(catchId, 0);
             return;
         }
 
@@ -163,6 +165,11 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         finally
         {
             _inFlight.TryRemove(catchId, out _);
+            if (_rerunRequested.TryRemove(catchId, out _)
+                && !cancellationToken.IsCancellationRequested)
+            {
+                await SynchroniseGuardedAsync(ownerUserId, catchId, cancellationToken);
+            }
         }
     }
 
@@ -173,6 +180,11 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
     {
         var catchRecord = await _store.GetAsync(ownerUserId, catchId, cancellationToken);
         if (catchRecord is null)
+        {
+            return;
+        }
+
+        if (!NeedsSynchronisation(catchRecord))
         {
             return;
         }
@@ -210,7 +222,11 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         {
             catchRecord = photograph.SyncStatus == SyncStatus.PendingDeletion
                 ? await DeletePhotographAsync(catchRecord, photograph.Id, cancellationToken)
-                : await SynchronisePhotographAsync(catchRecord, photograph.Id, cancellationToken);
+                : await SynchronisePhotographAsync(
+                    catchRecord,
+                    photograph.Id,
+                    allowServerCatchRecovery: true,
+                    cancellationToken);
         }
 
         catchRecord = catchRecord with { SyncStatus = DeriveOverallStatus(catchRecord) };
@@ -246,27 +262,29 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         {
             var sent = ToDto(catchRecord);
             await _client.UpsertAsync(sent, cancellationToken);
-            var current = await _store.GetAsync(
+            var stored = await _store.GetMetadataAsync(
                 catchRecord.UserId,
                 catchRecord.Id,
                 cancellationToken);
-            if (current is null)
+            if (stored is null)
             {
                 return catchRecord;
             }
 
-            if (!HasSameMetadata(current, sent))
+            var refreshed = WithPhotographBytesFrom(stored, catchRecord);
+
+            if (!HasSameMetadata(refreshed, sent))
             {
-                current = current with
+                refreshed = refreshed with
                 {
                     SyncStatus = SyncStatus.WaitingToSynchronise,
                     MetadataSyncStatus = SyncStatus.WaitingToSynchronise
                 };
-                await _store.UpdateSyncStateAsync(current, cancellationToken);
-                return current;
+                await _store.UpdateSyncStateAsync(refreshed, cancellationToken);
+                return refreshed;
             }
 
-            catchRecord = current with { MetadataSyncStatus = SyncStatus.Synchronised };
+            catchRecord = refreshed with { MetadataSyncStatus = SyncStatus.Synchronised };
             await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
             await SafeLogAsync(
                 DiagnosticLevel.Information,
@@ -313,6 +331,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
     private async Task<CatchModel> SynchronisePhotographAsync(
         CatchModel catchRecord,
         Guid photographId,
+        bool allowServerCatchRecovery,
         CancellationToken cancellationToken)
     {
         catchRecord = WithPhotographStatus(
@@ -372,6 +391,15 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         }
         catch (Exception exception) when (IsSynchronisationFailure(exception, cancellationToken))
         {
+            if (allowServerCatchRecovery && IsMissingServerCatch(exception))
+            {
+                return await RecoverMissingServerCatchAsync(
+                    catchRecord,
+                    photographId,
+                    exception,
+                    cancellationToken);
+            }
+
             catchRecord = WithPhotographStatus(
                 catchRecord,
                 photographId,
@@ -400,6 +428,70 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
 
             return catchRecord;
         }
+    }
+
+    private async Task<CatchModel> RecoverMissingServerCatchAsync(
+        CatchModel catchRecord,
+        Guid photographId,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        await SafeLogAsync(
+            DiagnosticLevel.Warning,
+            DiagnosticEventNames.CatchServerRecordMissing,
+            "The server catch was missing for a pending photograph upload.",
+            catchRecord.Id,
+            photographId,
+            exception,
+            cancellationToken);
+
+        catchRecord = catchRecord with { MetadataSyncStatus = SyncStatus.WaitingToSynchronise };
+        await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
+        catchRecord = await SynchroniseMetadataAsync(catchRecord, cancellationToken);
+        if (catchRecord.MetadataSyncStatus != SyncStatus.Synchronised)
+        {
+            return WithFailedPhotograph(catchRecord, photographId);
+        }
+
+        return await SynchronisePhotographAsync(
+            catchRecord,
+            photographId,
+            allowServerCatchRecovery: false,
+            cancellationToken);
+    }
+
+    private CatchModel WithFailedPhotograph(CatchModel catchRecord, Guid photographId)
+    {
+        return WithPhotographStatus(
+            catchRecord,
+            photographId,
+            SyncStatus.FailedToSynchronise,
+            objectKey: null);
+    }
+
+    private static CatchModel WithPhotographBytesFrom(CatchModel target, CatchModel source)
+    {
+        var bytesById = source.Photographs
+            .Where(photograph => photograph.Bytes is { Length: > 0 })
+            .ToDictionary(photograph => photograph.Id, photograph => photograph.Bytes!);
+        return target with
+        {
+            Photographs = target.Photographs
+                .Select(photograph => photograph.Bytes is { Length: > 0 }
+                    ? photograph
+                    : bytesById.TryGetValue(photograph.Id, out var bytes)
+                        ? photograph with { Bytes = bytes }
+                        : photograph)
+                .ToArray()
+        };
+    }
+
+    private static bool IsMissingServerCatch(Exception exception)
+    {
+        return exception is HttpRequestException
+        {
+            StatusCode: System.Net.HttpStatusCode.NotFound
+        };
     }
 
     private async Task<CatchModel> DeletePhotographAsync(
@@ -740,6 +832,15 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
     private static bool NeedsSynchronisation(CatchModel catchRecord)
     {
         return catchRecord.SyncStatus != SyncStatus.Synchronised;
+    }
+
+    private static bool NeedsAutomaticSynchronisation(CatchModel catchRecord)
+    {
+        return NeedsSynchronisation(catchRecord)
+            && catchRecord.SyncStatus != SyncStatus.FailedToSynchronise
+            && catchRecord.MetadataSyncStatus != SyncStatus.FailedToSynchronise
+            && catchRecord.Photographs.All(
+                photograph => photograph.SyncStatus != SyncStatus.FailedToSynchronise);
     }
 
     private static bool NeedsPhotographSynchronisation(CatchPhotographModel photograph)

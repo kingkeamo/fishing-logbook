@@ -8,8 +8,19 @@ public sealed class MemoryCatchStore : ICatchStore
 {
     private readonly Dictionary<Guid, CatchModel> _catches;
     private readonly Dictionary<Guid, byte[]> _photographBytes;
+    private readonly HashSet<Guid> _photographReads = [];
 
     public bool FailPhotographWrite { get; set; }
+
+    public Func<Guid, Task>? BeforeSingleRead { get; set; }
+
+    public int GetAllCalls { get; private set; }
+
+    public int GetMetadataCalls { get; private set; }
+
+    public int GetCalls { get; private set; }
+
+    public IReadOnlyCollection<Guid> PhotographBytesReadFor => _photographReads;
 
     public MemoryCatchStore()
         : this([], [])
@@ -60,6 +71,23 @@ public sealed class MemoryCatchStore : ICatchStore
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
+        GetAllCalls += 1;
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        IReadOnlyList<CatchModel> items = _catches.Values
+            .Select(catchRecord => WithPhotographBytes(catchRecord))
+            .ToArray();
+        return Task.FromResult(LocalCatchVisibility.ForOwner(items, ownerUserId));
+    }
+
+    public Task<IReadOnlyList<CatchModel>> GetMetadataAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        GetMetadataCalls += 1;
         if (ownerUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A catch owner is required.");
@@ -69,14 +97,33 @@ public sealed class MemoryCatchStore : ICatchStore
             .Select(catchRecord => catchRecord with
             {
                 Photographs = catchRecord.Photographs
-                    .Select(photograph => photograph with
-                    {
-                        Bytes = _photographBytes.GetValueOrDefault(photograph.Id)
-                    })
+                    .Select(photograph => photograph with { Bytes = null })
                     .ToArray()
             })
             .ToArray();
         return Task.FromResult(LocalCatchVisibility.ForOwner(items, ownerUserId));
+    }
+
+    public Task<CatchModel?> GetMetadataAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        CancellationToken cancellationToken)
+    {
+        GetMetadataCalls += 1;
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        var item = _catches.GetValueOrDefault(catchId);
+        return Task.FromResult(item is not null && item.UserId == ownerUserId
+            ? item with
+            {
+                Photographs = item.Photographs
+                    .Select(photograph => photograph with { Bytes = null })
+                    .ToArray()
+            }
+            : null);
     }
 
     public async Task<CatchModel?> GetAsync(
@@ -84,8 +131,23 @@ public sealed class MemoryCatchStore : ICatchStore
         Guid catchId,
         CancellationToken cancellationToken)
     {
-        var catches = await GetAllAsync(ownerUserId, cancellationToken);
-        return catches.SingleOrDefault(catchRecord => catchRecord.Id == catchId);
+        GetCalls += 1;
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        if (BeforeSingleRead is not null)
+        {
+            await BeforeSingleRead(catchId);
+        }
+
+        if (!_catches.TryGetValue(catchId, out var stored) || stored.UserId != ownerUserId)
+        {
+            return null;
+        }
+
+        return WithPhotographBytes(stored);
     }
 
     public Task UpdateSyncStateAsync(
@@ -117,5 +179,24 @@ public sealed class MemoryCatchStore : ICatchStore
                 .ToArray()
         };
         return Task.CompletedTask;
+    }
+
+    private CatchModel WithPhotographBytes(CatchModel catchRecord)
+    {
+        return catchRecord with
+        {
+            Photographs = catchRecord.Photographs
+                .Select(photograph =>
+                {
+                    var bytes = _photographBytes.GetValueOrDefault(photograph.Id);
+                    if (bytes is { Length: > 0 })
+                    {
+                        _photographReads.Add(photograph.Id);
+                    }
+
+                    return photograph with { Bytes = bytes };
+                })
+                .ToArray()
+        };
     }
 }

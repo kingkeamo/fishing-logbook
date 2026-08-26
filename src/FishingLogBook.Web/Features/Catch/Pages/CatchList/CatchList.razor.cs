@@ -13,6 +13,7 @@ using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
@@ -29,6 +30,7 @@ public partial class CatchList : ComponentBase, IDisposable
     private readonly Dictionary<Guid, DateTime> _localCaughtOn = [];
 
     private IReadOnlyList<CatchModel> _allCatches = [];
+    private IReadOnlyList<CatchModel> _remoteCatches = [];
     private IReadOnlyList<CatchGroup> _filteredGroups = [];
     private IReadOnlyList<string> _methodOptions = [];
     private IReadOnlyList<string> _speciesOptions = [];
@@ -39,6 +41,10 @@ public partial class CatchList : ComponentBase, IDisposable
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _isLoading = true;
     private bool _loadFailed;
+    private bool _isLoadInFlight;
+    private bool _reloadRequested;
+    private bool _localRefreshRequested;
+    private AnglerPreferencesModel? _preferences;
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
@@ -81,6 +87,35 @@ public partial class CatchList : ComponentBase, IDisposable
 
     private async Task LoadAsync()
     {
+        if (_isLoadInFlight)
+        {
+            _reloadRequested = true;
+            return;
+        }
+
+        _isLoadInFlight = true;
+        try
+        {
+            do
+            {
+                _reloadRequested = false;
+                await LoadOnceAsync();
+            }
+            while (_reloadRequested && !_cancellationTokenSource.IsCancellationRequested);
+        }
+        finally
+        {
+            _isLoadInFlight = false;
+        }
+
+        if (_localRefreshRequested && !_cancellationTokenSource.IsCancellationRequested)
+        {
+            await RefreshLocalAfterSynchronisationAsync();
+        }
+    }
+
+    private async Task LoadOnceAsync()
+    {
         _isLoading = true;
         _loadFailed = false;
         var cancellationToken = _cancellationTokenSource.Token;
@@ -89,19 +124,44 @@ public partial class CatchList : ComponentBase, IDisposable
             var preferencesTask = AnglerPreferences.GetAsync(cancellationToken);
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(cancellationToken);
             _currentUserId = ownerUserId;
-            var saved = await CatchStore.GetAllAsync(ownerUserId, cancellationToken);
-            var serverOnly = await LoadServerOnlyCatchesAsync(saved, cancellationToken);
-            _allCatches = saved
-                .Concat(serverOnly)
-                .OrderByDescending(catchRecord => catchRecord.CaughtOn)
-                .ToArray();
-            var preferences = await preferencesTask;
-            _weightUnit = preferences.WeightUnit;
-            _lengthUnit = preferences.LengthUnit;
 
-            await ComputeLocalTimesAsync(cancellationToken);
-            ComputeFilterOptions();
-            RebuildFilteredGroups();
+            var localTask = LoadLocalCatchesAsync(ownerUserId, cancellationToken);
+            var remoteTask = LoadRemoteCatchesAsync(cancellationToken);
+            var firstCompleted = await Task.WhenAny(localTask, remoteTask);
+            if (firstCompleted == remoteTask)
+            {
+                var earlyRemote = await remoteTask;
+                if (!earlyRemote.Failed)
+                {
+                    await DisplayAsync(
+                        ownerUserId,
+                        [],
+                        earlyRemote.Catches,
+                        await preferencesTask,
+                        cancellationToken);
+                    _isLoading = false;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+
+            var local = await localTask;
+            var remote = await remoteTask;
+            _remoteCatches = remote.Failed ? [] : remote.Catches;
+            _preferences = await preferencesTask;
+            if (local.Failed && remote.Failed)
+            {
+                _loadFailed = true;
+                _allCatches = [];
+                _filteredGroups = [];
+                return;
+            }
+
+            await DisplayAsync(
+                ownerUserId,
+                local.Catches,
+                _remoteCatches,
+                _preferences,
+                cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -120,19 +180,53 @@ public partial class CatchList : ComponentBase, IDisposable
         }
     }
 
-    private async Task<IReadOnlyList<CatchModel>> LoadServerOnlyCatchesAsync(
+    private async Task DisplayAsync(
+        Guid ownerUserId,
         IReadOnlyList<CatchModel> local,
+        IReadOnlyList<CatchModel> remote,
+        AnglerPreferencesModel preferences,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<CatchViewDto> remote;
+        _allCatches = await MergeAsync(ownerUserId, local, remote, cancellationToken);
+        _weightUnit = preferences.WeightUnit;
+        _lengthUnit = preferences.LengthUnit;
+        await ComputeLocalTimesAsync(cancellationToken);
+        ComputeFilterOptions();
+        RebuildFilteredGroups();
+    }
+
+    private async Task<CatchLoadResult> LoadLocalCatchesAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return new CatchLoadResult(
+                await CatchStore.GetMetadataAsync(ownerUserId, cancellationToken),
+                Failed: false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("catch logbook local read", exception, CancellationToken.None);
+            return new CatchLoadResult([], Failed: true);
+        }
+    }
+
+    private async Task<CatchLoadResult> LoadRemoteCatchesAsync(CancellationToken cancellationToken)
+    {
         try
         {
             if (!await Network.IsOnlineAsync(cancellationToken))
             {
-                return [];
+                return new CatchLoadResult([], Failed: true);
             }
 
-            remote = await CatchClient.GetAllAsync(cancellationToken);
+            var remote = await CatchClient.GetAllAsync(cancellationToken);
+            return new CatchLoadResult([.. remote.Select(ToCatchModel)], Failed: false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -141,13 +235,89 @@ public partial class CatchList : ComponentBase, IDisposable
         catch (Exception exception)
         {
             await Logging.LogErrorAsync("catch logbook server fetch", exception, CancellationToken.None);
-            return [];
+            return new CatchLoadResult([], Failed: true);
+        }
+    }
+
+    private async Task<IReadOnlyList<CatchModel>> MergeAsync(
+        Guid ownerUserId,
+        IReadOnlyList<CatchModel> local,
+        IReadOnlyList<CatchModel> remote,
+        CancellationToken cancellationToken)
+    {
+        var remoteById = remote.ToDictionary(catchRecord => catchRecord.Id);
+        var merged = new List<CatchModel>(local.Count + remote.Count);
+        foreach (var catchRecord in local)
+        {
+            var remoteCatch = remoteById.GetValueOrDefault(catchRecord.Id);
+            if (remoteCatch is not null && IsFullySynchronised(catchRecord))
+            {
+                merged.Add(remoteCatch);
+                continue;
+            }
+
+            merged.Add(await WithDisplayablePhotographsAsync(
+                ownerUserId,
+                catchRecord,
+                remoteCatch,
+                cancellationToken));
         }
 
         var localIds = local.Select(catchRecord => catchRecord.Id).ToHashSet();
-        return [.. remote
-            .Where(catchRecord => !localIds.Contains(catchRecord.Id))
-            .Select(ToCatchModel)];
+        merged.AddRange(remote.Where(catchRecord => !localIds.Contains(catchRecord.Id)));
+        return [.. merged.OrderByDescending(catchRecord => catchRecord.CaughtOn)];
+    }
+
+    private static bool IsFullySynchronised(CatchModel catchRecord)
+    {
+        return catchRecord.SyncStatus == SyncStatus.Synchronised
+            && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised
+            && catchRecord.Photographs.All(
+                photograph => photograph.SyncStatus == SyncStatus.Synchronised);
+    }
+
+    private async Task<CatchModel> WithDisplayablePhotographsAsync(
+        Guid ownerUserId,
+        CatchModel local,
+        CatchModel? remote,
+        CancellationToken cancellationToken)
+    {
+        var remoteUrls = remote?.Photographs
+            .Where(photograph => !string.IsNullOrWhiteSpace(photograph.RemoteUrl))
+            .ToDictionary(photograph => photograph.Id, photograph => photograph.RemoteUrl!)
+            ?? [];
+        var withRemoteUrls = local.Photographs
+            .Select(photograph => photograph.SyncStatus == SyncStatus.Synchronised
+                && remoteUrls.TryGetValue(photograph.Id, out var url)
+                ? photograph with { RemoteUrl = url }
+                : photograph)
+            .ToArray();
+        if (withRemoteUrls.All(photograph => !string.IsNullOrWhiteSpace(photograph.RemoteUrl)))
+        {
+            return local with { Photographs = withRemoteUrls };
+        }
+
+        try
+        {
+            var stored = await CatchStore.GetAsync(ownerUserId, local.Id, cancellationToken);
+            if (stored is not null)
+            {
+                return stored;
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "catch logbook local photograph read",
+                exception,
+                CancellationToken.None);
+        }
+
+        return local with { Photographs = withRemoteUrls };
     }
 
     private static CatchModel ToCatchModel(CatchViewDto dto)
@@ -340,6 +510,16 @@ public partial class CatchList : ComponentBase, IDisposable
         }
     }
 
+    private async Task RetryLoadAsync()
+    {
+        if (_isLoadInFlight)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
     private void OnSyncStateChanged(object? sender, EventArgs args)
     {
         if (_cancellationTokenSource.IsCancellationRequested)
@@ -349,22 +529,46 @@ public partial class CatchList : ComponentBase, IDisposable
 
         try
         {
-            _ = InvokeAsync(RefreshAfterSynchronisationAsync);
+            _ = InvokeAsync(RefreshLocalAfterSynchronisationAsync);
         }
         catch (ObjectDisposedException)
         {
         }
     }
 
-    private async Task RefreshAfterSynchronisationAsync()
+    private async Task RefreshLocalAfterSynchronisationAsync()
     {
-        await LoadAsync();
-        if (_cancellationTokenSource.IsCancellationRequested)
+        if (_isLoadInFlight)
         {
+            _localRefreshRequested = true;
             return;
         }
 
-        StateHasChanged();
+        _isLoadInFlight = true;
+        try
+        {
+            do
+            {
+                _localRefreshRequested = false;
+                var cancellationToken = _cancellationTokenSource.Token;
+                var local = await LoadLocalCatchesAsync(_currentUserId, cancellationToken);
+                if (!local.Failed && _preferences is not null)
+                {
+                    await DisplayAsync(
+                        _currentUserId,
+                        local.Catches,
+                        _remoteCatches,
+                        _preferences,
+                        cancellationToken);
+                    StateHasChanged();
+                }
+            }
+            while (_localRefreshRequested && !_cancellationTokenSource.IsCancellationRequested);
+        }
+        finally
+        {
+            _isLoadInFlight = false;
+        }
     }
 
     public void Dispose()
@@ -375,4 +579,6 @@ public partial class CatchList : ComponentBase, IDisposable
     }
 
     private sealed record CatchGroup(string Header, IReadOnlyList<CatchModel> Catches);
+
+    private sealed record CatchLoadResult(IReadOnlyList<CatchModel> Catches, bool Failed);
 }

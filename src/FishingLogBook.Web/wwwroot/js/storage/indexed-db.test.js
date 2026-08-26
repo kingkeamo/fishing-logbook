@@ -152,7 +152,7 @@ describe('IndexedDB helper', () => {
 
     it('rejects when the transaction times out', async () => {
         vi.useFakeTimers();
-        const { db } = createMockDb();
+        const { db, getTransaction } = createMockDb();
         const promise = runTransaction(db, {
             storeName: 'items',
             mode: 'readwrite',
@@ -161,9 +161,11 @@ describe('IndexedDB helper', () => {
             execute: () => { }
         });
         const assertion = expect(promise).rejects.toThrow('IndexedDB write timed out');
+        const abort = vi.spyOn(getTransaction(), 'abort');
         await vi.advanceTimersByTimeAsync(40);
         await assertion;
         vi.useRealTimers();
+        expect(abort).toHaveBeenCalledOnce();
         expect(db.closed).toBe(true);
     });
 

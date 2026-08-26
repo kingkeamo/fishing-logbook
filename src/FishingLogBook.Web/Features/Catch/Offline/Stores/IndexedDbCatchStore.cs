@@ -77,13 +77,38 @@ public sealed class IndexedDbCatchStore : ICatchStore
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
+        return await ReadCatchesAsync(
+            ownerUserId,
+            "getAllCatchesWithPhotographs",
+            "read",
+            ToModel,
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<CatchModel>> GetMetadataAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        return await ReadCatchesAsync(
+            ownerUserId,
+            "getCatchMetadata",
+            "metadata-read",
+            static record => CatchJson.DeserializeMetadata(record.Json),
+            cancellationToken);
+    }
+
+    public async Task<CatchModel?> GetMetadataAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        CancellationToken cancellationToken)
+    {
         if (ownerUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A catch owner is required.");
         }
 
         var loaded = await OfflineOperation.ExecuteAsync(
-            "read",
+            "single-metadata-read",
             StoreName,
             DiagnosticEventNames.OfflineDbReadStarted,
             DiagnosticEventNames.OfflineDbReadCompleted,
@@ -94,15 +119,16 @@ public sealed class IndexedDbCatchStore : ICatchStore
             async token =>
             {
                 var module = await GetModuleAsync(token);
-                var records = await module.InvokeAsync<StoredCatchRecord[]>(
-                    "getAllCatchesWithPhotographs",
+                var record = await module.InvokeAsync<StoredCatchRecord?>(
+                    "getCatchMetadataById",
                     token,
-                    ownerUserId.ToString("D"));
-                return (IReadOnlyList<CatchModel>)(records ?? []).Select(ToModel).ToArray();
+                    ownerUserId.ToString("D"),
+                    catchId.ToString("D"));
+                return record is null ? null : CatchJson.DeserializeMetadata(record.Json);
             },
             cancellationToken,
             _logging);
-        return LocalCatchVisibility.ForOwner(loaded, ownerUserId);
+        return loaded is not null && loaded.UserId == ownerUserId ? loaded : null;
     }
 
     public async Task<CatchModel?> GetAsync(
@@ -110,8 +136,33 @@ public sealed class IndexedDbCatchStore : ICatchStore
         Guid catchId,
         CancellationToken cancellationToken)
     {
-        var catches = await GetAllAsync(ownerUserId, cancellationToken);
-        return catches.SingleOrDefault(catchRecord => catchRecord.Id == catchId);
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        var loaded = await OfflineOperation.ExecuteAsync(
+            "single-read",
+            StoreName,
+            DiagnosticEventNames.OfflineDbReadStarted,
+            DiagnosticEventNames.OfflineDbReadCompleted,
+            DiagnosticEventNames.OfflineDbReadFailed,
+            DiagnosticEventNames.OfflineDbReadTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                var record = await module.InvokeAsync<StoredCatchRecord?>(
+                    "getCatchWithPhotographs",
+                    token,
+                    ownerUserId.ToString("D"),
+                    catchId.ToString("D"));
+                return record is null ? null : ToModel(record);
+            },
+            cancellationToken,
+            _logging);
+        return loaded is not null && loaded.UserId == ownerUserId ? loaded : null;
     }
 
     public async Task UpdateSyncStateAsync(
@@ -140,6 +191,41 @@ public sealed class IndexedDbCatchStore : ICatchStore
             },
             cancellationToken,
             _logging);
+    }
+
+    private async Task<IReadOnlyList<CatchModel>> ReadCatchesAsync(
+        Guid ownerUserId,
+        string jsFunction,
+        string operation,
+        Func<StoredCatchRecord, CatchModel> toModel,
+        CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch owner is required.");
+        }
+
+        var loaded = await OfflineOperation.ExecuteAsync(
+            operation,
+            StoreName,
+            DiagnosticEventNames.OfflineDbReadStarted,
+            DiagnosticEventNames.OfflineDbReadCompleted,
+            DiagnosticEventNames.OfflineDbReadFailed,
+            DiagnosticEventNames.OfflineDbReadTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                var records = await module.InvokeAsync<StoredCatchRecord[]>(
+                    jsFunction,
+                    token,
+                    ownerUserId.ToString("D"));
+                return (IReadOnlyList<CatchModel>)(records ?? []).Select(toModel).ToArray();
+            },
+            cancellationToken,
+            _logging);
+        return LocalCatchVisibility.ForOwner(loaded, ownerUserId);
     }
 
     private static CatchModel ToModel(StoredCatchRecord record)

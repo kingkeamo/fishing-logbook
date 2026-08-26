@@ -18,7 +18,7 @@ public class WhenTestingProvenance : BaseCatchListTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<CatchModel>>(
             [
                 StoredCatch(
@@ -44,7 +44,7 @@ public class WhenTestingProvenance : BaseCatchListTest
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
         var store = Substitute.For<ICatchStore>();
-        store.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<CatchModel>>(
             [
                 StoredCatch(

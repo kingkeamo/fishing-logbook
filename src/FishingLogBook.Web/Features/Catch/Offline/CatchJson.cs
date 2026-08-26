@@ -46,10 +46,17 @@ internal static class CatchJson
     {
         var metadata = JsonSerializer.Deserialize<CatchMetadata>(json, Options)
             ?? throw new InvalidOperationException("Catch metadata could not be read.");
+        return ToModel(metadata, OrderPhotographs(metadata.Photographs, photographs));
+    }
+
+    private static CatchModel ToModel(
+        CatchMetadata metadata,
+        IReadOnlyList<CatchPhotographModel> photographs)
+    {
         return new CatchModel(
             metadata.Id,
             metadata.CaughtOn,
-            OrderPhotographs(metadata.Photographs, photographs),
+            photographs,
             metadata.SpeciesName,
             metadata.Location,
             metadata.UserId,
@@ -62,6 +69,22 @@ internal static class CatchJson
             metadata.Method,
             metadata.BaitOrLure,
             metadata.Notes);
+    }
+
+    public static CatchModel DeserializeMetadata(string json)
+    {
+        var metadata = JsonSerializer.Deserialize<CatchMetadata>(json, Options)
+            ?? throw new InvalidOperationException("Catch metadata could not be read.");
+        var photographs = metadata.Photographs
+            .Select(photograph => new CatchPhotographModel(
+                photograph.Id,
+                photograph.CatchId,
+                photograph.ContentType,
+                Bytes: null,
+                photograph.SyncStatus,
+                photograph.ObjectKey))
+            .ToArray();
+        return ToModel(metadata, photographs);
     }
 
     private static IReadOnlyList<CatchPhotographModel> OrderPhotographs(

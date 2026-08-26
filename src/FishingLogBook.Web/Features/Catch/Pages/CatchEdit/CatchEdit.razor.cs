@@ -101,6 +101,16 @@ public partial class CatchEdit : ComponentBase, IDisposable
         await LoadAsync();
     }
 
+    private async Task RetryLoadAsync()
+    {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
     private Task OnDetailsSavedAsync(CatchEditSavedModel saved)
     {
         _catch = saved.Catch;

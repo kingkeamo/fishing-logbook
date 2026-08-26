@@ -346,6 +346,57 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
     }
 
     [Fact]
+    public async Task ItShouldSynchroniseANewerEditRequestedWhileTheCatchIsInFlight()
+    {
+        // Arrange
+        var original = CreateCatch(
+            photographs: [CreatePhotograph(PhotographAId, CatchId)]);
+        var updatedCaughtOn = original.CaughtOn.AddDays(-1);
+        var store = await CreateStoreAsync(original);
+        var metadataStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseMetadata = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var upsertCount = 0;
+        MockCatchClient.UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>())
+            .Returns(async _ =>
+            {
+                upsertCount += 1;
+                if (upsertCount == 1)
+                {
+                    metadataStarted.SetResult();
+                    await releaseMetadata.Task;
+                }
+            });
+        var sut = CreateSut(store);
+
+        // Act
+        var first = sut.SynchronisePendingAsync(CancellationToken.None);
+        await metadataStarted.Task;
+        var current = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+        await store.SaveAsync(
+            current! with
+            {
+                CaughtOn = updatedCaughtOn,
+                SyncStatus = SyncStatus.WaitingToSynchronise,
+                MetadataSyncStatus = SyncStatus.WaitingToSynchronise
+            },
+            CancellationToken.None);
+        var second = sut.SynchronisePendingAsync(CancellationToken.None);
+        releaseMetadata.SetResult();
+        await Task.WhenAll(first, second);
+
+        // Assert
+        await MockCatchClient.Received(2).UpsertAsync(
+            Arg.Any<CatchDto>(),
+            Arg.Any<CancellationToken>());
+        await MockCatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(dto => dto.CaughtOn == updatedCaughtOn),
+            Arg.Any<CancellationToken>());
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+        saved!.CaughtOn.Should().Be(updatedCaughtOn);
+        saved.SyncStatus.Should().Be(SyncStatus.Synchronised);
+    }
+
+    [Fact]
     public async Task ItShouldNotOverwriteANewerPrivacyChoiceMadeDuringMetadataSync()
     {
         // Arrange

@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     CATCH_STORE_NAME,
+    PHOTO_STORE_NAME,
     getAllCatchesWithPhotographs,
+    getCatchMetadata,
+    getCatchMetadataById,
+    getCatchWithPhotographs,
     openCatchDatabase,
     putCatchWithPhotographs,
     updateCatchMetadata
@@ -316,6 +320,49 @@ describe('Catch store', () => {
         expect(stored.photographs[0].syncStatus).toBe(3);
     });
 
+    it('does not let a stale sync completion clear a newer metadata edit', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = '11111111-1111-1111-1111-111111111111';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                caughtOn: '2026-08-20T08:15:00Z',
+                syncStatus: 2,
+                metadataSyncStatus: 2,
+                photographs: [{ id: photographId, catchId, contentType: 'image/jpeg', syncStatus: 2 }]
+            }),
+            [{ id: photographId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1]) }]
+        );
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                caughtOn: '2025-06-14T06:32:10Z',
+                syncStatus: 1,
+                metadataSyncStatus: 1,
+                photographs: [{ id: photographId, catchId, contentType: 'image/jpeg', syncStatus: 2 }]
+            }),
+            [{ id: photographId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1]) }]
+        );
+
+        await updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            caughtOn: '2026-08-20T08:15:00Z',
+            syncStatus: 3,
+            metadataSyncStatus: 3,
+            photographs: [{ id: photographId, catchId, contentType: 'image/jpeg', syncStatus: 3 }]
+        }));
+
+        const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
+        const stored = JSON.parse(ownerView[0].json);
+        expect(stored.caughtOn).toBe('2025-06-14T06:32:10Z');
+        expect(stored.syncStatus).toBe(1);
+        expect(stored.metadataSyncStatus).toBe(1);
+        expect(stored.photographs[0].syncStatus).toBe(3);
+    });
+
     it('keeps two separately saved catches on distinct ids', async () => {
         await putCatchWithPhotographs(
             JSON.stringify({ id: 'catch-a', userId: ownerUserId, caughtOn: '2026-08-17T08:00:00+00:00' }),
@@ -602,3 +649,222 @@ function readRawCatch(id) {
         transaction.oncomplete = () => db.close();
     }));
 }
+
+describe('Catch store read granularity', () => {
+    const ownerUserId = '11111111-1111-1111-1111-111111111111';
+    const otherUserId = '22222222-2222-2222-2222-222222222222';
+
+    function recordStoreAccess() {
+        const accesses = { get: [], openCursor: [] };
+        const originalGet = IDBObjectStore.prototype.get;
+        const originalOpenCursor = IDBObjectStore.prototype.openCursor;
+        IDBObjectStore.prototype.get = function instrumentedGet(key) {
+            accesses.get.push({ store: this.name, key });
+            return originalGet.call(this, key);
+        };
+        IDBObjectStore.prototype.openCursor = function instrumentedOpenCursor(...args) {
+            accesses.openCursor.push({ store: this.name });
+            return originalOpenCursor.apply(this, args);
+        };
+        accesses.restore = () => {
+            IDBObjectStore.prototype.get = originalGet;
+            IDBObjectStore.prototype.openCursor = originalOpenCursor;
+        };
+        return accesses;
+    }
+
+    function largePhotograph(id, catchId, seed) {
+        return {
+            id,
+            catchId,
+            contentType: 'image/jpeg',
+            bytes: new Uint8Array(256 * 1024).fill(seed)
+        };
+    }
+
+    async function seedCatch(catchId, photographs, userId = ownerUserId) {
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId,
+                caughtOn: '2026-08-17T08:00:00+00:00',
+                photographs: photographs.map((photograph) => ({
+                    id: photograph.id,
+                    catchId,
+                    contentType: photograph.contentType,
+                    syncStatus: 'savedLocally'
+                }))
+            }),
+            photographs);
+    }
+
+    it('reads list metadata without touching the photograph store', async () => {
+        const first = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const second = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await seedCatch(first, [largePhotograph('photo-a', first, 1)]);
+        await seedCatch(second, [largePhotograph('photo-b', second, 2)]);
+        const accesses = recordStoreAccess();
+
+        try {
+            const items = await getCatchMetadata(ownerUserId);
+
+            expect(items).toHaveLength(2);
+            expect(items.every((item) => item.photographs.length === 0)).toBe(true);
+            expect(items.some((item) => JSON.parse(item.json).id === first)).toBe(true);
+            expect(accesses.openCursor.map((access) => access.store)).toEqual([CATCH_STORE_NAME]);
+            expect(accesses.get.filter((access) => access.store === PHOTO_STORE_NAME)).toHaveLength(0);
+        } finally {
+            accesses.restore();
+        }
+    });
+
+    it('updates a current Catch without scanning unrelated photographs', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        await seedCatch(catchId, [largePhotograph('old-photo', catchId, 1)]);
+        const accesses = recordStoreAccess();
+
+        try {
+            await seedCatch(catchId, [largePhotograph('new-photo', catchId, 2)]);
+
+            expect(accesses.get).toContainEqual({ store: CATCH_STORE_NAME, key: catchId });
+            expect(accesses.openCursor).toHaveLength(0);
+        } finally {
+            accesses.restore();
+        }
+
+        const item = await getCatchWithPhotographs(ownerUserId, catchId);
+        expect(item.photographs.map((photograph) => photograph.id)).toEqual(['new-photo']);
+    });
+
+    it('writes a new Catch without scanning existing photographs', async () => {
+        const existingId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const newId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await seedCatch(existingId, [largePhotograph('existing-photo', existingId, 1)]);
+        const accesses = recordStoreAccess();
+
+        try {
+            await seedCatch(newId, [largePhotograph('new-photo', newId, 2)]);
+
+            expect(accesses.get).toContainEqual({ store: CATCH_STORE_NAME, key: newId });
+            expect(accesses.openCursor).toHaveLength(0);
+        } finally {
+            accesses.restore();
+        }
+    });
+
+    it('does not return metadata belonging to another owner', async () => {
+        const owned = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const foreign = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        await seedCatch(owned, [largePhotograph('photo-a', owned, 1)]);
+        await seedCatch(foreign, [largePhotograph('photo-c', foreign, 3)], otherUserId);
+
+        const items = await getCatchMetadata(ownerUserId);
+
+        expect(items).toHaveLength(1);
+        expect(JSON.parse(items[0].json).id).toBe(owned);
+    });
+
+    it('reads one Catch metadata record by key without touching photograph blobs', async () => {
+        const wanted = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const unrelated = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await seedCatch(wanted, [largePhotograph('photo-a', wanted, 1)]);
+        await seedCatch(unrelated, [largePhotograph('photo-b', unrelated, 2)]);
+        const accesses = recordStoreAccess();
+
+        try {
+            const item = await getCatchMetadataById(ownerUserId, wanted);
+
+            expect(JSON.parse(item.json).id).toBe(wanted);
+            expect(item.photographs).toEqual([]);
+            expect(accesses.get).toEqual([{ store: CATCH_STORE_NAME, key: wanted }]);
+            expect(accesses.openCursor).toHaveLength(0);
+        } finally {
+            accesses.restore();
+        }
+    });
+
+    it('treats an empty owner as no owner for metadata', async () => {
+        const owned = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        await seedCatch(owned, [largePhotograph('photo-a', owned, 1)]);
+
+        const items = await getCatchMetadata('00000000-0000-0000-0000-000000000000');
+
+        expect(items).toEqual([]);
+    });
+
+    it('reads one Catch by key and only its own photograph blobs', async () => {
+        const wanted = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const unrelated = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await seedCatch(wanted, [largePhotograph('photo-a', wanted, 1)]);
+        await seedCatch(unrelated, [
+            largePhotograph('photo-b', unrelated, 2),
+            largePhotograph('photo-c', unrelated, 3)
+        ]);
+        const accesses = recordStoreAccess();
+
+        try {
+            const item = await getCatchWithPhotographs(ownerUserId, wanted);
+
+            expect(JSON.parse(item.json).id).toBe(wanted);
+            expect(item.photographs).toHaveLength(1);
+            expect(item.photographs[0].id).toBe('photo-a');
+            expect(accesses.get).toEqual([
+                { store: CATCH_STORE_NAME, key: wanted },
+                { store: PHOTO_STORE_NAME, key: 'photo-a' }
+            ]);
+            expect(accesses.openCursor).toHaveLength(0);
+        } finally {
+            accesses.restore();
+        }
+    });
+
+    it('reads every photograph belonging to the requested Catch in metadata order', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        await seedCatch(catchId, [
+            largePhotograph('photo-1', catchId, 1),
+            largePhotograph('photo-2', catchId, 2),
+            largePhotograph('photo-3', catchId, 3)
+        ]);
+
+        const item = await getCatchWithPhotographs(ownerUserId, catchId);
+
+        expect(item.photographs.map((photograph) => photograph.id))
+            .toEqual(['photo-1', 'photo-2', 'photo-3']);
+        expect(item.photographs.every((photograph) => photograph.bytesBase64.length > 0)).toBe(true);
+    });
+
+    it('does not read a Catch belonging to another owner by id', async () => {
+        const foreign = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        await seedCatch(foreign, [largePhotograph('photo-c', foreign, 3)], otherUserId);
+        const accesses = recordStoreAccess();
+
+        try {
+            const item = await getCatchWithPhotographs(ownerUserId, foreign);
+
+            expect(item).toBeNull();
+            expect(accesses.get.filter((access) => access.store === PHOTO_STORE_NAME)).toHaveLength(0);
+        } finally {
+            accesses.restore();
+        }
+    });
+
+    it('returns null for a Catch that is not stored', async () => {
+        const item = await getCatchWithPhotographs(ownerUserId, 'dddddddd-dddd-dddd-dddd-dddddddddddd');
+
+        expect(item).toBeNull();
+    });
+
+    it('falls back to a filtered scan for a legacy Catch with no photograph metadata', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const unrelated = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await putCatchWithPhotographs(
+            JSON.stringify({ id: catchId, userId: ownerUserId, caughtOn: '2026-08-17T08:00:00+00:00' }),
+            [largePhotograph('legacy-photo', catchId, 1)]);
+        await seedCatch(unrelated, [largePhotograph('photo-b', unrelated, 2)]);
+
+        const item = await getCatchWithPhotographs(ownerUserId, catchId);
+
+        expect(item.photographs).toHaveLength(1);
+        expect(item.photographs[0].id).toBe('legacy-photo');
+    });
+});

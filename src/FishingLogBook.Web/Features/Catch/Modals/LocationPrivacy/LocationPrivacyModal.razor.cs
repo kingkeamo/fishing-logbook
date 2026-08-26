@@ -61,8 +61,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
         try
         {
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
-            var saved = await CatchStore.GetAllAsync(ownerUserId, _cancellationTokenSource.Token);
-            _catch = saved.FirstOrDefault(catchRecord => catchRecord.Id == CatchId);
+            _catch = await CatchStore.GetAsync(ownerUserId, CatchId, _cancellationTokenSource.Token);
             if (_catch is null)
             {
                 _loadFailed = true;
