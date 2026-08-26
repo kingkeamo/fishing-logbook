@@ -847,6 +847,21 @@
   <data name="Catch_MeasurementCoarseAdjustment" xml:space="preserve">
     <value>Faites glisser pour ajuster</value>
   </data>
+  <data name="Catch_MeasurementRangeGroup" xml:space="preserve">
+    <value>Plage de l’échelle</value>
+  </data>
+  <data name="Catch_MeasurementRange_Small" xml:space="preserve">
+    <value>Petit</value>
+  </data>
+  <data name="Catch_MeasurementRange_Medium" xml:space="preserve">
+    <value>Moyen</value>
+  </data>
+  <data name="Catch_MeasurementRange_Large" xml:space="preserve">
+    <value>Grand</value>
+  </data>
+  <data name="Catch_MeasurementRange_Monster" xml:space="preserve">
+    <value>Monstre</value>
+  </data>
   <data name="Catch_MeasurementSliderLabel" xml:space="preserve">
     <value>Régler {0}</value>
   </data>

@@ -1,0 +1,74 @@
+.measurement-ranges {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: stretch;
+    gap: 0.15rem;
+    flex: 0 0 auto;
+}
+
+.measurement-range {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    flex: 1 1 0;
+    min-height: 2.25rem;
+    min-width: 2.75rem;
+    padding: 0.1rem 0.35rem;
+    border: 1px solid transparent;
+    border-radius: var(--mud-default-borderradius);
+    background: transparent;
+    color: var(--mud-palette-primary);
+    cursor: pointer;
+}
+
+.measurement-range:disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+}
+
+.measurement-range-selected {
+    border-color: var(--mud-palette-primary);
+    background-color: var(--mud-palette-surface);
+    font-weight: 600;
+}
+
+.measurement-range-fish {
+    display: block;
+    flex: 0 0 auto;
+    fill: var(--mud-palette-primary);
+    transform: scaleX(-1);
+}
+
+.measurement-range-fish-Small {
+    width: 14px;
+}
+
+.measurement-range-fish-Medium {
+    width: 19px;
+}
+
+.measurement-range-fish-Large {
+    width: 25px;
+}
+
+.measurement-range-fish-Monster {
+    width: 32px;
+}
+
+.measurement-range-eye {
+    fill: var(--mud-palette-surface);
+}
+
+.measurement-range-name {
+    font-size: 0.7rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+    .measurement-range-name {
+        display: none;
+    }
+}

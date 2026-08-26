@@ -1,4 +1,3 @@
-using System.Globalization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -11,14 +10,9 @@ namespace FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
 
 public partial class MeasurementEditorModal : ComponentBase
 {
-    private const decimal MetricWeightSliderMaximum = 100m;
-    private const decimal ImperialWeightSliderMaximum = 220m;
-    private const decimal MetricLengthSliderMaximum = 300m;
-    private const decimal ImperialLengthSliderMaximum = 120m;
+    private MeasurementScaleRangeModel _scaleRange = MeasurementScaleRangeModel.Weights[0];
     private decimal? _canonicalValue;
-    private string _exactText = string.Empty;
     private string? _validationMessage;
-    private bool _exactEntryValid = true;
     private int _pounds;
     private int _ounces;
 
@@ -37,6 +31,7 @@ public partial class MeasurementEditorModal : ComponentBase
     protected override void OnParametersSet()
     {
         _canonicalValue = Model.CanonicalValue;
+        _scaleRange = MeasurementScaleRangeModel.SmallestFor(Model.IsWeight, _canonicalValue);
         SynchroniseInputs();
     }
 
@@ -66,7 +61,7 @@ public partial class MeasurementEditorModal : ComponentBase
 
     private static IEnumerable<decimal> TapeTickPositions => Enumerable.Range(0, 18).Select(index => 56m + (index * 10m));
 
-    private decimal DialAngle => SliderValue / SliderMaximum * 359m;
+    private decimal DialAngle => Math.Round(SliderValue / SliderMaximum * 359m, 2);
 
     private decimal TapeWidth => 12m + (SliderValue / SliderMaximum * 166m);
 
@@ -83,17 +78,62 @@ public partial class MeasurementEditorModal : ComponentBase
     {
         get
         {
-            if (Model.IsWeight)
-            {
-                return Model.WeightUnit == WeightUnitEnum.Lb
-                    ? ImperialWeightSliderMaximum
-                    : MetricWeightSliderMaximum;
-            }
-
-            return Model.LengthUnit == LengthUnitEnum.In
-                ? ImperialLengthSliderMaximum
-                : MetricLengthSliderMaximum;
+            return DisplayOf(_scaleRange.MaximumCanonical);
         }
+    }
+
+    private IReadOnlyList<MeasurementScaleRangeModel> ScaleRanges =>
+        MeasurementScaleRangeModel.For(Model.IsWeight);
+
+    private string SliderMinimumLabel => FormatCanonicalForDisplay(0m);
+
+    private string SliderMaximumLabel => FormatCanonicalForDisplay(_scaleRange.MaximumCanonical);
+
+    private decimal DisplayOf(decimal canonicalValue)
+    {
+        var display = Model.IsWeight
+            ? Measurement.ToDisplayWeight(canonicalValue, Model.WeightUnit)
+            : Measurement.ToDisplayLength(canonicalValue, Model.LengthUnit);
+        return display ?? canonicalValue;
+    }
+
+    private string FormatCanonicalForDisplay(decimal canonicalValue)
+    {
+        if (Model.IsWeight)
+        {
+            return Measurement.FormatWeight(
+                canonicalValue,
+                Model.WeightUnit,
+                Model.WeightUnit == WeightUnitEnum.Lb
+                    ? Loc["Catch_WeightUnitShort_Lb"]
+                    : Loc["Catch_WeightUnitShort_Kg"],
+                Loc["Catch_WeightUnitShort_Oz"]);
+        }
+
+        return Measurement.FormatLength(
+            canonicalValue,
+            Model.LengthUnit,
+            Model.LengthUnit == LengthUnitEnum.In
+                ? Loc["Catch_LengthUnitShort_In"]
+                : Loc["Catch_LengthUnitShort_Cm"]);
+    }
+
+    private void SelectScaleRange(MeasurementScaleRangeModel range)
+    {
+        if (!range.CanDisplay(_canonicalValue))
+        {
+            return;
+        }
+
+        _scaleRange = range;
+    }
+
+    private void ExpandScaleRangeForValue()
+    {
+        _scaleRange = MeasurementScaleRangeModel.ExpandedFor(
+            Model.IsWeight,
+            _scaleRange,
+            _canonicalValue);
     }
 
     private decimal SliderStep
@@ -150,23 +190,19 @@ public partial class MeasurementEditorModal : ComponentBase
         ? Measurement.ToDisplayWeight(_canonicalValue, Model.WeightUnit)
         : Measurement.ToDisplayLength(_canonicalValue, Model.LengthUnit);
 
-    private void SetSliderValue(decimal value)
+    private void SetExactDisplayValue(decimal? displayValue)
     {
-        SetDisplayValue(value);
-    }
-
-    private void SetExactValue(string value)
-    {
-        _exactText = value;
-        if (!TryParse(value, out var parsed))
+        if (displayValue is null)
         {
-            _exactEntryValid = false;
-            _validationMessage = Loc["Catch_MeasurementInvalid"];
             return;
         }
 
-        _exactEntryValid = true;
-        SetDisplayValue(parsed);
+        SetDisplayValue(displayValue);
+    }
+
+    private void SetSliderValue(decimal value)
+    {
+        SetDisplayValue(value);
     }
 
     private void SetPounds(int value)
@@ -220,7 +256,6 @@ public partial class MeasurementEditorModal : ComponentBase
 
     private void SetDisplayValue(decimal? displayValue)
     {
-        _exactEntryValid = true;
         _canonicalValue = Model.IsWeight
             ? Measurement.ToCanonicalWeight(displayValue, Model.WeightUnit, _canonicalValue)
             : Measurement.ToCanonicalLength(displayValue, Model.LengthUnit, _canonicalValue);
@@ -230,6 +265,7 @@ public partial class MeasurementEditorModal : ComponentBase
 
     private void ValidateCanonicalValue()
     {
+        ExpandScaleRangeForValue();
         var valid = Model.IsWeight
             ? CatchDetailConstants.IsWeightValid(_canonicalValue)
             : CatchDetailConstants.IsLengthValid(_canonicalValue);
@@ -241,19 +277,11 @@ public partial class MeasurementEditorModal : ComponentBase
         if (IsImperialWeight)
         {
             (_pounds, _ounces) = Measurement.ToPoundsAndOunces(_canonicalValue);
-            return;
         }
-
-        _exactText = DisplayValue?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
     }
 
     private void Apply()
     {
-        if (!_exactEntryValid)
-        {
-            return;
-        }
-
         ValidateCanonicalValue();
         if (_validationMessage is not null)
         {
@@ -265,7 +293,9 @@ public partial class MeasurementEditorModal : ComponentBase
 
     private void Clear()
     {
-        MudDialog.Close(DialogResult.Ok(new MeasurementEditorResult(null)));
+        _canonicalValue = null;
+        _validationMessage = null;
+        SynchroniseInputs();
     }
 
     private void Cancel()
@@ -283,21 +313,4 @@ public partial class MeasurementEditorModal : ComponentBase
         return (position - 56m) % 50m == 0;
     }
 
-    private static bool TryParse(string value, out decimal? parsed)
-    {
-        parsed = null;
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return true;
-        }
-
-        if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out var number)
-            && !decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out number))
-        {
-            return false;
-        }
-
-        parsed = number;
-        return true;
-    }
 }

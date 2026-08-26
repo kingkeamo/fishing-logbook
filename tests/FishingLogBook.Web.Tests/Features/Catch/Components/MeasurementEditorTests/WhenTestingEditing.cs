@@ -7,19 +7,37 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Components.MeasurementEditorTe
 public class WhenTestingEditing : BaseMeasurementEditorTest
 {
     [Fact]
-    public async Task ItShouldNotApplyAnInvalidExactValue()
+    public async Task ItShouldIgnoreNonNumericExactEntryAndKeepTheCapturedValue()
     {
         // Arrange
         await using var context = CreateContext();
         var (cut, dialog) = await ShowAsync(context, Weight(2.5m));
-        cut.Find("#measurement-exact-value").Input("invalid");
 
         // Act
+        cut.Find("#measurement-exact-value").Input("invalid");
         await cut.Find("#measurement-apply").ClickAsync();
 
         // Assert
-        cut.Find("#measurement-validation").Should().NotBeNull();
-        dialog.Result.IsCompleted.Should().BeFalse();
+        cut.FindAll("#measurement-validation").Should().BeEmpty();
+        var result = await dialog.Result;
+        result!.Data.Should().BeOfType<MeasurementEditorResult>().Which.CanonicalValue.Should().Be(2.5m);
+    }
+
+    [Fact]
+    public async Task ItShouldOfferSteppersOnTheExactEntryForWeightAndLength()
+    {
+        // Arrange
+        await using var context = CreateContext();
+
+        // Act
+        var (weight, _) = await ShowAsync(context, Weight(2.5m));
+        var (length, _) = await ShowAsync(context, Length(64m));
+
+        // Assert
+        weight.FindAll("button[aria-label=Increment]").Should().NotBeEmpty();
+        weight.FindAll("button[aria-label=Decrement]").Should().NotBeEmpty();
+        length.FindAll("button[aria-label=Increment]").Should().NotBeEmpty();
+        length.FindAll("button[aria-label=Decrement]").Should().NotBeEmpty();
     }
 
     [Fact]
@@ -69,7 +87,8 @@ public class WhenTestingEditing : BaseMeasurementEditorTest
 
         // Assert
         cut.Find(".measurement-dial").Should().NotBeNull();
-        cut.Find(".measurement-dial-needle").GetAttribute("transform").Should().Be("rotate(179.5 120 70)");
+        cut.Find("#measurement-range-Monster").GetAttribute("aria-pressed").Should().Be("true");
+        cut.Find(".measurement-dial-needle").GetAttribute("transform").Should().Be("rotate(149.58 120 70)");
         cut.FindAll(".measurement-dial-tick").Should().HaveCount(24);
         cut.Find(".measurement-scale-hook").Should().NotBeNull();
     }
@@ -109,7 +128,7 @@ public class WhenTestingEditing : BaseMeasurementEditorTest
     }
 
     [Fact]
-    public async Task ItShouldClearAnExistingMeasurement()
+    public async Task ItShouldClearInPlaceWithoutClosingTheEditor()
     {
         // Arrange
         await using var context = CreateContext();
@@ -117,12 +136,47 @@ public class WhenTestingEditing : BaseMeasurementEditorTest
 
         // Act
         await cut.Find("#measurement-clear").ClickAsync();
+
+        // Assert
+        cut.Find("#measurement-editor-modal").Should().NotBeNull();
+        dialog.Result.IsCompleted.Should().BeFalse();
+        cut.Find("#measurement-exact-value").GetAttribute("value").Should().BeNullOrEmpty();
+        cut.Find("#measurement-slider").GetAttribute("value").Should().Be("0");
+    }
+
+    [Fact]
+    public async Task ItShouldApplyAClearedMeasurementOnlyWhenTheAnglerConfirms()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var (cut, dialog) = await ShowAsync(context, Length(64m));
+
+        // Act
+        await cut.Find("#measurement-clear").ClickAsync();
+        await cut.Find("#measurement-apply").ClickAsync();
         var result = await dialog.Result;
 
         // Assert
         result.Should().NotBeNull();
         result!.Canceled.Should().BeFalse();
         result.Data.Should().BeOfType<MeasurementEditorResult>().Which.CanonicalValue.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheStoredMeasurementWhenAClearIsCancelled()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var (cut, dialog) = await ShowAsync(context, Length(64m));
+
+        // Act
+        await cut.Find("#measurement-clear").ClickAsync();
+        await cut.Find("#measurement-cancel").ClickAsync();
+        var result = await dialog.Result;
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Canceled.Should().BeTrue();
     }
 
     [Fact]
