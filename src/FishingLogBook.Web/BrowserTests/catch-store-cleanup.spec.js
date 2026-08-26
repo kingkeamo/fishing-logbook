@@ -54,6 +54,68 @@ async function seedCatch(page, {
     }, { catchStoreModule, catchId, userId, syncStatus, metadataSyncStatus, syncedAt, photographSyncStatus });
 }
 
+async function writeRawCatch(page, { catchId, userId, syncStatus, metadataSyncStatus, syncedAt }) {
+    await page.evaluate(async ({ catchStoreModule, catchId, userId, syncStatus, metadataSyncStatus, syncedAt }) => {
+        const { openCatchDatabase, CATCH_STORE_NAME } = await import(catchStoreModule);
+        const db = await openCatchDatabase();
+        await new Promise((resolve, reject) => {
+            const transaction = db.transaction(CATCH_STORE_NAME, 'readwrite');
+            const request = transaction.objectStore(CATCH_STORE_NAME).put({
+                id: catchId,
+                userId,
+                caughtOn: '2020-01-01T08:00:00+00:00',
+                syncStatus,
+                metadataSyncStatus,
+                syncedAt,
+                photographs: []
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+            transaction.oncomplete = () => db.close();
+        });
+    }, { catchStoreModule, catchId, userId, syncStatus, metadataSyncStatus, syncedAt });
+}
+
+test('cleanup removes a fully synced catch with no photographs older than the retention cutoff', async ({ page }) => {
+    await writeRawCatch(page, {
+        catchId: 'aaaaaaaa-1111-1111-1111-111111111111',
+        userId: ownerUserId,
+        syncStatus: 'synchronised',
+        metadataSyncStatus: 'synchronised',
+        syncedAt: new Date(now.getTime() - (25 * 60 * 60 * 1000)).toISOString()
+    });
+
+    const result = await page.evaluate(async ({ catchStoreModule, ownerUserId, cutoffIso }) => {
+        const module = await import(catchStoreModule);
+        const removed = await module.cleanupSyncedCatches(ownerUserId, cutoffIso);
+        const remaining = await module.getCatchMetadata(ownerUserId);
+        return { removed, remainingCount: remaining.length };
+    }, { catchStoreModule, ownerUserId, cutoffIso });
+
+    expect(result.removed).toBe(1);
+    expect(result.remainingCount).toBe(0);
+});
+
+test('cleanup retains a fully synced catch with no photographs newer than the retention cutoff', async ({ page }) => {
+    await writeRawCatch(page, {
+        catchId: 'bbbbbbbb-1111-1111-1111-111111111111',
+        userId: ownerUserId,
+        syncStatus: 'synchronised',
+        metadataSyncStatus: 'synchronised',
+        syncedAt: new Date(now.getTime() - (1 * 60 * 60 * 1000)).toISOString()
+    });
+
+    const result = await page.evaluate(async ({ catchStoreModule, ownerUserId, cutoffIso }) => {
+        const module = await import(catchStoreModule);
+        const removed = await module.cleanupSyncedCatches(ownerUserId, cutoffIso);
+        const remaining = await module.getCatchMetadata(ownerUserId);
+        return { removed, remainingCount: remaining.length };
+    }, { catchStoreModule, ownerUserId, cutoffIso });
+
+    expect(result.removed).toBe(0);
+    expect(result.remainingCount).toBe(1);
+});
+
 test('cleanup removes an eligible synced catch and its photograph without reading photograph bytes', async ({ page }) => {
     await seedCatch(page, {
         catchId: 'aaaaaaaa-aaaa-aaaa-aaaa-000000000001',

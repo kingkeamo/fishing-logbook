@@ -528,7 +528,7 @@ function isEligibleForCleanup(record, cutoff) {
     }
 
     const photographs = Array.isArray(record.photographs) ? record.photographs : [];
-    if (photographs.length === 0 || !photographs.every((photograph) => isSynchronisedStatus(photograph.syncStatus))) {
+    if (!photographs.every((photograph) => isSynchronisedStatus(photograph.syncStatus))) {
         return false;
     }
 

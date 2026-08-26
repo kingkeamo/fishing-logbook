@@ -200,7 +200,6 @@ public sealed class MemoryCatchStore : ICatchStore
             .Where(catchRecord => catchRecord.UserId == ownerUserId)
             .Where(catchRecord => catchRecord.SyncStatus == SyncStatus.Synchronised
                 && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised
-                && catchRecord.Photographs.Count > 0
                 && catchRecord.Photographs.All(
                     photograph => photograph.SyncStatus == SyncStatus.Synchronised)
                 && catchRecord.SyncedAt is not null

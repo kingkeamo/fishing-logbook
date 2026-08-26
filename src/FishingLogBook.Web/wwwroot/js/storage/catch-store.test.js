@@ -905,6 +905,52 @@ describe('Catch store cleanup', () => {
         return photographId;
     }
 
+    function writeRawCatch(catchId, {
+        userId = ownerUserId,
+        syncStatus = 'synchronised',
+        metadataSyncStatus = 'synchronised',
+        photographs = [],
+        syncedAt
+    } = {}) {
+        return openCatchDatabase().then((db) => new Promise((resolve, reject) => {
+            const transaction = db.transaction(CATCH_STORE_NAME, 'readwrite');
+            const request = transaction.objectStore(CATCH_STORE_NAME).put({
+                id: catchId,
+                userId,
+                caughtOn: '2020-01-01T08:00:00+00:00',
+                syncStatus,
+                metadataSyncStatus,
+                syncedAt,
+                photographs
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+            transaction.oncomplete = () => db.close();
+        }));
+    }
+
+    it('removes a fully synced Catch with no photographs older than the retention cutoff', async () => {
+        const catchId = 'aaaaaaaa-1111-1111-1111-111111111111';
+        await writeRawCatch(catchId, { syncedAt: new Date(now - (25 * 60 * 60 * 1000)).toISOString() });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+        const remaining = await getCatchMetadata(ownerUserId);
+
+        expect(removed).toBe(1);
+        expect(remaining).toHaveLength(0);
+    });
+
+    it('retains a fully synced Catch with no photographs newer than the retention cutoff', async () => {
+        const catchId = 'bbbbbbbb-1111-1111-1111-111111111111';
+        await writeRawCatch(catchId, { syncedAt: new Date(now - (1 * 60 * 60 * 1000)).toISOString() });
+
+        const removed = await cleanupSyncedCatches(ownerUserId, cutoffIso);
+        const remaining = await getCatchMetadata(ownerUserId);
+
+        expect(removed).toBe(0);
+        expect(remaining).toHaveLength(1);
+    });
+
     it('removes an eligible synced Catch and its photograph without reading photograph bytes', async () => {
         const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
         await seedSyncedCatch(catchId, {

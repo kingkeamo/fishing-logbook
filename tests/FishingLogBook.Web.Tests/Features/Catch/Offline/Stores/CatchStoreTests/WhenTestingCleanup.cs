@@ -156,6 +156,48 @@ public class WhenTestingCleanup : BaseCatchStoreTest
     }
 
     [Fact]
+    public async Task ItShouldRemoveAFullySyncedCatchWithNoPhotographsOlderThanTheCutoff()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        SaveRawCatch(
+            catchId,
+            OwnerUserId,
+            SyncStatus.Synchronised,
+            SyncStatus.Synchronised,
+            photographs: [],
+            syncedAt: Now.AddHours(-25));
+
+        // Act
+        var removed = await Sut.CleanupSyncedCacheAsync(OwnerUserId, Now.AddHours(-24), CancellationToken.None);
+
+        // Assert
+        removed.Should().Be(1);
+        BackingCatches.Should().NotContainKey(catchId);
+    }
+
+    [Fact]
+    public async Task ItShouldRetainAFullySyncedCatchWithNoPhotographsNewerThanTheCutoff()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        SaveRawCatch(
+            catchId,
+            OwnerUserId,
+            SyncStatus.Synchronised,
+            SyncStatus.Synchronised,
+            photographs: [],
+            syncedAt: Now.AddHours(-23));
+
+        // Act
+        var removed = await Sut.CleanupSyncedCacheAsync(OwnerUserId, Now.AddHours(-24), CancellationToken.None);
+
+        // Assert
+        removed.Should().Be(0);
+        BackingCatches.Should().ContainKey(catchId);
+    }
+
+    [Fact]
     public async Task ItShouldIgnoreCaughtOnWhenDecidingEligibility()
     {
         // Arrange
@@ -175,6 +217,24 @@ public class WhenTestingCleanup : BaseCatchStoreTest
         // Assert
         removed.Should().Be(0);
         BackingCatches.Should().ContainKey(oldCatchDateRecentSync);
+    }
+
+    private void SaveRawCatch(
+        Guid catchId,
+        Guid ownerUserId,
+        SyncStatus syncStatus,
+        SyncStatus metadataSyncStatus,
+        IReadOnlyList<CatchPhotographModel> photographs,
+        DateTimeOffset syncedAt)
+    {
+        BackingCatches[catchId] = new CatchModel(
+            catchId,
+            Now,
+            photographs,
+            UserId: ownerUserId,
+            SyncStatus: syncStatus,
+            MetadataSyncStatus: metadataSyncStatus,
+            SyncedAt: syncedAt);
     }
 
     private Task SaveSyncedCatchAsync(Guid catchId, Guid ownerUserId, DateTimeOffset syncedAt)
