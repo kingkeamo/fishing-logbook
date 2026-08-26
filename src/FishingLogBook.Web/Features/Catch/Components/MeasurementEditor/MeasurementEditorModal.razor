@@ -6,43 +6,49 @@
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3" Class="measurement-editor">
-            <div class="measurement-visual @(Model.IsWeight ? "measurement-scale" : "measurement-tape")"
-                 aria-hidden="true">
-                @if (Model.IsWeight)
-                {
-                    <svg class="measurement-dial" viewBox="0 0 240 150">
-                        <path class="measurement-scale-handle" d="M 98 18 C 98 1, 142 1, 142 18 L 135 18 C 135 9, 105 9, 105 18 Z" />
-                        <rect class="measurement-scale-neck" x="112" y="14" width="16" height="10" rx="4" />
-                        <circle class="measurement-scale-case" cx="120" cy="70" r="53" />
-                        <circle class="measurement-dial-face" cx="120" cy="70" r="46" />
-                        @foreach (var angle in DialTickAngles)
-                        {
-                            <line class="measurement-dial-tick"
-                                  x1="120" y1="24" x2="120" y2="@(IsMajorDialTick(angle) ? 36 : 31)"
-                                  transform="rotate(@angle 120 70)" />
-                        }
-                        <line class="measurement-dial-needle" x1="120" y1="70" x2="120" y2="37"
-                              transform="rotate(@DialAngle 120 70)" />
-                        <circle class="measurement-dial-pin" cx="120" cy="70" r="6" />
-                        <rect class="measurement-scale-stem" x="114" y="121" width="12" height="9" rx="3" />
-                        <path class="measurement-scale-hook" d="M 120 128 v 5 c 0 9 15 9 15 0 v -2" />
-                    </svg>
-                }
-                else
-                {
-                    <svg class="measurement-tape-visual" viewBox="0 0 240 92" preserveAspectRatio="none">
-                        <rect class="measurement-tape-case" x="10" y="16" width="48" height="60" rx="12" />
-                        <image class="measurement-tape-logo" href="images/brand/brand-mark-transparent.png"
-                               x="17" y="27" width="34" height="38" preserveAspectRatio="xMidYMid meet" />
-                        <rect class="measurement-tape-strip" x="50" y="27" width="@TapeWidth" height="38" rx="3" />
-                        @foreach (var tick in TapeTickPositions)
-                        {
-                            <line class="measurement-tape-tick"
-                                  x1="@tick" y1="27" x2="@tick" y2="@(IsMajorTapeTick(tick) ? 48 : 40)" />
-                        }
-                        <path class="measurement-tape-hook" d="@TapeHookPath" />
-                    </svg>
-                }
+            <div class="measurement-scale-layout">
+                <div class="measurement-visual @(Model.IsWeight ? "measurement-scale" : "measurement-tape")"
+                     aria-hidden="true">
+                    @if (Model.IsWeight)
+                    {
+                        <svg class="measurement-dial" viewBox="0 0 240 150">
+                            <path class="measurement-scale-handle" d="M 98 18 C 98 1, 142 1, 142 18 L 135 18 C 135 9, 105 9, 105 18 Z" />
+                            <rect class="measurement-scale-neck" x="112" y="14" width="16" height="10" rx="4" />
+                            <circle class="measurement-scale-case" cx="120" cy="70" r="53" />
+                            <circle class="measurement-dial-face" cx="120" cy="70" r="46" />
+                            @foreach (var angle in DialTickAngles)
+                            {
+                                <line class="measurement-dial-tick"
+                                      x1="120" y1="24" x2="120" y2="@(IsMajorDialTick(angle) ? 36 : 31)"
+                                      transform="rotate(@angle 120 70)" />
+                            }
+                            <line class="measurement-dial-needle" x1="120" y1="70" x2="120" y2="37"
+                                  transform="rotate(@DialAngle 120 70)" />
+                            <circle class="measurement-dial-pin" cx="120" cy="70" r="6" />
+                            <rect class="measurement-scale-stem" x="114" y="121" width="12" height="9" rx="3" />
+                            <path class="measurement-scale-hook" d="M 120 128 v 5 c 0 9 15 9 15 0 v -2" />
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg class="measurement-tape-visual" viewBox="0 0 240 92" preserveAspectRatio="none">
+                            <rect class="measurement-tape-case" x="10" y="16" width="48" height="60" rx="12" />
+                            <image class="measurement-tape-logo" href="images/brand/brand-mark-transparent.png"
+                                   x="17" y="27" width="34" height="38" preserveAspectRatio="xMidYMid meet" />
+                            <rect class="measurement-tape-strip" x="50" y="27" width="@TapeWidth" height="38" rx="3" />
+                            @foreach (var tick in TapeTickPositions)
+                            {
+                                <line class="measurement-tape-tick"
+                                      x1="@tick" y1="27" x2="@tick" y2="@(IsMajorTapeTick(tick) ? 48 : 40)" />
+                            }
+                            <path class="measurement-tape-hook" d="@TapeHookPath" />
+                        </svg>
+                    }
+                </div>
+                <MeasurementRangeSelector Ranges="ScaleRanges"
+                                          Selected="_scaleRange"
+                                          CanonicalValue="_canonicalValue"
+                                          SelectedChanged="SelectScaleRange" />
             </div>
 
             @if (IsImperialWeight)
@@ -60,10 +66,10 @@
             }
             else
             {
-                <MudTextField T="string" Value="_exactText" ValueChanged="SetExactValue"
-                              Label="@ExactLabel" InputType="InputType.Number"
-                              Variant="Variant.Outlined" Immediate="true"
-                              id="measurement-exact-value" />
+                <MudNumericField T="decimal?" Value="DisplayValue" ValueChanged="SetExactDisplayValue"
+                                 Label="@ExactLabel" Step="FineStep"
+                                 Variant="Variant.Outlined" Immediate="true"
+                                 id="measurement-exact-value" />
             }
 
             <MudText Typo="Typo.subtitle2">@Loc["Catch_MeasurementCoarseAdjustment"]</MudText>
@@ -72,6 +78,11 @@
                        ValueLabel="true" Immediate="true"
                        aria-label="@Loc["Catch_MeasurementSliderLabel", Title]"
                        id="measurement-slider" />
+
+            <div class="measurement-slider-bounds" id="measurement-slider-bounds">
+                <MudText Typo="Typo.caption" id="measurement-slider-minimum">@SliderMinimumLabel</MudText>
+                <MudText Typo="Typo.caption" id="measurement-slider-maximum">@SliderMaximumLabel</MudText>
+            </div>
 
             <div class="measurement-fine-controls">
                 <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Large"

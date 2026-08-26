@@ -5,7 +5,7 @@
 .measurement-visual {
     position: relative;
     display: flex;
-    min-height: 8rem;
+    min-height: 9.5rem;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -17,9 +17,9 @@
 
 .measurement-dial {
     position: absolute;
-    inset: 0.1rem auto auto;
+    inset: 0.35rem auto auto;
     width: min(15rem, 82%);
-    height: 7.8rem;
+    height: 8.8rem;
 }
 
 .measurement-scale-handle,
@@ -65,7 +65,7 @@
 
 .measurement-tape-visual {
     position: absolute;
-    inset: 0.65rem auto auto;
+    inset: 2.05rem auto auto;
     width: min(21rem, 94%);
     height: 5.4rem;
 }
@@ -110,6 +110,24 @@
 
 @media (max-width: 480px) {
     .measurement-visual {
-        min-height: 7.5rem;
+        min-height: 9.5rem;
     }
+}
+
+.measurement-scale-layout {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.measurement-scale-layout .measurement-visual {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.measurement-slider-bounds {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: -0.75rem;
 }
