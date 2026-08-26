@@ -18,6 +18,7 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
     private const byte FirstPhotograph = 0x0A;
     private const byte SecondPhotograph = 0x0B;
     private const byte ThirdPhotograph = 0x0C;
+    private const byte FourthPhotograph = 0x0D;
 
     private static readonly DateTimeOffset JuneCapture = DateTimeOffset.Parse("2025-06-14T06:32:10Z");
     private static readonly DateTimeOffset MayCapture = DateTimeOffset.Parse("2025-05-02T14:10:00Z");
@@ -141,7 +142,7 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         await cut.Find("#catch-photo-use-details").ClickAsync();
 
         // Assert
-        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.FindAll("#catch-location-from-photo").Should().BeEmpty();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
@@ -174,7 +175,7 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         await cut.Find("#catch-photo-use-details").ClickAsync();
 
         // Assert
-        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-05-02T14:10");
         cut.Find("#catch-location-from-photo").TextContent.Should().Contain("Location from photo");
         await cut.Find("#save-catch-button").ClickAsync();
@@ -249,7 +250,7 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         await cut.Find("#catch-photo-use-details").ClickAsync();
 
         // Assert
-        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.Find("#catch-location-from-photo").TextContent.Should().Contain("Location from photo");
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
@@ -286,7 +287,7 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         await cut.Find("#catch-photo-use-details").ClickAsync();
 
         // Assert
-        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.FindAll("#catch-location-from-photo").Should().BeEmpty();
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
@@ -352,7 +353,7 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
             JpegFile("may.jpg", SecondPhotograph));
         cut.WaitForAssertion(() => cut.Find("#catch-photo-use-details").Should().NotBeNull());
         await cut.Find("#catch-photo-use-details").ClickAsync();
-        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-05-02T14:10");
 
         // Act
@@ -360,8 +361,24 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
         await cut.Find("#catch-photo-use-details").ClickAsync();
 
         // Assert
-        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.Find("#catch-photo-current-metadata").Should().NotBeNull();
+        cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32");
+
+        // Act
+        await cut.Find("#catch-photo-next").ClickAsync();
+        await cut.Find("#catch-photo-use-details").ClickAsync();
+
+        // Assert
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
+        cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-05-02T14:10");
+
+        // Act
+        await cut.Find("#catch-photo-previous").ClickAsync();
+        await cut.Find("#catch-photo-use-details").ClickAsync();
+
+        // Assert
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
         cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32");
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
@@ -371,6 +388,148 @@ public class WhenTestingPhotoMetadataConflict : BaseRecordCatchTest
                 && catchRecord.Location.Longitude == CorribLongitude
                 && catchRecord.Location.Source == LocationDefaults.PhotoMetadata),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheChosenRepresentativeWhileSwipingWithoutChoosingAgain()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var photoMetadata = PhotoMetadataFor(
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[1].UploadFiles(
+            JpegFile("june.jpg", FirstPhotograph),
+            JpegFile("may.jpg", SecondPhotograph));
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-use-details").Should().NotBeNull());
+        await cut.Find("#catch-photo-previous").ClickAsync();
+        await cut.Find("#catch-photo-use-details").ClickAsync();
+        cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32");
+
+        // Act
+        await cut.Find("#catch-photo-next").ClickAsync();
+
+        // Assert
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
+        cut.Find("#catch-caught-on").GetAttribute("value").Should().Be("2025-06-14T06:32");
+        cut.Find("#catch-photo-current-date").GetAttribute("data-captured-on").Should().Be("2025-05-02T14:10");
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheWarningVisibleWhileNavigatingFourOrMoreConflictingPhotographs()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var photoMetadata = PhotoMetadataFor(
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)),
+            (ThirdPhotograph, new PhotographMetadataModel(MayCapture.AddDays(-20), CorribLatitude, CorribLongitude)),
+            (FourthPhotograph, new PhotographMetadataModel(MayCapture.AddDays(-40), LeeLatitude, LeeLongitude)));
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[1].UploadFiles(
+            JpegFile("june.jpg", FirstPhotograph),
+            JpegFile("may.jpg", SecondPhotograph),
+            JpegFile("april.jpg", ThirdPhotograph),
+            JpegFile("march.jpg", FourthPhotograph));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull());
+        await cut.Find("#catch-photo-previous").ClickAsync();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
+        await cut.Find("#catch-photo-previous").ClickAsync();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
+        await cut.Find("#catch-photo-previous").ClickAsync();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
+
+        // Act
+        await cut.Find("#catch-photo-use-details").ClickAsync();
+
+        // Assert
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotShowAWarningWhenDatesAreWithinTheSameCatchTolerance()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var photoMetadata = PhotoMetadataFor(
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(JuneCapture.AddMinutes(20), CorribLatitude, CorribLongitude)));
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[1].UploadFiles(
+            JpegFile("first.jpg", FirstPhotograph),
+            JpegFile("second.jpg", SecondPhotograph));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-carousel").Should().NotBeNull());
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-use-details").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldNotShowAWarningWhenCoordinatesAreWithinTheSameLocationTolerance()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        var photoMetadata = PhotoMetadataFor(
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude + 0.0016, CorribLongitude)));
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+
+        // Act
+        cut.FindComponents<InputFile>()[1].UploadFiles(
+            JpegFile("first.jpg", FirstPhotograph),
+            JpegFile("second.jpg", SecondPhotograph));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-carousel").Should().NotBeNull());
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-use-details").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldHideTheChooserAndWarningAfterASuccessfulSave()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        var photoMetadata = PhotoMetadataFor(
+            (FirstPhotograph, new PhotographMetadataModel(JuneCapture, CorribLatitude, CorribLongitude)),
+            (SecondPhotograph, new PhotographMetadataModel(MayCapture, LeeLatitude, LeeLongitude)));
+        await using var context = CreateContext(store, photoMetadata: photoMetadata);
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[1].UploadFiles(
+            JpegFile("june.jpg", FirstPhotograph),
+            JpegFile("may.jpg", SecondPhotograph));
+        cut.WaitForAssertion(() => cut.Find("#catch-photo-use-details").Should().NotBeNull());
+        await cut.Find("#catch-photo-use-details").ClickAsync();
+        cut.Find("#catch-photo-metadata-conflict").Should().NotBeNull();
+
+        // Act
+        await cut.Find("#save-catch-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-saved").Should().NotBeNull());
+        cut.FindAll("#catch-photo-metadata-conflict").Should().BeEmpty();
+        cut.FindAll("#catch-photo-use-details").Should().BeEmpty();
+        await store.Received(1).SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -92,12 +92,9 @@
                                       id="catch-caught-on" />
                         @if (ShowPhotographChooser && !_isSaved)
                         {
-                            @if (MetadataConflict)
-                            {
-                                <MudAlert Severity="Severity.Warning" id="catch-photo-metadata-conflict">
-                                    @Loc["Catch_PhotoMetadataConflict"]
-                                </MudAlert>
-                            }
+                            <MudAlert Severity="Severity.Warning" id="catch-photo-metadata-conflict">
+                                @Loc["Catch_PhotoMetadataConflict"]
+                            </MudAlert>
                             <PhotographDetails IdPrefix="catch"
                                                PhotographId="CurrentPhotograph?.Id"
                                                Metadata="CurrentPhotograph?.Metadata"

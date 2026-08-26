@@ -216,6 +216,9 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         }
     }
 
+    private bool HasPhotoMetadataConflict =>
+        _proposal.HasConflictingDates || _proposal.HasConflictingCoordinates;
+
     private bool DateConflict =>
         _proposal.HasConflictingDates
         && !_caughtOnResolvedByAngler
@@ -224,10 +227,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private bool CoordinateConflict =>
         _proposal.HasConflictingCoordinates && _representativePhotographId is null;
 
-    private bool MetadataConflict => DateConflict || CoordinateConflict;
-
-    private bool ShowPhotographChooser =>
-        _proposal.HasConflictingDates || _proposal.HasConflictingCoordinates;
+    private bool ShowPhotographChooser => HasPhotoMetadataConflict;
 
     private bool CurrentPhotographIsRepresentative =>
         _representativePhotographId is { } photographId

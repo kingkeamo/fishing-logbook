@@ -58,7 +58,7 @@ export async function createCatch(page, waitForServer = false, options = {}) {
         await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
         await showPhoto(page, options.representativePhoto, photoCount);
         await page.locator('#catch-photo-use-details').click();
-        await expect(page.locator('#catch-photo-metadata-conflict')).toBeHidden();
+        await expect(page.locator('#catch-photo-metadata-conflict')).toBeVisible();
     }
     if (options.caughtOn) {
         await page.locator('#catch-caught-on').fill(options.caughtOn);
