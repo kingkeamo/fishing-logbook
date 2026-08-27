@@ -157,12 +157,14 @@ public class WhenTestingNotes : IClassFixture<SystemApiFactory>
         body.TripId.Should().Be(tripId);
         body.Text.Should().Be("a good day");
         body.RecordedOn.Should().Be(RecordedOn);
+        body.CreatedByUserId.Should().Be(current.UserId);
         await _factory.TripNoteRepository.Received(1).UpsertAsync(
             Arg.Is<TripNote>(note =>
                 note.Id == noteId
                 && note.TripId == tripId
                 && note.Text == "a good day"
-                && note.RecordedOn == RecordedOn),
+                && note.RecordedOn == RecordedOn
+                && note.CreatedByUserId == current.UserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -256,6 +258,42 @@ public class WhenTestingNotes : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         await _factory.TripNoteRepository.DidNotReceive().DeleteAsync(
             Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAttributeTheNoteToTheAuthenticatedAnglerNotTheRequest()
+    {
+        // Arrange
+        Reset();
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        var tripId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId)));
+        var impostor = Guid.NewGuid();
+
+        // Act
+        var response = await client.PostAsJsonAsync(
+            $"/api/trips/{tripId:D}/notes",
+            new
+            {
+                noteId = Guid.NewGuid(),
+                text = "wind picked up",
+                recordedOn = RecordedOn,
+                createdByUserId = impostor
+            });
+        var body = await response.Content.ReadFromJsonAsync<TripNoteDto>();
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body!.CreatedByUserId.Should().Be(current.UserId);
+        body.CreatedByUserId.Should().NotBe(impostor);
+        await _factory.TripNoteRepository.Received(1).UpsertAsync(
+            Arg.Is<TripNote>(note => note.CreatedByUserId == current.UserId),
+            Arg.Any<CancellationToken>());
+        await _factory.TripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Is<TripNote>(note => note.CreatedByUserId == impostor),
             Arg.Any<CancellationToken>());
     }
 

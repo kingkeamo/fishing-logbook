@@ -16,6 +16,7 @@ public sealed class TripNoteRepository : ITripNoteRepository
         SELECT
             "Id",
             "TripId",
+            "CreatedByUserId",
             "Text",
             "RecordedOn"
         FROM "TripNote"
@@ -81,8 +82,8 @@ public sealed class TripNoteRepository : ITripNoteRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                INSERT INTO "TripNote" ("Id", "TripId", "Text", "RecordedOn")
-                VALUES (@Id, @TripId, @Text, @RecordedOn)
+                INSERT INTO "TripNote" ("Id", "TripId", "CreatedByUserId", "Text", "RecordedOn")
+                VALUES (@Id, @TripId, @CreatedByUserId, @Text, @RecordedOn)
                 ON CONFLICT ("Id") DO UPDATE SET
                     "Text" = EXCLUDED."Text",
                     "RecordedOn" = EXCLUDED."RecordedOn",
@@ -138,6 +139,7 @@ public sealed class TripNoteRepository : ITripNoteRepository
         {
             Id = note.Id,
             TripId = note.TripId,
+            CreatedByUserId = note.CreatedByUserId,
             Text = note.Text,
             RecordedOn = note.RecordedOn.ToUniversalTime()
         };
@@ -148,6 +150,8 @@ public sealed class TripNoteRepository : ITripNoteRepository
         public Guid Id { get; init; }
 
         public Guid TripId { get; init; }
+
+        public Guid CreatedByUserId { get; init; }
 
         public string Text { get; init; } = string.Empty;
 

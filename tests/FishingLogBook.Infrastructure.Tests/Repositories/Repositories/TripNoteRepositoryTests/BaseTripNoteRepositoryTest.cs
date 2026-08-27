@@ -69,6 +69,7 @@ public abstract class BaseTripNoteRepositoryTest
 
     protected static TripNote NewNote(
         Guid tripId,
+        Guid createdByUserId,
         string text = "water dropped about a foot",
         Guid? noteId = null,
         DateTimeOffset? recordedOn = null)
@@ -77,6 +78,7 @@ public abstract class BaseTripNoteRepositoryTest
         {
             Id = noteId ?? Guid.NewGuid(),
             TripId = tripId,
+            CreatedByUserId = createdByUserId,
             Text = text,
             RecordedOn = recordedOn ?? StartedOn.AddMinutes(45)
         };

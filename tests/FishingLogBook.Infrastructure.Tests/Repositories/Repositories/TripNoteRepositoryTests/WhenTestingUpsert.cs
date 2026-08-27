@@ -18,10 +18,10 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
     public async Task ItShouldRejectANoteForATripThatDoesNotExist()
     {
         // Arrange
-        await CreateUserAsync();
+        var userId = await CreateUserAsync();
 
         // Act
-        var saved = await Sut.UpsertAsync(NewNote(Guid.NewGuid()), CancellationToken.None);
+        var saved = await Sut.UpsertAsync(NewNote(Guid.NewGuid(), userId), CancellationToken.None);
 
         // Assert
         saved.IsFailed.Should().BeTrue();
@@ -34,11 +34,11 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         var userId = await CreateUserAsync();
         var first = await CreateTripAsync(userId, TripStatusEnum.Completed);
         var second = await CreateTripAsync(userId);
-        var note = NewNote(first.Id);
+        var note = NewNote(first.Id, userId);
         await Sut.UpsertAsync(note, CancellationToken.None);
 
         // Act
-        await Sut.UpsertAsync(NewNote(second.Id, noteId: note.Id), CancellationToken.None);
+        await Sut.UpsertAsync(NewNote(second.Id, userId, noteId: note.Id), CancellationToken.None);
 
         // Assert
         var stored = await Sut.GetByIdAsync(note.Id, CancellationToken.None);
@@ -51,7 +51,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         // Arrange
         var userId = await CreateUserAsync();
         var trip = await CreateTripAsync(userId);
-        var note = NewNote(trip.Id);
+        var note = NewNote(trip.Id, userId);
         await Sut.UpsertAsync(note, CancellationToken.None);
 
         // Act
@@ -74,7 +74,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
 
         // Act
         var saved = await Sut.UpsertAsync(
-            NewNote(trip.Id, recordedOn: recordedOn),
+            NewNote(trip.Id, userId, recordedOn: recordedOn),
             CancellationToken.None);
 
         // Assert
@@ -93,7 +93,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
 
         // Act
         var saved = await Sut.UpsertAsync(
-            NewNote(trip.Id, recordedOn: recordedOn),
+            NewNote(trip.Id, userId, recordedOn: recordedOn),
             CancellationToken.None);
 
         // Assert
@@ -114,7 +114,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         var text = new string('a', TripConstants.MaxNoteTextLength);
 
         // Act
-        var saved = await Sut.UpsertAsync(NewNote(trip.Id, text), CancellationToken.None);
+        var saved = await Sut.UpsertAsync(NewNote(trip.Id, userId, text), CancellationToken.None);
 
         // Assert
         saved.IsSuccess.Should().BeTrue();
@@ -127,9 +127,9 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         // Arrange
         var userId = await CreateUserAsync();
         var trip = await CreateTripAsync(userId);
-        var third = NewNote(trip.Id, "wind picked up", recordedOn: StartedOn.AddHours(5));
-        var first = NewNote(trip.Id, "fish rising near the reeds", recordedOn: StartedOn.AddHours(1));
-        var second = NewNote(trip.Id, "changed to olive nymph", recordedOn: StartedOn.AddHours(3));
+        var third = NewNote(trip.Id, userId, "wind picked up", recordedOn: StartedOn.AddHours(5));
+        var first = NewNote(trip.Id, userId, "fish rising near the reeds", recordedOn: StartedOn.AddHours(1));
+        var second = NewNote(trip.Id, userId, "changed to olive nymph", recordedOn: StartedOn.AddHours(3));
 
         // Act
         await Sut.UpsertAsync(third, CancellationToken.None);
@@ -150,7 +150,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         var trip = await CreateTripAsync(userId);
 
         // Act
-        await Sut.UpsertAsync(NewNote(trip.Id), CancellationToken.None);
+        await Sut.UpsertAsync(NewNote(trip.Id, userId), CancellationToken.None);
 
         // Assert
         var storedTrip = await Trips.GetByIdAsync(trip.Id, CancellationToken.None);
@@ -168,8 +168,8 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         // Arrange
         var userId = await CreateUserAsync();
         var trip = await CreateTripAsync(userId);
-        var kept = NewNote(trip.Id, "kept", recordedOn: StartedOn.AddHours(1));
-        var removed = NewNote(trip.Id, "removed", recordedOn: StartedOn.AddHours(2));
+        var kept = NewNote(trip.Id, userId, "kept", recordedOn: StartedOn.AddHours(1));
+        var removed = NewNote(trip.Id, userId, "removed", recordedOn: StartedOn.AddHours(2));
         await Sut.UpsertAsync(kept, CancellationToken.None);
         await Sut.UpsertAsync(removed, CancellationToken.None);
 
@@ -184,6 +184,63 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
     }
 
     [Fact]
+    public async Task ItShouldRoundTripTheAuthor()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var trip = await CreateTripAsync(userId);
+
+        // Act
+        var saved = await Sut.UpsertAsync(NewNote(trip.Id, userId), CancellationToken.None);
+
+        // Assert
+        saved.Value.CreatedByUserId.Should().Be(userId);
+        var reloaded = await Sut.GetByIdAsync(saved.Value.Id, CancellationToken.None);
+        reloaded.Value!.CreatedByUserId.Should().Be(userId);
+        var listed = await Sut.GetByTripIdAsync(trip.Id, CancellationToken.None);
+        listed.Value[0].CreatedByUserId.Should().Be(userId);
+    }
+
+    [Fact]
+    public async Task ItShouldNotLetAReplayRewriteTheAuthor()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var otherUserId = await CreateUserAsync();
+        var trip = await CreateTripAsync(userId);
+        var note = NewNote(trip.Id, userId, "water dropped about a foot");
+        await Sut.UpsertAsync(note, CancellationToken.None);
+
+        // Act
+        var replay = await Sut.UpsertAsync(
+            NewNote(trip.Id, otherUserId, "water dropped about two feet", noteId: note.Id),
+            CancellationToken.None);
+
+        // Assert
+        replay.Value.CreatedByUserId.Should().Be(userId);
+        replay.Value.Text.Should().Be("water dropped about two feet");
+        var stored = await Sut.GetByIdAsync(note.Id, CancellationToken.None);
+        stored.Value!.CreatedByUserId.Should().Be(userId);
+        stored.Value.CreatedByUserId.Should().NotBe(otherUserId);
+    }
+
+    [Fact]
+    public async Task ItShouldRejectANoteWhoseAuthorIsNotAKnownUser()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var trip = await CreateTripAsync(userId);
+
+        // Act
+        var saved = await Sut.UpsertAsync(
+            NewNote(trip.Id, Guid.NewGuid()),
+            CancellationToken.None);
+
+        // Assert
+        saved.IsFailed.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task ItShouldNotReturnAnotherTripsNotes()
     {
         // Arrange
@@ -191,8 +248,8 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         var otherUserId = await CreateUserAsync();
         var mine = await CreateTripAsync(ownerUserId);
         var theirs = await CreateTripAsync(otherUserId);
-        await Sut.UpsertAsync(NewNote(mine.Id, "mine"), CancellationToken.None);
-        var theirNote = NewNote(theirs.Id, "theirs");
+        await Sut.UpsertAsync(NewNote(mine.Id, ownerUserId, "mine"), CancellationToken.None);
+        var theirNote = NewNote(theirs.Id, otherUserId, "theirs");
         await Sut.UpsertAsync(theirNote, CancellationToken.None);
 
         // Act
@@ -210,7 +267,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         // Arrange
         var userId = await CreateUserAsync();
         var earlier = await CreateTripAsync(userId);
-        var note = NewNote(earlier.Id);
+        var note = NewNote(earlier.Id, userId);
         await Sut.UpsertAsync(note, CancellationToken.None);
 
         // Act

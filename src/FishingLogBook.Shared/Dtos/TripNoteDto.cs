@@ -4,4 +4,7 @@ public sealed record TripNoteDto(
     Guid Id,
     Guid TripId,
     string Text,
-    DateTimeOffset RecordedOn);
+    DateTimeOffset RecordedOn)
+{
+    public Guid CreatedByUserId { get; init; }
+}

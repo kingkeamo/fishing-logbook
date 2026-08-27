@@ -16,6 +16,15 @@ public sealed class TripMappingRegistration : IRegister
             .Map(destination => destination.ContentType, source => source.Photograph.ContentType)
             .Map(destination => destination.AddedOn, source => source.Photograph.AddedOn)
             .Map(destination => destination.CapturedOn, source => source.Photograph.CapturedOn);
+        config.NewConfig<TripNote, TripNoteDto>()
+            .MapWith(source => new TripNoteDto(
+                source.Id,
+                source.TripId,
+                source.Text,
+                source.RecordedOn)
+            {
+                CreatedByUserId = source.CreatedByUserId
+            });
         config.NewConfig<RecordTripNoteCommand, RecordTripNoteArgs>()
             .Map(destination => destination.NoteId, source => source.Note.NoteId)
             .Map(destination => destination.Text, source => source.Note.Text)

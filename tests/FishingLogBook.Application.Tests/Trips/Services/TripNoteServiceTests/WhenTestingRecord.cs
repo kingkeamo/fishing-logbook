@@ -4,6 +4,7 @@ using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using NSubstitute;
 
@@ -204,6 +205,42 @@ public class WhenTestingRecord : BaseTripNoteServiceTest
                 && note.TripId == TripId
                 && note.RecordedOn == RecordedOn),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldTakeTheAuthorFromTheTrustedCurrentUser()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+
+        // Act
+        var result = await Sut.RecordAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.CreatedByUserId.Should().Be(CurrentUserId);
+        await MockTripNoteRepository.Received(1).UpsertAsync(
+            Arg.Is<TripNote>(note => note.CreatedByUserId == CurrentUserId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void ItShouldNotAcceptAnAuthorFromTheRequestPayload()
+    {
+        // Arrange
+        var payloadProperties = typeof(RecordTripNoteDto).GetProperties();
+
+        // Act
+        var authorLike = payloadProperties
+            .Where(property => property.Name.Contains("User", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Author", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("CreatedBy", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        // Assert
+        authorLike.Should().BeEmpty();
+        payloadProperties.Select(property => property.Name)
+            .Should().BeEquivalentTo(["NoteId", "Text", "RecordedOn"]);
     }
 
     private static RecordTripNoteArgs Args(string text = "water dropped about a foot")
