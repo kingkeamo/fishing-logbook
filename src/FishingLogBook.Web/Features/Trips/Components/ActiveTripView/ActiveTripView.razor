@@ -1,4 +1,5 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripView
+@using FishingLogBook.Web.Features.Trips.Components.TripPhotographs
 
 <MudPaper Elevation="0" Class="active-trip-card" id="active-trip-card">
     <MudStack Spacing="3">
@@ -28,6 +29,8 @@
                 </MudStack>
             }
         </MudStack>
+
+        <TripPhotographs Trip="Trip" />
 
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"

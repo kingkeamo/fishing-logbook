@@ -9,6 +9,7 @@ public sealed class LogbookSynchroniser : ILogbookSynchroniser
 {
     private readonly SemaphoreSlim _runLock = new(1, 1);
     private readonly ITripSynchroniser _tripSynchroniser;
+    private readonly ITripPhotographSynchroniser _tripPhotographSynchroniser;
     private readonly ICatchSynchroniser _catchSynchroniser;
     private readonly ILocalCatchOwnerService _localCatchOwner;
     private readonly ILoggingService _logging;
@@ -17,11 +18,13 @@ public sealed class LogbookSynchroniser : ILogbookSynchroniser
 
     public LogbookSynchroniser(
         ITripSynchroniser tripSynchroniser,
+        ITripPhotographSynchroniser tripPhotographSynchroniser,
         ICatchSynchroniser catchSynchroniser,
         ILocalCatchOwnerService localCatchOwner,
         ILoggingService logging)
     {
         _tripSynchroniser = tripSynchroniser;
+        _tripPhotographSynchroniser = tripPhotographSynchroniser;
         _catchSynchroniser = catchSynchroniser;
         _localCatchOwner = localCatchOwner;
         _logging = logging;
@@ -77,7 +80,27 @@ public sealed class LogbookSynchroniser : ILogbookSynchroniser
     private async Task RunTripsThenCatchesAsync(Guid ownerUserId, CancellationToken cancellationToken)
     {
         await RunTripsAsync(ownerUserId, cancellationToken);
+        await RunTripPhotographsAsync(ownerUserId, cancellationToken);
         await _catchSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
+    }
+
+    private async Task RunTripPhotographsAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _tripPhotographSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await _logging.LogErrorAsync(
+                "trip photograph synchronisation",
+                exception,
+                CancellationToken.None);
+        }
     }
 
     private async Task RunTripsAsync(Guid ownerUserId, CancellationToken cancellationToken)

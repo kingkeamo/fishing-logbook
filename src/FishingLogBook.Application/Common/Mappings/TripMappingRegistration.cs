@@ -1,3 +1,5 @@
+using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Trips.Commands;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Dtos;
 using Mapster;
@@ -8,6 +10,12 @@ public sealed class TripMappingRegistration : IRegister
 {
     void IRegister.Register(TypeAdapterConfig config)
     {
+        config.NewConfig<RecordTripPhotographCommand, RecordTripPhotographArgs>()
+            .Map(destination => destination.PhotographId, source => source.Photograph.PhotographId)
+            .Map(destination => destination.ObjectKey, source => source.Photograph.ObjectKey)
+            .Map(destination => destination.ContentType, source => source.Photograph.ContentType)
+            .Map(destination => destination.AddedOn, source => source.Photograph.AddedOn)
+            .Map(destination => destination.CapturedOn, source => source.Photograph.CapturedOn);
         config.NewConfig<TripDto, TripDto>()
             .MapWith(source => source);
 

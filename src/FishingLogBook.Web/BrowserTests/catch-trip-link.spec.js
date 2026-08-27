@@ -114,13 +114,13 @@ test('a pre-T5 catch without a trip still reads back', async ({ page }) => {
     expect(stored.photographs).toHaveLength(1);
 });
 
-test('the database version is unchanged by the trip link', async ({ page }) => {
+test('the catch stores stay on the shared logbook database version', async ({ page }) => {
     const version = await page.evaluate(async ({ catchStoreModule }) => {
         const { CATCH_DATABASE_VERSION } = await import(catchStoreModule);
         return CATCH_DATABASE_VERSION;
     }, { catchStoreModule });
 
-    expect(version).toBe(5);
+    expect(version).toBe(6);
 });
 
 test('a pending linked catch keeps its trip out of retention cleanup', async ({ page }) => {

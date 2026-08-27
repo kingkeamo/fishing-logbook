@@ -1,0 +1,44 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.TripPhotographs
+@using FishingLogBook.Web.Features.Photographs.Components.PhotographCarousel
+@using FishingLogBook.Web.Features.Photographs.Components.PhotographPicker
+
+<MudStack Spacing="2" id="trip-photographs">
+    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_PhotographsLabel"]</MudText>
+
+    @if (_photographs.Count > 0)
+    {
+        <div id="trip-photo-carousel">
+            <PhotographCarousel Photographs="CarouselPhotographs"
+                                Editable="true"
+                                ActivePhotographId="_activePhotographId"
+                                ActivePhotographIdChanged="OnActivePhotographChanged"
+                                OnRemovePhotograph="RemovePhotographAsync"
+                                ShowSinglePhotographCount="true"
+                                IdPrefix="trip" />
+        </div>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary" id="trip-photographs-empty">
+            @Loc["Trip_PhotographsEmpty"]
+        </MudText>
+    }
+
+    <PhotographPicker IdPrefix="trip"
+                      MaxPhotographs="MaxPhotographs"
+                      PhotographsPrepared="OnPhotographsPreparedAsync" />
+
+    @if (_addFailed)
+    {
+        <MudAlert Severity="Severity.Error" id="trip-photo-add-failed">
+            @Loc["Trip_PhotographAddFailed"]
+        </MudAlert>
+    }
+
+    @if (_removeFailed)
+    {
+        <MudAlert Severity="Severity.Warning" id="trip-photo-remove-failed">
+            @Loc["Trip_PhotographRemoveFailed"]
+        </MudAlert>
+    }
+</MudStack>

@@ -42,6 +42,9 @@ public class SystemApiFactory : WebApplicationFactory<Program>
 
     public ITripRepository TripRepository { get; } = Substitute.For<ITripRepository>();
 
+    public ITripPhotographRepository TripPhotographRepository { get; } =
+        Substitute.For<ITripPhotographRepository>();
+
     public IUserPlatformCapabilityRepository UserPlatformCapabilityRepository { get; } =
         Substitute.For<IUserPlatformCapabilityRepository>();
 
@@ -225,7 +228,9 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<ICatchRepository>();
             services.AddSingleton(CatchRepository);
             services.RemoveAll<ITripRepository>();
+            services.RemoveAll<ITripPhotographRepository>();
             services.AddSingleton(TripRepository);
+            services.AddSingleton(TripPhotographRepository);
             services.RemoveAll<IFishingCatalogueRepository>();
             services.AddSingleton(FishingCatalogueRepository);
             services.RemoveAll<IFishingPreferenceRepository>();

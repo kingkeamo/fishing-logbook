@@ -1,6 +1,8 @@
 import {
+    TRIP_PHOTO_STORE_NAME,
     TRIP_STORE_NAME,
     normalisedOwnerId,
+    runLogbookMultiStoreTransaction,
     runLogbookTransaction
 } from './logbook-database.js';
 
@@ -20,6 +22,7 @@ export async function putTrip(json) {
 
     return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'write', (store, succeed, fail) => {
         const owner = normalisedOwnerId(trip.ownerUserId);
+        let storedPhotographs = null;
         const request = store.openCursor();
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
@@ -35,10 +38,15 @@ export async function putTrip(json) {
                     return;
                 }
 
+                if (cursor.value?.id === trip.id) {
+                    storedPhotographs = cursor.value.photographs ?? [];
+                }
+
                 cursor.continue();
                 return;
             }
 
+            trip.photographs = storedPhotographs ?? trip.photographs ?? [];
             const write = store.put(trip);
             write.onerror = () => fail(write.error);
             write.onsuccess = () => succeed(TRIP_SAVED_OUTCOME);
@@ -157,27 +165,39 @@ export async function cleanupSyncedTrips(ownerUserId, olderThanIso, retainedTrip
         .map(tripId => normalisedOwnerId(tripId))
         .filter(Boolean));
 
-    return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'cleanup', (store, succeed, fail) => {
-        let removed = 0;
-        const request = store.openCursor();
-        request.onerror = () => fail(request.error);
-        request.onsuccess = () => {
-            const cursor = request.result;
-            if (!cursor) {
-                succeed(removed);
-                return;
-            }
+    return runLogbookMultiStoreTransaction(
+        [TRIP_STORE_NAME, TRIP_PHOTO_STORE_NAME],
+        'readwrite',
+        'cleanup',
+        (transaction, succeed, fail) => {
+            const photographs = transaction.objectStore(TRIP_PHOTO_STORE_NAME);
+            let removed = 0;
+            const request = transaction.objectStore(TRIP_STORE_NAME).openCursor();
+            request.onerror = () => fail(request.error);
+            request.onsuccess = () => {
+                const cursor = request.result;
+                if (!cursor) {
+                    succeed(removed);
+                    return;
+                }
 
-            if (normalisedOwnerId(cursor.value?.ownerUserId) === owner
-                && !retained.has(normalisedOwnerId(cursor.value?.id))
-                && isEligibleForCleanup(cursor.value, cutoff)) {
-                cursor.delete();
-                removed += 1;
-            }
+                if (normalisedOwnerId(cursor.value?.ownerUserId) === owner
+                    && !retained.has(normalisedOwnerId(cursor.value?.id))
+                    && isEligibleForCleanup(cursor.value, cutoff)) {
+                    for (const photograph of cursor.value.photographs ?? []) {
+                        if (photograph?.id) {
+                            const drop = photographs.delete(photograph.id);
+                            drop.onerror = () => fail(drop.error);
+                        }
+                    }
 
-            cursor.continue();
-        };
-    });
+                    cursor.delete();
+                    removed += 1;
+                }
+
+                cursor.continue();
+            };
+        });
 }
 
 function isEligibleForCleanup(trip, cutoff) {

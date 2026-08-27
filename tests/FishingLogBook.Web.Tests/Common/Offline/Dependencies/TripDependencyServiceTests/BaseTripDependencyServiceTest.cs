@@ -4,6 +4,7 @@ using FishingLogBook.Web.Common.Offline.Dependencies;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Tests.Features.Catch.Offline.Stores.CatchStoreTests;
+using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripPhotographStoreTests;
 using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripStoreTests;
 
 namespace FishingLogBook.Web.Tests.Common.Offline.Dependencies.TripDependencyServiceTests;
@@ -24,12 +25,13 @@ public class BaseTripDependencyServiceTest
         DateTimeOffset.Parse("2026-08-17T09:00:00Z");
 
     protected readonly MemoryTripStore TripStore = new();
+    protected readonly MemoryTripPhotographStore TripPhotographStore = new();
     protected readonly MemoryCatchStore CatchStore = new();
     protected readonly TripDependencyService Sut;
 
     protected BaseTripDependencyServiceTest()
     {
-        Sut = new TripDependencyService(TripStore, CatchStore);
+        Sut = new TripDependencyService(TripStore, TripPhotographStore, CatchStore);
     }
 
     protected async Task GivenTripAsync(
@@ -43,6 +45,24 @@ public class BaseTripDependencyServiceTest
                 ownerUserId ?? OwnerUserId,
                 TripConstants.Active,
                 StartedOn,
+                SyncStatus: syncStatus),
+            CancellationToken.None);
+    }
+
+    protected async Task GivenTripPhotographAsync(
+        Guid photographId,
+        Guid tripId,
+        SyncStatus syncStatus,
+        Guid? ownerUserId = null)
+    {
+        await TripPhotographStore.SaveAsync(
+            new TripPhotographModel(
+                photographId,
+                tripId,
+                ownerUserId ?? OwnerUserId,
+                "image/jpeg",
+                StartedOn.AddMinutes(30),
+                Bytes: [1, 2, 3],
                 SyncStatus: syncStatus),
             CancellationToken.None);
     }

@@ -15,4 +15,11 @@ export {
     getPendingTrips,
     cleanupSyncedTrips
 } from './storage/trip-store.js';
+export {
+    putTripPhotograph,
+    getTripPhotographBytes,
+    deleteTripPhotograph,
+    getPendingTripPhotographs,
+    getTripsWithPendingPhotographs
+} from './storage/trip-photo-store.js';
 export { getStorageEstimate } from './storage/indexed-db.js';

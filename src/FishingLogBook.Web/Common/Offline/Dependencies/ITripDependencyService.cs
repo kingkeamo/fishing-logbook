@@ -7,7 +7,7 @@ public interface ITripDependencyService
         Guid tripId,
         CancellationToken cancellationToken);
 
-    Task<IReadOnlyCollection<Guid>> GetTripsAwaitingCatchesAsync(
+    Task<IReadOnlyCollection<Guid>> GetTripsAwaitingDependentsAsync(
         Guid ownerUserId,
         CancellationToken cancellationToken);
 }

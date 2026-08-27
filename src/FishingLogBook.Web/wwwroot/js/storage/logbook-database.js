@@ -8,10 +8,11 @@ import {
 import { emit, emitStorageEstimate, emitTimedOut } from './offline-diagnostics.js';
 
 export const LOGBOOK_DATABASE_NAME = 'FishingLogBook';
-export const LOGBOOK_DATABASE_VERSION = 5;
+export const LOGBOOK_DATABASE_VERSION = 6;
 export const CATCH_STORE_NAME = 'catches';
 export const PHOTO_STORE_NAME = 'catchPhotographs';
 export const TRIP_STORE_NAME = 'trips';
+export const TRIP_PHOTO_STORE_NAME = 'tripPhotographs';
 export const openTimeoutMs = 8000;
 
 const LEGACY_TEST_CATCH_STORE_NAME = 'testCatches';
@@ -38,6 +39,9 @@ export function openLogbookDatabase() {
             }
             if (!db.objectStoreNames.contains(TRIP_STORE_NAME)) {
                 db.createObjectStore(TRIP_STORE_NAME, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(TRIP_PHOTO_STORE_NAME)) {
+                db.createObjectStore(TRIP_PHOTO_STORE_NAME, { keyPath: 'id' });
             }
             if (db.objectStoreNames.contains(LEGACY_TEST_CATCH_STORE_NAME)) {
                 db.deleteObjectStore(LEGACY_TEST_CATCH_STORE_NAME);

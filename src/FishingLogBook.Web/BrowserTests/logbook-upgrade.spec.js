@@ -148,7 +148,7 @@ async function inspectDatabase(page) {
     }, databaseName);
 }
 
-test('an existing version 4 database upgrades to 5 and keeps every Catch record and blob', async ({ page }) => {
+test('an existing version 4 database upgrades to the current version and keeps every Catch record and blob', async ({ page }) => {
     const seeded = await seedVersionFour(page);
     expect(seeded.version).toBe(4);
     expect(seeded.stores).toEqual(['catchPhotographs', 'catches']);
@@ -165,8 +165,8 @@ test('an existing version 4 database upgrades to 5 and keeps every Catch record 
 
     const upgraded = await inspectDatabase(page);
 
-    expect(upgraded.version).toBe(5);
-    expect(upgraded.stores).toEqual(['catchPhotographs', 'catches', 'trips']);
+    expect(upgraded.version).toBe(6);
+    expect(upgraded.stores).toEqual(['catchPhotographs', 'catches', 'tripPhotographs', 'trips']);
     expect(survivors).toHaveLength(1);
     expect(survivors[0].notes).toBe('the one from before the upgrade');
     expect(survivors[0].photographCount).toBe(1);
@@ -363,6 +363,6 @@ test('the logbook database reports one owning module for its name and version', 
     }, logbookModule);
 
     expect(schema.name).toBe(databaseName);
-    expect(schema.version).toBe(5);
+    expect(schema.version).toBe(6);
     expect(schema.tripStore).toBe('trips');
 });

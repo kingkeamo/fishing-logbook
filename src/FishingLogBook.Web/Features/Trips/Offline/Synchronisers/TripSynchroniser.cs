@@ -86,7 +86,7 @@ public sealed class TripSynchroniser : ITripSynchroniser
                 tripId: null,
                 exception: null,
                 cancellationToken);
-            var retained = await _tripDependency.GetTripsAwaitingCatchesAsync(
+            var retained = await _tripDependency.GetTripsAwaitingDependentsAsync(
                 ownerUserId,
                 cancellationToken);
             var removed = await _store.CleanupSyncedAsync(
