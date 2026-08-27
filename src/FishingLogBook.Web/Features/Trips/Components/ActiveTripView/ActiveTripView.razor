@@ -1,0 +1,43 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripView
+
+<MudPaper Elevation="0" Class="active-trip-card" id="active-trip-card">
+    <MudStack Spacing="3">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.overline" Class="active-trip-eyebrow" id="active-trip-eyebrow">
+                @Loc["Trip_ActiveLabel"]
+            </MudText>
+            <MudText Typo="Typo.h5" id="active-trip-heading">@Heading</MudText>
+            @if (HasPlace)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary" id="active-trip-place">
+                    @Trip.PlaceName
+                </MudText>
+            }
+        </MudStack>
+
+        <MudStack Row="true" Spacing="6" Class="flex-wrap">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_StartedLabel"]</MudText>
+                <MudText Typo="Typo.body1" id="active-trip-started">@StartedLabel</MudText>
+            </MudStack>
+            @if (ElapsedLabel is not null)
+            {
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_DurationLabel"]</MudText>
+                    <MudText Typo="Typo.body1" id="active-trip-elapsed">@ElapsedLabel</MudText>
+                </MudStack>
+            }
+        </MudStack>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Disabled="IsFinishing"
+                   OnClick="OnFinish"
+                   StartIcon="@Icons.Material.Filled.Flag"
+                   id="active-trip-finish">
+            @Loc["Trip_Finish"]
+        </MudButton>
+    </MudStack>
+</MudPaper>
