@@ -9,11 +9,33 @@ public sealed record AnglerPreferencesModel(
     WeightUnitEnum WeightUnit,
     LengthUnitEnum LengthUnit)
 {
+    private readonly IReadOnlyList<FishingLocationPreferenceDto> _locations = [];
+
     public static AnglerPreferencesModel Empty { get; } = new(
         new FishingCatalogueDto([], []),
         new FishingPreferencesDto([]),
         WeightUnitEnum.Kg,
         LengthUnitEnum.Cm);
+
+    public IReadOnlyList<FishingLocationPreferenceDto> Locations
+    {
+        get
+        {
+            return _locations;
+        }
+        init
+        {
+            _locations = value ?? [];
+        }
+    }
+
+    public FishingLocationPreferenceDto? DefaultLocation
+    {
+        get
+        {
+            return Locations.FirstOrDefault(location => location.IsDefault);
+        }
+    }
 
     public bool HasCatalogue
     {

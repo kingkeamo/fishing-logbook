@@ -991,4 +991,49 @@
   <data name="Catch_MeasurementApply" xml:space="preserve">
     <value>Appliquer</value>
   </data>
+  <data name="Profile_FishingLocations" xml:space="preserve">
+    <value>Lieux de pêche</value>
+  </data>
+  <data name="Profile_FishingLocations_None" xml:space="preserve">
+    <value>Aucun lieu de pêche enregistré</value>
+  </data>
+  <data name="Profile_FishingLocation_Add" xml:space="preserve">
+    <value>Ajouter un lieu de pêche</value>
+  </data>
+  <data name="Profile_FishingLocation_AddAction" xml:space="preserve">
+    <value>Ajouter</value>
+  </data>
+  <data name="Profile_FishingLocation_Default" xml:space="preserve">
+    <value>Par défaut</value>
+  </data>
+  <data name="Profile_FishingLocation_SetDefault" xml:space="preserve">
+    <value>Définir par défaut</value>
+  </data>
+  <data name="Profile_FishingLocation_SetDefaultFor" xml:space="preserve">
+    <value>Définir {0} comme lieu de pêche par défaut</value>
+  </data>
+  <data name="Profile_FishingLocation_RemoveFor" xml:space="preserve">
+    <value>Supprimer le lieu de pêche {0}</value>
+  </data>
+  <data name="Profile_FishingLocation_NameRequired" xml:space="preserve">
+    <value>Saisissez un nom de lieu de pêche.</value>
+  </data>
+  <data name="Profile_FishingLocation_NameTooLong" xml:space="preserve">
+    <value>Un nom de lieu de pêche doit comporter au maximum {0} caractères.</value>
+  </data>
+  <data name="Profile_FishingLocation_Duplicate" xml:space="preserve">
+    <value>Ce lieu de pêche est déjà enregistré.</value>
+  </data>
+  <data name="Trip_FishingLocation" xml:space="preserve">
+    <value>Lieu de pêche</value>
+  </data>
+  <data name="Trip_OtherLocation" xml:space="preserve">
+    <value>Autre lieu</value>
+  </data>
+  <data name="Trip_ClearLocation" xml:space="preserve">
+    <value>Effacer le lieu</value>
+  </data>
+  <data name="Trip_LocationSaveFailed" xml:space="preserve">
+    <value>Le lieu de pêche n'a pas pu être enregistré.</value>
+  </data>
 </root>

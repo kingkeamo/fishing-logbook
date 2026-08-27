@@ -1,0 +1,20 @@
+.fishing-locations-item {
+    min-height: 3rem;
+}
+
+.fishing-locations-name-group {
+    min-width: 0;
+}
+
+.fishing-locations-name {
+    overflow-wrap: anywhere;
+}
+
+.fishing-locations-add {
+    flex-wrap: wrap;
+}
+
+.fishing-locations-add-input {
+    flex: 1 1 12rem;
+    min-width: 12rem;
+}

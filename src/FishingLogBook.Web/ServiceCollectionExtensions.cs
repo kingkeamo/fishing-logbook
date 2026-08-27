@@ -71,6 +71,7 @@ public static class ServiceCollectionExtensions
         }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
         services.AddScoped<IProfileClient, ProfileClient>();
         services.AddScoped<IFishingPreferenceClient, FishingPreferenceClient>();
+        services.AddScoped<IFishingLocationClient, FishingLocationClient>();
         services.AddScoped<IAnglerPreferencesStore, IndexedDbAnglerPreferencesStore>();
         services.AddScoped<IAnglerPreferencesProvider, AnglerPreferencesProvider>();
         services.AddScoped<IProfileSummaryProvider, ProfileSummaryProvider>();

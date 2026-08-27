@@ -136,6 +136,11 @@ public partial class OfflineActiveTrip : ComponentBase
         await LoadAsync();
     }
 
+    private void OnPlaceChanged(TripModel trip)
+    {
+        _trip = trip;
+    }
+
     private async Task FinishAsync()
     {
         if (_trip is null || _isFinishing || IsCompleted)

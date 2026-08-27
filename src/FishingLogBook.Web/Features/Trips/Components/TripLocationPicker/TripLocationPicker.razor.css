@@ -1,0 +1,7 @@
+#trip-location-picker {
+    min-width: 0;
+}
+
+#trip-location-choices {
+    row-gap: 0.25rem;
+}

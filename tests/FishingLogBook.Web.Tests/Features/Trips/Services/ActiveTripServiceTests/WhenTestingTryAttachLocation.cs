@@ -190,4 +190,25 @@ public class WhenTestingTryAttachLocation : BaseActiveTripServiceTest
         // Assert
         await MockLocationService.Received(1).TryCaptureAsync(false, Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldNotReplaceTheSelectedPlaceNameWithTheCapturedLocation()
+    {
+        // Arrange
+        MockLocationService.TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(CapturedLocation());
+        var trip = ActiveTrip() with { PlaceName = "Lough Corrib" };
+        MockTripStore.GetAsync(OwnerUserId, trip.Id, Arg.Any<CancellationToken>()).Returns(trip);
+
+        // Act
+        var located = await Sut.TryAttachLocationAsync(trip, CancellationToken.None);
+
+        // Assert
+        located!.PlaceName.Should().Be("Lough Corrib");
+        located.Location.Should().NotBeNull();
+        await MockTripStore.Received(1).SaveAsync(
+            Arg.Is<TripModel>(saved =>
+                saved.PlaceName == "Lough Corrib" && saved.Location != null),
+            Arg.Any<CancellationToken>());
+    }
 }

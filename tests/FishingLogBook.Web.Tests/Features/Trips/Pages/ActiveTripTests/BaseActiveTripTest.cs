@@ -1,5 +1,6 @@
 using Bunit;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -8,6 +9,8 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Photographs.Services;
+using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
@@ -58,7 +61,8 @@ public class BaseActiveTripTest
         ILocalCatchOwnerService? owner = null,
         IOfflineOwnerContextService? offlineOwner = null,
         ILoggingService? logging = null,
-        ICatchStore? catchStore = null)
+        ICatchStore? catchStore = null,
+        IAnglerPreferencesProvider? anglerPreferences = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -77,8 +81,18 @@ public class BaseActiveTripTest
         context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());
         context.Services.AddSingleton<ITripDisplayService>(provider =>
             new TripDisplayService(provider.GetRequiredService<ITimeService>()));
+        context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static IAnglerPreferencesProvider QuietAnglerPreferences(
+        params FishingLocationPreferenceDto[] locations)
+    {
+        var provider = Substitute.For<IAnglerPreferencesProvider>();
+        provider.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(AnglerPreferencesModel.Empty with { Locations = locations });
+        return provider;
     }
 
     protected static IActiveTripService QuietActiveTripService()

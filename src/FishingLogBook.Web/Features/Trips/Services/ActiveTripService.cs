@@ -2,6 +2,7 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 
@@ -9,8 +10,11 @@ namespace FishingLogBook.Web.Features.Trips.Services;
 
 public sealed class ActiveTripService : IActiveTripService
 {
+    private static readonly TimeSpan DefaultPlaceTimeout = TimeSpan.FromSeconds(2);
+
     private readonly ITripStore _tripStore;
     private readonly ILocationService _locationService;
+    private readonly IAnglerPreferencesProvider _anglerPreferences;
     private readonly ILoggingService _logging;
 
     private Guid _cachedOwnerUserId;
@@ -22,10 +26,12 @@ public sealed class ActiveTripService : IActiveTripService
     public ActiveTripService(
         ITripStore tripStore,
         ILocationService locationService,
+        IAnglerPreferencesProvider anglerPreferences,
         ILoggingService logging)
     {
         _tripStore = tripStore;
         _locationService = locationService;
+        _anglerPreferences = anglerPreferences;
         _logging = logging;
     }
 
@@ -58,6 +64,7 @@ public sealed class ActiveTripService : IActiveTripService
             ownerUserId,
             TripConstants.Active,
             DateTimeOffset.UtcNow,
+            PlaceName: await TryResolveDefaultPlaceAsync(cancellationToken),
             SyncStatus: SyncStatus.SavedLocally);
         await _tripStore.SaveAsync(trip, cancellationToken);
         Remember(ownerUserId, trip);
@@ -77,6 +84,32 @@ public sealed class ActiveTripService : IActiveTripService
         Remember(trip.OwnerUserId, null);
         RaiseStateChanged();
         return finished;
+    }
+
+    public async Task<TripModel?> UpdatePlaceAsync(
+        TripModel trip,
+        string? placeName,
+        CancellationToken cancellationToken)
+    {
+        var current = await _tripStore.GetAsync(trip.OwnerUserId, trip.Id, cancellationToken);
+        if (current is null)
+        {
+            return null;
+        }
+
+        var updated = current with
+        {
+            PlaceName = TripConstants.TrimPlaceName(placeName),
+            SyncStatus = SyncStatus.SavedLocally
+        };
+        await _tripStore.SaveAsync(updated, cancellationToken);
+        if (updated.Status == TripConstants.Active)
+        {
+            Remember(trip.OwnerUserId, updated);
+        }
+
+        RaiseStateChanged();
+        return updated;
     }
 
     public async Task<TripModel?> TryAttachLocationAsync(TripModel trip, CancellationToken cancellationToken)
@@ -109,6 +142,33 @@ public sealed class ActiveTripService : IActiveTripService
         _hasCachedActiveTrip = false;
         _cachedActiveTrip = null;
         _cachedOwnerUserId = Guid.Empty;
+    }
+
+    private async Task<string?> TryResolveDefaultPlaceAsync(CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(DefaultPlaceTimeout);
+        try
+        {
+            var preferences = await _anglerPreferences.GetAsync(timeout.Token);
+            return TripConstants.TrimPlaceName(preferences.DefaultLocation?.Name);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch (Exception exception)
+        {
+            await _logging.LogErrorAsync(
+                "resolving the default fishing location",
+                exception,
+                CancellationToken.None);
+            return null;
+        }
     }
 
     private async Task<TripLocationModel?> TryCaptureAsync(CancellationToken cancellationToken)

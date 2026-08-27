@@ -1,0 +1,57 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.TripLocationPicker
+@using FishingLogBook.Shared.Constants
+
+<MudStack Spacing="1" id="trip-location-picker">
+    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_FishingLocation"]</MudText>
+
+    @if (SavedLocations.Count > 0)
+    {
+        <MudStack Row="true" Spacing="1" Class="flex-wrap" id="trip-location-choices">
+            @foreach (var location in SavedLocations)
+            {
+                var isSelected = IsSelected(location.Name);
+                <MudChip T="string"
+                         Color="@(isSelected ? Color.Primary : Color.Default)"
+                         Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
+                         Icon="@(isSelected ? Icons.Material.Filled.Check : null)"
+                         Disabled="_isSaving"
+                         aria-pressed="@(isSelected ? "true" : "false")"
+                         OnClick="@(() => SelectAsync(location.Name))"
+                         id="@ChoiceId(location.Name)">
+                    @location.Name
+                </MudChip>
+            }
+        </MudStack>
+    }
+
+    <MudTextField Value="_otherLocation"
+                  ValueChanged="@((string? value) => OnOtherChangedAsync(value))"
+                  T="string"
+                  Label="@Loc["Trip_OtherLocation"]"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  MaxLength="TripConstants.MaxPlaceNameLength"
+                  Disabled="_isSaving"
+                  id="trip-location-other" />
+
+    @if (HasPlace)
+    {
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   Size="Size.Small"
+                   Class="align-self-start"
+                   Disabled="_isSaving"
+                   StartIcon="@Icons.Material.Filled.Clear"
+                   OnClick="ClearAsync"
+                   id="trip-location-clear">
+            @Loc["Trip_ClearLocation"]
+        </MudButton>
+    }
+
+    @if (_saveFailed)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Error" id="trip-location-failed">
+            @Loc["Trip_LocationSaveFailed"]
+        </MudText>
+    }
+</MudStack>

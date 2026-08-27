@@ -991,4 +991,49 @@
   <data name="Catch_MeasurementApply" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="Profile_FishingLocations" xml:space="preserve">
+    <value>Fishing locations</value>
+  </data>
+  <data name="Profile_FishingLocations_None" xml:space="preserve">
+    <value>No saved fishing locations</value>
+  </data>
+  <data name="Profile_FishingLocation_Add" xml:space="preserve">
+    <value>Add fishing location</value>
+  </data>
+  <data name="Profile_FishingLocation_AddAction" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Profile_FishingLocation_Default" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Profile_FishingLocation_SetDefault" xml:space="preserve">
+    <value>Set as default</value>
+  </data>
+  <data name="Profile_FishingLocation_SetDefaultFor" xml:space="preserve">
+    <value>Set {0} as the default fishing location</value>
+  </data>
+  <data name="Profile_FishingLocation_RemoveFor" xml:space="preserve">
+    <value>Remove the fishing location {0}</value>
+  </data>
+  <data name="Profile_FishingLocation_NameRequired" xml:space="preserve">
+    <value>Enter a fishing location name.</value>
+  </data>
+  <data name="Profile_FishingLocation_NameTooLong" xml:space="preserve">
+    <value>A fishing location name must be {0} characters or fewer.</value>
+  </data>
+  <data name="Profile_FishingLocation_Duplicate" xml:space="preserve">
+    <value>That fishing location is already saved.</value>
+  </data>
+  <data name="Trip_FishingLocation" xml:space="preserve">
+    <value>Fishing location</value>
+  </data>
+  <data name="Trip_OtherLocation" xml:space="preserve">
+    <value>Other location</value>
+  </data>
+  <data name="Trip_ClearLocation" xml:space="preserve">
+    <value>Clear location</value>
+  </data>
+  <data name="Trip_LocationSaveFailed" xml:space="preserve">
+    <value>The fishing location could not be saved.</value>
+  </data>
 </root>

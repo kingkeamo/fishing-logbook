@@ -6,6 +6,7 @@ using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Diagnostics;
+using FishingLogBook.Application.FishingLocations.Services;
 using FishingLogBook.Application.FishingPreferences.Services;
 using FishingLogBook.Application.OfflineAccess.Services;
 using FishingLogBook.Application.Profiles.Services;
@@ -59,6 +60,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatchPhotographService, CatchPhotographService>();
         services.AddScoped<ICatchLocationPrivacyService, CatchLocationPrivacyService>();
         services.AddScoped<IPlatformCapabilityService, PlatformCapabilityService>();
+        services.AddScoped<IFishingLocationPreferenceService, FishingLocationPreferenceService>();
         services.AddScoped<IFishingPreferenceService, FishingPreferenceService>();
         services.AddScoped<IOfflineAccessPreferenceService, OfflineAccessPreferenceService>();
 
@@ -90,6 +92,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripNoteRepository, TripNoteRepository>();
         services.AddScoped<IUserPlatformCapabilityRepository, UserPlatformCapabilityRepository>();
         services.AddScoped<IFishingCatalogueRepository, FishingCatalogueRepository>();
+        services.AddScoped<IFishingLocationPreferenceRepository, FishingLocationPreferenceRepository>();
         services.AddScoped<IFishingPreferenceRepository, FishingPreferenceRepository>();
         services.AddScoped<IOfflineAccessPreferenceRepository, OfflineAccessPreferenceRepository>();
         services.Configure<ObjectStorageConfig>(configuration.GetSection(ObjectStorageConfig.SectionName));

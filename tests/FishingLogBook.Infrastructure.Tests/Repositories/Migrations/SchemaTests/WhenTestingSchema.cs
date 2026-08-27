@@ -89,6 +89,7 @@ public class WhenTestingSchema
         tableNames.Should().Contain("Species");
         tableNames.Should().Contain("UserFishingMethodPreference");
         tableNames.Should().Contain("UserFishingSpeciesPreference");
+        tableNames.Should().Contain("UserFishingLocationPreference");
     }
 
     [Fact]
@@ -129,5 +130,44 @@ public class WhenTestingSchema
             column.Name == "OfflineAccessEnabled" && column.Nullable == "NO");
         columns.Should().Contain(column =>
             column.Name == "OfflineAccessEnabledAt" && column.Nullable == "YES");
+    }
+
+    [Fact]
+    public async Task ItShouldExposeTheFishingLocationPreferenceTableAndItsInvariants()
+    {
+        // Arrange
+        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
+        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+
+        // Act
+        var indexes = await connection.QueryAsync<string>(
+            """
+            SELECT "indexname" FROM pg_indexes
+            WHERE "schemaname" = 'public' AND "tablename" = 'UserFishingLocationPreference';
+            """);
+
+        // Assert
+        var indexNames = indexes.ToArray();
+        indexNames.Should().Contain("PkUserFishingLocationPreference");
+        indexNames.Should().Contain("UxUserFishingLocationPreferenceName");
+        indexNames.Should().Contain("UxUserFishingLocationPreferenceDefault");
+    }
+
+    [Fact]
+    public async Task ItShouldNotStoreASingleDefaultFishingPlaceOnTheProfile()
+    {
+        // Arrange
+        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
+        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+
+        // Act
+        var columns = await connection.QueryAsync<string>(
+            """
+            SELECT "column_name" FROM information_schema.columns
+            WHERE "table_schema" = 'public' AND "table_name" = 'Profile';
+            """);
+
+        // Assert
+        columns.Should().NotContain("DefaultFishingPlace");
     }
 }

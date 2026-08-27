@@ -27,6 +27,9 @@ public partial class ActiveTripView : ComponentBase
     public EventCallback OnFinish { get; set; }
 
     [Parameter]
+    public EventCallback<TripModel> OnPlaceChanged { get; set; }
+
+    [Parameter]
     public string RecordCatchBaseHref { get; set; } = "/catches/record";
 
     [Parameter]

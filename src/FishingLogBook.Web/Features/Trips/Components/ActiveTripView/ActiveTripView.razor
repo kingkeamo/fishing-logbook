@@ -1,4 +1,5 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripView
+@using FishingLogBook.Web.Features.Trips.Components.TripLocationPicker
 @using FishingLogBook.Web.Features.Trips.Components.TripNotes
 @using FishingLogBook.Web.Features.Trips.Components.TripPhotographs
 
@@ -16,6 +17,8 @@
                 </MudText>
             }
         </MudStack>
+
+        <TripLocationPicker Trip="Trip" OnPlaceChanged="OnPlaceChanged" />
 
         <MudStack Row="true" Spacing="6" Class="flex-wrap">
             <MudStack Spacing="0">

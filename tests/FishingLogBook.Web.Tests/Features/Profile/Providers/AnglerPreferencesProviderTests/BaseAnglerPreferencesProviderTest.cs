@@ -21,6 +21,8 @@ public class BaseAnglerPreferencesProviderTest
     protected readonly IProfileClient MockProfileClient = Substitute.For<IProfileClient>();
     protected readonly IFishingPreferenceClient MockFishingPreferenceClient =
         Substitute.For<IFishingPreferenceClient>();
+    protected readonly IFishingLocationClient MockFishingLocationClient =
+        Substitute.For<IFishingLocationClient>();
     protected readonly IAnglerPreferencesStore MockCache = Substitute.For<IAnglerPreferencesStore>();
     protected readonly ILocalCatchOwnerService MockLocalCatchOwner = Substitute.For<ILocalCatchOwnerService>();
     protected readonly AnglerPreferencesProvider Sut;
@@ -28,9 +30,12 @@ public class BaseAnglerPreferencesProviderTest
     protected BaseAnglerPreferencesProviderTest()
     {
         MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OwnerUserId);
+        MockFishingLocationClient.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(new FishingLocationPreferencesDto([]));
         Sut = new AnglerPreferencesProvider(
             MockProfileClient,
             MockFishingPreferenceClient,
+            MockFishingLocationClient,
             MockCache,
             MockLocalCatchOwner);
     }

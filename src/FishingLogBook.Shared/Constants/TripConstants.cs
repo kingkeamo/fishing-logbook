@@ -12,6 +12,17 @@ public static class TripConstants
 
     public const string Completed = "Completed";
 
+    public static string? TrimPlaceName(string? placeName)
+    {
+        var trimmed = placeName?.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed.Length > MaxPlaceNameLength)
+        {
+            return null;
+        }
+
+        return trimmed;
+    }
+
     public static bool IsNoteTextValid(string? text)
     {
         return !string.IsNullOrWhiteSpace(text) && text.Trim().Length <= MaxNoteTextLength;
