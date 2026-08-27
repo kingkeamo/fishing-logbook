@@ -4,17 +4,21 @@ using FishingLogBook.Domain.FishingLocations;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
+using MapsterMapper;
 
 namespace FishingLogBook.Application.FishingLocations.Services;
 
 public sealed class FishingLocationPreferenceService : IFishingLocationPreferenceService
 {
     private readonly IFishingLocationPreferenceRepository _fishingLocationPreferenceRepository;
+    private readonly IMapper _mapper;
 
     public FishingLocationPreferenceService(
-        IFishingLocationPreferenceRepository fishingLocationPreferenceRepository)
+        IFishingLocationPreferenceRepository fishingLocationPreferenceRepository,
+        IMapper mapper)
     {
         _fishingLocationPreferenceRepository = fishingLocationPreferenceRepository;
+        _mapper = mapper;
     }
 
     public async Task<Result<FishingLocationPreferencesDto>> GetPreferencesAsync(
@@ -66,16 +70,13 @@ public sealed class FishingLocationPreferenceService : IFishingLocationPreferenc
         };
     }
 
-    private static FishingLocationPreferencesDto ToPreferences(
+    private FishingLocationPreferencesDto ToPreferences(
         IReadOnlyList<UserFishingLocationPreference> stored)
     {
         var locations = stored
             .OrderByDescending(location => location.IsDefault)
             .ThenBy(location => location.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(location => new FishingLocationPreferenceDto(
-                location.Id,
-                location.Name,
-                location.IsDefault))
+            .Select(_mapper.Map<FishingLocationPreferenceDto>)
             .ToArray();
         return new FishingLocationPreferencesDto(locations);
     }

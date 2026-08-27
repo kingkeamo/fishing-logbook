@@ -32,18 +32,30 @@ public partial class TripTimeline : ComponentBase, IDisposable
 
     protected override async Task OnParametersSetAsync()
     {
-        foreach (var item in Items.Where(item => !_localTimes.ContainsKey(item.OccurredOn)))
+        var pending = Items
+            .Select(item => item.OccurredOn)
+            .Where(occurredOn => !_localTimes.ContainsKey(occurredOn))
+            .Distinct()
+            .ToArray();
+        if (pending.Length == 0)
         {
-            await RememberLocalTimeAsync(item.OccurredOn);
+            return;
         }
+
+        await RememberLocalTimesAsync(pending);
     }
 
-    private async Task RememberLocalTimeAsync(DateTimeOffset occurredOn)
+    private async Task RememberLocalTimesAsync(IReadOnlyList<DateTimeOffset> pending)
     {
         try
         {
-            var value = await Time.ToDateTimeLocalValueAsync(occurredOn, _cancellationTokenSource.Token);
-            _localTimes[occurredOn] = value.Length >= 16 ? value[11..16] : value;
+            var values = await Task.WhenAll(pending.Select(occurredOn =>
+                Time.ToDateTimeLocalValueAsync(occurredOn, _cancellationTokenSource.Token)));
+            for (var index = 0; index < pending.Count; index++)
+            {
+                var value = values[index];
+                _localTimes[pending[index]] = value.Length >= 16 ? value[11..16] : value;
+            }
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {

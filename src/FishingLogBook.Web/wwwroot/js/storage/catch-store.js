@@ -207,7 +207,8 @@ function hasMetadataDifference(existing, incoming) {
         'length',
         'method',
         'baitOrLure',
-        'notes'
+        'notes',
+        'tripId'
     ];
     return metadataFields.some((field) =>
         Object.hasOwn(incoming, field)

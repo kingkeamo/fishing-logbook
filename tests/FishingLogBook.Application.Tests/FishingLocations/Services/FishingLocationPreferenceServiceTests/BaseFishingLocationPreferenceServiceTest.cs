@@ -28,7 +28,9 @@ public class BaseFishingLocationPreferenceServiceTest
                 Arg.Any<IReadOnlyList<UserFishingLocationPreference>>(),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
-        Sut = new FishingLocationPreferenceService(MockFishingLocationPreferenceRepository);
+        Sut = new FishingLocationPreferenceService(
+            MockFishingLocationPreferenceRepository,
+            TestMapper.Create());
     }
 
     protected static UserFishingLocationPreference Stored(

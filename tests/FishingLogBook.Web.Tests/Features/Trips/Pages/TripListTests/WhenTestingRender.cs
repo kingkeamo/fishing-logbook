@@ -102,7 +102,7 @@ public class WhenTestingRender : BaseTripListTest
         cut.WaitForAssertion(() =>
             cut.Find($"#trip-list-catches-{RemoteTripId:D}").TextContent.Should().Contain("3 catches"));
         cut.Find($"#trip-list-photographs-{RemoteTripId:D}").TextContent.Should().Contain("2 photos");
-        cut.Find($"#trip-list-notes-{RemoteTripId:D}").TextContent.Should().Contain("1 notes");
+        cut.Find($"#trip-list-notes-{RemoteTripId:D}").TextContent.Should().Contain("1 note");
         cut.Find($"#trip-list-place-{RemoteTripId:D}").TextContent.Should().Contain("Lough Mask");
         cut.Find($"#trip-list-view-{RemoteTripId:D}").GetAttribute("href")
             .Should().Be($"/trips/{RemoteTripId:D}");
@@ -191,8 +191,8 @@ public class WhenTestingRender : BaseTripListTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find($"#trip-list-photographs-{LocalTripId:D}").TextContent.Should().Contain("1 photos"));
-        cut.Find($"#trip-list-notes-{LocalTripId:D}").TextContent.Should().Contain("1 notes");
+            cut.Find($"#trip-list-photographs-{LocalTripId:D}").TextContent.Should().Contain("1 photo"));
+        cut.Find($"#trip-list-notes-{LocalTripId:D}").TextContent.Should().Contain("1 note");
         cut.Find($"#trip-list-catches-{LocalTripId:D}").TextContent.Should().Contain("1 catch");
     }
 

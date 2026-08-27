@@ -1084,12 +1084,6 @@
   <data name="Trip_ListLoadFailed" xml:space="preserve">
     <value>Vos sorties n'ont pas pu être chargées.</value>
   </data>
-  <data name="Trip_ListPhotographCount" xml:space="preserve">
-    <value>{0} photos</value>
-  </data>
-  <data name="Trip_ListNoteCount" xml:space="preserve">
-    <value>{0} notes</value>
-  </data>
   <data name="Trip_ViewTrip" xml:space="preserve">
     <value>Voir la sortie</value>
   </data>
@@ -1107,5 +1101,23 @@
   </data>
   <data name="Trip_AddExistingCatchFailed" xml:space="preserve">
     <value>Ces prises n'ont pas pu être ajoutées à la sortie.</value>
+  </data>
+  <data name="Trip_ListPhotographsNone" xml:space="preserve">
+    <value>Aucune photo</value>
+  </data>
+  <data name="Trip_ListPhotographsOne" xml:space="preserve">
+    <value>1 photo</value>
+  </data>
+  <data name="Trip_ListPhotographsMany" xml:space="preserve">
+    <value>{0} photos</value>
+  </data>
+  <data name="Trip_ListNotesNone" xml:space="preserve">
+    <value>Aucune note</value>
+  </data>
+  <data name="Trip_ListNotesOne" xml:space="preserve">
+    <value>1 note</value>
+  </data>
+  <data name="Trip_ListNotesMany" xml:space="preserve">
+    <value>{0} notes</value>
   </data>
 </root>

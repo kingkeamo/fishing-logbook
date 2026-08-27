@@ -251,12 +251,22 @@ public partial class TripList : ComponentBase, IDisposable
 
     private string PhotographLabel(TripListItemModel trip)
     {
-        return string.Format(Loc["Trip_ListPhotographCount"], trip.PhotographCount);
+        return trip.PhotographCount switch
+        {
+            0 => Loc["Trip_ListPhotographsNone"],
+            1 => Loc["Trip_ListPhotographsOne"],
+            _ => string.Format(Loc["Trip_ListPhotographsMany"], trip.PhotographCount)
+        };
     }
 
     private string NoteLabel(TripListItemModel trip)
     {
-        return string.Format(Loc["Trip_ListNoteCount"], trip.NoteCount);
+        return trip.NoteCount switch
+        {
+            0 => Loc["Trip_ListNotesNone"],
+            1 => Loc["Trip_ListNotesOne"],
+            _ => string.Format(Loc["Trip_ListNotesMany"], trip.NoteCount)
+        };
     }
 
     private async Task RetryAsync()
