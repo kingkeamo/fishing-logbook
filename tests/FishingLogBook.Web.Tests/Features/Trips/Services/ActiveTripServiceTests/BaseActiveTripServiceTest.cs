@@ -3,6 +3,8 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -19,6 +21,8 @@ public class BaseActiveTripServiceTest
 
     protected readonly ITripStore MockTripStore = Substitute.For<ITripStore>();
     protected readonly ILocationService MockLocationService = Substitute.For<ILocationService>();
+    protected readonly IAnglerPreferencesProvider MockAnglerPreferences =
+        Substitute.For<IAnglerPreferencesProvider>();
     protected readonly ILoggingService MockLogging = Substitute.For<ILoggingService>();
     protected readonly ActiveTripService Sut;
 
@@ -32,7 +36,13 @@ public class BaseActiveTripServiceTest
             .Returns((CatchLocationModel?)null);
         MockLogging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        Sut = new ActiveTripService(MockTripStore, MockLocationService, MockLogging);
+        MockAnglerPreferences.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(AnglerPreferencesModel.Empty);
+        Sut = new ActiveTripService(
+            MockTripStore,
+            MockLocationService,
+            MockAnglerPreferences,
+            MockLogging);
     }
 
     protected static TripModel ActiveTrip(Guid? tripId = null, TripLocationModel? location = null)

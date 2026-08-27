@@ -116,7 +116,7 @@ public class WhenTestingCatchCount : BaseActiveTripTest
         cut.Find("#active-trip-catch-count").TextContent.Should().Contain("No catches yet");
         cut.Find("#active-trip-record-catch").Should().NotBeNull();
         await logging.Received(1).LogErrorAsync(
-            "counting catches for a trip",
+            "reading the catches of a trip",
             Arg.Any<Exception>(),
             Arg.Any<CancellationToken>());
     }

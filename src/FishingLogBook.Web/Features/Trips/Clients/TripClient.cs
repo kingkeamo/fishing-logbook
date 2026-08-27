@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FishingLogBook.Shared.Dtos;
@@ -21,6 +22,26 @@ public sealed class TripClient : ITripClient
         using var response = await _apiClient.PostAsJsonAsync("api/trips", trip, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TripDto>(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<TripSummaryDto>> GetMyAsync(CancellationToken cancellationToken)
+    {
+        var trips = await _apiClient.GetFromJsonAsync<IReadOnlyList<TripSummaryDto>>(
+            "api/trips",
+            cancellationToken);
+        return trips ?? throw new HttpRequestException("Trips were missing.");
+    }
+
+    public async Task<TripDetailDto?> GetDetailAsync(Guid tripId, CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.GetAsync($"api/trips/{tripId:D}", cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<TripDetailDto>(cancellationToken);
     }
 
     public async Task<PhotographUploadDto> CreatePhotographUploadAsync(

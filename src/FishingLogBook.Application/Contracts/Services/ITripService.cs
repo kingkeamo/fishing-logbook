@@ -8,9 +8,7 @@ public interface ITripService
 {
     Task<Result<TripDto>> UpsertAsync(UpsertTripArgs args, CancellationToken cancellationToken);
 
-    Task<Result<TripViewDto>> GetViewAsync(GetTripArgs args, CancellationToken cancellationToken);
-
-    Task<Result<IReadOnlyList<TripViewDto>>> GetMyAsync(
+    Task<Result<IReadOnlyList<TripSummaryDto>>> GetSummariesAsync(
         GetMyTripsArgs args,
         CancellationToken cancellationToken);
 }

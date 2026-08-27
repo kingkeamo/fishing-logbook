@@ -43,7 +43,7 @@ public class WhenTestingUpsert : BaseTripRepositoryTest
         // Assert
         second.IsSuccess.Should().BeTrue();
         second.Value.Status.Should().Be(TripStatusEnum.Active);
-        var stored = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var stored = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         stored.Value.Should().HaveCount(2);
         stored.Value.Count(trip => trip.Status == TripStatusEnum.Active).Should().Be(1);
     }
@@ -228,7 +228,7 @@ public class WhenTestingUpsert : BaseTripRepositoryTest
         result.Value.Id.Should().Be(trip.Id);
         result.Value.Status.Should().Be(TripStatusEnum.Completed);
         result.Value.EndedOn.Should().Be(StartedOn.AddHours(6));
-        var all = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var all = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         all.Value.Should().ContainSingle();
     }
 
@@ -250,7 +250,7 @@ public class WhenTestingUpsert : BaseTripRepositoryTest
         second.Value.StartedOn.Should().Be(first.Value.StartedOn);
         second.Value.Location!.Latitude.Should().Be(first.Value.Location!.Latitude);
         second.Value.CreatedOn.Should().Be(first.Value.CreatedOn);
-        var all = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var all = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         all.Value.Should().ContainSingle();
     }
 

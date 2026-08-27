@@ -12,6 +12,7 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
 
     private readonly IProfileClient _profileClient;
     private readonly IFishingPreferenceClient _fishingPreferenceClient;
+    private readonly IFishingLocationClient _fishingLocationClient;
     private readonly IAnglerPreferencesStore _cache;
     private readonly ILocalCatchOwnerService _localCatchOwner;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
@@ -21,11 +22,13 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
     public AnglerPreferencesProvider(
         IProfileClient profileClient,
         IFishingPreferenceClient fishingPreferenceClient,
+        IFishingLocationClient fishingLocationClient,
         IAnglerPreferencesStore cache,
         ILocalCatchOwnerService localCatchOwner)
     {
         _profileClient = profileClient;
         _fishingPreferenceClient = fishingPreferenceClient;
+        _fishingLocationClient = fishingLocationClient;
         _cache = cache;
         _localCatchOwner = localCatchOwner;
     }
@@ -167,15 +170,20 @@ public sealed class AnglerPreferencesProvider : IAnglerPreferencesProvider
         var profileTask = _profileClient.GetOwnAsync(timeout.Token);
         var catalogueTask = _fishingPreferenceClient.GetCatalogueAsync(timeout.Token);
         var preferencesTask = _fishingPreferenceClient.GetPreferencesAsync(timeout.Token);
+        var locationsTask = _fishingLocationClient.GetAsync(timeout.Token);
         try
         {
-            await Task.WhenAll(profileTask, catalogueTask, preferencesTask);
+            await Task.WhenAll(profileTask, catalogueTask, preferencesTask, locationsTask);
             var profile = await profileTask;
+            var locations = await locationsTask;
             return new AnglerPreferencesModel(
                 await catalogueTask,
                 await preferencesTask,
                 profile.PreferredWeightUnit,
-                profile.PreferredLengthUnit);
+                profile.PreferredLengthUnit)
+            {
+                Locations = locations.Locations
+            };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

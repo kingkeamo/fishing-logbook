@@ -1,0 +1,58 @@
+.location-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.location-pill-primary {
+    background-color: var(--mud-palette-primary);
+    color: var(--mud-palette-primary-text);
+}
+
+.location-pill-secondary {
+    background-color: var(--mud-palette-secondary);
+    color: var(--mud-palette-secondary-text);
+}
+
+::deep .location-pill .mud-chip {
+    margin: 0;
+    border-radius: 9999px 0 0 9999px;
+    padding-right: 0;
+    max-width: 100%;
+}
+
+::deep .location-pill .mud-chip-content {
+    overflow-wrap: anywhere;
+}
+
+::deep .location-pill .location-pill-remove {
+    position: relative;
+    z-index: 1;
+    width: 1.125rem;
+    height: 1.125rem;
+    padding: 0.0625rem;
+    margin-left: 0.25rem;
+    margin-right: 0.5rem;
+    border-radius: 0 9999px 9999px 0;
+}
+
+::deep .location-pill .location-pill-remove::before {
+    content: "";
+    position: absolute;
+    inset: -0.4375rem;
+}
+
+.fishing-locations-add {
+    flex-wrap: wrap;
+}
+
+.fishing-locations-add-input {
+    flex: 1 1 12rem;
+    min-width: 12rem;
+}
+
+::deep .fishing-locations-add-button {
+    min-height: 2.5rem;
+}

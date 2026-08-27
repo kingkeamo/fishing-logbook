@@ -90,7 +90,7 @@ public class WhenTestingRender : BaseActiveTripTest
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#active-trip-card").Should().NotBeNull());
-        cut.Find("#active-trip-eyebrow").TextContent.Should().Contain("Active trip");
+        cut.Find("#active-trip-status").TextContent.Should().Contain("Active trip");
         cut.Find("#active-trip-started").TextContent.Should().NotBeEmpty();
         cut.Find("#active-trip-finish").TextContent.Should().Contain("Finish trip");
         await store.Received(1).GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>());
@@ -147,9 +147,9 @@ public class WhenTestingRender : BaseActiveTripTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#completed-trip-heading").TextContent.Should().Contain("Trip finished"));
-        cut.Find("#completed-trip-duration").TextContent.Should().Contain("6h 43m");
-        cut.Find("#completed-trip-logbook").TextContent.Should().Contain("Back to logbook");
+            cut.Find("#active-trip-status").TextContent.Should().Contain("Finished"));
+        cut.Find("#active-trip-elapsed").TextContent.Should().Contain("6h 43m");
+        cut.Find("#active-trip-logbook").TextContent.Should().Contain("Back to logbook");
         cut.FindAll("#active-trip-finish").Should().BeEmpty();
     }
 
@@ -168,6 +168,6 @@ public class WhenTestingRender : BaseActiveTripTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#active-trip-finish").TextContent.Should().Contain("Terminer la sortie"));
-        cut.Find("#active-trip-eyebrow").TextContent.Should().Contain("Sortie en cours");
+        cut.Find("#active-trip-status").TextContent.Should().Contain("Sortie en cours");
     }
 }

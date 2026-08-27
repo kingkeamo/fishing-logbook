@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Diagnostics;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Offline;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Catch.Models;
@@ -188,6 +189,74 @@ public sealed class IndexedDbCatchStore : ICatchStore
             {
                 var module = await GetModuleAsync(token);
                 await module.InvokeVoidAsync("updateCatchMetadata", token, json);
+            },
+            cancellationToken,
+            _logging);
+    }
+
+    public async Task UpdateTripAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid? tripId,
+        CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch requires an owner.");
+        }
+
+        var json = CatchJson.SerializeTripAssociation(
+            catchId,
+            ownerUserId,
+            tripId,
+            SyncStatus.SavedLocally);
+        await OfflineOperation.ExecuteAsync(
+            "write",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                await module.InvokeVoidAsync("updateCatchTrip", token, json);
+            },
+            cancellationToken,
+            _logging);
+    }
+
+    public async Task<byte[]?> GetPhotographBytesAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid photographId,
+        CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            return null;
+        }
+
+        return await OfflineOperation.ExecuteAsync(
+            "photo-read",
+            StoreName,
+            DiagnosticEventNames.OfflineDbReadStarted,
+            DiagnosticEventNames.OfflineDbReadCompleted,
+            DiagnosticEventNames.OfflineDbReadFailed,
+            DiagnosticEventNames.OfflineDbReadTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                return await module.InvokeAsync<byte[]?>(
+                    "getCatchPhotographBytes",
+                    token,
+                    ownerUserId.ToString("D"),
+                    catchId.ToString("D"),
+                    photographId.ToString("D"));
             },
             cancellationToken,
             _logging);

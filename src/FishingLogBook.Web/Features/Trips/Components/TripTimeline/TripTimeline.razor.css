@@ -1,0 +1,76 @@
+.trip-timeline {
+    padding-block: 0;
+    width: 100%;
+}
+
+::deep .trip-timeline .mud-timeline-item {
+    padding-bottom: 0.75rem;
+}
+
+::deep .trip-timeline .mud-timeline-item-opposite {
+    display: none;
+}
+
+::deep .trip-timeline .mud-timeline-item-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+::deep .trip-timeline .mud-timeline-item-divider {
+    opacity: 0.5;
+}
+
+.trip-timeline-entry {
+    min-width: 0;
+}
+
+.trip-timeline-time {
+    line-height: 1.2;
+}
+
+.trip-timeline-photograph {
+    display: block;
+    width: 100%;
+    max-height: 14rem;
+    object-fit: cover;
+    border-radius: var(--mud-default-borderradius);
+}
+
+.trip-timeline-catch {
+    padding: 0.5rem;
+    border-radius: var(--mud-default-borderradius);
+    background-color: var(--mud-palette-background-grey);
+}
+
+.trip-timeline-catch-thumbnail {
+    width: 5.5rem;
+    height: 5.5rem;
+    object-fit: cover;
+    border-radius: var(--mud-default-borderradius);
+    flex: 0 0 auto;
+}
+
+.trip-timeline-catch-detail {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.trip-timeline-catch-species {
+    overflow-wrap: anywhere;
+}
+
+.trip-timeline-note {
+    min-width: 0;
+}
+
+.trip-timeline-note-text {
+    overflow-wrap: anywhere;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+::deep .trip-timeline-note-remove {
+    flex: 0 0 auto;
+    opacity: 0.7;
+}

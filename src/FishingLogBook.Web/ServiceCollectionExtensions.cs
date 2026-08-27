@@ -71,6 +71,7 @@ public static class ServiceCollectionExtensions
         }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
         services.AddScoped<IProfileClient, ProfileClient>();
         services.AddScoped<IFishingPreferenceClient, FishingPreferenceClient>();
+        services.AddScoped<IFishingLocationClient, FishingLocationClient>();
         services.AddScoped<IAnglerPreferencesStore, IndexedDbAnglerPreferencesStore>();
         services.AddScoped<IAnglerPreferencesProvider, AnglerPreferencesProvider>();
         services.AddScoped<IProfileSummaryProvider, ProfileSummaryProvider>();
@@ -89,6 +90,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripStore, IndexedDbTripStore>();
         services.AddScoped<IActiveTripService, ActiveTripService>();
         services.AddScoped<ITripDisplayService, TripDisplayService>();
+        services.AddScoped<ITripTimelineService, TripTimelineService>();
         services.AddScoped<ITripClient, TripClient>();
         services.AddScoped<ITripSynchroniser, TripSynchroniser>();
         services.AddScoped<ITripPhotographStore, IndexedDbTripPhotographStore>();

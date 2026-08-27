@@ -454,6 +454,50 @@ public class WhenTestingTripAssociation : BaseRecordCatchTest
         cut.FindAll("#catch-trip-standalone-row").Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task ItShouldNotOfferViewingATripAfterSavingAStandaloneCatch()
+    {
+        // Arrange
+        var store = Substitute.For<ICatchStore>();
+        await using var context = CreateContext(store);
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+
+        // Act
+        await cut.Find("#save-catch-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-view-catches").Should().NotBeNull());
+        cut.FindAll("#catch-view-trip").Should().BeEmpty();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.TripId == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldOfferViewingTheTripAfterSavingACatchOntoIt()
+    {
+        // Arrange
+        var store = Substitute.For<ICatchStore>();
+        var trip = new TripModel(TripId, OwnerUserId, TripConstants.Active, StartedOn);
+        await using var context = CreateContext(
+            store,
+            tripStore: TripStoreWith(trip),
+            activeTrip: ActiveTrip(trip));
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+
+        // Act
+        await cut.Find("#save-catch-button").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#catch-view-trip").GetAttribute("href").Should().Be($"/trips/{TripId:D}"));
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.TripId == TripId),
+            Arg.Any<CancellationToken>());
+    }
+
     private static void NavigateToTrip(BunitContext context, Guid tripId)
     {
         var navigation = context.Services.GetRequiredService<NavigationManager>();

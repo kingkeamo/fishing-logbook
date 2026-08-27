@@ -1,9 +1,12 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.TripNotes
 
 <MudStack Spacing="2" id="trip-notes">
-    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_NotesLabel"]</MudText>
+    @if (ShowList)
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_NotesLabel"]</MudText>
+    }
 
-    @if (_notes.Count > 0)
+    @if (ShowList && _notes.Count > 0)
     {
         <MudStack Spacing="2" id="trip-notes-list">
             @foreach (var note in _notes)
@@ -20,7 +23,7 @@
                         </MudStack>
                         <MudIconButton Icon="@Icons.Material.Filled.Close"
                                        Size="Size.Small"
-                                       Aria-label="@Loc["Trip_NoteRemove"]"
+                                       aria-label="@Loc["Trip_NoteRemove"]"
                                        OnClick="@(() => RemoveNoteAsync(note.Id))"
                                        id="@($"trip-note-remove-{note.Id:D}")" />
                     </MudStack>
@@ -57,6 +60,18 @@
                     @Loc["Modal_Cancel"]
                 </MudButton>
             </MudStack>
+        </MudStack>
+    }
+    else if (UseFloatingTrigger)
+    {
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="trip-note-floating">
+            <MudFab Color="Color.Primary"
+                    Size="Size.Medium"
+                    StartIcon="@Icons.Material.Filled.EditNote"
+                    aria-label="@Loc["Trip_NoteAdd"]"
+                    Title="@Loc["Trip_NoteAdd"]"
+                    OnClick="StartWriting"
+                    id="trip-note-start" />
         </MudStack>
     }
     else

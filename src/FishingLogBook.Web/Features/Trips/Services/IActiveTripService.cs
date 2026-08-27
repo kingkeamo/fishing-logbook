@@ -12,6 +12,12 @@ public interface IActiveTripService
 
     Task<TripModel> FinishAsync(TripModel trip, CancellationToken cancellationToken);
 
+    Task<TripModel?> UpdateDetailsAsync(
+        TripModel trip,
+        string? title,
+        string? placeName,
+        CancellationToken cancellationToken);
+
     Task<TripModel?> TryAttachLocationAsync(TripModel trip, CancellationToken cancellationToken);
 
     void Invalidate();

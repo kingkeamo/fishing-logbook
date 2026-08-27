@@ -69,6 +69,7 @@ artifacts/javascript-tests/
 
 # Local scratch
 .tmp/
+test-images/
 
 # Claude Code local settings
 .claude/settings.local.json

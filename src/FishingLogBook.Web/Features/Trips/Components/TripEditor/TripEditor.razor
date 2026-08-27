@@ -1,0 +1,116 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.TripEditor
+@using FishingLogBook.Shared.Constants
+@using FishingLogBook.Web.Features.Trips.Components.TripCatches
+@using FishingLogBook.Web.Features.Trips.Components.TripLocationPicker
+@using FishingLogBook.Web.Features.Trips.Components.TripNotes
+@using FishingLogBook.Web.Features.Trips.Components.TripPhotographs
+
+<MudPaper Class="pa-3" Elevation="2" id="trip-editor">
+    <MudStack Spacing="3">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5" id="trip-editor-heading">@Loc["Trip_EditTitle"]</MudText>
+            @if (SummaryLabel is not null)
+            {
+                <MudText Typo="Typo.body2"
+                         Class="mud-text-secondary"
+                         id="trip-editor-summary">@SummaryLabel</MudText>
+            }
+        </MudStack>
+
+        <MudTextField @bind-Value="_title"
+                      Label="@Loc["Trip_EditTripTitle"]"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      MaxLength="TripConstants.MaxTitleLength"
+                      id="trip-editor-title" />
+
+        <TripLocationPicker PlaceName="@_placeName" PlaceNameChanged="OnPlaceNameChanged" />
+
+        <MudDivider />
+
+        <TripPhotographs Trip="Trip" Changed="OnContentChanged" />
+
+        <MudDivider />
+
+        <TripNotes @ref="_notes" Trip="Trip" Changed="OnContentChanged" />
+
+        <MudDivider />
+
+        <MudStack Spacing="2" id="trip-editor-catches">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_CatchesLabel"]</MudText>
+            @if (Catches.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary" id="trip-editor-catches-empty">
+                    @Loc["Trip_CatchesNone"]
+                </MudText>
+            }
+            else
+            {
+                @foreach (var associated in Catches)
+                {
+                    <MudStack Row="true"
+                              Spacing="2"
+                              AlignItems="AlignItems.Center"
+                              Class="trip-editor-catch"
+                              id="@($"trip-editor-catch-{associated.Id:D}")">
+                        <MudStack Spacing="0" Class="trip-editor-catch-detail">
+                            <MudText Typo="Typo.subtitle2"
+                                     Class="trip-editor-catch-species">@SpeciesLabel(associated)</MudText>
+                            @if (MeasurementsLabel(associated) is { } measurements)
+                            {
+                                <MudText Typo="Typo.body2"
+                                         Class="mud-text-secondary"
+                                         id="@($"trip-editor-catch-measurements-{associated.Id:D}")">@measurements</MudText>
+                            }
+                        </MudStack>
+                        <MudIconButton Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       Size="Size.Small"
+                                       Icon="@Icons.Material.Filled.LinkOff"
+                                       Title="@RemoveCatchLabel(associated)"
+                                       aria-label="@RemoveCatchLabel(associated)"
+                                       OnClick="@(() => RemoveCatchAsync(associated))"
+                                       Class="trip-editor-catch-remove"
+                                       id="@($"trip-editor-catch-remove-{associated.Id:D}")" />
+                    </MudStack>
+                }
+            }
+
+            <TripCatches Trip="Trip"
+                         RecordCatchBaseHref="@RecordCatchBaseHref"
+                         OnCatchesAttached="OnContentChanged" />
+        </MudStack>
+
+        @if (_saveFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="trip-editor-save-failed">
+                @Loc["Trip_EditSaveFailed"]
+            </MudAlert>
+        }
+
+        <MudText Typo="Typo.caption" Class="mud-text-secondary" id="trip-editor-save-scope">
+            @Loc["Trip_EditSaveScope"]
+        </MudText>
+
+        <MudStack Row="true" Spacing="2" Class="flex-wrap trip-editor-actions">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Disabled="_isSaving"
+                       OnClick="CancelAsync"
+                       Class="trip-editor-action"
+                       id="trip-editor-cancel">
+                @Loc["Modal_Cancel"]
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Check"
+                       Disabled="_isSaving"
+                       OnClick="SaveAsync"
+                       Class="trip-editor-action"
+                       id="trip-editor-save">
+                @Loc["Trip_EditSave"]
+            </MudButton>
+        </MudStack>
+    </MudStack>
+</MudPaper>

@@ -1,7 +1,13 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -22,6 +28,12 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private bool _isFinishing;
     private bool _locationAttempted;
     private int? _catchCount;
+    private IReadOnlyList<TripTimelineItemModel> _timeline = [];
+    private int? _photographCount;
+    private int? _noteCount;
+    private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
+    private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
+    private bool _isReadOnlyHistory;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -42,6 +54,15 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private ICatchStore CatchStore { get; set; } = default!;
 
     [Inject]
+    private ITripClient TripClient { get; set; } = default!;
+
+    [Inject]
+    private ITripTimelineService TripTimeline { get; set; } = default!;
+
+    [Inject]
+    private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
+
+    [Inject]
     private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
@@ -52,6 +73,14 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         get
         {
             return _trip?.Status == TripConstants.Completed;
+        }
+    }
+
+    private bool CanEdit
+    {
+        get
+        {
+            return !IsCompleted && !_isReadOnlyHistory;
         }
     }
 
@@ -95,12 +124,13 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         await TryAttachLocationAsync();
     }
 
-    private async Task<int?> CountCatchesAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<CatchModel>?> LoadCatchesAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var catches = await CatchStore.GetMetadataAsync(ownerUserId, cancellationToken);
-            return catches.Count(catchRecord => catchRecord.TripId == TripId);
+            return await CatchStore.GetMetadataAsync(ownerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -108,7 +138,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("counting catches for a trip", exception, CancellationToken.None);
+            await Logging.LogErrorAsync("reading the catches of a trip", exception, CancellationToken.None);
             return null;
         }
     }
@@ -124,9 +154,18 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             _trip = await TripStore.GetAsync(ownerUserId, TripId, cancellationToken);
             if (_trip is not null)
             {
+                _isReadOnlyHistory = false;
                 _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
-                _catchCount = await CountCatchesAsync(ownerUserId, cancellationToken);
+                var catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
+                _catchCount = catches?.Count(catchRecord => catchRecord.TripId == TripId);
+                _photographCount = _trip.Photographs.Count;
+                _noteCount = _trip.Notes.Count;
+                _timeline = TripTimeline.BuildLocal(_trip, catches ?? []);
+                await ReadPreferencesAsync(cancellationToken);
+                return;
             }
+
+            await LoadHistoricalAsync(ownerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -141,6 +180,57 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private async Task LoadHistoricalAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
+        if (detail is null)
+        {
+            return;
+        }
+
+        _isReadOnlyHistory = true;
+        _trip = ToTripModel(detail.Trip, ownerUserId);
+        _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
+        _catchCount = detail.Catches.Count;
+        _photographCount = detail.Photographs.Count;
+        _noteCount = detail.Notes.Count;
+        _timeline = TripTimeline.BuildRemote(detail);
+        await ReadPreferencesAsync(cancellationToken);
+    }
+
+    private static TripModel ToTripModel(TripViewDto view, Guid ownerUserId)
+    {
+        return new TripModel(
+            view.Id,
+            ownerUserId,
+            view.Status,
+            view.StartedOn,
+            view.EndedOn,
+            view.Title,
+            view.PlaceName,
+            SyncStatus: SyncStatus.Synchronised);
+    }
+
+    private async Task ReadPreferencesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var preferences = await AnglerPreferences.GetAsync(cancellationToken);
+            _weightUnit = preferences.WeightUnit;
+            _lengthUnit = preferences.LengthUnit;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "reading angler preferences for a trip",
+                exception,
+                CancellationToken.None);
         }
     }
 

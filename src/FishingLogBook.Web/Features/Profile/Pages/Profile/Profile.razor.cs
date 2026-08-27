@@ -39,12 +39,16 @@ public partial class Profile : ComponentBase, IDisposable
     private IReadOnlyList<FishingMethodDto> _catalogueMethods = [];
     private IReadOnlyList<SpeciesDto> _catalogueSpecies = [];
     private List<SelectedMethodPreference> _selectedMethods = [];
+    private List<FishingLocationEditModel> _fishingLocations = [];
 
     [Inject]
     private IProfileClient ProfileClient { get; set; } = default!;
 
     [Inject]
     private IFishingPreferenceClient FishingPreferenceClient { get; set; } = default!;
+
+    [Inject]
+    private IFishingLocationClient FishingLocationClient { get; set; } = default!;
 
     [Inject]
     private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
@@ -72,15 +76,18 @@ public partial class Profile : ComponentBase, IDisposable
             var profileTask = ProfileClient.GetOwnAsync(_cancellationTokenSource.Token);
             var catalogueTask = FishingPreferenceClient.GetCatalogueAsync(_cancellationTokenSource.Token);
             var preferencesTask = FishingPreferenceClient.GetPreferencesAsync(_cancellationTokenSource.Token);
-            await Task.WhenAll(profileTask, catalogueTask, preferencesTask);
+            var locationsTask = FishingLocationClient.GetAsync(_cancellationTokenSource.Token);
+            await Task.WhenAll(profileTask, catalogueTask, preferencesTask, locationsTask);
             var profile = await profileTask;
             var catalogue = await catalogueTask;
             var preferences = await preferencesTask;
+            var locations = await locationsTask;
 
             Apply(profile);
             _catalogueMethods = catalogue.Methods;
             _catalogueSpecies = catalogue.AllSpecies;
             ApplyPreferences(preferences);
+            ApplyLocations(locations);
         }
         catch (Exception)
         {
@@ -111,7 +118,11 @@ public partial class Profile : ComponentBase, IDisposable
                 BuildPreferencesUpdate(),
                 _cancellationTokenSource.Token);
             ApplyPreferences(preferences);
-            await RememberPreferencesAsync(saved, preferences);
+            var locations = await FishingLocationClient.UpdateAsync(
+                BuildLocationsUpdate(),
+                _cancellationTokenSource.Token);
+            ApplyLocations(locations);
+            await RememberPreferencesAsync(saved, preferences, locations);
         }
         catch (Exception)
         {
@@ -123,7 +134,10 @@ public partial class Profile : ComponentBase, IDisposable
         }
     }
 
-    private async Task RememberPreferencesAsync(ProfileDto saved, FishingPreferencesDto preferences)
+    private async Task RememberPreferencesAsync(
+        ProfileDto saved,
+        FishingPreferencesDto preferences,
+        FishingLocationPreferencesDto locations)
     {
         try
         {
@@ -133,7 +147,10 @@ public partial class Profile : ComponentBase, IDisposable
                     new FishingCatalogueDto(_catalogueMethods, _catalogueSpecies),
                     preferences,
                     saved.PreferredWeightUnit,
-                    saved.PreferredLengthUnit),
+                    saved.PreferredLengthUnit)
+                {
+                    Locations = locations.Locations
+                },
                 _cancellationTokenSource.Token);
         }
         catch (Exception)
@@ -213,6 +230,28 @@ public partial class Profile : ComponentBase, IDisposable
                 species.Code,
                 species.Name,
                 species.IsDefault))]))];
+    }
+
+    private void ApplyLocations(FishingLocationPreferencesDto locations)
+    {
+        _fishingLocations =
+        [
+            .. locations.Locations.Select(location => new FishingLocationEditModel(
+                location.Id,
+                location.Name,
+                location.IsDefault))
+        ];
+    }
+
+    private UpdateFishingLocationPreferencesDto BuildLocationsUpdate()
+    {
+        return new UpdateFishingLocationPreferencesDto(
+        [
+            .. _fishingLocations.Select(location => new UpdateFishingLocationPreferenceDto(
+                location.Id,
+                location.Name,
+                location.IsDefault))
+        ]);
     }
 
     private UpdateProfileDto BuildUpdate()

@@ -67,39 +67,18 @@ public sealed class TripService : ITripService
         return Result.Ok(_mapper.Map<TripDto>(saved.Value));
     }
 
-    public async Task<Result<TripViewDto>> GetViewAsync(GetTripArgs args, CancellationToken cancellationToken)
-    {
-        if (!_currentUser.IsResolved)
-        {
-            return Result.Fail<TripViewDto>(new CurrentUserUnresolvedError());
-        }
-
-        var loaded = await _tripRepository.GetByIdAsync(args.TripId, cancellationToken);
-        if (loaded.IsFailed)
-        {
-            return Result.Fail<TripViewDto>(loaded.Errors);
-        }
-
-        if (loaded.Value is null || loaded.Value.OwnerUserId != _currentUser.UserId)
-        {
-            return Result.Fail<TripViewDto>(new TripNotFoundError());
-        }
-
-        return Result.Ok(_mapper.Map<TripViewDto>(loaded.Value));
-    }
-
-    public async Task<Result<IReadOnlyList<TripViewDto>>> GetMyAsync(
+    public async Task<Result<IReadOnlyList<TripSummaryDto>>> GetSummariesAsync(
         GetMyTripsArgs args,
         CancellationToken cancellationToken)
     {
-        var loaded = await _tripRepository.GetByOwnerUserIdAsync(args.UserId, cancellationToken);
+        var loaded = await _tripRepository.GetSummariesByOwnerUserIdAsync(args.UserId, cancellationToken);
         if (loaded.IsFailed)
         {
-            return Result.Fail<IReadOnlyList<TripViewDto>>(loaded.Errors);
+            return Result.Fail<IReadOnlyList<TripSummaryDto>>(loaded.Errors);
         }
 
-        IReadOnlyList<TripViewDto> views = [.. loaded.Value.Select(_mapper.Map<TripViewDto>)];
-        return Result.Ok(views);
+        IReadOnlyList<TripSummaryDto> summaries = [.. loaded.Value.Select(_mapper.Map<TripSummaryDto>)];
+        return Result.Ok(summaries);
     }
 
     private static TripLocation? ToLocation(TripLocationDto? location)

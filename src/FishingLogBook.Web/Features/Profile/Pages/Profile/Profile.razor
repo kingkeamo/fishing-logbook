@@ -4,6 +4,7 @@
 @using FishingLogBook.Shared.Dtos
 @using FishingLogBook.Shared.Enums
 @using FishingLogBook.Web.Features.OfflineAccess.Components
+@using FishingLogBook.Web.Features.Profile.Components.FishingLocationsEditor
 @attribute [Authorize]
 
 <PageTitle>@Loc["Profile_PageTitle"]</PageTitle>
@@ -167,6 +168,8 @@
                             </MudStack>
                         </MudStack>
                     }
+
+                    <FishingLocationsEditor Locations="_fishingLocations" />
 
                     <MudSwitch @bind-Value="_showPreferredFishingMethods"
                                Color="Color.Primary"

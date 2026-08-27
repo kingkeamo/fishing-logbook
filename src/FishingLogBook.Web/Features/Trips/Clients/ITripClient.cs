@@ -6,6 +6,10 @@ public interface ITripClient
 {
     Task<TripDto?> UpsertAsync(TripDto trip, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<TripSummaryDto>> GetMyAsync(CancellationToken cancellationToken);
+
+    Task<TripDetailDto?> GetDetailAsync(Guid tripId, CancellationToken cancellationToken);
+
     Task<PhotographUploadDto> CreatePhotographUploadAsync(
         Guid tripId,
         PhotographUploadRequestDto request,

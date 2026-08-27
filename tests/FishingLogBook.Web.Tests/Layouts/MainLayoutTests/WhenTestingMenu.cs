@@ -25,6 +25,8 @@ public class WhenTestingMenu : BaseMainLayoutTest
         cut.Find("#install-nav-link").GetAttribute("href").Should().Be("/install");
         cut.Find("#record-catch-nav-link").GetAttribute("href").Should().Be("/catches/record");
         cut.Find("#catch-logbook-nav-link").GetAttribute("href").Should().Be("/catches");
+        cut.Find("#trips-nav-link").GetAttribute("href").Should().Be("/trips");
+        cut.Find("#trips-nav-link").TextContent.Should().Contain("Trips");
         cut.FindAll("#test-catch-nav-button").Should().BeEmpty();
         cut.Find("#diagnostics-nav-button").GetAttribute("href").Should().Be("/diagnostics");
         cut.Find("#home-nav-link").GetAttribute("href").Should().Be("/");
@@ -47,6 +49,7 @@ public class WhenTestingMenu : BaseMainLayoutTest
         cut.Find("#profile-nav-link").TextContent.Should().Contain("Profil");
         cut.Find("#record-catch-nav-link").TextContent.Should().Contain("Enregistrer une prise");
         cut.Find("#catch-logbook-nav-link").TextContent.Should().Contain("Prises");
+        cut.Find("#trips-nav-link").TextContent.Should().Contain("Sorties");
         cut.Find("#app-menu-button").GetAttribute("aria-label").Should().Be("Ouvrir le menu");
     }
 }

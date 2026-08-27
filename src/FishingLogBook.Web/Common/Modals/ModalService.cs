@@ -24,7 +24,7 @@ public sealed class ModalService : IModalService
         var dialog = await _dialogService.ShowAsync<ConfirmModal>(
             model.Title,
             parameters,
-            CreateOptions());
+            CreateCompactOptions());
         var result = await dialog.Result;
         return result is { Canceled: false, Data: true };
     }
@@ -41,7 +41,7 @@ public sealed class ModalService : IModalService
         var dialog = await _dialogService.ShowAsync<MessageModal>(
             model.Title,
             parameters,
-            CreateOptions());
+            CreateCompactOptions());
         await dialog.Result;
     }
 
@@ -74,6 +74,17 @@ public sealed class ModalService : IModalService
             CloseButton = true,
             CloseOnEscapeKey = true,
             FullWidth = true,
+            MaxWidth = MaxWidth.Small
+        };
+    }
+
+    private static DialogOptions CreateCompactOptions()
+    {
+        return new DialogOptions
+        {
+            CloseButton = true,
+            CloseOnEscapeKey = true,
+            FullWidth = false,
             MaxWidth = MaxWidth.Small
         };
     }

@@ -8,6 +8,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Catalogue;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
+using FishingLogBook.Domain.FishingLocations;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Domain.Users;
@@ -55,6 +56,9 @@ public class SystemApiFactory : WebApplicationFactory<Program>
 
     public IFishingPreferenceRepository FishingPreferenceRepository { get; } =
         Substitute.For<IFishingPreferenceRepository>();
+
+    public IFishingLocationPreferenceRepository FishingLocationPreferenceRepository { get; } =
+        Substitute.For<IFishingLocationPreferenceRepository>();
 
     public static readonly Guid FlyMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
 
@@ -117,8 +121,17 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Trip?>(null));
         TripRepository
-            .GetByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Trip>>([]));
+            .GetSummariesByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripSummary>>([]));
+        TripRepository
+            .GetCatchSummariesByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripCatchSummary>>([]));
+        TripNoteRepository
+            .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripNote>>([]));
+        TripPhotographRepository
+            .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripPhotograph>>([]));
         UserPlatformCapabilityRepository
             .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(false));
@@ -164,6 +177,19 @@ public class SystemApiFactory : WebApplicationFactory<Program>
                 Arg.Any<Guid>(),
                 Arg.Any<IReadOnlyList<UserFishingMethodPreference>>(),
                 Arg.Any<IReadOnlyList<UserFishingSpeciesPreference>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Ok());
+    }
+
+    public void ResetFishingLocations()
+    {
+        FishingLocationPreferenceRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<UserFishingLocationPreference>>([]));
+        FishingLocationPreferenceRepository
+            .ReplaceAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<IReadOnlyList<UserFishingLocationPreference>>(),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
     }
@@ -239,6 +265,8 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(FishingCatalogueRepository);
             services.RemoveAll<IFishingPreferenceRepository>();
             services.AddSingleton(FishingPreferenceRepository);
+            services.RemoveAll<IFishingLocationPreferenceRepository>();
+            services.AddSingleton(FishingLocationPreferenceRepository);
             services.RemoveAll<IUserPlatformCapabilityRepository>();
             services.AddSingleton(UserPlatformCapabilityRepository);
             ConfigureAdditionalTestServices(services);

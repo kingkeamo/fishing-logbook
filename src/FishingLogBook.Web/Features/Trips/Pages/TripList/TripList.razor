@@ -1,0 +1,122 @@
+@page "/trips"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using FishingLogBook.Web.Common.Icons
+
+<PageTitle>@Loc["Trip_ListTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="trip-list-page">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.h5" id="trip-list-heading">@Loc["Trip_ListTitle"]</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@Loc["Trip_ListSubtitle"]</MudText>
+        </MudStack>
+
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="trip-list-load-failed">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Justify="Justify.SpaceBetween">
+                    <span>@Loc["Trip_ListLoadFailed"]</span>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               Disabled="_isLoading"
+                               OnClick="RetryAsync"
+                               id="trip-list-retry">@Loc["Action_TryAgain"]</MudButton>
+                </MudStack>
+            </MudAlert>
+        }
+
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true"
+                                 Color="Color.Primary"
+                                 Class="align-self-center"
+                                 id="trip-list-loading" />
+        }
+        else if (_trips.Count == 0)
+        {
+            <MudPaper Class="pa-4" Elevation="1" id="trip-list-empty">
+                <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@FishingLogBookIcons.FishingTrip" Size="Size.Large" aria-hidden="true" />
+                    <MudText Typo="Typo.body1" Align="Align.Center">@Loc["Trip_ListEmpty"]</MudText>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Href="/catches"
+                               StartIcon="@Icons.Material.Filled.MenuBook"
+                               id="trip-list-empty-logbook">@Loc["Trip_BackToLogbook"]</MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <MudStack Spacing="2" id="trip-list">
+                @foreach (var trip in _trips)
+                {
+                    <MudPaper Class="pa-3 trip-list-card" Elevation="2" id="@($"trip-list-item-{trip.Id:D}")">
+                        <MudStack Spacing="2">
+                            <MudStack Row="true"
+                                      Spacing="2"
+                                      AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween">
+                                <MudStack Spacing="0" Class="trip-list-heading-group">
+                                    <MudText Typo="Typo.subtitle1" Class="trip-list-title">@Title(trip)</MudText>
+                                    @if (!string.IsNullOrWhiteSpace(trip.PlaceName))
+                                    {
+                                        <MudText Typo="Typo.body2"
+                                                 Class="mud-text-secondary trip-list-place"
+                                                 id="@($"trip-list-place-{trip.Id:D}")">@trip.PlaceName</MudText>
+                                    }
+                                </MudStack>
+                                @if (trip.IsActive)
+                                {
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Color="Color.Secondary"
+                                             Variant="Variant.Filled"
+                                             Icon="@Icons.Material.Filled.PlayArrow"
+                                             id="@($"trip-list-active-{trip.Id:D}")">
+                                        @Loc["Trip_ActiveLabel"]
+                                    </MudChip>
+                                }
+                            </MudStack>
+
+                            <MudStack Row="true" Spacing="4" Class="flex-wrap">
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Grade"
+                                             Size="Size.Small"
+                                             aria-hidden="true" />
+                                    <MudText Typo="Typo.body2"
+                                             id="@($"trip-list-catches-{trip.Id:D}")">@CatchLabel(trip)</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                    <MudIcon Icon="@Icons.Material.Filled.PhotoCamera"
+                                             Size="Size.Small"
+                                             aria-hidden="true" />
+                                    <MudText Typo="Typo.body2"
+                                             id="@($"trip-list-photographs-{trip.Id:D}")">@PhotographLabel(trip)</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Notes"
+                                             Size="Size.Small"
+                                             aria-hidden="true" />
+                                    <MudText Typo="Typo.body2"
+                                             id="@($"trip-list-notes-{trip.Id:D}")">@NoteLabel(trip)</MudText>
+                                </MudStack>
+                            </MudStack>
+
+                            <MudButton Variant="@(trip.IsActive ? Variant.Filled : Variant.Outlined)"
+                                       Color="Color.Primary"
+                                       FullWidth="true"
+                                       Href="@($"/trips/{trip.Id:D}")"
+                                       StartIcon="@FishingLogBookIcons.FishingTrip"
+                                       id="@($"trip-list-view-{trip.Id:D}")">
+                                @(trip.IsActive ? Loc["Trip_Update"] : Loc["Trip_ViewTrip"])
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+    </MudStack>
+</MudContainer>

@@ -22,6 +22,18 @@ public interface ICatchStore
 
     Task UpdateSyncStateAsync(CatchModel catchRecord, CancellationToken cancellationToken);
 
+    Task UpdateTripAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid? tripId,
+        CancellationToken cancellationToken);
+
+    Task<byte[]?> GetPhotographBytesAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid photographId,
+        CancellationToken cancellationToken);
+
     Task<int> CleanupSyncedCacheAsync(
         Guid ownerUserId,
         DateTimeOffset olderThan,

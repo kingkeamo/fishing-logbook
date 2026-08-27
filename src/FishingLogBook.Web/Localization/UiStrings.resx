@@ -991,4 +991,181 @@
   <data name="Catch_MeasurementApply" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="Profile_FishingLocations" xml:space="preserve">
+    <value>Fishing locations</value>
+  </data>
+  <data name="Profile_FishingLocations_None" xml:space="preserve">
+    <value>No saved fishing locations</value>
+  </data>
+  <data name="Profile_FishingLocation_Add" xml:space="preserve">
+    <value>Add fishing location</value>
+  </data>
+  <data name="Profile_FishingLocation_AddAction" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Profile_FishingLocation_Default" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Profile_FishingLocation_SetDefault" xml:space="preserve">
+    <value>Set as default</value>
+  </data>
+  <data name="Profile_FishingLocation_SetDefaultFor" xml:space="preserve">
+    <value>Set {0} as the default fishing location</value>
+  </data>
+  <data name="Profile_FishingLocation_RemoveFor" xml:space="preserve">
+    <value>Remove the fishing location {0}</value>
+  </data>
+  <data name="Profile_FishingLocation_NameRequired" xml:space="preserve">
+    <value>Enter a fishing location name.</value>
+  </data>
+  <data name="Profile_FishingLocation_NameTooLong" xml:space="preserve">
+    <value>A fishing location name must be {0} characters or fewer.</value>
+  </data>
+  <data name="Profile_FishingLocation_Duplicate" xml:space="preserve">
+    <value>That fishing location is already saved.</value>
+  </data>
+  <data name="Trip_FishingLocation" xml:space="preserve">
+    <value>Fishing location</value>
+  </data>
+  <data name="Trip_OtherLocation" xml:space="preserve">
+    <value>Other location</value>
+  </data>
+  <data name="Trip_ClearLocation" xml:space="preserve">
+    <value>Clear location</value>
+  </data>
+  <data name="Trip_LocationSaveFailed" xml:space="preserve">
+    <value>The fishing location could not be saved.</value>
+  </data>
+  <data name="Trip_TimelineLabel" xml:space="preserve">
+    <value>Trip timeline</value>
+  </data>
+  <data name="Trip_TimelineEmpty" xml:space="preserve">
+    <value>Nothing has happened on this trip yet.</value>
+  </data>
+  <data name="Trip_Timeline_Started" xml:space="preserve">
+    <value>Started</value>
+  </data>
+  <data name="Trip_Timeline_StartedDescription" xml:space="preserve">
+    <value>Fishing started</value>
+  </data>
+  <data name="Trip_Timeline_Catch" xml:space="preserve">
+    <value>Catch</value>
+  </data>
+  <data name="Trip_Timeline_CatchUnknownSpecies" xml:space="preserve">
+    <value>Catch recorded</value>
+  </data>
+  <data name="Trip_Timeline_Photograph" xml:space="preserve">
+    <value>Photograph</value>
+  </data>
+  <data name="Trip_Timeline_PhotographDescription" xml:space="preserve">
+    <value>Trip photograph added</value>
+  </data>
+  <data name="Trip_Timeline_Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="Trip_Timeline_Finished" xml:space="preserve">
+    <value>Finished</value>
+  </data>
+  <data name="Trip_Timeline_FinishedDescription" xml:space="preserve">
+    <value>Fishing finished</value>
+  </data>
+  <data name="Trip_Nav" xml:space="preserve">
+    <value>Trips</value>
+  </data>
+  <data name="Trip_ListTitle" xml:space="preserve">
+    <value>Your trips</value>
+  </data>
+  <data name="Trip_ListSubtitle" xml:space="preserve">
+    <value>Every trip you have started, newest first.</value>
+  </data>
+  <data name="Trip_ListEmpty" xml:space="preserve">
+    <value>You have not started a trip yet.</value>
+  </data>
+  <data name="Trip_ListLoadFailed" xml:space="preserve">
+    <value>Your trips could not be loaded.</value>
+  </data>
+  <data name="Trip_ViewTrip" xml:space="preserve">
+    <value>View trip</value>
+  </data>
+  <data name="Trip_AddExistingCatch" xml:space="preserve">
+    <value>Add catch</value>
+  </data>
+  <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
+    <value>Catches not on a trip</value>
+  </data>
+  <data name="Trip_AddExistingCatchConfirm" xml:space="preserve">
+    <value>Add to this trip</value>
+  </data>
+  <data name="Trip_AddExistingCatchEmpty" xml:space="preserve">
+    <value>Every catch is already on a trip.</value>
+  </data>
+  <data name="Trip_AddExistingCatchFailed" xml:space="preserve">
+    <value>Those catches could not be added to the trip.</value>
+  </data>
+  <data name="Trip_ListPhotographsNone" xml:space="preserve">
+    <value>No photos</value>
+  </data>
+  <data name="Trip_ListPhotographsOne" xml:space="preserve">
+    <value>1 photo</value>
+  </data>
+  <data name="Trip_ListPhotographsMany" xml:space="preserve">
+    <value>{0} photos</value>
+  </data>
+  <data name="Trip_ListNotesNone" xml:space="preserve">
+    <value>No notes</value>
+  </data>
+  <data name="Trip_ListNotesOne" xml:space="preserve">
+    <value>1 note</value>
+  </data>
+  <data name="Trip_ListNotesMany" xml:space="preserve">
+    <value>{0} notes</value>
+  </data>
+  <data name="Profile_FishingLocation_SetDefaultHint" xml:space="preserve">
+    <value>Tap a location to make it the default:</value>
+  </data>
+  <data name="Trip_NoteRemoveTitle" xml:space="preserve">
+    <value>Delete note?</value>
+  </data>
+  <data name="Trip_NoteRemoveMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this note?</value>
+  </data>
+  <data name="Trip_NoteRemoveConfirm" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Trip_AddPhotograph" xml:space="preserve">
+    <value>Add photo</value>
+  </data>
+  <data name="Trip_EditTitle" xml:space="preserve">
+    <value>Update trip</value>
+  </data>
+  <data name="Trip_EditTripTitle" xml:space="preserve">
+    <value>Trip title (optional)</value>
+  </data>
+  <data name="Trip_EditSave" xml:space="preserve">
+    <value>Save changes</value>
+  </data>
+  <data name="Trip_EditSaveFailed" xml:space="preserve">
+    <value>The trip could not be saved.</value>
+  </data>
+  <data name="Trip_EditSaveScope" xml:space="preserve">
+    <value>Save changes applies to the trip title and fishing location. Photos, notes and catches are saved as you add or remove them.</value>
+  </data>
+  <data name="Trip_CatchRemoveFromTrip" xml:space="preserve">
+    <value>Remove from trip</value>
+  </data>
+  <data name="Trip_CatchRemoveFromTripFor" xml:space="preserve">
+    <value>Remove {0} from this trip</value>
+  </data>
+  <data name="Trip_CatchRemoveTitle" xml:space="preserve">
+    <value>Remove catch from trip?</value>
+  </data>
+  <data name="Trip_CatchRemoveMessage" xml:space="preserve">
+    <value>{0} will remain in your logbook but will no longer be part of this trip.</value>
+  </data>
+  <data name="Trip_CatchRemoveConfirm" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Trip_StatusFinished" xml:space="preserve">
+    <value>Finished</value>
+  </data>
 </root>

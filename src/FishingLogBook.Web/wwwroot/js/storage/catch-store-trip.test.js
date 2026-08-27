@@ -3,7 +3,10 @@ import {
     CATCH_DATABASE_VERSION,
     getCatchMetadata,
     getCatchMetadataById,
-    putCatchWithPhotographs
+    getCatchWithPhotographs,
+    putCatchWithPhotographs,
+    updateCatchMetadata,
+    updateCatchTrip
 } from './catch-store.js';
 
 describe('Catch store trip association', () => {
@@ -87,5 +90,100 @@ describe('Catch store trip association', () => {
 
         expect(await getCatchMetadata(ownerUserId)).toEqual([]);
         expect(await getCatchMetadataById(ownerUserId, catchId)).toBeNull();
+    });
+    it('refuses to attach a catch to a trip without an owner', async () => {
+        await save(catchRecord({ tripId: null }));
+
+        await expect(updateCatchTrip(JSON.stringify({ id: catchId, tripId })))
+            .rejects.toBeTruthy();
+        const stored = await getCatchMetadataById(ownerUserId, catchId);
+        expect(JSON.parse(stored.json).tripId).toBeNull();
+    });
+
+    it('refuses to attach another anglers catch to a trip', async () => {
+        await save(catchRecord({ userId: otherUserId, tripId: null }));
+
+        await expect(updateCatchTrip(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            tripId,
+            metadataSyncStatus: 'savedLocally'
+        }))).rejects.toBeTruthy();
+        const stored = await getCatchMetadataById(otherUserId, catchId);
+        expect(JSON.parse(stored.json).tripId).toBeNull();
+    });
+
+    it('refuses to attach a catch that is not stored', async () => {
+        await expect(updateCatchTrip(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            tripId,
+            metadataSyncStatus: 'savedLocally'
+        }))).rejects.toBeTruthy();
+    });
+
+    it('attaches a stored catch to a trip and marks its metadata for synchronisation', async () => {
+        await save(catchRecord({ tripId: null, metadataSyncStatus: 'synchronised' }));
+
+        await updateCatchTrip(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            tripId,
+            metadataSyncStatus: 'savedLocally'
+        }));
+
+        const stored = JSON.parse((await getCatchMetadataById(ownerUserId, catchId)).json);
+        expect(stored.tripId).toBe(tripId);
+        expect(stored.metadataSyncStatus).toBe('savedLocally');
+        expect(stored.speciesName).toBe('Pike');
+        expect(stored.caughtOn).toBe('2026-08-17T08:00:00+00:00');
+    });
+
+    it('keeps the photograph bytes when a catch is attached to a trip', async () => {
+        await save(catchRecord({ tripId: null }));
+
+        await updateCatchTrip(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            tripId,
+            metadataSyncStatus: 'savedLocally'
+        }));
+
+        const stored = await getCatchWithPhotographs(ownerUserId, catchId);
+        expect(stored.photographs).toHaveLength(1);
+        expect(stored.photographs[0].bytesBase64.length).toBeGreaterThan(0);
+    });
+
+    it('takes a catch off a trip again', async () => {
+        await save(catchRecord());
+
+        await updateCatchTrip(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            tripId: null,
+            metadataSyncStatus: 'savedLocally'
+        }));
+
+        const stored = JSON.parse((await getCatchMetadataById(ownerUserId, catchId)).json);
+        expect(stored.tripId).toBeNull();
+    });
+    it('keeps a trip attached while the catch metadata was synchronising', async () => {
+        await save(catchRecord({ tripId: null, metadataSyncStatus: 'synchronising' }));
+        await updateCatchTrip(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            tripId,
+            metadataSyncStatus: 'savedLocally'
+        }));
+
+        await updateCatchMetadata(JSON.stringify(catchRecord({
+            tripId: null,
+            metadataSyncStatus: 'synchronised',
+            syncStatus: 'synchronised'
+        })));
+
+        const stored = JSON.parse((await getCatchMetadataById(ownerUserId, catchId)).json);
+        expect(stored.tripId).toBe(tripId);
+        expect(stored.metadataSyncStatus).toBe('savedLocally');
     });
 });

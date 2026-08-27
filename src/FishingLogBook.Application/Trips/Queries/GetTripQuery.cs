@@ -15,23 +15,23 @@ public sealed class GetTripQuery : IRequest<GetTripResponse>
 
 public sealed class GetTripResponse : ValidatedResponse
 {
-    public TripViewDto? Trip { get; init; }
+    public TripDetailDto? Trip { get; init; }
 }
 
 public sealed class GetTripHandler : IRequestHandler<GetTripQuery, GetTripResponse>
 {
-    private readonly ITripService _tripService;
+    private readonly ITripDetailService _tripDetailService;
     private readonly IMapper _mapper;
 
-    public GetTripHandler(ITripService tripService, IMapper mapper)
+    public GetTripHandler(ITripDetailService tripDetailService, IMapper mapper)
     {
-        _tripService = tripService;
+        _tripDetailService = tripDetailService;
         _mapper = mapper;
     }
 
     public async Task<GetTripResponse> Handle(GetTripQuery query, CancellationToken cancellationToken)
     {
-        var result = await _tripService.GetViewAsync(
+        var result = await _tripDetailService.GetAsync(
             _mapper.Map<GetTripArgs>(query),
             cancellationToken);
         if (result.IsFailed)

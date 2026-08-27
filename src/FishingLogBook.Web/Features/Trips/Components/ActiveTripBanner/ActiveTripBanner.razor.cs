@@ -26,11 +26,19 @@ public partial class ActiveTripBanner : ComponentBase, IDisposable
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
-    private string ContinueHref
+    private string ViewHref
     {
         get
         {
             return _trip is null ? "/catches" : $"/trips/{_trip.Id:D}";
+        }
+    }
+
+    private string EditHref
+    {
+        get
+        {
+            return _trip is null ? "/catches" : $"/trips/{_trip.Id:D}/edit";
         }
     }
 

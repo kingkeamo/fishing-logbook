@@ -27,7 +27,8 @@ public class BaseProfileTest
         IModalService? modalService = null,
         IAnglerPreferencesStore? cache = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
-        IProfileSummaryProvider? profileSummary = null)
+        IProfileSummaryProvider? profileSummary = null,
+        IFishingLocationClient? fishingLocationClient = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -35,6 +36,7 @@ public class BaseProfileTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(profileClient);
         context.Services.AddSingleton(fishingPreferenceClient ?? QuietFishingPreferenceClient());
+        context.Services.AddSingleton(fishingLocationClient ?? QuietFishingLocationClient());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddSingleton(cache ?? Substitute.For<IAnglerPreferencesStore>());
         context.Services.AddSingleton(
@@ -59,6 +61,30 @@ public class BaseProfileTest
         client.UpdatePreferencesAsync(Arg.Any<UpdateFishingPreferencesDto>(), Arg.Any<CancellationToken>())
             .Returns(call => SavedPreferences(call.ArgAt<UpdateFishingPreferencesDto>(0)));
         return client;
+    }
+
+    protected static IFishingLocationClient QuietFishingLocationClient(
+        FishingLocationPreferencesDto? locations = null)
+    {
+        var client = Substitute.For<IFishingLocationClient>();
+        client.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(locations ?? new FishingLocationPreferencesDto([]));
+        client.UpdateAsync(
+                Arg.Any<UpdateFishingLocationPreferencesDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => SavedLocations(call.ArgAt<UpdateFishingLocationPreferencesDto>(0)));
+        return client;
+    }
+
+    protected static FishingLocationPreferencesDto SavedLocations(UpdateFishingLocationPreferencesDto update)
+    {
+        return new FishingLocationPreferencesDto(
+        [
+            .. update.Locations.Select(location => new FishingLocationPreferenceDto(
+                location.Id == Guid.Empty ? Guid.NewGuid() : location.Id,
+                location.Name.Trim(),
+                location.IsDefault))
+        ]);
     }
 
     protected static IModalService QuietModalService()

@@ -34,6 +34,14 @@
     padding-top: 0.125rem;
 }
 
+/* MudChip renders its container as display:contents, so the chip itself is the
+   flex item of this scrolling row and must not shrink below its nowrap label. */
+.catch-filters-quick-row ::deep .mud-chip,
+.catch-filters-quick-row ::deep .mud-menu {
+    flex: 0 0 auto;
+    max-width: none;
+}
+
 ::deep .mud-chip > .mud-chip-content {
     line-height: 1;
 }

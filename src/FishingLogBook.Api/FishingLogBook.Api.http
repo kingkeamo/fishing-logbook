@@ -172,3 +172,25 @@ Authorization: Bearer <access-token>
 }
 
 ###
+
+### Fishing locations (requires a Cognito access token; never commit real tokens)
+
+GET {{FishingLogBook.Api_HostAddress}}/api/profiles/me/fishing-locations
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+PUT {{FishingLogBook.Api_HostAddress}}/api/profiles/me/fishing-locations
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "locations": [
+    { "id": "00000000-0000-0000-0000-000000000000", "name": "Lough Corrib", "isDefault": true },
+    { "id": "00000000-0000-0000-0000-000000000000", "name": "River Moy", "isDefault": false }
+  ]
+}
+
+###

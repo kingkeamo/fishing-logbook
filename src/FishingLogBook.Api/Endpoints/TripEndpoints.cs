@@ -26,7 +26,7 @@ public static class TripEndpoints
             .WithName("ListMyTrips")
             .WithTags("Trips")
             .RequireAuthorization()
-            .Produces<IReadOnlyList<TripViewDto>>(StatusCodes.Status200OK)
+            .Produces<IReadOnlyList<TripSummaryDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -34,7 +34,7 @@ public static class TripEndpoints
             .WithName("GetTrip")
             .WithTags("Trips")
             .RequireAuthorization()
-            .Produces<TripViewDto>(StatusCodes.Status200OK)
+            .Produces<TripDetailDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
