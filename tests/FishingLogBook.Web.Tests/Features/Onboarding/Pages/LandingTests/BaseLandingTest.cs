@@ -2,6 +2,7 @@ using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Update;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
@@ -78,6 +79,7 @@ public class BaseLandingTest
         });
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddSingleton(Substitute.For<ICatchSynchroniser>());
+        context.Services.AddSingleton(Substitute.For<ILogbookSynchroniser>());
         context.Services.AddSingleton(Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(Substitute.For<IAppUpdateService>());
         var profile = Substitute.For<IProfileSummaryProvider>();

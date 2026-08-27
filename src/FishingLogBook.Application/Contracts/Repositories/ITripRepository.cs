@@ -11,7 +11,5 @@ public interface ITripRepository
         Guid ownerUserId,
         CancellationToken cancellationToken);
 
-    Task<Result<Trip?>> GetActiveAsync(Guid ownerUserId, CancellationToken cancellationToken);
-
     Task<Result<Trip>> UpsertAsync(Trip trip, CancellationToken cancellationToken);
 }

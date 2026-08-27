@@ -112,35 +112,6 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldReportAConflictWhenAnotherTripIsAlreadyActive()
-    {
-        // Arrange
-        ResetRepositories();
-        var client = _factory.CreateAuthenticatedClient(
-            TestJwt.CreateAccessToken(subject: "trip-conflict"));
-        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
-        current.Should().NotBeNull();
-        _factory.TripRepository
-            .GetActiveAsync(current!.UserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(new Trip
-            {
-                Id = Guid.NewGuid(),
-                OwnerUserId = current.UserId,
-                Status = TripStatusEnum.Active,
-                StartedOn = StartedOn
-            }));
-
-        // Act
-        var response = await client.PostAsJsonAsync("/api/trips", NewTrip());
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        await _factory.TripRepository.DidNotReceive().UpsertAsync(
-            Arg.Any<Trip>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task ItShouldReportServiceUnavailableWhenPersistenceFails()
     {
         // Arrange
@@ -244,9 +215,6 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         var saved = await response.Content.ReadFromJsonAsync<TripDto>();
         saved!.Status.Should().Be(TripConstants.Completed);
         saved.EndedOn.Should().Be(StartedOn.AddHours(6));
-        await _factory.TripRepository.DidNotReceive().GetActiveAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<CancellationToken>());
         await _factory.TripRepository.Received(1).UpsertAsync(
             Arg.Is<Trip>(item =>
                 item.Status == TripStatusEnum.Completed
@@ -257,9 +225,6 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     private void ResetRepositories()
     {
         _factory.TripRepository.ClearReceivedCalls();
-        _factory.TripRepository
-            .GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
         _factory.TripRepository
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Trip?>(null));

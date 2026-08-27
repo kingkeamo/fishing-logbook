@@ -96,22 +96,18 @@ public class WhenTestingUpsert : BaseTripServiceTest
     }
 
     [Fact]
-    public async Task ItShouldRejectASecondActiveTripForTheSameOwner()
+    public async Task ItShouldLeaveActiveConflictReconciliationToThePersistenceTransaction()
     {
         // Arrange
-        MockTripRepository.GetActiveAsync(CurrentUserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(StoredTrip(
-                tripId: Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"))));
         var args = UpsertArgs();
 
         // Act
         var result = await Sut.UpsertAsync(args, CancellationToken.None);
 
         // Assert
-        result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripAlreadyActiveError>();
-        await MockTripRepository.DidNotReceive().UpsertAsync(
-            Arg.Any<Trip>(),
+        result.IsSuccess.Should().BeTrue();
+        await MockTripRepository.Received(1).UpsertAsync(
+            Arg.Is<Trip>(trip => trip.Id == TripId && trip.Status == TripStatusEnum.Active),
             Arg.Any<CancellationToken>());
     }
 
@@ -119,8 +115,6 @@ public class WhenTestingUpsert : BaseTripServiceTest
     public async Task ItShouldAllowReplayingTheSameActiveTrip()
     {
         // Arrange
-        MockTripRepository.GetActiveAsync(CurrentUserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(StoredTrip()));
         var args = UpsertArgs();
 
         // Act
@@ -135,7 +129,7 @@ public class WhenTestingUpsert : BaseTripServiceTest
     }
 
     [Fact]
-    public async Task ItShouldNotCheckForAnActiveTripWhenCompletingOne()
+    public async Task ItShouldPersistACompletedTripWithItsEndTime()
     {
         // Arrange
         var args = UpsertArgs(
@@ -147,8 +141,10 @@ public class WhenTestingUpsert : BaseTripServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        await MockTripRepository.DidNotReceive().GetActiveAsync(
-            Arg.Any<Guid>(),
+        await MockTripRepository.Received(1).UpsertAsync(
+            Arg.Is<Trip>(trip =>
+                trip.Status == TripStatusEnum.Completed
+                && trip.EndedOn == StartedOn.AddHours(6)),
             Arg.Any<CancellationToken>());
     }
 

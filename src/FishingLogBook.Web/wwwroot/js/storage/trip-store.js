@@ -5,6 +5,8 @@ import {
 } from './logbook-database.js';
 
 export const TRIP_ACTIVE_STATUS = 'Active';
+export const TRIP_COMPLETED_STATUS = 'Completed';
+export const TRIP_SYNCHRONISED_STATUS = 'synchronised';
 export const TRIP_SAVED_OUTCOME = 'saved';
 export const TRIP_ACTIVE_CONFLICT_OUTCOME = 'activeConflict';
 
@@ -115,6 +117,75 @@ export async function getActiveTrip(ownerUserId) {
             cursor.continue();
         };
     });
+}
+
+export async function getPendingTrips(ownerUserId) {
+    const owner = normalisedOwnerId(ownerUserId);
+    if (!owner) {
+        return [];
+    }
+
+    return runLogbookTransaction(TRIP_STORE_NAME, 'readonly', 'pending-read', (store, succeed, fail) => {
+        const pending = [];
+        const request = store.openCursor();
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (cursor) {
+                if (normalisedOwnerId(cursor.value?.ownerUserId) === owner
+                    && !isSynchronised(cursor.value?.syncStatus)) {
+                    pending.push({ json: JSON.stringify(cursor.value) });
+                }
+
+                cursor.continue();
+                return;
+            }
+
+            succeed(pending);
+        };
+    });
+}
+
+export async function cleanupSyncedTrips(ownerUserId, olderThanIso) {
+    const owner = normalisedOwnerId(ownerUserId);
+    const cutoff = Date.parse(olderThanIso);
+    if (!owner || Number.isNaN(cutoff)) {
+        return 0;
+    }
+
+    return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'cleanup', (store, succeed, fail) => {
+        let removed = 0;
+        const request = store.openCursor();
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) {
+                succeed(removed);
+                return;
+            }
+
+            if (normalisedOwnerId(cursor.value?.ownerUserId) === owner
+                && isEligibleForCleanup(cursor.value, cutoff)) {
+                cursor.delete();
+                removed += 1;
+            }
+
+            cursor.continue();
+        };
+    });
+}
+
+function isEligibleForCleanup(trip, cutoff) {
+    if (trip?.status !== TRIP_COMPLETED_STATUS || !isSynchronised(trip?.syncStatus)) {
+        return false;
+    }
+
+    const syncedAt = Date.parse(trip.syncedAt);
+    return !Number.isNaN(syncedAt) && syncedAt <= cutoff;
+}
+
+function isSynchronised(status) {
+    return status === TRIP_SYNCHRONISED_STATUS || status === 3;
 }
 
 function isActiveForOwner(trip, owner) {

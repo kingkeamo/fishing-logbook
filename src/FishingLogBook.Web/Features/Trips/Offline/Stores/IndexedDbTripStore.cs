@@ -125,6 +125,72 @@ public sealed class IndexedDbTripStore : ITripStore
             cancellationToken);
     }
 
+    public async Task<IReadOnlyList<TripModel>> GetPendingAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A trip owner is required.");
+        }
+
+        var loaded = await OfflineOperation.ExecuteAsync(
+            "pending-read",
+            StoreName,
+            DiagnosticEventNames.OfflineDbReadStarted,
+            DiagnosticEventNames.OfflineDbReadCompleted,
+            DiagnosticEventNames.OfflineDbReadFailed,
+            DiagnosticEventNames.OfflineDbReadTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                var records = await module.InvokeAsync<StoredTripRecord[]>(
+                    "getPendingTrips",
+                    token,
+                    ownerUserId.ToString("D"));
+                return (IReadOnlyList<TripModel>)(records ?? [])
+                    .Select(record => TripJson.Deserialize(record.Json))
+                    .ToArray();
+            },
+            cancellationToken,
+            _logging);
+        return LocalTripVisibility.ForOwner(loaded, ownerUserId);
+    }
+
+    public async Task<int> CleanupSyncedAsync(
+        Guid ownerUserId,
+        DateTimeOffset olderThan,
+        CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A trip owner is required.");
+        }
+
+        return await OfflineOperation.ExecuteAsync(
+            "cleanup",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                return await module.InvokeAsync<int>(
+                    "cleanupSyncedTrips",
+                    token,
+                    ownerUserId.ToString("D"),
+                    olderThan.ToUniversalTime().ToString("O"));
+            },
+            cancellationToken,
+            _logging);
+    }
+
     private async Task<TripModel?> ReadSingleAsync(
         Guid ownerUserId,
         string operation,

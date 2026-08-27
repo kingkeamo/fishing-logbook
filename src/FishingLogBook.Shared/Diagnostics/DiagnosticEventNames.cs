@@ -57,6 +57,14 @@ public static class DiagnosticEventNames
     public const string CatchCacheCleanupCompleted = "CatchCacheCleanupCompleted";
     public const string CatchCacheCleanupFailed = "CatchCacheCleanupFailed";
 
+    public const string TripSyncStarted = "TripSyncStarted";
+    public const string TripSyncCompleted = "TripSyncCompleted";
+    public const string TripSyncFailed = "TripSyncFailed";
+    public const string TripActiveReconciled = "TripActiveReconciled";
+    public const string TripCacheCleanupStarted = "TripCacheCleanupStarted";
+    public const string TripCacheCleanupCompleted = "TripCacheCleanupCompleted";
+    public const string TripCacheCleanupFailed = "TripCacheCleanupFailed";
+
     public const string AuthenticationUnavailable = "AuthenticationUnavailable";
 
     public const string ServiceWorkerError = "ServiceWorkerError";

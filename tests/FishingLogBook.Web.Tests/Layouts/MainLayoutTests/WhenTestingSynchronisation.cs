@@ -1,6 +1,6 @@
 using Bunit;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Offline;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Layouts.MainLayout;
@@ -16,11 +16,11 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
     public async Task ItShouldSynchroniseOnStartupAndNavigationReentry()
     {
         // Arrange
-        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
         var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
         await using var context = CreateContext(
             isAuthenticated: true,
-            catchSynchroniser,
+            logbookSynchroniser,
             diagnosticSynchroniser);
         context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
         context.Render<MainLayout>();
@@ -32,7 +32,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
         await Task.Yield();
 
         // Assert
-        await catchSynchroniser.Received(2).SynchronisePendingAsync(
+        await logbookSynchroniser.Received(2).SynchronisePendingAsync(
             Arg.Any<CancellationToken>());
         await diagnosticSynchroniser.Received(2).SynchronisePendingAsync(
             Arg.Any<CancellationToken>());
@@ -42,11 +42,11 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
     public async Task ItShouldTriggerSyncedCacheCleanupOnlyOnceAcrossNavigationReentry()
     {
         // Arrange
-        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
         var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
         await using var context = CreateContext(
             isAuthenticated: true,
-            catchSynchroniser,
+            logbookSynchroniser,
             diagnosticSynchroniser);
         context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
         context.Render<MainLayout>();
@@ -58,7 +58,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
         await Task.Yield();
 
         // Assert
-        await catchSynchroniser.Received(1).CleanupSyncedCacheAsync(Arg.Any<CancellationToken>());
+        await logbookSynchroniser.Received(1).CleanupSyncedCacheAsync(Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -68,11 +68,11 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
     public async Task ItShouldNotSynchroniseOnAuthenticationBootstrapRoutes(string path)
     {
         // Arrange
-        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
         var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
         await using var context = CreateContext(
             isAuthenticated: true,
-            catchSynchroniser,
+            logbookSynchroniser,
             diagnosticSynchroniser);
         context.Services.GetRequiredService<NavigationManager>().NavigateTo($"/{path}");
 
@@ -81,7 +81,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
         await Task.Yield();
 
         // Assert
-        await catchSynchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await logbookSynchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await diagnosticSynchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 
@@ -89,10 +89,10 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
     public async Task ItShouldNotSynchroniseAnAnonymousProtectedRoute()
     {
         // Arrange
-        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
         var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
         await using var context = CreateContext(
-            catchSynchroniser: catchSynchroniser,
+            logbookSynchroniser: logbookSynchroniser,
             diagnosticSynchroniser: diagnosticSynchroniser);
         context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
 
@@ -101,7 +101,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
         await Task.Yield();
 
         // Assert
-        await catchSynchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await logbookSynchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await diagnosticSynchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 
@@ -110,12 +110,12 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
     {
         // Arrange
         var pending = new TaskCompletionSource();
-        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
-        catchSynchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>()).Returns(pending.Task);
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
+        logbookSynchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>()).Returns(pending.Task);
         var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
         await using var context = CreateContext(
             isAuthenticated: true,
-            catchSynchroniser,
+            logbookSynchroniser,
             diagnosticSynchroniser);
         context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
         var logging = context.Services.GetRequiredService<ILoggingService>();
@@ -128,7 +128,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
         await Task.Delay(20);
 
         // Assert
-        await catchSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await logbookSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await diagnosticSynchroniser.DidNotReceive().SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await logging.DidNotReceive().LogErrorAsync(
             Arg.Any<string>(),
@@ -140,13 +140,13 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
     public async Task ItShouldLogACancellationThatTheLayoutDidNotCause()
     {
         // Arrange
-        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
-        catchSynchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
+        logbookSynchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromException(new TaskCanceledException()));
         var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
         await using var context = CreateContext(
             isAuthenticated: true,
-            catchSynchroniser,
+            logbookSynchroniser,
             diagnosticSynchroniser);
         context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
         var logging = context.Services.GetRequiredService<ILoggingService>();
@@ -157,7 +157,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
 
         // Assert
         await logging.Received(1).LogErrorAsync(
-            "catch synchronisation",
+            "logbook synchronisation",
             Arg.Is<Exception>(exception => exception is TaskCanceledException),
             CancellationToken.None);
         await diagnosticSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
@@ -167,13 +167,13 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
     public async Task ItShouldLogWithoutTheDisposedTokenWhenSynchronisationFails()
     {
         // Arrange
-        var catchSynchroniser = Substitute.For<ICatchSynchroniser>();
-        catchSynchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
+        logbookSynchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromException(new InvalidOperationException("boom")));
         var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
         await using var context = CreateContext(
             isAuthenticated: true,
-            catchSynchroniser,
+            logbookSynchroniser,
             diagnosticSynchroniser);
         context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
         var logging = context.Services.GetRequiredService<ILoggingService>();
@@ -184,7 +184,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
 
         // Assert
         await logging.Received(1).LogErrorAsync(
-            "catch synchronisation",
+            "logbook synchronisation",
             Arg.Is<Exception>(exception => exception.Message == "boom"),
             CancellationToken.None);
         await diagnosticSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());

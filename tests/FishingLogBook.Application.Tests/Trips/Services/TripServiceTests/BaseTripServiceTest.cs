@@ -26,8 +26,6 @@ public class BaseTripServiceTest
     {
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
-        MockTripRepository.GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
         MockTripRepository.UpsertAsync(Arg.Any<Trip>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(Persisted(call.ArgAt<Trip>(0))));
         Sut = new TripService(MockTripRepository, MockCurrentUser, TestMapper.Create());

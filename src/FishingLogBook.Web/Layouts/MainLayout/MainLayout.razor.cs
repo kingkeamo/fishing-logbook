@@ -1,5 +1,5 @@
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Offline;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Localization;
@@ -31,7 +31,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 
     [Inject]
-    private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+    private ILogbookSynchroniser LogbookSynchroniser { get; set; } = default!;
 
     [Inject]
     private IDiagnosticSynchroniser DiagnosticSynchroniser { get; set; } = default!;
@@ -100,7 +100,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
 
         try
         {
-            await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
+            await LogbookSynchroniser.SynchronisePendingAsync(cancellationToken);
             TriggerSyncedCacheCleanupOnce(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -110,7 +110,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         catch (Exception exception)
         {
             await Logging.LogErrorAsync(
-                "catch synchronisation",
+                "logbook synchronisation",
                 exception,
                 CancellationToken.None);
         }
@@ -140,7 +140,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         }
 
         _cleanupAttempted = true;
-        _ = CatchSynchroniser.CleanupSyncedCacheAsync(cancellationToken);
+        _ = LogbookSynchroniser.CleanupSyncedCacheAsync(cancellationToken);
     }
 
     private bool ShouldSynchroniseCurrentRoute()

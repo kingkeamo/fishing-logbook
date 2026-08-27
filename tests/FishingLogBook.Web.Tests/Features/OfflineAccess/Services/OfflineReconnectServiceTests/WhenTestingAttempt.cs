@@ -22,7 +22,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         Sut.State.Should().Be(OfflineReconnectStateEnum.AuthenticationRequired);
         OfflineOwnerContext.IsUnlocked.Should().BeTrue();
         await MockCurrentUserClient.DidNotReceive().GetCurrentAsync(Arg.Any<CancellationToken>());
-        await MockCatchSynchroniser.DidNotReceive().SynchronisePendingAsync(
+        await MockLogbookSynchroniser.DidNotReceive().SynchronisePendingAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -40,7 +40,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         // Assert
         Sut.State.Should().Be(OfflineReconnectStateEnum.AuthenticationRequired);
         OfflineOwnerContext.IsUnlocked.Should().BeTrue();
-        await MockCatchSynchroniser.DidNotReceive().SynchronisePendingAsync(
+        await MockLogbookSynchroniser.DidNotReceive().SynchronisePendingAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
         await MockLoggingService.DidNotReceive().LogErrorAsync(
@@ -63,7 +63,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         Sut.State.Should().Be(OfflineReconnectStateEnum.OwnerMismatch);
         OfflineOwnerContext.Owner!.UserId.Should().Be(OfflineUserId);
         await MockCurrentUserClient.Received(1).GetCurrentAsync(Arg.Any<CancellationToken>());
-        await MockCatchSynchroniser.DidNotReceive().SynchronisePendingAsync(
+        await MockLogbookSynchroniser.DidNotReceive().SynchronisePendingAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -81,7 +81,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         // Assert
         Sut.State.Should().Be(OfflineReconnectStateEnum.RetryableFailure);
         OfflineOwnerContext.IsUnlocked.Should().BeTrue();
-        await MockCatchSynchroniser.DidNotReceive().SynchronisePendingAsync(
+        await MockLogbookSynchroniser.DidNotReceive().SynchronisePendingAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
         await MockLoggingService.Received(1).LogErrorAsync(
@@ -95,7 +95,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
     {
         // Arrange
         var failure = new InvalidOperationException("sync failed");
-        MockCatchSynchroniser.SynchronisePendingAsync(OfflineUserId, Arg.Any<CancellationToken>())
+        MockLogbookSynchroniser.SynchronisePendingAsync(OfflineUserId, Arg.Any<CancellationToken>())
             .ThrowsAsync(failure);
 
         // Act
@@ -104,7 +104,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         // Assert
         Sut.State.Should().Be(OfflineReconnectStateEnum.RetryableFailure);
         OfflineOwnerContext.IsUnlocked.Should().BeTrue();
-        await MockCatchSynchroniser.Received(1).SynchronisePendingAsync(
+        await MockLogbookSynchroniser.Received(1).SynchronisePendingAsync(
             OfflineUserId,
             Arg.Any<CancellationToken>());
         await MockLoggingService.Received(1).LogErrorAsync(
@@ -134,7 +134,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
 
         // Assert
         Sut.State.Should().Be(OfflineReconnectStateEnum.Offline);
-        await MockCatchSynchroniser.DidNotReceive().SynchronisePendingAsync(
+        await MockLogbookSynchroniser.DidNotReceive().SynchronisePendingAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -145,7 +145,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         // Arrange
         var syncStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseSync = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        MockCatchSynchroniser.SynchronisePendingAsync(
+        MockLogbookSynchroniser.SynchronisePendingAsync(
             OfflineUserId,
             Arg.Any<CancellationToken>()).Returns(async _ =>
         {
@@ -162,7 +162,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
 
         // Assert
         await MockCurrentUserClient.Received(1).GetCurrentAsync(Arg.Any<CancellationToken>());
-        await MockCatchSynchroniser.Received(1).SynchronisePendingAsync(
+        await MockLogbookSynchroniser.Received(1).SynchronisePendingAsync(
             OfflineUserId,
             Arg.Any<CancellationToken>());
     }
@@ -173,7 +173,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         // Arrange
         var syncStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseSync = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        MockCatchSynchroniser.SynchronisePendingAsync(
+        MockLogbookSynchroniser.SynchronisePendingAsync(
             OfflineUserId,
             Arg.Any<CancellationToken>()).Returns(async _ =>
         {
@@ -193,7 +193,7 @@ public class WhenTestingAttempt : BaseOfflineReconnectServiceTest
         Sut.State.Should().Be(OfflineReconnectStateEnum.Online);
         OfflineOwnerContext.IsUnlocked.Should().BeFalse();
         await MockCurrentUserClient.Received(1).GetCurrentAsync(Arg.Any<CancellationToken>());
-        await MockCatchSynchroniser.Received(1).SynchronisePendingAsync(
+        await MockLogbookSynchroniser.Received(1).SynchronisePendingAsync(
             OfflineUserId,
             Arg.Any<CancellationToken>());
     }

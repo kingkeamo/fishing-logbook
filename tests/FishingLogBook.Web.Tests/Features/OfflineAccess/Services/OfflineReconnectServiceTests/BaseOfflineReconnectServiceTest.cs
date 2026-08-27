@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
@@ -19,7 +19,7 @@ public class BaseOfflineReconnectServiceTest
     protected readonly AuthenticationStateProvider MockAuthenticationStateProvider =
         Substitute.For<AuthenticationStateProvider>();
     protected readonly ICurrentUserClient MockCurrentUserClient = Substitute.For<ICurrentUserClient>();
-    protected readonly ICatchSynchroniser MockCatchSynchroniser = Substitute.For<ICatchSynchroniser>();
+    protected readonly ILogbookSynchroniser MockLogbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
     protected readonly ILoggingService MockLoggingService = Substitute.For<ILoggingService>();
     protected readonly INetworkService MockNetworkService = Substitute.For<INetworkService>();
     protected readonly OfflineOwnerContextService OfflineOwnerContext = new();
@@ -34,7 +34,7 @@ public class BaseOfflineReconnectServiceTest
         Sut = new OfflineReconnectService(
             MockAuthenticationStateProvider,
             MockCurrentUserClient,
-            MockCatchSynchroniser,
+            MockLogbookSynchroniser,
             OfflineOwnerContext,
             MockLoggingService,
             MockNetworkService);
