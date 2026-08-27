@@ -210,6 +210,26 @@ public class WhenTestingEdit : BaseFishingLocationsEditorTest
     }
 
     [Fact]
+    public async Task ItShouldListTheSavedLocationsBelowTheAddField()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var locations = SavedLocations();
+
+        // Act
+        var cut = context.Render<FishingLocationsEditor>(parameters => parameters
+            .Add(component => component.Locations, locations));
+
+        // Assert
+        var markup = cut.Markup;
+        markup.IndexOf("fishing-location-new-name", StringComparison.Ordinal)
+            .Should().BeLessThan(markup.IndexOf("fishing-locations-list", StringComparison.Ordinal));
+        markup.IndexOf("fishing-location-add", StringComparison.Ordinal)
+            .Should().BeLessThan(markup.IndexOf("fishing-location-lough-corrib", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task ItShouldShowFrenchCopy()
     {
         // Arrange
