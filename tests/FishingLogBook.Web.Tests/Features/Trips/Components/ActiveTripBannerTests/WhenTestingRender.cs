@@ -75,9 +75,9 @@ public class WhenTestingRender
         cut.WaitForAssertion(() =>
             cut.Find("#active-trip-banner").TextContent.Should().Contain("Fishing trip in progress"));
         cut.Find("#active-trip-banner").GetAttribute("role").Should().Be("status");
-        cut.Find("#active-trip-banner-continue").GetAttribute("href")
+        cut.Find("#active-trip-banner-update").GetAttribute("href")
             .Should().Be($"/trips/{TripId:D}");
-        cut.Find("#active-trip-banner-continue").TextContent.Should().Contain("Continue trip");
+        cut.Find("#active-trip-banner-update").TextContent.Should().Contain("Update trip");
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class WhenTestingRender
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#active-trip-banner").TextContent.Should().Contain("Sortie de pêche en cours"));
-        cut.Find("#active-trip-banner-continue").TextContent.Should().Contain("Reprendre la sortie");
+        cut.Find("#active-trip-banner-update").TextContent.Should().Contain("Modifier la sortie");
     }
 
     [Fact]

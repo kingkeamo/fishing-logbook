@@ -1,0 +1,10 @@
+.trip-note {
+    background-color: var(--mud-palette-background-grey);
+    border-radius: var(--mud-default-borderradius);
+    padding: 0.5rem 0.75rem;
+}
+
+.trip-note-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

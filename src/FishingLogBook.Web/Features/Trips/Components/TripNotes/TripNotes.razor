@@ -1,0 +1,87 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.TripNotes
+
+<MudStack Spacing="2" id="trip-notes">
+    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_NotesLabel"]</MudText>
+
+    @if (_notes.Count > 0)
+    {
+        <MudStack Spacing="2" id="trip-notes-list">
+            @foreach (var note in _notes)
+            {
+                <MudPaper Elevation="0" Class="trip-note" id="@($"trip-note-{note.Id:D}")">
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption"
+                                     Class="mud-text-secondary"
+                                     id="@($"trip-note-time-{note.Id:D}")">
+                                @LocalTime(note.Id)
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="trip-note-text">@note.Text</MudText>
+                        </MudStack>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Size="Size.Small"
+                                       Aria-label="@Loc["Trip_NoteRemove"]"
+                                       OnClick="@(() => RemoveNoteAsync(note.Id))"
+                                       id="@($"trip-note-remove-{note.Id:D}")" />
+                    </MudStack>
+                </MudPaper>
+            }
+        </MudStack>
+    }
+
+    @if (_isWriting)
+    {
+        <MudStack Spacing="2" id="trip-note-editor">
+            <MudTextField T="string"
+                          Value="_text"
+                          ValueChanged="OnTextChanged"
+                          Label="@Loc["Trip_NotePrompt"]"
+                          Placeholder="@Loc["Trip_NotePlaceholder"]"
+                          Lines="3"
+                          Immediate="true"
+                          MaxLength="MaxNoteLength"
+                          Variant="Variant.Outlined"
+                          id="trip-note-text" />
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@(!CanSave)"
+                           OnClick="AddNoteAsync"
+                           id="trip-note-save">
+                    @Loc["Trip_NoteAdd"]
+                </MudButton>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           OnClick="CancelWriting"
+                           id="trip-note-cancel">
+                    @Loc["Modal_Cancel"]
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   StartIcon="@Icons.Material.Filled.EditNote"
+                   OnClick="StartWriting"
+                   id="trip-note-start">
+            @Loc["Trip_NoteAdd"]
+        </MudButton>
+    }
+
+    @if (_addFailed)
+    {
+        <MudAlert Severity="Severity.Error" id="trip-note-add-failed">
+            @Loc["Trip_NoteAddFailed"]
+        </MudAlert>
+    }
+
+    @if (_removeFailed)
+    {
+        <MudAlert Severity="Severity.Warning" id="trip-note-remove-failed">
+            @Loc["Trip_NoteRemoveFailed"]
+        </MudAlert>
+    }
+</MudStack>

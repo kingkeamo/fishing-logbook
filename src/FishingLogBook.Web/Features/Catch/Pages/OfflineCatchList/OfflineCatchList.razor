@@ -1,3 +1,4 @@
+@using FishingLogBook.Web.Common.Icons
 @page "/offline/catches"
 @attribute [OfflineRoute]
 @layout OfflineLayout
@@ -16,9 +17,9 @@
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Secondary"
                                Href="@ActiveTripHref"
-                               StartIcon="@Icons.Material.Filled.Sailing"
-                               id="offline-trip-continue-link">
-                        @Loc["Trip_Continue"]
+                               StartIcon="@FishingLogBookIcons.FishingTrip"
+                               id="offline-trip-update-link">
+                        @Loc["Trip_Update"]
                     </MudButton>
                 }
                 else
@@ -27,7 +28,7 @@
                                Color="Color.Secondary"
                                OnClick="StartFishingAsync"
                                Disabled="_isStartingTrip"
-                               StartIcon="@Icons.Material.Filled.Sailing"
+                               StartIcon="@FishingLogBookIcons.FishingTrip"
                                id="offline-trip-start-link">
                         @Loc["Trip_StartFishing"]
                     </MudButton>

@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -34,10 +35,32 @@ public partial class OfflineActiveTrip : ComponentBase
     private IOfflineOwnerContextService OfflineOwnerContext { get; set; } = default!;
 
     [Inject]
+    private ICatchStore CatchStore { get; set; } = default!;
+
+    [Inject]
     private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    private int? _catchCount;
+
+    private async Task<int?> CountCatchesAsync(Guid ownerUserId)
+    {
+        try
+        {
+            var catches = await CatchStore.GetMetadataAsync(ownerUserId, CancellationToken.None);
+            return catches.Count(catchRecord => catchRecord.TripId == TripId);
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "counting catches for a trip offline",
+                exception,
+                CancellationToken.None);
+            return null;
+        }
+    }
 
     private bool IsCompleted
     {
@@ -88,6 +111,7 @@ public partial class OfflineActiveTrip : ComponentBase
             if (_trip is not null)
             {
                 _display = await TripDisplay.DescribeAsync(_trip, CancellationToken.None);
+                _catchCount = await CountCatchesAsync(owner.UserId);
             }
         }
         catch (Exception exception)

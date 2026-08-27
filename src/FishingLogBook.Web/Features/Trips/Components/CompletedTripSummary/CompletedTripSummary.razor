@@ -1,6 +1,7 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.CompletedTripSummary
+@using FishingLogBook.Web.Features.Trips.Components.TripNotes
 
-<MudPaper Elevation="0" Class="completed-trip-card" id="completed-trip-card">
+<MudPaper Class="pa-3" Elevation="2" id="completed-trip-card">
     <MudStack Spacing="3" AlignItems="AlignItems.Center">
         <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                  Color="Color.Primary"
@@ -17,6 +18,10 @@
                 <MudText Typo="Typo.body1" id="completed-trip-duration">@DurationLabel</MudText>
             </MudStack>
         }
+        <MudStack Spacing="2" Class="completed-trip-notes" id="completed-trip-notes">
+            <TripNotes Trip="Trip" />
+        </MudStack>
+
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Size="Size.Large"

@@ -7,3 +7,20 @@
         flex-direction: column;
     }
 }
+
+.catch-trip-row {
+    width: 100%;
+}
+
+.catch-trip-state {
+    min-width: 0;
+}
+
+.catch-trip-name {
+    overflow-wrap: anywhere;
+}
+
+.catch-trip-action {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}

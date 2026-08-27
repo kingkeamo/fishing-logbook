@@ -31,7 +31,7 @@ public class WhenTestingStartFishing : BaseOfflineCatchListTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#offline-trip-start-link").TextContent.Should().Contain("Start fishing"));
-        cut.FindAll("#offline-trip-continue-link").Should().BeEmpty();
+        cut.FindAll("#offline-trip-update-link").Should().BeEmpty();
         await activeTrip.Received(1).GetActiveAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 
@@ -49,7 +49,7 @@ public class WhenTestingStartFishing : BaseOfflineCatchListTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#offline-trip-continue-link").GetAttribute("href")
+            cut.Find("#offline-trip-update-link").GetAttribute("href")
                 .Should().Be($"/offline/trips/{TripId:D}"));
         cut.FindAll("#offline-trip-start-link").Should().BeEmpty();
     }

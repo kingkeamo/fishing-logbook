@@ -1,7 +1,8 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripView
+@using FishingLogBook.Web.Features.Trips.Components.TripNotes
 @using FishingLogBook.Web.Features.Trips.Components.TripPhotographs
 
-<MudPaper Elevation="0" Class="active-trip-card" id="active-trip-card">
+<MudPaper Class="pa-3" Elevation="2" id="active-trip-card">
     <MudStack Spacing="3">
         <MudStack Spacing="1">
             <MudText Typo="Typo.overline" Class="active-trip-eyebrow" id="active-trip-eyebrow">
@@ -31,6 +32,15 @@
         </MudStack>
 
         <TripPhotographs Trip="Trip" />
+
+        <TripNotes Trip="Trip" />
+
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_CatchesLabel"]</MudText>
+            <MudText Typo="Typo.body2"
+                     Class="mud-text-secondary"
+                     id="active-trip-catch-count">@CatchSummary</MudText>
+        </MudStack>
 
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"

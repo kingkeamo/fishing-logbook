@@ -228,11 +228,14 @@
   <data name="Catch_TripRecordingIn" xml:space="preserve">
     <value>Sortie en cours</value>
   </data>
+  <data name="Catch_TripRejoin" xml:space="preserve">
+    <value>Ajouter à la sortie</value>
+  </data>
   <data name="Catch_TripLeave" xml:space="preserve">
-    <value>Hors de cette sortie</value>
+    <value>Retirer de cette sortie</value>
   </data>
   <data name="Catch_TripNotPartOfTrip" xml:space="preserve">
-    <value>Cette prise ne fait partie d'aucune sortie</value>
+    <value>Ne fait pas partie d'une sortie</value>
   </data>
   <data name="Catch_TripUnavailable" xml:space="preserve">
     <value>Cette sortie n'est plus sur cet appareil. Choisissez « Hors de cette sortie » pour enregistrer cette prise seule.</value>
@@ -248,6 +251,39 @@
   </data>
   <data name="Trip_PhotographRemoveFailed" xml:space="preserve">
     <value>Cette photo n'a pas pu être supprimée. Réessayez une fois de retour en ligne.</value>
+  </data>
+  <data name="Trip_NotesLabel" xml:space="preserve">
+    <value>Notes de la sortie</value>
+  </data>
+  <data name="Trip_NoteAdd" xml:space="preserve">
+    <value>Ajouter une note</value>
+  </data>
+  <data name="Trip_NotePrompt" xml:space="preserve">
+    <value>Que s'est-il passé ?</value>
+  </data>
+  <data name="Trip_NotePlaceholder" xml:space="preserve">
+    <value>Le niveau a baissé de trente centimètres</value>
+  </data>
+  <data name="Trip_NoteRemove" xml:space="preserve">
+    <value>Supprimer la note</value>
+  </data>
+  <data name="Trip_NoteAddFailed" xml:space="preserve">
+    <value>Cette note n'a pas pu être ajoutée</value>
+  </data>
+  <data name="Trip_NoteRemoveFailed" xml:space="preserve">
+    <value>Cette note n'a pas pu être supprimée. Réessayez une fois de retour en ligne.</value>
+  </data>
+  <data name="Trip_CatchesLabel" xml:space="preserve">
+    <value>Prises de la sortie</value>
+  </data>
+  <data name="Trip_CatchesNone" xml:space="preserve">
+    <value>Aucune prise pour l'instant</value>
+  </data>
+  <data name="Trip_CatchesOne" xml:space="preserve">
+    <value>1 prise enregistrée</value>
+  </data>
+  <data name="Trip_CatchesMany" xml:space="preserve">
+    <value>{0} prises enregistrées</value>
   </data>
   <data name="Trip_RecordCatch" xml:space="preserve">
     <value>Enregistrer une prise</value>
@@ -327,8 +363,8 @@
   <data name="Trip_StartFishing" xml:space="preserve">
     <value>Commencer la pêche</value>
   </data>
-  <data name="Trip_Continue" xml:space="preserve">
-    <value>Reprendre la sortie</value>
+  <data name="Trip_Update" xml:space="preserve">
+    <value>Modifier la sortie</value>
   </data>
   <data name="Trip_InProgress" xml:space="preserve">
     <value>Sortie de pêche en cours</value>

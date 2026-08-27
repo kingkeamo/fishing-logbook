@@ -13,8 +13,12 @@ public sealed record TripModel(
     TripLocationModel? Location = null,
     SyncStatus SyncStatus = SyncStatus.SavedLocally,
     DateTimeOffset? SyncedAt = null,
-    IReadOnlyList<TripPhotographModel>? Photographs = null)
+    IReadOnlyList<TripPhotographModel>? Photographs = null,
+    IReadOnlyList<TripNoteModel>? Notes = null)
 {
     public IReadOnlyList<TripPhotographModel> Photographs { get; init; } =
         Photographs is { Count: > 0 } ? Photographs : [];
+
+    public IReadOnlyList<TripNoteModel> Notes { get; init; } =
+        Notes is { Count: > 0 } ? Notes : [];
 }

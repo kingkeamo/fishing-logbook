@@ -1,6 +1,8 @@
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Features.Catch.Models;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
@@ -24,12 +26,39 @@ public class BaseActiveTripTest
     protected static readonly Guid TripId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     protected static readonly DateTimeOffset StartedOn = DateTimeOffset.Parse("2026-08-26T05:32:00Z");
 
+    protected static Task<ITripStore> StoreWithActiveTripAsync()
+    {
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(StoredActiveTrip());
+        return Task.FromResult(store);
+    }
+
+    protected static ICatchStore QuietCatchStore(params CatchModel[] catches)
+    {
+        var store = Substitute.For<ICatchStore>();
+        store.GetMetadataAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(catches);
+        return store;
+    }
+
+    protected static CatchModel CatchFor(Guid? tripId)
+    {
+        var catchId = Guid.NewGuid();
+        return new CatchModel(
+            catchId,
+            DateTimeOffset.Parse("2026-08-26T09:48:00Z"),
+            [],
+            TripId: tripId);
+    }
+
     protected static BunitContext CreateContext(
         ITripStore store,
         IActiveTripService? activeTrip = null,
         ILocalCatchOwnerService? owner = null,
         IOfflineOwnerContextService? offlineOwner = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        ICatchStore? catchStore = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -42,6 +71,8 @@ public class BaseActiveTripTest
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton<ITimeService>(TestTimeService.WithOffset(TimeSpan.Zero));
         context.Services.AddSingleton(Substitute.For<ITripPhotographStore>());
+        context.Services.AddSingleton(Substitute.For<ITripNoteStore>());
+        context.Services.AddSingleton(catchStore ?? QuietCatchStore());
         context.Services.AddSingleton(Substitute.For<ITripClient>());
         context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());
         context.Services.AddSingleton<ITripDisplayService>(provider =>

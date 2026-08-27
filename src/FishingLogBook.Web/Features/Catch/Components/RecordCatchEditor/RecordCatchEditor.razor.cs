@@ -55,6 +55,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private LocationPromptStatus _locationPrompt = new(false, false, false);
     private CatchLocationModel? _capturedLocation;
     private TripModel? _associatedTrip;
+    private TripModel? _candidateTrip;
     private string? _associatedTripLabel;
     private bool _tripOptedOut;
     private bool _tripUnavailable;
@@ -102,6 +103,8 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
 
     private bool ShowTripOptedOut => _associatedTrip is null && _tripOptedOut && !_isSaved;
 
+    private bool CanRejoinTrip => _candidateTrip is not null;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -136,6 +139,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             }
 
             _associatedTrip = trip;
+            _candidateTrip = trip;
             _associatedTripLabel = await DescribeTripAsync(trip);
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
@@ -164,8 +168,19 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private void LeaveTrip()
     {
         _associatedTrip = null;
-        _associatedTripLabel = null;
         _tripOptedOut = true;
+        _tripUnavailable = false;
+    }
+
+    private void RejoinTrip()
+    {
+        if (_candidateTrip is null)
+        {
+            return;
+        }
+
+        _associatedTrip = _candidateTrip;
+        _tripOptedOut = false;
         _tripUnavailable = false;
     }
 

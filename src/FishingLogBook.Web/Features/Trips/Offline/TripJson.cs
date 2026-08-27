@@ -34,7 +34,8 @@ internal static class TripJson
             ToLocation(record.Location),
             record.SyncStatus,
             record.SyncedAt,
-            [.. record.Photographs.Select(ToPhotograph)]);
+            [.. record.Photographs.Select(ToPhotograph)],
+            [.. record.Notes.Select(ToNote)]);
     }
 
     private static StoredTrip ToRecord(TripModel trip)
@@ -59,7 +60,44 @@ internal static class TripJson
                     trip.Location.ConsentVersion),
             trip.SyncStatus,
             trip.SyncedAt,
-            [.. (trip.Photographs ?? []).Select(ToStoredPhotograph)]);
+            [.. (trip.Photographs ?? []).Select(ToStoredPhotograph)],
+            [.. (trip.Notes ?? []).Select(ToStoredNote)]);
+    }
+
+    public static string SerializeNote(TripNoteModel note)
+    {
+        return JsonSerializer.Serialize(ToStoredNote(note), Options);
+    }
+
+    public static TripNoteModel DeserializeNote(string json)
+    {
+        var record = JsonSerializer.Deserialize<StoredTripNote>(json, Options)
+            ?? throw new InvalidOperationException("Trip note metadata could not be read.");
+        return ToNote(record);
+    }
+
+    private static StoredTripNote ToStoredNote(TripNoteModel note)
+    {
+        return new StoredTripNote(
+            note.Id,
+            note.TripId,
+            note.OwnerUserId,
+            note.Text,
+            note.RecordedOn,
+            note.SyncStatus,
+            note.SyncedAt);
+    }
+
+    private static TripNoteModel ToNote(StoredTripNote record)
+    {
+        return new TripNoteModel(
+            record.Id,
+            record.TripId,
+            record.OwnerUserId,
+            record.Text,
+            record.RecordedOn,
+            record.SyncStatus,
+            record.SyncedAt);
     }
 
     public static string SerializePhotograph(TripPhotographModel photograph)
@@ -131,10 +169,22 @@ internal static class TripJson
         StoredTripLocation? Location = null,
         SyncStatus SyncStatus = SyncStatus.SavedLocally,
         DateTimeOffset? SyncedAt = null,
-        IReadOnlyList<StoredTripPhotograph>? Photographs = null)
+        IReadOnlyList<StoredTripPhotograph>? Photographs = null,
+        IReadOnlyList<StoredTripNote>? Notes = null)
     {
         public IReadOnlyList<StoredTripPhotograph> Photographs { get; init; } = Photographs ?? [];
+
+        public IReadOnlyList<StoredTripNote> Notes { get; init; } = Notes ?? [];
     }
+
+    private sealed record StoredTripNote(
+        Guid Id,
+        Guid TripId,
+        Guid OwnerUserId,
+        string Text,
+        DateTimeOffset RecordedOn,
+        SyncStatus SyncStatus = SyncStatus.SavedLocally,
+        DateTimeOffset? SyncedAt = null);
 
     private sealed record StoredTripPhotograph(
         Guid Id,

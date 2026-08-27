@@ -1,6 +1,4 @@
-.completed-trip-card {
-    padding: 1.75rem 1.25rem;
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: var(--mud-default-borderradius);
-    background: var(--mud-palette-surface);
+.completed-trip-notes {
+    align-self: stretch;
+    text-align: start;
 }

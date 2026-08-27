@@ -236,7 +236,7 @@ public partial class CatchList : ComponentBase, IDisposable
 
     private async Task StartFishingAsync()
     {
-        if (_isStartingTrip || _activeTrip is not null)
+        if (_isLoading || _isStartingTrip || _activeTrip is not null)
         {
             return;
         }
