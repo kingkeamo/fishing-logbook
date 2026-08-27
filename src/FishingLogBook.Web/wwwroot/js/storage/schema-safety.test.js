@@ -11,6 +11,7 @@ import {
     putCatchWithPhotographs
 } from './catch-store.js';
 import { TRIP_STORE_NAME } from './trip-store.js';
+import { TRIP_PHOTO_STORE_NAME } from './trip-photo-store.js';
 import {
     DIAGNOSTIC_DATABASE_NAME,
     DIAGNOSTIC_STORE_NAME,
@@ -64,7 +65,7 @@ describe('schema safety', () => {
     });
 
     it('keeps the released logbook database version unchanged', () => {
-        expect(CATCH_DATABASE_VERSION).toBe(5);
+        expect(CATCH_DATABASE_VERSION).toBe(6);
     });
 
     it('does not mix Trip and other feature schema names across store modules', () => {
@@ -78,6 +79,8 @@ describe('schema safety', () => {
         expect(tripSource).not.toContain('fishingPreferences');
         expect(diagnosticSource).not.toContain(TRIP_STORE_NAME);
         expect(preferenceSource).not.toContain(TRIP_STORE_NAME);
+        expect(diagnosticSource).not.toContain(TRIP_PHOTO_STORE_NAME);
+        expect(preferenceSource).not.toContain(TRIP_PHOTO_STORE_NAME);
     });
 
     it('owns the logbook database name in exactly one module', () => {
@@ -109,7 +112,7 @@ describe('schema safety', () => {
 
         expect(catchDb.version).toBe(CATCH_DATABASE_VERSION);
         expect([...catchDb.objectStoreNames].sort())
-            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME].sort());
+            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME, TRIP_PHOTO_STORE_NAME].sort());
         expect(catchDb.objectStoreNames.contains(PREFERENCE_STORE_NAME)).toBe(false);
         expect([...preferenceDb.objectStoreNames]).toEqual([PREFERENCE_STORE_NAME]);
         expect(preferenceDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
@@ -161,7 +164,7 @@ describe('schema safety', () => {
         });
 
         expect([...db.objectStoreNames].sort())
-            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME].sort());
+            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME, TRIP_PHOTO_STORE_NAME].sort());
         db.close();
     });
 
@@ -190,7 +193,7 @@ describe('schema safety', () => {
 
         expect(upgraded.version).toBe(CATCH_DATABASE_VERSION);
         expect([...upgraded.objectStoreNames].sort())
-            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME].sort());
+            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME, TRIP_PHOTO_STORE_NAME].sort());
         expect(upgraded.objectStoreNames.contains('testCatches')).toBe(false);
         expect(upgraded.objectStoreNames.contains('testCatchPhotographs')).toBe(false);
         upgraded.close();

@@ -14,6 +14,8 @@ public class BaseLogbookSynchroniserTest
 
     protected readonly ITripSynchroniser MockTripSynchroniser =
         Substitute.For<ITripSynchroniser>();
+    protected readonly ITripPhotographSynchroniser MockTripPhotographSynchroniser =
+        Substitute.For<ITripPhotographSynchroniser>();
     protected readonly ICatchSynchroniser MockCatchSynchroniser =
         Substitute.For<ICatchSynchroniser>();
     protected readonly ILocalCatchOwnerService MockLocalCatchOwner =
@@ -26,6 +28,7 @@ public class BaseLogbookSynchroniserTest
         MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OwnerUserId);
         Sut = new LogbookSynchroniser(
             MockTripSynchroniser,
+            MockTripPhotographSynchroniser,
             MockCatchSynchroniser,
             MockLocalCatchOwner,
             MockLogging);

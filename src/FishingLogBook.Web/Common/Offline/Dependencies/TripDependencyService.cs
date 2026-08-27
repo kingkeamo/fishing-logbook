@@ -7,11 +7,16 @@ namespace FishingLogBook.Web.Common.Offline.Dependencies;
 public sealed class TripDependencyService : ITripDependencyService
 {
     private readonly ITripStore _tripStore;
+    private readonly ITripPhotographStore _tripPhotographStore;
     private readonly ICatchStore _catchStore;
 
-    public TripDependencyService(ITripStore tripStore, ICatchStore catchStore)
+    public TripDependencyService(
+        ITripStore tripStore,
+        ITripPhotographStore tripPhotographStore,
+        ICatchStore catchStore)
     {
         _tripStore = tripStore;
+        _tripPhotographStore = tripPhotographStore;
         _catchStore = catchStore;
     }
 
@@ -34,7 +39,7 @@ public sealed class TripDependencyService : ITripDependencyService
         return trip.SyncStatus == SyncStatus.Synchronised;
     }
 
-    public async Task<IReadOnlyCollection<Guid>> GetTripsAwaitingCatchesAsync(
+    public async Task<IReadOnlyCollection<Guid>> GetTripsAwaitingDependentsAsync(
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
@@ -44,10 +49,14 @@ public sealed class TripDependencyService : ITripDependencyService
         }
 
         var catches = await _catchStore.GetMetadataAsync(ownerUserId, cancellationToken);
+        var awaitingPhotographs = await _tripPhotographStore.GetTripsWithPendingPhotographsAsync(
+            ownerUserId,
+            cancellationToken);
         return catches
             .Where(IsAwaitingServer)
             .Select(catchRecord => catchRecord.TripId)
             .OfType<Guid>()
+            .Concat(awaitingPhotographs)
             .Distinct()
             .ToArray();
     }

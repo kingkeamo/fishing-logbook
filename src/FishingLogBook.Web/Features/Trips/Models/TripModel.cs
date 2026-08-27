@@ -12,4 +12,9 @@ public sealed record TripModel(
     string? PlaceName = null,
     TripLocationModel? Location = null,
     SyncStatus SyncStatus = SyncStatus.SavedLocally,
-    DateTimeOffset? SyncedAt = null);
+    DateTimeOffset? SyncedAt = null,
+    IReadOnlyList<TripPhotographModel>? Photographs = null)
+{
+    public IReadOnlyList<TripPhotographModel> Photographs { get; init; } =
+        Photographs is { Count: > 0 } ? Photographs : [];
+}

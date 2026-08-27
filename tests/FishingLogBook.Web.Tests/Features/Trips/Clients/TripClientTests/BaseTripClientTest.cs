@@ -15,11 +15,15 @@ public class BaseTripClientTest
     protected static readonly DateTimeOffset StartedOn =
         DateTimeOffset.Parse("2026-08-17T09:00:00Z");
 
-    protected static TripClient CreateClient(RecordingHandler apiHandler)
+    protected static TripClient CreateClient(
+        RecordingHandler apiHandler,
+        RecordingHandler? anonymousHandler = null)
     {
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient(HttpClientNames.AuthorizedApi)
             .Returns(new HttpClient(apiHandler) { BaseAddress = new Uri("https://api.test/") });
+        factory.CreateClient(HttpClientNames.Anonymous)
+            .Returns(new HttpClient(anonymousHandler ?? apiHandler));
         return new TripClient(factory);
     }
 

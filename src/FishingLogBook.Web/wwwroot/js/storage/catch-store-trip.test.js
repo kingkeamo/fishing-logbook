@@ -39,8 +39,8 @@ describe('Catch store trip association', () => {
         };
     }
 
-    it('does not need a database version bump for the trip link', () => {
-        expect(CATCH_DATABASE_VERSION).toBe(5);
+    it('keeps the catch stores on the shared logbook database version', () => {
+        expect(CATCH_DATABASE_VERSION).toBe(6);
     });
 
     it('carries the trip through the metadata list without reading photograph bytes', async () => {

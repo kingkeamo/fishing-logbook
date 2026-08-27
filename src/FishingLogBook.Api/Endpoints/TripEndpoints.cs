@@ -39,7 +39,159 @@ public static class TripEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapPost("/api/trips/{tripId:guid}/photographs/upload-url", CreatePhotographUploadAsync)
+            .WithName("CreateTripPhotographUpload")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces<PhotographUploadDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
+        endpoints.MapPost("/api/trips/{tripId:guid}/photographs", RecordPhotographAsync)
+            .WithName("RecordTripPhotograph")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces<TripPhotographDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
+        endpoints.MapDelete("/api/trips/{tripId:guid}/photographs/{photographId:guid}", DeletePhotographAsync)
+            .WithName("DeleteTripPhotograph")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         return endpoints;
+    }
+
+    private static async Task<IResult> CreatePhotographUploadAsync(
+        Guid tripId,
+        PhotographUploadRequestDto request,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new CreateTripPhotographUploadCommand
+            {
+                TripId = tripId,
+                Request = request
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripPhotographNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Upload);
+    }
+
+    private static async Task<IResult> RecordPhotographAsync(
+        Guid tripId,
+        RecordTripPhotographDto photograph,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new RecordTripPhotographCommand
+            {
+                TripId = tripId,
+                Photograph = photograph
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripPhotographNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.Error is TripPhotographObjectKeyMismatchError)
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Photograph);
+    }
+
+    private static async Task<IResult> DeletePhotographAsync(
+        Guid tripId,
+        Guid photographId,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new DeleteTripPhotographCommand
+            {
+                TripId = tripId,
+                PhotographId = photographId
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripPhotographNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.NoContent();
     }
 
     private static async Task<IResult> UpsertAsync(

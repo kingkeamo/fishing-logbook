@@ -59,7 +59,7 @@ public class WhenTestingCleanupWithLinkedCatches : BaseTripSynchroniserTest
         // Assert
         var remaining = await store.GetAllAsync(OwnerUserId, CancellationToken.None);
         remaining.Should().BeEmpty();
-        await MockTripDependency.Received(2).GetTripsAwaitingCatchesAsync(
+        await MockTripDependency.Received(2).GetTripsAwaitingDependentsAsync(
             OwnerUserId,
             Arg.Any<CancellationToken>());
     }
@@ -76,17 +76,17 @@ public class WhenTestingCleanupWithLinkedCatches : BaseTripSynchroniserTest
         await sut.CleanupSyncedCacheAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        await MockTripDependency.Received(1).GetTripsAwaitingCatchesAsync(
+        await MockTripDependency.Received(1).GetTripsAwaitingDependentsAsync(
             OwnerUserId,
             Arg.Any<CancellationToken>());
-        await MockTripDependency.DidNotReceive().GetTripsAwaitingCatchesAsync(
+        await MockTripDependency.DidNotReceive().GetTripsAwaitingDependentsAsync(
             OtherUserId,
             Arg.Any<CancellationToken>());
     }
 
     private void GivenTripsAwaitingCatches(params Guid[] tripIds)
     {
-        MockTripDependency.GetTripsAwaitingCatchesAsync(
+        MockTripDependency.GetTripsAwaitingDependentsAsync(
                 Arg.Any<Guid>(),
                 Arg.Any<CancellationToken>())
             .Returns<IReadOnlyCollection<Guid>>(tripIds);

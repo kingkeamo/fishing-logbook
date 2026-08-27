@@ -59,6 +59,14 @@ public static class DiagnosticEventNames
 
     public const string CatchSyncWaitingForTrip = "catch.sync.waiting_for_trip";
 
+    public const string TripPhotoSyncStarted = "trip.photo.sync.started";
+
+    public const string TripPhotoSyncCompleted = "trip.photo.sync.completed";
+
+    public const string TripPhotoSyncFailed = "trip.photo.sync.failed";
+
+    public const string TripPhotoSyncWaitingForTrip = "trip.photo.sync.waiting_for_trip";
+
     public const string TripSyncStarted = "TripSyncStarted";
     public const string TripSyncCompleted = "TripSyncCompleted";
     public const string TripSyncFailed = "TripSyncFailed";

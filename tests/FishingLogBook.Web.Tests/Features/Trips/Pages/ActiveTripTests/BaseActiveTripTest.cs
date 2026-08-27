@@ -5,6 +5,8 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
+using FishingLogBook.Web.Features.Photographs.Services;
+using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -39,6 +41,9 @@ public class BaseActiveTripTest
         context.Services.AddSingleton(offlineOwner ?? UnlockedOfflineOwner());
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton<ITimeService>(TestTimeService.WithOffset(TimeSpan.Zero));
+        context.Services.AddSingleton(Substitute.For<ITripPhotographStore>());
+        context.Services.AddSingleton(Substitute.For<ITripClient>());
+        context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());
         context.Services.AddSingleton<ITripDisplayService>(provider =>
             new TripDisplayService(provider.GetRequiredService<ITimeService>()));
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();

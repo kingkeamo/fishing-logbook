@@ -33,7 +33,8 @@ internal static class TripJson
             record.PlaceName,
             ToLocation(record.Location),
             record.SyncStatus,
-            record.SyncedAt);
+            record.SyncedAt,
+            [.. record.Photographs.Select(ToPhotograph)]);
     }
 
     private static StoredTrip ToRecord(TripModel trip)
@@ -57,7 +58,49 @@ internal static class TripJson
                     trip.Location.Visibility,
                     trip.Location.ConsentVersion),
             trip.SyncStatus,
-            trip.SyncedAt);
+            trip.SyncedAt,
+            [.. (trip.Photographs ?? []).Select(ToStoredPhotograph)]);
+    }
+
+    public static string SerializePhotograph(TripPhotographModel photograph)
+    {
+        return JsonSerializer.Serialize(ToStoredPhotograph(photograph), Options);
+    }
+
+    public static TripPhotographModel DeserializePhotograph(string json)
+    {
+        var record = JsonSerializer.Deserialize<StoredTripPhotograph>(json, Options)
+            ?? throw new InvalidOperationException("Trip photograph metadata could not be read.");
+        return ToPhotograph(record);
+    }
+
+    private static StoredTripPhotograph ToStoredPhotograph(TripPhotographModel photograph)
+    {
+        return new StoredTripPhotograph(
+            photograph.Id,
+            photograph.TripId,
+            photograph.OwnerUserId,
+            photograph.ContentType,
+            photograph.AddedOn,
+            photograph.CapturedOn,
+            photograph.ObjectKey,
+            photograph.SyncStatus,
+            photograph.SyncedAt);
+    }
+
+    private static TripPhotographModel ToPhotograph(StoredTripPhotograph record)
+    {
+        return new TripPhotographModel(
+            record.Id,
+            record.TripId,
+            record.OwnerUserId,
+            record.ContentType,
+            record.AddedOn,
+            record.CapturedOn,
+            Bytes: null,
+            record.ObjectKey,
+            record.SyncStatus,
+            record.SyncedAt);
     }
 
     private static TripLocationModel? ToLocation(StoredTripLocation? location)
@@ -86,6 +129,21 @@ internal static class TripJson
         string? Title = null,
         string? PlaceName = null,
         StoredTripLocation? Location = null,
+        SyncStatus SyncStatus = SyncStatus.SavedLocally,
+        DateTimeOffset? SyncedAt = null,
+        IReadOnlyList<StoredTripPhotograph>? Photographs = null)
+    {
+        public IReadOnlyList<StoredTripPhotograph> Photographs { get; init; } = Photographs ?? [];
+    }
+
+    private sealed record StoredTripPhotograph(
+        Guid Id,
+        Guid TripId,
+        Guid OwnerUserId,
+        string ContentType,
+        DateTimeOffset AddedOn,
+        DateTimeOffset? CapturedOn = null,
+        string? ObjectKey = null,
         SyncStatus SyncStatus = SyncStatus.SavedLocally,
         DateTimeOffset? SyncedAt = null);
 
