@@ -1,7 +1,11 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -22,6 +26,8 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private bool _isFinishing;
     private bool _locationAttempted;
     private int? _catchCount;
+    private IReadOnlyList<TripTimelineItemModel> _timeline = [];
+    private bool _isReadOnlyHistory;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -40,6 +46,12 @@ public partial class ActiveTrip : ComponentBase, IDisposable
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
+
+    [Inject]
+    private ITripClient TripClient { get; set; } = default!;
+
+    [Inject]
+    private ITripTimelineService TripTimeline { get; set; } = default!;
 
     [Inject]
     private ILoggingService Logging { get; set; } = default!;
@@ -95,12 +107,13 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         await TryAttachLocationAsync();
     }
 
-    private async Task<int?> CountCatchesAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<CatchModel>?> LoadCatchesAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var catches = await CatchStore.GetMetadataAsync(ownerUserId, cancellationToken);
-            return catches.Count(catchRecord => catchRecord.TripId == TripId);
+            return await CatchStore.GetMetadataAsync(ownerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -108,7 +121,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("counting catches for a trip", exception, CancellationToken.None);
+            await Logging.LogErrorAsync("reading the catches of a trip", exception, CancellationToken.None);
             return null;
         }
     }
@@ -124,9 +137,15 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             _trip = await TripStore.GetAsync(ownerUserId, TripId, cancellationToken);
             if (_trip is not null)
             {
+                _isReadOnlyHistory = false;
                 _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
-                _catchCount = await CountCatchesAsync(ownerUserId, cancellationToken);
+                var catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
+                _catchCount = catches?.Count(catchRecord => catchRecord.TripId == TripId);
+                _timeline = TripTimeline.BuildLocal(_trip, catches ?? []);
+                return;
             }
+
+            await LoadHistoricalAsync(ownerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -142,6 +161,34 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         {
             _isLoading = false;
         }
+    }
+
+    private async Task LoadHistoricalAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
+        if (detail is null)
+        {
+            return;
+        }
+
+        _isReadOnlyHistory = true;
+        _trip = ToTripModel(detail.Trip, ownerUserId);
+        _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
+        _catchCount = detail.Catches.Count;
+        _timeline = TripTimeline.BuildRemote(detail);
+    }
+
+    private static TripModel ToTripModel(TripViewDto view, Guid ownerUserId)
+    {
+        return new TripModel(
+            view.Id,
+            ownerUserId,
+            view.Status,
+            view.StartedOn,
+            view.EndedOn,
+            view.Title,
+            view.PlaceName,
+            SyncStatus: SyncStatus.Synchronised);
     }
 
     private async Task RetryAsync()

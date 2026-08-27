@@ -1,0 +1,36 @@
+@namespace FishingLogBook.Web.Features.Catch.Components.CatchSelector
+
+<MudStack Spacing="2" id="catch-selector">
+    @if (Catches.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary" id="catch-selector-empty">
+            @EmptyLabel
+        </MudText>
+    }
+    else
+    {
+        <MudStack Spacing="1" id="catch-selector-options">
+            @foreach (var candidate in Catches)
+            {
+                <MudCheckBox T="bool"
+                             Value="@IsSelected(candidate.Id)"
+                             ValueChanged="@((bool selected) => ToggleAsync(candidate.Id, selected))"
+                             Color="Color.Primary"
+                             Dense="true"
+                             Disabled="Disabled"
+                             Label="@Describe(candidate)"
+                             id="@($"catch-selector-option-{candidate.Id:D}")" />
+            }
+        </MudStack>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                   Disabled="@(Disabled || _selected.Count == 0)"
+                   OnClick="ConfirmAsync"
+                   id="catch-selector-confirm">
+            @ConfirmLabel
+        </MudButton>
+    }
+</MudStack>

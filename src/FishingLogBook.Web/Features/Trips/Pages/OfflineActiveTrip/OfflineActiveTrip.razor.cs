@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
@@ -18,6 +19,8 @@ public partial class OfflineActiveTrip : ComponentBase
     private bool _isLoading = true;
     private bool _loadFailed;
     private bool _isFinishing;
+    private int? _catchCount;
+    private IReadOnlyList<TripTimelineItemModel> _timeline = [];
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -38,24 +41,24 @@ public partial class OfflineActiveTrip : ComponentBase
     private ICatchStore CatchStore { get; set; } = default!;
 
     [Inject]
+    private ITripTimelineService TripTimeline { get; set; } = default!;
+
+    [Inject]
     private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
-    private int? _catchCount;
-
-    private async Task<int?> CountCatchesAsync(Guid ownerUserId)
+    private async Task<IReadOnlyList<CatchModel>?> LoadCatchesAsync(Guid ownerUserId)
     {
         try
         {
-            var catches = await CatchStore.GetMetadataAsync(ownerUserId, CancellationToken.None);
-            return catches.Count(catchRecord => catchRecord.TripId == TripId);
+            return await CatchStore.GetMetadataAsync(ownerUserId, CancellationToken.None);
         }
         catch (Exception exception)
         {
             await Logging.LogErrorAsync(
-                "counting catches for a trip offline",
+                "reading the catches of a trip offline",
                 exception,
                 CancellationToken.None);
             return null;
@@ -111,7 +114,9 @@ public partial class OfflineActiveTrip : ComponentBase
             if (_trip is not null)
             {
                 _display = await TripDisplay.DescribeAsync(_trip, CancellationToken.None);
-                _catchCount = await CountCatchesAsync(owner.UserId);
+                var catches = await LoadCatchesAsync(owner.UserId);
+                _catchCount = catches?.Count(catchRecord => catchRecord.TripId == TripId);
+                _timeline = TripTimeline.BuildLocal(_trip, catches ?? []);
             }
         }
         catch (Exception exception)

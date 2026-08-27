@@ -1,5 +1,6 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.CompletedTripSummary
 @using FishingLogBook.Web.Features.Trips.Components.TripNotes
+@using FishingLogBook.Web.Features.Trips.Components.TripTimeline
 
 <MudPaper Class="pa-3" Elevation="2" id="completed-trip-card">
     <MudStack Spacing="3" AlignItems="AlignItems.Center">
@@ -11,6 +12,13 @@
             @Loc["Trip_Finished"]
         </MudText>
         <MudText Typo="Typo.h6" Align="Align.Center" id="completed-trip-title">@Heading</MudText>
+        @if (HasPlace)
+        {
+            <MudText Typo="Typo.body2"
+                     Align="Align.Center"
+                     Class="mud-text-secondary"
+                     id="completed-trip-place">@Trip.PlaceName</MudText>
+        }
         @if (DurationLabel is not null)
         {
             <MudStack Spacing="0" AlignItems="AlignItems.Center">
@@ -18,8 +26,15 @@
                 <MudText Typo="Typo.body1" id="completed-trip-duration">@DurationLabel</MudText>
             </MudStack>
         }
-        <MudStack Spacing="2" Class="completed-trip-notes" id="completed-trip-notes">
-            <TripNotes Trip="Trip" />
+        @if (ShowNotes)
+        {
+            <MudStack Spacing="2" Class="completed-trip-notes" id="completed-trip-notes">
+                <TripNotes Trip="Trip" />
+            </MudStack>
+        }
+
+        <MudStack Spacing="2" Class="completed-trip-timeline">
+            <TripTimeline Items="Timeline" CatchBaseHref="@CatchBaseHref" />
         </MudStack>
 
         <MudButton Variant="Variant.Filled"

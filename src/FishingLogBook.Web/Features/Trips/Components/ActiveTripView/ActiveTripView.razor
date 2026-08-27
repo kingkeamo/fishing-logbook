@@ -1,5 +1,7 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripView
+@using FishingLogBook.Web.Features.Trips.Components.TripCatches
 @using FishingLogBook.Web.Features.Trips.Components.TripLocationPicker
+@using FishingLogBook.Web.Features.Trips.Components.TripTimeline
 @using FishingLogBook.Web.Features.Trips.Components.TripNotes
 @using FishingLogBook.Web.Features.Trips.Components.TripPhotographs
 
@@ -45,15 +47,11 @@
                      id="active-trip-catch-count">@CatchSummary</MudText>
         </MudStack>
 
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   Size="Size.Large"
-                   FullWidth="true"
-                   Href="@RecordCatchHref"
-                   StartIcon="@Icons.Material.Filled.PhotoCamera"
-                   id="active-trip-record-catch">
-            @Loc["Trip_RecordCatch"]
-        </MudButton>
+        <TripTimeline Items="Timeline" CatchBaseHref="@CatchBaseHref" />
+
+        <TripCatches Trip="Trip"
+                     RecordCatchBaseHref="@RecordCatchBaseHref"
+                     OnCatchesAttached="OnCatchesAttached" />
 
         <MudButton Variant="Variant.Outlined"
                    Color="Color.Primary"

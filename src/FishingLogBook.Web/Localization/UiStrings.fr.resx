@@ -1036,4 +1036,76 @@
   <data name="Trip_LocationSaveFailed" xml:space="preserve">
     <value>Le lieu de pêche n'a pas pu être enregistré.</value>
   </data>
+  <data name="Trip_TimelineLabel" xml:space="preserve">
+    <value>Chronologie de la sortie</value>
+  </data>
+  <data name="Trip_TimelineEmpty" xml:space="preserve">
+    <value>Rien ne s'est encore passé pendant cette sortie.</value>
+  </data>
+  <data name="Trip_Timeline_Started" xml:space="preserve">
+    <value>Début</value>
+  </data>
+  <data name="Trip_Timeline_StartedDescription" xml:space="preserve">
+    <value>Pêche commencée</value>
+  </data>
+  <data name="Trip_Timeline_Catch" xml:space="preserve">
+    <value>Prise</value>
+  </data>
+  <data name="Trip_Timeline_CatchUnknownSpecies" xml:space="preserve">
+    <value>Prise enregistrée</value>
+  </data>
+  <data name="Trip_Timeline_Photograph" xml:space="preserve">
+    <value>Photographie</value>
+  </data>
+  <data name="Trip_Timeline_PhotographDescription" xml:space="preserve">
+    <value>Photographie de sortie ajoutée</value>
+  </data>
+  <data name="Trip_Timeline_Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="Trip_Timeline_Finished" xml:space="preserve">
+    <value>Terminée</value>
+  </data>
+  <data name="Trip_Timeline_FinishedDescription" xml:space="preserve">
+    <value>Pêche terminée</value>
+  </data>
+  <data name="Trip_Nav" xml:space="preserve">
+    <value>Sorties</value>
+  </data>
+  <data name="Trip_ListTitle" xml:space="preserve">
+    <value>Vos sorties</value>
+  </data>
+  <data name="Trip_ListSubtitle" xml:space="preserve">
+    <value>Toutes vos sorties, la plus récente en premier.</value>
+  </data>
+  <data name="Trip_ListEmpty" xml:space="preserve">
+    <value>Vous n'avez pas encore commencé de sortie.</value>
+  </data>
+  <data name="Trip_ListLoadFailed" xml:space="preserve">
+    <value>Vos sorties n'ont pas pu être chargées.</value>
+  </data>
+  <data name="Trip_ListPhotographCount" xml:space="preserve">
+    <value>{0} photos</value>
+  </data>
+  <data name="Trip_ListNoteCount" xml:space="preserve">
+    <value>{0} notes</value>
+  </data>
+  <data name="Trip_ViewTrip" xml:space="preserve">
+    <value>Voir la sortie</value>
+  </data>
+  <data name="Trip_AddExistingCatch" xml:space="preserve">
+    <value>Ajouter une prise</value>
+  </data>
+  <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
+    <value>Prises sans sortie</value>
+  </data>
+  <data name="Trip_AddExistingCatchConfirm" xml:space="preserve">
+    <value>Ajouter à cette sortie</value>
+  </data>
+  <data name="Trip_AddExistingCatchEmpty" xml:space="preserve">
+    <value>Toutes vos prises sont déjà associées à une sortie.</value>
+  </data>
+  <data name="Trip_AddExistingCatchFailed" xml:space="preserve">
+    <value>Ces prises n'ont pas pu être ajoutées à la sortie.</value>
+  </data>
 </root>

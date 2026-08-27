@@ -62,7 +62,8 @@ public class BaseActiveTripTest
         IOfflineOwnerContextService? offlineOwner = null,
         ILoggingService? logging = null,
         ICatchStore? catchStore = null,
-        IAnglerPreferencesProvider? anglerPreferences = null)
+        IAnglerPreferencesProvider? anglerPreferences = null,
+        ITripClient? tripClient = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -77,11 +78,12 @@ public class BaseActiveTripTest
         context.Services.AddSingleton(Substitute.For<ITripPhotographStore>());
         context.Services.AddSingleton(Substitute.For<ITripNoteStore>());
         context.Services.AddSingleton(catchStore ?? QuietCatchStore());
-        context.Services.AddSingleton(Substitute.For<ITripClient>());
+        context.Services.AddSingleton(tripClient ?? Substitute.For<ITripClient>());
         context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());
         context.Services.AddSingleton<ITripDisplayService>(provider =>
             new TripDisplayService(provider.GetRequiredService<ITimeService>()));
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
+        context.Services.AddSingleton<ITripTimelineService>(new TripTimelineService());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }

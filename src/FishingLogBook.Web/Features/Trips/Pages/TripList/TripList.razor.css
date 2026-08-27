@@ -1,0 +1,12 @@
+.trip-list-card {
+    min-width: 0;
+}
+
+.trip-list-heading-group {
+    min-width: 0;
+}
+
+.trip-list-title,
+.trip-list-place {
+    overflow-wrap: anywhere;
+}

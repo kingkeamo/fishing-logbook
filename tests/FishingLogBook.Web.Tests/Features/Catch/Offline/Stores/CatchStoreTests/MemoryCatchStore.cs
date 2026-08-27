@@ -151,6 +151,25 @@ public sealed class MemoryCatchStore : ICatchStore
         return WithPhotographBytes(stored);
     }
 
+    public Task UpdateTripAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid? tripId,
+        CancellationToken cancellationToken)
+    {
+        if (!_catches.TryGetValue(catchId, out var existing) || existing.UserId != ownerUserId)
+        {
+            throw new InvalidOperationException("Owned Catch was not found.");
+        }
+
+        _catches[catchId] = existing with
+        {
+            TripId = tripId,
+            MetadataSyncStatus = SyncStatus.SavedLocally
+        };
+        return Task.CompletedTask;
+    }
+
     public Task UpdateSyncStateAsync(
         CatchModel catchRecord,
         CancellationToken cancellationToken)

@@ -20,8 +20,25 @@ public partial class CompletedTripSummary : ComponentBase
     [Parameter]
     public string LogbookHref { get; set; } = "/catches";
 
+    [Parameter]
+    public string CatchBaseHref { get; set; } = "/catches";
+
+    [Parameter]
+    public bool ShowNotes { get; set; } = true;
+
+    [Parameter]
+    public IReadOnlyList<TripTimelineItemModel> Timeline { get; set; } = [];
+
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    private bool HasPlace
+    {
+        get
+        {
+            return !string.IsNullOrWhiteSpace(Trip.PlaceName);
+        }
+    }
 
     private string Heading
     {

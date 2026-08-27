@@ -1,0 +1,55 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.TripCatches
+@using FishingLogBook.Web.Features.Catch.Components.CatchSelector
+
+<MudStack Spacing="2" id="trip-catches">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               FullWidth="true"
+               Href="@RecordCatchHref"
+               StartIcon="@Icons.Material.Filled.PhotoCamera"
+               id="trip-catches-record">
+        @Loc["Trip_RecordCatch"]
+    </MudButton>
+
+    @if (_isOpen)
+    {
+        <MudPaper Class="pa-3" Elevation="1" id="trip-catches-picker">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.subtitle2">@Loc["Trip_AddExistingCatchTitle"]</MudText>
+                <CatchSelector Catches="_unassigned"
+                               ConfirmLabel="@Loc["Trip_AddExistingCatchConfirm"]"
+                               EmptyLabel="@Loc["Trip_AddExistingCatchEmpty"]"
+                               UnknownSpeciesLabel="@Loc["Trip_Timeline_CatchUnknownSpecies"]"
+                               Disabled="_isSaving"
+                               OnConfirm="AttachAsync" />
+                @if (_saveFailed)
+                {
+                    <MudAlert Severity="Severity.Error" id="trip-catches-failed">
+                        @Loc["Trip_AddExistingCatchFailed"]
+                    </MudAlert>
+                }
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           Size="Size.Small"
+                           Disabled="_isSaving"
+                           OnClick="Close"
+                           id="trip-catches-cancel">
+                    @Loc["Modal_Cancel"]
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    }
+    else
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                   OnClick="OpenAsync"
+                   id="trip-catches-add">
+            @Loc["Trip_AddExistingCatch"]
+        </MudButton>
+    }
+</MudStack>

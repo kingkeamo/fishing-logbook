@@ -55,6 +55,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private LocationPromptStatus _locationPrompt = new(false, false, false);
     private CatchLocationModel? _capturedLocation;
     private TripModel? _associatedTrip;
+    private Guid? _savedTripId;
     private TripModel? _candidateTrip;
     private string? _associatedTripLabel;
     private bool _tripOptedOut;
@@ -96,10 +97,16 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     [Parameter] public Guid OwnerUserId { get; set; }
     [Parameter] public AnglerPreferencesModel Preferences { get; set; } = AnglerPreferencesModel.Empty;
     [Parameter] public string ViewCatchesHref { get; set; } = "/catches";
+
+    [Parameter] public string TripBaseHref { get; set; } = "/trips";
     [Parameter] public Guid? RequestedTripId { get; set; }
     [Parameter] public EventCallback Saved { get; set; }
 
     private bool ShowTripAssociation => _associatedTrip is not null && !_isSaved;
+
+    private string? SavedTripHref => _isSaved && _savedTripId is { } tripId
+        ? $"{TripBaseHref}/{tripId:D}"
+        : null;
 
     private bool ShowTripOptedOut => _associatedTrip is null && _tripOptedOut && !_isSaved;
 
@@ -643,6 +650,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             _carriedMethod = method;
             _carriedSpecies = species;
             _carriedSpeciesWasExplicit = _speciesIsExplicit;
+            _savedTripId = tripId;
             _isSaved = true;
             _locationSaved = location is not null;
             saved = true;

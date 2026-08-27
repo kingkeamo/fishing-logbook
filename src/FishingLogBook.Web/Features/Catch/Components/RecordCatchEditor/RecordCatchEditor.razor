@@ -290,6 +290,17 @@
                                    id="catch-record-another">
                             @Loc["Catch_RecordAnother"]
                         </MudButton>
+                        @if (SavedTripHref is { } savedTripHref)
+                        {
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       FullWidth="true"
+                                       Href="@savedTripHref"
+                                       StartIcon="@FishingLogBookIcons.FishingTrip"
+                                       id="catch-view-trip">
+                                @Loc["Trip_ViewTrip"]
+                            </MudButton>
+                        }
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Primary"
                                    FullWidth="true"

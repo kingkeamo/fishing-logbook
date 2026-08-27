@@ -1,0 +1,11 @@
+.trip-timeline-list {
+    padding-block: 0;
+}
+
+.trip-timeline-entry {
+    min-width: 0;
+}
+
+.trip-timeline-text {
+    overflow-wrap: anywhere;
+}

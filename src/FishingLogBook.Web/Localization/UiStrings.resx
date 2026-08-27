@@ -1036,4 +1036,76 @@
   <data name="Trip_LocationSaveFailed" xml:space="preserve">
     <value>The fishing location could not be saved.</value>
   </data>
+  <data name="Trip_TimelineLabel" xml:space="preserve">
+    <value>Trip timeline</value>
+  </data>
+  <data name="Trip_TimelineEmpty" xml:space="preserve">
+    <value>Nothing has happened on this trip yet.</value>
+  </data>
+  <data name="Trip_Timeline_Started" xml:space="preserve">
+    <value>Started</value>
+  </data>
+  <data name="Trip_Timeline_StartedDescription" xml:space="preserve">
+    <value>Fishing started</value>
+  </data>
+  <data name="Trip_Timeline_Catch" xml:space="preserve">
+    <value>Catch</value>
+  </data>
+  <data name="Trip_Timeline_CatchUnknownSpecies" xml:space="preserve">
+    <value>Catch recorded</value>
+  </data>
+  <data name="Trip_Timeline_Photograph" xml:space="preserve">
+    <value>Photograph</value>
+  </data>
+  <data name="Trip_Timeline_PhotographDescription" xml:space="preserve">
+    <value>Trip photograph added</value>
+  </data>
+  <data name="Trip_Timeline_Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="Trip_Timeline_Finished" xml:space="preserve">
+    <value>Finished</value>
+  </data>
+  <data name="Trip_Timeline_FinishedDescription" xml:space="preserve">
+    <value>Fishing finished</value>
+  </data>
+  <data name="Trip_Nav" xml:space="preserve">
+    <value>Trips</value>
+  </data>
+  <data name="Trip_ListTitle" xml:space="preserve">
+    <value>Your trips</value>
+  </data>
+  <data name="Trip_ListSubtitle" xml:space="preserve">
+    <value>Every trip you have started, newest first.</value>
+  </data>
+  <data name="Trip_ListEmpty" xml:space="preserve">
+    <value>You have not started a trip yet.</value>
+  </data>
+  <data name="Trip_ListLoadFailed" xml:space="preserve">
+    <value>Your trips could not be loaded.</value>
+  </data>
+  <data name="Trip_ListPhotographCount" xml:space="preserve">
+    <value>{0} photos</value>
+  </data>
+  <data name="Trip_ListNoteCount" xml:space="preserve">
+    <value>{0} notes</value>
+  </data>
+  <data name="Trip_ViewTrip" xml:space="preserve">
+    <value>View trip</value>
+  </data>
+  <data name="Trip_AddExistingCatch" xml:space="preserve">
+    <value>Add catch</value>
+  </data>
+  <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
+    <value>Catches not on a trip</value>
+  </data>
+  <data name="Trip_AddExistingCatchConfirm" xml:space="preserve">
+    <value>Add to this trip</value>
+  </data>
+  <data name="Trip_AddExistingCatchEmpty" xml:space="preserve">
+    <value>Every catch is already on a trip.</value>
+  </data>
+  <data name="Trip_AddExistingCatchFailed" xml:space="preserve">
+    <value>Those catches could not be added to the trip.</value>
+  </data>
 </root>

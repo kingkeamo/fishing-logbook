@@ -33,6 +33,7 @@
             <CompletedTripSummary Trip="_trip"
                                   DurationLabel="@DurationLabel"
                                   GeneratedTitle="@GeneratedTitle"
+                                  Timeline="_timeline"
                                   LogbookHref="/offline/catches" />
         }
         else
@@ -44,7 +45,9 @@
                             GeneratedTitle="@GeneratedTitle"
                             IsFinishing="_isFinishing"
                             CatchCount="_catchCount"
+                            Timeline="_timeline"
                             OnPlaceChanged="OnPlaceChanged"
+                            OnCatchesAttached="LoadAsync"
                             OnFinish="FinishAsync" />
         }
     </MudStack>

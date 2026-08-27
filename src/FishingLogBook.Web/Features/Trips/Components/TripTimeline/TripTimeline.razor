@@ -1,0 +1,43 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.TripTimeline
+@using FishingLogBook.Web.Features.Trips.Enums
+
+<MudStack Spacing="2" id="trip-timeline">
+    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_TimelineLabel"]</MudText>
+
+    @if (Items.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-text-secondary" id="trip-timeline-empty">
+            @Loc["Trip_TimelineEmpty"]
+        </MudText>
+    }
+    else
+    {
+        <MudTimeline TimelinePosition="TimelinePosition.Start"
+                     TimelineOrientation="TimelineOrientation.Vertical"
+                     Class="trip-timeline-list">
+            @foreach (var item in Items)
+            {
+                <MudTimelineItem Icon="@IconFor(item.Kind)"
+                                 Color="@ColourFor(item.Kind)"
+                                 Size="Size.Small"
+                                 id="@ItemId(item)">
+                    <MudStack Spacing="0" Class="trip-timeline-entry">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            @TimeLabel(item) · @KindLabel(item.Kind)
+                        </MudText>
+                        @if (CatchHref(item) is { } href)
+                        {
+                            <MudLink Href="@href" Typo="Typo.body2" id="@($"{ItemId(item)}-link")">
+                                @Description(item)
+                            </MudLink>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="trip-timeline-text">@Description(item)</MudText>
+                        }
+                    </MudStack>
+                </MudTimelineItem>
+            }
+        </MudTimeline>
+    }
+</MudStack>

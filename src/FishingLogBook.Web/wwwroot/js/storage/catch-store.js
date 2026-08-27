@@ -169,6 +169,34 @@ export async function updateCatchMetadata(json) {
     });
 }
 
+export async function updateCatchTrip(json) {
+    const request = JSON.parse(json);
+    const owner = normalisedOwnerId(request?.userId);
+    if (!request?.id || !owner) {
+        throw new Error('Owned Catch id is required');
+    }
+
+    await runCatchTransaction(CATCH_STORE_NAME, 'readwrite', 'trip-write', (store, succeed, fail) => {
+        const existingRequest = store.get(request.id);
+        existingRequest.onerror = () => fail(existingRequest.error);
+        existingRequest.onsuccess = () => {
+            const existing = existingRequest.result;
+            if (!existing || normalisedOwnerId(existing.userId) !== owner) {
+                fail(new Error('Owned Catch was not found'));
+                return;
+            }
+
+            const updateRequest = store.put({
+                ...existing,
+                tripId: request.tripId ?? null,
+                metadataSyncStatus: request.metadataSyncStatus
+            });
+            updateRequest.onsuccess = () => succeed();
+            updateRequest.onerror = () => fail(updateRequest.error);
+        };
+    });
+}
+
 function hasMetadataDifference(existing, incoming) {
     const metadataFields = [
         'caughtOn',

@@ -30,10 +30,19 @@ public partial class ActiveTripView : ComponentBase
     public EventCallback<TripModel> OnPlaceChanged { get; set; }
 
     [Parameter]
+    public EventCallback OnCatchesAttached { get; set; }
+
+    [Parameter]
     public string RecordCatchBaseHref { get; set; } = "/catches/record";
 
     [Parameter]
     public int? CatchCount { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<TripTimelineItemModel> Timeline { get; set; } = [];
+
+    [Parameter]
+    public string CatchBaseHref { get; set; } = "/catches";
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
@@ -50,8 +59,6 @@ public partial class ActiveTripView : ComponentBase
             };
         }
     }
-
-    private string RecordCatchHref => $"{RecordCatchBaseHref}?tripId={Trip.Id:D}";
 
     private bool HasPlace
     {

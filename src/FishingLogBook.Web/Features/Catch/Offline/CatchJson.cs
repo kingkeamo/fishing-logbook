@@ -113,6 +113,23 @@ internal static class CatchJson
         return ordered;
     }
 
+    public static string SerializeTripAssociation(
+        Guid catchId,
+        Guid ownerUserId,
+        Guid? tripId,
+        SyncStatus metadataSyncStatus)
+    {
+        return JsonSerializer.Serialize(
+            new CatchTripAssociation(catchId, ownerUserId, tripId, metadataSyncStatus),
+            Options);
+    }
+
+    private sealed record CatchTripAssociation(
+        Guid Id,
+        Guid UserId,
+        Guid? TripId,
+        SyncStatus MetadataSyncStatus);
+
     private sealed record CatchMetadata(
         Guid Id,
         DateTimeOffset CaughtOn,
