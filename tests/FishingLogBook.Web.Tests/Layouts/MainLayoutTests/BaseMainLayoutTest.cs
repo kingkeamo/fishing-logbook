@@ -2,10 +2,10 @@ using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Update;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
@@ -43,7 +43,7 @@ public class BaseMainLayoutTest
 
     protected static BunitContext CreateContext(
         bool isAuthenticated = false,
-        ICatchSynchroniser? catchSynchroniser = null,
+        ILogbookSynchroniser? logbookSynchroniser = null,
         IDiagnosticSynchroniser? diagnosticSynchroniser = null,
         IProfileSummaryProvider? profileSummary = null,
         IAppUpdateService? appUpdate = null,
@@ -75,7 +75,7 @@ public class BaseMainLayoutTest
 
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddSingleton(
-            catchSynchroniser ?? Substitute.For<ICatchSynchroniser>());
+            logbookSynchroniser ?? Substitute.For<ILogbookSynchroniser>());
         context.Services.AddSingleton(
             diagnosticSynchroniser ?? Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(Substitute.For<ILoggingService>());

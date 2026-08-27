@@ -11,6 +11,8 @@ export {
     putTrip,
     getTrips,
     getTrip,
-    getActiveTrip
+    getActiveTrip,
+    getPendingTrips,
+    cleanupSyncedTrips
 } from './storage/trip-store.js';
 export { getStorageEstimate } from './storage/indexed-db.js';

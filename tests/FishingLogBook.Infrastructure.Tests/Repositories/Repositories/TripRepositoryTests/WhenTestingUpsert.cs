@@ -28,19 +28,24 @@ public class WhenTestingUpsert : BaseTripRepositoryTest
     }
 
     [Fact]
-    public async Task ItShouldRejectASecondActiveTripForTheSameOwner()
+    public async Task ItShouldReconcileASecondActiveTripRatherThanRejectingIt()
     {
         // Arrange
         var ownerUserId = await CreateUserAsync();
-        var first = await Sut.UpsertAsync(NewTrip(ownerUserId), CancellationToken.None);
+        var first = await Sut.UpsertAsync(NewTrip(ownerUserId, startedOn: StartedOn), CancellationToken.None);
         first.IsSuccess.Should().BeTrue();
 
         // Act
-        var second = await Sut.UpsertAsync(NewTrip(ownerUserId), CancellationToken.None);
+        var second = await Sut.UpsertAsync(
+            NewTrip(ownerUserId, startedOn: StartedOn.AddHours(1)),
+            CancellationToken.None);
 
         // Assert
-        second.IsFailed.Should().BeTrue();
-        second.Errors[0].Should().BeOfType<TripAlreadyActiveError>();
+        second.IsSuccess.Should().BeTrue();
+        second.Value.Status.Should().Be(TripStatusEnum.Active);
+        var stored = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        stored.Value.Should().HaveCount(2);
+        stored.Value.Count(trip => trip.Status == TripStatusEnum.Active).Should().Be(1);
     }
 
     [Fact]

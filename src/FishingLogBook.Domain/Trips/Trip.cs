@@ -32,6 +32,33 @@ public sealed class Trip
         }
     }
 
+    public bool OutranksActive(Trip other)
+    {
+        if (StartedOn != other.StartedOn)
+        {
+            return StartedOn > other.StartedOn;
+        }
+
+        return Id.CompareTo(other.Id) > 0;
+    }
+
+    public Trip CompletedAt(DateTimeOffset endedOn)
+    {
+        return new Trip
+        {
+            Id = Id,
+            OwnerUserId = OwnerUserId,
+            Title = Title,
+            PlaceName = PlaceName,
+            Status = TripStatusEnum.Completed,
+            StartedOn = StartedOn,
+            EndedOn = endedOn < StartedOn ? StartedOn : endedOn,
+            Location = Location,
+            CreatedOn = CreatedOn,
+            UpdatedOn = UpdatedOn
+        };
+    }
+
     public bool HasCoherentLifecycle()
     {
         if (StartedOn == default)

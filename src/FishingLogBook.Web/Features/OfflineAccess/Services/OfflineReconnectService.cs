@@ -1,6 +1,6 @@
 using System.Net;
 using FishingLogBook.Web.Browser.Network;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Enums;
 using FishingLogBook.Web.Features.Users.Clients;
@@ -13,7 +13,7 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
 {
     private readonly AuthenticationStateProvider _authenticationStateProvider;
     private readonly ICurrentUserClient _currentUserClient;
-    private readonly ICatchSynchroniser _catchSynchroniser;
+    private readonly ILogbookSynchroniser _logbookSynchroniser;
     private readonly IOfflineOwnerContextService _offlineOwnerContext;
     private readonly ILoggingService _logging;
     private readonly INetworkService _networkService;
@@ -28,14 +28,14 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
     public OfflineReconnectService(
         AuthenticationStateProvider authenticationStateProvider,
         ICurrentUserClient currentUserClient,
-        ICatchSynchroniser catchSynchroniser,
+        ILogbookSynchroniser logbookSynchroniser,
         IOfflineOwnerContextService offlineOwnerContext,
         ILoggingService logging,
         INetworkService networkService)
     {
         _authenticationStateProvider = authenticationStateProvider;
         _currentUserClient = currentUserClient;
-        _catchSynchroniser = catchSynchroniser;
+        _logbookSynchroniser = logbookSynchroniser;
         _offlineOwnerContext = offlineOwnerContext;
         _logging = logging;
         _networkService = networkService;
@@ -325,7 +325,7 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
 
             _offlineOwnerContext.Lock();
             SetState(OfflineReconnectStateEnum.Online);
-            _ = _catchSynchroniser.CleanupSyncedCacheAsync(ownerUserId, cancellationToken);
+            _ = _logbookSynchroniser.CleanupSyncedCacheAsync(ownerUserId, cancellationToken);
             return true;
         }
     }
@@ -347,7 +347,7 @@ public sealed class OfflineReconnectService : IOfflineReconnectService
             }
 
             SetState(OfflineReconnectStateEnum.Synchronising);
-            synchronisation = _catchSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
+            synchronisation = _logbookSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
             return true;
         }
     }

@@ -58,20 +58,6 @@ public sealed class TripService : ITripService
             return Result.Fail<TripDto>(new TripLifecycleInvalidError());
         }
 
-        if (trip.IsActive)
-        {
-            var active = await _tripRepository.GetActiveAsync(trip.OwnerUserId, cancellationToken);
-            if (active.IsFailed)
-            {
-                return Result.Fail<TripDto>(active.Errors);
-            }
-
-            if (active.Value is not null && active.Value.Id != trip.Id)
-            {
-                return Result.Fail<TripDto>(new TripAlreadyActiveError());
-            }
-        }
-
         var saved = await _tripRepository.UpsertAsync(trip, cancellationToken);
         if (saved.IsFailed)
         {

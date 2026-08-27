@@ -18,6 +18,7 @@ public static class DiagnosticMetadata
     public const string Result = "result";
     public const string CatchId = "catchId";
     public const string PhotographId = "photographId";
+    public const string TripId = "tripId";
 
     private static readonly HashSet<string> AllowedKeys = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -36,7 +37,8 @@ public static class DiagnosticMetadata
         ErrorType,
         Result,
         CatchId,
-        PhotographId
+        PhotographId,
+        TripId
     };
 
     private static readonly string[] ForbiddenFragments =
@@ -88,7 +90,8 @@ public static class DiagnosticMetadata
         }
 
         if (string.Equals(key, CatchId, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(key, PhotographId, StringComparison.OrdinalIgnoreCase))
+            || string.Equals(key, PhotographId, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, TripId, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

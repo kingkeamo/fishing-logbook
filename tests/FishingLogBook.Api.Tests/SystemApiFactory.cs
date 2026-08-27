@@ -112,9 +112,6 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Trip?>(null));
         TripRepository
-            .GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
-        TripRepository
             .GetByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<Trip>>([]));
         UserPlatformCapabilityRepository

@@ -89,30 +89,6 @@ public sealed class TripRepository : ITripRepository
         }
     }
 
-    public async Task<Result<Trip?>> GetActiveAsync(Guid ownerUserId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
-            const string sql = $"""
-                {SelectSql}
-                WHERE "OwnerUserId" = @OwnerUserId
-                  AND "Status" = 'Active'
-                LIMIT 1;
-                """;
-            var row = await connection.QuerySingleOrDefaultAsync<TripPersistenceRow>(new CommandDefinition(
-                sql,
-                new { OwnerUserId = ownerUserId },
-                cancellationToken: cancellationToken));
-            return Result.Ok(row is null ? null : _mapper.Map<Trip>(row));
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(exception, "Failed to load the active trip for user {UserId}.", ownerUserId);
-            return Result.Fail<Trip?>(FailedMessage);
-        }
-    }
-
     public async Task<Result<Trip>> UpsertAsync(Trip trip, CancellationToken cancellationToken)
     {
         try
@@ -128,7 +104,12 @@ public sealed class TripRepository : ITripRepository
                     return Result.Fail<Trip>(new TripOwnershipConflictError());
                 }
 
-                await UpsertRowAsync(connection, transaction, trip, cancellationToken);
+                var demoted = await DemoteConflictingActiveAsync(
+                    connection,
+                    transaction,
+                    trip,
+                    cancellationToken);
+                await UpsertRowAsync(connection, transaction, demoted, cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
                 var saved = await LoadAsync(connection, transaction: null, trip.Id, cancellationToken);
                 return saved is null
@@ -217,6 +198,56 @@ public sealed class TripRepository : ITripRepository
             ToParameters(trip),
             transaction,
             cancellationToken: cancellationToken));
+    }
+
+    private async Task<Trip> DemoteConflictingActiveAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Trip trip,
+        CancellationToken cancellationToken)
+    {
+        if (!trip.IsActive)
+        {
+            return trip;
+        }
+
+        const string sql = $"""
+            {SelectSql}
+            WHERE "OwnerUserId" = @OwnerUserId
+              AND "Status" = 'Active'
+              AND "Id" <> @Id
+            LIMIT 1;
+            """;
+        var row = await connection.QuerySingleOrDefaultAsync<TripPersistenceRow>(new CommandDefinition(
+            sql,
+            new { trip.OwnerUserId, trip.Id },
+            transaction,
+            cancellationToken: cancellationToken));
+        if (row is null)
+        {
+            return trip;
+        }
+
+        var existing = _mapper.Map<Trip>(row);
+        if (trip.OutranksActive(existing))
+        {
+            await UpsertRowAsync(
+                connection,
+                transaction,
+                existing.CompletedAt(trip.StartedOn),
+                cancellationToken);
+            _logger.LogWarning(
+                "Completed the earlier active trip {TripId} so that {IncomingTripId} could become active.",
+                existing.Id,
+                trip.Id);
+            return trip;
+        }
+
+        _logger.LogWarning(
+            "Stored trip {TripId} as completed because active trip {ActiveTripId} started later.",
+            trip.Id,
+            existing.Id);
+        return trip.CompletedAt(existing.StartedOn);
     }
 
     private static TripPersistenceParameters ToParameters(Trip trip)

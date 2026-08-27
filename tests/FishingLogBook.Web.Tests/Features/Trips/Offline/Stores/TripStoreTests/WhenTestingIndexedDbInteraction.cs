@@ -58,11 +58,15 @@ public class WhenTestingIndexedDbInteraction
         var all = () => sut.GetAllAsync(Guid.Empty, CancellationToken.None);
         var single = () => sut.GetAsync(Guid.Empty, TripId, CancellationToken.None);
         var active = () => sut.GetActiveAsync(Guid.Empty, CancellationToken.None);
+        var pending = () => sut.GetPendingAsync(Guid.Empty, CancellationToken.None);
+        var cleanup = () => sut.CleanupSyncedAsync(Guid.Empty, StartedOn, CancellationToken.None);
 
         // Assert
         await all.Should().ThrowAsync<InvalidOperationException>();
         await single.Should().ThrowAsync<InvalidOperationException>();
         await active.Should().ThrowAsync<InvalidOperationException>();
+        await pending.Should().ThrowAsync<InvalidOperationException>();
+        await cleanup.Should().ThrowAsync<InvalidOperationException>();
         js.Invocations.Should().BeEmpty();
     }
 
@@ -215,6 +219,61 @@ public class WhenTestingIndexedDbInteraction
         await act.Should().ThrowAsync<TimeoutException>();
     }
 
+
+    [Fact]
+    public async Task ItShouldNotReturnAnotherAnglersPendingTrip()
+    {
+        // Arrange
+        var js = new RecordingJsRuntime
+        {
+            ListRecords = [StoredRecord(OwnerUserId), StoredRecord(OtherUserId, Guid.NewGuid())]
+        };
+        var sut = CreateStore(js);
+
+        // Act
+        var loaded = await sut.GetPendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        loaded.Should().ContainSingle();
+        loaded[0].OwnerUserId.Should().Be(OwnerUserId);
+    }
+
+    [Fact]
+    public async Task ItShouldReadPendingTripsDirectlyWithoutListingEveryTrip()
+    {
+        // Arrange
+        var js = new RecordingJsRuntime { ListRecords = [StoredRecord(OwnerUserId)] };
+        var sut = CreateStore(js);
+
+        // Act
+        var loaded = await sut.GetPendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        loaded.Should().ContainSingle();
+        js.Identifiers.Should().Equal("getPendingTrips");
+        js.Identifiers.Should().NotContain("getTrips");
+        js.Invocations[0].Arguments.Should().Equal(OwnerUserId.ToString("D"));
+    }
+
+    [Fact]
+    public async Task ItShouldPassTheRetentionCutoffAsUniversalTime()
+    {
+        // Arrange
+        var js = new RecordingJsRuntime { RemovedCount = 2 };
+        var sut = CreateStore(js);
+        var cutoff = new DateTimeOffset(2026, 8, 26, 7, 32, 0, TimeSpan.FromHours(2));
+
+        // Act
+        var removed = await sut.CleanupSyncedAsync(OwnerUserId, cutoff, CancellationToken.None);
+
+        // Assert
+        removed.Should().Be(2);
+        js.Identifiers.Should().Equal("cleanupSyncedTrips");
+        js.Invocations[0].Arguments.Should().Equal(
+            OwnerUserId.ToString("D"),
+            cutoff.ToUniversalTime().ToString("O"));
+    }
+
     private static IndexedDbTripStore CreateStore(IJSRuntime js)
     {
         return new IndexedDbTripStore(
@@ -253,6 +312,8 @@ public class WhenTestingIndexedDbInteraction
 
         public StoredTripRecord[] ListRecords { get; set; } = [];
 
+        public int RemovedCount { get; set; }
+
         public IReadOnlyList<JsInvocation> Invocations => _invocations;
 
         public IReadOnlyList<string> Identifiers =>
@@ -280,6 +341,8 @@ public class WhenTestingIndexedDbInteraction
                 "getTrip" => SingleRecord,
                 "getActiveTrip" => SingleRecord,
                 "getTrips" => ListRecords,
+                "getPendingTrips" => ListRecords,
+                "cleanupSyncedTrips" => RemovedCount,
                 _ => null
             };
             return new ValueTask<TValue>((TValue)result!);
