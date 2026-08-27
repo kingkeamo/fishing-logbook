@@ -7,11 +7,11 @@ using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -34,7 +34,7 @@ public class BaseCatchListTest
     protected static BunitContext CreateContext(
         ICatchStore store,
         ILocalCatchOwnerService? owner = null,
-        ICatchSynchroniser? synchroniser = null,
+        ILogbookSynchroniser? synchroniser = null,
         IModalService? modalService = null,
         ITimeService? time = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
@@ -48,7 +48,7 @@ public class BaseCatchListTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(owner ?? SignedInOwner());
-        context.Services.AddSingleton(synchroniser ?? Substitute.For<ICatchSynchroniser>());
+        context.Services.AddSingleton(synchroniser ?? Substitute.For<ILogbookSynchroniser>());
         context.Services.AddSingleton(modalService ?? Substitute.For<IModalService>());
         context.Services.AddSingleton(time ?? UtcTime());
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());

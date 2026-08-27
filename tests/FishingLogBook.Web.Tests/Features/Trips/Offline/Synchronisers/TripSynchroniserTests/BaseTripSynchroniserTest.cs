@@ -2,6 +2,7 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Offline.Dependencies;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -25,6 +26,8 @@ public class BaseTripSynchroniserTest
     protected static readonly DateTimeOffset StartedOn =
         DateTimeOffset.Parse("2026-08-17T09:00:00Z");
 
+    protected readonly ITripDependencyService MockTripDependency =
+        Substitute.For<ITripDependencyService>();
     protected readonly ITripClient MockTripClient = Substitute.For<ITripClient>();
     protected readonly INetworkService MockNetworkService = Substitute.For<INetworkService>();
     protected readonly IActiveTripService MockActiveTripService =
@@ -43,6 +46,7 @@ public class BaseTripSynchroniserTest
     {
         return new TripSynchroniser(
             store,
+            MockTripDependency,
             MockTripClient,
             MockNetworkService,
             MockActiveTripService,

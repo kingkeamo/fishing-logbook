@@ -227,7 +227,7 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
         store.BeforeSingleRead = async tripId =>
         {
             store.BeforeSingleRead = null;
-            await store.CleanupSyncedAsync(OwnerUserId, StartedOn, CancellationToken.None);
+            await store.CleanupSyncedAsync(OwnerUserId, StartedOn, [], CancellationToken.None);
             await store.SaveAsync(
                 CreateTrip(
                     tripId: tripId,
@@ -235,7 +235,7 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
                     syncStatus: SyncStatus.Synchronised,
                     syncedAt: StartedOn),
                 CancellationToken.None);
-            await store.CleanupSyncedAsync(OwnerUserId, StartedOn, CancellationToken.None);
+            await store.CleanupSyncedAsync(OwnerUserId, StartedOn, [], CancellationToken.None);
         };
 
         // Act

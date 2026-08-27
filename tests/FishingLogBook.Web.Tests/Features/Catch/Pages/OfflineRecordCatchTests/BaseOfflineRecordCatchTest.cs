@@ -14,6 +14,9 @@ using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +51,12 @@ public class BaseOfflineRecordCatchTest
             new PhotographPreparationService(metadata, timeService, loggingService));
         context.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
+        context.Services.AddSingleton(Substitute.For<ITripStore>());
+        var activeTrip = Substitute.For<IActiveTripService>();
+        activeTrip.GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripModel?)null);
+        context.Services.AddSingleton(activeTrip);
+        context.Services.AddSingleton<ITripDisplayService>(new TripDisplayService(timeService));
         var location = Substitute.For<ILocationService>();
         location.GetPromptStatusAsync(Arg.Any<CancellationToken>()).Returns(new LocationPromptStatus(false, false, false));
         context.Services.AddSingleton(location);

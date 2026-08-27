@@ -57,6 +57,8 @@ public static class DiagnosticEventNames
     public const string CatchCacheCleanupCompleted = "CatchCacheCleanupCompleted";
     public const string CatchCacheCleanupFailed = "CatchCacheCleanupFailed";
 
+    public const string CatchSyncWaitingForTrip = "catch.sync.waiting_for_trip";
+
     public const string TripSyncStarted = "TripSyncStarted";
     public const string TripSyncCompleted = "TripSyncCompleted";
     public const string TripSyncFailed = "TripSyncFailed";

@@ -10,6 +10,10 @@ namespace FishingLogBook.Web.Features.Catch.Pages.OfflineRecordCatch;
 
 public partial class OfflineRecordCatch : ComponentBase
 {
+    [SupplyParameterFromQuery(Name = "tripId")]
+    [Parameter]
+    public Guid? TripId { get; set; }
+
     private Guid _ownerUserId;
     private AnglerPreferencesModel _preferences = AnglerPreferencesModel.Empty;
     private bool _isLoading = true;

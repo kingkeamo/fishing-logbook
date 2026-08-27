@@ -1,0 +1,10 @@
+ALTER TABLE "Catch"
+    ADD COLUMN IF NOT EXISTS "TripId" uuid NULL;
+
+ALTER TABLE "Catch"
+    DROP CONSTRAINT IF EXISTS "FkCatchTrip";
+
+ALTER TABLE "Catch"
+    ADD CONSTRAINT "FkCatchTrip" FOREIGN KEY ("TripId") REFERENCES "Trip" ("Id") ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS "IxCatchTripId" ON "Catch" ("TripId");

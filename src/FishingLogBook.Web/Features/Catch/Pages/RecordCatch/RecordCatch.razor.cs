@@ -1,4 +1,4 @@
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -17,9 +17,13 @@ public partial class RecordCatch : ComponentBase, IDisposable
     private bool _isLoading = true;
     private bool _ownerResolutionFailed;
 
+    [SupplyParameterFromQuery(Name = "tripId")]
+    [Parameter]
+    public Guid? TripId { get; set; }
+
     [Inject] private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
     [Inject] private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
-    [Inject] private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+    [Inject] private ILogbookSynchroniser LogbookSynchroniser { get; set; } = default!;
     [Inject] private ILoggingService Logging { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
@@ -57,14 +61,14 @@ public partial class RecordCatch : ComponentBase, IDisposable
     {
         try
         {
-            await CatchSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
+            await LogbookSynchroniser.SynchronisePendingAsync(_cancellationTokenSource.Token);
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("catch synchronisation", exception, CancellationToken.None);
+            await Logging.LogErrorAsync("logbook synchronisation", exception, CancellationToken.None);
         }
     }
 

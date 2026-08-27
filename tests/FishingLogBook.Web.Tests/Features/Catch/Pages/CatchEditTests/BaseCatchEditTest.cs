@@ -6,12 +6,12 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Photographs.Models;
@@ -41,7 +41,7 @@ public class BaseCatchEditTest
     protected static BunitContext CreateContext(
         ICatchStore store,
         ILocalCatchOwnerService? owner = null,
-        ICatchSynchroniser? synchroniser = null,
+        ILogbookSynchroniser? synchroniser = null,
         ILoggingService? logging = null,
         ITimeService? time = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
@@ -171,9 +171,9 @@ public class BaseCatchEditTest
         return owner;
     }
 
-    protected static ICatchSynchroniser QuietSynchroniser()
+    protected static ILogbookSynchroniser QuietSynchroniser()
     {
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         return synchroniser;

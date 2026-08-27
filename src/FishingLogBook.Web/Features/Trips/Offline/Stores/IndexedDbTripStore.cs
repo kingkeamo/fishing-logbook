@@ -162,6 +162,7 @@ public sealed class IndexedDbTripStore : ITripStore
     public async Task<int> CleanupSyncedAsync(
         Guid ownerUserId,
         DateTimeOffset olderThan,
+        IReadOnlyCollection<Guid> retainedTripIds,
         CancellationToken cancellationToken)
     {
         if (ownerUserId == Guid.Empty)
@@ -185,7 +186,8 @@ public sealed class IndexedDbTripStore : ITripStore
                     "cleanupSyncedTrips",
                     token,
                     ownerUserId.ToString("D"),
-                    olderThan.ToUniversalTime().ToString("O"));
+                    olderThan.ToUniversalTime().ToString("O"),
+                    retainedTripIds.Select(tripId => tripId.ToString("D")).ToArray());
             },
             cancellationToken,
             _logging);

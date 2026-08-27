@@ -1,10 +1,10 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Pages.CatchList;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
@@ -89,7 +89,7 @@ public class WhenTestingSyncStatus : BaseCatchListTest
             .Returns(
                 _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.FailedToSynchronise)],
                 _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.Synchronised)]);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         var catchClient = EmptyCatchClient();
         await using var context = CreateContext(
             store,
@@ -119,7 +119,7 @@ public class WhenTestingSyncStatus : BaseCatchListTest
             .Returns(
                 _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.SavedLocally)],
                 _ => [StoredCatch(catchId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"), SyncStatus.Synchronised)]);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         var catchClient = EmptyCatchClient();
         await using var context = CreateContext(
             store,

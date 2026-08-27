@@ -5,11 +5,11 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
@@ -17,6 +17,9 @@ using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.AspNetCore.Components.Forms;
@@ -40,12 +43,14 @@ public class BaseRecordCatchTest
         ICatchStore store,
         ILocationService? location = null,
         ILocalCatchOwnerService? owner = null,
-        ICatchSynchroniser? synchroniser = null,
+        ILogbookSynchroniser? synchroniser = null,
         ILoggingService? logging = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
         IModalService? modalService = null,
         ITimeService? time = null,
-        IPhotographMetadataService? photoMetadata = null)
+        IPhotographMetadataService? photoMetadata = null,
+        ITripStore? tripStore = null,
+        IActiveTripService? activeTrip = null)
     {
         var metadata = photoMetadata ?? NoPhotoMetadata();
         var timeService = time ?? UtcTime();
@@ -67,6 +72,9 @@ public class BaseRecordCatchTest
             new PhotographPreparationService(metadata, timeService, loggingService));
         context.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
+        context.Services.AddSingleton(tripStore ?? Substitute.For<ITripStore>());
+        context.Services.AddSingleton(activeTrip ?? QuietActiveTrip());
+        context.Services.AddSingleton<ITripDisplayService>(new TripDisplayService(timeService));
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
@@ -260,9 +268,17 @@ public class BaseRecordCatchTest
         ]);
     }
 
-    protected static ICatchSynchroniser QuietSynchroniser()
+    protected static IActiveTripService QuietActiveTrip()
     {
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var activeTrip = Substitute.For<IActiveTripService>();
+        activeTrip.GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripModel?)null);
+        return activeTrip;
+    }
+
+    protected static ILogbookSynchroniser QuietSynchroniser()
+    {
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         synchroniser.RetryAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())

@@ -33,6 +33,16 @@
                    Color="Color.Primary"
                    Size="Size.Large"
                    FullWidth="true"
+                   Href="@RecordCatchHref"
+                   StartIcon="@Icons.Material.Filled.PhotoCamera"
+                   id="active-trip-record-catch">
+            @Loc["Trip_RecordCatch"]
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   FullWidth="true"
                    Disabled="IsFinishing"
                    OnClick="OnFinish"
                    StartIcon="@Icons.Material.Filled.Flag"

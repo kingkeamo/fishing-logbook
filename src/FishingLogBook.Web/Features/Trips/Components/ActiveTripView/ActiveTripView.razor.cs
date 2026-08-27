@@ -26,8 +26,13 @@ public partial class ActiveTripView : ComponentBase
     [Parameter]
     public EventCallback OnFinish { get; set; }
 
+    [Parameter]
+    public string RecordCatchBaseHref { get; set; } = "/catches/record";
+
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    private string RecordCatchHref => $"{RecordCatchBaseHref}?tripId={Trip.Id:D}";
 
     private bool HasPlace
     {

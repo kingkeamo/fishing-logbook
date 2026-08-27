@@ -3,6 +3,7 @@ using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Offline.Dependencies;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -17,6 +18,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
     private readonly ConcurrentDictionary<Guid, byte> _inFlight = new();
     private readonly ConcurrentDictionary<Guid, byte> _rerunRequested = new();
     private readonly ICatchStore _store;
+    private readonly ITripDependencyService _tripDependency;
     private readonly ICatchClient _client;
     private readonly INetworkService _networkService;
     private readonly ILocalCatchOwnerService _localCatchOwner;
@@ -27,6 +29,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
 
     public CatchSynchroniser(
         ICatchStore store,
+        ITripDependencyService tripDependency,
         ICatchClient client,
         INetworkService networkService,
         ILocalCatchOwnerService localCatchOwner,
@@ -34,6 +37,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         ILoggingService logging)
     {
         _store = store;
+        _tripDependency = tripDependency;
         _client = client;
         _networkService = networkService;
         _localCatchOwner = localCatchOwner;
@@ -168,11 +172,18 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
             return;
         }
 
+        var readiness = await ResolveTripReadinessAsync(ownerUserId, pending, cancellationToken);
         foreach (var catchRecord in pending)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
+                if (catchRecord.TripId is { } tripId && !readiness[tripId])
+                {
+                    await LogWaitingForTripAsync(catchRecord.Id, cancellationToken);
+                    continue;
+                }
+
                 await SynchroniseGuardedAsync(ownerUserId, catchRecord.Id, cancellationToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -206,6 +217,11 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         if (!await _networkService.IsOnlineAsync(cancellationToken))
         {
             await _store.UpdateSyncStateAsync(ToWaiting(catchRecord), cancellationToken);
+            return;
+        }
+
+        if (!await IsTripReadyAsync(ownerUserId.Value, catchRecord, cancellationToken))
+        {
             return;
         }
 
@@ -801,6 +817,62 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         return SyncStatus.WaitingToSynchronise;
     }
 
+    private async Task<IReadOnlyDictionary<Guid, bool>> ResolveTripReadinessAsync(
+        Guid ownerUserId,
+        IReadOnlyList<CatchModel> pending,
+        CancellationToken cancellationToken)
+    {
+        var readiness = new Dictionary<Guid, bool>();
+        foreach (var tripId in pending.Select(catchRecord => catchRecord.TripId).OfType<Guid>())
+        {
+            if (readiness.ContainsKey(tripId))
+            {
+                continue;
+            }
+
+            readiness[tripId] = await _tripDependency.IsTripReadyForServerAsync(
+                ownerUserId,
+                tripId,
+                cancellationToken);
+        }
+
+        return readiness;
+    }
+
+    private async Task<bool> IsTripReadyAsync(
+        Guid ownerUserId,
+        CatchModel catchRecord,
+        CancellationToken cancellationToken)
+    {
+        if (catchRecord.TripId is null)
+        {
+            return true;
+        }
+
+        if (await _tripDependency.IsTripReadyForServerAsync(
+                ownerUserId,
+                catchRecord.TripId.Value,
+                cancellationToken))
+        {
+            return true;
+        }
+
+        await LogWaitingForTripAsync(catchRecord.Id, cancellationToken);
+        return false;
+    }
+
+    private async Task LogWaitingForTripAsync(Guid catchId, CancellationToken cancellationToken)
+    {
+        await SafeLogAsync(
+            DiagnosticLevel.Information,
+            DiagnosticEventNames.CatchSyncWaitingForTrip,
+            "Catch is waiting for its trip to reach the server.",
+            catchId,
+            photographId: null,
+            exception: null,
+            cancellationToken);
+    }
+
     private static CatchDto ToDto(CatchModel catchRecord)
     {
         return new CatchDto(
@@ -831,7 +903,8 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
             Length = catchRecord.Length,
             Method = catchRecord.Method,
             BaitOrLure = catchRecord.BaitOrLure,
-            Notes = catchRecord.Notes
+            Notes = catchRecord.Notes,
+            TripId = catchRecord.TripId
         };
     }
 

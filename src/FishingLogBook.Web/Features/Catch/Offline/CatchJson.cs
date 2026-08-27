@@ -39,7 +39,8 @@ internal static class CatchJson
             catchRecord.Method,
             catchRecord.BaitOrLure,
             catchRecord.Notes,
-            catchRecord.SyncedAt);
+            catchRecord.SyncedAt,
+            catchRecord.TripId);
         return JsonSerializer.Serialize(metadata, Options);
     }
 
@@ -70,7 +71,8 @@ internal static class CatchJson
             metadata.Method,
             metadata.BaitOrLure,
             metadata.Notes,
-            metadata.SyncedAt);
+            metadata.SyncedAt,
+            metadata.TripId);
     }
 
     public static CatchModel DeserializeMetadata(string json)
@@ -127,7 +129,8 @@ internal static class CatchJson
         string? Method = null,
         string? BaitOrLure = null,
         string? Notes = null,
-        DateTimeOffset? SyncedAt = null);
+        DateTimeOffset? SyncedAt = null,
+        Guid? TripId = null);
 
     private sealed record CatchPhotographMetadata(
         Guid Id,

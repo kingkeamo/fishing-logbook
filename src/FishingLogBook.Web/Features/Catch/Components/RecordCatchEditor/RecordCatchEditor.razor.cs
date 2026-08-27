@@ -11,6 +11,9 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -51,6 +54,10 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private bool _locationSaved;
     private LocationPromptStatus _locationPrompt = new(false, false, false);
     private CatchLocationModel? _capturedLocation;
+    private TripModel? _associatedTrip;
+    private string? _associatedTripLabel;
+    private bool _tripOptedOut;
+    private bool _tripUnavailable;
     private FishingPreferencesDto? _preferences;
     private IReadOnlyList<FishingMethodDto> _catalogueMethods = [];
     private IReadOnlyList<SpeciesDto> _catalogueSpecies = [];
@@ -71,6 +78,15 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private IModalService ModalService { get; set; } = default!;
 
     [Inject]
+    private IActiveTripService ActiveTripService { get; set; } = default!;
+
+    [Inject]
+    private ITripStore TripStore { get; set; } = default!;
+
+    [Inject]
+    private ITripDisplayService TripDisplay { get; set; } = default!;
+
+    [Inject]
     private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
@@ -79,13 +95,19 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     [Parameter] public Guid OwnerUserId { get; set; }
     [Parameter] public AnglerPreferencesModel Preferences { get; set; } = AnglerPreferencesModel.Empty;
     [Parameter] public string ViewCatchesHref { get; set; } = "/catches";
+    [Parameter] public Guid? RequestedTripId { get; set; }
     [Parameter] public EventCallback Saved { get; set; }
+
+    private bool ShowTripAssociation => _associatedTrip is not null && !_isSaved;
+
+    private bool ShowTripOptedOut => _associatedTrip is null && _tripOptedOut && !_isSaved;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             var locationPrompt = RefreshLocationPromptAsync();
+            await ResolveTripAssociationAsync();
             await locationPrompt;
             LoadCatalogue();
             ApplyProfileDefaults();
@@ -94,6 +116,57 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         {
             _isLoading = false;
         }
+    }
+
+    private async Task ResolveTripAssociationAsync()
+    {
+        if (OwnerUserId == Guid.Empty)
+        {
+            return;
+        }
+
+        try
+        {
+            var trip = RequestedTripId is { } requested && requested != Guid.Empty
+                ? await TripStore.GetAsync(OwnerUserId, requested, _cancellationTokenSource.Token)
+                : await ActiveTripService.GetActiveAsync(OwnerUserId, _cancellationTokenSource.Token);
+            if (trip is null || trip.OwnerUserId != OwnerUserId)
+            {
+                return;
+            }
+
+            _associatedTrip = trip;
+            _associatedTripLabel = await DescribeTripAsync(trip);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("resolving the active trip", exception, CancellationToken.None);
+        }
+    }
+
+    private async Task<string> DescribeTripAsync(TripModel trip)
+    {
+        if (!string.IsNullOrWhiteSpace(trip.Title))
+        {
+            return trip.Title;
+        }
+
+        var display = await TripDisplay.DescribeAsync(trip, _cancellationTokenSource.Token);
+        var started = display.StartedDate ?? Loc["Trip_ActiveLabel"];
+        return string.IsNullOrWhiteSpace(trip.PlaceName)
+            ? started
+            : $"{started} · {trip.PlaceName}";
+    }
+
+    private void LeaveTrip()
+    {
+        _associatedTrip = null;
+        _associatedTripLabel = null;
+        _tripOptedOut = true;
+        _tripUnavailable = false;
     }
 
     private void LoadCatalogue()
@@ -495,6 +568,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _isSaving = true;
         _saveFailed = false;
         _caughtOnInvalid = false;
+        _tripUnavailable = false;
         await InvokeAsync(StateHasChanged);
         var saved = false;
         try
@@ -509,6 +583,18 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             {
                 _caughtOnInvalid = true;
                 return;
+            }
+
+            Guid? tripId = null;
+            if (_associatedTrip is not null)
+            {
+                if (!await IsAssociatedTripStillValidAsync())
+                {
+                    _tripUnavailable = true;
+                    return;
+                }
+
+                tripId = _associatedTrip.Id;
             }
 
             var catchId = Guid.NewGuid();
@@ -536,7 +622,8 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
                     OwnerUserId,
                     Method: method,
                     Weight: _weight,
-                    Length: _length),
+                    Length: _length,
+                    TripId: tripId),
                 _cancellationTokenSource.Token);
             _carriedMethod = method;
             _carriedSpecies = species;
@@ -563,6 +650,32 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         await Saved.InvokeAsync();
     }
 
+    private async Task<bool> IsAssociatedTripStillValidAsync()
+    {
+        if (_associatedTrip is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var trip = await TripStore.GetAsync(
+                OwnerUserId,
+                _associatedTrip.Id,
+                _cancellationTokenSource.Token);
+            return trip is not null && trip.OwnerUserId == OwnerUserId;
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("confirming the trip for a catch", exception, CancellationToken.None);
+            return false;
+        }
+    }
+
     private void RecordAnotherCatch()
     {
         _photographs.Clear();
@@ -572,6 +685,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _activePhotographId = null;
         _isSaved = false;
         _saveFailed = false;
+        _tripUnavailable = false;
         _capturedLocation = null;
         _deviceLocationChosen = false;
         _locationCaptureStarted = false;

@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Offline.Dependencies;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -18,6 +19,7 @@ public sealed class TripSynchroniser : ITripSynchroniser
 
     private readonly ConcurrentDictionary<Guid, byte> _inFlight = new();
     private readonly ITripStore _store;
+    private readonly ITripDependencyService _tripDependency;
     private readonly ITripClient _client;
     private readonly INetworkService _networkService;
     private readonly IActiveTripService _activeTripService;
@@ -26,6 +28,7 @@ public sealed class TripSynchroniser : ITripSynchroniser
 
     public TripSynchroniser(
         ITripStore store,
+        ITripDependencyService tripDependency,
         ITripClient client,
         INetworkService networkService,
         IActiveTripService activeTripService,
@@ -33,6 +36,7 @@ public sealed class TripSynchroniser : ITripSynchroniser
         ILoggingService logging)
     {
         _store = store;
+        _tripDependency = tripDependency;
         _client = client;
         _networkService = networkService;
         _activeTripService = activeTripService;
@@ -82,9 +86,13 @@ public sealed class TripSynchroniser : ITripSynchroniser
                 tripId: null,
                 exception: null,
                 cancellationToken);
+            var retained = await _tripDependency.GetTripsAwaitingCatchesAsync(
+                ownerUserId,
+                cancellationToken);
             var removed = await _store.CleanupSyncedAsync(
                 ownerUserId,
                 DateTimeOffset.UtcNow - SyncedCacheRetentionWindow,
+                retained,
                 cancellationToken);
             if (removed > 0)
             {

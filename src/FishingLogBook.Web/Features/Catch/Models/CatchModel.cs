@@ -18,4 +18,5 @@ public sealed record CatchModel(
     string? Method = null,
     string? BaitOrLure = null,
     string? Notes = null,
-    DateTimeOffset? SyncedAt = null);
+    DateTimeOffset? SyncedAt = null,
+    Guid? TripId = null);

@@ -1,6 +1,7 @@
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Offline.Dependencies;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -27,6 +28,8 @@ public class BaseCatchSynchroniserTest
     protected static readonly Guid PhotographCId =
         Guid.Parse("cccccccc-3333-3333-3333-333333333333");
 
+    protected readonly ITripDependencyService MockTripDependency =
+        Substitute.For<ITripDependencyService>();
     protected readonly ICatchClient MockCatchClient = Substitute.For<ICatchClient>();
     protected readonly INetworkService MockNetworkService = Substitute.For<INetworkService>();
     protected readonly ILocalCatchOwnerService MockLocalCatchOwner =
@@ -39,6 +42,11 @@ public class BaseCatchSynchroniserTest
         MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>())
             .Returns(OwnerUserId);
         MockNetworkService.IsOnlineAsync(Arg.Any<CancellationToken>())
+            .Returns(true);
+        MockTripDependency.IsTripReadyForServerAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
             .Returns(true);
         MockCatchClient.CreatePhotographUploadAsync(
                 Arg.Any<Guid>(),
@@ -60,6 +68,7 @@ public class BaseCatchSynchroniserTest
     {
         return new CatchSynchroniser(
             store,
+            MockTripDependency,
             MockCatchClient,
             MockNetworkService,
             MockLocalCatchOwner,

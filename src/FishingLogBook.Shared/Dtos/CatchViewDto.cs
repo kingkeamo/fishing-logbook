@@ -10,6 +10,8 @@ public sealed record CatchViewDto(
 
     public Guid RecordedByUserId { get; init; }
 
+    public Guid? TripId { get; init; }
+
     public string? SpeciesName { get; init; }
 
     public decimal? Weight { get; init; }

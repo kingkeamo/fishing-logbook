@@ -3,10 +3,10 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Pages.CatchList;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
@@ -381,7 +381,7 @@ public class WhenTestingLoadResilience : BaseCatchListTest
                 concurrent -= 1;
                 return (IReadOnlyList<CatchModel>)[];
             });
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         var catchClient = ServerCatchClient();
         await using var context = CreateContext(
             store,

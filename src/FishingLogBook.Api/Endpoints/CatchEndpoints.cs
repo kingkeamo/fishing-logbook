@@ -108,7 +108,8 @@ public static class CatchEndpoints
         if (response.Error is CatchHasNoPhotographsError
             or CatchPhotographIdentityError
             or CatchOwnershipConflictError
-            or CatchLocationInvalidError)
+            or CatchLocationInvalidError
+            or CatchTripInvalidError)
         {
             return Results.BadRequest(response);
         }
