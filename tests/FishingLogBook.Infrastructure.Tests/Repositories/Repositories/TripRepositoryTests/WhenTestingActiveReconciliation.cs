@@ -26,7 +26,7 @@ public class WhenTestingActiveReconciliation : BaseTripRepositoryTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Status.Should().Be(TripStatusEnum.Active);
-        var stored = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var stored = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         stored.Value.Should().HaveCount(2);
         var demoted = stored.Value.Single(trip => trip.Id == earlier.Id);
         demoted.Status.Should().Be(TripStatusEnum.Completed);
@@ -50,7 +50,7 @@ public class WhenTestingActiveReconciliation : BaseTripRepositoryTest
         result.IsSuccess.Should().BeTrue();
         result.Value.Status.Should().Be(TripStatusEnum.Completed);
         result.Value.EndedOn.Should().Be(later.StartedOn);
-        var stored = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var stored = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         stored.Value.Should().HaveCount(2);
         stored.Value.Single(trip => trip.Id == later.Id).Status.Should().Be(TripStatusEnum.Active);
     }
@@ -73,8 +73,8 @@ public class WhenTestingActiveReconciliation : BaseTripRepositoryTest
         await Sut.UpsertAsync(secondEarlier, CancellationToken.None);
 
         // Assert
-        var first = await Sut.GetByOwnerUserIdAsync(firstOwner, CancellationToken.None);
-        var second = await Sut.GetByOwnerUserIdAsync(secondOwner, CancellationToken.None);
+        var first = await Sut.GetSummariesByOwnerUserIdAsync(firstOwner, CancellationToken.None);
+        var second = await Sut.GetSummariesByOwnerUserIdAsync(secondOwner, CancellationToken.None);
         first.Value.Single(trip => trip.Status == TripStatusEnum.Active).Id.Should().Be(firstLater.Id);
         second.Value.Single(trip => trip.Status == TripStatusEnum.Active).Id.Should().Be(secondLater.Id);
         first.Value.Single(trip => trip.Id == firstEarlier.Id).EndedOn
@@ -96,7 +96,7 @@ public class WhenTestingActiveReconciliation : BaseTripRepositoryTest
         }
 
         // Assert
-        var stored = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var stored = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         stored.Value.Should().HaveCount(4);
         stored.Value.Count(trip => trip.Status == TripStatusEnum.Active).Should().Be(1);
         stored.Value.Where(trip => trip.Status == TripStatusEnum.Completed)
@@ -138,7 +138,7 @@ public class WhenTestingActiveReconciliation : BaseTripRepositoryTest
         replay.IsSuccess.Should().BeTrue();
         replay.Value.Status.Should().Be(TripStatusEnum.Active);
         replay.Value.EndedOn.Should().BeNull();
-        var stored = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var stored = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         stored.Value.Should().ContainSingle();
     }
 
@@ -158,7 +158,7 @@ public class WhenTestingActiveReconciliation : BaseTripRepositoryTest
         await Sut.UpsertAsync(second, CancellationToken.None);
 
         // Assert
-        var stored = await Sut.GetByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var stored = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
         stored.Value.Should().HaveCount(2);
         stored.Value.Single(trip => trip.Status == TripStatusEnum.Active).Id
             .Should().Be(expectedActive.Id);

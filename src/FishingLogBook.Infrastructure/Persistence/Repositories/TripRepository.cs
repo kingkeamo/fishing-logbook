@@ -2,6 +2,7 @@ using Dapper;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Trips.Errors;
+using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
 using FluentResults;
 using MapsterMapper;
@@ -63,29 +64,79 @@ public sealed class TripRepository : ITripRepository
         }
     }
 
-    public async Task<Result<IReadOnlyList<Trip>>> GetByOwnerUserIdAsync(
+    public async Task<Result<IReadOnlyList<TripSummary>>> GetSummariesByOwnerUserIdAsync(
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
         try
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
-            const string sql = $"""
-                {SelectSql}
-                WHERE "OwnerUserId" = @OwnerUserId
-                ORDER BY "StartedOn" DESC;
+            const string sql = """
+                SELECT
+                    t."Id",
+                    t."Status",
+                    t."StartedOn",
+                    t."EndedOn",
+                    t."Title",
+                    t."PlaceName",
+                    (SELECT COUNT(*) FROM "Catch" c WHERE c."TripId" = t."Id") AS "CatchCount",
+                    (SELECT COUNT(*) FROM "TripPhotograph" p WHERE p."TripId" = t."Id") AS "PhotographCount",
+                    (SELECT COUNT(*) FROM "TripNote" n WHERE n."TripId" = t."Id") AS "NoteCount"
+                FROM "Trip" t
+                WHERE t."OwnerUserId" = @OwnerUserId
+                ORDER BY t."StartedOn" DESC, t."Id" DESC;
                 """;
-            var rows = await connection.QueryAsync<TripPersistenceRow>(new CommandDefinition(
+            var rows = await connection.QueryAsync<TripSummaryRow>(new CommandDefinition(
                 sql,
                 new { OwnerUserId = ownerUserId },
                 cancellationToken: cancellationToken));
-            IReadOnlyList<Trip> trips = [.. rows.Select(_mapper.Map<Trip>)];
-            return Result.Ok(trips);
+            IReadOnlyList<TripSummary> summaries =
+            [
+                .. rows.Select(row => new TripSummary
+                {
+                    Id = row.Id,
+                    Status = ToStatus(row.Status),
+                    StartedOn = row.StartedOn,
+                    EndedOn = row.EndedOn,
+                    Title = row.Title,
+                    PlaceName = row.PlaceName,
+                    CatchCount = row.CatchCount,
+                    PhotographCount = row.PhotographCount,
+                    NoteCount = row.NoteCount
+                })
+            ];
+            return Result.Ok(summaries);
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed to load trips for user {UserId}.", ownerUserId);
-            return Result.Fail<IReadOnlyList<Trip>>(FailedMessage);
+            _logger.LogError(exception, "Failed to load trip summaries for user {UserId}.", ownerUserId);
+            return Result.Fail<IReadOnlyList<TripSummary>>(FailedMessage);
+        }
+    }
+
+    public async Task<Result<IReadOnlyList<TripCatchSummary>>> GetCatchSummariesByTripIdAsync(
+        Guid tripId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            const string sql = """
+                SELECT "Id", "CaughtOn", "SpeciesName"
+                FROM "Catch"
+                WHERE "TripId" = @TripId
+                ORDER BY "CaughtOn";
+                """;
+            var rows = await connection.QueryAsync<TripCatchSummary>(new CommandDefinition(
+                sql,
+                new { TripId = tripId },
+                cancellationToken: cancellationToken));
+            return Result.Ok<IReadOnlyList<TripCatchSummary>>([.. rows]);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to load catch summaries for trip {TripId}.", tripId);
+            return Result.Fail<IReadOnlyList<TripCatchSummary>>(FailedMessage);
         }
     }
 
@@ -287,6 +338,34 @@ public sealed class TripRepository : ITripRepository
             transaction,
             cancellationToken: cancellationToken));
         return row is null ? null : _mapper.Map<Trip>(row);
+    }
+
+    private static TripStatusEnum ToStatus(string? status)
+    {
+        return Enum.TryParse<TripStatusEnum>(status, ignoreCase: false, out var parsed)
+            ? parsed
+            : TripStatusEnum.Completed;
+    }
+
+    public sealed class TripSummaryRow
+    {
+        public Guid Id { get; init; }
+
+        public string? Status { get; init; }
+
+        public DateTimeOffset StartedOn { get; init; }
+
+        public DateTimeOffset? EndedOn { get; init; }
+
+        public string? Title { get; init; }
+
+        public string? PlaceName { get; init; }
+
+        public int CatchCount { get; init; }
+
+        public int PhotographCount { get; init; }
+
+        public int NoteCount { get; init; }
     }
 
     public sealed class TripPersistenceRow

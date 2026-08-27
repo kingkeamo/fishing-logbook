@@ -54,6 +54,26 @@ public sealed class TripMappingRegistration : IRegister
                 PlaceName = source.PlaceName
             });
 
+        config.NewConfig<TripSummary, TripSummaryDto>()
+            .MapWith(source => new TripSummaryDto(
+                source.Id,
+                source.Status.ToString(),
+                source.StartedOn,
+                source.EndedOn)
+            {
+                Title = source.Title,
+                PlaceName = source.PlaceName,
+                CatchCount = source.CatchCount,
+                PhotographCount = source.PhotographCount,
+                NoteCount = source.NoteCount
+            });
+
+        config.NewConfig<TripCatchSummary, TripCatchSummaryDto>()
+            .MapWith(source => new TripCatchSummaryDto(source.Id, source.CaughtOn)
+            {
+                SpeciesName = source.SpeciesName
+            });
+
         config.NewConfig<Trip, TripViewDto>()
             .MapWith(source => new TripViewDto(
                 source.Id,

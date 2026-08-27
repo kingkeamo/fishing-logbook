@@ -15,7 +15,7 @@ public sealed class GetMyTripsQuery : IRequest<GetMyTripsResponse>
 
 public sealed class GetMyTripsResponse : ValidatedResponse
 {
-    public IReadOnlyList<TripViewDto> Trips { get; init; } = [];
+    public IReadOnlyList<TripSummaryDto> Trips { get; init; } = [];
 }
 
 public sealed class GetMyTripsHandler : IRequestHandler<GetMyTripsQuery, GetMyTripsResponse>
@@ -31,7 +31,7 @@ public sealed class GetMyTripsHandler : IRequestHandler<GetMyTripsQuery, GetMyTr
 
     public async Task<GetMyTripsResponse> Handle(GetMyTripsQuery query, CancellationToken cancellationToken)
     {
-        var result = await _tripService.GetMyAsync(
+        var result = await _tripService.GetSummariesAsync(
             _mapper.Map<GetMyTripsArgs>(query),
             cancellationToken);
         if (result.IsFailed)

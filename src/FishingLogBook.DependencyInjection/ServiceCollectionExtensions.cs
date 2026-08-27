@@ -55,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ICatchService, CatchService>();
         services.AddScoped<ITripService, TripService>();
+        services.AddScoped<ITripDetailService, TripDetailService>();
         services.AddScoped<ITripPhotographService, TripPhotographService>();
         services.AddScoped<ITripNoteService, TripNoteService>();
         services.AddScoped<ICatchPhotographService, CatchPhotographService>();

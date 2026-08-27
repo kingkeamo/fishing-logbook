@@ -121,8 +121,17 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Trip?>(null));
         TripRepository
-            .GetByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Trip>>([]));
+            .GetSummariesByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripSummary>>([]));
+        TripRepository
+            .GetCatchSummariesByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripCatchSummary>>([]));
+        TripNoteRepository
+            .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripNote>>([]));
+        TripPhotographRepository
+            .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripPhotograph>>([]));
         UserPlatformCapabilityRepository
             .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(false));

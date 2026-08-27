@@ -34,7 +34,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        await _factory.TripRepository.DidNotReceive().GetByOwnerUserIdAsync(
+        await _factory.TripRepository.DidNotReceive().GetSummariesByOwnerUserIdAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -45,8 +45,8 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         // Arrange
         ResetRepositories();
         _factory.TripRepository
-            .GetByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<IReadOnlyList<Trip>>("Failed to save the trip."));
+            .GetSummariesByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<IReadOnlyList<TripSummary>>("Failed to save the trip."));
         var client = _factory.CreateAuthenticatedClient();
 
         // Act
@@ -54,6 +54,9 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -71,15 +74,15 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trips = await response.Content.ReadFromJsonAsync<IReadOnlyList<TripViewDto>>();
+        var trips = await response.Content.ReadFromJsonAsync<IReadOnlyList<TripSummaryDto>>();
         trips.Should().BeEmpty();
-        await _factory.TripRepository.Received(1).GetByOwnerUserIdAsync(
+        await _factory.TripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
             current!.UserId,
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldReturnTheAnglersOwnTrips()
+    public async Task ItShouldReturnTheAnglersOwnTripsWithTheirCounts()
     {
         // Arrange
         ResetRepositories();
@@ -90,24 +93,25 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         var activeId = Guid.NewGuid();
         var completedId = Guid.NewGuid();
         _factory.TripRepository
-            .GetByOwnerUserIdAsync(current!.UserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Trip>>(
+            .GetSummariesByOwnerUserIdAsync(current!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripSummary>>(
             [
-                new Trip
+                new TripSummary
                 {
                     Id = activeId,
-                    OwnerUserId = current.UserId,
                     Status = TripStatusEnum.Active,
                     StartedOn = StartedOn
                 },
-                new Trip
+                new TripSummary
                 {
                     Id = completedId,
-                    OwnerUserId = current.UserId,
                     PlaceName = "Lough Corrib",
                     Status = TripStatusEnum.Completed,
                     StartedOn = StartedOn.AddDays(-1),
-                    EndedOn = StartedOn.AddDays(-1).AddHours(5)
+                    EndedOn = StartedOn.AddDays(-1).AddHours(5),
+                    CatchCount = 4,
+                    PhotographCount = 2,
+                    NoteCount = 1
                 }
             ]));
 
@@ -116,22 +120,59 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trips = await response.Content.ReadFromJsonAsync<IReadOnlyList<TripViewDto>>();
+        var trips = await response.Content.ReadFromJsonAsync<IReadOnlyList<TripSummaryDto>>();
         trips.Should().HaveCount(2);
         trips!.Single(trip => trip.Id == activeId).Status.Should().Be(TripConstants.Active);
         var completed = trips.Single(trip => trip.Id == completedId);
         completed.Status.Should().Be(TripConstants.Completed);
         completed.PlaceName.Should().Be("Lough Corrib");
-        await _factory.TripRepository.Received(1).GetByOwnerUserIdAsync(
+        completed.CatchCount.Should().Be(4);
+        completed.PhotographCount.Should().Be(2);
+        completed.NoteCount.Should().Be(1);
+        await _factory.TripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
             current.UserId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotReadEveryTripsCatchesPhotographsOrNotesToBuildTheList()
+    {
+        // Arrange
+        ResetRepositories();
+        var client = _factory.CreateAuthenticatedClient(
+            TestJwt.CreateAccessToken(subject: "trip-list-no-amplification"));
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        _factory.TripRepository
+            .GetSummariesByOwnerUserIdAsync(current!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripSummary>>(
+            [
+                new TripSummary { Id = Guid.NewGuid(), Status = TripStatusEnum.Completed, StartedOn = StartedOn },
+                new TripSummary { Id = Guid.NewGuid(), Status = TripStatusEnum.Completed, StartedOn = StartedOn }
+            ]));
+
+        // Act
+        var response = await client.GetAsync("/api/trips");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        await _factory.TripRepository.DidNotReceive().GetCatchSummariesByTripIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+        await _factory.TripPhotographRepository.DidNotReceive().GetByTripIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+        await _factory.TripNoteRepository.DidNotReceive().GetByTripIdAsync(
+            Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
 
     private void ResetRepositories()
     {
         _factory.TripRepository.ClearReceivedCalls();
+        _factory.TripNoteRepository.ClearReceivedCalls();
+        _factory.TripPhotographRepository.ClearReceivedCalls();
         _factory.TripRepository
-            .GetByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Trip>>([]));
+            .GetSummariesByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripSummary>>([]));
     }
 }

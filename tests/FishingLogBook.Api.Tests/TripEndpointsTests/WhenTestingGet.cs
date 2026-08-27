@@ -123,9 +123,10 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trip = await response.Content.ReadFromJsonAsync<TripViewDto>();
-        trip.Should().NotBeNull();
-        trip!.Id.Should().Be(tripId);
+        var detail = await response.Content.ReadFromJsonAsync<TripDetailDto>();
+        detail.Should().NotBeNull();
+        var trip = detail!.Trip;
+        trip.Id.Should().Be(tripId);
         trip.OwnerUserId.Should().Be(current.UserId);
         trip.Status.Should().Be(TripConstants.Active);
         trip.Title.Should().BeNull();
@@ -170,8 +171,9 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var trip = await response.Content.ReadFromJsonAsync<TripViewDto>();
-        trip!.Status.Should().Be(TripConstants.Completed);
+        var detail = await response.Content.ReadFromJsonAsync<TripDetailDto>();
+        var trip = detail!.Trip;
+        trip.Status.Should().Be(TripConstants.Completed);
         trip.Title.Should().Be("Day with Dad");
         trip.PlaceName.Should().Be("Lough Corrib");
         trip.EndedOn.Should().Be(StartedOn.AddHours(6));
@@ -180,11 +182,86 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         await _factory.TripRepository.Received(1).GetByIdAsync(tripId, Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldReturnTheTripTimelineContentForTheOwner()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+        ResetRepositories();
+        var client = _factory.CreateAuthenticatedClient(
+            TestJwt.CreateAccessToken(subject: "trip-get-timeline"));
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        _factory.TripRepository
+            .GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(new Trip
+            {
+                Id = tripId,
+                OwnerUserId = current!.UserId,
+                PlaceName = "Lough Corrib",
+                Status = TripStatusEnum.Completed,
+                StartedOn = StartedOn,
+                EndedOn = StartedOn.AddHours(6)
+            }));
+        _factory.TripNoteRepository
+            .GetByTripIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripNote>>(
+            [
+                new TripNote
+                {
+                    Id = Guid.NewGuid(),
+                    TripId = tripId,
+                    CreatedByUserId = current.UserId,
+                    Text = "The wind dropped.",
+                    RecordedOn = StartedOn.AddMinutes(30)
+                }
+            ]));
+        _factory.TripRepository
+            .GetCatchSummariesByTripIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripCatchSummary>>(
+            [
+                new TripCatchSummary
+                {
+                    Id = Guid.NewGuid(),
+                    CaughtOn = StartedOn.AddHours(1),
+                    SpeciesName = "Pike"
+                }
+            ]));
+
+        // Act
+        var response = await client.GetAsync($"/api/trips/{tripId:D}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var detail = await response.Content.ReadFromJsonAsync<TripDetailDto>();
+        detail!.Trip.PlaceName.Should().Be("Lough Corrib");
+        detail.Notes.Single().Text.Should().Be("The wind dropped.");
+        detail.Notes.Single().CreatedByUserId.Should().Be(current.UserId);
+        detail.Catches.Single().SpeciesName.Should().Be("Pike");
+        detail.Photographs.Should().BeEmpty();
+        await _factory.TripNoteRepository.Received(1).GetByTripIdAsync(
+            tripId,
+            Arg.Any<CancellationToken>());
+        await _factory.TripRepository.Received(1).GetCatchSummariesByTripIdAsync(
+            tripId,
+            Arg.Any<CancellationToken>());
+    }
+
     private void ResetRepositories()
     {
         _factory.TripRepository.ClearReceivedCalls();
+        _factory.TripNoteRepository.ClearReceivedCalls();
+        _factory.TripPhotographRepository.ClearReceivedCalls();
         _factory.TripRepository
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Trip?>(null));
+        _factory.TripRepository
+            .GetCatchSummariesByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripCatchSummary>>([]));
+        _factory.TripNoteRepository
+            .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripNote>>([]));
+        _factory.TripPhotographRepository
+            .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripPhotograph>>([]));
     }
 }
