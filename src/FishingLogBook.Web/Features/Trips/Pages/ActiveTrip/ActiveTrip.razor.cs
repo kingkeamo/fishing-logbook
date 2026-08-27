@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -20,6 +21,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private bool _loadFailed;
     private bool _isFinishing;
     private bool _locationAttempted;
+    private int? _catchCount;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -35,6 +37,9 @@ public partial class ActiveTrip : ComponentBase, IDisposable
 
     [Inject]
     private ILocalCatchOwnerService LocalOwner { get; set; } = default!;
+
+    [Inject]
+    private ICatchStore CatchStore { get; set; } = default!;
 
     [Inject]
     private ILoggingService Logging { get; set; } = default!;
@@ -90,6 +95,24 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         await TryAttachLocationAsync();
     }
 
+    private async Task<int?> CountCatchesAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var catches = await CatchStore.GetMetadataAsync(ownerUserId, cancellationToken);
+            return catches.Count(catchRecord => catchRecord.TripId == TripId);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("counting catches for a trip", exception, CancellationToken.None);
+            return null;
+        }
+    }
+
     private async Task LoadAsync()
     {
         _isLoading = true;
@@ -102,6 +125,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             if (_trip is not null)
             {
                 _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
+                _catchCount = await CountCatchesAsync(ownerUserId, cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

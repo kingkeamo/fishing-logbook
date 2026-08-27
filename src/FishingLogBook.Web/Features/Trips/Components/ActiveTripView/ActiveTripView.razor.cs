@@ -29,8 +29,24 @@ public partial class ActiveTripView : ComponentBase
     [Parameter]
     public string RecordCatchBaseHref { get; set; } = "/catches/record";
 
+    [Parameter]
+    public int? CatchCount { get; set; }
+
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+
+    private string CatchSummary
+    {
+        get
+        {
+            return CatchCount switch
+            {
+                null or 0 => Loc["Trip_CatchesNone"],
+                1 => Loc["Trip_CatchesOne"],
+                _ => string.Format(Loc["Trip_CatchesMany"], CatchCount)
+            };
+        }
+    }
 
     private string RecordCatchHref => $"{RecordCatchBaseHref}?tripId={Trip.Id:D}";
 

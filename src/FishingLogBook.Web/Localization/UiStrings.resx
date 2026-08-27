@@ -273,6 +273,18 @@
   <data name="Trip_NoteRemoveFailed" xml:space="preserve">
     <value>That note could not be removed. Try again when you are back online.</value>
   </data>
+  <data name="Trip_CatchesLabel" xml:space="preserve">
+    <value>Trip catches</value>
+  </data>
+  <data name="Trip_CatchesNone" xml:space="preserve">
+    <value>No catches yet</value>
+  </data>
+  <data name="Trip_CatchesOne" xml:space="preserve">
+    <value>1 catch recorded</value>
+  </data>
+  <data name="Trip_CatchesMany" xml:space="preserve">
+    <value>{0} catches recorded</value>
+  </data>
   <data name="Trip_RecordCatch" xml:space="preserve">
     <value>Record catch</value>
   </data>

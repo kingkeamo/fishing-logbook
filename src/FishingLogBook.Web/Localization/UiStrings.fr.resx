@@ -273,6 +273,18 @@
   <data name="Trip_NoteRemoveFailed" xml:space="preserve">
     <value>Cette note n'a pas pu être supprimée. Réessayez une fois de retour en ligne.</value>
   </data>
+  <data name="Trip_CatchesLabel" xml:space="preserve">
+    <value>Prises de la sortie</value>
+  </data>
+  <data name="Trip_CatchesNone" xml:space="preserve">
+    <value>Aucune prise pour l'instant</value>
+  </data>
+  <data name="Trip_CatchesOne" xml:space="preserve">
+    <value>1 prise enregistrée</value>
+  </data>
+  <data name="Trip_CatchesMany" xml:space="preserve">
+    <value>{0} prises enregistrées</value>
+  </data>
   <data name="Trip_RecordCatch" xml:space="preserve">
     <value>Enregistrer une prise</value>
   </data>
