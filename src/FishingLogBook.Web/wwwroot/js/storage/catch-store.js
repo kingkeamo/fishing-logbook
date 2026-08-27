@@ -1,165 +1,33 @@
 import {
-    closeDatabase,
-    elapsedSince,
-    openDatabase,
-    runMultiStoreTransaction,
-    runTransaction
-} from './indexed-db.js';
-import { emit, emitStorageEstimate, emitTimedOut } from './offline-diagnostics.js';
+    CATCH_STORE_NAME as LOGBOOK_CATCH_STORE_NAME,
+    LOGBOOK_DATABASE_NAME,
+    LOGBOOK_DATABASE_VERSION,
+    PHOTO_STORE_NAME as LOGBOOK_PHOTO_STORE_NAME,
+    normalisedOwnerId,
+    openLogbookDatabase,
+    openTimeoutMs as logbookOpenTimeoutMs,
+    runLogbookMultiStoreTransaction,
+    runLogbookTransaction
+} from './logbook-database.js';
 
-export const CATCH_DATABASE_NAME = 'FishingLogBook';
-export const CATCH_STORE_NAME = 'catches';
-export const PHOTO_STORE_NAME = 'catchPhotographs';
-export const CATCH_DATABASE_VERSION = 4;
-export const openTimeoutMs = 8000;
+export const CATCH_DATABASE_NAME = LOGBOOK_DATABASE_NAME;
+export const CATCH_STORE_NAME = LOGBOOK_CATCH_STORE_NAME;
+export const PHOTO_STORE_NAME = LOGBOOK_PHOTO_STORE_NAME;
+export const CATCH_DATABASE_VERSION = LOGBOOK_DATABASE_VERSION;
+export const openTimeoutMs = logbookOpenTimeoutMs;
 
-const LEGACY_TEST_CATCH_STORE_NAME = 'testCatches';
-const LEGACY_TEST_CATCH_PHOTO_STORE_NAME = 'testCatchPhotographs';
-
-const databaseName = CATCH_DATABASE_NAME;
-const storeName = CATCH_STORE_NAME;
-const photographStoreName = PHOTO_STORE_NAME;
-const version = CATCH_DATABASE_VERSION;
-
-export function openCatchDatabase() {
-    const started = performance.now();
-    emit('OfflineDbOpenStarted', { storeName, operation: 'open', elapsedMilliseconds: 0 });
-    return openDatabase({
-        databaseName,
-        version,
-        timeoutMs: openTimeoutMs,
-        timeoutLabel: 'IndexedDB open',
-        onUpgrade: (db) => {
-            if (!db.objectStoreNames.contains(storeName)) {
-                db.createObjectStore(storeName, { keyPath: 'id' });
-            }
-            if (!db.objectStoreNames.contains(photographStoreName)) {
-                db.createObjectStore(photographStoreName, { keyPath: 'id' });
-            }
-            if (db.objectStoreNames.contains(LEGACY_TEST_CATCH_STORE_NAME)) {
-                db.deleteObjectStore(LEGACY_TEST_CATCH_STORE_NAME);
-            }
-            if (db.objectStoreNames.contains(LEGACY_TEST_CATCH_PHOTO_STORE_NAME)) {
-                db.deleteObjectStore(LEGACY_TEST_CATCH_PHOTO_STORE_NAME);
-            }
-        },
-        onOpened: () => {
-            emit('OfflineDbOpenCompleted', {
-                operation: 'open',
-                elapsedMilliseconds: elapsedSince(started)
-            });
-            void emitStorageEstimate();
-        },
-        onFailed: (error) => {
-            emit('OfflineDbOpenFailed', {
-                operation: 'open',
-                elapsedMilliseconds: elapsedSince(started),
-                errorType: error?.name
-            });
-        },
-        onTimedOut: () => {
-            emit('OfflineDbOpenTimedOut', {
-                operation: 'open',
-                elapsedMilliseconds: elapsedSince(started)
-            });
-        },
-        onVersionChange: (db) => {
-            closeDatabase(db);
-            emit('OfflineDbClosed', {
-                operation: 'versionchange',
-                elapsedMilliseconds: elapsedSince(started)
-            });
-        }
-    });
-}
+export const openCatchDatabase = openLogbookDatabase;
 
 export function runCatchTransaction(objectStoreName, mode, operationName, execute) {
-    const started = performance.now();
-    return openCatchDatabase().then((db) => runTransaction(db, {
-        storeName: objectStoreName,
-        mode,
-        timeoutMs: openTimeoutMs,
-        timeoutLabel: `IndexedDB ${operationName}`,
-        execute,
-        closeWhenDone: true,
-        onStarted: () => emit('OfflineDbTransactionStarted', {
-            storeName: objectStoreName,
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onCompleted: () => emit('OfflineDbTransactionCompleted', {
-            storeName: objectStoreName,
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onAborted: (error) => emit('OfflineDbTransactionAborted', {
-            storeName: objectStoreName,
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started),
-            errorType: error?.name
-        }),
-        onError: (error) => emit('OfflineDbTransactionError', {
-            storeName: objectStoreName,
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started),
-            errorType: error?.name
-        }),
-        onRequestSucceeded: () => emit('OfflineDbRequestSucceeded', {
-            storeName: objectStoreName,
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onClosed: () => emit('OfflineDbClosed', {
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onTimedOut: (error) => emitTimedOut(mode, objectStoreName, started, error)
-    }));
+    return runLogbookTransaction(objectStoreName, mode, operationName, execute);
 }
 
 function runCatchWithPhotographsTransaction(mode, operationName, execute) {
-    const started = performance.now();
-    const storeNames = [CATCH_STORE_NAME, PHOTO_STORE_NAME];
-    return openCatchDatabase().then((db) => runMultiStoreTransaction(db, {
-        storeNames,
+    return runLogbookMultiStoreTransaction(
+        [CATCH_STORE_NAME, PHOTO_STORE_NAME],
         mode,
-        timeoutMs: openTimeoutMs,
-        timeoutLabel: `IndexedDB ${operationName}`,
-        execute,
-        closeWhenDone: true,
-        onStarted: () => emit('OfflineDbTransactionStarted', {
-            storeName: storeNames.join(','),
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onCompleted: () => emit('OfflineDbTransactionCompleted', {
-            storeName: storeNames.join(','),
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onAborted: (error) => emit('OfflineDbTransactionAborted', {
-            storeName: storeNames.join(','),
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started),
-            errorType: error?.name
-        }),
-        onError: (error) => emit('OfflineDbTransactionError', {
-            storeName: storeNames.join(','),
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started),
-            errorType: error?.name
-        }),
-        onRequestSucceeded: () => emit('OfflineDbRequestSucceeded', {
-            storeName: storeNames.join(','),
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onClosed: () => emit('OfflineDbClosed', {
-            operation: operationName,
-            elapsedMilliseconds: elapsedSince(started)
-        }),
-        onTimedOut: (error) => emitTimedOut(mode, storeNames.join(','), started, error)
-    }));
+        operationName,
+        execute);
 }
 
 export async function putCatchWithPhotographs(json, photographs) {
@@ -245,7 +113,7 @@ function writePhotographs(photoStore, photos, succeed, fail) {
 
 export async function updateCatchMetadata(json) {
     const catchRecord = JSON.parse(json);
-    if (!catchRecord?.id || !normalisedUserId(catchRecord.userId)) {
+    if (!catchRecord?.id || !normalisedOwnerId(catchRecord.userId)) {
         throw new Error('Owned Catch id is required');
     }
 
@@ -254,7 +122,7 @@ export async function updateCatchMetadata(json) {
         existingRequest.onerror = () => fail(existingRequest.error);
         existingRequest.onsuccess = () => {
             const existing = existingRequest.result;
-            if (!existing || normalisedUserId(existing.userId) !== normalisedUserId(catchRecord.userId)) {
+            if (!existing || normalisedOwnerId(existing.userId) !== normalisedOwnerId(catchRecord.userId)) {
                 fail(new Error('Owned Catch was not found'));
                 return;
             }
@@ -319,7 +187,7 @@ function hasMetadataDifference(existing, incoming) {
 }
 
 export async function getAllCatchesWithPhotographs(ownerUserId) {
-    const owner = normalisedUserId(ownerUserId);
+    const owner = normalisedOwnerId(ownerUserId);
     if (!owner) {
         return [];
     }
@@ -333,7 +201,7 @@ export async function getAllCatchesWithPhotographs(ownerUserId) {
         catchRequest.onsuccess = () => {
             const cursor = catchRequest.result;
             if (cursor) {
-                if (normalisedUserId(cursor.value?.userId) === owner) {
+                if (normalisedOwnerId(cursor.value?.userId) === owner) {
                     catches.push(cursor.value);
                 }
 
@@ -363,7 +231,7 @@ export async function getAllCatchesWithPhotographs(ownerUserId) {
 }
 
 export async function getCatchMetadata(ownerUserId) {
-    const owner = normalisedUserId(ownerUserId);
+    const owner = normalisedOwnerId(ownerUserId);
     if (!owner) {
         return [];
     }
@@ -375,7 +243,7 @@ export async function getCatchMetadata(ownerUserId) {
         request.onsuccess = () => {
             const cursor = request.result;
             if (cursor) {
-                if (normalisedUserId(cursor.value?.userId) === owner) {
+                if (normalisedOwnerId(cursor.value?.userId) === owner) {
                     catches.push({ json: JSON.stringify(cursor.value), photographs: [] });
                 }
 
@@ -389,7 +257,7 @@ export async function getCatchMetadata(ownerUserId) {
 }
 
 export async function getCatchMetadataById(ownerUserId, catchId) {
-    const owner = normalisedUserId(ownerUserId);
+    const owner = normalisedOwnerId(ownerUserId);
     if (!owner || typeof catchId !== 'string' || !catchId) {
         return null;
     }
@@ -399,7 +267,7 @@ export async function getCatchMetadataById(ownerUserId, catchId) {
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
             const record = request.result;
-            succeed(record && normalisedUserId(record.userId) === owner
+            succeed(record && normalisedOwnerId(record.userId) === owner
                 ? { json: JSON.stringify(record), photographs: [] }
                 : null);
         };
@@ -407,7 +275,7 @@ export async function getCatchMetadataById(ownerUserId, catchId) {
 }
 
 export async function getCatchWithPhotographs(ownerUserId, catchId) {
-    const owner = normalisedUserId(ownerUserId);
+    const owner = normalisedOwnerId(ownerUserId);
     if (!owner || typeof catchId !== 'string' || !catchId) {
         return null;
     }
@@ -419,7 +287,7 @@ export async function getCatchWithPhotographs(ownerUserId, catchId) {
         catchRequest.onerror = () => fail(catchRequest.error);
         catchRequest.onsuccess = () => {
             const record = catchRequest.result;
-            if (!record || normalisedUserId(record.userId) !== owner) {
+            if (!record || normalisedOwnerId(record.userId) !== owner) {
                 succeed(null);
                 return;
             }
@@ -488,7 +356,7 @@ function toStoredResult(record, photographs) {
 }
 
 export async function cleanupSyncedCatches(ownerUserId, olderThanIso) {
-    const owner = normalisedUserId(ownerUserId);
+    const owner = normalisedOwnerId(ownerUserId);
     const cutoff = Date.parse(olderThanIso);
     if (!owner || Number.isNaN(cutoff)) {
         return 0;
@@ -508,7 +376,7 @@ export async function cleanupSyncedCatches(ownerUserId, olderThanIso) {
             }
 
             const record = cursor.value;
-            if (normalisedUserId(record?.userId) === owner && isEligibleForCleanup(record, cutoff)) {
+            if (normalisedOwnerId(record?.userId) === owner && isEligibleForCleanup(record, cutoff)) {
                 for (const photograph of record.photographs || []) {
                     photoStore.delete(photograph.id);
                 }
@@ -538,19 +406,6 @@ function isEligibleForCleanup(record, cutoff) {
 
 function isSynchronisedStatus(status) {
     return status === 'synchronised' || status === 3;
-}
-
-function normalisedUserId(value) {
-    if (typeof value !== 'string') {
-        return '';
-    }
-
-    const normalised = value.trim().toLowerCase();
-    if (!normalised || normalised === '00000000-0000-0000-0000-000000000000') {
-        return '';
-    }
-
-    return normalised;
 }
 
 function orderPhotographs(catchRecord, photographs) {

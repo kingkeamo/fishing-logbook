@@ -10,6 +10,7 @@ import {
     getAllCatchesWithPhotographs,
     putCatchWithPhotographs
 } from './catch-store.js';
+import { TRIP_STORE_NAME } from './trip-store.js';
 import {
     DIAGNOSTIC_DATABASE_NAME,
     DIAGNOSTIC_STORE_NAME,
@@ -62,8 +63,31 @@ describe('schema safety', () => {
         expect(indexedDbSource).not.toContain(PREFERENCE_DATABASE_NAME);
     });
 
-    it('keeps the released Catch database version unchanged', () => {
-        expect(CATCH_DATABASE_VERSION).toBe(4);
+    it('keeps the released logbook database version unchanged', () => {
+        expect(CATCH_DATABASE_VERSION).toBe(5);
+    });
+
+    it('does not mix Trip and other feature schema names across store modules', () => {
+        const tripSource = readJs('trip-store.js');
+        const diagnosticSource = readJs('diagnostic-store.js');
+        const preferenceSource = readJs('preference-store.js');
+
+        expect(tripSource).not.toContain('FishingLogBookDiagnostics');
+        expect(tripSource).not.toContain('FishingLogBookPreferences');
+        expect(tripSource).not.toContain('diagnosticEvents');
+        expect(tripSource).not.toContain('fishingPreferences');
+        expect(diagnosticSource).not.toContain(TRIP_STORE_NAME);
+        expect(preferenceSource).not.toContain(TRIP_STORE_NAME);
+    });
+
+    it('owns the logbook database name in exactly one module', () => {
+        const logbookSource = readJs('logbook-database.js');
+        const catchSource = readJs('catch-store.js');
+        const tripSource = readJs('trip-store.js');
+
+        expect(logbookSource).toContain(`'${CATCH_DATABASE_NAME}'`);
+        expect(catchSource).not.toContain(`'${CATCH_DATABASE_NAME}'`);
+        expect(tripSource).not.toContain(`'${CATCH_DATABASE_NAME}'`);
     });
 
     it('does not let the preference store modify the Catch schema', async () => {
@@ -84,7 +108,8 @@ describe('schema safety', () => {
         });
 
         expect(catchDb.version).toBe(CATCH_DATABASE_VERSION);
-        expect([...catchDb.objectStoreNames].sort()).toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME].sort());
+        expect([...catchDb.objectStoreNames].sort())
+            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME].sort());
         expect(catchDb.objectStoreNames.contains(PREFERENCE_STORE_NAME)).toBe(false);
         expect([...preferenceDb.objectStoreNames]).toEqual([PREFERENCE_STORE_NAME]);
         expect(preferenceDb.objectStoreNames.contains(CATCH_STORE_NAME)).toBe(false);
@@ -135,7 +160,8 @@ describe('schema safety', () => {
             request.onerror = () => reject(request.error);
         });
 
-        expect([...db.objectStoreNames].sort()).toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME].sort());
+        expect([...db.objectStoreNames].sort())
+            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME].sort());
         db.close();
     });
 
@@ -163,7 +189,8 @@ describe('schema safety', () => {
         });
 
         expect(upgraded.version).toBe(CATCH_DATABASE_VERSION);
-        expect([...upgraded.objectStoreNames].sort()).toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME].sort());
+        expect([...upgraded.objectStoreNames].sort())
+            .toEqual([CATCH_STORE_NAME, PHOTO_STORE_NAME, TRIP_STORE_NAME].sort());
         expect(upgraded.objectStoreNames.contains('testCatches')).toBe(false);
         expect(upgraded.objectStoreNames.contains('testCatchPhotographs')).toBe(false);
         upgraded.close();

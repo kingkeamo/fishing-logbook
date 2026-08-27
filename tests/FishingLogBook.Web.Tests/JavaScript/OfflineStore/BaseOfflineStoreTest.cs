@@ -8,7 +8,9 @@ public class BaseOfflineStoreTest
             ReadWwwRootJs("browser", "timeout.js"),
             ReadWwwRootJs("storage", "indexed-db.js"),
             ReadWwwRootJs("storage", "offline-diagnostics.js"),
-            ReadWwwRootJs("storage", "catch-store.js"));
+            ReadWwwRootJs("storage", "logbook-database.js"),
+            ReadWwwRootJs("storage", "catch-store.js"),
+            ReadWwwRootJs("storage", "trip-store.js"));
     }
 
     private static string ReadWwwRootJs(params string[] relativeSegments)
