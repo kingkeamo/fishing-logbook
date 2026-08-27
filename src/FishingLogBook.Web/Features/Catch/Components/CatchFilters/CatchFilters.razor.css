@@ -34,6 +34,15 @@
     padding-top: 0.125rem;
 }
 
+.catch-filters-quick-row ::deep .mud-chip-container,
+.catch-filters-quick-row ::deep .mud-menu {
+    flex: 0 0 auto;
+}
+
+.catch-filters-quick-row ::deep .mud-chip {
+    max-width: none;
+}
+
 ::deep .mud-chip > .mud-chip-content {
     line-height: 1;
 }
