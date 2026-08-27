@@ -1546,7 +1546,100 @@ The product should be considered commercially validated separately based on actu
 
 ---
 
-# 51. Next Document
+# 51. Fishing Trips
+
+A Fishing Trip records the experience of going fishing. A Catch records a fish caught during it.
+
+A trip with zero catches is a valid and meaningful fishing record. It must never be presented as a failed or incomplete entry.
+
+A trip must not be required in order to record a catch. An angler who catches a fish unexpectedly must still be able to record it immediately.
+
+## Trip ownership
+
+A trip belongs to one owner.
+
+Catches recorded during a trip continue to belong to their own angler and retain their existing ownership and provenance.
+
+## Trip lifecycle
+
+A trip has an explicit status. The supported statuses are:
+
+- Active
+- Completed
+
+An owner may have at most one Active trip at a time.
+
+A trip records:
+
+- start time
+- end time, once finished
+
+Start and end times are stored as absolute instants and displayed in the angler's local time.
+
+A trip may be created retrospectively as Completed, so historical trips can be recorded later.
+
+## Trip identity and title
+
+A trip title is optional.
+
+Where no title is supplied, the application displays a localised date. The generated title is not stored.
+
+A title is a description chosen by the angler, for example "Day with Dad". It is not a substitute for where the trip happened.
+
+## Trip location
+
+Trip location is optional but first-class. A trip without location context is incomplete, particularly a blank trip with no catches.
+
+Three location concepts are distinct and must not be conflated:
+
+- exact coordinates, captured from the device where the angler allows it
+- a display place, describing where the fishing happened, for example "Lough Corrib"
+- a fishing venue or fishery, which is a future concept
+
+Trip coordinates are private by default and follow the same visibility, source and consent rules as catch location.
+
+A catch does not inherit trip coordinates. A catch keeps its own location and provenance.
+
+## Trip content
+
+A trip may own:
+
+- trip photographs that belong to the day rather than to a catch
+- trip notes recorded during or at the end of the trip
+- catches recorded during the trip
+
+Trip photographs and trip notes are separate from catch photographs and catch notes.
+
+Trip notes are timestamped so they can be shown in the order they were written.
+
+## Offline use
+
+A trip must be usable with little or no connectivity.
+
+An angler must be able to start a trip, record catches, add photographs and notes, and finish the trip without live connectivity, and have that data synchronise safely when connectivity returns.
+
+An active trip must remain recoverable after the application is closed and reopened while offline.
+
+## Trip history
+
+A completed trip should be presented as a chronological record of the day, interleaving trip start and finish, photographs, notes and catches by time.
+
+## Out of scope for the first Trip implementation
+
+- participants and invitations
+- guided trip and client workflows
+- video
+- fishing venues and fisheries
+- planned future trips
+- public sharing
+- advanced trip search
+- historical import workflows
+
+These concepts influence the trip model but are not implemented as part of it.
+
+---
+
+# 52. Next Document
 
 The next project document will be:
 
