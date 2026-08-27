@@ -3,9 +3,12 @@
 @using FishingLogBook.Web.Features.Photographs.Components.PhotographPicker
 
 <MudStack Spacing="2" id="trip-photographs">
-    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_PhotographsLabel"]</MudText>
+    @if (ShowGallery)
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_PhotographsLabel"]</MudText>
+    }
 
-    @if (_photographs.Count > 0)
+    @if (ShowGallery && _photographs.Count > 0)
     {
         <div id="trip-photo-carousel">
             <PhotographCarousel Photographs="CarouselPhotographs"
@@ -17,7 +20,7 @@
                                 IdPrefix="trip" />
         </div>
     }
-    else
+    else if (ShowGallery)
     {
         <MudText Typo="Typo.body2" Class="mud-text-secondary" id="trip-photographs-empty">
             @Loc["Trip_PhotographsEmpty"]

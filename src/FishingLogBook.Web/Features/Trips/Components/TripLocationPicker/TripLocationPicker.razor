@@ -14,7 +14,7 @@
                          Color="@(isSelected ? Color.Primary : Color.Default)"
                          Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
                          Icon="@(isSelected ? Icons.Material.Filled.Check : null)"
-                         Disabled="_isSaving"
+                         Disabled="Disabled"
                          aria-pressed="@(isSelected ? "true" : "false")"
                          OnClick="@(() => SelectAsync(location.Name))"
                          id="@ChoiceId(location.Name)">
@@ -31,7 +31,7 @@
                   Variant="Variant.Outlined"
                   Margin="Margin.Dense"
                   MaxLength="TripConstants.MaxPlaceNameLength"
-                  Disabled="_isSaving"
+                  Disabled="Disabled"
                   id="trip-location-other" />
 
     @if (HasPlace)
@@ -40,18 +40,11 @@
                    Color="Color.Default"
                    Size="Size.Small"
                    Class="align-self-start"
-                   Disabled="_isSaving"
+                   Disabled="Disabled"
                    StartIcon="@Icons.Material.Filled.Clear"
                    OnClick="ClearAsync"
                    id="trip-location-clear">
             @Loc["Trip_ClearLocation"]
         </MudButton>
-    }
-
-    @if (_saveFailed)
-    {
-        <MudText Typo="Typo.caption" Color="Color.Error" id="trip-location-failed">
-            @Loc["Trip_LocationSaveFailed"]
-        </MudText>
     }
 </MudStack>

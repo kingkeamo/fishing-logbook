@@ -1,6 +1,7 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -30,11 +31,20 @@ public partial class TripNotes : ComponentBase, IDisposable
     [Parameter]
     public EventCallback Changed { get; set; }
 
+    [Parameter]
+    public bool ShowList { get; set; } = true;
+
+    [Parameter]
+    public bool UseFloatingTrigger { get; set; }
+
     [Inject]
     private ITripNoteStore NoteStore { get; set; } = default!;
 
     [Inject]
     private ITripClient TripClient { get; set; } = default!;
+
+    [Inject]
+    private IModalService ModalService { get; set; } = default!;
 
     [Inject]
     private ITimeService Time { get; set; } = default!;
@@ -151,11 +161,24 @@ public partial class TripNotes : ComponentBase, IDisposable
         }
     }
 
-    private async Task RemoveNoteAsync(Guid noteId)
+    public async Task RemoveNoteAsync(Guid noteId)
     {
         _removeFailed = false;
         var note = _notes.FirstOrDefault(candidate => candidate.Id == noteId);
         if (note is null)
+        {
+            return;
+        }
+
+        var confirmed = await ModalService.ConfirmAsync(
+            new ConfirmModalModel(
+                Loc["Trip_NoteRemoveTitle"].Value,
+                Loc["Trip_NoteRemoveMessage"].Value,
+                Loc["Trip_NoteRemoveConfirm"].Value,
+                Loc["Modal_Cancel"].Value,
+                IsDestructive: true),
+            _cancellationTokenSource.Token);
+        if (!confirmed)
         {
             return;
         }

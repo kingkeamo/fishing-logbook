@@ -108,8 +108,8 @@ public class WhenTestingRender : BaseActiveTripTest
         await cut.Find("#active-trip-finish").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#completed-trip-heading").Should().NotBeNull());
-        cut.Find("#completed-trip-logbook").GetAttribute("href").Should().Be("/offline/catches");
+        cut.WaitForAssertion(() => cut.Find("#active-trip-status").TextContent.Should().Contain("Finished"));
+        cut.Find("#active-trip-logbook").GetAttribute("href").Should().Be("/offline/catches");
         await activeTrip.Received(1).FinishAsync(
             Arg.Is<TripModel>(trip => trip.Id == TripId),
             Arg.Any<CancellationToken>());

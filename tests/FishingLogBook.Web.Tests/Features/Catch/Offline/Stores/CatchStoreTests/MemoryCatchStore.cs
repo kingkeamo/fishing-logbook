@@ -170,6 +170,21 @@ public sealed class MemoryCatchStore : ICatchStore
         return Task.CompletedTask;
     }
 
+    public Task<byte[]?> GetPhotographBytesAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid photographId,
+        CancellationToken cancellationToken)
+    {
+        if (!_catches.TryGetValue(catchId, out var existing) || existing.UserId != ownerUserId)
+        {
+            return Task.FromResult<byte[]?>(null);
+        }
+
+        var photograph = existing.Photographs.FirstOrDefault(candidate => candidate.Id == photographId);
+        return Task.FromResult(photograph?.Bytes);
+    }
+
     public Task UpdateSyncStateAsync(
         CatchModel catchRecord,
         CancellationToken cancellationToken)

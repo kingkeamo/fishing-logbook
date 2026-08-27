@@ -28,7 +28,7 @@ public class WhenTestingFinish : BaseActiveTripTest
         await cut.Find("#active-trip-finish").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#completed-trip-heading").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("#active-trip-status").TextContent.Should().Contain("Finished"));
         cut.FindAll("#active-trip-finish").Should().BeEmpty();
         await activeTrip.Received(1).FinishAsync(
             Arg.Is<TripModel>(trip => trip.Id == TripId && trip.Status == TripConstants.Active),
@@ -49,7 +49,7 @@ public class WhenTestingFinish : BaseActiveTripTest
         var cut = context.Render<ActiveTripPage>(parameters => parameters.Add(p => p.TripId, TripId));
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#completed-trip-heading").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("#active-trip-status").TextContent.Should().Contain("Finished"));
         await activeTrip.DidNotReceive().FinishAsync(
             Arg.Any<TripModel>(),
             Arg.Any<CancellationToken>());
@@ -118,7 +118,7 @@ public class WhenTestingFinish : BaseActiveTripTest
         var cut = context.Render<ActiveTripPage>(parameters => parameters.Add(p => p.TripId, TripId));
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#completed-trip-heading").Should().NotBeNull());
+        cut.WaitForAssertion(() => cut.Find("#active-trip-status").TextContent.Should().Contain("Finished"));
         await activeTrip.DidNotReceive().TryAttachLocationAsync(
             Arg.Any<TripModel>(),
             Arg.Any<CancellationToken>());

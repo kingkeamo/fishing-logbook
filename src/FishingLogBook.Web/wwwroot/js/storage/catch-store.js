@@ -169,6 +169,32 @@ export async function updateCatchMetadata(json) {
     });
 }
 
+export async function getCatchPhotographBytes(ownerUserId, catchId, photographId) {
+    const owner = normalisedOwnerId(ownerUserId);
+    if (!owner || !catchId || !photographId) {
+        return null;
+    }
+
+    return runCatchWithPhotographsTransaction('readonly', 'photo-read', (transaction, succeed, fail) => {
+        const read = transaction.objectStore(CATCH_STORE_NAME).get(catchId);
+        read.onerror = () => fail(read.error);
+        read.onsuccess = () => {
+            const catchRecord = read.result;
+            const owns = catchRecord
+                && normalisedOwnerId(catchRecord.userId) === owner
+                && (catchRecord.photographs ?? []).some((photograph) => photograph.id === photographId);
+            if (!owns) {
+                succeed(null);
+                return;
+            }
+
+            const bytes = transaction.objectStore(PHOTO_STORE_NAME).get(photographId);
+            bytes.onerror = () => fail(bytes.error);
+            bytes.onsuccess = () => succeed(bytes.result?.bytes ? toUint8Array(bytes.result.bytes) : null);
+        };
+    });
+}
+
 export async function updateCatchTrip(json) {
     const request = JSON.parse(json);
     const owner = normalisedOwnerId(request?.userId);

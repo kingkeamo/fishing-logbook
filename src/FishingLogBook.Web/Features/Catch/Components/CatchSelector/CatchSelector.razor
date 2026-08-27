@@ -12,14 +12,27 @@
         <MudStack Spacing="1" id="catch-selector-options">
             @foreach (var candidate in Catches)
             {
-                <MudCheckBox T="bool"
-                             Value="@IsSelected(candidate.Id)"
-                             ValueChanged="@((bool selected) => ToggleAsync(candidate.Id, selected))"
-                             Color="Color.Primary"
-                             Dense="true"
-                             Disabled="Disabled"
-                             Label="@Describe(candidate)"
-                             id="@($"catch-selector-option-{candidate.Id:D}")" />
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="catch-selector-row">
+                    @if (MediaSource(candidate) is { } source)
+                    {
+                        <img src="@source" alt="" class="catch-selector-thumbnail" />
+                    }
+                    else
+                    {
+                        <div class="catch-selector-thumbnail catch-selector-thumbnail-placeholder" aria-hidden="true">
+                            <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" Size="Size.Small" />
+                        </div>
+                    }
+                    <MudCheckBox T="bool"
+                                 Value="@IsSelected(candidate.Id)"
+                                 ValueChanged="@((bool selected) => ToggleAsync(candidate.Id, selected))"
+                                 Color="Color.Primary"
+                                 Dense="true"
+                                 Disabled="Disabled"
+                                 Label="@Describe(candidate)"
+                                 Class="catch-selector-option-checkbox"
+                                 id="@($"catch-selector-option-{candidate.Id:D}")" />
+                </MudStack>
             }
         </MudStack>
 

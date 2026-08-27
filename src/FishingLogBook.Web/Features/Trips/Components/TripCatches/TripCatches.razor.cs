@@ -27,6 +27,15 @@ public partial class TripCatches : ComponentBase, IDisposable
     [Parameter]
     public EventCallback OnCatchesAttached { get; set; }
 
+    [Parameter]
+    public bool ShowRecordAction { get; set; } = true;
+
+    [Parameter]
+    public bool ShowAddAction { get; set; } = true;
+
+    [Parameter]
+    public bool StartOpen { get; set; }
+
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
 
@@ -37,6 +46,14 @@ public partial class TripCatches : ComponentBase, IDisposable
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private string RecordCatchHref => $"{RecordCatchBaseHref}?tripId={Trip.Id:D}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (StartOpen)
+        {
+            await OpenAsync();
+        }
+    }
 
     private async Task OpenAsync()
     {

@@ -6,6 +6,7 @@ import {
     getAllCatchesWithPhotographs,
     getCatchMetadata,
     getCatchMetadataById,
+    getCatchPhotographBytes,
     getCatchWithPhotographs,
     openCatchDatabase,
     putCatchWithPhotographs,
@@ -638,6 +639,76 @@ describe('Catch store', () => {
         expect(firstSignedIn).toEqual([]);
         expect(JSON.stringify(firstSignedIn)).not.toContain('empty-owner-photo');
         expect(stored.userId).toBe('00000000-0000-0000-0000-000000000000');
+    });
+});
+
+describe('getCatchPhotographBytes', () => {
+    const ownerUserId = '11111111-1111-1111-1111-111111111111';
+    const otherUserId = '22222222-2222-2222-2222-222222222222';
+
+    function catchJson(id, userId, photographIds) {
+        return JSON.stringify({
+            id,
+            userId,
+            caughtOn: '2026-08-17T08:00:00+00:00',
+            photographs: photographIds.map((photographId) => ({
+                id: photographId,
+                catchId: id,
+                contentType: 'image/jpeg',
+                syncStatus: 'savedLocally'
+            }))
+        });
+    }
+
+    it('returns a Uint8Array Blazor can marshal as byte[], not the stored ArrayBuffer', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await putCatchWithPhotographs(
+            catchJson(catchId, ownerUserId, [photographId]),
+            [{ id: photographId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1, 2, 3]) }]
+        );
+
+        const bytes = await getCatchPhotographBytes(ownerUserId, catchId, photographId);
+
+        expect(bytes).toBeInstanceOf(Uint8Array);
+        expect(Array.from(bytes)).toEqual([1, 2, 3]);
+    });
+
+    it('returns null for a photograph that belongs to another owner\'s Catch', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        await putCatchWithPhotographs(
+            catchJson(catchId, ownerUserId, [photographId]),
+            [{ id: photographId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1, 2, 3]) }]
+        );
+
+        const bytes = await getCatchPhotographBytes(otherUserId, catchId, photographId);
+
+        expect(bytes).toBeNull();
+    });
+
+    it('returns null when the photograph does not belong to the given Catch', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const otherCatchId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+        const photographId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        const unrelatedPhotographId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+        await putCatchWithPhotographs(
+            catchJson(catchId, ownerUserId, [photographId]),
+            [{ id: photographId, catchId, contentType: 'image/jpeg', bytes: new Uint8Array([1, 2, 3]) }]
+        );
+        await putCatchWithPhotographs(
+            catchJson(otherCatchId, ownerUserId, [unrelatedPhotographId]),
+            [{
+                id: unrelatedPhotographId,
+                catchId: otherCatchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([9])
+            }]
+        );
+
+        const bytes = await getCatchPhotographBytes(ownerUserId, catchId, unrelatedPhotographId);
+
+        expect(bytes).toBeNull();
     });
 });
 

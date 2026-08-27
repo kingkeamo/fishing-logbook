@@ -1,10 +1,12 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
@@ -27,6 +29,10 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private bool _locationAttempted;
     private int? _catchCount;
     private IReadOnlyList<TripTimelineItemModel> _timeline = [];
+    private int? _photographCount;
+    private int? _noteCount;
+    private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
+    private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _isReadOnlyHistory;
 
     [Parameter]
@@ -54,6 +60,9 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private ITripTimelineService TripTimeline { get; set; } = default!;
 
     [Inject]
+    private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
+
+    [Inject]
     private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
@@ -64,6 +73,14 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         get
         {
             return _trip?.Status == TripConstants.Completed;
+        }
+    }
+
+    private bool CanEdit
+    {
+        get
+        {
+            return !IsCompleted && !_isReadOnlyHistory;
         }
     }
 
@@ -141,7 +158,10 @@ public partial class ActiveTrip : ComponentBase, IDisposable
                 _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
                 var catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
                 _catchCount = catches?.Count(catchRecord => catchRecord.TripId == TripId);
+                _photographCount = _trip.Photographs.Count;
+                _noteCount = _trip.Notes.Count;
                 _timeline = TripTimeline.BuildLocal(_trip, catches ?? []);
+                await ReadPreferencesAsync(cancellationToken);
                 return;
             }
 
@@ -175,7 +195,10 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         _trip = ToTripModel(detail.Trip, ownerUserId);
         _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
         _catchCount = detail.Catches.Count;
+        _photographCount = detail.Photographs.Count;
+        _noteCount = detail.Notes.Count;
         _timeline = TripTimeline.BuildRemote(detail);
+        await ReadPreferencesAsync(cancellationToken);
     }
 
     private static TripModel ToTripModel(TripViewDto view, Guid ownerUserId)
@@ -191,6 +214,26 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             SyncStatus: SyncStatus.Synchronised);
     }
 
+    private async Task ReadPreferencesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var preferences = await AnglerPreferences.GetAsync(cancellationToken);
+            _weightUnit = preferences.WeightUnit;
+            _lengthUnit = preferences.LengthUnit;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "reading angler preferences for a trip",
+                exception,
+                CancellationToken.None);
+        }
+    }
+
     private async Task RetryAsync()
     {
         if (_isLoading)
@@ -199,11 +242,6 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
 
         await LoadAsync();
-    }
-
-    private void OnPlaceChanged(TripModel trip)
-    {
-        _trip = trip;
     }
 
     private async Task FinishAsync()

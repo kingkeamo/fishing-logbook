@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Features.Trips.Enums;
+using FishingLogBook.Web.Features.Trips.Models;
 
 namespace FishingLogBook.Web.Tests.Features.Trips.Services.TripTimelineServiceTests;
 
@@ -93,6 +94,34 @@ public class WhenTestingBuildLocal : BaseTripTimelineServiceTest
         // Assert
         timeline.Single(item => item.Kind == TripTimelineKindEnum.Photograph)
             .OccurredOn.Should().Be(StartedOn.AddMinutes(10));
+    }
+
+    [Fact]
+    public void ItShouldOrderCatchesByAbsoluteTimestampRatherThanTheirDisplayedTimeAcrossDates()
+    {
+        // Arrange - regression for catches rendering as
+        // 16:33, 20:57, 08:08, 10:52, 16:50 when only the formatted time was compared
+        var dayOne = DateTimeOffset.Parse("2026-08-27T16:50:00Z");
+        var trip = new TripModel(TripId, OwnerUserId, TripConstants.Active, dayOne);
+        var catches = new[]
+        {
+            Catch(DateTimeOffset.Parse("2026-08-27T20:57:00Z"), "Perch", TripId),
+            Catch(DateTimeOffset.Parse("2026-08-28T08:08:00Z"), "Pike", TripId),
+            Catch(DateTimeOffset.Parse("2026-08-27T16:33:00Z"), "Roach", TripId),
+            Catch(DateTimeOffset.Parse("2026-08-28T10:52:00Z"), "Bream", TripId)
+        };
+
+        // Act
+        var timeline = Sut.BuildLocal(trip, catches);
+
+        // Assert
+        timeline.Select(item => item.OccurredOn).Should().Equal(
+            DateTimeOffset.Parse("2026-08-27T16:33:00Z"),
+            dayOne,
+            DateTimeOffset.Parse("2026-08-27T20:57:00Z"),
+            DateTimeOffset.Parse("2026-08-28T08:08:00Z"),
+            DateTimeOffset.Parse("2026-08-28T10:52:00Z"));
+        timeline.Should().BeInAscendingOrder(item => item.OccurredOn);
     }
 
     [Fact]

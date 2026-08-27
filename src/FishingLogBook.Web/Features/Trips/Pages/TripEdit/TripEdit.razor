@@ -1,0 +1,46 @@
+@page "/trips/{TripId:guid}/edit"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using FishingLogBook.Web.Features.Trips.Components.TripEditor
+
+<PageTitle>@Loc["Trip_EditTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="trip-edit-page">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="trip-edit-load-failed">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Justify="Justify.SpaceBetween">
+                    <span>@Loc["Trip_LoadFailed"]</span>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               Disabled="_isLoading"
+                               OnClick="RetryAsync"
+                               id="trip-edit-retry">@Loc["Action_TryAgain"]</MudButton>
+                </MudStack>
+            </MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true"
+                                 Color="Color.Primary"
+                                 Class="align-self-center"
+                                 id="trip-edit-loading" />
+        }
+        else if (_trip is null)
+        {
+            <MudAlert Severity="Severity.Info" id="trip-edit-not-found">@Loc["Trip_NotFound"]</MudAlert>
+        }
+        else
+        {
+            <TripEditor Trip="_trip"
+                        Catches="_catches"
+                        SummaryLabel="@SummaryLabel"
+                        WeightUnit="_weightUnit"
+                        LengthUnit="_lengthUnit"
+                        OnContentChanged="LoadAsync"
+                        OnClosed="ReturnToDiary" />
+        }
+    </MudStack>
+</MudContainer>

@@ -3,7 +3,6 @@
 @layout OfflineLayout
 @using FishingLogBook.Web.Features.OfflineAccess
 @using FishingLogBook.Web.Features.Trips.Components.ActiveTripView
-@using FishingLogBook.Web.Features.Trips.Components.CompletedTripSummary
 
 <PageTitle>@Loc["Trip_ActiveLabel"]</PageTitle>
 
@@ -28,26 +27,23 @@
         {
             <MudAlert Severity="Severity.Info" id="offline-trip-not-found">@Loc["Trip_NotFound"]</MudAlert>
         }
-        else if (IsCompleted)
-        {
-            <CompletedTripSummary Trip="_trip"
-                                  DurationLabel="@DurationLabel"
-                                  GeneratedTitle="@GeneratedTitle"
-                                  Timeline="_timeline"
-                                  LogbookHref="/offline/catches" />
-        }
         else
         {
             <ActiveTripView Trip="_trip"
                             RecordCatchBaseHref="/offline/record"
+                            TripBaseHref="/offline/trips"
+                            LogbookHref="/offline/catches"
+                            CatchBaseHref="/offline/catches"
                             StartedLabel="@StartedLabel"
                             ElapsedLabel="@DurationLabel"
                             GeneratedTitle="@GeneratedTitle"
                             IsFinishing="_isFinishing"
                             CatchCount="_catchCount"
+                            PhotographCount="_photographCount"
+                            NoteCount="_noteCount"
                             Timeline="_timeline"
-                            OnPlaceChanged="OnPlaceChanged"
-                            OnCatchesAttached="LoadAsync"
+                            CanEdit="CanEdit"
+                            OnContentChanged="LoadAsync"
                             OnFinish="FinishAsync" />
         }
     </MudStack>

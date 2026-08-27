@@ -1,7 +1,6 @@
 @page "/trips/{TripId:guid}"
 @attribute [Authorize]
 @using FishingLogBook.Web.Features.Trips.Components.ActiveTripView
-@using FishingLogBook.Web.Features.Trips.Components.CompletedTripSummary
 
 <PageTitle>@Loc["Trip_ActiveLabel"]</PageTitle>
 
@@ -26,15 +25,6 @@
         {
             <MudAlert Severity="Severity.Info" id="trip-not-found">@Loc["Trip_NotFound"]</MudAlert>
         }
-        else if (IsCompleted)
-        {
-            <CompletedTripSummary Trip="_trip"
-                                  DurationLabel="@DurationLabel"
-                                  GeneratedTitle="@GeneratedTitle"
-                                  Timeline="_timeline"
-                                  ShowNotes="!_isReadOnlyHistory"
-                                  LogbookHref="/catches" />
-        }
         else
         {
             <ActiveTripView Trip="_trip"
@@ -43,9 +33,14 @@
                             GeneratedTitle="@GeneratedTitle"
                             IsFinishing="_isFinishing"
                             CatchCount="_catchCount"
+                            PhotographCount="_photographCount"
+                            NoteCount="_noteCount"
                             Timeline="_timeline"
-                            OnPlaceChanged="OnPlaceChanged"
-                            OnCatchesAttached="LoadAsync"
+                            AllowLocalMedia="!_isReadOnlyHistory"
+                            CanEdit="CanEdit"
+                            WeightUnit="_weightUnit"
+                            LengthUnit="_lengthUnit"
+                            OnContentChanged="LoadAsync"
                             OnFinish="FinishAsync" />
         }
     </MudStack>

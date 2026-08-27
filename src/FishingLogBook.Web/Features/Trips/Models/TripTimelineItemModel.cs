@@ -8,6 +8,16 @@ public sealed record TripTimelineItemModel(
 {
     public Guid? CatchId { get; init; }
 
+    public Guid? NoteId { get; init; }
+
+    public Guid? PhotographId { get; init; }
+
+    public decimal? Weight { get; init; }
+
+    public decimal? Length { get; init; }
+
+    public string? ContentType { get; init; }
+
     public string? SpeciesName { get; init; }
 
     public string? Text { get; init; }

@@ -1,8 +1,8 @@
 using AngleSharp.Html.Dom;
 using AwesomeAssertions;
 using Bunit;
+using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Components.TripLocationPicker;
-using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
 using NSubstitute;
@@ -17,64 +17,34 @@ public class WhenTestingSelect : BaseTripLocationPickerTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip);
+        await using var context = CreateContext();
+        var chosen = new List<string?>();
 
         // Act
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip()));
+            .Add(component => component.PlaceNameChanged, place => chosen.Add(place)));
 
         // Assert
         cut.WaitForAssertion(() => cut.FindAll("#trip-location-choices").Should().BeEmpty());
         cut.Find("#trip-location-other").Should().NotBeNull();
         cut.FindAll("#trip-location-clear").Should().BeEmpty();
-        await activeTrip.DidNotReceive().UpdatePlaceAsync(
-            Arg.Any<TripModel>(),
-            Arg.Any<string?>(),
-            Arg.Any<CancellationToken>());
+        chosen.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ItShouldShowTheFailureWhenTheTripCanNoLongerBeSaved()
+    public async Task ItShouldStillRenderTheCurrentPlaceWhenReadingThePreferencesFails()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = Substitute.For<Web.Features.Trips.Services.IActiveTripService>();
-        activeTrip.UpdatePlaceAsync(Arg.Any<TripModel>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .Returns((TripModel?)null);
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib(false)));
-        var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip()));
-        cut.WaitForAssertion(() => cut.Find("#trip-location-choice-lough-corrib").Should().NotBeNull());
-
-        // Act
-        cut.Find("#trip-location-choice-lough-corrib").Click();
-
-        // Assert
-        cut.WaitForAssertion(() =>
-            cut.Find("#trip-location-failed").TextContent.Should()
-                .Contain("The fishing location could not be saved."));
-        await activeTrip.Received(1).UpdatePlaceAsync(
-            Arg.Any<TripModel>(),
-            "Lough Corrib",
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldStillRenderTheChoicesWhenReadingThePreferencesFails()
-    {
-        // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        var preferences = Substitute.For<Web.Features.Profile.Providers.IAnglerPreferencesProvider>();
+        var preferences = Substitute.For<IAnglerPreferencesProvider>();
         preferences.GetAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("preferences unavailable"));
         var logging = QuietLogging();
-        await using var context = CreateContext(activeTrip, preferences, logging);
+        await using var context = CreateContext(preferences, logging);
 
         // Act
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("Small lake near Clifden")));
+            .Add(component => component.PlaceName, "Small lake near Clifden"));
 
         // Assert
         cut.WaitForAssertion(() => cut.FindAll("#trip-location-choices").Should().BeEmpty());
@@ -86,39 +56,35 @@ public class WhenTestingSelect : BaseTripLocationPickerTest
     }
 
     [Fact]
-    public async Task ItShouldPreserveATripPlaceThatIsNotSavedAsAPreference()
+    public async Task ItShouldPreserveAPlaceThatIsNotSavedAsAPreference()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib(), Moy()));
+        await using var context = CreateContext(PreferencesWith(Corrib(), Moy()));
+        var chosen = new List<string?>();
 
         // Act
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("Small lake near Clifden")));
+            .Add(component => component.PlaceName, "Small lake near Clifden")
+            .Add(component => component.PlaceNameChanged, place => chosen.Add(place)));
 
         // Assert
-        cut.WaitForAssertion(() =>
-            OtherLocationValue(cut).Should().Be("Small lake near Clifden"));
+        cut.WaitForAssertion(() => OtherLocationValue(cut).Should().Be("Small lake near Clifden"));
         cut.Find("#trip-location-choice-lough-corrib").GetAttribute("aria-pressed").Should().Be("false");
         cut.Find("#trip-location-choice-river-moy").GetAttribute("aria-pressed").Should().Be("false");
-        await activeTrip.DidNotReceive().UpdatePlaceAsync(
-            Arg.Any<TripModel>(),
-            Arg.Any<string?>(),
-            Arg.Any<CancellationToken>());
+        chosen.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ItShouldShowTheSavedLocationMatchingTheTripAsSelected()
+    public async Task ItShouldShowTheSavedLocationMatchingThePlaceAsSelected()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib(), Moy()));
+        await using var context = CreateContext(PreferencesWith(Corrib(), Moy()));
 
         // Act
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("lough corrib")));
+            .Add(component => component.PlaceName, "lough corrib"));
 
         // Assert
         cut.WaitForAssertion(() =>
@@ -128,100 +94,86 @@ public class WhenTestingSelect : BaseTripLocationPickerTest
     }
 
     [Fact]
-    public async Task ItShouldClearTheTripLocation()
+    public async Task ItShouldRaiseAClearedPlace()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib()));
-        TripModel? changed = null;
+        await using var context = CreateContext(PreferencesWith(Corrib()));
+        var chosen = new List<string?>();
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("Lough Corrib"))
-            .Add(component => component.OnPlaceChanged, trip => changed = trip));
+            .Add(component => component.PlaceName, "Lough Corrib")
+            .Add(component => component.PlaceNameChanged, place => chosen.Add(place)));
         cut.WaitForAssertion(() => cut.Find("#trip-location-clear").Should().NotBeNull());
 
         // Act
         cut.Find("#trip-location-clear").Click();
 
         // Assert
-        cut.WaitForAssertion(() => changed!.PlaceName.Should().BeNull());
-        await activeTrip.Received(1).UpdatePlaceAsync(
-            Arg.Is<TripModel>(trip => trip.Id == TripId),
-            null,
-            Arg.Any<CancellationToken>());
+        chosen.Should().ContainSingle();
+        chosen[0].Should().BeNull();
     }
 
     [Fact]
-    public async Task ItShouldReplaceTheTripPlaceWithAManualLocation()
+    public async Task ItShouldRaiseAManualPlace()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib()));
-        TripModel? changed = null;
+        await using var context = CreateContext(PreferencesWith(Corrib()));
+        var chosen = new List<string?>();
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("Lough Corrib"))
-            .Add(component => component.OnPlaceChanged, trip => changed = trip));
+            .Add(component => component.PlaceName, "Lough Corrib")
+            .Add(component => component.PlaceNameChanged, place => chosen.Add(place)));
         cut.WaitForAssertion(() => cut.Find("#trip-location-other").Should().NotBeNull());
 
         // Act
         cut.Find("#trip-location-other").Change("Small lake near Clifden");
 
         // Assert
-        cut.WaitForAssertion(() => changed!.PlaceName.Should().Be("Small lake near Clifden"));
-        await activeTrip.Received(1).UpdatePlaceAsync(
-            Arg.Is<TripModel>(trip => trip.Id == TripId),
-            "Small lake near Clifden",
-            Arg.Any<CancellationToken>());
+        chosen.Should().ContainSingle();
+        chosen[0].Should().Be("Small lake near Clifden");
         cut.Find("#trip-location-choice-lough-corrib").GetAttribute("aria-pressed").Should().Be("false");
     }
 
     [Fact]
-    public async Task ItShouldCopyAnotherSavedLocationOntoTheTrip()
+    public async Task ItShouldRaiseAnotherSavedLocation()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib(), Moy()));
-        TripModel? changed = null;
+        await using var context = CreateContext(PreferencesWith(Corrib(), Moy()));
+        var chosen = new List<string?>();
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("Lough Corrib"))
-            .Add(component => component.OnPlaceChanged, trip => changed = trip));
+            .Add(component => component.PlaceName, "Lough Corrib")
+            .Add(component => component.PlaceNameChanged, place => chosen.Add(place)));
         cut.WaitForAssertion(() => cut.Find("#trip-location-choice-river-moy").Should().NotBeNull());
 
         // Act
         cut.Find("#trip-location-choice-river-moy").Click();
 
         // Assert
-        cut.WaitForAssertion(() => changed!.PlaceName.Should().Be("River Moy"));
+        chosen.Should().ContainSingle();
+        chosen[0].Should().Be("River Moy");
         cut.Find("#trip-location-choice-river-moy").GetAttribute("aria-pressed").Should().Be("true");
         cut.Find("#trip-location-choice-lough-corrib").GetAttribute("aria-pressed").Should().Be("false");
-        await activeTrip.Received(1).UpdatePlaceAsync(
-            Arg.Is<TripModel>(trip => trip.Id == TripId && trip.OwnerUserId == OwnerUserId),
-            "River Moy",
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldNotSaveWhenTheChosenLocationIsAlreadyTheTripPlace()
+    public async Task ItShouldNotRaiseAChangeWhenTheChosenLocationIsAlreadyThePlace()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib()));
+        await using var context = CreateContext(PreferencesWith(Corrib()));
+        var chosen = new List<string?>();
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("Lough Corrib")));
+            .Add(component => component.PlaceName, "Lough Corrib")
+            .Add(component => component.PlaceNameChanged, place => chosen.Add(place)));
         cut.WaitForAssertion(() => cut.Find("#trip-location-choice-lough-corrib").Should().NotBeNull());
 
         // Act
         cut.Find("#trip-location-choice-lough-corrib").Click();
 
         // Assert
+        chosen.Should().BeEmpty();
         cut.Find("#trip-location-choice-lough-corrib").GetAttribute("aria-pressed").Should().Be("true");
-        await activeTrip.DidNotReceive().UpdatePlaceAsync(
-            Arg.Any<TripModel>(),
-            Arg.Any<string?>(),
-            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -229,19 +181,19 @@ public class WhenTestingSelect : BaseTripLocationPickerTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.French);
-        var activeTrip = TripServiceThatSaves();
-        await using var context = CreateContext(activeTrip, PreferencesWith(Corrib()));
+        await using var context = CreateContext(PreferencesWith(Corrib()));
 
         // Act
         var cut = context.Render<TripLocationPicker>(parameters => parameters
-            .Add(component => component.Trip, Trip("Lough Corrib")));
+            .Add(component => component.PlaceName, "Lough Corrib"));
 
         // Assert
         cut.WaitForAssertion(() => cut.Markup.Should().Contain("Lieu de pêche"));
         cut.Markup.Should().Contain("Autre lieu");
         cut.Find("#trip-location-clear").TextContent.Should().Contain("Effacer le lieu");
     }
-    private static string? OtherLocationValue(Bunit.IRenderedComponent<TripLocationPicker> cut)
+
+    private static string? OtherLocationValue(IRenderedComponent<TripLocationPicker> cut)
     {
         return ((IHtmlInputElement)cut.Find("#trip-location-other")).Value;
     }

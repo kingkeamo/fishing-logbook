@@ -27,6 +27,9 @@ public partial class TripPhotographs : ComponentBase, IDisposable
     [Parameter]
     public EventCallback Changed { get; set; }
 
+    [Parameter]
+    public bool ShowGallery { get; set; } = true;
+
     [Inject]
     private ITripPhotographStore PhotographStore { get; set; } = default!;
 

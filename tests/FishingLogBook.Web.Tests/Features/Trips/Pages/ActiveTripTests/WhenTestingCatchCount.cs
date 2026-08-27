@@ -114,7 +114,7 @@ public class WhenTestingCatchCount : BaseActiveTripTest
         // Assert
         cut.WaitForAssertion(() => cut.Find("#active-trip-card").Should().NotBeNull());
         cut.Find("#active-trip-catch-count").TextContent.Should().Contain("No catches yet");
-        cut.Find("#trip-catches-record").Should().NotBeNull();
+        cut.Find("#active-trip-record-catch").Should().NotBeNull();
         await logging.Received(1).LogErrorAsync(
             "reading the catches of a trip",
             Arg.Any<Exception>(),

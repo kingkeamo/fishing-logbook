@@ -28,6 +28,12 @@ public interface ICatchStore
         Guid? tripId,
         CancellationToken cancellationToken);
 
+    Task<byte[]?> GetPhotographBytesAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid photographId,
+        CancellationToken cancellationToken);
+
     Task<int> CleanupSyncedCacheAsync(
         Guid ownerUserId,
         DateTimeOffset olderThan,

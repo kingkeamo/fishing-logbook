@@ -4,6 +4,7 @@ export {
     getCatchMetadata,
     getCatchMetadataById,
     getCatchWithPhotographs,
+    getCatchPhotographBytes,
     updateCatchMetadata,
     updateCatchTrip,
     cleanupSyncedCatches

@@ -228,6 +228,40 @@ public sealed class IndexedDbCatchStore : ICatchStore
             _logging);
     }
 
+    public async Task<byte[]?> GetPhotographBytesAsync(
+        Guid ownerUserId,
+        Guid catchId,
+        Guid photographId,
+        CancellationToken cancellationToken)
+    {
+        if (ownerUserId == Guid.Empty)
+        {
+            return null;
+        }
+
+        return await OfflineOperation.ExecuteAsync(
+            "photo-read",
+            StoreName,
+            DiagnosticEventNames.OfflineDbReadStarted,
+            DiagnosticEventNames.OfflineDbReadCompleted,
+            DiagnosticEventNames.OfflineDbReadFailed,
+            DiagnosticEventNames.OfflineDbReadTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                return await module.InvokeAsync<byte[]?>(
+                    "getCatchPhotographBytes",
+                    token,
+                    ownerUserId.ToString("D"),
+                    catchId.ToString("D"),
+                    photographId.ToString("D"));
+            },
+            cancellationToken,
+            _logging);
+    }
+
     public async Task<int> CleanupSyncedCacheAsync(
         Guid ownerUserId,
         DateTimeOffset olderThan,

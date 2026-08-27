@@ -2,15 +2,18 @@
 @using FishingLogBook.Web.Features.Catch.Components.CatchSelector
 
 <MudStack Spacing="2" id="trip-catches">
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               Size="Size.Large"
-               FullWidth="true"
-               Href="@RecordCatchHref"
-               StartIcon="@Icons.Material.Filled.PhotoCamera"
-               id="trip-catches-record">
-        @Loc["Trip_RecordCatch"]
-    </MudButton>
+    @if (ShowRecordAction)
+    {
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Href="@RecordCatchHref"
+                   StartIcon="@Icons.Material.Filled.PhotoCamera"
+                   id="trip-catches-record">
+            @Loc["Trip_RecordCatch"]
+        </MudButton>
+    }
 
     @if (_isOpen)
     {
@@ -18,6 +21,7 @@
             <MudStack Spacing="2">
                 <MudText Typo="Typo.subtitle2">@Loc["Trip_AddExistingCatchTitle"]</MudText>
                 <CatchSelector Catches="_unassigned"
+                               OwnerUserId="Trip.OwnerUserId"
                                ConfirmLabel="@Loc["Trip_AddExistingCatchConfirm"]"
                                EmptyLabel="@Loc["Trip_AddExistingCatchEmpty"]"
                                UnknownSpeciesLabel="@Loc["Trip_Timeline_CatchUnknownSpecies"]"
@@ -40,7 +44,7 @@
             </MudStack>
         </MudPaper>
     }
-    else
+    else if (ShowAddAction)
     {
         <MudButton Variant="Variant.Outlined"
                    Color="Color.Primary"

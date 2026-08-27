@@ -122,10 +122,23 @@ public sealed class TripRepository : ITripRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                SELECT "Id", "CaughtOn", "SpeciesName"
-                FROM "Catch"
-                WHERE "TripId" = @TripId
-                ORDER BY "CaughtOn";
+                SELECT
+                    c."Id",
+                    c."UserId",
+                    c."CaughtOn",
+                    c."SpeciesName",
+                    c."Weight",
+                    c."Length",
+                    (
+                        SELECT p."Id"
+                        FROM "CatchPhotograph" p
+                        WHERE p."CatchId" = c."Id"
+                        ORDER BY p."Id"
+                        LIMIT 1
+                    ) AS "PhotographId"
+                FROM "Catch" c
+                WHERE c."TripId" = @TripId
+                ORDER BY c."CaughtOn", c."Id";
                 """;
             var rows = await connection.QueryAsync<TripCatchSummary>(new CommandDefinition(
                 sql,

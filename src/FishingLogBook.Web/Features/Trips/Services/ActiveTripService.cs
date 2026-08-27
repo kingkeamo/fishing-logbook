@@ -86,8 +86,9 @@ public sealed class ActiveTripService : IActiveTripService
         return finished;
     }
 
-    public async Task<TripModel?> UpdatePlaceAsync(
+    public async Task<TripModel?> UpdateDetailsAsync(
         TripModel trip,
+        string? title,
         string? placeName,
         CancellationToken cancellationToken)
     {
@@ -99,6 +100,7 @@ public sealed class ActiveTripService : IActiveTripService
 
         var updated = current with
         {
+            Title = TripConstants.TrimTitle(title),
             PlaceName = TripConstants.TrimPlaceName(placeName),
             SyncStatus = SyncStatus.SavedLocally
         };

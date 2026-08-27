@@ -22,16 +22,28 @@ public sealed class TripTimelineService : ITripTimelineService
             {
                 CatchId = catchRecord.Id,
                 SpeciesName = catchRecord.SpeciesName,
+                Weight = catchRecord.Weight,
+                Length = catchRecord.Length,
+                PhotographId = catchRecord.Photographs.Count > 0 ? catchRecord.Photographs[0].Id : null,
+                ContentType = catchRecord.Photographs.Count > 0
+                    ? catchRecord.Photographs[0].ContentType
+                    : null,
+                PhotographUrl = catchRecord.Photographs.Count > 0
+                    ? catchRecord.Photographs[0].RemoteUrl
+                    : null,
                 PhotographCount = catchRecord.Photographs.Count
             }));
         items.AddRange(trip.Photographs.Select(photograph =>
             new TripTimelineItemModel(TripTimelineKindEnum.Photograph, photograph.OrderedOn)
             {
+                PhotographId = photograph.Id,
+                ContentType = photograph.ContentType,
                 PhotographCount = 1
             }));
         items.AddRange(trip.Notes.Select(note =>
             new TripTimelineItemModel(TripTimelineKindEnum.Note, note.RecordedOn)
             {
+                NoteId = note.Id,
                 Text = note.Text
             }));
         return Ordered(items, trip.Status, trip.EndedOn);
@@ -47,19 +59,25 @@ public sealed class TripTimelineService : ITripTimelineService
             new TripTimelineItemModel(TripTimelineKindEnum.Catch, summary.CaughtOn)
             {
                 CatchId = summary.Id,
-                SpeciesName = summary.SpeciesName
+                SpeciesName = summary.SpeciesName,
+                Weight = summary.Weight,
+                Length = summary.Length,
+                PhotographUrl = summary.PhotographUrl
             }));
         items.AddRange(detail.Photographs.Select(photograph =>
             new TripTimelineItemModel(
                 TripTimelineKindEnum.Photograph,
                 photograph.CapturedOn ?? photograph.AddedOn)
             {
+                PhotographId = photograph.Id,
+                ContentType = photograph.ContentType,
                 PhotographUrl = photograph.Url,
                 PhotographCount = 1
             }));
         items.AddRange(detail.Notes.Select(note =>
             new TripTimelineItemModel(TripTimelineKindEnum.Note, note.RecordedOn)
             {
+                NoteId = note.Id,
                 Text = note.Text
             }));
         return Ordered(items, detail.Trip.Status, detail.Trip.EndedOn);
@@ -75,15 +93,17 @@ public sealed class TripTimelineService : ITripTimelineService
         string status,
         DateTimeOffset? endedOn)
     {
-        var ordered = items
-            .OrderBy(item => item.OccurredOn)
-            .ThenBy(item => item.Kind)
-            .ToList();
         if (status == TripConstants.Completed && endedOn is not null)
         {
-            ordered.Add(new TripTimelineItemModel(TripTimelineKindEnum.Finished, endedOn.Value));
+            items.Add(new TripTimelineItemModel(TripTimelineKindEnum.Finished, endedOn.Value));
         }
 
-        return ordered;
+        return
+        [
+            .. items
+                .OrderBy(item => item.OccurredOn.UtcDateTime)
+                .ThenBy(item => item.Kind)
+                .ThenBy(item => item.CatchId ?? item.NoteId ?? item.PhotographId ?? Guid.Empty)
+        ];
     }
 }

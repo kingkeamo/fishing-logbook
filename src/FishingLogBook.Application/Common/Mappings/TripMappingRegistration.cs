@@ -71,7 +71,9 @@ public sealed class TripMappingRegistration : IRegister
         config.NewConfig<TripCatchSummary, TripCatchSummaryDto>()
             .MapWith(source => new TripCatchSummaryDto(source.Id, source.CaughtOn)
             {
-                SpeciesName = source.SpeciesName
+                SpeciesName = source.SpeciesName,
+                Weight = source.Weight,
+                Length = source.Length
             });
 
         config.NewConfig<Trip, TripViewDto>()

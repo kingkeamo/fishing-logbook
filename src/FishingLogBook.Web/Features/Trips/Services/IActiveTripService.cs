@@ -12,8 +12,9 @@ public interface IActiveTripService
 
     Task<TripModel> FinishAsync(TripModel trip, CancellationToken cancellationToken);
 
-    Task<TripModel?> UpdatePlaceAsync(
+    Task<TripModel?> UpdateDetailsAsync(
         TripModel trip,
+        string? title,
         string? placeName,
         CancellationToken cancellationToken);
 

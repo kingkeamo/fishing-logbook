@@ -1123,4 +1123,49 @@
   <data name="Profile_FishingLocation_SetDefaultHint" xml:space="preserve">
     <value>Tap a location to make it the default:</value>
   </data>
+  <data name="Trip_NoteRemoveTitle" xml:space="preserve">
+    <value>Delete note?</value>
+  </data>
+  <data name="Trip_NoteRemoveMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this note?</value>
+  </data>
+  <data name="Trip_NoteRemoveConfirm" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Trip_AddPhotograph" xml:space="preserve">
+    <value>Add photo</value>
+  </data>
+  <data name="Trip_EditTitle" xml:space="preserve">
+    <value>Update trip</value>
+  </data>
+  <data name="Trip_EditTripTitle" xml:space="preserve">
+    <value>Trip title (optional)</value>
+  </data>
+  <data name="Trip_EditSave" xml:space="preserve">
+    <value>Save changes</value>
+  </data>
+  <data name="Trip_EditSaveFailed" xml:space="preserve">
+    <value>The trip could not be saved.</value>
+  </data>
+  <data name="Trip_EditSaveScope" xml:space="preserve">
+    <value>Save changes applies to the trip title and fishing location. Photos, notes and catches are saved as you add or remove them.</value>
+  </data>
+  <data name="Trip_CatchRemoveFromTrip" xml:space="preserve">
+    <value>Remove from trip</value>
+  </data>
+  <data name="Trip_CatchRemoveFromTripFor" xml:space="preserve">
+    <value>Remove {0} from this trip</value>
+  </data>
+  <data name="Trip_CatchRemoveTitle" xml:space="preserve">
+    <value>Remove catch from trip?</value>
+  </data>
+  <data name="Trip_CatchRemoveMessage" xml:space="preserve">
+    <value>{0} will remain in your logbook but will no longer be part of this trip.</value>
+  </data>
+  <data name="Trip_CatchRemoveConfirm" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Trip_StatusFinished" xml:space="preserve">
+    <value>Finished</value>
+  </data>
 </root>

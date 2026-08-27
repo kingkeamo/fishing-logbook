@@ -1123,4 +1123,49 @@
   <data name="Profile_FishingLocation_SetDefaultHint" xml:space="preserve">
     <value>Touchez un lieu pour le définir par défaut :</value>
   </data>
+  <data name="Trip_NoteRemoveTitle" xml:space="preserve">
+    <value>Supprimer la note ?</value>
+  </data>
+  <data name="Trip_NoteRemoveMessage" xml:space="preserve">
+    <value>Voulez-vous vraiment supprimer cette note ?</value>
+  </data>
+  <data name="Trip_NoteRemoveConfirm" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Trip_AddPhotograph" xml:space="preserve">
+    <value>Ajouter une photo</value>
+  </data>
+  <data name="Trip_EditTitle" xml:space="preserve">
+    <value>Modifier la sortie</value>
+  </data>
+  <data name="Trip_EditTripTitle" xml:space="preserve">
+    <value>Titre de la sortie (facultatif)</value>
+  </data>
+  <data name="Trip_EditSave" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="Trip_EditSaveFailed" xml:space="preserve">
+    <value>La sortie n'a pas pu être enregistrée.</value>
+  </data>
+  <data name="Trip_EditSaveScope" xml:space="preserve">
+    <value>Enregistrer s'applique au titre et au lieu de pêche. Les photos, notes et prises sont enregistrées au fur et à mesure.</value>
+  </data>
+  <data name="Trip_CatchRemoveFromTrip" xml:space="preserve">
+    <value>Retirer de la sortie</value>
+  </data>
+  <data name="Trip_CatchRemoveFromTripFor" xml:space="preserve">
+    <value>Retirer {0} de cette sortie</value>
+  </data>
+  <data name="Trip_CatchRemoveTitle" xml:space="preserve">
+    <value>Retirer la prise de la sortie ?</value>
+  </data>
+  <data name="Trip_CatchRemoveMessage" xml:space="preserve">
+    <value>{0} restera dans votre carnet mais ne fera plus partie de cette sortie.</value>
+  </data>
+  <data name="Trip_CatchRemoveConfirm" xml:space="preserve">
+    <value>Retirer</value>
+  </data>
+  <data name="Trip_StatusFinished" xml:space="preserve">
+    <value>Terminée</value>
+  </data>
 </root>

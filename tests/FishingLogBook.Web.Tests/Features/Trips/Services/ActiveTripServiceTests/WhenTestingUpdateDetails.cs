@@ -8,7 +8,7 @@ using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Features.Trips.Services.ActiveTripServiceTests;
 
-public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
+public class WhenTestingUpdateDetails : BaseActiveTripServiceTest
 {
     [Fact]
     public async Task ItShouldNotSaveWhenTheTripIsNoLongerStored()
@@ -19,7 +19,7 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
             .Returns((TripModel?)null);
 
         // Act
-        var updated = await Sut.UpdatePlaceAsync(trip, "Lough Corrib", CancellationToken.None);
+        var updated = await Sut.UpdateDetailsAsync(trip, null, "Lough Corrib", CancellationToken.None);
 
         // Assert
         updated.Should().BeNull();
@@ -37,8 +37,9 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
             .Returns(trip with { PlaceName = "Lough Corrib" });
 
         // Act
-        var updated = await Sut.UpdatePlaceAsync(
+        var updated = await Sut.UpdateDetailsAsync(
             trip,
+            null,
             new string('a', TripConstants.MaxPlaceNameLength + 1),
             CancellationToken.None);
 
@@ -58,7 +59,7 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
             .Returns(trip with { PlaceName = "Lough Corrib", SyncStatus = SyncStatus.Synchronised });
 
         // Act
-        var updated = await Sut.UpdatePlaceAsync(trip, null, CancellationToken.None);
+        var updated = await Sut.UpdateDetailsAsync(trip, null, null, CancellationToken.None);
 
         // Assert
         updated!.PlaceName.Should().BeNull();
@@ -87,7 +88,7 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
             .Returns(located with { PlaceName = "Lough Corrib" });
 
         // Act
-        var updated = await Sut.UpdatePlaceAsync(located, "River Moy", CancellationToken.None);
+        var updated = await Sut.UpdateDetailsAsync(located, null, "River Moy", CancellationToken.None);
 
         // Assert
         updated!.PlaceName.Should().Be("River Moy");
@@ -98,15 +99,59 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
     }
 
     [Fact]
-    public async Task ItShouldSaveTheTrimmedPlaceNameAgainstTheStoredTrip()
+    public async Task ItShouldClearTheTitleWhenTheAnglerEmptiesIt()
     {
         // Arrange
         var trip = ActiveTrip();
         MockTripStore.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
-            .Returns(trip with { Title = "Morning session", SyncStatus = SyncStatus.Synchronised });
+            .Returns(trip with { Title = "Morning session", PlaceName = "Lough Corrib" });
 
         // Act
-        var updated = await Sut.UpdatePlaceAsync(trip, "  Lough Corrib  ", CancellationToken.None);
+        var updated = await Sut.UpdateDetailsAsync(trip, "   ", "Lough Corrib", CancellationToken.None);
+
+        // Assert
+        updated!.Title.Should().BeNull();
+        updated.PlaceName.Should().Be("Lough Corrib");
+        await MockTripStore.Received(1).SaveAsync(
+            Arg.Is<TripModel>(saved => saved.Title == null && saved.PlaceName == "Lough Corrib"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldIgnoreATitleThatIsTooLong()
+    {
+        // Arrange
+        var trip = ActiveTrip();
+        MockTripStore.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>()).Returns(trip);
+
+        // Act
+        var updated = await Sut.UpdateDetailsAsync(
+            trip,
+            new string('a', TripConstants.MaxTitleLength + 1),
+            "Lough Corrib",
+            CancellationToken.None);
+
+        // Assert
+        updated!.Title.Should().BeNull();
+        await MockTripStore.Received(1).SaveAsync(
+            Arg.Is<TripModel>(saved => saved.Title == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSaveTheTrimmedTitleAndPlaceNameAgainstTheStoredTrip()
+    {
+        // Arrange
+        var trip = ActiveTrip();
+        MockTripStore.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(trip with { SyncStatus = SyncStatus.Synchronised });
+
+        // Act
+        var updated = await Sut.UpdateDetailsAsync(
+            trip,
+            "  Morning session  ",
+            "  Lough Corrib  ",
+            CancellationToken.None);
 
         // Assert
         updated!.PlaceName.Should().Be("Lough Corrib");
@@ -133,7 +178,7 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
             .Returns(trip with { PlaceName = "Lough Corrib" });
 
         // Act
-        await Sut.UpdatePlaceAsync(trip, "Small lake near Clifden", CancellationToken.None);
+        await Sut.UpdateDetailsAsync(trip, null, "Small lake near Clifden", CancellationToken.None);
 
         // Assert
         await MockAnglerPreferences.DidNotReceive().SetAsync(
@@ -152,7 +197,7 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
             .Returns(trip);
 
         // Act
-        await Sut.UpdatePlaceAsync(trip, "Lough Corrib", CancellationToken.None);
+        await Sut.UpdateDetailsAsync(trip, null, "Lough Corrib", CancellationToken.None);
         var active = await Sut.GetActiveAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
@@ -171,7 +216,7 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
             .Returns(trip with { Status = TripConstants.Completed, EndedOn = StartedOn.AddHours(2) });
 
         // Act
-        var updated = await Sut.UpdatePlaceAsync(trip, "Lough Corrib", CancellationToken.None);
+        var updated = await Sut.UpdateDetailsAsync(trip, null, "Lough Corrib", CancellationToken.None);
         var active = await Sut.GetActiveAsync(OwnerUserId, CancellationToken.None);
 
         // Assert

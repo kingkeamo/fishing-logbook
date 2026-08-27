@@ -1,0 +1,25 @@
+#trip-editor {
+    min-width: 0;
+}
+
+.trip-editor-catch {
+    min-width: 0;
+}
+
+.trip-editor-catch-detail {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.trip-editor-catch-species {
+    overflow-wrap: anywhere;
+}
+
+.trip-editor-actions {
+    row-gap: 0.5rem;
+}
+
+::deep .trip-editor-action {
+    flex: 1 1 9rem;
+    min-height: 2.75rem;
+}

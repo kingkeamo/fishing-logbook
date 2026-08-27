@@ -20,6 +20,8 @@ public partial class OfflineActiveTrip : ComponentBase
     private bool _loadFailed;
     private bool _isFinishing;
     private int? _catchCount;
+    private int? _photographCount;
+    private int? _noteCount;
     private IReadOnlyList<TripTimelineItemModel> _timeline = [];
 
     [Parameter]
@@ -116,6 +118,8 @@ public partial class OfflineActiveTrip : ComponentBase
                 _display = await TripDisplay.DescribeAsync(_trip, CancellationToken.None);
                 var catches = await LoadCatchesAsync(owner.UserId);
                 _catchCount = catches?.Count(catchRecord => catchRecord.TripId == TripId);
+                _photographCount = _trip.Photographs.Count;
+                _noteCount = _trip.Notes.Count;
                 _timeline = TripTimeline.BuildLocal(_trip, catches ?? []);
             }
         }
@@ -141,9 +145,12 @@ public partial class OfflineActiveTrip : ComponentBase
         await LoadAsync();
     }
 
-    private void OnPlaceChanged(TripModel trip)
+    private bool CanEdit
     {
-        _trip = trip;
+        get
+        {
+            return !IsCompleted;
+        }
     }
 
     private async Task FinishAsync()

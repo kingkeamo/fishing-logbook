@@ -110,11 +110,11 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
             parameters.Add(page => page.TripId, TripId));
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#completed-trip-card").Should().NotBeNull());
-        cut.Find("#completed-trip-place").TextContent.Should().Contain("Lough Corrib");
+        cut.WaitForAssertion(() => cut.Find("#active-trip-card").Should().NotBeNull());
+        cut.Find("#active-trip-place").TextContent.Should().Contain("Lough Corrib");
         cut.Find($"#trip-timeline-catch-{catchId:D}").TextContent.Should().Contain("Pike");
         cut.Markup.Should().Contain("The wind dropped.");
-        cut.FindAll("#completed-trip-notes").Should().BeEmpty();
+        cut.FindAll("#trip-note-start").Should().BeEmpty();
         await tripClient.Received(1).GetDetailAsync(TripId, Arg.Any<CancellationToken>());
     }
 }

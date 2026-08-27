@@ -1,6 +1,5 @@
 using AwesomeAssertions;
 using Bunit;
-using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Trips.Components.TripTimeline;
 using FishingLogBook.Web.Features.Trips.Enums;
@@ -28,6 +27,7 @@ public class WhenTestingRender : BaseTripTimelineTest
         // Assert
         cut.Find("#trip-timeline-empty").TextContent.Should()
             .Contain("Nothing has happened on this trip yet.");
+        cut.FindAll("#trip-timeline").Should().BeEmpty();
     }
 
     [Fact]
@@ -56,7 +56,30 @@ public class WhenTestingRender : BaseTripTimelineTest
     }
 
     [Fact]
-    public async Task ItShouldLinkACatchEntryToTheCatch()
+    public async Task ItShouldNotLabelEveryEntryWithItsKind()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var items = new[]
+        {
+            Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "The wind dropped.", noteId: NoteId),
+            Item(TripTimelineKindEnum.Catch, StartedOn.AddMinutes(30), "Pike", catchId: CatchId)
+        };
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(component => component.Items, items));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Markup.Should().Contain("The wind dropped."));
+        cut.Markup.Should().NotContain("· Note");
+        cut.Markup.Should().NotContain("· Catch");
+        cut.Markup.Should().NotContain("Trip photograph added");
+    }
+
+    [Fact]
+    public async Task ItShouldRenderACatchWithItsSpeciesAndMeasurements()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -66,17 +89,28 @@ public class WhenTestingRender : BaseTripTimelineTest
         var cut = context.Render<TripTimeline>(parameters => parameters
             .Add(
                 component => component.Items,
-                new[] { Item(TripTimelineKindEnum.Catch, StartedOn.AddMinutes(30), "Pike", catchId: CatchId) })
+                new[]
+                {
+                    Item(
+                        TripTimelineKindEnum.Catch,
+                        StartedOn.AddMinutes(30),
+                        "Brown Trout",
+                        catchId: CatchId,
+                        weight: 1.02m,
+                        length: 48m)
+                })
             .Add(component => component.CatchBaseHref, "/offline/catches"));
 
         // Assert
-        var link = cut.Find($"#trip-timeline-catch-{CatchId:D}-link");
-        link.GetAttribute("href").Should().Be($"/offline/catches?catchId={CatchId:D}");
-        link.TextContent.Should().Contain("Pike");
+        var entry = cut.Find($"#trip-timeline-catch-{CatchId:D}-catch");
+        entry.TextContent.Should().Contain("Brown Trout");
+        cut.Find($"#trip-timeline-catch-{CatchId:D}-measurements").TextContent.Should().Contain("48 cm");
+        cut.Find($"#trip-timeline-catch-{CatchId:D}-link").GetAttribute("href")
+            .Should().Be($"/offline/catches/{CatchId:D}/edit");
     }
 
     [Fact]
-    public async Task ItShouldDescribeACatchWithNoSpecies()
+    public async Task ItShouldRenderACatchWithNoMeasurementsWithoutAnEmptyLine()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -89,11 +123,207 @@ public class WhenTestingRender : BaseTripTimelineTest
                 new[] { Item(TripTimelineKindEnum.Catch, StartedOn.AddMinutes(30), catchId: CatchId) }));
 
         // Assert
-        cut.Find($"#trip-timeline-catch-{CatchId:D}").TextContent.Should().Contain("Catch recorded");
+        cut.Find($"#trip-timeline-catch-{CatchId:D}-catch").TextContent.Should().Contain("Catch recorded");
+        cut.FindAll($"#trip-timeline-catch-{CatchId:D}-measurements").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ItShouldRenderTheWholeTripInOrderWithLocalTimes()
+    public async Task ItShouldRenderARemotePhotographWithoutReadingLocalMedia()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var tripPhotographStore = StoreWithPhotographBytes(1, 2, 3);
+        await using var context = CreateContext(tripPhotographStore: tripPhotographStore);
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(
+                        TripTimelineKindEnum.Photograph,
+                        StartedOn.AddMinutes(20),
+                        photographId: PhotographId,
+                        photographUrl: "https://storage.test/one.jpg?signed=1")
+                })
+            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.TripId, TripId));
+
+        // Assert
+        cut.Find($"#trip-timeline-photograph-{PhotographId:D}-media").GetAttribute("src")
+            .Should().Be("https://storage.test/one.jpg?signed=1");
+        await tripPhotographStore.DidNotReceive().GetBytesAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRenderAStoredTripPhotographFromTheDevice()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var tripPhotographStore = StoreWithPhotographBytes(1, 2, 3, 4);
+        await using var context = CreateContext(tripPhotographStore: tripPhotographStore);
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(
+                        TripTimelineKindEnum.Photograph,
+                        StartedOn.AddMinutes(20),
+                        photographId: PhotographId)
+                })
+            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-timeline-photograph-{PhotographId:D}-media").GetAttribute("src")
+                .Should().StartWith("data:image/jpeg;base64,"));
+        await tripPhotographStore.Received(1).GetBytesAsync(
+            OwnerUserId,
+            TripId,
+            PhotographId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRenderAStoredCatchThumbnailFromTheDevice()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchStore = CatchStoreWithPhotographBytes(9, 9, 9);
+        await using var context = CreateContext(catchStore: catchStore);
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(
+                        TripTimelineKindEnum.Catch,
+                        StartedOn.AddMinutes(30),
+                        "Pike",
+                        catchId: CatchId,
+                        photographId: PhotographId)
+                })
+            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-timeline-catch-{CatchId:D}-media").GetAttribute("src")
+                .Should().StartWith("data:image/jpeg;base64,"));
+        await catchStore.Received(1).GetPhotographBytesAsync(
+            OwnerUserId,
+            CatchId,
+            PhotographId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotReadLocalMediaForAHistoricalTrip()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var tripPhotographStore = StoreWithPhotographBytes(1, 2, 3);
+        var catchStore = CatchStoreWithPhotographBytes(4, 5, 6);
+        await using var context = CreateContext(
+            tripPhotographStore: tripPhotographStore,
+            catchStore: catchStore);
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(TripTimelineKindEnum.Photograph, StartedOn.AddMinutes(20), photographId: PhotographId),
+                    Item(
+                        TripTimelineKindEnum.Catch,
+                        StartedOn.AddMinutes(30),
+                        "Pike",
+                        catchId: CatchId,
+                        photographId: PhotographId)
+                })
+            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.TripId, TripId)
+            .Add(component => component.AllowLocalMedia, false));
+
+        // Assert
+        cut.FindAll($"#trip-timeline-photograph-{PhotographId:D}-media").Should().BeEmpty();
+        await tripPhotographStore.DidNotReceive().GetBytesAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+        await catchStore.DidNotReceive().GetPhotographBytesAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotOfferDeletingANoteWhenTheTripCannotBeEdited()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var deleted = new List<Guid>();
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "Windy.", noteId: NoteId)
+                })
+            .Add(component => component.CanDeleteNotes, false)
+            .Add(component => component.OnDeleteNote, noteId => deleted.Add(noteId)));
+
+        // Assert
+        cut.Markup.Should().Contain("Windy.");
+        cut.FindAll($"#trip-timeline-note-remove-{NoteId:D}").Should().BeEmpty();
+        deleted.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldAskTheParentToDeleteANote()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var deleted = new List<Guid>();
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "Windy.", noteId: NoteId)
+                })
+            .Add(component => component.CanDeleteNotes, true)
+            .Add(component => component.OnDeleteNote, noteId => deleted.Add(noteId)));
+
+        // Act
+        cut.Find($"#trip-timeline-note-remove-{NoteId:D}").Click();
+
+        // Assert
+        deleted.Should().Equal(NoteId);
+        cut.Find($"#trip-timeline-note-remove-{NoteId:D}").GetAttribute("aria-label")
+            .Should().Be("Remove note");
+    }
+
+    [Fact]
+    public async Task ItShouldShowOnlyTheTimeWhenEveryEntryIsOnTheSameDay()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -101,10 +331,7 @@ public class WhenTestingRender : BaseTripTimelineTest
         var items = new[]
         {
             Item(TripTimelineKindEnum.Started, StartedOn),
-            Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "The wind dropped."),
-            Item(TripTimelineKindEnum.Catch, StartedOn.AddMinutes(30), "Pike", catchId: CatchId),
-            Item(TripTimelineKindEnum.Photograph, StartedOn.AddMinutes(45)),
-            Item(TripTimelineKindEnum.Finished, StartedOn.AddHours(4))
+            Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "Windy.", noteId: NoteId)
         };
 
         // Act
@@ -115,11 +342,32 @@ public class WhenTestingRender : BaseTripTimelineTest
         cut.WaitForAssertion(() =>
             cut.Find($"#trip-timeline-started-{StartedOn.ToUnixTimeMilliseconds()}")
                 .TextContent.Should().Contain("07:00"));
-        cut.Find($"#trip-timeline-catch-{CatchId:D}").TextContent.Should().Contain("07:30");
-        cut.Markup.Should().Contain("The wind dropped.");
-        cut.Markup.Should().Contain("Trip photograph added");
-        cut.Find($"#trip-timeline-finished-{StartedOn.AddHours(4).ToUnixTimeMilliseconds()}")
-            .TextContent.Should().Contain("Fishing finished");
+        cut.Markup.Should().NotContain("27 Aug");
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheDateOnEveryEntryWhenTheTripCrossesMidnight()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var lateNight = DateTimeOffset.Parse("2026-08-27T22:30:00Z");
+        var afterMidnight = DateTimeOffset.Parse("2026-08-28T01:15:00Z");
+        var items = new[]
+        {
+            Item(TripTimelineKindEnum.Started, lateNight),
+            Item(TripTimelineKindEnum.Note, afterMidnight, text: "Still going.", noteId: NoteId)
+        };
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(component => component.Items, items));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-timeline-started-{lateNight.ToUnixTimeMilliseconds()}")
+                .TextContent.Should().Contain("27 Aug"));
+        cut.Find($"#trip-timeline-note-{NoteId:D}").TextContent.Should().Contain("28 Aug");
     }
 
     [Fact]
@@ -134,7 +382,6 @@ public class WhenTestingRender : BaseTripTimelineTest
             .Add(component => component.Items, new[] { Item(TripTimelineKindEnum.Started, StartedOn) }));
 
         // Assert
-        cut.WaitForAssertion(() => cut.Markup.Should().Contain("Chronologie de la sortie"));
-        cut.Markup.Should().Contain("Pêche commencée");
+        cut.WaitForAssertion(() => cut.Markup.Should().Contain("Pêche commencée"));
     }
 }

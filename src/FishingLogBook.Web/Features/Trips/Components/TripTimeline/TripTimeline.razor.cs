@@ -1,7 +1,12 @@
+using System.Globalization;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -12,17 +17,49 @@ namespace FishingLogBook.Web.Features.Trips.Components.TripTimeline;
 public partial class TripTimeline : ComponentBase, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private readonly Dictionary<DateTimeOffset, string> _localTimes = [];
+    private readonly Dictionary<DateTimeOffset, DateTime> _localTimes = [];
+    private readonly Dictionary<Guid, string> _mediaSources = [];
+    private readonly HashSet<Guid> _mediaRequested = [];
 
     [Parameter]
     [EditorRequired]
     public IReadOnlyList<TripTimelineItemModel> Items { get; set; } = [];
 
     [Parameter]
+    public Guid OwnerUserId { get; set; }
+
+    [Parameter]
+    public Guid TripId { get; set; }
+
+    [Parameter]
+    public bool AllowLocalMedia { get; set; } = true;
+
+    [Parameter]
+    public bool CanDeleteNotes { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnDeleteNote { get; set; }
+
+    [Parameter]
     public string CatchBaseHref { get; set; } = "/catches";
+
+    [Parameter]
+    public WeightUnitEnum WeightUnit { get; set; } = WeightUnitEnum.Kg;
+
+    [Parameter]
+    public LengthUnitEnum LengthUnit { get; set; } = LengthUnitEnum.Cm;
 
     [Inject]
     private ITimeService Time { get; set; } = default!;
+
+    [Inject]
+    private ITripPhotographStore TripPhotographStore { get; set; } = default!;
+
+    [Inject]
+    private ICatchStore CatchStore { get; set; } = default!;
+
+    [Inject]
+    private IMeasurementService Measurement { get; set; } = default!;
 
     [Inject]
     private ILoggingService Logging { get; set; } = default!;
@@ -31,6 +68,12 @@ public partial class TripTimeline : ComponentBase, IDisposable
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnParametersSetAsync()
+    {
+        await RememberLocalTimesAsync();
+        await LoadMediaAsync();
+    }
+
+    private async Task RememberLocalTimesAsync()
     {
         var pending = Items
             .Select(item => item.OccurredOn)
@@ -42,19 +85,17 @@ public partial class TripTimeline : ComponentBase, IDisposable
             return;
         }
 
-        await RememberLocalTimesAsync(pending);
-    }
-
-    private async Task RememberLocalTimesAsync(IReadOnlyList<DateTimeOffset> pending)
-    {
         try
         {
             var values = await Task.WhenAll(pending.Select(occurredOn =>
                 Time.ToDateTimeLocalValueAsync(occurredOn, _cancellationTokenSource.Token)));
-            for (var index = 0; index < pending.Count; index++)
+            for (var index = 0; index < pending.Length; index++)
             {
-                var value = values[index];
-                _localTimes[pending[index]] = value.Length >= 16 ? value[11..16] : value;
+                var parsed = ParseLocalValue(values[index]);
+                if (parsed is not null)
+                {
+                    _localTimes[pending[index]] = parsed.Value;
+                }
             }
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
@@ -66,43 +107,172 @@ public partial class TripTimeline : ComponentBase, IDisposable
         }
     }
 
-    private string TimeLabel(TripTimelineItemModel item)
+    private async Task LoadMediaAsync()
     {
-        return _localTimes.TryGetValue(item.OccurredOn, out var local)
-            ? local
-            : item.OccurredOn.ToString("HH:mm");
+        if (!AllowLocalMedia)
+        {
+            return;
+        }
+
+        foreach (var item in Items.Where(NeedsLocalMedia))
+        {
+            _mediaRequested.Add(item.PhotographId!.Value);
+            await LoadMediaAsync(item);
+        }
     }
 
-    private string KindLabel(TripTimelineKindEnum kind)
+    private bool NeedsLocalMedia(TripTimelineItemModel item)
     {
-        return kind switch
-        {
-            TripTimelineKindEnum.Started => Loc["Trip_Timeline_Started"],
-            TripTimelineKindEnum.Catch => Loc["Trip_Timeline_Catch"],
-            TripTimelineKindEnum.Photograph => Loc["Trip_Timeline_Photograph"],
-            TripTimelineKindEnum.Note => Loc["Trip_Timeline_Note"],
-            _ => Loc["Trip_Timeline_Finished"]
-        };
+        return item.PhotographId is { } photographId
+            && item.PhotographUrl is null
+            && !_mediaRequested.Contains(photographId)
+            && item.Kind is TripTimelineKindEnum.Photograph or TripTimelineKindEnum.Catch;
     }
+
+    private async Task LoadMediaAsync(TripTimelineItemModel item)
+    {
+        try
+        {
+            var bytes = item.Kind == TripTimelineKindEnum.Photograph
+                ? await TripPhotographStore.GetBytesAsync(
+                    OwnerUserId,
+                    TripId,
+                    item.PhotographId!.Value,
+                    _cancellationTokenSource.Token)
+                : await CatchStore.GetPhotographBytesAsync(
+                    OwnerUserId,
+                    item.CatchId ?? Guid.Empty,
+                    item.PhotographId!.Value,
+                    _cancellationTokenSource.Token);
+            if (bytes is { Length: > 0 })
+            {
+                _mediaSources[item.PhotographId!.Value] =
+                    $"data:{item.ContentType};base64,{Convert.ToBase64String(bytes)}";
+            }
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "reading a trip timeline photograph",
+                exception,
+                CancellationToken.None);
+        }
+    }
+
+    private string? MediaSource(TripTimelineItemModel item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.PhotographUrl))
+        {
+            return item.PhotographUrl;
+        }
+
+        return item.PhotographId is { } photographId
+            && _mediaSources.TryGetValue(photographId, out var source)
+            ? source
+            : null;
+    }
+
+    private bool ShowDate(int index)
+    {
+        var current = LocalDate(Items[index]);
+        if (current is null)
+        {
+            return false;
+        }
+
+        if (index == 0)
+        {
+            return Items
+                .Select(LocalDate)
+                .OfType<DateTime>()
+                .Select(value => value.Date)
+                .Distinct()
+                .Count() > 1;
+        }
+
+        var previous = LocalDate(Items[index - 1]);
+        return previous is null || previous.Value.Date != current.Value.Date;
+    }
+
+    private DateTime? LocalDate(TripTimelineItemModel item)
+    {
+        return _localTimes.TryGetValue(item.OccurredOn, out var local) ? local : null;
+    }
+
+    private string TimeLabel(TripTimelineItemModel item, bool showDate)
+    {
+        var local = LocalDate(item);
+        var time = local is null
+            ? item.OccurredOn.ToString("HH:mm", CultureInfo.CurrentCulture)
+            : local.Value.ToString("t", CultureInfo.CurrentCulture);
+        if (!showDate)
+        {
+            return time;
+        }
+
+        var date = local is null
+            ? item.OccurredOn.ToString("d MMM", CultureInfo.CurrentCulture)
+            : local.Value.ToString("d MMM", CultureInfo.CurrentCulture);
+        return $"{date} · {time}";
+    }
+
+    private string SpeciesLabel(TripTimelineItemModel item)
+    {
+        return string.IsNullOrWhiteSpace(item.SpeciesName)
+            ? Loc["Trip_Timeline_CatchUnknownSpecies"]
+            : item.SpeciesName!;
+    }
+
+    private string? MeasurementsLabel(TripTimelineItemModel item)
+    {
+        var weight = Measurement.ToDisplayWeight(item.Weight, WeightUnit);
+        var length = Measurement.ToDisplayLength(item.Length, LengthUnit);
+        var weightText = weight is null
+            ? null
+            : $"{weight.Value.ToString("0.##", CultureInfo.CurrentCulture)} {WeightUnitLabel}";
+        var lengthText = length is null
+            ? null
+            : $"{length.Value.ToString("0.##", CultureInfo.CurrentCulture)} {LengthUnitLabel}";
+        if (weightText is null && lengthText is null)
+        {
+            return null;
+        }
+
+        return string.Join(" · ", new[] { weightText, lengthText }.Where(value => value is not null));
+    }
+
+    private string WeightUnitLabel => WeightUnit == WeightUnitEnum.Lb
+        ? Loc["Catch_WeightUnitShort_Lb"]
+        : Loc["Catch_WeightUnitShort_Kg"];
+
+    private string LengthUnitLabel => LengthUnit == LengthUnitEnum.In
+        ? Loc["Catch_LengthUnitShort_In"]
+        : Loc["Catch_LengthUnitShort_Cm"];
 
     private string Description(TripTimelineItemModel item)
     {
-        return item.Kind switch
-        {
-            TripTimelineKindEnum.Started => Loc["Trip_Timeline_StartedDescription"],
-            TripTimelineKindEnum.Catch => string.IsNullOrWhiteSpace(item.SpeciesName)
-                ? Loc["Trip_Timeline_CatchUnknownSpecies"]
-                : item.SpeciesName!,
-            TripTimelineKindEnum.Photograph => Loc["Trip_Timeline_PhotographDescription"],
-            TripTimelineKindEnum.Note => item.Text ?? string.Empty,
-            _ => Loc["Trip_Timeline_FinishedDescription"]
-        };
+        return item.Kind == TripTimelineKindEnum.Started
+            ? Loc["Trip_Timeline_StartedDescription"]
+            : Loc["Trip_Timeline_FinishedDescription"];
     }
 
     private string? CatchHref(TripTimelineItemModel item)
     {
-        return item.Kind == TripTimelineKindEnum.Catch && item.CatchId is { } catchId
-            ? $"{CatchBaseHref}?catchId={catchId:D}"
+        return item.CatchId is { } catchId ? $"{CatchBaseHref}/{catchId:D}/edit" : null;
+    }
+
+    private static DateTime? ParseLocalValue(string value)
+    {
+        return DateTime.TryParseExact(
+            value,
+            "yyyy-MM-ddTHH:mm",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsed)
+            ? parsed
             : null;
     }
 
@@ -131,8 +301,9 @@ public partial class TripTimeline : ComponentBase, IDisposable
     private static string ItemId(TripTimelineItemModel item)
     {
         var kind = item.Kind.ToString().ToLowerInvariant();
-        return item.CatchId is { } catchId
-            ? $"trip-timeline-{kind}-{catchId:D}"
+        var identity = item.CatchId ?? item.NoteId ?? item.PhotographId;
+        return identity is { } value
+            ? $"trip-timeline-{kind}-{value:D}"
             : $"trip-timeline-{kind}-{item.OccurredOn.ToUnixTimeMilliseconds()}";
     }
 

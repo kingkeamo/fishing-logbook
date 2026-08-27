@@ -2,3 +2,27 @@
     max-height: 18rem;
     overflow-y: auto;
 }
+
+.catch-selector-row {
+    min-width: 0;
+}
+
+.catch-selector-thumbnail {
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: cover;
+    border-radius: var(--mud-default-borderradius);
+    flex: 0 0 auto;
+}
+
+.catch-selector-thumbnail-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mud-palette-background-grey);
+    color: var(--mud-palette-text-secondary);
+}
+
+::deep .catch-selector-option-checkbox {
+    min-width: 0;
+}

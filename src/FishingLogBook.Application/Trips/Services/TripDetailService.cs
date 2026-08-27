@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
+using FishingLogBook.Application.Catches;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
@@ -78,8 +79,38 @@ public sealed class TripDetailService : ITripDetailService
         {
             Notes = [.. notes.Value.OrderBy(note => note.RecordedOn).Select(_mapper.Map<TripNoteDto>)],
             Photographs = await ToViewsAsync(photographs.Value, cancellationToken),
-            Catches = [.. catches.Value.Select(_mapper.Map<TripCatchSummaryDto>)]
+            Catches = await ToCatchSummariesAsync(catches.Value, cancellationToken)
         });
+    }
+
+    private async Task<IReadOnlyList<TripCatchSummaryDto>> ToCatchSummariesAsync(
+        IReadOnlyList<TripCatchSummary> catches,
+        CancellationToken cancellationToken)
+    {
+        var summaries = new List<TripCatchSummaryDto>(catches.Count);
+        foreach (var summary in catches)
+        {
+            summaries.Add(_mapper.Map<TripCatchSummaryDto>(summary) with
+            {
+                PhotographUrl = await CreateCatchPhotographUrlAsync(summary, cancellationToken)
+            });
+        }
+
+        return summaries;
+    }
+
+    private async Task<string?> CreateCatchPhotographUrlAsync(
+        TripCatchSummary summary,
+        CancellationToken cancellationToken)
+    {
+        if (summary.PhotographId is not { } photographId)
+        {
+            return null;
+        }
+
+        return await CreateDownloadUrlAsync(
+            CatchPhotographObjectKey.Build(summary.UserId, summary.Id, photographId),
+            cancellationToken);
     }
 
     private async Task<IReadOnlyList<TripPhotographViewDto>> ToViewsAsync(

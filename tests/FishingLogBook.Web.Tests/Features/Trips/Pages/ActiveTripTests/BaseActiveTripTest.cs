@@ -2,6 +2,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -63,7 +64,8 @@ public class BaseActiveTripTest
         ILoggingService? logging = null,
         ICatchStore? catchStore = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
-        ITripClient? tripClient = null)
+        ITripClient? tripClient = null,
+        IModalService? modalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -84,6 +86,8 @@ public class BaseActiveTripTest
             new TripDisplayService(provider.GetRequiredService<ITimeService>()));
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton<ITripTimelineService>(new TripTimelineService());
+        context.Services.AddSingleton<IMeasurementService>(new MeasurementService());
+        context.Services.AddSingleton(modalService ?? ConfirmingModalService());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
@@ -95,6 +99,14 @@ public class BaseActiveTripTest
         provider.GetAsync(Arg.Any<CancellationToken>())
             .Returns(AnglerPreferencesModel.Empty with { Locations = locations });
         return provider;
+    }
+
+    protected static IModalService ConfirmingModalService(bool confirm = true)
+    {
+        var modalService = Substitute.For<IModalService>();
+        modalService.ConfirmAsync(Arg.Any<ConfirmModalModel>(), Arg.Any<CancellationToken>())
+            .Returns(confirm);
+        return modalService;
     }
 
     protected static IActiveTripService QuietActiveTripService()

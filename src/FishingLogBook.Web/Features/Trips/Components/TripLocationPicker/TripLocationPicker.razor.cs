@@ -2,8 +2,6 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
-using FishingLogBook.Web.Features.Trips.Models;
-using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -16,22 +14,20 @@ public partial class TripLocationPicker : ComponentBase, IDisposable
 
     private IReadOnlyList<FishingLocationPreferenceDto> _savedLocations = [];
     private string? _otherLocation;
-    private Guid _loadedTripId;
-    private bool _isSaving;
-    private bool _saveFailed;
+    private string? _loadedPlaceName;
+    private bool _hasLoadedPlaceName;
 
     [Parameter]
-    [EditorRequired]
-    public TripModel Trip { get; set; } = default!;
+    public string? PlaceName { get; set; }
 
     [Parameter]
-    public EventCallback<TripModel> OnPlaceChanged { get; set; }
+    public EventCallback<string?> PlaceNameChanged { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
 
     [Inject]
     private IAnglerPreferencesProvider AnglerPreferences { get; set; } = default!;
-
-    [Inject]
-    private IActiveTripService ActiveTrip { get; set; } = default!;
 
     [Inject]
     private ILoggingService Logging { get; set; } = default!;
@@ -41,7 +37,7 @@ public partial class TripLocationPicker : ComponentBase, IDisposable
 
     private IReadOnlyList<FishingLocationPreferenceDto> SavedLocations => _savedLocations;
 
-    private bool HasPlace => !string.IsNullOrWhiteSpace(Trip.PlaceName);
+    private bool HasPlace => !string.IsNullOrWhiteSpace(PlaceName);
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,12 +46,13 @@ public partial class TripLocationPicker : ComponentBase, IDisposable
 
     protected override void OnParametersSet()
     {
-        if (_loadedTripId == Trip.Id)
+        if (_hasLoadedPlaceName && _loadedPlaceName == PlaceName)
         {
             return;
         }
 
-        _loadedTripId = Trip.Id;
+        _hasLoadedPlaceName = true;
+        _loadedPlaceName = PlaceName;
         _otherLocation = ManualPlaceName();
     }
 
@@ -78,7 +75,7 @@ public partial class TripLocationPicker : ComponentBase, IDisposable
 
     private string? ManualPlaceName()
     {
-        var place = TripConstants.TrimPlaceName(Trip.PlaceName);
+        var place = TripConstants.TrimPlaceName(PlaceName);
         if (place is null)
         {
             return null;
@@ -91,7 +88,7 @@ public partial class TripLocationPicker : ComponentBase, IDisposable
 
     private bool IsSelected(string name)
     {
-        return FishingLocationConstants.AreSameName(Trip.PlaceName, name);
+        return FishingLocationConstants.AreSameName(PlaceName, name);
     }
 
     private async Task SelectAsync(string name)
@@ -114,40 +111,17 @@ public partial class TripLocationPicker : ComponentBase, IDisposable
     private async Task ApplyAsync(string? placeName)
     {
         var place = TripConstants.TrimPlaceName(placeName);
-        if (string.Equals(place, TripConstants.TrimPlaceName(Trip.PlaceName), StringComparison.Ordinal))
+        if (string.Equals(place, TripConstants.TrimPlaceName(PlaceName), StringComparison.Ordinal))
         {
             return;
         }
 
-        _isSaving = true;
-        _saveFailed = false;
-        try
+        PlaceName = place;
+        _loadedPlaceName = place;
+        _otherLocation = ManualPlaceName();
+        if (PlaceNameChanged.HasDelegate)
         {
-            var updated = await ActiveTrip.UpdatePlaceAsync(Trip, place, _cancellationTokenSource.Token);
-            if (updated is null)
-            {
-                _saveFailed = true;
-                return;
-            }
-
-            Trip = updated;
-            _otherLocation = ManualPlaceName();
-            if (OnPlaceChanged.HasDelegate)
-            {
-                await OnPlaceChanged.InvokeAsync(updated);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (Exception exception)
-        {
-            _saveFailed = true;
-            await Logging.LogErrorAsync("updating the trip fishing location", exception, CancellationToken.None);
-        }
-        finally
-        {
-            _isSaving = false;
+            await PlaceNameChanged.InvokeAsync(place);
         }
     }
 

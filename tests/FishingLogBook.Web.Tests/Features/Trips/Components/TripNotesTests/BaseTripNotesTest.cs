@@ -2,6 +2,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -20,11 +21,20 @@ public class BaseTripNotesTest
     protected static readonly Guid TripId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     protected static readonly DateTimeOffset StartedOn = DateTimeOffset.Parse("2026-08-17T07:00:00Z");
 
+    protected static IModalService ConfirmingModalService(bool confirm = true)
+    {
+        var modalService = Substitute.For<IModalService>();
+        modalService.ConfirmAsync(Arg.Any<ConfirmModalModel>(), Arg.Any<CancellationToken>())
+            .Returns(confirm);
+        return modalService;
+    }
+
     protected static BunitContext CreateContext(
         ITripNoteStore store,
         ITripClient? tripClient = null,
         ILoggingService? logging = null,
-        ITimeService? time = null)
+        ITimeService? time = null,
+        IModalService? modalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -34,6 +44,7 @@ public class BaseTripNotesTest
         context.Services.AddSingleton(tripClient ?? Substitute.For<ITripClient>());
         context.Services.AddSingleton(logging ?? Substitute.For<ILoggingService>());
         context.Services.AddSingleton(time ?? TestTimeService.WithOffset(TimeSpan.Zero));
+        context.Services.AddSingleton(modalService ?? ConfirmingModalService());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
