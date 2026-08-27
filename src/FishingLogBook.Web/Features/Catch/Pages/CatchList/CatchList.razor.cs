@@ -15,6 +15,9 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Offline;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -43,6 +46,8 @@ public partial class CatchList : ComponentBase, IDisposable
     private bool _loadFailed;
     private bool _isLoadInFlight;
     private bool _reloadRequested;
+    private TripModel? _activeTrip;
+    private bool _isStartingTrip;
     private bool _localRefreshRequested;
     private AnglerPreferencesModel? _preferences;
 
@@ -78,6 +83,20 @@ public partial class CatchList : ComponentBase, IDisposable
 
     [Inject]
     private ILoggingService Logging { get; set; } = default!;
+
+    [Inject]
+    private IActiveTripService ActiveTrip { get; set; } = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    private string ActiveTripHref
+    {
+        get
+        {
+            return _activeTrip is null ? "/catches" : $"/trips/{_activeTrip.Id:D}";
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -124,6 +143,7 @@ public partial class CatchList : ComponentBase, IDisposable
             var preferencesTask = AnglerPreferences.GetAsync(cancellationToken);
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(cancellationToken);
             _currentUserId = ownerUserId;
+            _activeTrip = await LoadActiveTripAsync(ownerUserId, cancellationToken);
 
             var localTask = LoadLocalCatchesAsync(ownerUserId, cancellationToken);
             var remoteTask = LoadRemoteCatchesAsync(cancellationToken);
@@ -193,6 +213,60 @@ public partial class CatchList : ComponentBase, IDisposable
         await ComputeLocalTimesAsync(cancellationToken);
         ComputeFilterOptions();
         RebuildFilteredGroups();
+    }
+
+    private async Task<TripModel?> LoadActiveTripAsync(
+        Guid ownerUserId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await ActiveTrip.GetActiveAsync(ownerUserId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("resolving the active trip", exception, CancellationToken.None);
+            return null;
+        }
+    }
+
+    private async Task StartFishingAsync()
+    {
+        if (_isStartingTrip || _activeTrip is not null)
+        {
+            return;
+        }
+
+        _isStartingTrip = true;
+        var cancellationToken = _cancellationTokenSource.Token;
+        try
+        {
+            var started = await ActiveTrip.StartAsync(_currentUserId, cancellationToken);
+            Navigation.NavigateTo($"/trips/{started.Id:D}");
+        }
+        catch (TripAlreadyActiveException)
+        {
+            _activeTrip = await LoadActiveTripAsync(_currentUserId, cancellationToken);
+            if (_activeTrip is not null)
+            {
+                Navigation.NavigateTo($"/trips/{_activeTrip.Id:D}");
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("starting a trip", exception, CancellationToken.None);
+        }
+        finally
+        {
+            _isStartingTrip = false;
+        }
     }
 
     private async Task<CatchLoadResult> LoadLocalCatchesAsync(

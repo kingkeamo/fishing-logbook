@@ -10,13 +10,36 @@
     <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap" Spacing="2">
             <MudText Typo="Typo.h4" id="offline-catch-list-title">@Loc["Catch_LogbookTitle"]</MudText>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       Href="/offline/record"
-                       StartIcon="@Icons.Material.Filled.AddAPhoto"
-                       id="offline-catch-record-link">
-                @Loc["Catch_RecordNav"]
-            </MudButton>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="flex-wrap">
+                @if (_activeTrip is not null)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               Href="@ActiveTripHref"
+                               StartIcon="@Icons.Material.Filled.Sailing"
+                               id="offline-trip-continue-link">
+                        @Loc["Trip_Continue"]
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               OnClick="StartFishingAsync"
+                               Disabled="_isStartingTrip"
+                               StartIcon="@Icons.Material.Filled.Sailing"
+                               id="offline-trip-start-link">
+                        @Loc["Trip_StartFishing"]
+                    </MudButton>
+                }
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Href="/offline/record"
+                           StartIcon="@Icons.Material.Filled.AddAPhoto"
+                           id="offline-catch-record-link">
+                    @Loc["Catch_RecordNav"]
+                </MudButton>
+            </MudStack>
         </MudStack>
 
         @if (_loadFailed)

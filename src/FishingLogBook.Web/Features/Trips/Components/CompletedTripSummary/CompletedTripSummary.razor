@@ -1,0 +1,30 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.CompletedTripSummary
+
+<MudPaper Elevation="0" Class="completed-trip-card" id="completed-trip-card">
+    <MudStack Spacing="3" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                 Color="Color.Primary"
+                 Size="Size.Large"
+                 aria-hidden="true" />
+        <MudText Typo="Typo.h5" Align="Align.Center" id="completed-trip-heading">
+            @Loc["Trip_Finished"]
+        </MudText>
+        <MudText Typo="Typo.h6" Align="Align.Center" id="completed-trip-title">@Heading</MudText>
+        @if (DurationLabel is not null)
+        {
+            <MudStack Spacing="0" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_DurationLabel"]</MudText>
+                <MudText Typo="Typo.body1" id="completed-trip-duration">@DurationLabel</MudText>
+            </MudStack>
+        }
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   FullWidth="true"
+                   Href="@LogbookHref"
+                   StartIcon="@Icons.Material.Filled.MenuBook"
+                   id="completed-trip-logbook">
+            @Loc["Trip_BackToLogbook"]
+        </MudButton>
+    </MudStack>
+</MudPaper>

@@ -16,6 +16,8 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +55,7 @@ public class BaseCatchListTest
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(catchClient ?? EmptyCatchClient());
         context.Services.AddSingleton(network ?? OnlineNetwork());
+        context.Services.AddSingleton(QuietActiveTripService());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton<ICatchDateGroupingService, CatchDateGroupingService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
@@ -93,6 +96,14 @@ public class BaseCatchListTest
                 weightUnit,
                 lengthUnit));
         return provider;
+    }
+
+    protected static IActiveTripService QuietActiveTripService()
+    {
+        var service = Substitute.For<IActiveTripService>();
+        service.GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripModel?)null);
+        return service;
     }
 
     protected static ILoggingService QuietLogging()

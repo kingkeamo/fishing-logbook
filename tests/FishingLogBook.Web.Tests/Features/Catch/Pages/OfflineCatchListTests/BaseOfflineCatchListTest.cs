@@ -9,6 +9,8 @@ using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -33,6 +35,7 @@ public class BaseOfflineCatchListTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(preferences ?? EmptyPreferences());
         context.Services.AddSingleton(logging ?? QuietLogging());
+        context.Services.AddSingleton(QuietActiveTripService());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton<ICatchDateGroupingService, CatchDateGroupingService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
@@ -40,6 +43,14 @@ public class BaseOfflineCatchListTest
         owner.Unlock(new OfflineOwnerModel(OwnerUserId, 1));
         context.Services.AddSingleton<IOfflineOwnerContextService>(owner);
         return context;
+    }
+
+    protected static IActiveTripService QuietActiveTripService()
+    {
+        var service = Substitute.For<IActiveTripService>();
+        service.GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripModel?)null);
+        return service;
     }
 
     protected static ILoggingService QuietLogging()

@@ -28,6 +28,7 @@ using FishingLogBook.Web.Features.Profile.Offline.Stores;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.SystemStatus.Clients;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Features.Users.Clients;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
@@ -82,6 +83,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITimeService, TimeService>();
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
         services.AddScoped<ITripStore, IndexedDbTripStore>();
+        services.AddScoped<IActiveTripService, ActiveTripService>();
+        services.AddScoped<ITripDisplayService, TripDisplayService>();
         services.AddScoped<ICatchSynchroniser, CatchSynchroniser>();
         services.AddScoped<ICatchClient, CatchClient>();
         services.AddScoped<ICurrentUserClient, CurrentUserClient>();

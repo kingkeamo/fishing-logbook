@@ -297,6 +297,45 @@
   <data name="Catch_LoadRetry" xml:space="preserve">
     <value>Réessayer</value>
   </data>
+  <data name="Trip_StartFishing" xml:space="preserve">
+    <value>Commencer la pêche</value>
+  </data>
+  <data name="Trip_Continue" xml:space="preserve">
+    <value>Reprendre la sortie</value>
+  </data>
+  <data name="Trip_InProgress" xml:space="preserve">
+    <value>Sortie de pêche en cours</value>
+  </data>
+  <data name="Trip_ActiveLabel" xml:space="preserve">
+    <value>Sortie en cours</value>
+  </data>
+  <data name="Trip_StartedLabel" xml:space="preserve">
+    <value>Commencée</value>
+  </data>
+  <data name="Trip_DurationLabel" xml:space="preserve">
+    <value>Durée</value>
+  </data>
+  <data name="Trip_DurationHoursMinutes" xml:space="preserve">
+    <value>{0} h {1} min</value>
+  </data>
+  <data name="Trip_DurationMinutes" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="Trip_Finish" xml:space="preserve">
+    <value>Terminer la sortie</value>
+  </data>
+  <data name="Trip_Finished" xml:space="preserve">
+    <value>Sortie terminée</value>
+  </data>
+  <data name="Trip_BackToLogbook" xml:space="preserve">
+    <value>Retour au carnet</value>
+  </data>
+  <data name="Trip_LoadFailed" xml:space="preserve">
+    <value>Cette sortie n'a pas pu être chargée.</value>
+  </data>
+  <data name="Trip_NotFound" xml:space="preserve">
+    <value>Cette sortie n'est plus disponible.</value>
+  </data>
   <data name="Catch_LoadFailed" xml:space="preserve">
     <value>Les prises n'ont pas pu être chargées.</value>
   </data>

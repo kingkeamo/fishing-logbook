@@ -6,10 +6,13 @@ using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
@@ -21,6 +24,22 @@ namespace FishingLogBook.Web.Tests.Layouts.MainLayoutTests;
 public class BaseMainLayoutTest
 {
     protected const string SignedInEmail = "tester@example.test";
+
+    protected static IActiveTripService QuietActiveTripService()
+    {
+        var service = Substitute.For<IActiveTripService>();
+        service.GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripModel?)null);
+        return service;
+    }
+
+    protected static ILocalCatchOwnerService QuietLocalOwner()
+    {
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>())
+            .Returns(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+        return owner;
+    }
 
     protected static BunitContext CreateContext(
         bool isAuthenticated = false,
@@ -61,6 +80,8 @@ public class BaseMainLayoutTest
             diagnosticSynchroniser ?? Substitute.For<IDiagnosticSynchroniser>());
         context.Services.AddSingleton(Substitute.For<ILoggingService>());
         context.Services.AddSingleton(appUpdate ?? Substitute.For<IAppUpdateService>());
+        context.Services.AddSingleton(QuietActiveTripService());
+        context.Services.AddSingleton(QuietLocalOwner());
         context.Services.AddSingleton(profileSummary ?? QuietProfileSummary());
         context.Services.AddSingleton(network ?? Network(isOnline: true));
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();

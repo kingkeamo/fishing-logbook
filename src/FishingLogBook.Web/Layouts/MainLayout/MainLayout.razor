@@ -1,3 +1,4 @@
+@using FishingLogBook.Web.Features.Trips.Components.ActiveTripBanner
 @inherits LayoutComponentBase
 
 <MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
@@ -48,6 +49,7 @@
         <AuthorizeView>
             <Authorized>
                 <AppUpdateBanner />
+                <ActiveTripBanner />
             </Authorized>
         </AuthorizeView>
         <div class="app-shell-content" id="app-shell-content">

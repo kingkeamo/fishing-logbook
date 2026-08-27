@@ -1,0 +1,15 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripBanner
+
+@if (_trip is not null)
+{
+    <div class="active-trip-banner" role="status" id="active-trip-banner">
+        <MudIcon Icon="@Icons.Material.Filled.Sailing" Size="Size.Small" aria-hidden="true" />
+        <span class="active-trip-banner-text">@Loc["Trip_InProgress"]</span>
+        <MudButton Variant="Variant.Text"
+                   Size="Size.Small"
+                   Href="@ContinueHref"
+                   id="active-trip-banner-continue">
+            @Loc["Trip_Continue"]
+        </MudButton>
+    </div>
+}

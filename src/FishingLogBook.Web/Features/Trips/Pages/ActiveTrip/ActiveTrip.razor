@@ -1,0 +1,46 @@
+@page "/trips/{TripId:guid}"
+@attribute [Authorize]
+@using FishingLogBook.Web.Features.Trips.Components.ActiveTripView
+@using FishingLogBook.Web.Features.Trips.Components.CompletedTripSummary
+
+<PageTitle>@Loc["Trip_ActiveLabel"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="trip-page">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="trip-load-failed">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Justify="Justify.SpaceBetween">
+                    <span>@Loc["Trip_LoadFailed"]</span>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small"
+                               OnClick="RetryAsync" Disabled="_isLoading"
+                               id="trip-load-retry">@Loc["Action_TryAgain"]</MudButton>
+                </MudStack>
+            </MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center" id="trip-loading" />
+        }
+        else if (_trip is null)
+        {
+            <MudAlert Severity="Severity.Info" id="trip-not-found">@Loc["Trip_NotFound"]</MudAlert>
+        }
+        else if (IsCompleted)
+        {
+            <CompletedTripSummary Trip="_trip"
+                                  DurationLabel="@DurationLabel"
+                                  GeneratedTitle="@GeneratedTitle"
+                                  LogbookHref="/catches" />
+        }
+        else
+        {
+            <ActiveTripView Trip="_trip"
+                            StartedLabel="@StartedLabel"
+                            ElapsedLabel="@DurationLabel"
+                            GeneratedTitle="@GeneratedTitle"
+                            IsFinishing="_isFinishing"
+                            OnFinish="FinishAsync" />
+        }
+    </MudStack>
+</MudContainer>
