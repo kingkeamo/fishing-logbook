@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Trips.Models;
 using NSubstitute;
 
@@ -121,6 +122,25 @@ public class WhenTestingUpdatePlace : BaseActiveTripServiceTest
                 saved.Title == "Morning session" &&
                 saved.Status == TripConstants.Active),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotChangeTheSavedFishingLocationsWhenTheTripPlaceChanges()
+    {
+        // Arrange
+        var trip = ActiveTrip();
+        MockTripStore.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(trip with { PlaceName = "Lough Corrib" });
+
+        // Act
+        await Sut.UpdatePlaceAsync(trip, "Small lake near Clifden", CancellationToken.None);
+
+        // Assert
+        await MockAnglerPreferences.DidNotReceive().SetAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<AnglerPreferencesModel>(),
+            Arg.Any<CancellationToken>());
+        await MockAnglerPreferences.DidNotReceive().GetAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

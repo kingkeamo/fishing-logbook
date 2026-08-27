@@ -126,6 +126,23 @@ public class WhenTestingStartWithASavedLocation : BaseActiveTripServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldOnlyReadTheSavedLocationsWhenStartingATrip()
+    {
+        // Arrange
+        GivenSavedLocations(new FishingLocationPreferenceDto(CorribId, "Lough Corrib", true));
+
+        // Act
+        await Sut.StartAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockAnglerPreferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
+        await MockAnglerPreferences.DidNotReceive().SetAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<AnglerPreferencesModel>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private void GivenSavedLocations(params FishingLocationPreferenceDto[] locations)
     {
         MockAnglerPreferences.GetAsync(Arg.Any<CancellationToken>())
