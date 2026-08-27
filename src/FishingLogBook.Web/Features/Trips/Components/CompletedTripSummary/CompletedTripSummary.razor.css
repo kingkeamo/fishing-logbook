@@ -4,3 +4,8 @@
     border-radius: var(--mud-default-borderradius);
     background: var(--mud-palette-surface);
 }
+
+.completed-trip-notes {
+    align-self: stretch;
+    text-align: start;
+}

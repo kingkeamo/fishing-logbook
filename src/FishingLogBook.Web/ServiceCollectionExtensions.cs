@@ -93,6 +93,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripSynchroniser, TripSynchroniser>();
         services.AddScoped<ITripPhotographStore, IndexedDbTripPhotographStore>();
         services.AddScoped<ITripPhotographSynchroniser, TripPhotographSynchroniser>();
+        services.AddScoped<ITripNoteStore, IndexedDbTripNoteStore>();
+        services.AddScoped<ITripNoteSynchroniser, TripNoteSynchroniser>();
         services.AddScoped<ITripDependencyService, TripDependencyService>();
         services.AddScoped<ILogbookSynchroniser, LogbookSynchroniser>();
         services.AddScoped<ICatchSynchroniser, CatchSynchroniser>();

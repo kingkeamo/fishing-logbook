@@ -6,9 +6,22 @@ public static class TripConstants
 
     public const int MaxPlaceNameLength = 160;
 
+    public const int MaxNoteTextLength = CatchDetailConstants.MaxNotesLength;
+
     public const string Active = "Active";
 
     public const string Completed = "Completed";
+
+    public static bool IsNoteTextValid(string? text)
+    {
+        return !string.IsNullOrWhiteSpace(text) && text.Trim().Length <= MaxNoteTextLength;
+    }
+
+    public static string? TrimNoteText(string? text)
+    {
+        var trimmed = text?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
+    }
 
     public static bool IsKnownStatus(string? status)
     {

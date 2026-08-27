@@ -4,6 +4,7 @@ using FishingLogBook.Web.Common.Offline.Dependencies;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Tests.Features.Catch.Offline.Stores.CatchStoreTests;
+using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripNoteStoreTests;
 using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripPhotographStoreTests;
 using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripStoreTests;
 
@@ -26,12 +27,13 @@ public class BaseTripDependencyServiceTest
 
     protected readonly MemoryTripStore TripStore = new();
     protected readonly MemoryTripPhotographStore TripPhotographStore = new();
+    protected readonly MemoryTripNoteStore TripNoteStore = new();
     protected readonly MemoryCatchStore CatchStore = new();
     protected readonly TripDependencyService Sut;
 
     protected BaseTripDependencyServiceTest()
     {
-        Sut = new TripDependencyService(TripStore, TripPhotographStore, CatchStore);
+        Sut = new TripDependencyService(TripStore, TripPhotographStore, TripNoteStore, CatchStore);
     }
 
     protected async Task GivenTripAsync(
@@ -64,6 +66,23 @@ public class BaseTripDependencyServiceTest
                 StartedOn.AddMinutes(30),
                 Bytes: [1, 2, 3],
                 SyncStatus: syncStatus),
+            CancellationToken.None);
+    }
+
+    protected async Task GivenTripNoteAsync(
+        Guid noteId,
+        Guid tripId,
+        SyncStatus syncStatus,
+        Guid? ownerUserId = null)
+    {
+        await TripNoteStore.SaveAsync(
+            new TripNoteModel(
+                noteId,
+                tripId,
+                ownerUserId ?? OwnerUserId,
+                "water dropped a foot",
+                StartedOn.AddMinutes(45),
+                syncStatus),
             CancellationToken.None);
     }
 

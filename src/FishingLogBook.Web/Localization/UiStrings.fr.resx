@@ -249,6 +249,27 @@
   <data name="Trip_PhotographRemoveFailed" xml:space="preserve">
     <value>Cette photo n'a pas pu être supprimée. Réessayez une fois de retour en ligne.</value>
   </data>
+  <data name="Trip_NotesLabel" xml:space="preserve">
+    <value>Notes de la sortie</value>
+  </data>
+  <data name="Trip_NoteAdd" xml:space="preserve">
+    <value>Ajouter une note</value>
+  </data>
+  <data name="Trip_NotePrompt" xml:space="preserve">
+    <value>Que s'est-il passé ?</value>
+  </data>
+  <data name="Trip_NotePlaceholder" xml:space="preserve">
+    <value>Le niveau a baissé de trente centimètres</value>
+  </data>
+  <data name="Trip_NoteRemove" xml:space="preserve">
+    <value>Supprimer la note</value>
+  </data>
+  <data name="Trip_NoteAddFailed" xml:space="preserve">
+    <value>Cette note n'a pas pu être ajoutée</value>
+  </data>
+  <data name="Trip_NoteRemoveFailed" xml:space="preserve">
+    <value>Cette note n'a pas pu être supprimée. Réessayez une fois de retour en ligne.</value>
+  </data>
   <data name="Trip_RecordCatch" xml:space="preserve">
     <value>Enregistrer une prise</value>
   </data>

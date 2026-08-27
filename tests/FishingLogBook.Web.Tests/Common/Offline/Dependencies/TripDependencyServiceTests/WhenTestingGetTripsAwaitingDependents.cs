@@ -149,6 +149,65 @@ public class WhenTestingGetTripsAwaitingDependents : BaseTripDependencyServiceTe
     }
 
     [Fact]
+    public async Task ItShouldIgnoreASynchronisedTripNote()
+    {
+        // Arrange
+        await GivenTripNoteAsync(Guid.NewGuid(), TripId, SyncStatus.Synchronised);
+
+        // Act
+        var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        awaiting.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldIgnoreAnotherAnglersPendingTripNote()
+    {
+        // Arrange
+        await GivenTripNoteAsync(Guid.NewGuid(), TripId, SyncStatus.SavedLocally, ownerUserId: OtherUserId);
+
+        // Act
+        var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        awaiting.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldHoldTheTripWhileOneOfItsNotesIsStillPending()
+    {
+        // Arrange
+        await GivenTripNoteAsync(Guid.NewGuid(), TripId, SyncStatus.SavedLocally);
+
+        // Act
+        var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        awaiting.Should().Equal(TripId);
+        TripPhotographStore.BytesReadFor.Should().BeEmpty();
+        CatchStore.PhotographBytesReadFor.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldReportATripHeldByACatchAPhotographAndANoteOnce()
+    {
+        // Arrange
+        await GivenCatchAsync(CatchId, TripId, SyncStatus.SavedLocally);
+        await GivenTripPhotographAsync(Guid.NewGuid(), TripId, SyncStatus.SavedLocally);
+        await GivenTripNoteAsync(Guid.NewGuid(), TripId, SyncStatus.SavedLocally);
+        await GivenTripNoteAsync(Guid.NewGuid(), SecondTripId, SyncStatus.SavedLocally);
+
+        // Act
+        var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        awaiting.Should().BeEquivalentTo([TripId, SecondTripId]);
+        TripPhotographStore.BytesReadFor.Should().BeEmpty();
+        CatchStore.PhotographBytesReadFor.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ItShouldReportEachTripOnceWithoutReadingPhotographBytes()
     {
         // Arrange

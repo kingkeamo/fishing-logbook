@@ -90,6 +90,45 @@ public class WhenTestingSynchronisePending : BaseLogbookSynchroniserTest
     }
 
     [Fact]
+    public async Task ItShouldStillSynchroniseCatchesWhenTripNotesFail()
+    {
+        // Arrange
+        var failure = new InvalidOperationException("note store unavailable");
+        MockTripNoteSynchroniser
+            .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(_ => throw failure);
+
+        // Act
+        await Sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockCatchSynchroniser.Received(1)
+            .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await MockLogging.Received(1).LogErrorAsync(
+            "trip note synchronisation",
+            failure,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldStillSynchroniseNotesWhenTripPhotographsFail()
+    {
+        // Arrange
+        MockTripPhotographSynchroniser
+            .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(_ => throw new InvalidOperationException("photograph storage unavailable"));
+
+        // Act
+        await Sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockTripNoteSynchroniser.Received(1)
+            .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await MockCatchSynchroniser.Received(1)
+            .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldNotStartASecondRunWhileOneIsInProgress()
     {
         // Arrange
@@ -142,7 +181,7 @@ public class WhenTestingSynchronisePending : BaseLogbookSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldSynchroniseTripsThenPhotographsThenCatches()
+    public async Task ItShouldSynchroniseTripsThenPhotographsThenNotesThenCatches()
     {
         // Arrange
         var order = new List<string>();
@@ -160,6 +199,13 @@ public class WhenTestingSynchronisePending : BaseLogbookSynchroniserTest
                 order.Add("photographs");
                 return Task.CompletedTask;
             });
+        MockTripNoteSynchroniser
+            .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                order.Add("notes");
+                return Task.CompletedTask;
+            });
         MockCatchSynchroniser
             .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>())
             .Returns(_ =>
@@ -172,7 +218,7 @@ public class WhenTestingSynchronisePending : BaseLogbookSynchroniserTest
         await Sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        order.Should().Equal("trips", "photographs", "catches");
+        order.Should().Equal("trips", "photographs", "notes", "catches");
         await MockTripSynchroniser.Received(1)
             .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>());
         await MockCatchSynchroniser.Received(1)

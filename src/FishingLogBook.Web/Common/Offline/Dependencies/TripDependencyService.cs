@@ -8,15 +8,18 @@ public sealed class TripDependencyService : ITripDependencyService
 {
     private readonly ITripStore _tripStore;
     private readonly ITripPhotographStore _tripPhotographStore;
+    private readonly ITripNoteStore _tripNoteStore;
     private readonly ICatchStore _catchStore;
 
     public TripDependencyService(
         ITripStore tripStore,
         ITripPhotographStore tripPhotographStore,
+        ITripNoteStore tripNoteStore,
         ICatchStore catchStore)
     {
         _tripStore = tripStore;
         _tripPhotographStore = tripPhotographStore;
+        _tripNoteStore = tripNoteStore;
         _catchStore = catchStore;
     }
 
@@ -52,11 +55,15 @@ public sealed class TripDependencyService : ITripDependencyService
         var awaitingPhotographs = await _tripPhotographStore.GetTripsWithPendingPhotographsAsync(
             ownerUserId,
             cancellationToken);
+        var awaitingNotes = await _tripNoteStore.GetTripsWithPendingNotesAsync(
+            ownerUserId,
+            cancellationToken);
         return catches
             .Where(IsAwaitingServer)
             .Select(catchRecord => catchRecord.TripId)
             .OfType<Guid>()
             .Concat(awaitingPhotographs)
+            .Concat(awaitingNotes)
             .Distinct()
             .ToArray();
     }

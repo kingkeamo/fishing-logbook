@@ -16,6 +16,8 @@ public class BaseLogbookSynchroniserTest
         Substitute.For<ITripSynchroniser>();
     protected readonly ITripPhotographSynchroniser MockTripPhotographSynchroniser =
         Substitute.For<ITripPhotographSynchroniser>();
+    protected readonly ITripNoteSynchroniser MockTripNoteSynchroniser =
+        Substitute.For<ITripNoteSynchroniser>();
     protected readonly ICatchSynchroniser MockCatchSynchroniser =
         Substitute.For<ICatchSynchroniser>();
     protected readonly ILocalCatchOwnerService MockLocalCatchOwner =
@@ -29,6 +31,7 @@ public class BaseLogbookSynchroniserTest
         Sut = new LogbookSynchroniser(
             MockTripSynchroniser,
             MockTripPhotographSynchroniser,
+            MockTripNoteSynchroniser,
             MockCatchSynchroniser,
             MockLocalCatchOwner,
             MockLogging);

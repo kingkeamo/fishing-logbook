@@ -42,6 +42,7 @@ public class BaseActiveTripTest
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton<ITimeService>(TestTimeService.WithOffset(TimeSpan.Zero));
         context.Services.AddSingleton(Substitute.For<ITripPhotographStore>());
+        context.Services.AddSingleton(Substitute.For<ITripNoteStore>());
         context.Services.AddSingleton(Substitute.For<ITripClient>());
         context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());
         context.Services.AddSingleton<ITripDisplayService>(provider =>

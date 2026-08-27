@@ -69,7 +69,110 @@ public static class TripEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapPost("/api/trips/{tripId:guid}/notes", RecordNoteAsync)
+            .WithName("RecordTripNote")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces<TripNoteDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
+        endpoints.MapDelete("/api/trips/{tripId:guid}/notes/{noteId:guid}", DeleteNoteAsync)
+            .WithName("DeleteTripNote")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         return endpoints;
+    }
+
+    private static async Task<IResult> RecordNoteAsync(
+        Guid tripId,
+        RecordTripNoteDto note,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new RecordTripNoteCommand
+            {
+                TripId = tripId,
+                Note = note
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripNoteNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.Error is TripNoteInvalidError)
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Note);
+    }
+
+    private static async Task<IResult> DeleteNoteAsync(
+        Guid tripId,
+        Guid noteId,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new DeleteTripNoteCommand
+            {
+                TripId = tripId,
+                NoteId = noteId
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripNoteNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.NoContent();
     }
 
     private static async Task<IResult> CreatePhotographUploadAsync(

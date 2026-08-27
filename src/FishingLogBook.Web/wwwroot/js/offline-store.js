@@ -22,4 +22,12 @@ export {
     getPendingTripPhotographs,
     getTripsWithPendingPhotographs
 } from './storage/trip-photo-store.js';
+export {
+    putTripNote,
+    getTripNotes,
+    getTripNote,
+    deleteTripNote,
+    getPendingTripNotes,
+    getTripsWithPendingNotes
+} from './storage/trip-note-store.js';
 export { getStorageEstimate } from './storage/indexed-db.js';

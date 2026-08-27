@@ -72,4 +72,25 @@ public sealed class TripClient : ITripClient
             cancellationToken);
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task<TripNoteDto?> RecordNoteAsync(
+        Guid tripId,
+        RecordTripNoteDto request,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.PostAsJsonAsync(
+            $"api/trips/{tripId:D}/notes",
+            request,
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<TripNoteDto>(cancellationToken);
+    }
+
+    public async Task DeleteNoteAsync(Guid tripId, Guid noteId, CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.DeleteAsync(
+            $"api/trips/{tripId:D}/notes/{noteId:D}",
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
 }

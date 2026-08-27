@@ -23,6 +23,7 @@ export async function putTrip(json) {
     return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'write', (store, succeed, fail) => {
         const owner = normalisedOwnerId(trip.ownerUserId);
         let storedPhotographs = null;
+        let storedNotes = null;
         const request = store.openCursor();
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
@@ -40,6 +41,7 @@ export async function putTrip(json) {
 
                 if (cursor.value?.id === trip.id) {
                     storedPhotographs = cursor.value.photographs ?? [];
+                    storedNotes = cursor.value.notes ?? [];
                 }
 
                 cursor.continue();
@@ -47,6 +49,7 @@ export async function putTrip(json) {
             }
 
             trip.photographs = storedPhotographs ?? trip.photographs ?? [];
+            trip.notes = storedNotes ?? trip.notes ?? [];
             const write = store.put(trip);
             write.onerror = () => fail(write.error);
             write.onsuccess = () => succeed(TRIP_SAVED_OUTCOME);
