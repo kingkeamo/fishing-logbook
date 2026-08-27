@@ -351,8 +351,8 @@
   <data name="Trip_StartFishing" xml:space="preserve">
     <value>Start fishing</value>
   </data>
-  <data name="Trip_Continue" xml:space="preserve">
-    <value>Continue trip</value>
+  <data name="Trip_Update" xml:space="preserve">
+    <value>Update trip</value>
   </data>
   <data name="Trip_InProgress" xml:space="preserve">
     <value>Fishing trip in progress</value>

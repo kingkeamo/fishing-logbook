@@ -35,7 +35,7 @@ public class WhenTestingStartFishing : BaseCatchListTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#trip-start-link").TextContent.Should().Contain("Start fishing"));
-        cut.FindAll("#trip-continue-link").Should().BeEmpty();
+        cut.FindAll("#trip-update-link").Should().BeEmpty();
         cut.Find("#catch-record-link").Should().NotBeNull();
     }
 
@@ -54,9 +54,9 @@ public class WhenTestingStartFishing : BaseCatchListTest
 
         // Assert
         cut.WaitForAssertion(() =>
-            cut.Find("#trip-continue-link").TextContent.Should().Contain("Continue trip"));
+            cut.Find("#trip-update-link").TextContent.Should().Contain("Update trip"));
         cut.FindAll("#trip-start-link").Should().BeEmpty();
-        cut.Find("#trip-continue-link").GetAttribute("href").Should().Be($"/trips/{TripId:D}");
+        cut.Find("#trip-update-link").GetAttribute("href").Should().Be($"/trips/{TripId:D}");
     }
 
     [Fact]

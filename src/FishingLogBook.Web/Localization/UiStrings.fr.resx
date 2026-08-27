@@ -351,8 +351,8 @@
   <data name="Trip_StartFishing" xml:space="preserve">
     <value>Commencer la pêche</value>
   </data>
-  <data name="Trip_Continue" xml:space="preserve">
-    <value>Reprendre la sortie</value>
+  <data name="Trip_Update" xml:space="preserve">
+    <value>Modifier la sortie</value>
   </data>
   <data name="Trip_InProgress" xml:space="preserve">
     <value>Sortie de pêche en cours</value>
