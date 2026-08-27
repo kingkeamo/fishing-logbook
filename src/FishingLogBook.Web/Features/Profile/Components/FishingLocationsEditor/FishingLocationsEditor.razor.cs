@@ -22,7 +22,7 @@ public partial class FishingLocationsEditor : ComponentBase
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
-    private async Task OnAddKeyUpAsync(KeyboardEventArgs args)
+    private async Task OnAddKeyDownAsync(KeyboardEventArgs args)
     {
         if (args.Key is "Enter" or "NumpadEnter")
         {

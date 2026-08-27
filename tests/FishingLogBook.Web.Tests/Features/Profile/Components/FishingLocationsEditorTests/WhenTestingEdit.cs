@@ -1,3 +1,4 @@
+using AngleSharp.Dom;
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Features.Profile.Components.FishingLocationsEditor;
@@ -141,6 +142,74 @@ public class WhenTestingEdit : BaseFishingLocationsEditorTest
     }
 
     [Fact]
+    public async Task ItShouldAddTheLocationWhenTheAnglerPressesEnter()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var locations = SavedLocations();
+        var changes = 0;
+        var cut = context.Render<FishingLocationsEditor>(parameters => parameters
+            .Add(component => component.Locations, locations)
+            .Add(component => component.OnChanged, () => changes++));
+        cut.Find("#fishing-location-new-name").Input("Lough Mask");
+
+        // Act
+        cut.Find("#fishing-location-new-name").KeyDown(Key.Enter);
+
+        // Assert
+        locations.Select(location => location.Name)
+            .Should().Equal("Lough Corrib", "River Moy", "Lough Mask");
+        changes.Should().Be(1);
+        cut.Find("#fishing-location-lough-mask").TextContent.Should().Contain("Lough Mask");
+    }
+
+    [Fact]
+    public async Task ItShouldNotAddABlankLocationWhenTheAnglerPressesEnter()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var locations = new List<FishingLocationEditModel>();
+        var changes = 0;
+        var cut = context.Render<FishingLocationsEditor>(parameters => parameters
+            .Add(component => component.Locations, locations)
+            .Add(component => component.OnChanged, () => changes++));
+
+        // Act
+        cut.Find("#fishing-location-new-name").KeyDown(Key.Enter);
+
+        // Assert
+        locations.Should().BeEmpty();
+        changes.Should().Be(0);
+        cut.Markup.Should().Contain("Enter a fishing location name.");
+    }
+
+    [Fact]
+    public async Task ItShouldAppendANewLocationAfterTheOnesAlreadySaved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var locations = SavedLocations();
+        var cut = context.Render<FishingLocationsEditor>(parameters => parameters
+            .Add(component => component.Locations, locations));
+        cut.Find("#fishing-location-new-name").Input("Lough Mask");
+
+        // Act
+        cut.Find("#fishing-location-add").Click();
+
+        // Assert
+        var pills = cut.FindAll("#fishing-locations-list .location-pill").Select(pill => pill.Id).ToArray();
+        pills.Should().Equal(
+            "fishing-location-lough-corrib",
+            "fishing-location-river-moy",
+            "fishing-location-lough-mask");
+        cut.Find("#fishing-location-lough-mask").GetAttribute("class")
+            .Should().Contain("location-pill-primary");
+    }
+
+    [Fact]
     public async Task ItShouldShowFrenchCopy()
     {
         // Arrange
@@ -155,7 +224,7 @@ public class WhenTestingEdit : BaseFishingLocationsEditorTest
         // Assert
         cut.Markup.Should().Contain("Lieux de pêche");
         cut.Find("#fishing-location-lough-corrib-default").TextContent.Should().Contain("Par défaut");
-        cut.Find("#fishing-location-river-moy-set-default").TextContent.Should().Contain("Définir par défaut");
+        cut.Markup.Should().Contain("Touchez un lieu pour le définir par défaut");
     }
 
     [Fact]
@@ -175,5 +244,9 @@ public class WhenTestingEdit : BaseFishingLocationsEditorTest
             .Should().Be("Remove the fishing location Lough Corrib");
         cut.Find("#fishing-location-river-moy-set-default").GetAttribute("aria-label")
             .Should().Be("Set River Moy as the default fishing location");
+        cut.Find("#fishing-location-lough-corrib").GetAttribute("class")
+            .Should().Contain("location-pill-secondary");
+        cut.Find("#fishing-location-river-moy").GetAttribute("class")
+            .Should().Contain("location-pill-primary");
     }
 }

@@ -1120,4 +1120,7 @@
   <data name="Trip_ListNotesMany" xml:space="preserve">
     <value>{0} notes</value>
   </data>
+  <data name="Profile_FishingLocation_SetDefaultHint" xml:space="preserve">
+    <value>Tap a location to make it the default:</value>
+  </data>
 </root>
