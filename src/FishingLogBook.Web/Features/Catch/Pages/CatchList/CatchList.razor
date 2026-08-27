@@ -12,7 +12,14 @@
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap" Spacing="2">
             <MudText Typo="Typo.h4" id="catch-list-title">@Loc["Catch_LogbookTitle"]</MudText>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="flex-wrap">
-                @if (_activeTrip is not null)
+                @if (_isLoading)
+                {
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle"
+                                 Width="9rem"
+                                 Height="2.25rem"
+                                 id="trip-action-loading" />
+                }
+                else if (_activeTrip is not null)
                 {
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Secondary"
