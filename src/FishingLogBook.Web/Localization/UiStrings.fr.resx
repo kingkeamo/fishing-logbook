@@ -228,11 +228,14 @@
   <data name="Catch_TripRecordingIn" xml:space="preserve">
     <value>Sortie en cours</value>
   </data>
+  <data name="Catch_TripRejoin" xml:space="preserve">
+    <value>Ajouter à la sortie</value>
+  </data>
   <data name="Catch_TripLeave" xml:space="preserve">
-    <value>Hors de cette sortie</value>
+    <value>Retirer de cette sortie</value>
   </data>
   <data name="Catch_TripNotPartOfTrip" xml:space="preserve">
-    <value>Cette prise ne fait partie d'aucune sortie</value>
+    <value>Ne fait pas partie d'une sortie</value>
   </data>
   <data name="Catch_TripUnavailable" xml:space="preserve">
     <value>Cette sortie n'est plus sur cet appareil. Choisissez « Hors de cette sortie » pour enregistrer cette prise seule.</value>

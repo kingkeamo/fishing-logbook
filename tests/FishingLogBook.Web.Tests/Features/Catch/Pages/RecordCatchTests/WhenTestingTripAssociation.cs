@@ -113,7 +113,7 @@ public class WhenTestingTripAssociation : BaseRecordCatchTest
         {
             cut.Find("#catch-trip-association").TextContent.Should().Contain("Recording in");
             cut.Find("#catch-trip-name").TextContent.Should().Contain("Evening session");
-            cut.Find("#catch-trip-leave").TextContent.Should().Contain("Not part of this trip");
+            cut.Find("#catch-trip-leave").TextContent.Should().Contain("Remove from this trip");
         });
         await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
     }
@@ -177,7 +177,7 @@ public class WhenTestingTripAssociation : BaseRecordCatchTest
         // Assert
         cut.FindAll("#catch-trip-association").Should().BeEmpty();
         cut.Find("#catch-trip-standalone").TextContent
-            .Should().Contain("This catch is not part of a trip");
+            .Should().Contain("Not part of a trip");
         await cut.Find("#save-catch-button").ClickAsync();
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord => catchRecord.TripId == null),
@@ -385,8 +385,73 @@ public class WhenTestingTripAssociation : BaseRecordCatchTest
         cut.WaitForAssertion(() =>
         {
             cut.Find("#catch-trip-association").TextContent.Should().Contain("Sortie en cours");
-            cut.Find("#catch-trip-leave").TextContent.Should().Contain("Hors de cette sortie");
+            cut.Find("#catch-trip-leave").TextContent.Should().Contain("Retirer de cette sortie");
         });
+    }
+
+    [Fact]
+    public async Task ItShouldOfferTheOptOutAsAButtonRatherThanALabel()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        await using var context = CreateContext(store, activeTrip: ActiveTrip(Trip()));
+
+        // Act
+        var cut = context.Render<RecordCatch>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            var leave = cut.Find("#catch-trip-leave");
+            leave.TagName.Should().Be("BUTTON");
+            leave.ClassList.Should().Contain("mud-button-outlined");
+            leave.QuerySelector(".mud-icon-root").Should().NotBeNull();
+        });
+    }
+
+    [Fact]
+    public async Task ItShouldLetTheAnglerPutTheCatchBackOnTheTrip()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        await using var context = CreateContext(
+            store,
+            tripStore: TripStoreWith(Trip()),
+            activeTrip: ActiveTrip(Trip()));
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+        cut.WaitForAssertion(() => cut.Find("#catch-trip-leave").Should().NotBeNull());
+        await cut.Find("#catch-trip-leave").ClickAsync();
+
+        // Act
+        var rejoin = cut.Find("#catch-trip-rejoin");
+        rejoin.TagName.Should().Be("BUTTON");
+        await rejoin.ClickAsync();
+
+        // Assert
+        cut.Find("#catch-trip-association").Should().NotBeNull();
+        cut.FindAll("#catch-trip-standalone").Should().BeEmpty();
+        await cut.Find("#save-catch-button").ClickAsync();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.TripId == TripId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotOfferPuttingTheCatchBackWhenThereWasNoTrip()
+    {
+        // Arrange
+        var store = Substitute.For<ICatchStore>();
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<RecordCatch>();
+
+        // Assert
+        cut.FindAll("#catch-trip-rejoin").Should().BeEmpty();
+        cut.FindAll("#catch-trip-standalone-row").Should().BeEmpty();
     }
 
     private static void NavigateToTrip(BunitContext context, Guid tripId)
