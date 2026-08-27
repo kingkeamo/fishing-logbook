@@ -10,6 +10,8 @@ public sealed class Catch
 
     public Guid RecordedByUserId { get; init; }
 
+    public Guid? TripId { get; init; }
+
     public DateTimeOffset CaughtOn { get; init; }
 
     public string? SpeciesName { get; init; }

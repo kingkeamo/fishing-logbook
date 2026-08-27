@@ -17,5 +17,6 @@ public interface ITripStore
     Task<int> CleanupSyncedAsync(
         Guid ownerUserId,
         DateTimeOffset olderThan,
+        IReadOnlyCollection<Guid> retainedTripIds,
         CancellationToken cancellationToken);
 }

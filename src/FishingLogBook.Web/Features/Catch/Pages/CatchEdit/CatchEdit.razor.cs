@@ -3,12 +3,12 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Photographs.Models;
@@ -50,7 +50,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
 
     [Inject]
-    private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+    private ILogbookSynchroniser LogbookSynchroniser { get; set; } = default!;
 
     [Inject]
     private ILoggingService Logging { get; set; } = default!;
@@ -146,14 +146,14 @@ public partial class CatchEdit : ComponentBase, IDisposable
         var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            await CatchSynchroniser.SynchronisePendingAsync(cancellationToken);
+            await LogbookSynchroniser.SynchronisePendingAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("catch synchronisation", exception, CancellationToken.None);
+            await Logging.LogErrorAsync("logbook synchronisation", exception, CancellationToken.None);
         }
     }
 

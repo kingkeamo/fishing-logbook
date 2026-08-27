@@ -41,6 +41,7 @@ public sealed class CatchMappingRegistration : IRegister
                 UserId = source.UserId,
                 AnglerUserId = source.AnglerUserId,
                 RecordedByUserId = source.RecordedByUserId,
+                TripId = source.TripId,
                 SpeciesName = source.SpeciesName,
                 Weight = source.Weight,
                 Length = source.Length,

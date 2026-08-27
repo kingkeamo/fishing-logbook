@@ -10,6 +10,8 @@ public class BaseCatchServiceTest
 {
     protected readonly ICatchRepository MockCatchRepository = Substitute.For<ICatchRepository>();
 
+    protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
+
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
 
     protected readonly ICatchLocationPrivacyService MockCatchLocationPrivacyService =
@@ -28,6 +30,7 @@ public class BaseCatchServiceTest
         MockObjectStorage.IsConfigured.Returns(false);
         Sut = new CatchService(
             MockCatchRepository,
+            MockTripRepository,
             MockCurrentUser,
             MockCatchLocationPrivacyService,
             MockObjectStorage,

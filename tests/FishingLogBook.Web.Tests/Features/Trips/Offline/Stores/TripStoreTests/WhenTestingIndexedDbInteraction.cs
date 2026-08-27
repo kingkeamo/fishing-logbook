@@ -59,7 +59,7 @@ public class WhenTestingIndexedDbInteraction
         var single = () => sut.GetAsync(Guid.Empty, TripId, CancellationToken.None);
         var active = () => sut.GetActiveAsync(Guid.Empty, CancellationToken.None);
         var pending = () => sut.GetPendingAsync(Guid.Empty, CancellationToken.None);
-        var cleanup = () => sut.CleanupSyncedAsync(Guid.Empty, StartedOn, CancellationToken.None);
+        var cleanup = () => sut.CleanupSyncedAsync(Guid.Empty, StartedOn, [], CancellationToken.None);
 
         // Assert
         await all.Should().ThrowAsync<InvalidOperationException>();
@@ -264,14 +264,16 @@ public class WhenTestingIndexedDbInteraction
         var cutoff = new DateTimeOffset(2026, 8, 26, 7, 32, 0, TimeSpan.FromHours(2));
 
         // Act
-        var removed = await sut.CleanupSyncedAsync(OwnerUserId, cutoff, CancellationToken.None);
+        var removed = await sut.CleanupSyncedAsync(OwnerUserId, cutoff, [], CancellationToken.None);
 
         // Assert
         removed.Should().Be(2);
         js.Identifiers.Should().Equal("cleanupSyncedTrips");
-        js.Invocations[0].Arguments.Should().Equal(
-            OwnerUserId.ToString("D"),
-            cutoff.ToUniversalTime().ToString("O"));
+        js.Invocations[0].Arguments.Should().HaveCount(3);
+        js.Invocations[0].Arguments[0].Should().Be(OwnerUserId.ToString("D"));
+        js.Invocations[0].Arguments[1].Should().Be(cutoff.ToUniversalTime().ToString("O"));
+        js.Invocations[0].Arguments[2].Should().BeAssignableTo<IEnumerable<string>>()
+            .Which.Should().BeEmpty();
     }
 
     private static IndexedDbTripStore CreateStore(IJSRuntime js)

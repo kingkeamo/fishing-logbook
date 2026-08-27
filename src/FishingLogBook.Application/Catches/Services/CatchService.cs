@@ -17,6 +17,7 @@ public sealed class CatchService : ICatchService
     private static readonly TimeSpan DownloadLifetime = TimeSpan.FromHours(1);
 
     private readonly ICatchRepository _catchRepository;
+    private readonly ITripRepository _tripRepository;
     private readonly ICurrentUser _currentUser;
     private readonly ICatchLocationPrivacyService _catchLocationPrivacyService;
     private readonly IObjectStorage _objectStorage;
@@ -24,12 +25,14 @@ public sealed class CatchService : ICatchService
 
     public CatchService(
         ICatchRepository catchRepository,
+        ITripRepository tripRepository,
         ICurrentUser currentUser,
         ICatchLocationPrivacyService catchLocationPrivacyService,
         IObjectStorage objectStorage,
         IMapper mapper)
     {
         _catchRepository = catchRepository;
+        _tripRepository = tripRepository;
         _currentUser = currentUser;
         _catchLocationPrivacyService = catchLocationPrivacyService;
         _objectStorage = objectStorage;
@@ -63,12 +66,19 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchDto>(details.Errors);
         }
 
+        var trip = await ResolveTripAsync(args.Catch.TripId, args.UserId, cancellationToken);
+        if (trip.IsFailed)
+        {
+            return Result.Fail<CatchDto>(trip.Errors);
+        }
+
         var catchRecord = new Catch
         {
             Id = args.Catch.Id,
             UserId = args.UserId,
             AnglerUserId = args.UserId,
             RecordedByUserId = args.UserId,
+            TripId = trip.Value,
             CaughtOn = args.Catch.CaughtOn,
             SpeciesName = TrimToNull(args.Catch.SpeciesName),
             Weight = args.Catch.Weight,
@@ -184,6 +194,7 @@ public sealed class CatchService : ICatchService
         {
             AnglerUserId = catchRecord.AnglerUserId,
             RecordedByUserId = catchRecord.RecordedByUserId,
+            TripId = catchRecord.TripId,
             SpeciesName = catchRecord.SpeciesName,
             Weight = catchRecord.Weight,
             Length = catchRecord.Length,
@@ -253,6 +264,30 @@ public sealed class CatchService : ICatchService
         }
 
         return Result.Ok();
+    }
+
+    private async Task<Result<Guid?>> ResolveTripAsync(
+        Guid? tripId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        if (tripId is null || tripId == Guid.Empty)
+        {
+            return Result.Ok<Guid?>(null);
+        }
+
+        var trip = await _tripRepository.GetByIdAsync(tripId.Value, cancellationToken);
+        if (trip.IsFailed)
+        {
+            return Result.Fail<Guid?>(trip.Errors);
+        }
+
+        if (trip.Value is null || trip.Value.OwnerUserId != userId)
+        {
+            return Result.Fail<Guid?>(new CatchTripInvalidError());
+        }
+
+        return Result.Ok<Guid?>(trip.Value.Id);
     }
 
     private static string? TrimToNull(string? value)

@@ -2,12 +2,12 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Components.RecordCatchEditor;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
@@ -291,7 +291,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         injected.Should().Contain(typeof(ICatchStore));
         injected.Should().Contain(typeof(ILocationService));
         injected.Should().Contain(typeof(ILocalCatchOwnerService));
-        injected.Should().Contain(typeof(ICatchSynchroniser));
+        injected.Should().Contain(typeof(ILogbookSynchroniser));
         injected.Should().Contain(typeof(ILoggingService));
         injected.Should().NotContain(typeof(HttpClient));
         injected.Should().NotContain(typeof(ICatchClient));
@@ -346,7 +346,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException("The API is unavailable."));
         var logging = QuietLogging();
@@ -369,7 +369,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await logging.Received(1).LogErrorAsync(
-            "catch synchronisation",
+            "logbook synchronisation",
             Arg.Is<Exception>(exception =>
                 exception is HttpRequestException
                 && exception.Message == "The API is unavailable."),
@@ -388,7 +388,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("IndexedDB getAll failed."));
         var logging = QuietLogging();
@@ -412,7 +412,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await logging.Received(1).LogErrorAsync(
-            "catch synchronisation",
+            "logbook synchronisation",
             Arg.Is<Exception>(exception =>
                 exception is InvalidOperationException
                 && exception.Message == "IndexedDB getAll failed."),
@@ -432,7 +432,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         var store = Substitute.For<ICatchStore>();
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .Returns(Hang());
         await using var context = CreateContext(store, synchroniser: synchroniser);
@@ -468,7 +468,7 @@ public class WhenTestingSave : BaseRecordCatchTest
                 await Task.Yield();
                 order.Add("save");
             });
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .Returns(_ =>
             {

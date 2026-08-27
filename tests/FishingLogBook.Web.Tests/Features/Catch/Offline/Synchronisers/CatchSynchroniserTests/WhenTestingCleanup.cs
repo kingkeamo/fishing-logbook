@@ -15,6 +15,7 @@ public class WhenTestingCleanup : BaseCatchSynchroniserTest
     {
         return new CatchSynchroniser(
             store,
+            MockTripDependency,
             MockCatchClient,
             MockNetworkService,
             MockLocalCatchOwner,

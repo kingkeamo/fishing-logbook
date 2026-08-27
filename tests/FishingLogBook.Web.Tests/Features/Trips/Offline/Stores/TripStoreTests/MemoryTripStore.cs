@@ -17,6 +17,8 @@ public sealed class MemoryTripStore : ITripStore
 
     public int CleanupCalls { get; private set; }
 
+    public IReadOnlyCollection<Guid> RetainedTripIds { get; private set; } = [];
+
     public Func<Guid, Task>? BeforeSingleRead { get; set; }
 
     public Task SaveAsync(TripModel trip, CancellationToken cancellationToken)
@@ -82,9 +84,11 @@ public sealed class MemoryTripStore : ITripStore
     public Task<int> CleanupSyncedAsync(
         Guid ownerUserId,
         DateTimeOffset olderThan,
+        IReadOnlyCollection<Guid> retainedTripIds,
         CancellationToken cancellationToken)
     {
         CleanupCalls++;
+        RetainedTripIds = retainedTripIds;
         if (FailCleanup)
         {
             throw new InvalidOperationException("Trip cleanup failed.");
@@ -96,7 +100,8 @@ public sealed class MemoryTripStore : ITripStore
                 && trip.Status == TripConstants.Completed
                 && trip.SyncStatus == SyncStatus.Synchronised
                 && trip.SyncedAt is not null
-                && trip.SyncedAt <= olderThan)
+                && trip.SyncedAt <= olderThan
+                && !retainedTripIds.Contains(trip.Id))
             .Select(trip => trip.Id)
             .ToList();
 

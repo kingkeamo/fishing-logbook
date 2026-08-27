@@ -51,6 +51,17 @@ public sealed class LogbookSynchroniser : ILogbookSynchroniser
         }
     }
 
+    public async Task RetryAsync(Guid catchId, CancellationToken cancellationToken)
+    {
+        var ownerUserId = await _localCatchOwner.GetUserIdAsync(cancellationToken);
+        if (ownerUserId != Guid.Empty)
+        {
+            await RunTripsAsync(ownerUserId, cancellationToken);
+        }
+
+        await _catchSynchroniser.RetryAsync(catchId, cancellationToken);
+    }
+
     public async Task CleanupSyncedCacheAsync(CancellationToken cancellationToken)
     {
         var ownerUserId = await _localCatchOwner.GetUserIdAsync(cancellationToken);
@@ -65,6 +76,12 @@ public sealed class LogbookSynchroniser : ILogbookSynchroniser
 
     private async Task RunTripsThenCatchesAsync(Guid ownerUserId, CancellationToken cancellationToken)
     {
+        await RunTripsAsync(ownerUserId, cancellationToken);
+        await _catchSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
+    }
+
+    private async Task RunTripsAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    {
         try
         {
             await _tripSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
@@ -77,7 +94,5 @@ public sealed class LogbookSynchroniser : ILogbookSynchroniser
         {
             await _logging.LogErrorAsync("trip synchronisation", exception, CancellationToken.None);
         }
-
-        await _catchSynchroniser.SynchronisePendingAsync(ownerUserId, cancellationToken);
     }
 }

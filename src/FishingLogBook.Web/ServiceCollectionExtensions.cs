@@ -4,6 +4,7 @@ using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Browser.Update;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Offline.Dependencies;
 using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Authentication.Services;
@@ -90,6 +91,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripDisplayService, TripDisplayService>();
         services.AddScoped<ITripClient, TripClient>();
         services.AddScoped<ITripSynchroniser, TripSynchroniser>();
+        services.AddScoped<ITripDependencyService, TripDependencyService>();
         services.AddScoped<ILogbookSynchroniser, LogbookSynchroniser>();
         services.AddScoped<ICatchSynchroniser, CatchSynchroniser>();
         services.AddScoped<ICatchClient, CatchClient>();

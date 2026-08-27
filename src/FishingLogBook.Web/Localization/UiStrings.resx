@@ -225,6 +225,21 @@
   <data name="Catch_Saving" xml:space="preserve">
     <value>Saving</value>
   </data>
+  <data name="Catch_TripRecordingIn" xml:space="preserve">
+    <value>Recording in</value>
+  </data>
+  <data name="Catch_TripLeave" xml:space="preserve">
+    <value>Not part of this trip</value>
+  </data>
+  <data name="Catch_TripNotPartOfTrip" xml:space="preserve">
+    <value>This catch is not part of a trip</value>
+  </data>
+  <data name="Catch_TripUnavailable" xml:space="preserve">
+    <value>That trip is no longer on this device. Choose "Not part of this trip" to save this catch on its own.</value>
+  </data>
+  <data name="Trip_RecordCatch" xml:space="preserve">
+    <value>Record catch</value>
+  </data>
   <data name="Catch_Saved" xml:space="preserve">
     <value>Catch saved on this device</value>
   </data>

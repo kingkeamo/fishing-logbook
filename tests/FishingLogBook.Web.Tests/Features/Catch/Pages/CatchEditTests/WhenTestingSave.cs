@@ -4,10 +4,10 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Pages.CatchEdit;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
@@ -409,7 +409,7 @@ public class WhenTestingSave : BaseCatchEditTest
             .Returns(StoredCatch(catchId, SyncStatus.Synchronised, SyncStatus.Synchronised, method: "Fly"));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        var synchroniser = Substitute.For<ICatchSynchroniser>();
+        var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException());
         var preferences = QuietAnglerPreferences(SamplePreferences(), SampleCatalogue());

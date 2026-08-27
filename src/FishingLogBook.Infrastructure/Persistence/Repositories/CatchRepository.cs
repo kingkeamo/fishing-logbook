@@ -205,6 +205,7 @@ public sealed class CatchRepository : ICatchRepository
                 "UserId",
                 "AnglerUserId",
                 "RecordedByUserId",
+                "TripId",
                 "CaughtOn",
                 "SpeciesName",
                 "Weight",
@@ -224,6 +225,7 @@ public sealed class CatchRepository : ICatchRepository
                 @UserId,
                 @AnglerUserId,
                 @RecordedByUserId,
+                @TripId,
                 @CaughtOn,
                 @SpeciesName,
                 @Weight,
@@ -239,6 +241,7 @@ public sealed class CatchRepository : ICatchRepository
                 @LocationVisibility,
                 @LocationConsentVersion)
             ON CONFLICT ("Id") DO UPDATE SET
+                "TripId" = EXCLUDED."TripId",
                 "CaughtOn" = EXCLUDED."CaughtOn",
                 "SpeciesName" = EXCLUDED."SpeciesName",
                 "Weight" = EXCLUDED."Weight",
@@ -304,6 +307,7 @@ public sealed class CatchRepository : ICatchRepository
                 "UserId",
                 COALESCE("AnglerUserId", "UserId") AS "AnglerUserId",
                 COALESCE("RecordedByUserId", "UserId") AS "RecordedByUserId",
+                "TripId",
                 "CaughtOn",
                 "SpeciesName",
                 "Weight",
@@ -358,6 +362,7 @@ public sealed class CatchRepository : ICatchRepository
                 c."UserId",
                 COALESCE(c."AnglerUserId", c."UserId") AS "AnglerUserId",
                 COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
+                c."TripId",
                 c."CaughtOn",
                 c."SpeciesName",
                 c."Weight",
@@ -420,6 +425,7 @@ public sealed class CatchRepository : ICatchRepository
             UserId = catchRecord.UserId,
             AnglerUserId = catchRecord.AnglerUserId,
             RecordedByUserId = catchRecord.RecordedByUserId,
+            TripId = catchRecord.TripId,
             CaughtOn = catchRecord.CaughtOn.ToUniversalTime(),
             SpeciesName = catchRecord.SpeciesName,
             Weight = catchRecord.Weight,
@@ -475,6 +481,8 @@ public sealed class CatchRepository : ICatchRepository
 
         public Guid RecordedByUserId { get; init; }
 
+        public Guid? TripId { get; init; }
+
         public DateTimeOffset CaughtOn { get; init; }
 
         public string? SpeciesName { get; init; }
@@ -515,6 +523,8 @@ public sealed class CatchRepository : ICatchRepository
         public Guid AnglerUserId { get; init; }
 
         public Guid RecordedByUserId { get; init; }
+
+        public Guid? TripId { get; init; }
 
         public DateTimeOffset CaughtOn { get; init; }
 

@@ -146,12 +146,16 @@ export async function getPendingTrips(ownerUserId) {
     });
 }
 
-export async function cleanupSyncedTrips(ownerUserId, olderThanIso) {
+export async function cleanupSyncedTrips(ownerUserId, olderThanIso, retainedTripIds) {
     const owner = normalisedOwnerId(ownerUserId);
     const cutoff = Date.parse(olderThanIso);
     if (!owner || Number.isNaN(cutoff)) {
         return 0;
     }
+
+    const retained = new Set((retainedTripIds ?? [])
+        .map(tripId => normalisedOwnerId(tripId))
+        .filter(Boolean));
 
     return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'cleanup', (store, succeed, fail) => {
         let removed = 0;
@@ -165,6 +169,7 @@ export async function cleanupSyncedTrips(ownerUserId, olderThanIso) {
             }
 
             if (normalisedOwnerId(cursor.value?.ownerUserId) === owner
+                && !retained.has(normalisedOwnerId(cursor.value?.id))
                 && isEligibleForCleanup(cursor.value, cutoff)) {
                 cursor.delete();
                 removed += 1;

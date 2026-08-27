@@ -5,12 +5,12 @@ using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Modals.LocationPrivacy;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -64,7 +64,7 @@ public partial class CatchList : ComponentBase, IDisposable
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
 
     [Inject]
-    private ICatchSynchroniser CatchSynchroniser { get; set; } = default!;
+    private ILogbookSynchroniser LogbookSynchroniser { get; set; } = default!;
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
@@ -100,7 +100,7 @@ public partial class CatchList : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        CatchSynchroniser.StateChanged += OnSyncStateChanged;
+        LogbookSynchroniser.StateChanged += OnSyncStateChanged;
         await LoadAsync();
     }
 
@@ -575,7 +575,7 @@ public partial class CatchList : ComponentBase, IDisposable
 
         try
         {
-            await CatchSynchroniser.RetryAsync(catchId, _cancellationTokenSource.Token);
+            await LogbookSynchroniser.RetryAsync(catchId, _cancellationTokenSource.Token);
             await LoadAsync();
         }
         finally
@@ -647,7 +647,7 @@ public partial class CatchList : ComponentBase, IDisposable
 
     public void Dispose()
     {
-        CatchSynchroniser.StateChanged -= OnSyncStateChanged;
+        LogbookSynchroniser.StateChanged -= OnSyncStateChanged;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }
