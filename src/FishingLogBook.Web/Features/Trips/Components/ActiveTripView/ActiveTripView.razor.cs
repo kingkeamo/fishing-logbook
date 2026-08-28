@@ -67,6 +67,9 @@ public partial class ActiveTripView : ComponentBase
     public bool CanEdit { get; set; } = true;
 
     [Parameter]
+    public bool CanAddNotes { get; set; } = true;
+
+    [Parameter]
     public WeightUnitEnum WeightUnit { get; set; } = WeightUnitEnum.Kg;
 
     [Parameter]

@@ -84,6 +84,14 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
     }
 
+    private bool CanAddNotes
+    {
+        get
+        {
+            return !_isReadOnlyHistory;
+        }
+    }
+
     private string? GeneratedTitle
     {
         get

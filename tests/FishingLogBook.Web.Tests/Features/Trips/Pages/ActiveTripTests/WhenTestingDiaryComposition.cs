@@ -139,7 +139,58 @@ public class WhenTestingDiaryComposition : BaseActiveTripTest
         cut.FindAll("#active-trip-add-catch").Should().BeEmpty();
         cut.FindAll("#active-trip-add-photo").Should().BeEmpty();
         cut.FindAll("#active-trip-finish").Should().BeEmpty();
-        cut.FindAll("#trip-note-start").Should().BeEmpty();
         cut.Find("#active-trip-logbook").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldStillOfferAddNoteOnACompletedTrip()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(StoredCompletedTrip());
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#trip-note-start").Should().NotBeNull());
+        var trigger = cut.Find("#trip-note-start");
+        trigger.ClassName.Should().Contain("mud-fab");
+        trigger.GetAttribute("aria-label").Should().Be("Add note");
+        cut.FindAll("#active-trip-actions").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldStillOfferToRemoveANoteOnACompletedTrip()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var noteId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(StoredCompletedTrip() with
+            {
+                Notes = [
+                    new TripNoteModel(
+                        noteId,
+                        TripId,
+                        OwnerUserId,
+                        "a good day, three brownies",
+                        StartedOn.AddHours(2))
+                ]
+            });
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-timeline-note-remove-{noteId:D}").Should().NotBeNull());
     }
 }

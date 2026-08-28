@@ -74,20 +74,23 @@
                       OwnerUserId="Trip.OwnerUserId"
                       TripId="Trip.Id"
                       AllowLocalMedia="AllowLocalMedia"
-                      CanDeleteNotes="CanEdit"
+                      CanDeleteNotes="CanAddNotes"
                       OnDeleteNote="DeleteNoteAsync"
                       CatchBaseHref="@CatchBaseHref"
                       WeightUnit="WeightUnit"
                       LengthUnit="LengthUnit" />
 
-        @if (CanEdit)
+        @if (CanAddNotes)
         {
             <TripNotes @ref="_notes"
                        Trip="Trip"
                        ShowList="false"
                        UseFloatingTrigger="true"
                        Changed="OnContentChanged" />
+        }
 
+        @if (CanEdit)
+        {
             @if (_showPhotographPicker)
             {
                 <TripPhotographs Trip="Trip" ShowGallery="false" Changed="OnContentChanged" />
