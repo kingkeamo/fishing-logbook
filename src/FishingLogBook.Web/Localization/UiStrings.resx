@@ -264,6 +264,15 @@
   <data name="Trip_NotePlaceholder" xml:space="preserve">
     <value>Water dropped a foot</value>
   </data>
+  <data name="Trip_NoteRecordedOn" xml:space="preserve">
+    <value>Note date and time</value>
+  </data>
+  <data name="Trip_NoteRecordedOnHelp" xml:space="preserve">
+    <value>Change the time to place this note on the trip timeline.</value>
+  </data>
+  <data name="Trip_NoteRecordedOnInvalid" xml:space="preserve">
+    <value>Enter a valid date and time for this note.</value>
+  </data>
   <data name="Trip_NoteRemove" xml:space="preserve">
     <value>Remove note</value>
   </data>

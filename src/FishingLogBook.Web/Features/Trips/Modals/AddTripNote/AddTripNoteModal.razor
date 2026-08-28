@@ -1,0 +1,59 @@
+@namespace FishingLogBook.Web.Features.Trips.Modals.AddTripNote
+
+<MudDialog id="trip-note-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="trip-note-modal-title">@Loc["Trip_NoteAdd"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+            <MudTextField T="string"
+                          Value="_recordedOnLocal"
+                          ValueChanged="OnRecordedOnChanged"
+                          Label="@Loc["Trip_NoteRecordedOn"]"
+                          HelperText="@Loc["Trip_NoteRecordedOnHelp"]"
+                          Immediate="true"
+                          InputType="InputType.DateTimeLocal"
+                          id="trip-note-recorded-on" />
+
+            <MudTextField T="string"
+                          Value="_text"
+                          ValueChanged="OnTextChanged"
+                          Label="@Loc["Trip_NotePrompt"]"
+                          Placeholder="@Loc["Trip_NotePlaceholder"]"
+                          Lines="3"
+                          Immediate="true"
+                          MaxLength="MaxNoteLength"
+                          Variant="Variant.Outlined"
+                          id="trip-note-text" />
+
+            @if (_recordedOnInvalid)
+            {
+                <MudAlert Severity="Severity.Error" id="trip-note-recorded-on-invalid">
+                    @Loc["Trip_NoteRecordedOnInvalid"]
+                </MudAlert>
+            }
+
+            @if (_saveFailed)
+            {
+                <MudAlert Severity="Severity.Error" id="trip-note-add-failed">
+                    @Loc["Trip_NoteAddFailed"]
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   OnClick="Cancel"
+                   id="trip-note-cancel">
+            @Loc["Modal_Cancel"]
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!CanSave)"
+                   OnClick="SaveAsync"
+                   id="trip-note-save">
+            @Loc["Trip_NoteAdd"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

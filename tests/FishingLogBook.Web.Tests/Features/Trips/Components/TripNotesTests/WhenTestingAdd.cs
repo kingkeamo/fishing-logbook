@@ -1,9 +1,9 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
-using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Diagnostics.Services;
-using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripNoteStoreTests;
 using NSubstitute;
@@ -22,7 +22,8 @@ public class WhenTestingAdd : BaseTripNotesTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = new MemoryTripNoteStore();
-        await using var context = CreateContext(store);
+        var modalService = ConfirmingModalService();
+        await using var context = CreateContext(store, modalService: modalService);
 
         // Act
         var cut = context.Render<TripNotesComponent>(parameters =>
@@ -31,125 +32,54 @@ public class WhenTestingAdd : BaseTripNotesTest
         // Assert
         cut.Find("#trip-notes").Should().NotBeNull();
         cut.Find("#trip-note-start").TextContent.Should().Contain("Add note");
-        cut.FindAll("#trip-note-editor").Should().BeEmpty();
-        store.Count.Should().Be(0);
+        cut.FindAll("#trip-note-text").Should().BeEmpty();
+        await modalService.DidNotReceive()
+            .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
+                Arg.Any<AddTripNoteModalModel>(),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldNotAllowSavingAWhitespaceOnlyNote()
+    public async Task ItShouldOpenTheAddNoteModalForThisTrip()
     {
         // Arrange
         var store = new MemoryTripNoteStore();
-        await using var context = CreateContext(store);
+        var modalService = ConfirmingModalService();
+        await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<TripNotesComponent>(parameters =>
             parameters.Add(component => component.Trip, Trip()));
-        await cut.Find("#trip-note-start").ClickAsync();
 
         // Act
-        cut.Find("#trip-note-text").Input("   \t  ");
+        await cut.Find("#trip-note-start").ClickAsync();
 
         // Assert
-        cut.Find("#trip-note-save").HasAttribute("disabled").Should().BeTrue();
-        await cut.Find("#trip-note-save").ClickAsync();
-        store.Count.Should().Be(0);
+        await modalService.Received(1)
+            .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
+                Arg.Is<AddTripNoteModalModel>(model =>
+                    model.TripId == TripId
+                    && model.OwnerUserId == OwnerUserId
+                    && model.TripStartedOn == StartedOn),
+                Arg.Any<CancellationToken>());
+        cut.FindAll("#trip-notes-list").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ItShouldNotAllowSavingANoteOverTheCap()
+    public async Task ItShouldNotChangeTheTripWhenTheModalIsDismissed()
     {
         // Arrange
         var store = new MemoryTripNoteStore();
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
-        await cut.Find("#trip-note-start").ClickAsync();
+        var changed = 0;
+        await using var context = CreateContext(store, modalService: ConfirmingModalService());
+        var cut = context.Render<TripNotesComponent>(parameters => parameters
+            .Add(component => component.Trip, Trip())
+            .Add(component => component.Changed, () => changed++));
 
         // Act
-        cut.Find("#trip-note-text").Input(new string('a', TripConstants.MaxNoteTextLength + 1));
-
-        // Assert
-        cut.Find("#trip-note-save").HasAttribute("disabled").Should().BeTrue();
-        store.Count.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task ItShouldKeepTheTypedTextWhenTheLocalWriteFails()
-    {
-        // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var store = new MemoryTripNoteStore { FailWrite = true };
-        var logging = Substitute.For<ILoggingService>();
-        await using var context = CreateContext(store, logging: logging);
-        var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
         await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input("fish rising near the reeds");
-
-        // Act
-        await cut.Find("#trip-note-save").ClickAsync();
 
         // Assert
-        cut.Find("#trip-note-add-failed").TextContent.Should().Contain("could not be added");
-        cut.Find("#trip-note-text").GetAttribute("value").Should().Be("fish rising near the reeds");
-        store.Count.Should().Be(0);
-        await logging.Received(1).LogErrorAsync(
-            "adding a trip note",
-            Arg.Any<Exception>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldNeverLogTheNoteText()
-    {
-        // Arrange
-        const string secret = "met Sarah about the lease at the bailiff hut";
-        var store = new MemoryTripNoteStore { FailWrite = true };
-        var logging = Substitute.For<ILoggingService>();
-        await using var context = CreateContext(store, logging: logging);
-        var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
-        await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input(secret);
-
-        // Act
-        await cut.Find("#trip-note-save").ClickAsync();
-
-        // Assert
-        await logging.DidNotReceive().LogErrorAsync(
-            Arg.Is<string>(operation => operation.Contains(secret)),
-            Arg.Any<Exception>(),
-            Arg.Any<CancellationToken>());
-        await logging.DidNotReceive().LogErrorAsync(
-            Arg.Any<string>(),
-            Arg.Is<Exception>(exception => exception.Message.Contains(secret)),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldSaveTheNoteLocallyAndClearTheEditor()
-    {
-        // Arrange
-        var store = new MemoryTripNoteStore();
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
-        await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input("  changed to olive nymph  ");
-
-        // Act
-        await cut.Find("#trip-note-save").ClickAsync();
-
-        // Assert
-        store.Count.Should().Be(1);
-        var stored = store.All().Single();
-        stored.Text.Should().Be("changed to olive nymph");
-        stored.TripId.Should().Be(TripId);
-        stored.OwnerUserId.Should().Be(OwnerUserId);
-        stored.SyncStatus.Should().Be(SyncStatus.SavedLocally);
-        stored.RecordedOn.Should().NotBe(default);
-        stored.RecordedOn.Should().NotBe(StartedOn);
-        cut.FindAll("#trip-note-editor").Should().BeEmpty();
-        cut.Find("#trip-note-start").Should().NotBeNull();
+        changed.Should().Be(0);
+        cut.FindAll("#trip-notes-list").Should().BeEmpty();
     }
 
     [Fact]
@@ -157,22 +87,84 @@ public class WhenTestingAdd : BaseTripNotesTest
     {
         // Arrange
         var store = new MemoryTripNoteStore();
-        await using var context = CreateContext(store);
+        var note = Note(FirstNoteId, "wind picked up", StartedOn.AddHours(2));
+        await using var context = CreateContext(store, modalService: ModalServiceAdding(note));
         var cut = context.Render<TripNotesComponent>(parameters =>
             parameters.Add(component => component.Trip, Trip()));
-        await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input("wind picked up");
 
         // Act
-        await cut.Find("#trip-note-save").ClickAsync();
+        await cut.Find("#trip-note-start").ClickAsync();
 
         // Assert
-        var noteId = store.All().Single().Id;
         cut.WaitForAssertion(() =>
         {
-            cut.Find($"#trip-note-{noteId:D}").TextContent.Should().Contain("wind picked up");
-            cut.Find($"#trip-note-time-{noteId:D}").TextContent.Should().MatchRegex(@"^\d{2}:\d{2}$");
+            cut.Find($"#trip-note-{FirstNoteId:D}").TextContent.Should().Contain("wind picked up");
+            cut.Find($"#trip-note-time-{FirstNoteId:D}").TextContent.Should().Be("09:00");
         });
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheNotesInTimeOrderWhenAnEarlierTimeIsChosen()
+    {
+        // Arrange
+        var store = new MemoryTripNoteStore();
+        await store.SaveAsync(
+            Note(SecondNoteId, "wind picked up", StartedOn.AddHours(5)),
+            CancellationToken.None);
+        var backdated = Note(FirstNoteId, "fish rising near the reeds", StartedOn.AddHours(1));
+        await using var context = CreateContext(store, modalService: ModalServiceAdding(backdated));
+        var cut = context.Render<TripNotesComponent>(parameters =>
+            parameters.Add(component => component.Trip, Trip()));
+        cut.WaitForAssertion(() => cut.Find($"#trip-note-{SecondNoteId:D}").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#trip-note-start").ClickAsync();
+
+        // Assert
+        var rendered = cut.FindAll("#trip-notes-list .trip-note-text")
+            .Select(element => element.TextContent.Trim())
+            .ToArray();
+        rendered.Should().Equal("fish rising near the reeds", "wind picked up");
+    }
+
+    [Fact]
+    public async Task ItShouldNotifyTheParentThatTheTripChanged()
+    {
+        // Arrange
+        var store = new MemoryTripNoteStore();
+        var changed = 0;
+        var note = Note(FirstNoteId, "stopped for lunch", StartedOn.AddHours(3));
+        await using var context = CreateContext(store, modalService: ModalServiceAdding(note));
+        var cut = context.Render<TripNotesComponent>(parameters => parameters
+            .Add(component => component.Trip, Trip())
+            .Add(component => component.Changed, () => changed++));
+
+        // Act
+        await cut.Find("#trip-note-start").ClickAsync();
+
+        // Assert
+        changed.Should().Be(1);
+        cut.Find($"#trip-note-{FirstNoteId:D}").TextContent.Should().Contain("stopped for lunch");
+    }
+
+    [Fact]
+    public async Task ItShouldStillOfferNotesOnACompletedTrip()
+    {
+        // Arrange
+        var store = new MemoryTripNoteStore();
+        var modalService = ConfirmingModalService();
+        await using var context = CreateContext(store, modalService: modalService);
+        var cut = context.Render<TripNotesComponent>(parameters =>
+            parameters.Add(component => component.Trip, CompletedTrip()));
+
+        // Act
+        await cut.Find("#trip-note-start").ClickAsync();
+
+        // Assert
+        await modalService.Received(1)
+            .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
+                Arg.Is<AddTripNoteModalModel>(model => model.TripStartedOn == StartedOn),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -197,70 +189,6 @@ public class WhenTestingAdd : BaseTripNotesTest
             .Select(element => element.TextContent.Trim())
             .ToArray();
         rendered.Should().Equal("fish rising near the reeds", "wind picked up");
-    }
-
-    [Fact]
-    public async Task ItShouldAddSeveralNotesInTheOrderTheyWereWritten()
-    {
-        // Arrange
-        var store = new MemoryTripNoteStore();
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
-
-        // Act
-        await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input("first");
-        await cut.Find("#trip-note-save").ClickAsync();
-        await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input("second");
-        await cut.Find("#trip-note-save").ClickAsync();
-
-        // Assert
-        store.Count.Should().Be(2);
-        var rendered = cut.FindAll("#trip-notes-list .trip-note-text")
-            .Select(element => element.TextContent.Trim())
-            .ToArray();
-        rendered.Should().Equal("first", "second");
-    }
-
-    [Fact]
-    public async Task ItShouldNotifyTheParentThatTheTripChanged()
-    {
-        // Arrange
-        var store = new MemoryTripNoteStore();
-        var changed = 0;
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripNotesComponent>(parameters => parameters
-            .Add(component => component.Trip, Trip())
-            .Add(component => component.Changed, () => changed++));
-        await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input("stopped for lunch");
-
-        // Act
-        await cut.Find("#trip-note-save").ClickAsync();
-
-        // Assert
-        changed.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task ItShouldStillOfferNotesOnACompletedTrip()
-    {
-        // Arrange
-        var store = new MemoryTripNoteStore();
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, CompletedTrip()));
-        await cut.Find("#trip-note-start").ClickAsync();
-        cut.Find("#trip-note-text").Input("a good day, three brownies");
-
-        // Act
-        await cut.Find("#trip-note-save").ClickAsync();
-
-        // Assert
-        store.Count.Should().Be(1);
-        store.All().Single().Text.Should().Be("a good day, three brownies");
     }
 
     [Fact]

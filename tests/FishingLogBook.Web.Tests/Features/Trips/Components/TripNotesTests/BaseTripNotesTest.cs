@@ -5,6 +5,7 @@ using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
+using FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Localization;
@@ -26,6 +27,17 @@ public class BaseTripNotesTest
         var modalService = Substitute.For<IModalService>();
         modalService.ConfirmAsync(Arg.Any<ConfirmModalModel>(), Arg.Any<CancellationToken>())
             .Returns(confirm);
+        return modalService;
+    }
+
+    protected static IModalService ModalServiceAdding(TripNoteModel note)
+    {
+        var modalService = ConfirmingModalService();
+        modalService
+            .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
+                Arg.Any<AddTripNoteModalModel>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new AddTripNoteModalResult(note));
         return modalService;
     }
 

@@ -264,6 +264,15 @@
   <data name="Trip_NotePlaceholder" xml:space="preserve">
     <value>Le niveau a baissé de trente centimètres</value>
   </data>
+  <data name="Trip_NoteRecordedOn" xml:space="preserve">
+    <value>Date et heure de la note</value>
+  </data>
+  <data name="Trip_NoteRecordedOnHelp" xml:space="preserve">
+    <value>Modifiez l'heure pour placer cette note sur la chronologie de la sortie.</value>
+  </data>
+  <data name="Trip_NoteRecordedOnInvalid" xml:space="preserve">
+    <value>Saisissez une date et une heure valides pour cette note.</value>
+  </data>
   <data name="Trip_NoteRemove" xml:space="preserve">
     <value>Supprimer la note</value>
   </data>
