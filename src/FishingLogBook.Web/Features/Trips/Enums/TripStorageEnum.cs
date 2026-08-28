@@ -1,6 +1,6 @@
 namespace FishingLogBook.Web.Features.Trips.Enums;
 
-public enum TripNoteStorageEnum
+public enum TripStorageEnum
 {
     LocalFirst = 0,
     Server = 1

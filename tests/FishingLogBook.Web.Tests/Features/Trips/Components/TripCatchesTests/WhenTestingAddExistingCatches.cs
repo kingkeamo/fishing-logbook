@@ -1,199 +1,137 @@
 using AwesomeAssertions;
 using Bunit;
-using FishingLogBook.Web.Features.Catch.Models;
-using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Trips.Components.TripCatches;
+using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Features.Trips.Enums;
+using FishingLogBook.Web.Features.Trips.Modals.AddTripCatches;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
+using TripCatchesComponent = FishingLogBook.Web.Features.Trips.Components.TripCatches.TripCatches;
 
 namespace FishingLogBook.Web.Tests.Features.Trips.Components.TripCatchesTests;
 
 public class WhenTestingAddExistingCatches : BaseTripCatchesTest
 {
     [Fact]
-    public async Task ItShouldOfferRecordCatchForThisTripWithoutReadingAnyCatches()
+    public async Task ItShouldOfferRecordCatchForThisTripWithoutOpeningThePicker()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var store = StoreWith();
-        await using var context = CreateContext(store);
+        var modalService = ModalServiceAdding();
+        await using var context = CreateContext(modalService);
 
         // Act
-        var cut = context.Render<TripCatches>(parameters => parameters
-            .Add(component => component.Trip, Trip())
-            .Add(component => component.RecordCatchBaseHref, "/offline/record"));
+        var cut = context.Render<TripCatchesComponent>(parameters =>
+            parameters.Add(component => component.Trip, Trip()));
 
         // Assert
-        cut.Find("#trip-catches-record").GetAttribute("href")
-            .Should().Be($"/offline/record?tripId={TripId:D}");
-        await store.DidNotReceive().GetMetadataAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        cut.Find("#trip-catches-record").GetAttribute("href").Should().Be($"/catches/record?tripId={TripId:D}");
+        cut.Find("#trip-catches-add").TextContent.Should().Contain("Add catch");
+        cut.Find("#trip-catches-actions").ClassName.Should().Contain("mud-grid");
+        await modalService.DidNotReceive()
+            .ShowAsync<AddTripCatchesModal, AddTripCatchesModalModel, AddTripCatchesModalResult>(
+                Arg.Any<AddTripCatchesModalModel>(),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldShowTheFailureWhenTheUnassignedCatchesCannotBeRead()
+    public async Task ItShouldOpenThePickerForThisTripsTimeframe()
     {
         // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var store = Substitute.For<ICatchStore>();
-        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .ThrowsAsync(new InvalidOperationException("IndexedDB unavailable."));
-        var logging = QuietLogging();
-        await using var context = CreateContext(store, logging);
-        var cut = context.Render<TripCatches>(parameters => parameters
-            .Add(component => component.Trip, Trip()));
+        var modalService = ModalServiceAdding();
+        await using var context = CreateContext(modalService);
+        var cut = context.Render<TripCatchesComponent>(parameters =>
+            parameters.Add(component => component.Trip, CompletedTrip()));
 
         // Act
-        cut.Find("#trip-catches-add").Click();
+        await cut.Find("#trip-catches-add").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#trip-catches-failed").Should().NotBeNull());
-        await logging.Received(1).LogErrorAsync(
-            "reading catches that are not on a trip",
-            Arg.Any<InvalidOperationException>(),
-            Arg.Any<CancellationToken>());
-        await store.DidNotReceive().UpdateTripAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<Guid>(),
-            Arg.Any<Guid?>(),
-            Arg.Any<CancellationToken>());
+        await modalService.Received(1)
+            .ShowAsync<AddTripCatchesModal, AddTripCatchesModalModel, AddTripCatchesModalResult>(
+                Arg.Is<AddTripCatchesModalModel>(model =>
+                    model.Scope.TripId == TripId
+                    && model.Scope.OwnerUserId == OwnerUserId
+                    && model.Scope.StartedOn == StartedOn
+                    && model.Scope.EndedOn == EndedOn
+                    && model.Storage == TripStorageEnum.LocalFirst),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldOnlyOfferCatchesThatAreNotAlreadyOnATrip()
+    public async Task ItShouldAskTheServerForAHistoricalTrip()
     {
         // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var store = StoreWith(
-            Catch(PikeCatchId, "Pike"),
-            Catch(TrippedCatchId, "Brown Trout", Guid.NewGuid()));
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripCatches>(parameters => parameters
-            .Add(component => component.Trip, Trip()));
+        var modalService = ModalServiceAdding();
+        await using var context = CreateContext(modalService);
+        var cut = context.Render<TripCatchesComponent>(parameters => parameters
+            .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.CatchStorage, TripStorageEnum.Server));
 
         // Act
-        cut.Find("#trip-catches-add").Click();
+        await cut.Find("#trip-catches-add").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() =>
-            cut.Find($"#catch-selector-option-{PikeCatchId:D}").Should().NotBeNull());
-        cut.FindAll($"#catch-selector-option-{TrippedCatchId:D}").Should().BeEmpty();
-        await store.Received(1).GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await modalService.Received(1)
+            .ShowAsync<AddTripCatchesModal, AddTripCatchesModalModel, AddTripCatchesModalResult>(
+                Arg.Is<AddTripCatchesModalModel>(model => model.Storage == TripStorageEnum.Server),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldSayWhenEveryCatchIsAlreadyOnATrip()
+    public async Task ItShouldNotTellTheParentWhenThePickerWasDismissed()
     {
         // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var store = StoreWith(Catch(TrippedCatchId, "Brown Trout", Guid.NewGuid()));
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripCatches>(parameters => parameters
-            .Add(component => component.Trip, Trip()));
-
-        // Act
-        cut.Find("#trip-catches-add").Click();
-
-        // Assert
-        cut.WaitForAssertion(() =>
-            cut.Find("#catch-selector-empty").TextContent.Should()
-                .Contain("Every catch is already on a trip."));
-        cut.FindAll("#catch-selector-confirm").Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ItShouldCloseThePickerWithoutAttachingAnything()
-    {
-        // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var store = StoreWith(Catch(PikeCatchId, "Pike"));
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripCatches>(parameters => parameters
-            .Add(component => component.Trip, Trip()));
-        cut.Find("#trip-catches-add").Click();
-        cut.WaitForAssertion(() => cut.Find("#trip-catches-cancel").Should().NotBeNull());
-
-        // Act
-        cut.Find("#trip-catches-cancel").Click();
-
-        // Assert
-        cut.FindAll("#trip-catches-picker").Should().BeEmpty();
-        cut.Find("#trip-catches-add").Should().NotBeNull();
-        await store.DidNotReceive().UpdateTripAsync(
-            Arg.Any<Guid>(),
-            Arg.Any<Guid>(),
-            Arg.Any<Guid?>(),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ItShouldShowTheFailureWhenAttachingACatchFails()
-    {
-        // Arrange
-        using var culture = TestCulture.Use(CultureNames.English);
-        var store = StoreWith(Catch(PikeCatchId, "Pike"));
-        store.UpdateTripAsync(
-                OwnerUserId,
-                PikeCatchId,
-                TripId,
-                Arg.Any<CancellationToken>())
-            .ThrowsAsync(new InvalidOperationException("IndexedDB unavailable."));
-        var logging = QuietLogging();
         var attached = 0;
-        await using var context = CreateContext(store, logging);
-        var cut = context.Render<TripCatches>(parameters => parameters
+        await using var context = CreateContext(ModalServiceAdding());
+        var cut = context.Render<TripCatchesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
             .Add(component => component.OnCatchesAttached, () => attached++));
-        cut.Find("#trip-catches-add").Click();
-        cut.WaitForAssertion(() => cut.Find($"#catch-selector-option-{PikeCatchId:D}").Should().NotBeNull());
-        cut.Find($"#catch-selector-option-{PikeCatchId:D}").Change(true);
 
         // Act
-        cut.Find("#catch-selector-confirm").Click();
+        await cut.Find("#trip-catches-add").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#trip-catches-failed").Should().NotBeNull());
         attached.Should().Be(0);
-        await logging.Received(1).LogErrorAsync(
-            "adding catches to a trip",
-            Arg.Any<InvalidOperationException>(),
-            Arg.Any<CancellationToken>());
+        cut.FindAll("#trip-catches-partial").Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ItShouldAttachEverySelectedCatchToThisTripAndTellTheParent()
+    public async Task ItShouldTellTheParentWhenCatchesWereAdded()
+    {
+        // Arrange
+        var attached = 0;
+        await using var context = CreateContext(ModalServiceAdding(
+            new AddTripCatchesModalResult([PikeCatchId, TroutCatchId], [])));
+        var cut = context.Render<TripCatchesComponent>(parameters => parameters
+            .Add(component => component.Trip, Trip())
+            .Add(component => component.OnCatchesAttached, () => attached++));
+
+        // Act
+        await cut.Find("#trip-catches-add").ClickAsync();
+
+        // Assert
+        attached.Should().Be(1);
+        cut.FindAll("#trip-catches-partial").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldWarnWhenSomeCatchesCouldNotBeAdded()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var store = StoreWith(Catch(PikeCatchId, "Pike"), Catch(TroutCatchId, "Brown Trout"));
         var attached = 0;
-        await using var context = CreateContext(store);
-        var cut = context.Render<TripCatches>(parameters => parameters
+        await using var context = CreateContext(ModalServiceAdding(
+            new AddTripCatchesModalResult([PikeCatchId], [TroutCatchId])));
+        var cut = context.Render<TripCatchesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
             .Add(component => component.OnCatchesAttached, () => attached++));
-        cut.Find("#trip-catches-add").Click();
-        cut.WaitForAssertion(() => cut.Find($"#catch-selector-option-{PikeCatchId:D}").Should().NotBeNull());
-        cut.Find($"#catch-selector-option-{PikeCatchId:D}").Change(true);
-        cut.Find($"#catch-selector-option-{TroutCatchId:D}").Change(true);
 
         // Act
-        cut.Find("#catch-selector-confirm").Click();
+        await cut.Find("#trip-catches-add").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => attached.Should().Be(1));
-        cut.FindAll("#trip-catches-picker").Should().BeEmpty();
-        await store.Received(1).UpdateTripAsync(
-            OwnerUserId,
-            PikeCatchId,
-            TripId,
-            Arg.Any<CancellationToken>());
-        await store.Received(1).UpdateTripAsync(
-            OwnerUserId,
-            TroutCatchId,
-            TripId,
-            Arg.Any<CancellationToken>());
-        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
-        await store.DidNotReceive().GetAllAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        attached.Should().Be(1);
+        cut.Find("#trip-catches-partial").TextContent.Should().Contain("no longer available");
     }
 }

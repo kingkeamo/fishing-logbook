@@ -16,7 +16,7 @@ public class WhenTestingAdd : BaseTripNoteWriteServiceTest
         var draft = new TripNoteDraftModel(TripId, OwnerUserId, "changed to olive nymph", RecordedOn);
 
         // Act
-        var note = await Sut.AddAsync(draft, TripNoteStorageEnum.LocalFirst, CancellationToken.None);
+        var note = await Sut.AddAsync(draft, TripStorageEnum.LocalFirst, CancellationToken.None);
 
         // Assert
         note.TripId.Should().Be(TripId);
@@ -49,7 +49,7 @@ public class WhenTestingAdd : BaseTripNoteWriteServiceTest
             RecordedOn);
 
         // Act
-        var note = await Sut.AddAsync(draft, TripNoteStorageEnum.Server, CancellationToken.None);
+        var note = await Sut.AddAsync(draft, TripStorageEnum.Server, CancellationToken.None);
 
         // Assert
         note.RecordedOn.Should().Be(RecordedOn);
@@ -81,7 +81,7 @@ public class WhenTestingAdd : BaseTripNoteWriteServiceTest
         var draft = new TripNoteDraftModel(TripId, OwnerUserId, "  trimmed by the server  ", RecordedOn);
 
         // Act
-        var note = await Sut.AddAsync(draft, TripNoteStorageEnum.Server, CancellationToken.None);
+        var note = await Sut.AddAsync(draft, TripStorageEnum.Server, CancellationToken.None);
 
         // Assert
         note.Id.Should().Be(NoteId);
@@ -104,7 +104,7 @@ public class WhenTestingAdd : BaseTripNoteWriteServiceTest
 
         // Act
         var add = async () =>
-            await Sut.AddAsync(draft, TripNoteStorageEnum.Server, CancellationToken.None);
+            await Sut.AddAsync(draft, TripStorageEnum.Server, CancellationToken.None);
 
         // Assert
         await add.Should().ThrowAsync<HttpRequestException>();

@@ -2,7 +2,7 @@
 
 <MudDialog id="trip-note-modal">
     <TitleContent>
-        <MudText Typo="Typo.h6" id="trip-note-modal-title">@Loc["Trip_NoteAdd"]</MudText>
+        <MudText Typo="Typo.h6" id="trip-note-modal-title">@Title</MudText>
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
@@ -63,7 +63,7 @@
                    Disabled="@(!CanSave)"
                    OnClick="SaveAsync"
                    id="trip-note-save">
-            @Loc["Trip_NoteAdd"]
+            @SaveLabel
         </MudButton>
     </DialogActions>
 </MudDialog>

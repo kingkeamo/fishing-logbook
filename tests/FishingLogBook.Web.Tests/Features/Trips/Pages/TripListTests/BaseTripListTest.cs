@@ -99,6 +99,7 @@ public class BaseTripListTest
         Guid? tripId = null,
         string status = TripConstants.Active,
         DateTimeOffset? startedOn = null,
+        string? title = null,
         string? placeName = null,
         IReadOnlyList<TripPhotographModel>? photographs = null,
         IReadOnlyList<TripNoteModel>? notes = null)
@@ -109,6 +110,7 @@ public class BaseTripListTest
             status,
             startedOn ?? StartedOn,
             status == TripConstants.Completed ? (startedOn ?? StartedOn).AddHours(3) : null,
+            Title: title,
             PlaceName: placeName,
             Photographs: photographs,
             Notes: notes);

@@ -20,9 +20,7 @@ public class WhenTestingThumbnails : BaseCatchSelectorTest
         // Act
         var cut = context.Render<CatchSelector>(parameters => parameters
             .Add(component => component.Catches, new[] { withoutPhoto })
-            .Add(component => component.OwnerUserId, OwnerUserId)
-            .Add(component => component.ConfirmLabel, "Add to this trip")
-            .Add(component => component.EmptyLabel, "Nothing to add"));
+            .Add(component => component.OwnerUserId, OwnerUserId));
 
         // Assert
         cut.Find(".catch-selector-thumbnail-placeholder").Should().NotBeNull();
@@ -52,9 +50,7 @@ public class WhenTestingThumbnails : BaseCatchSelectorTest
         // Act
         var cut = context.Render<CatchSelector>(parameters => parameters
             .Add(component => component.Catches, new[] { withRemotePhoto })
-            .Add(component => component.OwnerUserId, OwnerUserId)
-            .Add(component => component.ConfirmLabel, "Add to this trip")
-            .Add(component => component.EmptyLabel, "Nothing to add"));
+            .Add(component => component.OwnerUserId, OwnerUserId));
 
         // Assert
         cut.WaitForAssertion(() =>
@@ -84,9 +80,7 @@ public class WhenTestingThumbnails : BaseCatchSelectorTest
         // Act
         var cut = context.Render<CatchSelector>(parameters => parameters
             .Add(component => component.Catches, new[] { withLocalPhoto })
-            .Add(component => component.OwnerUserId, OwnerUserId)
-            .Add(component => component.ConfirmLabel, "Add to this trip")
-            .Add(component => component.EmptyLabel, "Nothing to add"));
+            .Add(component => component.OwnerUserId, OwnerUserId));
 
         // Assert
         cut.WaitForAssertion(() =>

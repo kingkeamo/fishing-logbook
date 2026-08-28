@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripDetailService, TripDetailService>();
         services.AddScoped<ITripPhotographService, TripPhotographService>();
         services.AddScoped<ITripNoteService, TripNoteService>();
+        services.AddScoped<ITripCatchService, TripCatchService>();
         services.AddScoped<ICatchPhotographService, CatchPhotographService>();
         services.AddScoped<ICatchLocationPrivacyService, CatchLocationPrivacyService>();
         services.AddScoped<IPlatformCapabilityService, PlatformCapabilityService>();

@@ -56,6 +56,12 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
 
     private DateTimeOffset Ceiling => Model.TripEndedOn ?? DateTimeOffset.UtcNow;
 
+    private bool IsEditing => Model.ExistingNote is not null;
+
+    private string Title => IsEditing ? Loc["Trip_NoteEdit"] : Loc["Trip_NoteAdd"];
+
+    private string SaveLabel => IsEditing ? Loc["Modal_Save"] : Loc["Trip_NoteAdd"];
+
     private bool CanSave =>
         !_isSaving
         && TripConstants.IsNoteTextValid(_text)
@@ -69,11 +75,17 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
         var initial = await InitialLocalValueAsync();
         _dateLocal = DatePartOf(initial);
         _timeLocal = TimePartOf(initial);
+        _text = Model.ExistingNote?.Text ?? string.Empty;
         await ValidateAsync();
     }
 
     private async Task<string> InitialLocalValueAsync()
     {
+        if (Model.ExistingNote is { } existing)
+        {
+            return await LocalValueAsync(existing.RecordedOn);
+        }
+
         if (Model.TripEndedOn is not null)
         {
             return _latestLocal;
@@ -168,10 +180,7 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
         _isSaving = true;
         try
         {
-            var note = await NoteWriter.AddAsync(
-                new TripNoteDraftModel(Model.TripId, Model.OwnerUserId, text, recordedOn),
-                Model.Storage,
-                _cancellationTokenSource.Token);
+            var note = await PersistAsync(text, recordedOn);
             MudDialog.Close(DialogResult.Ok(new AddTripNoteModalResult(note)));
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
@@ -195,10 +204,26 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
         }
     }
 
+    private async Task<TripNoteModel> PersistAsync(string text, DateTimeOffset recordedOn)
+    {
+        if (Model.ExistingNote is { } existing)
+        {
+            return await NoteWriter.UpdateAsync(
+                existing with { Text = text, RecordedOn = recordedOn },
+                Model.Storage,
+                _cancellationTokenSource.Token);
+        }
+
+        return await NoteWriter.AddAsync(
+            new TripNoteDraftModel(Model.TripId, Model.OwnerUserId, text, recordedOn),
+            Model.Storage,
+            _cancellationTokenSource.Token);
+    }
+
     private async Task FailAsync(Exception exception, bool unreachable)
     {
-        await Logging.LogErrorAsync("adding a trip note", exception, CancellationToken.None);
-        _saveFailedMessage = unreachable && Model.Storage == TripNoteStorageEnum.Server
+        await Logging.LogErrorAsync(Operation, exception, CancellationToken.None);
+        _saveFailedMessage = unreachable && Model.Storage == TripStorageEnum.Server
             ? Loc["Trip_NoteOnlineRequired"].Value
             : Loc["Trip_NoteAddFailed"].Value;
     }
@@ -286,6 +311,8 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
             ? parsed
             : null;
     }
+
+    private string Operation => IsEditing ? "editing a trip note" : "adding a trip note";
 
     private void Cancel()
     {

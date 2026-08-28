@@ -68,7 +68,7 @@ public sealed class TripNoteService : ITripNoteService
             {
                 Id = args.NoteId,
                 TripId = args.TripId,
-                CreatedByUserId = _currentUser.UserId,
+                CreatedByUserId = existing.Value?.CreatedByUserId ?? _currentUser.UserId,
                 Text = text,
                 RecordedOn = args.RecordedOn
             },

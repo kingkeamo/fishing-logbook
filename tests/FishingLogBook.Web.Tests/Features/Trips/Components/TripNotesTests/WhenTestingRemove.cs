@@ -102,7 +102,7 @@ public class WhenTestingRemove : BaseTripNotesTest
             modalService: ConfirmingModalService(confirm: false));
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, CompletedTrip())
-            .Add(component => component.NoteStorage, TripNoteStorageEnum.Server));
+            .Add(component => component.NoteStorage, TripStorageEnum.Server));
 
         // Act
         await cut.InvokeAsync(() => cut.Instance.RemoveNoteAsync(FirstNoteId));
@@ -125,7 +125,7 @@ public class WhenTestingRemove : BaseTripNotesTest
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, CompletedTrip())
-            .Add(component => component.NoteStorage, TripNoteStorageEnum.Server)
+            .Add(component => component.NoteStorage, TripStorageEnum.Server)
             .Add(component => component.Changed, () => changed++));
 
         // Act

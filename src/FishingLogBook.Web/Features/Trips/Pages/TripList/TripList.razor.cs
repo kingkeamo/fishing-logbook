@@ -227,13 +227,13 @@ public partial class TripList : ComponentBase, IDisposable
             : null;
     }
 
-    private string Title(TripListItemModel trip)
+    private static bool HasCustomTitle(TripListItemModel trip)
     {
-        if (!string.IsNullOrWhiteSpace(trip.Title))
-        {
-            return trip.Title!;
-        }
+        return !string.IsNullOrWhiteSpace(trip.Title);
+    }
 
+    private string DateLabel(TripListItemModel trip)
+    {
         return _startedLabels.TryGetValue(trip.Id, out var label)
             ? label
             : trip.StartedOn.ToString("d MMM yyyy", CultureInfo.CurrentCulture);

@@ -285,6 +285,9 @@
   <data name="Trip_NoteRecordedOnInvalid" xml:space="preserve">
     <value>Enter a valid date and time for this note.</value>
   </data>
+  <data name="Trip_NoteEdit" xml:space="preserve">
+    <value>Edit note</value>
+  </data>
   <data name="Trip_NoteRemove" xml:space="preserve">
     <value>Remove note</value>
   </data>
@@ -1113,6 +1116,36 @@
   </data>
   <data name="Trip_AddExistingCatch" xml:space="preserve">
     <value>Add catch</value>
+  </data>
+  <data name="Trip_AddCatchesTitle" xml:space="preserve">
+    <value>Add catches</value>
+  </data>
+  <data name="Trip_AddCatchesSubtitle" xml:space="preserve">
+    <value>Select catches to add to this trip</value>
+  </data>
+  <data name="Trip_AddCatchesEmpty" xml:space="preserve">
+    <value>No catches to add</value>
+  </data>
+  <data name="Trip_AddCatchesEmptyHint" xml:space="preserve">
+    <value>All catches recorded during this trip are already associated.</value>
+  </data>
+  <data name="Trip_AddCatchesConfirmOne" xml:space="preserve">
+    <value>Add 1 catch</value>
+  </data>
+  <data name="Trip_AddCatchesConfirmMany" xml:space="preserve">
+    <value>Add {0} catches</value>
+  </data>
+  <data name="Trip_AddCatchesLoadFailed" xml:space="preserve">
+    <value>Those catches could not be read. Try again in a moment.</value>
+  </data>
+  <data name="Trip_AddCatchesFailed" xml:space="preserve">
+    <value>Those catches could not be added to the trip.</value>
+  </data>
+  <data name="Trip_AddCatchesRejected" xml:space="preserve">
+    <value>Those catches are no longer available to add. The list has been refreshed.</value>
+  </data>
+  <data name="Trip_AddCatchesOnlineRequired" xml:space="preserve">
+    <value>You need to be online to add catches to this trip.</value>
   </data>
   <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
     <value>Catches not on a trip</value>

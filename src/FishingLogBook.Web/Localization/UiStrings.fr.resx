@@ -285,6 +285,9 @@
   <data name="Trip_NoteRecordedOnInvalid" xml:space="preserve">
     <value>Saisissez une date et une heure valides pour cette note.</value>
   </data>
+  <data name="Trip_NoteEdit" xml:space="preserve">
+    <value>Modifier la note</value>
+  </data>
   <data name="Trip_NoteRemove" xml:space="preserve">
     <value>Supprimer la note</value>
   </data>
@@ -1113,6 +1116,36 @@
   </data>
   <data name="Trip_AddExistingCatch" xml:space="preserve">
     <value>Ajouter une prise</value>
+  </data>
+  <data name="Trip_AddCatchesTitle" xml:space="preserve">
+    <value>Ajouter des prises</value>
+  </data>
+  <data name="Trip_AddCatchesSubtitle" xml:space="preserve">
+    <value>Choisissez les prises à ajouter à cette sortie</value>
+  </data>
+  <data name="Trip_AddCatchesEmpty" xml:space="preserve">
+    <value>Aucune prise à ajouter</value>
+  </data>
+  <data name="Trip_AddCatchesEmptyHint" xml:space="preserve">
+    <value>Toutes les prises enregistrées pendant cette sortie y sont déjà associées.</value>
+  </data>
+  <data name="Trip_AddCatchesConfirmOne" xml:space="preserve">
+    <value>Ajouter 1 prise</value>
+  </data>
+  <data name="Trip_AddCatchesConfirmMany" xml:space="preserve">
+    <value>Ajouter {0} prises</value>
+  </data>
+  <data name="Trip_AddCatchesLoadFailed" xml:space="preserve">
+    <value>Ces prises n'ont pas pu être lues. Réessayez dans un instant.</value>
+  </data>
+  <data name="Trip_AddCatchesFailed" xml:space="preserve">
+    <value>Ces prises n'ont pas pu être ajoutées à la sortie.</value>
+  </data>
+  <data name="Trip_AddCatchesRejected" xml:space="preserve">
+    <value>Ces prises ne sont plus disponibles. La liste a été actualisée.</value>
+  </data>
+  <data name="Trip_AddCatchesOnlineRequired" xml:space="preserve">
+    <value>Vous devez être en ligne pour ajouter des prises à cette sortie.</value>
   </data>
   <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
     <value>Prises sans sortie</value>

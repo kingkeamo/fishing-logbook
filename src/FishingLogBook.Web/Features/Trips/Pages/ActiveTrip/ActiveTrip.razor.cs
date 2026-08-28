@@ -90,7 +90,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
     }
 
-    private bool CanAddNotes
+    private bool CanContribute
     {
         get
         {
@@ -98,11 +98,15 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
     }
 
-    private TripNoteStorageEnum NoteStorage
+    private bool CanAddNotes => CanContribute;
+
+    private bool CanAddCatches => CanContribute;
+
+    private TripStorageEnum NoteStorage
     {
         get
         {
-            return _isReadOnlyHistory ? TripNoteStorageEnum.Server : TripNoteStorageEnum.LocalFirst;
+            return _isReadOnlyHistory ? TripStorageEnum.Server : TripStorageEnum.LocalFirst;
         }
     }
 

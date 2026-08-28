@@ -34,7 +34,7 @@ public partial class TripNotes : ComponentBase, IDisposable
     public bool UseFloatingTrigger { get; set; }
 
     [Parameter]
-    public TripNoteStorageEnum NoteStorage { get; set; } = TripNoteStorageEnum.LocalFirst;
+    public TripStorageEnum NoteStorage { get; set; } = TripStorageEnum.LocalFirst;
 
     [Inject]
     private ITripNoteStore NoteStore { get; set; } = default!;
@@ -72,7 +72,7 @@ public partial class TripNotes : ComponentBase, IDisposable
 
     private async Task<IReadOnlyList<TripNoteModel>> ReadStoredNotesAsync()
     {
-        if (NoteStorage == TripNoteStorageEnum.Server
+        if (NoteStorage == TripStorageEnum.Server
             || Trip.OwnerUserId == Guid.Empty
             || Trip.Id == Guid.Empty)
         {
@@ -125,6 +125,39 @@ public partial class TripNotes : ComponentBase, IDisposable
         await Changed.InvokeAsync();
     }
 
+    public async Task EditNoteAsync(Guid noteId, string text, DateTimeOffset recordedOn)
+    {
+        _removeFailed = false;
+        var existing = _notes.FirstOrDefault(candidate => candidate.Id == noteId)
+            ?? new TripNoteModel(
+                noteId,
+                Trip.Id,
+                Trip.OwnerUserId,
+                text,
+                recordedOn,
+                SyncStatus.Synchronised);
+        var edited = await ModalService
+            .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
+                new AddTripNoteModalModel(
+                    Trip.Id,
+                    Trip.OwnerUserId,
+                    Trip.StartedOn,
+                    Trip.EndedOn,
+                    NoteStorage,
+                    existing),
+                _cancellationTokenSource.Token);
+        if (edited is null)
+        {
+            return;
+        }
+
+        _notes.RemoveAll(candidate => candidate.Id == edited.Note.Id);
+        _notes.Add(edited.Note);
+        _notes.Sort(Chronologically);
+        await RememberLocalTimeAsync(edited.Note);
+        await Changed.InvokeAsync();
+    }
+
     private static int Chronologically(TripNoteModel left, TripNoteModel right)
     {
         var byRecordedOn = left.RecordedOn.CompareTo(right.RecordedOn);
@@ -135,7 +168,7 @@ public partial class TripNotes : ComponentBase, IDisposable
     {
         _removeFailed = false;
         var note = _notes.FirstOrDefault(candidate => candidate.Id == noteId);
-        if (note is null && NoteStorage != TripNoteStorageEnum.Server)
+        if (note is null && NoteStorage != TripStorageEnum.Server)
         {
             return;
         }

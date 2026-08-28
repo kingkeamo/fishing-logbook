@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Features.Trips.Modals.AddTripCatches;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Localization;
@@ -33,7 +34,7 @@ public class WhenTestingDiaryComposition : BaseActiveTripTest
     }
 
     [Fact]
-    public async Task ItShouldOfferTheActiveTripActionsWithoutStackingFullWidthButtons()
+    public async Task ItShouldOfferTheActiveTripActionsInThreeEqualColumns()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -46,10 +47,12 @@ public class WhenTestingDiaryComposition : BaseActiveTripTest
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#active-trip-actions").Should().NotBeNull());
-        cut.Find("#active-trip-record-catch").Should().NotBeNull();
-        cut.Find("#active-trip-add-catch").Should().NotBeNull();
-        cut.Find("#active-trip-add-photo").Should().NotBeNull();
-        cut.Find("#active-trip-finish").Should().NotBeNull();
+        cut.Find("#active-trip-actions").ClassName.Should().Contain("mud-grid");
+        cut.Find("#active-trip-record-catch").ClassName.Should().Contain("active-trip-action");
+        cut.Find("#active-trip-add-catch").ClassName.Should().Contain("active-trip-action");
+        cut.Find("#active-trip-add-photo").ClassName.Should().Contain("active-trip-action");
+        cut.Find("#active-trip-update").ClassName.Should().Contain("active-trip-action");
+        cut.Find("#active-trip-finish").ClassName.Should().Contain("active-trip-action");
         cut.Find("#active-trip-update").GetAttribute("href").Should().Be($"/trips/{TripId:D}/edit");
     }
 
@@ -93,24 +96,49 @@ public class WhenTestingDiaryComposition : BaseActiveTripTest
     }
 
     [Fact]
-    public async Task ItShouldRevealTheCatchSelectorOnlyWhenAddCatchIsChosen()
+    public async Task ItShouldOpenTheCatchPickerOnlyWhenAddCatchIsChosen()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var store = await StoreWithActiveTripAsync();
-        var catchStore = QuietCatchStore(CatchFor(null));
-        await using var context = CreateContext(store, catchStore: catchStore);
+        var modalService = ConfirmingModalService();
+        await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<ActiveTripPage>(parameters =>
             parameters.Add(page => page.TripId, TripId));
         cut.WaitForAssertion(() => cut.Find("#active-trip-add-catch").Should().NotBeNull());
-        cut.FindAll("#catch-selector").Should().BeEmpty();
+        await modalService.DidNotReceive()
+            .ShowAsync<AddTripCatchesModal, AddTripCatchesModalModel, AddTripCatchesModalResult>(
+                Arg.Any<AddTripCatchesModalModel>(),
+                Arg.Any<CancellationToken>());
 
         // Act
         await cut.Find("#active-trip-add-catch").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#catch-selector").Should().NotBeNull());
+        await modalService.Received(1)
+            .ShowAsync<AddTripCatchesModal, AddTripCatchesModalModel, AddTripCatchesModalResult>(
+                Arg.Is<AddTripCatchesModalModel>(model => model.Scope.TripId == TripId),
+                Arg.Any<CancellationToken>());
         cut.FindAll("#trip-catches-record").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldStillOfferAddCatchOnACompletedTrip()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(StoredCompletedTrip());
+        await using var context = CreateContext(store);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#active-trip-add-catch").Should().NotBeNull());
+        cut.FindAll("#active-trip-finish").Should().BeEmpty();
     }
 
     [Fact]
@@ -134,10 +162,9 @@ public class WhenTestingDiaryComposition : BaseActiveTripTest
         // Assert
         cut.WaitForAssertion(() =>
             cut.Find("#active-trip-status").TextContent.Should().Contain("Finished"));
-        cut.FindAll("#active-trip-actions").Should().BeEmpty();
         cut.FindAll("#active-trip-record-catch").Should().BeEmpty();
-        cut.FindAll("#active-trip-add-catch").Should().BeEmpty();
         cut.FindAll("#active-trip-add-photo").Should().BeEmpty();
+        cut.FindAll("#active-trip-update").Should().BeEmpty();
         cut.FindAll("#active-trip-finish").Should().BeEmpty();
         cut.Find("#active-trip-logbook").Should().NotBeNull();
     }
@@ -161,7 +188,7 @@ public class WhenTestingDiaryComposition : BaseActiveTripTest
         var trigger = cut.Find("#trip-note-start");
         trigger.ClassName.Should().Contain("mud-fab");
         trigger.GetAttribute("aria-label").Should().Be("Add note");
-        cut.FindAll("#active-trip-actions").Should().BeEmpty();
+        cut.FindAll("#active-trip-finish").Should().BeEmpty();
     }
 
     [Fact]

@@ -42,6 +42,17 @@ public class BaseTripNotesTest
         return modalService;
     }
 
+    protected static IModalService ModalServiceEditing(TripNoteModel edited)
+    {
+        var modalService = ConfirmingModalService();
+        modalService
+            .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
+                Arg.Any<AddTripNoteModalModel>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new AddTripNoteModalResult(edited));
+        return modalService;
+    }
+
     protected static BunitContext CreateContext(
         ITripNoteStore store,
         ITripClient? tripClient = null,

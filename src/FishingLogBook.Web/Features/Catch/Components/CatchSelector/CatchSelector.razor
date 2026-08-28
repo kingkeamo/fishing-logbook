@@ -1,49 +1,54 @@
 @namespace FishingLogBook.Web.Features.Catch.Components.CatchSelector
 
-<MudStack Spacing="2" id="catch-selector">
-    @if (Catches.Count == 0)
+<MudStack Spacing="1" id="catch-selector">
+    @foreach (var candidate in Catches)
     {
-        <MudText Typo="Typo.body2" Class="mud-text-secondary" id="catch-selector-empty">
-            @EmptyLabel
-        </MudText>
-    }
-    else
-    {
-        <MudStack Spacing="1" id="catch-selector-options">
-            @foreach (var candidate in Catches)
-            {
-                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="catch-selector-row">
-                    @if (MediaSource(candidate) is { } source)
-                    {
-                        <img src="@source" alt="" class="catch-selector-thumbnail" />
-                    }
-                    else
-                    {
-                        <div class="catch-selector-thumbnail catch-selector-thumbnail-placeholder" aria-hidden="true">
-                            <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" Size="Size.Small" />
-                        </div>
-                    }
-                    <MudCheckBox T="bool"
-                                 Value="@IsSelected(candidate.Id)"
-                                 ValueChanged="@((bool selected) => ToggleAsync(candidate.Id, selected))"
-                                 Color="Color.Primary"
-                                 Dense="true"
-                                 Disabled="Disabled"
-                                 Label="@Describe(candidate)"
-                                 Class="catch-selector-option-checkbox"
-                                 id="@($"catch-selector-option-{candidate.Id:D}")" />
-                </MudStack>
-            }
-        </MudStack>
+        <MudPaper Elevation="0"
+                  Class="catch-selector-row"
+                  id="@($"catch-selector-row-{candidate.Id:D}")">
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudCheckBox T="bool"
+                             Value="@IsSelected(candidate.Id)"
+                             ValueChanged="@((bool selected) => ToggleAsync(candidate.Id, selected))"
+                             Color="Color.Primary"
+                             Dense="true"
+                             Disabled="Disabled"
+                             aria-label="@SpeciesLabel(candidate)"
+                             Class="catch-selector-option-checkbox"
+                             id="@($"catch-selector-option-{candidate.Id:D}")" />
 
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   FullWidth="true"
-                   StartIcon="@Icons.Material.Filled.PlaylistAdd"
-                   Disabled="@(Disabled || _selected.Count == 0)"
-                   OnClick="ConfirmAsync"
-                   id="catch-selector-confirm">
-            @ConfirmLabel
-        </MudButton>
+                @if (MediaSource(candidate) is { } source)
+                {
+                    <img src="@source" alt="" class="catch-selector-thumbnail" />
+                }
+                else
+                {
+                    <div class="catch-selector-thumbnail catch-selector-thumbnail-placeholder" aria-hidden="true">
+                        <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" Size="Size.Small" />
+                    </div>
+                }
+
+                <MudStack Spacing="0" Class="catch-selector-detail">
+                    <MudText Typo="Typo.body2"
+                             Class="catch-selector-species"
+                             id="@($"catch-selector-species-{candidate.Id:D}")">
+                        @SpeciesLabel(candidate)
+                    </MudText>
+                    <MudText Typo="Typo.caption"
+                             Class="mud-text-secondary"
+                             id="@($"catch-selector-facts-{candidate.Id:D}")">
+                        @Facts(candidate)
+                    </MudText>
+                    @if (MethodLabel(candidate) is { } method)
+                    {
+                        <MudText Typo="Typo.caption"
+                                 Class="mud-text-secondary catch-selector-method"
+                                 id="@($"catch-selector-method-{candidate.Id:D}")">
+                            @method
+                        </MudText>
+                    }
+                </MudStack>
+            </MudStack>
+        </MudPaper>
     }
 </MudStack>

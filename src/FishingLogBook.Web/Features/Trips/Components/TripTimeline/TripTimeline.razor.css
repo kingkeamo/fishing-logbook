@@ -70,7 +70,11 @@
     min-width: 0;
 }
 
-::deep .trip-timeline-note-remove {
+.trip-timeline-note-actions {
+    flex: 0 0 auto;
+}
+
+::deep .trip-timeline-note-action {
     flex: 0 0 auto;
     opacity: 0.7;
 }

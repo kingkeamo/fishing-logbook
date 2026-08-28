@@ -177,7 +177,7 @@ public class WhenTestingAdd : BaseTripNotesTest
         await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, CompletedTrip())
-            .Add(component => component.NoteStorage, TripNoteStorageEnum.Server));
+            .Add(component => component.NoteStorage, TripStorageEnum.Server));
 
         // Act
         await cut.Find("#trip-note-start").ClickAsync();
@@ -187,7 +187,7 @@ public class WhenTestingAdd : BaseTripNotesTest
             .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
                 Arg.Is<AddTripNoteModalModel>(model =>
                     model.TripId == TripId
-                    && model.Storage == TripNoteStorageEnum.Server
+                    && model.Storage == TripStorageEnum.Server
                     && model.TripEndedOn != null),
                 Arg.Any<CancellationToken>());
         store.ForTripCalls.Should().Be(0);

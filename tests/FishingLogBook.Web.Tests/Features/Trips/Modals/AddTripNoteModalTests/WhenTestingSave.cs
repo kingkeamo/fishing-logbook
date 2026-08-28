@@ -178,7 +178,7 @@ public class WhenTestingSave : BaseAddTripNoteModalTest
         var (cut, dialog) = await ShowModalAsync(
             context,
             endedOn: EndedOn,
-            storage: TripNoteStorageEnum.Server);
+            storage: TripStorageEnum.Server);
         cut.Find("#trip-note-text").Input("fish started rising beside the reeds");
 
         // Act
@@ -260,7 +260,7 @@ public class WhenTestingSave : BaseAddTripNoteModalTest
                 && draft.OwnerUserId == OwnerUserId
                 && draft.Text == "changed to olive nymph"
                 && draft.RecordedOn == DateTimeOffset.Parse("2026-08-17T11:30:00Z")),
-            TripNoteStorageEnum.LocalFirst,
+            TripStorageEnum.LocalFirst,
             Arg.Any<CancellationToken>());
         var result = await dialog.Result;
         result.Should().NotBeNull();
@@ -278,7 +278,7 @@ public class WhenTestingSave : BaseAddTripNoteModalTest
         var (cut, dialog) = await ShowModalAsync(
             context,
             endedOn: EndedOn,
-            storage: TripNoteStorageEnum.Server);
+            storage: TripStorageEnum.Server);
         cut.WaitForAssertion(() => TimeValue(cut).Should().Be("16:00"));
 
         // Act
@@ -292,7 +292,7 @@ public class WhenTestingSave : BaseAddTripNoteModalTest
                 draft.TripId == TripId
                 && draft.Text == "fish started rising beside the reeds"
                 && draft.RecordedOn == DateTimeOffset.Parse("2026-08-17T11:30:00Z")),
-            TripNoteStorageEnum.Server,
+            TripStorageEnum.Server,
             Arg.Any<CancellationToken>());
         var result = await dialog.Result;
         result.Should().NotBeNull();
@@ -304,7 +304,7 @@ public class WhenTestingSave : BaseAddTripNoteModalTest
     {
         await writer.DidNotReceive().AddAsync(
             Arg.Any<TripNoteDraftModel>(),
-            Arg.Any<TripNoteStorageEnum>(),
+            Arg.Any<TripStorageEnum>(),
             Arg.Any<CancellationToken>());
     }
 }

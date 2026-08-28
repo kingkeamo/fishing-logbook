@@ -88,15 +88,26 @@ else
                                           Class="trip-timeline-note">
                                     <MudText Typo="Typo.body2"
                                              Class="trip-timeline-note-text">@item.Text</MudText>
-                                    @if (CanDeleteNotes && item.NoteId is { } noteId)
+                                    @if (CanEditNotes && item.NoteId is { } noteId)
                                     {
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                       Size="Size.Small"
-                                                       Color="Color.Inherit"
-                                                       Class="trip-timeline-note-remove"
-                                                       aria-label="@Loc["Trip_NoteRemove"]"
-                                                       OnClick="@(() => OnDeleteNote.InvokeAsync(noteId))"
-                                                       id="@($"trip-timeline-note-remove-{noteId:D}")" />
+                                        <MudStack Row="true" Spacing="0" Class="trip-timeline-note-actions">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           Color="Color.Inherit"
+                                                           Class="trip-timeline-note-action"
+                                                           aria-label="@Loc["Trip_NoteEdit"]"
+                                                           title="@Loc["Trip_NoteEdit"]"
+                                                           OnClick="@(() => OnEditNote.InvokeAsync(item))"
+                                                           id="@($"trip-timeline-note-edit-{noteId:D}")" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Inherit"
+                                                           Class="trip-timeline-note-action trip-timeline-note-remove"
+                                                           aria-label="@Loc["Trip_NoteRemove"]"
+                                                           title="@Loc["Trip_NoteRemove"]"
+                                                           OnClick="@(() => OnDeleteNote.InvokeAsync(noteId))"
+                                                           id="@($"trip-timeline-note-remove-{noteId:D}")" />
+                                        </MudStack>
                                     }
                                 </MudStack>
 

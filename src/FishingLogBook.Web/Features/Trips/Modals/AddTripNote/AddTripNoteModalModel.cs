@@ -1,4 +1,5 @@
 using FishingLogBook.Web.Features.Trips.Enums;
+using FishingLogBook.Web.Features.Trips.Models;
 
 namespace FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
 
@@ -7,4 +8,5 @@ public sealed record AddTripNoteModalModel(
     Guid OwnerUserId,
     DateTimeOffset TripStartedOn,
     DateTimeOffset? TripEndedOn = null,
-    TripNoteStorageEnum Storage = TripNoteStorageEnum.LocalFirst);
+    TripStorageEnum Storage = TripStorageEnum.LocalFirst,
+    TripNoteModel? ExistingNote = null);

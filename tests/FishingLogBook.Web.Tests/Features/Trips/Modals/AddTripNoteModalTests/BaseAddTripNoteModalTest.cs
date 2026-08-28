@@ -1,6 +1,7 @@
 using AngleSharp.Html.Dom;
 using Bunit;
 using FishingLogBook.Web.Browser.Time;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
@@ -44,7 +45,7 @@ public class BaseAddTripNoteModalTest
         var writer = Substitute.For<ITripNoteWriteService>();
         writer.AddAsync(
                 Arg.Any<TripNoteDraftModel>(),
-                Arg.Any<TripNoteStorageEnum>(),
+                Arg.Any<TripStorageEnum>(),
                 Arg.Any<CancellationToken>())
             .Returns(call =>
             {
@@ -59,12 +60,36 @@ public class BaseAddTripNoteModalTest
         return writer;
     }
 
+    protected static ITripNoteWriteService WriterThatUpdates()
+    {
+        var writer = WriterThatSaves();
+        writer.UpdateAsync(
+                Arg.Any<TripNoteModel>(),
+                Arg.Any<TripStorageEnum>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call => call.ArgAt<TripNoteModel>(0));
+        return writer;
+    }
+
+    protected static TripNoteModel ExistingNote(
+        string text = "water dropped about a foot",
+        DateTimeOffset? recordedOn = null)
+    {
+        return new TripNoteModel(
+            NoteId,
+            TripId,
+            OwnerUserId,
+            text,
+            recordedOn ?? StartedOn.AddHours(2),
+            SyncStatus.Synchronised);
+    }
+
     protected static ITripNoteWriteService WriterThatCannotReachTheServer()
     {
         var writer = Substitute.For<ITripNoteWriteService>();
         writer.AddAsync(
                 Arg.Any<TripNoteDraftModel>(),
-                Arg.Any<TripNoteStorageEnum>(),
+                Arg.Any<TripStorageEnum>(),
                 Arg.Any<CancellationToken>())
             .Returns<TripNoteModel>(_ => throw new HttpRequestException("offline"));
         return writer;
@@ -75,7 +100,7 @@ public class BaseAddTripNoteModalTest
         var writer = Substitute.For<ITripNoteWriteService>();
         writer.AddAsync(
                 Arg.Any<TripNoteDraftModel>(),
-                Arg.Any<TripNoteStorageEnum>(),
+                Arg.Any<TripStorageEnum>(),
                 Arg.Any<CancellationToken>())
             .Returns<TripNoteModel>(_ => throw new InvalidOperationException("write failed"));
         return writer;
@@ -85,7 +110,8 @@ public class BaseAddTripNoteModalTest
         BunitContext context,
         DateTimeOffset? startedOn = null,
         DateTimeOffset? endedOn = null,
-        TripNoteStorageEnum storage = TripNoteStorageEnum.LocalFirst)
+        TripStorageEnum storage = TripStorageEnum.LocalFirst,
+        TripNoteModel? existingNote = null)
     {
         var cut = context.Render<MudDialogProvider>();
         var dialogs = context.Services.GetRequiredService<IDialogService>();
@@ -98,7 +124,8 @@ public class BaseAddTripNoteModalTest
                     OwnerUserId,
                     startedOn ?? StartedOn,
                     endedOn,
-                    storage)
+                    storage,
+                    existingNote)
             }
         };
         var dialog = await dialogs.ShowAsync<AddTripNoteModal>(

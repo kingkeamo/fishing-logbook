@@ -15,7 +15,7 @@ public class WhenTestingRemove : BaseTripNoteWriteServiceTest
         var removal = new TripNoteRemovalModel(TripId, OwnerUserId, NoteId, SyncStatus.SavedLocally);
 
         // Act
-        await Sut.RemoveAsync(removal, TripNoteStorageEnum.LocalFirst, CancellationToken.None);
+        await Sut.RemoveAsync(removal, TripStorageEnum.LocalFirst, CancellationToken.None);
 
         // Assert
         await MockNoteStore.Received(1).DeleteAsync(
@@ -36,7 +36,7 @@ public class WhenTestingRemove : BaseTripNoteWriteServiceTest
         var removal = new TripNoteRemovalModel(TripId, OwnerUserId, NoteId, SyncStatus.Synchronised);
 
         // Act
-        await Sut.RemoveAsync(removal, TripNoteStorageEnum.LocalFirst, CancellationToken.None);
+        await Sut.RemoveAsync(removal, TripStorageEnum.LocalFirst, CancellationToken.None);
 
         // Assert
         await MockTripClient.Received(1).DeleteNoteAsync(
@@ -57,7 +57,7 @@ public class WhenTestingRemove : BaseTripNoteWriteServiceTest
         var removal = new TripNoteRemovalModel(TripId, OwnerUserId, NoteId);
 
         // Act
-        await Sut.RemoveAsync(removal, TripNoteStorageEnum.Server, CancellationToken.None);
+        await Sut.RemoveAsync(removal, TripStorageEnum.Server, CancellationToken.None);
 
         // Assert
         await MockTripClient.Received(1).DeleteNoteAsync(
@@ -81,7 +81,7 @@ public class WhenTestingRemove : BaseTripNoteWriteServiceTest
 
         // Act
         var remove = async () =>
-            await Sut.RemoveAsync(removal, TripNoteStorageEnum.Server, CancellationToken.None);
+            await Sut.RemoveAsync(removal, TripStorageEnum.Server, CancellationToken.None);
 
         // Assert
         await remove.Should().ThrowAsync<HttpRequestException>();

@@ -20,11 +20,11 @@ public sealed class TripNoteWriteService : ITripNoteWriteService
 
     public async Task<TripNoteModel> AddAsync(
         TripNoteDraftModel draft,
-        TripNoteStorageEnum storage,
+        TripStorageEnum storage,
         CancellationToken cancellationToken)
     {
         var noteId = Guid.NewGuid();
-        if (storage != TripNoteStorageEnum.Server)
+        if (storage != TripStorageEnum.Server)
         {
             var note = new TripNoteModel(
                 noteId,
@@ -50,12 +50,42 @@ public sealed class TripNoteWriteService : ITripNoteWriteService
             DateTimeOffset.UtcNow);
     }
 
-    public async Task RemoveAsync(
-        TripNoteRemovalModel removal,
-        TripNoteStorageEnum storage,
+    public async Task<TripNoteModel> UpdateAsync(
+        TripNoteModel note,
+        TripStorageEnum storage,
         CancellationToken cancellationToken)
     {
-        if (storage == TripNoteStorageEnum.Server)
+        if (storage != TripStorageEnum.Server)
+        {
+            var pending = note with
+            {
+                SyncStatus = note.SyncStatus == SyncStatus.Synchronised
+                    ? SyncStatus.WaitingToSynchronise
+                    : note.SyncStatus
+            };
+            await _noteStore.SaveAsync(pending, cancellationToken);
+            return pending;
+        }
+
+        var recorded = await _tripClient.RecordNoteAsync(
+            note.TripId,
+            new RecordTripNoteDto(note.Id, note.Text, note.RecordedOn),
+            cancellationToken);
+        return note with
+        {
+            Text = recorded?.Text ?? note.Text,
+            RecordedOn = recorded?.RecordedOn ?? note.RecordedOn,
+            SyncStatus = SyncStatus.Synchronised,
+            SyncedAt = DateTimeOffset.UtcNow
+        };
+    }
+
+    public async Task RemoveAsync(
+        TripNoteRemovalModel removal,
+        TripStorageEnum storage,
+        CancellationToken cancellationToken)
+    {
+        if (storage == TripStorageEnum.Server)
         {
             await _tripClient.DeleteNoteAsync(removal.TripId, removal.NoteId, cancellationToken);
             return;

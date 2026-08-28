@@ -89,6 +89,9 @@ public class WhenTestingRender : BaseTripEditorTest
 
         // Assert
         cut.Find("#trip-editor-catches-empty").TextContent.Should().Contain("No catches yet");
+        cut.Find("#trip-catches-actions").ClassName.Should().Contain("mud-grid");
+        cut.Find("#trip-catches-record").Should().NotBeNull();
+        cut.Find("#trip-catches-add").Should().NotBeNull();
     }
 
     [Fact]

@@ -1,8 +1,8 @@
 using Bunit;
 using FishingLogBook.Shared.Constants;
-using FishingLogBook.Web.Features.Catch.Models;
-using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Trips.Modals.AddTripCatches;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,33 +17,33 @@ public class BaseTripCatchesTest
     protected static readonly Guid TripId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     protected static readonly Guid PikeCatchId = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
     protected static readonly Guid TroutCatchId = Guid.Parse("cccccccc-0000-0000-0000-000000000002");
-    protected static readonly Guid TrippedCatchId = Guid.Parse("cccccccc-0000-0000-0000-000000000003");
     protected static readonly DateTimeOffset StartedOn = DateTimeOffset.Parse("2026-08-27T06:00:00Z");
+    protected static readonly DateTimeOffset EndedOn = DateTimeOffset.Parse("2026-08-27T14:00:00Z");
 
-    protected static BunitContext CreateContext(ICatchStore catchStore, ILoggingService? logging = null)
+    protected static BunitContext CreateContext(
+        IModalService modalService,
+        ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
-        context.Services.AddSingleton(catchStore);
+        context.Services.AddSingleton(modalService);
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
 
-    protected static ICatchStore StoreWith(params CatchModel[] catches)
+    protected static IModalService ModalServiceAdding(AddTripCatchesModalResult? result = null)
     {
-        var store = Substitute.For<ICatchStore>();
-        store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>()).Returns(catches);
-        store.UpdateTripAsync(
-                Arg.Any<Guid>(),
-                Arg.Any<Guid>(),
-                Arg.Any<Guid?>(),
+        var modalService = Substitute.For<IModalService>();
+        modalService
+            .ShowAsync<AddTripCatchesModal, AddTripCatchesModalModel, AddTripCatchesModalResult>(
+                Arg.Any<AddTripCatchesModalModel>(),
                 Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
-        return store;
+            .Returns(result);
+        return modalService;
     }
 
     protected static ILoggingService QuietLogging()
@@ -54,19 +54,13 @@ public class BaseTripCatchesTest
         return logging;
     }
 
-    protected static CatchModel Catch(Guid catchId, string? speciesName, Guid? tripId = null)
-    {
-        return new CatchModel(
-            catchId,
-            StartedOn.AddMinutes(30),
-            [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)],
-            speciesName,
-            UserId: OwnerUserId,
-            TripId: tripId);
-    }
-
     protected static TripModel Trip()
     {
         return new TripModel(TripId, OwnerUserId, TripConstants.Active, StartedOn);
+    }
+
+    protected static TripModel CompletedTrip()
+    {
+        return new TripModel(TripId, OwnerUserId, TripConstants.Completed, StartedOn, EndedOn);
     }
 }

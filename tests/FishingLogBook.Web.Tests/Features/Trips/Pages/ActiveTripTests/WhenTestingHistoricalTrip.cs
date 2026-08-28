@@ -137,7 +137,10 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
         // Assert
         cut.WaitForAssertion(() => cut.Find("#trip-note-start").Should().NotBeNull());
         cut.Find("#trip-note-start").GetAttribute("aria-label").Should().Be("Add note");
-        cut.FindAll("#active-trip-actions").Should().BeEmpty();
+        cut.Find("#active-trip-add-catch").Should().NotBeNull();
+        cut.FindAll("#active-trip-record-catch").Should().BeEmpty();
+        cut.FindAll("#active-trip-update").Should().BeEmpty();
+        cut.FindAll("#active-trip-finish").Should().BeEmpty();
     }
 
     [Fact]
@@ -163,7 +166,7 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
         cut.FindAll("#trip-note-start").Should().BeEmpty();
         await noteWriter.DidNotReceive().AddAsync(
             Arg.Any<TripNoteDraftModel>(),
-            Arg.Any<TripNoteStorageEnum>(),
+            Arg.Any<TripStorageEnum>(),
             Arg.Any<CancellationToken>());
     }
 

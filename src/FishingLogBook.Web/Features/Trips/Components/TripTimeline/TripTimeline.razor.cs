@@ -35,10 +35,13 @@ public partial class TripTimeline : ComponentBase, IDisposable
     public bool AllowLocalMedia { get; set; } = true;
 
     [Parameter]
-    public bool CanDeleteNotes { get; set; }
+    public bool CanEditNotes { get; set; }
 
     [Parameter]
     public EventCallback<Guid> OnDeleteNote { get; set; }
+
+    [Parameter]
+    public EventCallback<TripTimelineItemModel> OnEditNote { get; set; }
 
     [Parameter]
     public string CatchBaseHref { get; set; } = "/catches";
