@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Trips.Clients;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripNoteStoreTests;
 using NSubstitute;
@@ -87,6 +88,56 @@ public class WhenTestingRemove : BaseTripNotesTest
             FirstNoteId,
             Arg.Any<CancellationToken>());
         store.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ItShouldNotDeleteAHistoricalNoteWhenTheConfirmationIsCancelled()
+    {
+        // Arrange
+        var store = new MemoryTripNoteStore();
+        var client = Substitute.For<ITripClient>();
+        await using var context = CreateContext(
+            store,
+            tripClient: client,
+            modalService: ConfirmingModalService(confirm: false));
+        var cut = context.Render<TripNotesComponent>(parameters => parameters
+            .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.NoteStorage, TripNoteStorageEnum.Server));
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.RemoveNoteAsync(FirstNoteId));
+
+        // Assert
+        await client.DidNotReceive().DeleteNoteAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+        store.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ItShouldDeleteAHistoricalNoteOnTheServerAfterConfirmation()
+    {
+        // Arrange
+        var store = new MemoryTripNoteStore();
+        var client = Substitute.For<ITripClient>();
+        var changed = 0;
+        await using var context = CreateContext(store, tripClient: client);
+        var cut = context.Render<TripNotesComponent>(parameters => parameters
+            .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.NoteStorage, TripNoteStorageEnum.Server)
+            .Add(component => component.Changed, () => changed++));
+
+        // Act
+        await cut.InvokeAsync(() => cut.Instance.RemoveNoteAsync(FirstNoteId));
+
+        // Assert
+        await client.Received(1).DeleteNoteAsync(
+            TripId,
+            FirstNoteId,
+            Arg.Any<CancellationToken>());
+        store.DeleteCalls.Should().Be(0);
+        changed.Should().Be(1);
     }
 
     [Fact]

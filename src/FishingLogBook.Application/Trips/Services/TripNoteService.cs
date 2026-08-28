@@ -12,6 +12,8 @@ namespace FishingLogBook.Application.Trips.Services;
 
 public sealed class TripNoteService : ITripNoteService
 {
+    private static readonly TimeSpan ClockSkewAllowance = TimeSpan.FromMinutes(5);
+
     private readonly ITripRepository _tripRepository;
     private readonly ITripNoteRepository _tripNoteRepository;
     private readonly ICurrentUser _currentUser;
@@ -43,6 +45,11 @@ public sealed class TripNoteService : ITripNoteService
         if (trip.IsFailed)
         {
             return Result.Fail<TripNoteDto>(trip.Errors);
+        }
+
+        if (!IsWithinTrip(trip.Value, args.RecordedOn))
+        {
+            return Result.Fail<TripNoteDto>(new TripNoteOutsideTripError());
         }
 
         var existing = await _tripNoteRepository.GetByIdAsync(args.NoteId, cancellationToken);
@@ -93,6 +100,16 @@ public sealed class TripNoteService : ITripNoteService
         }
 
         return await _tripNoteRepository.DeleteAsync(args.NoteId, cancellationToken);
+    }
+
+    private static bool IsWithinTrip(Trip trip, DateTimeOffset recordedOn)
+    {
+        if (recordedOn < trip.StartedOn)
+        {
+            return false;
+        }
+
+        return recordedOn <= (trip.EndedOn ?? DateTimeOffset.UtcNow.Add(ClockSkewAllowance));
     }
 
     private async Task<Result<Trip>> LoadOwnedTripAsync(Guid tripId, CancellationToken cancellationToken)

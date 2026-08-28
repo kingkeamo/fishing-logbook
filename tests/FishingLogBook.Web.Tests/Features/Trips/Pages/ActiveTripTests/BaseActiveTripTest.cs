@@ -1,6 +1,7 @@
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
@@ -65,7 +66,9 @@ public class BaseActiveTripTest
         ICatchStore? catchStore = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
         ITripClient? tripClient = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        ITripNoteWriteService? noteWriter = null,
+        INetworkService? network = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -88,8 +91,17 @@ public class BaseActiveTripTest
         context.Services.AddSingleton<ITripTimelineService>(new TripTimelineService());
         context.Services.AddSingleton<IMeasurementService>(new MeasurementService());
         context.Services.AddSingleton(modalService ?? ConfirmingModalService());
+        context.Services.AddSingleton(noteWriter ?? Substitute.For<ITripNoteWriteService>());
+        context.Services.AddSingleton(network ?? OnlineNetwork());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static INetworkService OnlineNetwork(bool isOnline = true)
+    {
+        var network = Substitute.For<INetworkService>();
+        network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(isOnline);
+        return network;
     }
 
     protected static IAnglerPreferencesProvider QuietAnglerPreferences(

@@ -1,8 +1,10 @@
+using System.Globalization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
-using FishingLogBook.Web.Features.Trips.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -13,15 +15,22 @@ namespace FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
 public partial class AddTripNoteModal : ComponentBase, IDisposable
 {
     private const int MaxNoteLength = TripConstants.MaxNoteTextLength;
+    private const string LocalValueFormat = "yyyy-MM-ddTHH:mm";
     private const int LocalValueLength = 16;
+    private const int DatePartLength = 10;
     private const int TimePartIndex = 11;
+    private const int TimePartLength = 5;
 
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private string _recordedOnLocal = string.Empty;
+    private string _earliestLocal = string.Empty;
+    private string _latestLocal = string.Empty;
+    private string _dateLocal = string.Empty;
+    private string _timeLocal = string.Empty;
     private string _text = string.Empty;
+    private DateTimeOffset? _recordedOn;
+    private string? _validationMessage;
+    private string? _saveFailedMessage;
     private bool _isSaving;
-    private bool _recordedOnInvalid;
-    private bool _saveFailed;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -30,7 +39,7 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
     public AddTripNoteModalModel Model { get; set; } = default!;
 
     [Inject]
-    private ITripNoteStore NoteStore { get; set; } = default!;
+    private ITripNoteWriteService NoteWriter { get; set; } = default!;
 
     [Inject]
     private ITimeService Time { get; set; } = default!;
@@ -41,63 +50,105 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
-    private bool CanSave => !_isSaving && TripConstants.IsNoteTextValid(_text);
+    private string EarliestDate => DatePartOf(_earliestLocal);
+
+    private string LatestDate => DatePartOf(_latestLocal);
+
+    private DateTimeOffset Ceiling => Model.TripEndedOn ?? DateTimeOffset.UtcNow;
+
+    private bool CanSave =>
+        !_isSaving
+        && TripConstants.IsNoteTextValid(_text)
+        && _validationMessage is null
+        && _recordedOn is not null;
 
     protected override async Task OnInitializedAsync()
     {
-        _recordedOnLocal = await ResolveDefaultRecordedOnAsync();
+        _earliestLocal = await LocalValueAsync(Model.TripStartedOn);
+        _latestLocal = await LocalValueAsync(Ceiling);
+        var initial = await InitialLocalValueAsync();
+        _dateLocal = DatePartOf(initial);
+        _timeLocal = TimePartOf(initial);
+        await ValidateAsync();
     }
 
-    private async Task<string> ResolveDefaultRecordedOnAsync()
+    private async Task<string> InitialLocalValueAsync()
     {
-        try
+        if (Model.TripEndedOn is not null)
         {
-            var tripLocal = await Time.ToDateTimeLocalValueAsync(
-                Model.TripStartedOn,
-                _cancellationTokenSource.Token);
-            var nowLocal = await Time.ToDateTimeLocalValueAsync(
-                DateTimeOffset.UtcNow,
-                _cancellationTokenSource.Token);
-            return OnTripDate(tripLocal, nowLocal);
+            return _latestLocal;
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
-        {
-            return string.Empty;
-        }
-        catch (Exception exception)
-        {
-            await Logging.LogErrorAsync(
-                "reading a trip note time",
-                exception,
-                CancellationToken.None);
-            return string.Empty;
-        }
-    }
 
-    private static string OnTripDate(string tripLocal, string nowLocal)
-    {
-        if (tripLocal.Length < LocalValueLength || nowLocal.Length < LocalValueLength)
+        var nowLocal = await LocalValueAsync(DateTimeOffset.UtcNow);
+        if (_earliestLocal.Length < LocalValueLength || nowLocal.Length < LocalValueLength)
         {
-            return nowLocal;
+            return _latestLocal.Length < LocalValueLength ? nowLocal : _latestLocal;
         }
 
         var candidate = string.Concat(
-            tripLocal.AsSpan(0, TimePartIndex),
-            nowLocal.AsSpan(TimePartIndex, LocalValueLength - TimePartIndex));
-        return string.CompareOrdinal(candidate, tripLocal) < 0 ? tripLocal : candidate;
+            _earliestLocal.AsSpan(0, TimePartIndex),
+            nowLocal.AsSpan(TimePartIndex, TimePartLength));
+        var instant = await ToInstantAsync(candidate);
+        if (instant is null || instant < Model.TripStartedOn)
+        {
+            return _earliestLocal;
+        }
+
+        return instant > Ceiling ? _latestLocal : candidate;
     }
 
-    private void OnRecordedOnChanged(string? value)
+    private async Task OnDateChanged(string? value)
     {
-        _recordedOnLocal = value ?? string.Empty;
-        _recordedOnInvalid = false;
-        _saveFailed = false;
+        _dateLocal = value ?? string.Empty;
+        _saveFailedMessage = null;
+        await ValidateAsync();
+    }
+
+    private async Task OnTimeChanged(string? value)
+    {
+        _timeLocal = value ?? string.Empty;
+        _saveFailedMessage = null;
+        await ValidateAsync();
     }
 
     private void OnTextChanged(string? value)
     {
         _text = value ?? string.Empty;
-        _saveFailed = false;
+        _saveFailedMessage = null;
+    }
+
+    private async Task ValidateAsync()
+    {
+        _validationMessage = null;
+        _recordedOn = null;
+        if (ComposedLocalValue() is not { } composed)
+        {
+            _validationMessage = Loc["Trip_NoteRecordedOnInvalid"].Value;
+            return;
+        }
+
+        var instant = await ToInstantAsync(composed);
+        if (instant is null)
+        {
+            _validationMessage = Loc["Trip_NoteRecordedOnInvalid"].Value;
+            return;
+        }
+
+        if (instant < Model.TripStartedOn)
+        {
+            _validationMessage = Loc["Trip_NoteBeforeTripStart", Display(_earliestLocal)].Value;
+            return;
+        }
+
+        if (instant > Ceiling)
+        {
+            _validationMessage = Model.TripEndedOn is null
+                ? Loc["Trip_NoteAfterNow"].Value
+                : Loc["Trip_NoteAfterTripEnd", Display(_latestLocal)].Value;
+            return;
+        }
+
+        _recordedOn = instant;
     }
 
     private async Task SaveAsync()
@@ -107,40 +158,36 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
             return;
         }
 
-        _recordedOnInvalid = false;
-        _saveFailed = false;
+        _saveFailedMessage = null;
         var text = TripConstants.TrimNoteText(_text);
-        if (text is null)
+        if (text is null || _recordedOn is not { } recordedOn)
         {
             return;
         }
 
-        var recordedOn = await ResolveRecordedOnAsync();
-        if (recordedOn is null)
-        {
-            _recordedOnInvalid = true;
-            return;
-        }
-
-        var note = new TripNoteModel(
-            Guid.NewGuid(),
-            Model.TripId,
-            Model.OwnerUserId,
-            text,
-            recordedOn.Value);
         _isSaving = true;
         try
         {
-            await NoteStore.SaveAsync(note, _cancellationTokenSource.Token);
+            var note = await NoteWriter.AddAsync(
+                new TripNoteDraftModel(Model.TripId, Model.OwnerUserId, text, recordedOn),
+                Model.Storage,
+                _cancellationTokenSource.Token);
             MudDialog.Close(DialogResult.Ok(new AddTripNoteModalResult(note)));
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
         }
+        catch (HttpRequestException exception)
+        {
+            await FailAsync(exception, exception.StatusCode is null);
+        }
+        catch (TaskCanceledException exception)
+        {
+            await FailAsync(exception, unreachable: true);
+        }
         catch (Exception exception)
         {
-            await Logging.LogErrorAsync("adding a trip note", exception, CancellationToken.None);
-            _saveFailed = true;
+            await FailAsync(exception, unreachable: false);
         }
         finally
         {
@@ -148,17 +195,31 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
         }
     }
 
-    private async Task<DateTimeOffset?> ResolveRecordedOnAsync()
+    private async Task FailAsync(Exception exception, bool unreachable)
     {
-        if (string.IsNullOrWhiteSpace(_recordedOnLocal))
+        await Logging.LogErrorAsync("adding a trip note", exception, CancellationToken.None);
+        _saveFailedMessage = unreachable && Model.Storage == TripNoteStorageEnum.Server
+            ? Loc["Trip_NoteOnlineRequired"].Value
+            : Loc["Trip_NoteAddFailed"].Value;
+    }
+
+    private string? ComposedLocalValue()
+    {
+        if (_dateLocal.Length != DatePartLength || _timeLocal.Length < TimePartLength)
         {
             return null;
         }
 
+        var value = $"{_dateLocal}T{_timeLocal[..TimePartLength]}";
+        return Parse(value) is null ? null : value;
+    }
+
+    private async Task<DateTimeOffset?> ToInstantAsync(string localValue)
+    {
         try
         {
             return await Time.FromDateTimeLocalValueAsync(
-                _recordedOnLocal,
+                localValue,
                 _cancellationTokenSource.Token);
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
@@ -173,6 +234,57 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
                 CancellationToken.None);
             return null;
         }
+    }
+
+    private async Task<string> LocalValueAsync(DateTimeOffset instant)
+    {
+        try
+        {
+            return await Time.ToDateTimeLocalValueAsync(instant, _cancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return string.Empty;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "reading a trip note time",
+                exception,
+                CancellationToken.None);
+            return string.Empty;
+        }
+    }
+
+    private static string DatePartOf(string localValue)
+    {
+        return localValue.Length >= LocalValueLength ? localValue[..DatePartLength] : string.Empty;
+    }
+
+    private static string TimePartOf(string localValue)
+    {
+        return localValue.Length >= LocalValueLength
+            ? localValue.Substring(TimePartIndex, TimePartLength)
+            : string.Empty;
+    }
+
+    private static string Display(string localValue)
+    {
+        return Parse(localValue) is { } parsed
+            ? parsed.ToString("g", CultureInfo.CurrentCulture)
+            : localValue;
+    }
+
+    private static DateTime? Parse(string localValue)
+    {
+        return DateTime.TryParseExact(
+            localValue,
+            LocalValueFormat,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out var parsed)
+            ? parsed
+            : null;
     }
 
     private void Cancel()

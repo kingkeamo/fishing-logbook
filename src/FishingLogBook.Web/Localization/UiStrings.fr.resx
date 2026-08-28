@@ -264,8 +264,20 @@
   <data name="Trip_NotePlaceholder" xml:space="preserve">
     <value>Le niveau a baissé de trente centimètres</value>
   </data>
-  <data name="Trip_NoteRecordedOn" xml:space="preserve">
-    <value>Date et heure de la note</value>
+  <data name="Trip_NoteDateLabel" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Trip_NoteTimeLabel" xml:space="preserve">
+    <value>Heure</value>
+  </data>
+  <data name="Trip_NoteBeforeTripStart" xml:space="preserve">
+    <value>C'est avant le début de la sortie à {0}. Choisissez une heure plus tardive.</value>
+  </data>
+  <data name="Trip_NoteAfterTripEnd" xml:space="preserve">
+    <value>C'est après la fin de la sortie à {0}. Choisissez une heure plus tôt.</value>
+  </data>
+  <data name="Trip_NoteAfterNow" xml:space="preserve">
+    <value>C'est dans le futur. Choisissez une heure jusqu'à maintenant.</value>
   </data>
   <data name="Trip_NoteRecordedOnHelp" xml:space="preserve">
     <value>Modifiez l'heure pour placer cette note sur la chronologie de la sortie.</value>
@@ -275,6 +287,9 @@
   </data>
   <data name="Trip_NoteRemove" xml:space="preserve">
     <value>Supprimer la note</value>
+  </data>
+  <data name="Trip_NoteOnlineRequired" xml:space="preserve">
+    <value>Vous devez être en ligne pour ajouter une note à cette sortie.</value>
   </data>
   <data name="Trip_NoteAddFailed" xml:space="preserve">
     <value>Cette note n'a pas pu être ajoutée</value>

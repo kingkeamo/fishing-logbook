@@ -8,6 +8,7 @@ using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,16 +47,19 @@ public class BaseTripNotesTest
         ITripClient? tripClient = null,
         ILoggingService? logging = null,
         ITimeService? time = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        ITripNoteWriteService? noteWriter = null)
     {
+        var client = tripClient ?? Substitute.For<ITripClient>();
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
         context.Services.AddSingleton(store);
-        context.Services.AddSingleton(tripClient ?? Substitute.For<ITripClient>());
+        context.Services.AddSingleton(client);
         context.Services.AddSingleton(logging ?? Substitute.For<ILoggingService>());
         context.Services.AddSingleton(time ?? TestTimeService.WithOffset(TimeSpan.Zero));
+        context.Services.AddSingleton(noteWriter ?? new TripNoteWriteService(store, client));
         context.Services.AddSingleton(modalService ?? ConfirmingModalService());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;

@@ -264,8 +264,20 @@
   <data name="Trip_NotePlaceholder" xml:space="preserve">
     <value>Water dropped a foot</value>
   </data>
-  <data name="Trip_NoteRecordedOn" xml:space="preserve">
-    <value>Note date and time</value>
+  <data name="Trip_NoteDateLabel" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Trip_NoteTimeLabel" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Trip_NoteBeforeTripStart" xml:space="preserve">
+    <value>That is before the trip started at {0}. Choose a later time.</value>
+  </data>
+  <data name="Trip_NoteAfterTripEnd" xml:space="preserve">
+    <value>That is after the trip finished at {0}. Choose an earlier time.</value>
+  </data>
+  <data name="Trip_NoteAfterNow" xml:space="preserve">
+    <value>That is in the future. Choose a time up to now.</value>
   </data>
   <data name="Trip_NoteRecordedOnHelp" xml:space="preserve">
     <value>Change the time to place this note on the trip timeline.</value>
@@ -275,6 +287,9 @@
   </data>
   <data name="Trip_NoteRemove" xml:space="preserve">
     <value>Remove note</value>
+  </data>
+  <data name="Trip_NoteOnlineRequired" xml:space="preserve">
+    <value>You need to be online to add a note to this trip.</value>
   </data>
   <data name="Trip_NoteAddFailed" xml:space="preserve">
     <value>That note could not be added</value>

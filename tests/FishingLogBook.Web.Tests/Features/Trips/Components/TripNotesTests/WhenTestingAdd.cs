@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.Features.Trips.Offline.Stores.TripNoteStoreTests;
@@ -165,6 +166,31 @@ public class WhenTestingAdd : BaseTripNotesTest
             .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
                 Arg.Is<AddTripNoteModalModel>(model => model.TripStartedOn == StartedOn),
                 Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAskTheModalToWriteAHistoricalNoteToTheServer()
+    {
+        // Arrange
+        var store = new MemoryTripNoteStore();
+        var modalService = ConfirmingModalService();
+        await using var context = CreateContext(store, modalService: modalService);
+        var cut = context.Render<TripNotesComponent>(parameters => parameters
+            .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.NoteStorage, TripNoteStorageEnum.Server));
+
+        // Act
+        await cut.Find("#trip-note-start").ClickAsync();
+
+        // Assert
+        await modalService.Received(1)
+            .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
+                Arg.Is<AddTripNoteModalModel>(model =>
+                    model.TripId == TripId
+                    && model.Storage == TripNoteStorageEnum.Server
+                    && model.TripEndedOn != null),
+                Arg.Any<CancellationToken>());
+        store.ForTripCalls.Should().Be(0);
     }
 
     [Fact]

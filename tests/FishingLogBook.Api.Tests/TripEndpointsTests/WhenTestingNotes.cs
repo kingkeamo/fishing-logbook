@@ -297,6 +297,52 @@ public class WhenTestingNotes : IClassFixture<SystemApiFactory>
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldRejectANoteRecordedBeforeTheTripStarted()
+    {
+        // Arrange
+        Reset();
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        var tripId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId, TripStatusEnum.Completed)));
+
+        // Act
+        var response = await client.PostAsJsonAsync(
+            $"/api/trips/{tripId:D}/notes",
+            new RecordTripNoteDto(Guid.NewGuid(), "before the off", StartedOn.AddMinutes(-1)));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await _factory.TripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectANoteRecordedAfterTheTripFinished()
+    {
+        // Arrange
+        Reset();
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        var tripId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId, TripStatusEnum.Completed)));
+
+        // Act
+        var response = await client.PostAsJsonAsync(
+            $"/api/trips/{tripId:D}/notes",
+            new RecordTripNoteDto(Guid.NewGuid(), "after the off", StartedOn.AddHours(4)));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await _factory.TripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private static Trip Trip(
         Guid tripId,
         Guid ownerUserId,

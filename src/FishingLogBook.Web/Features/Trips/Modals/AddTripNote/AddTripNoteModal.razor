@@ -7,13 +7,23 @@
     <DialogContent>
         <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
             <MudTextField T="string"
-                          Value="_recordedOnLocal"
-                          ValueChanged="OnRecordedOnChanged"
-                          Label="@Loc["Trip_NoteRecordedOn"]"
+                          Value="_dateLocal"
+                          ValueChanged="OnDateChanged"
+                          Label="@Loc["Trip_NoteDateLabel"]"
+                          Immediate="true"
+                          InputType="InputType.Date"
+                          min="@EarliestDate"
+                          max="@LatestDate"
+                          id="trip-note-date" />
+
+            <MudTextField T="string"
+                          Value="_timeLocal"
+                          ValueChanged="OnTimeChanged"
+                          Label="@Loc["Trip_NoteTimeLabel"]"
                           HelperText="@Loc["Trip_NoteRecordedOnHelp"]"
                           Immediate="true"
-                          InputType="InputType.DateTimeLocal"
-                          id="trip-note-recorded-on" />
+                          InputType="InputType.Time"
+                          id="trip-note-time" />
 
             <MudTextField T="string"
                           Value="_text"
@@ -26,17 +36,17 @@
                           Variant="Variant.Outlined"
                           id="trip-note-text" />
 
-            @if (_recordedOnInvalid)
+            @if (_validationMessage is not null)
             {
                 <MudAlert Severity="Severity.Error" id="trip-note-recorded-on-invalid">
-                    @Loc["Trip_NoteRecordedOnInvalid"]
+                    @_validationMessage
                 </MudAlert>
             }
 
-            @if (_saveFailed)
+            @if (_saveFailedMessage is not null)
             {
                 <MudAlert Severity="Severity.Error" id="trip-note-add-failed">
-                    @Loc["Trip_NoteAddFailed"]
+                    @_saveFailedMessage
                 </MudAlert>
             }
         </MudStack>

@@ -37,12 +37,15 @@ public sealed class MemoryTripNoteStore : ITripNoteStore
         return Task.CompletedTask;
     }
 
+    public int DeleteCalls { get; private set; }
+
     public Task<bool> DeleteAsync(
         Guid ownerUserId,
         Guid tripId,
         Guid noteId,
         CancellationToken cancellationToken)
     {
+        DeleteCalls++;
         if (!_notes.TryGetValue(noteId, out var note)
             || note.OwnerUserId != ownerUserId
             || note.TripId != tripId)

@@ -50,6 +50,7 @@ public class BaseTripEditorTest
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(noteStore ?? Substitute.For<ITripNoteStore>());
         context.Services.AddSingleton(logging ?? QuietLogging());
+        context.Services.AddSingleton(Substitute.For<ITripNoteWriteService>());
         context.Services.AddSingleton(Substitute.For<ITripPhotographStore>());
         context.Services.AddSingleton(Substitute.For<ITripClient>());
         context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());

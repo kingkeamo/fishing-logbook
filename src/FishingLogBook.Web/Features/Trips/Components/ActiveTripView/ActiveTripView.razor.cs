@@ -1,5 +1,6 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
@@ -68,6 +69,9 @@ public partial class ActiveTripView : ComponentBase
 
     [Parameter]
     public bool CanAddNotes { get; set; } = true;
+
+    [Parameter]
+    public TripNoteStorageEnum NoteStorage { get; set; } = TripNoteStorageEnum.LocalFirst;
 
     [Parameter]
     public WeightUnitEnum WeightUnit { get; set; } = WeightUnitEnum.Kg;

@@ -1,6 +1,7 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -8,6 +9,7 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Clients;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -34,6 +36,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _isReadOnlyHistory;
+    private bool _isOnline = true;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -55,6 +58,9 @@ public partial class ActiveTrip : ComponentBase, IDisposable
 
     [Inject]
     private ITripClient TripClient { get; set; } = default!;
+
+    [Inject]
+    private INetworkService Network { get; set; } = default!;
 
     [Inject]
     private ITripTimelineService TripTimeline { get; set; } = default!;
@@ -88,7 +94,15 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     {
         get
         {
-            return !_isReadOnlyHistory;
+            return !_isReadOnlyHistory || _isOnline;
+        }
+    }
+
+    private TripNoteStorageEnum NoteStorage
+    {
+        get
+        {
+            return _isReadOnlyHistory ? TripNoteStorageEnum.Server : TripNoteStorageEnum.LocalFirst;
         }
     }
 
@@ -116,9 +130,52 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
     }
 
+    protected override void OnInitialized()
+    {
+        Network.ConnectivityChanged += OnConnectivityChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
+        await RefreshConnectivityAsync();
+    }
+
+    private void OnConnectivityChanged(bool isOnline)
+    {
+        _ = UpdateConnectivityAsync(isOnline);
+    }
+
+    private async Task UpdateConnectivityAsync(bool isOnline)
+    {
+        if (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            _isOnline = isOnline;
+            StateHasChanged();
+        });
+    }
+
+    private async Task RefreshConnectivityAsync()
+    {
+        try
+        {
+            _isOnline = await Network.IsOnlineAsync(_cancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "reading connectivity for a trip",
+                exception,
+                CancellationToken.None);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -315,6 +372,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
 
     public void Dispose()
     {
+        Network.ConnectivityChanged -= OnConnectivityChanged;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }

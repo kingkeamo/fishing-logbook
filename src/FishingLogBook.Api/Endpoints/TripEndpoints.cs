@@ -121,7 +121,7 @@ public static class TripEndpoints
             return Results.NotFound();
         }
 
-        if (response.Error is TripNoteInvalidError)
+        if (response.Error is TripNoteInvalidError or TripNoteOutsideTripError)
         {
             return Results.BadRequest(response);
         }

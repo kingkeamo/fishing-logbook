@@ -2,10 +2,11 @@ using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Diagnostics.Services;
-using FishingLogBook.Web.Features.Trips.Clients;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Modals.AddTripNote;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -32,11 +33,14 @@ public partial class TripNotes : ComponentBase, IDisposable
     [Parameter]
     public bool UseFloatingTrigger { get; set; }
 
+    [Parameter]
+    public TripNoteStorageEnum NoteStorage { get; set; } = TripNoteStorageEnum.LocalFirst;
+
     [Inject]
     private ITripNoteStore NoteStore { get; set; } = default!;
 
     [Inject]
-    private ITripClient TripClient { get; set; } = default!;
+    private ITripNoteWriteService NoteWriter { get; set; } = default!;
 
     [Inject]
     private IModalService ModalService { get; set; } = default!;
@@ -68,7 +72,9 @@ public partial class TripNotes : ComponentBase, IDisposable
 
     private async Task<IReadOnlyList<TripNoteModel>> ReadStoredNotesAsync()
     {
-        if (Trip.OwnerUserId == Guid.Empty || Trip.Id == Guid.Empty)
+        if (NoteStorage == TripNoteStorageEnum.Server
+            || Trip.OwnerUserId == Guid.Empty
+            || Trip.Id == Guid.Empty)
         {
             return Trip.Notes ?? [];
         }
@@ -101,7 +107,12 @@ public partial class TripNotes : ComponentBase, IDisposable
         _removeFailed = false;
         var added = await ModalService
             .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
-                new AddTripNoteModalModel(Trip.Id, Trip.OwnerUserId, Trip.StartedOn),
+                new AddTripNoteModalModel(
+                    Trip.Id,
+                    Trip.OwnerUserId,
+                    Trip.StartedOn,
+                    Trip.EndedOn,
+                    NoteStorage),
                 _cancellationTokenSource.Token);
         if (added is null)
         {
@@ -124,7 +135,7 @@ public partial class TripNotes : ComponentBase, IDisposable
     {
         _removeFailed = false;
         var note = _notes.FirstOrDefault(candidate => candidate.Id == noteId);
-        if (note is null)
+        if (note is null && NoteStorage != TripNoteStorageEnum.Server)
         {
             return;
         }
@@ -144,17 +155,19 @@ public partial class TripNotes : ComponentBase, IDisposable
 
         try
         {
-            if (note.SyncStatus == SyncStatus.Synchronised)
+            await NoteWriter.RemoveAsync(
+                new TripNoteRemovalModel(
+                    Trip.Id,
+                    Trip.OwnerUserId,
+                    noteId,
+                    note?.SyncStatus ?? SyncStatus.Synchronised),
+                NoteStorage,
+                _cancellationTokenSource.Token);
+            if (note is not null)
             {
-                await TripClient.DeleteNoteAsync(Trip.Id, noteId, _cancellationTokenSource.Token);
+                _notes.Remove(note);
             }
 
-            await NoteStore.DeleteAsync(
-                Trip.OwnerUserId,
-                Trip.Id,
-                noteId,
-                _cancellationTokenSource.Token);
-            _notes.Remove(note);
             _localTimes.Remove(noteId);
             await Changed.InvokeAsync();
         }
