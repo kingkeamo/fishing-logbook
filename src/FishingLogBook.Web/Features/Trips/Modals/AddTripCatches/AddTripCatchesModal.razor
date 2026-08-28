@@ -1,0 +1,80 @@
+@namespace FishingLogBook.Web.Features.Trips.Modals.AddTripCatches
+@using FishingLogBook.Web.Features.Catch.Components.CatchSelector
+
+<MudDialog id="trip-catches-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="trip-catches-modal-title">@Loc["Trip_AddCatchesTitle"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" AlignItems="AlignItems.Stretch">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Indeterminate="true"
+                                     Color="Color.Primary"
+                                     Class="align-self-center"
+                                     id="trip-catches-loading" />
+            }
+            else if (_loadFailed)
+            {
+                <MudAlert Severity="Severity.Error" id="trip-catches-load-failed">
+                    @Loc["Trip_AddCatchesLoadFailed"]
+                </MudAlert>
+            }
+            else if (_candidates.Count == 0)
+            {
+                <MudStack Spacing="1" AlignItems="AlignItems.Center" id="trip-catches-empty">
+                    <MudIcon Icon="@Icons.Material.Filled.Grade" Color="Color.Default" aria-hidden="true" />
+                    <MudText Typo="Typo.subtitle1">@Loc["Trip_AddCatchesEmpty"]</MudText>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                        @Loc["Trip_AddCatchesEmptyHint"]
+                    </MudText>
+                </MudStack>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary" id="trip-catches-subtitle">
+                    @Loc["Trip_AddCatchesSubtitle"]
+                </MudText>
+                <CatchSelector Catches="_candidates"
+                               OwnerUserId="Model.Scope.OwnerUserId"
+                               UnknownSpeciesLabel="@Loc["Trip_Timeline_CatchUnknownSpecies"]"
+                               WeightUnit="Model.WeightUnit"
+                               LengthUnit="Model.LengthUnit"
+                               Disabled="_isSaving"
+                               SelectedChanged="OnSelectionChanged" />
+            }
+
+            @if (_rejected)
+            {
+                <MudAlert Severity="Severity.Warning" id="trip-catches-rejected">
+                    @Loc["Trip_AddCatchesRejected"]
+                </MudAlert>
+            }
+
+            @if (_saveFailedMessage is not null)
+            {
+                <MudAlert Severity="Severity.Error" id="trip-catches-failed">
+                    @_saveFailedMessage
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   OnClick="Cancel"
+                   id="trip-catches-cancel">
+            @Loc["Modal_Cancel"]
+        </MudButton>
+        @if (!_isLoading && !_loadFailed && _candidates.Count > 0)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="@(_isSaving || _selected.Count == 0)"
+                       OnClick="SaveAsync"
+                       id="trip-catches-confirm">
+                @ConfirmLabel
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>

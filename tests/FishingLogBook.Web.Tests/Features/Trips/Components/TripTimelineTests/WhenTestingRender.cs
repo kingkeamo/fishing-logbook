@@ -287,7 +287,7 @@ public class WhenTestingRender : BaseTripTimelineTest
                 {
                     Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "Windy.", noteId: NoteId)
                 })
-            .Add(component => component.CanDeleteNotes, false)
+            .Add(component => component.CanEditNotes, false)
             .Add(component => component.OnDeleteNote, noteId => deleted.Add(noteId)));
 
         // Assert
@@ -310,7 +310,7 @@ public class WhenTestingRender : BaseTripTimelineTest
                 {
                     Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "Windy.", noteId: NoteId)
                 })
-            .Add(component => component.CanDeleteNotes, true)
+            .Add(component => component.CanEditNotes, true)
             .Add(component => component.OnDeleteNote, noteId => deleted.Add(noteId)));
 
         // Act
@@ -320,6 +320,59 @@ public class WhenTestingRender : BaseTripTimelineTest
         deleted.Should().Equal(NoteId);
         cut.Find($"#trip-timeline-note-remove-{NoteId:D}").GetAttribute("aria-label")
             .Should().Be("Remove note");
+    }
+
+    [Fact]
+    public async Task ItShouldNotOfferEditingANoteWhenTheTripCannotBeEdited()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var edited = new List<TripTimelineItemModel>();
+
+        // Act
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "Windy.", noteId: NoteId)
+                })
+            .Add(component => component.CanEditNotes, false)
+            .Add(component => component.OnEditNote, item => edited.Add(item)));
+
+        // Assert
+        cut.Markup.Should().Contain("Windy.");
+        cut.FindAll($"#trip-timeline-note-edit-{NoteId:D}").Should().BeEmpty();
+        edited.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldAskTheParentToEditANote()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var context = CreateContext();
+        var edited = new List<TripTimelineItemModel>();
+        var cut = context.Render<TripTimeline>(parameters => parameters
+            .Add(
+                component => component.Items,
+                new[]
+                {
+                    Item(TripTimelineKindEnum.Note, StartedOn.AddMinutes(15), text: "Windy.", noteId: NoteId)
+                })
+            .Add(component => component.CanEditNotes, true)
+            .Add(component => component.OnEditNote, item => edited.Add(item)));
+
+        // Act
+        cut.Find($"#trip-timeline-note-edit-{NoteId:D}").Click();
+
+        // Assert
+        edited.Should().ContainSingle();
+        edited[0].NoteId.Should().Be(NoteId);
+        edited[0].Text.Should().Be("Windy.");
+        cut.Find($"#trip-timeline-note-edit-{NoteId:D}").GetAttribute("aria-label")
+            .Should().Be("Edit note");
     }
 
     [Fact]

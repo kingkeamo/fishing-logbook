@@ -20,6 +20,10 @@ public interface ICatchRepository
 
     Task<Result<Catch>> UpsertAsync(Catch catchRecord, CancellationToken cancellationToken);
 
+    Task<Result<bool>> AssociateTripAsync(
+        PersistCatchTripArgs args,
+        CancellationToken cancellationToken);
+
     Task<Result> UpdateLocationVisibilityAsync(
         PersistCatchLocationVisibilityArgs args,
         CancellationToken cancellationToken);

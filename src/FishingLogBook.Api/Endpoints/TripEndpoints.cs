@@ -89,7 +89,56 @@ public static class TripEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapPost("/api/trips/{tripId:guid}/catches", AssociateCatchesAsync)
+            .WithName("AssociateTripCatches")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces<TripCatchAssociationDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         return endpoints;
+    }
+
+    private static async Task<IResult> AssociateCatchesAsync(
+        Guid tripId,
+        AssociateTripCatchesDto request,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new AssociateTripCatchesCommand
+            {
+                TripId = tripId,
+                CatchIds = request.CatchIds
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Association);
     }
 
     private static async Task<IResult> RecordNoteAsync(
@@ -121,7 +170,7 @@ public static class TripEndpoints
             return Results.NotFound();
         }
 
-        if (response.Error is TripNoteInvalidError)
+        if (response.Error is TripNoteInvalidError or TripNoteOutsideTripError)
         {
             return Results.BadRequest(response);
         }

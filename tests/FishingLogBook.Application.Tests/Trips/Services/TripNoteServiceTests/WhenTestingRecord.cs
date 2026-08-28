@@ -243,14 +243,106 @@ public class WhenTestingRecord : BaseTripNoteServiceTest
             .Should().BeEquivalentTo(["NoteId", "Text", "RecordedOn"]);
     }
 
-    private static RecordTripNoteArgs Args(string text = "water dropped about a foot")
+    [Fact]
+    public async Task ItShouldRejectANoteRecordedBeforeTheTripStarted()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+
+        // Act
+        var result = await Sut.RecordAsync(
+            Args(recordedOn: StartedOn.AddMinutes(-1)),
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNoteOutsideTripError>();
+        await MockTripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectANoteRecordedAfterACompletedTripFinished()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId, TripStatusEnum.Completed);
+
+        // Act
+        var result = await Sut.RecordAsync(
+            Args(recordedOn: StartedOn.AddHours(3).AddMinutes(1)),
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNoteOutsideTripError>();
+        await MockTripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectANoteRecordedInTheFutureOnAnActiveTrip()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+
+        // Act
+        var result = await Sut.RecordAsync(
+            Args(recordedOn: DateTimeOffset.UtcNow.AddHours(1)),
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNoteOutsideTripError>();
+        await MockTripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAcceptANoteRecordedExactlyWhenTheTripStarted()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+
+        // Act
+        var result = await Sut.RecordAsync(Args(recordedOn: StartedOn), CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await MockTripNoteRepository.Received(1).UpsertAsync(
+            Arg.Is<TripNote>(note => note.RecordedOn == StartedOn),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAcceptANoteRecordedExactlyWhenACompletedTripFinished()
+    {
+        // Arrange
+        var endedOn = StartedOn.AddHours(3);
+        GivenTrip(CurrentUserId, TripStatusEnum.Completed);
+
+        // Act
+        var result = await Sut.RecordAsync(Args(recordedOn: endedOn), CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await MockTripNoteRepository.Received(1).UpsertAsync(
+            Arg.Is<TripNote>(note => note.RecordedOn == endedOn),
+            Arg.Any<CancellationToken>());
+    }
+
+    private static RecordTripNoteArgs Args(
+        string text = "water dropped about a foot",
+        DateTimeOffset? recordedOn = null)
     {
         return new RecordTripNoteArgs
         {
             TripId = TripId,
             NoteId = NoteId,
             Text = text,
-            RecordedOn = RecordedOn
+            RecordedOn = recordedOn ?? RecordedOn
         };
     }
 }

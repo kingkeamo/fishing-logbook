@@ -1,9 +1,11 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
+using TripCatchesComponent = FishingLogBook.Web.Features.Trips.Components.TripCatches.TripCatches;
 using TripNotesComponent = FishingLogBook.Web.Features.Trips.Components.TripNotes.TripNotes;
 
 namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripView;
@@ -11,8 +13,8 @@ namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripView;
 public partial class ActiveTripView : ComponentBase
 {
     private TripNotesComponent? _notes;
+    private TripCatchesComponent? _catches;
     private bool _showPhotographPicker;
-    private bool _showCatchPicker;
 
     [Parameter]
     [EditorRequired]
@@ -65,6 +67,15 @@ public partial class ActiveTripView : ComponentBase
 
     [Parameter]
     public bool CanEdit { get; set; } = true;
+
+    [Parameter]
+    public bool CanAddNotes { get; set; } = true;
+
+    [Parameter]
+    public TripStorageEnum NoteStorage { get; set; } = TripStorageEnum.LocalFirst;
+
+    [Parameter]
+    public bool CanAddCatches { get; set; } = true;
 
     [Parameter]
     public WeightUnitEnum WeightUnit { get; set; } = WeightUnitEnum.Kg;
@@ -137,13 +148,27 @@ public partial class ActiveTripView : ComponentBase
     private void TogglePhotographPicker()
     {
         _showPhotographPicker = !_showPhotographPicker;
-        _showCatchPicker = false;
     }
 
-    private void ToggleCatchPicker()
+    private async Task AddCatchesAsync()
     {
-        _showCatchPicker = !_showCatchPicker;
+        if (_catches is null)
+        {
+            return;
+        }
+
         _showPhotographPicker = false;
+        await _catches.AddCatchesAsync();
+    }
+
+    private async Task EditNoteAsync(TripTimelineItemModel item)
+    {
+        if (_notes is null || item.NoteId is not { } noteId)
+        {
+            return;
+        }
+
+        await _notes.EditNoteAsync(noteId, item.Text ?? string.Empty, item.OccurredOn);
     }
 
     private async Task DeleteNoteAsync(Guid noteId)

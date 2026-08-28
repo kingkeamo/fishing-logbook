@@ -1,6 +1,7 @@
-using FishingLogBook.Web.Features.Catch.Models;
-using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Trips.Enums;
+using FishingLogBook.Web.Features.Trips.Modals.AddTripCatches;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
@@ -12,10 +13,8 @@ public partial class TripCatches : ComponentBase, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    private IReadOnlyList<CatchModel> _unassigned = [];
-    private bool _isOpen;
-    private bool _isSaving;
-    private bool _saveFailed;
+    private bool _isBusy;
+    private bool _someWereRejected;
 
     [Parameter]
     [EditorRequired]
@@ -34,106 +33,56 @@ public partial class TripCatches : ComponentBase, IDisposable
     public bool ShowAddAction { get; set; } = true;
 
     [Parameter]
-    public bool StartOpen { get; set; }
+    public TripStorageEnum CatchStorage { get; set; } = TripStorageEnum.LocalFirst;
+
+    [Parameter]
+    public WeightUnitEnum WeightUnit { get; set; } = WeightUnitEnum.Kg;
+
+    [Parameter]
+    public LengthUnitEnum LengthUnit { get; set; } = LengthUnitEnum.Cm;
 
     [Inject]
-    private ICatchStore CatchStore { get; set; } = default!;
-
-    [Inject]
-    private ILoggingService Logging { get; set; } = default!;
+    private IModalService ModalService { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private string RecordCatchHref => $"{RecordCatchBaseHref}?tripId={Trip.Id:D}";
 
-    protected override async Task OnInitializedAsync()
+    public async Task AddCatchesAsync()
     {
-        if (StartOpen)
-        {
-            await OpenAsync();
-        }
-    }
-
-    private async Task OpenAsync()
-    {
-        _isOpen = true;
-        _saveFailed = false;
-        await LoadUnassignedAsync();
-    }
-
-    private void Close()
-    {
-        _isOpen = false;
-        _unassigned = [];
-        _saveFailed = false;
-    }
-
-    private async Task LoadUnassignedAsync()
-    {
-        try
-        {
-            var catches = await CatchStore.GetMetadataAsync(
-                Trip.OwnerUserId,
-                _cancellationTokenSource.Token);
-            _unassigned =
-            [
-                .. catches
-                    .Where(catchRecord => catchRecord.TripId is null)
-                    .OrderByDescending(catchRecord => catchRecord.CaughtOn)
-            ];
-        }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            _unassigned = [];
-            _saveFailed = true;
-            await Logging.LogErrorAsync(
-                "reading catches that are not on a trip",
-                exception,
-                CancellationToken.None);
-        }
-    }
-
-    private async Task AttachAsync(IReadOnlyList<Guid> catchIds)
-    {
-        if (catchIds.Count == 0 || _isSaving)
+        if (_isBusy)
         {
             return;
         }
 
-        _isSaving = true;
-        _saveFailed = false;
+        _isBusy = true;
+        _someWereRejected = false;
         try
         {
-            foreach (var catchId in catchIds)
-            {
-                await CatchStore.UpdateTripAsync(
-                    Trip.OwnerUserId,
-                    catchId,
-                    Trip.Id,
+            var added = await ModalService
+                .ShowAsync<AddTripCatchesModal, AddTripCatchesModalModel, AddTripCatchesModalResult>(
+                    new AddTripCatchesModalModel(
+                        new TripCatchScopeModel(
+                            Trip.Id,
+                            Trip.OwnerUserId,
+                            Trip.StartedOn,
+                            Trip.EndedOn),
+                        CatchStorage,
+                        WeightUnit,
+                        LengthUnit),
                     _cancellationTokenSource.Token);
+            if (added is null || added.AssociatedCatchIds.Count == 0)
+            {
+                return;
             }
 
-            Close();
-            if (OnCatchesAttached.HasDelegate)
-            {
-                await OnCatchesAttached.InvokeAsync();
-            }
-        }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
-        {
-        }
-        catch (Exception exception)
-        {
-            _saveFailed = true;
-            await Logging.LogErrorAsync("adding catches to a trip", exception, CancellationToken.None);
+            _someWereRejected = added.RejectedCatchIds.Count > 0;
+            await OnCatchesAttached.InvokeAsync();
         }
         finally
         {
-            _isSaving = false;
+            _isBusy = false;
         }
     }
 

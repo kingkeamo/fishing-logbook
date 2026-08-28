@@ -28,125 +28,171 @@
                 </MudChip>
             </MudStack>
 
-            <MudStack Row="true" Spacing="3" Class="flex-wrap active-trip-facts">
+            <MudGrid Spacing="1" Class="active-trip-facts" id="active-trip-facts">
                 @if (HasPlace)
                 {
-                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="active-trip-fact">
-                        <MudIcon Icon="@Icons.Material.Filled.Place" Size="Size.Small" aria-hidden="true" />
-                        <MudText Typo="Typo.body2"
-                                 Class="active-trip-place"
-                                 id="active-trip-place">@Trip.PlaceName</MudText>
-                    </MudStack>
+                    <MudItem xs="6" Class="active-trip-fact-place">
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Start">
+                            <MudIcon Icon="@Icons.Material.Filled.Place" Size="Size.Small" aria-hidden="true" />
+                            <MudText Typo="Typo.body2"
+                                     Class="active-trip-place"
+                                     id="active-trip-place">@Trip.PlaceName</MudText>
+                        </MudStack>
+                    </MudItem>
                 }
                 @if (StartedLabel is not null)
                 {
-                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="active-trip-fact">
-                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" aria-hidden="true" />
-                        <MudText Typo="Typo.body2" id="active-trip-started">@StartedLabel</MudText>
-                    </MudStack>
+                    <MudItem xs="@(HasPlace ? 3 : 6)" Class="active-trip-fact-started">
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Start">
+                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" aria-hidden="true" />
+                            <MudText Typo="Typo.body2" id="active-trip-started">@StartedLabel</MudText>
+                        </MudStack>
+                    </MudItem>
                 }
                 @if (ElapsedLabel is not null)
                 {
-                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="active-trip-fact">
-                        <MudIcon Icon="@Icons.Material.Filled.Timer" Size="Size.Small" aria-hidden="true" />
-                        <MudText Typo="Typo.body2" id="active-trip-elapsed">@ElapsedLabel</MudText>
-                    </MudStack>
+                    <MudItem xs="@(HasPlace ? 3 : 6)" Class="active-trip-fact-elapsed">
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Start">
+                            <MudIcon Icon="@Icons.Material.Filled.Timer" Size="Size.Small" aria-hidden="true" />
+                            <MudText Typo="Typo.body2" id="active-trip-elapsed">@ElapsedLabel</MudText>
+                        </MudStack>
+                    </MudItem>
                 }
-            </MudStack>
+            </MudGrid>
         </MudStack>
 
-        <MudStack Row="true" Spacing="4" Class="flex-wrap active-trip-stats" id="active-trip-stats">
-            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                <MudIcon Icon="@Icons.Material.Filled.Grade" Size="Size.Small" Color="Color.Primary" aria-hidden="true" />
-                <MudText Typo="Typo.body2" id="active-trip-catch-count">@CatchSummary</MudText>
-            </MudStack>
-            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" Size="Size.Small" aria-hidden="true" />
-                <MudText Typo="Typo.body2" id="active-trip-photograph-count">@PhotographSummary</MudText>
-            </MudStack>
-            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                <MudIcon Icon="@Icons.Material.Filled.Notes" Size="Size.Small" aria-hidden="true" />
-                <MudText Typo="Typo.body2" id="active-trip-note-count">@NoteSummary</MudText>
-            </MudStack>
-        </MudStack>
+        <MudGrid Spacing="1" Class="active-trip-stats" id="active-trip-stats">
+            <MudItem xs="6" Class="active-trip-stat-catches">
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Start">
+                    <MudIcon Icon="@Icons.Material.Filled.Grade" Size="Size.Small" Color="Color.Primary" aria-hidden="true" />
+                    <MudText Typo="Typo.body2" id="active-trip-catch-count">@CatchSummary</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="3" Class="active-trip-stat-photos">
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Start">
+                    <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" Size="Size.Small" aria-hidden="true" />
+                    <MudText Typo="Typo.body2" id="active-trip-photograph-count">@PhotographSummary</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="3" Class="active-trip-stat-notes">
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Start">
+                    <MudIcon Icon="@Icons.Material.Filled.Notes" Size="Size.Small" aria-hidden="true" />
+                    <MudText Typo="Typo.body2" id="active-trip-note-count">@NoteSummary</MudText>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
 
         <TripTimeline Items="Timeline"
                       OwnerUserId="Trip.OwnerUserId"
                       TripId="Trip.Id"
                       AllowLocalMedia="AllowLocalMedia"
-                      CanDeleteNotes="CanEdit"
+                      CanEditNotes="CanAddNotes"
                       OnDeleteNote="DeleteNoteAsync"
+                      OnEditNote="EditNoteAsync"
                       CatchBaseHref="@CatchBaseHref"
                       WeightUnit="WeightUnit"
                       LengthUnit="LengthUnit" />
 
-        @if (CanEdit)
+        @if (CanAddNotes)
         {
             <TripNotes @ref="_notes"
                        Trip="Trip"
                        ShowList="false"
                        UseFloatingTrigger="true"
+                       NoteStorage="NoteStorage"
                        Changed="OnContentChanged" />
-
-            @if (_showPhotographPicker)
-            {
-                <TripPhotographs Trip="Trip" ShowGallery="false" Changed="OnContentChanged" />
-            }
-
-            @if (_showCatchPicker)
-            {
-                <TripCatches Trip="Trip"
-                             RecordCatchBaseHref="@RecordCatchBaseHref"
-                             ShowRecordAction="false"
-                             StartOpen="true"
-                             OnCatchesAttached="OnContentChanged" />
-            }
-
-            <MudStack Row="true" Spacing="2" Class="flex-wrap active-trip-actions" id="active-trip-actions">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           Href="@RecordCatchHref"
-                           StartIcon="@FishingLogBookIcons.FishingTrip"
-                           Class="active-trip-action"
-                           id="active-trip-record-catch">
-                    @Loc["Trip_RecordCatch"]
-                </MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Grade"
-                           OnClick="ToggleCatchPicker"
-                           Class="active-trip-action"
-                           id="active-trip-add-catch">
-                    @Loc["Trip_AddExistingCatch"]
-                </MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.PhotoCamera"
-                           OnClick="TogglePhotographPicker"
-                           Class="active-trip-action"
-                           id="active-trip-add-photo">
-                    @Loc["Trip_AddPhotograph"]
-                </MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           Href="@EditHref"
-                           StartIcon="@Icons.Material.Filled.Edit"
-                           Class="active-trip-action"
-                           id="active-trip-update">
-                    @Loc["Trip_Update"]
-                </MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Secondary"
-                           Disabled="IsFinishing"
-                           OnClick="OnFinish"
-                           StartIcon="@Icons.Material.Filled.Flag"
-                           Class="active-trip-action"
-                           id="active-trip-finish">
-                    @Loc["Trip_Finish"]
-                </MudButton>
-            </MudStack>
         }
-        else
+
+        @if (CanAddCatches)
+        {
+            <TripCatches @ref="_catches"
+                         Trip="Trip"
+                         RecordCatchBaseHref="@RecordCatchBaseHref"
+                         CatchStorage="NoteStorage"
+                         ShowRecordAction="false"
+                         ShowAddAction="false"
+                         WeightUnit="WeightUnit"
+                         LengthUnit="LengthUnit"
+                         OnCatchesAttached="OnContentChanged" />
+        }
+
+        @if (CanEdit && _showPhotographPicker)
+        {
+            <TripPhotographs Trip="Trip" ShowGallery="false" Changed="OnContentChanged" />
+        }
+
+        @if (CanEdit || CanAddCatches)
+        {
+            <MudGrid Spacing="2" Class="active-trip-actions" id="active-trip-actions">
+                @if (CanEdit)
+                {
+                    <MudItem xs="4">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   Href="@RecordCatchHref"
+                                   StartIcon="@FishingLogBookIcons.FishingTrip"
+                                   FullWidth="true"
+                                   Class="active-trip-action"
+                                   id="active-trip-record-catch">
+                            @Loc["Trip_RecordCatch"]
+                        </MudButton>
+                    </MudItem>
+                }
+                @if (CanAddCatches)
+                {
+                    <MudItem xs="4">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Grade"
+                                   OnClick="AddCatchesAsync"
+                                   FullWidth="true"
+                                   Class="active-trip-action"
+                                   id="active-trip-add-catch">
+                            @Loc["Trip_AddExistingCatch"]
+                        </MudButton>
+                    </MudItem>
+                }
+                @if (CanEdit)
+                {
+                    <MudItem xs="4">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.PhotoCamera"
+                                   OnClick="TogglePhotographPicker"
+                                   FullWidth="true"
+                                   Class="active-trip-action"
+                                   id="active-trip-add-photo">
+                            @Loc["Trip_AddPhotograph"]
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="4">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   Href="@EditHref"
+                                   StartIcon="@Icons.Material.Filled.Edit"
+                                   FullWidth="true"
+                                   Class="active-trip-action"
+                                   id="active-trip-update">
+                            @Loc["Trip_Update"]
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="4">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Secondary"
+                                   Disabled="IsFinishing"
+                                   OnClick="OnFinish"
+                                   StartIcon="@Icons.Material.Filled.Flag"
+                                   FullWidth="true"
+                                   Class="active-trip-action"
+                                   id="active-trip-finish">
+                            @Loc["Trip_Finish"]
+                        </MudButton>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+
+        @if (!CanEdit)
         {
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Primary"

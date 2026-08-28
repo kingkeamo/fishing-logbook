@@ -264,8 +264,35 @@
   <data name="Trip_NotePlaceholder" xml:space="preserve">
     <value>Water dropped a foot</value>
   </data>
+  <data name="Trip_NoteDateLabel" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Trip_NoteTimeLabel" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Trip_NoteBeforeTripStart" xml:space="preserve">
+    <value>That is before the trip started at {0}. Choose a later time.</value>
+  </data>
+  <data name="Trip_NoteAfterTripEnd" xml:space="preserve">
+    <value>That is after the trip finished at {0}. Choose an earlier time.</value>
+  </data>
+  <data name="Trip_NoteAfterNow" xml:space="preserve">
+    <value>That is in the future. Choose a time up to now.</value>
+  </data>
+  <data name="Trip_NoteRecordedOnHelp" xml:space="preserve">
+    <value>Change the time to place this note on the trip timeline.</value>
+  </data>
+  <data name="Trip_NoteRecordedOnInvalid" xml:space="preserve">
+    <value>Enter a valid date and time for this note.</value>
+  </data>
+  <data name="Trip_NoteEdit" xml:space="preserve">
+    <value>Edit note</value>
+  </data>
   <data name="Trip_NoteRemove" xml:space="preserve">
     <value>Remove note</value>
+  </data>
+  <data name="Trip_NoteOnlineRequired" xml:space="preserve">
+    <value>You need to be online to add a note to this trip.</value>
   </data>
   <data name="Trip_NoteAddFailed" xml:space="preserve">
     <value>That note could not be added</value>
@@ -1090,17 +1117,35 @@
   <data name="Trip_AddExistingCatch" xml:space="preserve">
     <value>Add catch</value>
   </data>
-  <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
-    <value>Catches not on a trip</value>
+  <data name="Trip_AddCatchesTitle" xml:space="preserve">
+    <value>Add catches</value>
   </data>
-  <data name="Trip_AddExistingCatchConfirm" xml:space="preserve">
-    <value>Add to this trip</value>
+  <data name="Trip_AddCatchesSubtitle" xml:space="preserve">
+    <value>Select catches to add to this trip</value>
   </data>
-  <data name="Trip_AddExistingCatchEmpty" xml:space="preserve">
-    <value>Every catch is already on a trip.</value>
+  <data name="Trip_AddCatchesEmpty" xml:space="preserve">
+    <value>No catches to add</value>
   </data>
-  <data name="Trip_AddExistingCatchFailed" xml:space="preserve">
+  <data name="Trip_AddCatchesEmptyHint" xml:space="preserve">
+    <value>All catches recorded during this trip are already associated.</value>
+  </data>
+  <data name="Trip_AddCatchesConfirmOne" xml:space="preserve">
+    <value>Add 1 catch</value>
+  </data>
+  <data name="Trip_AddCatchesConfirmMany" xml:space="preserve">
+    <value>Add {0} catches</value>
+  </data>
+  <data name="Trip_AddCatchesLoadFailed" xml:space="preserve">
+    <value>Those catches could not be read. Try again in a moment.</value>
+  </data>
+  <data name="Trip_AddCatchesFailed" xml:space="preserve">
     <value>Those catches could not be added to the trip.</value>
+  </data>
+  <data name="Trip_AddCatchesRejected" xml:space="preserve">
+    <value>Those catches are no longer available to add. The list has been refreshed.</value>
+  </data>
+  <data name="Trip_AddCatchesOnlineRequired" xml:space="preserve">
+    <value>You need to be online to add catches to this trip.</value>
   </data>
   <data name="Trip_ListPhotographsNone" xml:space="preserve">
     <value>No photos</value>

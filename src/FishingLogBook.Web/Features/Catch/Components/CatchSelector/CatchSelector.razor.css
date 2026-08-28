@@ -1,15 +1,12 @@
-#catch-selector-options {
-    max-height: 18rem;
-    overflow-y: auto;
-}
-
 .catch-selector-row {
     min-width: 0;
+    padding: 0.25rem 0.25rem 0.25rem 0;
+    background-color: transparent;
 }
 
 .catch-selector-thumbnail {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 3rem;
+    height: 3rem;
     object-fit: cover;
     border-radius: var(--mud-default-borderradius);
     flex: 0 0 auto;
@@ -23,6 +20,18 @@
     color: var(--mud-palette-text-secondary);
 }
 
+.catch-selector-detail {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.catch-selector-species,
+.catch-selector-method {
+    overflow-wrap: anywhere;
+}
+
 ::deep .catch-selector-option-checkbox {
     min-width: 0;
+    flex: 0 0 auto;
+    margin-inline-end: 0;
 }

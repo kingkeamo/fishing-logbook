@@ -159,6 +159,38 @@ public sealed class CatchRepository : ICatchRepository
         }
     }
 
+    public async Task<Result<bool>> AssociateTripAsync(
+        PersistCatchTripArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            const string sql = """
+                UPDATE "Catch"
+                SET "TripId" = @TripId
+                WHERE "Id" = @CatchId
+                  AND "UserId" = @UserId
+                  AND "TripId" IS NULL;
+                """;
+            var updated = await connection.ExecuteAsync(new CommandDefinition(
+                sql,
+                new
+                {
+                    args.CatchId,
+                    args.UserId,
+                    args.TripId
+                },
+                cancellationToken: cancellationToken));
+            return Result.Ok(updated == 1);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to associate catch {CatchId} with a trip.", args.CatchId);
+            return Result.Fail<bool>(FailedMessage);
+        }
+    }
+
     public async Task<Result> UpdateLocationVisibilityAsync(
         PersistCatchLocationVisibilityArgs args,
         CancellationToken cancellationToken)

@@ -1,29 +1,31 @@
 using System.Globalization;
+using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Features.Catch.Components.CatchSelector;
 
 public partial class CatchSelector : ComponentBase, IDisposable
 {
+    private const int LocalValueLength = 16;
+    private const int TimePartIndex = 11;
+    private const int TimePartLength = 5;
+
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly HashSet<Guid> _selected = [];
     private readonly Dictionary<Guid, string> _mediaSources = [];
     private readonly HashSet<Guid> _mediaRequested = [];
+    private readonly Dictionary<Guid, string> _localTimes = [];
 
     [Parameter]
     [EditorRequired]
     public IReadOnlyList<CatchModel> Catches { get; set; } = [];
-
-    [Parameter]
-    [EditorRequired]
-    public string ConfirmLabel { get; set; } = string.Empty;
-
-    [Parameter]
-    [EditorRequired]
-    public string EmptyLabel { get; set; } = string.Empty;
 
     [Parameter]
     public string UnknownSpeciesLabel { get; set; } = string.Empty;
@@ -35,19 +37,70 @@ public partial class CatchSelector : ComponentBase, IDisposable
     public Guid OwnerUserId { get; set; }
 
     [Parameter]
-    public EventCallback<IReadOnlyList<Guid>> OnConfirm { get; set; }
+    public WeightUnitEnum WeightUnit { get; set; } = WeightUnitEnum.Kg;
+
+    [Parameter]
+    public LengthUnitEnum LengthUnit { get; set; } = LengthUnitEnum.Cm;
+
+    [Parameter]
+    public EventCallback<IReadOnlyList<Guid>> SelectedChanged { get; set; }
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
 
     [Inject]
+    private ITimeService Time { get; set; } = default!;
+
+    [Inject]
+    private IMeasurementService Measurement { get; set; } = default!;
+
+    [Inject]
     private ILoggingService Logging { get; set; } = default!;
+
+    [Inject]
+    private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     protected override async Task OnParametersSetAsync()
     {
         var available = Catches.Select(candidate => candidate.Id).ToHashSet();
-        _selected.RemoveWhere(id => !available.Contains(id));
+        if (_selected.RemoveWhere(id => !available.Contains(id)) > 0)
+        {
+            await PublishSelectionAsync();
+        }
+
+        await RememberLocalTimesAsync();
         await LoadThumbnailsAsync();
+    }
+
+    private async Task RememberLocalTimesAsync()
+    {
+        var pending = Catches
+            .Where(candidate => !_localTimes.ContainsKey(candidate.Id))
+            .ToArray();
+        if (pending.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var values = await Task.WhenAll(pending.Select(candidate =>
+                Time.ToDateTimeLocalValueAsync(candidate.CaughtOn, _cancellationTokenSource.Token)));
+            for (var index = 0; index < pending.Length; index++)
+            {
+                var value = values[index];
+                _localTimes[pending[index].Id] = value.Length >= LocalValueLength
+                    ? value.Substring(TimePartIndex, TimePartLength)
+                    : value;
+            }
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("reading a catch selector time", exception, CancellationToken.None);
+        }
     }
 
     private async Task LoadThumbnailsAsync()
@@ -107,7 +160,7 @@ public partial class CatchSelector : ComponentBase, IDisposable
         return _selected.Contains(catchId);
     }
 
-    private Task ToggleAsync(Guid catchId, bool selected)
+    private async Task ToggleAsync(Guid catchId, bool selected)
     {
         if (selected)
         {
@@ -118,31 +171,68 @@ public partial class CatchSelector : ComponentBase, IDisposable
             _selected.Remove(catchId);
         }
 
-        return Task.CompletedTask;
+        await PublishSelectionAsync();
     }
 
-    private async Task ConfirmAsync()
+    private async Task PublishSelectionAsync()
     {
-        if (_selected.Count == 0 || !OnConfirm.HasDelegate)
+        if (!SelectedChanged.HasDelegate)
         {
             return;
         }
 
-        var chosen = Catches
-            .Where(candidate => _selected.Contains(candidate.Id))
-            .Select(candidate => candidate.Id)
-            .ToArray();
-        await OnConfirm.InvokeAsync(chosen);
+        await SelectedChanged.InvokeAsync(
+        [
+            .. Catches
+                .Where(candidate => _selected.Contains(candidate.Id))
+                .Select(candidate => candidate.Id)
+        ]);
     }
 
-    private string Describe(CatchModel candidate)
+    private string SpeciesLabel(CatchModel candidate)
     {
-        var species = string.IsNullOrWhiteSpace(candidate.SpeciesName)
+        return string.IsNullOrWhiteSpace(candidate.SpeciesName)
             ? UnknownSpeciesLabel
             : candidate.SpeciesName!;
-        var caughtOn = candidate.CaughtOn.ToString("d MMM HH:mm", CultureInfo.CurrentCulture);
-        return $"{species} · {caughtOn}";
     }
+
+    private string Facts(CatchModel candidate)
+    {
+        var parts = new List<string> { LocalTime(candidate) };
+        var weight = Measurement.ToDisplayWeight(candidate.Weight, WeightUnit);
+        if (weight is not null)
+        {
+            parts.Add($"{weight.Value.ToString("0.##", CultureInfo.CurrentCulture)} {WeightUnitLabel}");
+        }
+
+        var length = Measurement.ToDisplayLength(candidate.Length, LengthUnit);
+        if (length is not null)
+        {
+            parts.Add($"{length.Value.ToString("0.##", CultureInfo.CurrentCulture)} {LengthUnitLabel}");
+        }
+
+        return string.Join(" · ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
+    }
+
+    private string LocalTime(CatchModel candidate)
+    {
+        return _localTimes.TryGetValue(candidate.Id, out var value)
+            ? value
+            : candidate.CaughtOn.ToString("HH:mm", CultureInfo.CurrentCulture);
+    }
+
+    private static string? MethodLabel(CatchModel candidate)
+    {
+        return string.IsNullOrWhiteSpace(candidate.Method) ? null : candidate.Method;
+    }
+
+    private string WeightUnitLabel => WeightUnit == WeightUnitEnum.Lb
+        ? Loc["Catch_WeightUnitShort_Lb"]
+        : Loc["Catch_WeightUnitShort_Kg"];
+
+    private string LengthUnitLabel => LengthUnit == LengthUnitEnum.In
+        ? Loc["Catch_LengthUnitShort_In"]
+        : Loc["Catch_LengthUnitShort_Cm"];
 
     public void Dispose()
     {

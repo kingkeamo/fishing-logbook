@@ -28,6 +28,11 @@ public interface ITripClient
 
     Task DeletePhotographAsync(Guid tripId, Guid photographId, CancellationToken cancellationToken);
 
+    Task<TripCatchAssociationDto?> AssociateCatchesAsync(
+        Guid tripId,
+        AssociateTripCatchesDto request,
+        CancellationToken cancellationToken);
+
     Task<TripNoteDto?> RecordNoteAsync(
         Guid tripId,
         RecordTripNoteDto request,

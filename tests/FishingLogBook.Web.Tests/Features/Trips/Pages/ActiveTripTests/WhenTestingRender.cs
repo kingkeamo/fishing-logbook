@@ -131,6 +131,14 @@ public class WhenTestingRender : BaseActiveTripTest
         cut.WaitForAssertion(() =>
             cut.Find("#active-trip-heading").TextContent.Should().Contain("Day with Dad"));
         cut.Find("#active-trip-place").TextContent.Should().Contain("Lough Corrib");
+        cut.Find("#active-trip-facts").ClassName.Should().Contain("mud-grid");
+        cut.Find(".active-trip-fact-place").ClassName.Should().Contain("mud-grid-item-xs-6");
+        cut.Find(".active-trip-fact-started").ClassName.Should().Contain("mud-grid-item-xs-3");
+        cut.Find(".active-trip-fact-elapsed").ClassName.Should().Contain("mud-grid-item-xs-3");
+        cut.Find("#active-trip-stats").ClassName.Should().Contain("mud-grid");
+        cut.Find(".active-trip-stat-catches").ClassName.Should().Contain("mud-grid-item-xs-6");
+        cut.Find(".active-trip-stat-photos").ClassName.Should().Contain("mud-grid-item-xs-3");
+        cut.Find(".active-trip-stat-notes").ClassName.Should().Contain("mud-grid-item-xs-3");
     }
 
     [Fact]

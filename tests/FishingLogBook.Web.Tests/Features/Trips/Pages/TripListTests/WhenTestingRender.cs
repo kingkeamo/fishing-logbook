@@ -197,6 +197,56 @@ public class WhenTestingRender : BaseTripListTest
     }
 
     [Fact]
+    public async Task ItShouldShowTheStartedDateWhenTheTripHasNoTitle()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = StoreWith(LocalTrip(placeName: "Ballynahinch"));
+        var client = ClientWith();
+        await using var context = CreateContext(store, client);
+
+        // Act
+        var cut = context.Render<TripListPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-list-date-{LocalTripId:D}").TextContent.Should().Contain("27 Aug 2026"));
+        cut.FindAll($"#trip-list-title-{LocalTripId:D}").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheStartedDateWhenTheTripHasATitle()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = StoreWith(LocalTrip(title: "First day of mayfly", placeName: "Lough Corrib"));
+        var client = ClientWith();
+        await using var context = CreateContext(store, client);
+
+        // Act
+        var cut = context.Render<TripListPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-list-date-{LocalTripId:D}").TextContent.Should().Contain("27 Aug 2026"));
+        var heading = cut.Find($"#trip-list-item-{LocalTripId:D} .trip-list-heading-group").TextContent;
+        heading.Should().Contain("27 Aug 2026");
+        heading.Should().Contain("First day of mayfly");
+        heading.IndexOf("27 Aug 2026", StringComparison.Ordinal)
+            .Should().BeLessThan(heading.IndexOf("First day of mayfly", StringComparison.Ordinal));
+        var title = cut.Find($"#trip-list-title-{LocalTripId:D}");
+        var date = cut.Find($"#trip-list-date-{LocalTripId:D}");
+        title.TextContent.Should().Contain("First day of mayfly");
+        title.ClassName.Should().NotContain("mud-text-secondary");
+        date.ClassName.Should().NotContain("mud-text-secondary");
+        title.ClassName.Should().Contain("mud-typography-subtitle1");
+        date.ClassName.Should().Contain("mud-typography-subtitle1");
+        cut.Find($"#trip-list-item-{LocalTripId:D} .trip-list-heading-row").ClassName.Should().Contain("flex-row");
+        cut.Find($"#trip-list-place-{LocalTripId:D}").TextContent.Should().Contain("Lough Corrib");
+        cut.Find($"#trip-list-place-{LocalTripId:D}").ClassName.Should().Contain("mud-text-secondary");
+    }
+
+    [Fact]
     public async Task ItShouldShowFrenchCopy()
     {
         // Arrange

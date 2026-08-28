@@ -1,9 +1,12 @@
 using Bunit;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
+using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using NSubstitute;
@@ -17,7 +20,10 @@ public class BaseCatchSelectorTest
     protected static readonly Guid TroutCatchId = Guid.Parse("cccccccc-0000-0000-0000-000000000002");
     protected static readonly DateTimeOffset CaughtOn = DateTimeOffset.Parse("2026-08-27T07:30:00Z");
 
-    protected static BunitContext CreateContext(ICatchStore? catchStore = null, ILoggingService? logging = null)
+    protected static BunitContext CreateContext(
+        ICatchStore? catchStore = null,
+        ILoggingService? logging = null,
+        ITimeService? time = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -26,6 +32,8 @@ public class BaseCatchSelectorTest
         context.Services.AddSingleton(Substitute.For<ICultureService>());
         context.Services.AddSingleton(catchStore ?? Substitute.For<ICatchStore>());
         context.Services.AddSingleton(logging ?? Substitute.For<ILoggingService>());
+        context.Services.AddSingleton(time ?? TestTimeService.WithOffset(TimeSpan.Zero));
+        context.Services.AddSingleton<IMeasurementService>(new MeasurementService());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
     }
@@ -38,13 +46,22 @@ public class BaseCatchSelectorTest
         return store;
     }
 
-    protected static CatchModel Catch(Guid catchId, string? speciesName, DateTimeOffset? caughtOn = null)
+    protected static CatchModel Catch(
+        Guid catchId,
+        string? speciesName,
+        DateTimeOffset? caughtOn = null,
+        decimal? weight = null,
+        decimal? length = null,
+        string? method = null)
     {
         return new CatchModel(
             catchId,
             caughtOn ?? CaughtOn,
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)],
             speciesName,
-            UserId: OwnerUserId);
+            UserId: OwnerUserId,
+            Weight: weight,
+            Length: length,
+            Method: method);
     }
 }

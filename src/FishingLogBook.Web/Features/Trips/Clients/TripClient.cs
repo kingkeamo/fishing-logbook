@@ -94,6 +94,19 @@ public sealed class TripClient : ITripClient
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<TripCatchAssociationDto?> AssociateCatchesAsync(
+        Guid tripId,
+        AssociateTripCatchesDto request,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.PostAsJsonAsync(
+            $"api/trips/{tripId:D}/catches",
+            request,
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<TripCatchAssociationDto>(cancellationToken);
+    }
+
     public async Task<TripNoteDto?> RecordNoteAsync(
         Guid tripId,
         RecordTripNoteDto request,

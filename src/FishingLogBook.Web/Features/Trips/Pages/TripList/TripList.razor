@@ -60,7 +60,20 @@
                                       AlignItems="AlignItems.Center"
                                       Justify="Justify.SpaceBetween">
                                 <MudStack Spacing="0" Class="trip-list-heading-group">
-                                    <MudText Typo="Typo.subtitle1" Class="trip-list-title">@Title(trip)</MudText>
+                                    <MudStack Row="true"
+                                              Spacing="2"
+                                              AlignItems="AlignItems.Baseline"
+                                              Class="flex-wrap trip-list-heading-row">
+                                        <MudText Typo="Typo.subtitle1"
+                                                 Class="trip-list-title"
+                                                 id="@($"trip-list-date-{trip.Id:D}")">@DateLabel(trip)</MudText>
+                                        @if (HasCustomTitle(trip))
+                                        {
+                                            <MudText Typo="Typo.subtitle1"
+                                                     Class="trip-list-title"
+                                                     id="@($"trip-list-title-{trip.Id:D}")">@trip.Title</MudText>
+                                        }
+                                    </MudStack>
                                     @if (!string.IsNullOrWhiteSpace(trip.PlaceName))
                                     {
                                         <MudText Typo="Typo.body2"

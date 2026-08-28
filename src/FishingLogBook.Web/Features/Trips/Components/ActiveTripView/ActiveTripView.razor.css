@@ -6,27 +6,29 @@
     overflow-wrap: anywhere;
 }
 
-.active-trip-facts {
-    row-gap: 0.25rem;
-}
-
-.active-trip-fact {
-    min-width: 0;
-}
-
 .active-trip-place {
     overflow-wrap: anywhere;
 }
 
-.active-trip-stats {
-    row-gap: 0.25rem;
+::deep .active-trip-facts .mud-grid-item,
+::deep .active-trip-stats .mud-grid-item,
+::deep .active-trip-actions .mud-grid-item {
+    min-width: 0;
 }
 
-.active-trip-actions {
-    row-gap: 0.5rem;
+::deep .active-trip-facts .mud-icon-root,
+::deep .active-trip-stats .mud-icon-root {
+    flex-shrink: 0;
 }
 
 ::deep .active-trip-action {
-    flex: 1 1 9rem;
+    min-width: 0;
     min-height: 2.75rem;
+    height: 100%;
+}
+
+::deep .active-trip-action .mud-button-label {
+    white-space: normal;
+    line-height: 1.15;
+    text-align: center;
 }

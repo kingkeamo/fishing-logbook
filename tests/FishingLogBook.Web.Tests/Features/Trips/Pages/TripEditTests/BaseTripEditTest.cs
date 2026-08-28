@@ -58,6 +58,7 @@ public class BaseTripEditTest
         context.Services.AddSingleton<IMeasurementService>(new MeasurementService());
         context.Services.AddSingleton(Substitute.For<ITripPhotographStore>());
         context.Services.AddSingleton(Substitute.For<ITripNoteStore>());
+        context.Services.AddSingleton(Substitute.For<ITripNoteWriteService>());
         context.Services.AddSingleton(Substitute.For<ITripClient>());
         context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();

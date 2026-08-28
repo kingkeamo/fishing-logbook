@@ -32,37 +32,7 @@
         </MudStack>
     }
 
-    @if (_isWriting)
-    {
-        <MudStack Spacing="2" id="trip-note-editor">
-            <MudTextField T="string"
-                          Value="_text"
-                          ValueChanged="OnTextChanged"
-                          Label="@Loc["Trip_NotePrompt"]"
-                          Placeholder="@Loc["Trip_NotePlaceholder"]"
-                          Lines="3"
-                          Immediate="true"
-                          MaxLength="MaxNoteLength"
-                          Variant="Variant.Outlined"
-                          id="trip-note-text" />
-            <MudStack Row="true" Spacing="2">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           Disabled="@(!CanSave)"
-                           OnClick="AddNoteAsync"
-                           id="trip-note-save">
-                    @Loc["Trip_NoteAdd"]
-                </MudButton>
-                <MudButton Variant="Variant.Text"
-                           Color="Color.Default"
-                           OnClick="CancelWriting"
-                           id="trip-note-cancel">
-                    @Loc["Modal_Cancel"]
-                </MudButton>
-            </MudStack>
-        </MudStack>
-    }
-    else if (UseFloatingTrigger)
+    @if (UseFloatingTrigger)
     {
         <MudStack Row="true" Justify="Justify.FlexEnd" Class="trip-note-floating">
             <MudFab Color="Color.Primary"
@@ -70,7 +40,7 @@
                     StartIcon="@Icons.Material.Filled.EditNote"
                     aria-label="@Loc["Trip_NoteAdd"]"
                     Title="@Loc["Trip_NoteAdd"]"
-                    OnClick="StartWriting"
+                    OnClick="AddNoteAsync"
                     id="trip-note-start" />
         </MudStack>
     }
@@ -80,17 +50,10 @@
                    Color="Color.Primary"
                    FullWidth="true"
                    StartIcon="@Icons.Material.Filled.EditNote"
-                   OnClick="StartWriting"
+                   OnClick="AddNoteAsync"
                    id="trip-note-start">
             @Loc["Trip_NoteAdd"]
         </MudButton>
-    }
-
-    @if (_addFailed)
-    {
-        <MudAlert Severity="Severity.Error" id="trip-note-add-failed">
-            @Loc["Trip_NoteAddFailed"]
-        </MudAlert>
     }
 
     @if (_removeFailed)

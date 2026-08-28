@@ -1,3 +1,7 @@
 #trip-catches {
     min-width: 0;
 }
+
+::deep .trip-catches-actions .mud-grid-item {
+    min-width: 0;
+}
