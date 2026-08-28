@@ -3,6 +3,7 @@ using FishingLogBook.Application.Common.Responses;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;
+using MapsterMapper;
 using MediatR;
 
 namespace FishingLogBook.Application.Trips.Commands;
@@ -23,10 +24,12 @@ public sealed class AssociateTripCatchesHandler
     : IRequestHandler<AssociateTripCatchesCommand, AssociateTripCatchesResponse>
 {
     private readonly ITripCatchService _tripCatchService;
+    private readonly IMapper _mapper;
 
-    public AssociateTripCatchesHandler(ITripCatchService tripCatchService)
+    public AssociateTripCatchesHandler(ITripCatchService tripCatchService, IMapper mapper)
     {
         _tripCatchService = tripCatchService;
+        _mapper = mapper;
     }
 
     public async Task<AssociateTripCatchesResponse> Handle(
@@ -34,11 +37,7 @@ public sealed class AssociateTripCatchesHandler
         CancellationToken cancellationToken)
     {
         var result = await _tripCatchService.AssociateAsync(
-            new AssociateTripCatchesArgs
-            {
-                TripId = command.TripId,
-                CatchIds = command.CatchIds
-            },
+            _mapper.Map<AssociateTripCatchesArgs>(command),
             cancellationToken);
         if (result.IsFailed)
         {

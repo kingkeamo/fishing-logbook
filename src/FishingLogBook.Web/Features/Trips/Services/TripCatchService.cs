@@ -65,16 +65,28 @@ public sealed class TripCatchService : ITripCatchService
                     association.RejectedCatchIds);
         }
 
-        foreach (var catchId in catchIds)
+        var eligible = (await GetEligibleAsync(scope, storage, cancellationToken))
+            .Select(candidate => candidate.Id)
+            .ToHashSet();
+        var associated = new List<Guid>();
+        var rejected = new List<Guid>();
+        foreach (var catchId in catchIds.Distinct())
         {
+            if (!eligible.Contains(catchId))
+            {
+                rejected.Add(catchId);
+                continue;
+            }
+
             await _catchStore.UpdateTripAsync(
                 scope.OwnerUserId,
                 catchId,
                 scope.TripId,
                 cancellationToken);
+            associated.Add(catchId);
         }
 
-        return new TripCatchAssociationModel(catchIds, []);
+        return new TripCatchAssociationModel(associated, rejected);
     }
 
     private static bool IsEligible(CatchModel candidate, TripCatchScopeModel scope)

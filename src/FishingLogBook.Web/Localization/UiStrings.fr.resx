@@ -1147,18 +1147,6 @@
   <data name="Trip_AddCatchesOnlineRequired" xml:space="preserve">
     <value>Vous devez être en ligne pour ajouter des prises à cette sortie.</value>
   </data>
-  <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
-    <value>Prises sans sortie</value>
-  </data>
-  <data name="Trip_AddExistingCatchConfirm" xml:space="preserve">
-    <value>Ajouter à cette sortie</value>
-  </data>
-  <data name="Trip_AddExistingCatchEmpty" xml:space="preserve">
-    <value>Toutes vos prises sont déjà associées à une sortie.</value>
-  </data>
-  <data name="Trip_AddExistingCatchFailed" xml:space="preserve">
-    <value>Ces prises n'ont pas pu être ajoutées à la sortie.</value>
-  </data>
   <data name="Trip_ListPhotographsNone" xml:space="preserve">
     <value>Aucune photo</value>
   </data>

@@ -187,7 +187,7 @@ public sealed class CatchRepository : ICatchRepository
         catch (Exception exception)
         {
             _logger.LogError(exception, "Failed to associate catch {CatchId} with a trip.", args.CatchId);
-            return Result.Fail<bool>("Failed to save the catch.");
+            return Result.Fail<bool>(FailedMessage);
         }
     }
 

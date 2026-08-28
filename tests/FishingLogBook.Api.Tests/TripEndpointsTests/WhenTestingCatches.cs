@@ -171,6 +171,38 @@ public class WhenTestingCatches : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReportServiceUnavailableWhenPersistenceFails()
+    {
+        // Arrange
+        Reset();
+        var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        var tripId = Guid.NewGuid();
+        var catchId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId)));
+        _factory.CatchRepository.GetByIdAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(CatchRecord(catchId, current.UserId)));
+        _factory.CatchRepository
+            .AssociateTripAsync(Arg.Any<PersistCatchTripArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<bool>("Failed to save the catch."));
+
+        // Act
+        var response = await client.PostAsJsonAsync(
+            $"/api/trips/{tripId:D}/catches",
+            new AssociateTripCatchesDto([catchId]));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.CatchRepository.Received(1).AssociateTripAsync(
+            Arg.Is<PersistCatchTripArgs>(args =>
+                args.CatchId == catchId
+                && args.TripId == tripId
+                && args.UserId == current.UserId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldAssociateAnEligibleCatchWithTheAnglersOwnTrip()
     {
         // Arrange

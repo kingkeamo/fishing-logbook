@@ -139,6 +139,106 @@ Authorization: Bearer <access-token>
 
 ###
 
+### Trips (requires a Cognito access token; never commit real tokens)
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "status": "Active",
+  "startedOn": "2026-08-17T07:00:00Z",
+  "endedOn": null,
+  "location": {
+    "latitude": 53.4419,
+    "longitude": -9.2531,
+    "accuracyMetres": 8,
+    "capturedOn": "2026-08-17T07:00:00Z",
+    "source": "DeviceGps",
+    "visibility": "Private",
+    "consentVersion": "1"
+  },
+  "title": "Evening session",
+  "placeName": "Corrib shoreline"
+}
+
+###
+
+GET {{FishingLogBook.Api_HostAddress}}/api/trips
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+GET {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/photographs/upload-url
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "photographId": "11111111-1111-1111-1111-111111111111",
+  "contentType": "image/jpeg"
+}
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/photographs
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "photographId": "11111111-1111-1111-1111-111111111111",
+  "objectKey": "trips/00000000-0000-0000-0000-000000000000/00000000-0000-0000-0000-000000000000/11111111-1111-1111-1111-111111111111",
+  "contentType": "image/jpeg",
+  "addedOn": "2026-08-17T09:20:00Z",
+  "capturedOn": "2026-08-17T09:12:00Z"
+}
+
+###
+
+DELETE {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/photographs/11111111-1111-1111-1111-111111111111
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/notes
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "noteId": "22222222-2222-2222-2222-222222222222",
+  "text": "Water dropped after lunch",
+  "recordedOn": "2026-08-17T13:40:00Z"
+}
+
+###
+
+DELETE {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/notes/22222222-2222-2222-2222-222222222222
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/catches
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "catchIds": ["11111111-1111-1111-1111-111111111111"]
+}
+
+###
+
 ### Fishing preferences (requires a Cognito access token; never commit real tokens)
 
 GET {{FishingLogBook.Api_HostAddress}}/api/fishing-catalogue

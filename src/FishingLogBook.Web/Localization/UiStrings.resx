@@ -1147,18 +1147,6 @@
   <data name="Trip_AddCatchesOnlineRequired" xml:space="preserve">
     <value>You need to be online to add catches to this trip.</value>
   </data>
-  <data name="Trip_AddExistingCatchTitle" xml:space="preserve">
-    <value>Catches not on a trip</value>
-  </data>
-  <data name="Trip_AddExistingCatchConfirm" xml:space="preserve">
-    <value>Add to this trip</value>
-  </data>
-  <data name="Trip_AddExistingCatchEmpty" xml:space="preserve">
-    <value>Every catch is already on a trip.</value>
-  </data>
-  <data name="Trip_AddExistingCatchFailed" xml:space="preserve">
-    <value>Those catches could not be added to the trip.</value>
-  </data>
   <data name="Trip_ListPhotographsNone" xml:space="preserve">
     <value>No photos</value>
   </data>

@@ -31,8 +31,72 @@ public class WhenTestingAssociate : BaseTripCatchServiceTest
     }
 
     [Fact]
+    public async Task ItShouldRejectALocalCatchThatIsNotEligible()
+    {
+        // Arrange
+        MockCatchStore.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns([Catch(PikeCatchId, StartedOn.AddHours(1))]);
+
+        // Act
+        var association = await Sut.AssociateAsync(
+            CompletedScope(),
+            [PikeCatchId, TroutCatchId],
+            TripStorageEnum.LocalFirst,
+            CancellationToken.None);
+
+        // Assert
+        association.AssociatedCatchIds.Should().Equal(PikeCatchId);
+        association.RejectedCatchIds.Should().Equal(TroutCatchId);
+        await MockCatchStore.Received(1).UpdateTripAsync(
+            OwnerUserId,
+            PikeCatchId,
+            TripId,
+            Arg.Any<CancellationToken>());
+        await MockCatchStore.DidNotReceive().UpdateTripAsync(
+            Arg.Any<Guid>(),
+            TroutCatchId,
+            Arg.Any<Guid?>(),
+            Arg.Any<CancellationToken>());
+        await MockTripClient.DidNotReceive().AssociateCatchesAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<AssociateTripCatchesDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAssociateADuplicateLocalCatchOnlyOnce()
+    {
+        // Arrange
+        MockCatchStore.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns([Catch(PikeCatchId, StartedOn.AddHours(1))]);
+
+        // Act
+        var association = await Sut.AssociateAsync(
+            CompletedScope(),
+            [PikeCatchId, PikeCatchId],
+            TripStorageEnum.LocalFirst,
+            CancellationToken.None);
+
+        // Assert
+        association.AssociatedCatchIds.Should().Equal(PikeCatchId);
+        await MockCatchStore.Received(1).UpdateTripAsync(
+            OwnerUserId,
+            PikeCatchId,
+            TripId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldAssociateALocalTripThroughTheOfflineStore()
     {
+        // Arrange
+        MockCatchStore.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                Catch(PikeCatchId, StartedOn.AddHours(1)),
+                Catch(TroutCatchId, StartedOn.AddHours(2))
+            ]);
+
         // Act
         var association = await Sut.AssociateAsync(
             CompletedScope(),
