@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using System.Security.Claims;
 using FishingLogBook.Api.Configuration;
 using FishingLogBook.Shared.Constants;
@@ -21,12 +23,15 @@ public static class AuthenticationExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer();
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
-            .Configure<AuthConfig>(ConfigureJwtBearer);
+            .Configure<AuthConfig, ILoggerFactory>(ConfigureJwtBearer);
         services.AddAuthorization();
         return services;
     }
 
-    private static void ConfigureJwtBearer(JwtBearerOptions options, AuthConfig authConfig)
+    private static void ConfigureJwtBearer(
+        JwtBearerOptions options,
+        AuthConfig authConfig,
+        ILoggerFactory loggerFactory)
     {
         authConfig.EnsureRequired();
         options.MapInboundClaims = false;
@@ -44,6 +49,71 @@ public static class AuthenticationExtensions
         options.Authority = authConfig.Authority;
         options.RequireHttpsMetadata = true;
         options.MetadataAddress = $"{authConfig.Authority.TrimEnd('/')}/.well-known/openid-configuration";
+        options.BackchannelHttpHandler = CreateBackchannelHandler(
+            loggerFactory.CreateLogger(typeof(AuthenticationExtensions)));
+    }
+
+    private static HttpMessageHandler CreateBackchannelHandler(ILogger logger)
+    {
+        return new SocketsHttpHandler
+        {
+            ConnectCallback = (context, cancellationToken) =>
+                ConnectBackchannelAsync(context.DnsEndPoint, cancellationToken, logger)
+        };
+    }
+
+    private static async ValueTask<Stream> ConnectBackchannelAsync(
+        DnsEndPoint endPoint,
+        CancellationToken cancellationToken,
+        ILogger logger)
+    {
+        try
+        {
+            return await ConnectSocketAsync(AddressFamily.InterNetwork, endPoint, cancellationToken);
+        }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogDebug(exception, "JWT metadata IPv4 connection was cancelled.");
+            throw;
+        }
+        catch (SocketException socketException)
+        {
+            logger.LogWarning(socketException, "JWT metadata IPv4 connection failed; trying IPv6.");
+            try
+            {
+                return await ConnectSocketAsync(AddressFamily.InterNetworkV6, endPoint, cancellationToken);
+            }
+            catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+            {
+                logger.LogDebug(exception, "JWT metadata IPv6 connection was cancelled.");
+                throw;
+            }
+            catch (SocketException ipv6Exception)
+            {
+                logger.LogError(ipv6Exception, "Failed to open an IPv6 connection for JWT metadata.");
+                throw;
+            }
+        }
+    }
+
+    private static async ValueTask<Stream> ConnectSocketAsync(
+        AddressFamily addressFamily,
+        DnsEndPoint endPoint,
+        CancellationToken cancellationToken)
+    {
+        Socket? socket = new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp);
+        try
+        {
+            socket.NoDelay = true;
+            await socket.ConnectAsync(endPoint, cancellationToken);
+            var stream = new NetworkStream(socket, ownsSocket: true);
+            socket = null;
+            return stream;
+        }
+        finally
+        {
+            socket?.Dispose();
+        }
     }
 
     private static TokenValidationParameters CreateValidationParameters(AuthConfig authConfig)
