@@ -8,6 +8,8 @@ public sealed class TripCatchSummary
 
     public Guid AnglerUserId { get; init; }
 
+    public Guid RecordedByUserId { get; init; }
+
     public DateTimeOffset CaughtOn { get; init; }
 
     public string? SpeciesName { get; init; }

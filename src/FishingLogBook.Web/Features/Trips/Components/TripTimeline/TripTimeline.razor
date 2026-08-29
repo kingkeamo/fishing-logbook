@@ -76,6 +76,14 @@ else
                                                          Class="mud-text-secondary"
                                                          id="@($"{ItemId(item)}-measurements")">@measurements</MudText>
                                             }
+                                            @if (RecordedByName(item) is { } recordedBy)
+                                            {
+                                                <MudText Typo="Typo.caption"
+                                                         Class="mud-text-secondary trip-timeline-catch-recorder"
+                                                         id="@($"{ItemId(item)}-recorded-by")">
+                                                    @Loc["Trip_Timeline_RecordedBy", recordedBy]
+                                                </MudText>
+                                            }
                                         </MudStack>
                                         @if (CatchHref(item) is { } href)
                                         {

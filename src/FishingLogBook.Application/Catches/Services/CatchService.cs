@@ -72,12 +72,34 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchDto>(trip.Errors);
         }
 
+        var existingResult = await _catchRepository.GetByIdAsync(args.Catch.Id, cancellationToken);
+        if (existingResult.IsFailed)
+        {
+            return Result.Fail<CatchDto>(existingResult.Errors);
+        }
+
+        var existing = existingResult.Value;
+        if (existing is not null
+            && existing.AnglerUserId != args.UserId
+            && existing.RecordedByUserId != args.UserId)
+        {
+            return Result.Fail<CatchDto>(new CatchEditNotPermittedError());
+        }
+
+        var identity = existing is not null
+            ? Result.Ok((UserId: existing.UserId, AnglerUserId: existing.AnglerUserId))
+            : await ResolveAnglerAsync(args, trip.Value, cancellationToken);
+        if (identity.IsFailed)
+        {
+            return Result.Fail<CatchDto>(identity.Errors);
+        }
+
         var catchRecord = new Catch
         {
             Id = args.Catch.Id,
-            UserId = args.UserId,
-            AnglerUserId = args.UserId,
-            RecordedByUserId = args.UserId,
+            UserId = identity.Value.UserId,
+            AnglerUserId = identity.Value.AnglerUserId,
+            RecordedByUserId = existing?.RecordedByUserId ?? args.UserId,
             TripId = trip.Value,
             CaughtOn = args.Catch.CaughtOn,
             SpeciesName = TrimToNull(args.Catch.SpeciesName),
@@ -288,6 +310,34 @@ public sealed class CatchService : ICatchService
         }
 
         return Result.Ok<Guid?>(tripId.Value);
+    }
+
+    private async Task<Result<(Guid UserId, Guid AnglerUserId)>> ResolveAnglerAsync(
+        UpsertCatchArgs args,
+        Guid? tripId,
+        CancellationToken cancellationToken)
+    {
+        var requestedAngler = args.Catch.AnglerUserId == Guid.Empty
+            ? args.UserId
+            : args.Catch.AnglerUserId;
+
+        if (requestedAngler == args.UserId)
+        {
+            return Result.Ok((UserId: args.UserId, AnglerUserId: args.UserId));
+        }
+
+        if (tripId is null)
+        {
+            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+        }
+
+        var anglerAccess = await _tripAccessService.ResolveForAsync(tripId.Value, requestedAngler, cancellationToken);
+        if (anglerAccess.IsFailed || !anglerAccess.Value.CanContribute)
+        {
+            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+        }
+
+        return Result.Ok((UserId: requestedAngler, AnglerUserId: requestedAngler));
     }
 
     private static string? TrimToNull(string? value)

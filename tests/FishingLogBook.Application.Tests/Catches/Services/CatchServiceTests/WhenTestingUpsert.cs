@@ -99,7 +99,6 @@ public class WhenTestingUpsert : BaseCatchServiceTest
     {
         // Arrange
         var authenticatedUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-        var clientUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
         var catchId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
         var args = new UpsertCatchArgs
@@ -109,11 +108,6 @@ public class WhenTestingUpsert : BaseCatchServiceTest
                 catchId,
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Png)])
-            {
-                UserId = clientUserId,
-                AnglerUserId = clientUserId,
-                RecordedByUserId = clientUserId
-            }
         };
         MockCatchRepository
             .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
@@ -127,9 +121,6 @@ public class WhenTestingUpsert : BaseCatchServiceTest
         result.Value.UserId.Should().Be(authenticatedUserId);
         result.Value.AnglerUserId.Should().Be(authenticatedUserId);
         result.Value.RecordedByUserId.Should().Be(authenticatedUserId);
-        result.Value.UserId.Should().NotBe(clientUserId);
-        result.Value.AnglerUserId.Should().NotBe(clientUserId);
-        result.Value.RecordedByUserId.Should().NotBe(clientUserId);
         result.Value.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
@@ -141,6 +132,39 @@ public class WhenTestingUpsert : BaseCatchServiceTest
                 && item.Photographs[0].Id == photographId
                 && item.Photographs[0].CatchId == catchId
                 && item.Location == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAClientSuppliedAnglerWithNoSharedTrip()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var spoofedAnglerUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var catchId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        var args = new UpsertCatchArgs
+        {
+            UserId = authenticatedUserId,
+            Catch = new CatchDto(
+                catchId,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Png)])
+            {
+                UserId = spoofedAnglerUserId,
+                AnglerUserId = spoofedAnglerUserId,
+                RecordedByUserId = spoofedAnglerUserId
+            }
+        };
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<CatchAnglerNotEligibleError>();
+        await MockCatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
             Arg.Any<CancellationToken>());
     }
 

@@ -58,10 +58,10 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldIgnoreAClientSuppliedOwnerUserId()
+    public async Task ItShouldIgnoreAClientSuppliedRecordedByUserId()
     {
         // Arrange
-        var clientOwner = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var spoofedRecorder = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var catchId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
         var dto = new CatchDto(
@@ -69,9 +69,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Jpeg)])
         {
-            UserId = clientOwner,
-            AnglerUserId = clientOwner,
-            RecordedByUserId = clientOwner
+            RecordedByUserId = spoofedRecorder
         };
         ResetCatchRepository();
         var client = _factory.CreateAuthenticatedClient();
@@ -88,9 +86,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         body!.UserId.Should().Be(current!.UserId);
         body.AnglerUserId.Should().Be(current.UserId);
         body.RecordedByUserId.Should().Be(current.UserId);
-        body.UserId.Should().NotBe(clientOwner);
-        body.AnglerUserId.Should().NotBe(clientOwner);
-        body.RecordedByUserId.Should().NotBe(clientOwner);
+        body.RecordedByUserId.Should().NotBe(spoofedRecorder);
         body.Id.Should().Be(catchId);
         body.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
         await _factory.CatchRepository.Received(1).UpsertAsync(
@@ -100,6 +96,34 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
                 && item.RecordedByUserId == current.UserId
                 && item.Id == catchId
                 && item.Photographs[0].Id == photographId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAClientSuppliedAnglerWithNoSharedTrip()
+    {
+        // Arrange
+        var spoofedAngler = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var catchId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        var dto = new CatchDto(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Jpeg)])
+        {
+            UserId = spoofedAngler,
+            AnglerUserId = spoofedAngler
+        };
+        ResetCatchRepository();
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/catches", dto);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await _factory.CatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
             Arg.Any<CancellationToken>());
     }
 

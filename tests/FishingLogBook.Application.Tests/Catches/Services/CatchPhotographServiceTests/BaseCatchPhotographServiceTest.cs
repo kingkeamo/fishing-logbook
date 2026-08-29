@@ -36,6 +36,14 @@ public class BaseCatchPhotographServiceTest
                 Arg.Any<TimeSpan>(),
                 Arg.Any<CancellationToken>())
             .Returns(new Uri("https://storage.test/upload"));
+        MockCatchRepository.GetByIdAsync(CatchId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(new Catch
+            {
+                Id = CatchId,
+                UserId = UserId,
+                AnglerUserId = UserId,
+                RecordedByUserId = UserId
+            }));
         MockCatchRepository.GetPhotographAsync(
                 Arg.Any<Application.Args.GetCatchPhotographArgs>(),
                 Arg.Any<CancellationToken>())

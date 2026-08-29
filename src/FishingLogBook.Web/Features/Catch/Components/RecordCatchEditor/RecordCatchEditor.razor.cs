@@ -63,6 +63,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     private FishingPreferencesDto? _preferences;
     private IReadOnlyList<FishingMethodDto> _catalogueMethods = [];
     private IReadOnlyList<SpeciesDto> _catalogueSpecies = [];
+    private Guid _selectedAnglerUserId;
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
@@ -101,6 +102,10 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     [Parameter] public string TripBaseHref { get; set; } = "/trips";
     [Parameter] public Guid? RequestedTripId { get; set; }
     [Parameter] public EventCallback Saved { get; set; }
+    [Parameter] public IReadOnlyList<CatchAnglerOptionModel> AnglerOptions { get; set; } = [];
+    [Parameter] public EventCallback<Guid> OnTripAssociated { get; set; }
+
+    private bool ShowAnglerSelector => _associatedTrip is not null && AnglerOptions.Count > 1 && !_isSaved;
 
     private bool ShowTripAssociation => _associatedTrip is not null && !_isSaved;
 
@@ -116,6 +121,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
     {
         try
         {
+            _selectedAnglerUserId = OwnerUserId;
             var locationPrompt = RefreshLocationPromptAsync();
             await ResolveTripAssociationAsync();
             await locationPrompt;
@@ -126,6 +132,11 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         {
             _isLoading = false;
         }
+    }
+
+    private void SelectAngler(Guid userId)
+    {
+        _selectedAnglerUserId = userId;
     }
 
     private async Task ResolveTripAssociationAsync()
@@ -148,6 +159,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             _associatedTrip = trip;
             _candidateTrip = trip;
             _associatedTripLabel = await DescribeTripAsync(trip);
+            await OnTripAssociated.InvokeAsync(trip.Id);
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
@@ -177,9 +189,10 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _associatedTrip = null;
         _tripOptedOut = true;
         _tripUnavailable = false;
+        _selectedAnglerUserId = OwnerUserId;
     }
 
-    private void RejoinTrip()
+    private async Task RejoinTripAsync()
     {
         if (_candidateTrip is null)
         {
@@ -189,6 +202,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
         _associatedTrip = _candidateTrip;
         _tripOptedOut = false;
         _tripUnavailable = false;
+        await OnTripAssociated.InvokeAsync(_candidateTrip.Id);
     }
 
     private void LoadCatalogue()
@@ -630,6 +644,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             var method = TrimToNull(_selectedMethod);
             var species = TrimToNull(_selectedSpecies);
             var location = _capturedLocation;
+            var anglerUserId = tripId is null ? OwnerUserId : _selectedAnglerUserId;
             await CatchStore.SaveAsync(
                 new CatchModel(
                     catchId,
@@ -637,10 +652,10 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
                     photographs,
                     species,
                     location,
-                    OwnerUserId,
+                    anglerUserId,
                     SyncStatus.SavedLocally,
                     SyncStatus.SavedLocally,
-                    OwnerUserId,
+                    anglerUserId,
                     OwnerUserId,
                     Method: method,
                     Weight: _weight,

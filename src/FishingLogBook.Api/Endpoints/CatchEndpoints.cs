@@ -109,9 +109,15 @@ public static class CatchEndpoints
             or CatchPhotographIdentityError
             or CatchOwnershipConflictError
             or CatchLocationInvalidError
-            or CatchTripInvalidError)
+            or CatchTripInvalidError
+            or CatchAnglerNotEligibleError)
         {
             return Results.BadRequest(response);
+        }
+
+        if (response.Error is CatchEditNotPermittedError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
         if (response.IsFailure)

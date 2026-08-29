@@ -531,6 +531,18 @@
   <data name="Catch_EditMethod" xml:space="preserve">
     <value>Méthode de pêche</value>
   </data>
+  <data name="Catch_AnglerLabel" xml:space="preserve">
+    <value>Pêcheur</value>
+  </data>
+  <data name="Catch_AnglerMe" xml:space="preserve">
+    <value>Moi</value>
+  </data>
+  <data name="Catch_CaughtByLabel" xml:space="preserve">
+    <value>Attrapé par</value>
+  </data>
+  <data name="Catch_RecordedByLabel" xml:space="preserve">
+    <value>Enregistré par</value>
+  </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
     <value>Appât ou leurre</value>
   </data>
@@ -1080,6 +1092,9 @@
   </data>
   <data name="Trip_Timeline_CatchUnknownSpecies" xml:space="preserve">
     <value>Prise enregistrée</value>
+  </data>
+  <data name="Trip_Timeline_RecordedBy" xml:space="preserve">
+    <value>Enregistrée par {0}</value>
   </data>
   <data name="Trip_Timeline_Photograph" xml:space="preserve">
     <value>Photographie</value>

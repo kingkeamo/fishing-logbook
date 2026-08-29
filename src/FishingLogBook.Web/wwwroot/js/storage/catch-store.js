@@ -169,6 +169,12 @@ export async function updateCatchMetadata(json) {
     });
 }
 
+function isVisibleTo(record, owner) {
+    const userId = normalisedOwnerId(record?.userId);
+    const recordedByUserId = normalisedOwnerId(record?.recordedByUserId);
+    return userId === owner || (recordedByUserId && recordedByUserId === owner);
+}
+
 export async function getCatchPhotographBytes(ownerUserId, catchId, photographId) {
     const owner = normalisedOwnerId(ownerUserId);
     if (!owner || !catchId || !photographId) {
@@ -181,7 +187,7 @@ export async function getCatchPhotographBytes(ownerUserId, catchId, photographId
         read.onsuccess = () => {
             const catchRecord = read.result;
             const owns = catchRecord
-                && normalisedOwnerId(catchRecord.userId) === owner
+                && isVisibleTo(catchRecord, owner)
                 && (catchRecord.photographs ?? []).some((photograph) => photograph.id === photographId);
             if (!owns) {
                 succeed(null);
@@ -256,7 +262,7 @@ export async function getAllCatchesWithPhotographs(ownerUserId) {
         catchRequest.onsuccess = () => {
             const cursor = catchRequest.result;
             if (cursor) {
-                if (normalisedOwnerId(cursor.value?.userId) === owner) {
+                if (isVisibleTo(cursor.value, owner)) {
                     catches.push(cursor.value);
                 }
 
@@ -298,7 +304,7 @@ export async function getCatchMetadata(ownerUserId) {
         request.onsuccess = () => {
             const cursor = request.result;
             if (cursor) {
-                if (normalisedOwnerId(cursor.value?.userId) === owner) {
+                if (isVisibleTo(cursor.value, owner)) {
                     catches.push({ json: JSON.stringify(cursor.value), photographs: [] });
                 }
 
@@ -322,7 +328,7 @@ export async function getCatchMetadataById(ownerUserId, catchId) {
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
             const record = request.result;
-            succeed(record && normalisedOwnerId(record.userId) === owner
+            succeed(record && isVisibleTo(record, owner)
                 ? { json: JSON.stringify(record), photographs: [] }
                 : null);
         };
@@ -342,7 +348,7 @@ export async function getCatchWithPhotographs(ownerUserId, catchId) {
         catchRequest.onerror = () => fail(catchRequest.error);
         catchRequest.onsuccess = () => {
             const record = catchRequest.result;
-            if (!record || normalisedOwnerId(record.userId) !== owner) {
+            if (!record || !isVisibleTo(record, owner)) {
                 succeed(null);
                 return;
             }
@@ -431,7 +437,7 @@ export async function cleanupSyncedCatches(ownerUserId, olderThanIso) {
             }
 
             const record = cursor.value;
-            if (normalisedOwnerId(record?.userId) === owner && isEligibleForCleanup(record, cutoff)) {
+            if (isVisibleTo(record, owner) && isEligibleForCleanup(record, cutoff)) {
                 for (const photograph of record.photographs || []) {
                     photoStore.delete(photograph.id);
                 }

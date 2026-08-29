@@ -3,6 +3,8 @@ using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
 using FishingLogBook.Application.Catches.Errors;
 using FishingLogBook.Domain.Catches;
+using FishingLogBook.Domain.Enums;
+using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using NSubstitute;
@@ -55,16 +57,18 @@ public class WhenTestingGetView : BaseCatchServiceTest
     }
 
     [Fact]
-    public async Task ItShouldShapeLocationUsingTheCurrentUserIdNotTheCatchOwner()
+    public async Task ItShouldShapeLocationUsingTheCurrentUserIdWhenAParticipantViewsAnotherAnglersSharedTripCatch()
     {
         // Arrange
         var ownerUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var tripId = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var catchRecord = new Catch
         {
             Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             UserId = ownerUserId,
             AnglerUserId = ownerUserId,
             RecordedByUserId = ownerUserId,
+            TripId = tripId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             SpeciesName = "Pike",
             Weight = 2.5m,
@@ -76,6 +80,21 @@ public class WhenTestingGetView : BaseCatchServiceTest
         MockCatchRepository
             .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Catch?>(catchRecord));
+        MockTripAccessService
+            .ResolveForAsync(tripId, CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(TripAccess.Resolve(
+                new Trip { Id = tripId, OwnerUserId = ownerUserId, StartedOn = catchRecord.CaughtOn },
+                CurrentUserId,
+                new TripParticipant
+                {
+                    Id = Guid.NewGuid(),
+                    TripId = tripId,
+                    UserId = CurrentUserId,
+                    Status = TripParticipantStatusEnum.Accepted,
+                    InvitedByUserId = ownerUserId,
+                    InvitedOn = catchRecord.CaughtOn.AddDays(-1),
+                    RespondedOn = catchRecord.CaughtOn.AddHours(-1)
+                })));
         MockCatchLocationPrivacyService
             .GetExposureAsync(Arg.Any<Catch>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new CatchLocationExposureDto

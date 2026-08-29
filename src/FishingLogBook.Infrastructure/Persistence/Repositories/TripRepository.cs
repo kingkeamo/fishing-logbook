@@ -145,6 +145,7 @@ public sealed class TripRepository : ITripRepository
                     c."Id",
                     c."UserId",
                     c."AnglerUserId",
+                    COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
                     c."CaughtOn",
                     c."SpeciesName",
                     c."Weight",

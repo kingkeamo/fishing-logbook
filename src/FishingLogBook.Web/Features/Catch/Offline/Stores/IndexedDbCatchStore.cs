@@ -129,7 +129,7 @@ public sealed class IndexedDbCatchStore : ICatchStore
             },
             cancellationToken,
             _logging);
-        return loaded is not null && loaded.UserId == ownerUserId ? loaded : null;
+        return loaded is not null && IsVisibleTo(loaded, ownerUserId) ? loaded : null;
     }
 
     public async Task<CatchModel?> GetAsync(
@@ -163,7 +163,12 @@ public sealed class IndexedDbCatchStore : ICatchStore
             },
             cancellationToken,
             _logging);
-        return loaded is not null && loaded.UserId == ownerUserId ? loaded : null;
+        return loaded is not null && IsVisibleTo(loaded, ownerUserId) ? loaded : null;
+    }
+
+    private static bool IsVisibleTo(CatchModel catchRecord, Guid userId)
+    {
+        return catchRecord.UserId == userId || catchRecord.RecordedByUserId == userId;
     }
 
     public async Task UpdateSyncStateAsync(

@@ -87,7 +87,8 @@ public sealed class TripMappingRegistration : IRegister
                 SpeciesName = source.SpeciesName,
                 Weight = source.Weight,
                 Length = source.Length,
-                AnglerUserId = source.AnglerUserId
+                AnglerUserId = source.AnglerUserId,
+                RecordedByUserId = source.RecordedByUserId
             });
 
         config.NewConfig<Trip, TripViewDto>()

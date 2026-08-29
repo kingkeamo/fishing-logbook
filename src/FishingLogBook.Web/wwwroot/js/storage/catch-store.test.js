@@ -71,6 +71,38 @@ describe('Catch store', () => {
         expect(catchRecord.recordedByUserId).toBe(catchRecord.userId);
     });
 
+    it('lets the recorder see a Catch stored for another angler', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const anglerUserId = ownerUserId;
+        const recorderUserId = otherUserId;
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: anglerUserId,
+                anglerUserId,
+                recordedByUserId: recorderUserId,
+                caughtOn: '2026-08-17T08:00:00+00:00'
+            }),
+            [{
+                id: 'recorded-for-another-photo',
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1])
+            }]
+        );
+
+        const anglerView = await getAllCatchesWithPhotographs(anglerUserId);
+        const recorderView = await getAllCatchesWithPhotographs(recorderUserId);
+        const unrelatedView = await getAllCatchesWithPhotographs('33333333-3333-3333-3333-333333333333');
+
+        expect(anglerView).toHaveLength(1);
+        expect(recorderView).toHaveLength(1);
+        expect(unrelatedView).toHaveLength(0);
+        const fromRecorderView = JSON.parse(recorderView[0].json);
+        expect(fromRecorderView.userId).toBe(anglerUserId);
+        expect(fromRecorderView.recordedByUserId).toBe(recorderUserId);
+    });
+
     it('still reads a Catch stored without provenance properties', async () => {
         const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
         await putCatchWithPhotographs(

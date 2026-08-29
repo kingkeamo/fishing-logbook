@@ -531,6 +531,18 @@
   <data name="Catch_EditMethod" xml:space="preserve">
     <value>Fishing method</value>
   </data>
+  <data name="Catch_AnglerLabel" xml:space="preserve">
+    <value>Angler</value>
+  </data>
+  <data name="Catch_AnglerMe" xml:space="preserve">
+    <value>Me</value>
+  </data>
+  <data name="Catch_CaughtByLabel" xml:space="preserve">
+    <value>Caught by</value>
+  </data>
+  <data name="Catch_RecordedByLabel" xml:space="preserve">
+    <value>Recorded by</value>
+  </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
     <value>Bait or lure</value>
   </data>
@@ -1080,6 +1092,9 @@
   </data>
   <data name="Trip_Timeline_CatchUnknownSpecies" xml:space="preserve">
     <value>Catch recorded</value>
+  </data>
+  <data name="Trip_Timeline_RecordedBy" xml:space="preserve">
+    <value>Recorded by {0}</value>
   </data>
   <data name="Trip_Timeline_Photograph" xml:space="preserve">
     <value>Photograph</value>

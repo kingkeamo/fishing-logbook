@@ -24,6 +24,9 @@ public sealed class TripTimelineService : ITripTimelineService
                 ContributedByUserId = catchRecord.AnglerUserId == Guid.Empty
                     ? catchRecord.UserId
                     : catchRecord.AnglerUserId,
+                RecordedByUserId = catchRecord.RecordedByUserId == Guid.Empty
+                    ? catchRecord.UserId
+                    : catchRecord.RecordedByUserId,
                 SpeciesName = catchRecord.SpeciesName,
                 Weight = catchRecord.Weight,
                 Length = catchRecord.Length,
@@ -65,6 +68,7 @@ public sealed class TripTimelineService : ITripTimelineService
             {
                 CatchId = summary.Id,
                 ContributedByUserId = summary.AnglerUserId,
+                RecordedByUserId = summary.RecordedByUserId,
                 SpeciesName = summary.SpeciesName,
                 Weight = summary.Weight,
                 Length = summary.Length,

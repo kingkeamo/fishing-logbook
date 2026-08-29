@@ -327,12 +327,34 @@ public partial class TripTimeline : ComponentBase, IDisposable
 
     private string? ContributorName(TripTimelineItemModel item)
     {
+        if (item.Kind == TripTimelineKindEnum.Catch)
+        {
+            return AnglerName(item);
+        }
+
         if (IsOwnContribution(item))
         {
             return null;
         }
 
-        var contributor = Contributors.FirstOrDefault(candidate => candidate.UserId == item.ContributedByUserId);
+        return DisplayNameFor(item.ContributedByUserId);
+    }
+
+    private string AnglerName(TripTimelineItemModel item)
+    {
+        return DisplayNameFor(item.ContributedByUserId);
+    }
+
+    private string? RecordedByName(TripTimelineItemModel item)
+    {
+        return item.RecordedByUserId == Guid.Empty || item.RecordedByUserId == item.ContributedByUserId
+            ? null
+            : DisplayNameFor(item.RecordedByUserId);
+    }
+
+    private string DisplayNameFor(Guid userId)
+    {
+        var contributor = Contributors.FirstOrDefault(candidate => candidate.UserId == userId);
         return string.IsNullOrWhiteSpace(contributor?.DisplayName)
             ? Loc["Trip_ContributorUnknown"].Value
             : contributor.DisplayName;

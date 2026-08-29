@@ -123,6 +123,7 @@ public sealed class TripDetailService : ITripDetailService
                 .Select(note => note.CreatedByUserId)
                 .Concat(content.Photographs.Select(photograph => photograph.ContributedByUserId))
                 .Concat(content.Catches.Select(summary => summary.AnglerUserId))
+                .Concat(content.Catches.Select(summary => summary.RecordedByUserId))
                 .Append(trip.OwnerUserId)
                 .Where(userId => userId != Guid.Empty)
                 .Distinct()

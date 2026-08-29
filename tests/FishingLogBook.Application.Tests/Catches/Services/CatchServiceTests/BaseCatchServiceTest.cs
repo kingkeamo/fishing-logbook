@@ -2,6 +2,8 @@ using FishingLogBook.Application.Catches.Services;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Domain.Catches;
+using FluentResults;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Catches.Services.CatchServiceTests;
@@ -28,6 +30,8 @@ public class BaseCatchServiceTest
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockObjectStorage.IsConfigured.Returns(false);
+        MockCatchRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(null));
         Sut = new CatchService(
             MockCatchRepository,
             MockTripAccessService,

@@ -83,3 +83,8 @@
     overflow-wrap: anywhere;
     min-width: 0;
 }
+
+.trip-timeline-catch-recorder {
+    opacity: 0.75;
+    overflow-wrap: anywhere;
+}
