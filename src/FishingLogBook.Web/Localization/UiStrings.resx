@@ -537,6 +537,9 @@
   <data name="Catch_EditMethod" xml:space="preserve">
     <value>Fishing method</value>
   </data>
+  <data name="Catch_EditTripLabel" xml:space="preserve">
+    <value>Trip</value>
+  </data>
   <data name="Catch_AnglerLabel" xml:space="preserve">
     <value>Angler</value>
   </data>
@@ -548,6 +551,9 @@
   </data>
   <data name="Catch_RecordedByLabel" xml:space="preserve">
     <value>Recorded by</value>
+  </data>
+  <data name="Catch_EditAnglerUpdateFailed" xml:space="preserve">
+    <value>Couldn't update who caught this fish. Please try again.</value>
   </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
     <value>Bait or lure</value>

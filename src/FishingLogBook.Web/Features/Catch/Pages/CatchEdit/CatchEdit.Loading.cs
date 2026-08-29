@@ -1,3 +1,4 @@
+using System.Globalization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
@@ -17,14 +18,29 @@ public partial class CatchEdit
         {
             await LoadPreferencesAsync();
             var ownerUserId = await LocalCatchOwner.GetUserIdAsync(_cancellationTokenSource.Token);
-            _catch = await TryLoadLocallyAsync(ownerUserId, _cancellationTokenSource.Token)
-                ?? await TryLocalizeFromServerAsync(ownerUserId, _cancellationTokenSource.Token);
+            _catch = await TryLoadLocallyAsync(ownerUserId, _cancellationTokenSource.Token);
+            if (_catch is not null)
+            {
+                if (_catch.SyncStatus == SyncStatus.Synchronised && _catch.MetadataSyncStatus == SyncStatus.Synchronised)
+                {
+                    await LoadProvenanceNamesAsync(_cancellationTokenSource.Token);
+                }
+            }
+            else
+            {
+                _catch = await TryLocalizeFromServerAsync(ownerUserId, _cancellationTokenSource.Token);
+            }
+
             if (_catch is null)
             {
                 _loadFailed = true;
                 return;
             }
 
+            if (_catch.TripId is { } tripId)
+            {
+                await LoadTripContextAsync(tripId, _cancellationTokenSource.Token);
+            }
         }
         catch (Exception exception)
         {
@@ -35,6 +51,89 @@ public partial class CatchEdit
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private async Task LoadProvenanceNamesAsync(CancellationToken cancellationToken)
+    {
+        _anglerName = null;
+        _recordedByName = null;
+        try
+        {
+            if (!await Network.IsOnlineAsync(cancellationToken))
+            {
+                return;
+            }
+
+            var remote = await CatchClient.GetAsync(CatchId, cancellationToken);
+            if (remote is null || remote.Id != CatchId)
+            {
+                return;
+            }
+
+            _anglerName = remote.AnglerName;
+            _recordedByName = remote.RecordedByName;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("loading catch provenance names", exception, CancellationToken.None);
+        }
+    }
+
+    private async Task LoadTripContextAsync(Guid tripId, CancellationToken cancellationToken)
+    {
+        _tripTitle = null;
+        _tripStartedOnLabel = null;
+        _anglerOptions = [];
+        try
+        {
+            if (!await Network.IsOnlineAsync(cancellationToken))
+            {
+                return;
+            }
+
+            var detail = await TripClient.GetDetailAsync(tripId, cancellationToken);
+            if (detail is not null)
+            {
+                _tripTitle = detail.Trip.Title;
+                var startedLocal = await Time.ToDateTimeLocalValueAsync(detail.Trip.StartedOn, cancellationToken);
+                _tripStartedOnLabel = DateTime.TryParseExact(
+                    startedLocal,
+                    "yyyy-MM-ddTHH:mm",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var parsed)
+                    ? parsed.ToString("d MMM yyyy", CultureInfo.CurrentCulture)
+                    : null;
+            }
+
+            var participants = await ParticipantClient.GetAsync(tripId, cancellationToken);
+            if (participants is null)
+            {
+                return;
+            }
+
+            _anglerOptions =
+            [
+                .. participants.Participants
+                    .Where(participant =>
+                        participant.IsOwner || participant.Status == TripParticipantConstants.Accepted)
+                    .Select(participant => new CatchAnglerOptionModel(
+                        participant.UserId,
+                        string.IsNullOrWhiteSpace(participant.DisplayName)
+                            ? Loc["Trip_ContributorUnknown"].Value
+                            : participant.DisplayName))
+            ];
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("loading trip context for catch editing", exception, CancellationToken.None);
         }
     }
 
@@ -77,6 +176,9 @@ public partial class CatchEdit
         {
             return null;
         }
+
+        _anglerName = remote.AnglerName;
+        _recordedByName = remote.RecordedByName;
 
         var photographs = new List<CatchPhotographModel>();
         foreach (var photograph in remote.Photographs)

@@ -87,7 +87,7 @@ public sealed class CatchService : ICatchService
         }
 
         var identity = existing is not null
-            ? Result.Ok((UserId: existing.UserId, AnglerUserId: existing.AnglerUserId))
+            ? await ResolveAnglerForEditAsync(args, existing, trip.Value, cancellationToken)
             : await ResolveAnglerAsync(args, trip.Value, cancellationToken);
         if (identity.IsFailed)
         {
@@ -340,6 +340,35 @@ public sealed class CatchService : ICatchService
         if (requestedAngler == args.UserId)
         {
             return Result.Ok((UserId: args.UserId, AnglerUserId: args.UserId));
+        }
+
+        if (tripId is null)
+        {
+            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+        }
+
+        var anglerAccess = await _tripAccessService.ResolveForAsync(tripId.Value, requestedAngler, cancellationToken);
+        if (anglerAccess.IsFailed || !anglerAccess.Value.CanContribute)
+        {
+            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+        }
+
+        return Result.Ok((UserId: requestedAngler, AnglerUserId: requestedAngler));
+    }
+
+    private async Task<Result<(Guid UserId, Guid AnglerUserId)>> ResolveAnglerForEditAsync(
+        UpsertCatchArgs args,
+        Catch existing,
+        Guid? tripId,
+        CancellationToken cancellationToken)
+    {
+        var requestedAngler = args.Catch.AnglerUserId == Guid.Empty
+            ? existing.AnglerUserId
+            : args.Catch.AnglerUserId;
+
+        if (requestedAngler == existing.AnglerUserId)
+        {
+            return Result.Ok((UserId: existing.UserId, AnglerUserId: existing.AnglerUserId));
         }
 
         if (tripId is null)

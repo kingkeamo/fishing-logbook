@@ -537,6 +537,9 @@
   <data name="Catch_EditMethod" xml:space="preserve">
     <value>Méthode de pêche</value>
   </data>
+  <data name="Catch_EditTripLabel" xml:space="preserve">
+    <value>Sortie</value>
+  </data>
   <data name="Catch_AnglerLabel" xml:space="preserve">
     <value>Pêcheur</value>
   </data>
@@ -548,6 +551,9 @@
   </data>
   <data name="Catch_RecordedByLabel" xml:space="preserve">
     <value>Enregistré par</value>
+  </data>
+  <data name="Catch_EditAnglerUpdateFailed" xml:space="preserve">
+    <value>Impossible de mettre à jour qui a attrapé ce poisson. Veuillez réessayer.</value>
   </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
     <value>Appât ou leurre</value>

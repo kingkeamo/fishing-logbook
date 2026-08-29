@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
@@ -18,6 +19,7 @@ using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +50,10 @@ public class BaseCatchEditTest
         IModalService? modalService = null,
         ICatchClient? catchClient = null,
         IPhotographMetadataService? photoMetadata = null,
-        IPhotographPreparationService? preparation = null)
+        IPhotographPreparationService? preparation = null,
+        INetworkService? network = null,
+        ITripClient? tripClient = null,
+        ITripParticipantClient? participantClient = null)
     {
         var metadata = photoMetadata ?? PassThroughPhotoMetadata();
         var timeService = time ?? UtcTime();
@@ -65,6 +70,9 @@ public class BaseCatchEditTest
         context.Services.AddSingleton(anglerPreferences ?? QuietAnglerPreferences());
         context.Services.AddSingleton(modalService ?? QuietModalService());
         context.Services.AddSingleton(catchClient ?? QuietCatchClient());
+        context.Services.AddSingleton(network ?? OnlineNetwork());
+        context.Services.AddSingleton(tripClient ?? QuietTripClient());
+        context.Services.AddSingleton(participantClient ?? QuietParticipantClient());
         context.Services.AddSingleton(metadata);
         context.Services.AddSingleton(preparation
             ?? new PhotographPreparationService(metadata, timeService, loggingService));
@@ -100,6 +108,29 @@ public class BaseCatchEditTest
         var client = Substitute.For<ICatchClient>();
         client.GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((CatchViewDto?)null);
+        return client;
+    }
+
+    protected static INetworkService OnlineNetwork(bool isOnline = true)
+    {
+        var network = Substitute.For<INetworkService>();
+        network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(isOnline);
+        return network;
+    }
+
+    protected static ITripClient QuietTripClient()
+    {
+        var client = Substitute.For<ITripClient>();
+        client.GetDetailAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripDetailDto?)null);
+        return client;
+    }
+
+    protected static ITripParticipantClient QuietParticipantClient()
+    {
+        var client = Substitute.For<ITripParticipantClient>();
+        client.GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripParticipantsDto?)null);
         return client;
     }
 
@@ -208,7 +239,10 @@ public class BaseCatchEditTest
         string? speciesName = null,
         string? method = null,
         decimal? weight = null,
-        decimal? length = null)
+        decimal? length = null,
+        Guid? anglerUserId = null,
+        Guid? recordedByUserId = null,
+        Guid? tripId = null)
     {
         return new CatchModel(
             catchId,
@@ -227,11 +261,12 @@ public class BaseCatchEditTest
             UserId: OwnerUserId,
             SyncStatus: syncStatus,
             MetadataSyncStatus: metadataStatus,
-            AnglerUserId: OwnerUserId,
-            RecordedByUserId: OwnerUserId,
+            AnglerUserId: anglerUserId ?? OwnerUserId,
+            RecordedByUserId: recordedByUserId ?? OwnerUserId,
             Weight: weight,
             Length: length,
-            Method: method);
+            Method: method,
+            TripId: tripId);
     }
 
     private static ITimeService OffsetTime(TimeSpan offset)

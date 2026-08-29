@@ -1,6 +1,8 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Common.Offline.Synchronisers;
@@ -14,6 +16,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -29,6 +32,12 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private Guid? _appliedPhotographId;
     private Guid? _activePhotographId;
     private CatchModel? _catch;
+    private string? _anglerName;
+    private string? _recordedByName;
+    private string? _tripTitle;
+    private string? _tripStartedOnLabel;
+    private IReadOnlyList<CatchAnglerOptionModel> _anglerOptions = [];
+    private bool _anglerUpdateFailed;
     private AnglerPreferencesModel _preferences = AnglerPreferencesModel.Empty;
     private bool _isLoading = true;
     private bool _loadFailed;
@@ -45,6 +54,9 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     [Inject]
     private ICatchClient CatchClient { get; set; } = default!;
+
+    [Inject]
+    private INetworkService Network { get; set; } = default!;
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
@@ -64,6 +76,15 @@ public partial class CatchEdit : ComponentBase, IDisposable
     [Inject]
     private IModalService ModalService { get; set; } = default!;
 
+    [Inject]
+    private ITripClient TripClient { get; set; } = default!;
+
+    [Inject]
+    private ITripParticipantClient ParticipantClient { get; set; } = default!;
+
+    [Inject]
+    private ITimeService Time { get; set; } = default!;
+
     private IReadOnlyList<PhotographCarouselItemModel> CarouselPhotographs
     {
         get
@@ -78,6 +99,47 @@ public partial class CatchEdit : ComponentBase, IDisposable
                         photograph.Bytes,
                         photograph.RemoteUrl))
                     .ToArray();
+        }
+    }
+
+    private bool ShowProvenance => _anglerName is not null || _recordedByName is not null;
+
+    private bool ShowRecordedBy =>
+        _recordedByName is not null
+        && _catch is not null
+        && _catch.AnglerUserId != _catch.RecordedByUserId;
+
+    private bool ShowTripHeader => _catch?.TripId is not null && _tripTitle is not null;
+
+    private bool ShowAnglerPicker => _catch?.TripId is not null && _anglerOptions.Count > 1;
+
+    private async Task SelectAnglerAsync(Guid anglerUserId)
+    {
+        if (_catch is null || _catch.AnglerUserId == anglerUserId)
+        {
+            return;
+        }
+
+        _anglerUpdateFailed = false;
+        var updated = _catch with
+        {
+            UserId = anglerUserId,
+            AnglerUserId = anglerUserId,
+            MetadataSyncStatus = SyncStatus.WaitingToSynchronise,
+            SyncStatus = PendingOverallStatus(_catch.SyncStatus)
+        };
+
+        try
+        {
+            await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
+            _catch = updated;
+            _anglerName = _anglerOptions.FirstOrDefault(option => option.UserId == anglerUserId)?.DisplayName;
+            TryToSynchronisePending();
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("correcting the catch angler", exception, CancellationToken.None);
+            _anglerUpdateFailed = true;
         }
     }
 
