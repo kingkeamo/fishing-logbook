@@ -58,6 +58,7 @@
                                     <MudChip T="string"
                                              Color="@(selected ? Color.Primary : Color.Default)"
                                              Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                             Disabled="_isSavingAngler"
                                              OnClick="@(() => SelectAnglerAsync(angler.UserId))"
                                              id="@($"catch-edit-angler-{angler.UserId:D}")">
                                         @angler.DisplayName

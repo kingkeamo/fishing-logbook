@@ -38,6 +38,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private string? _tripStartedOnLabel;
     private IReadOnlyList<CatchAnglerOptionModel> _anglerOptions = [];
     private bool _anglerUpdateFailed;
+    private bool _isSavingAngler;
     private AnglerPreferencesModel _preferences = AnglerPreferencesModel.Empty;
     private bool _isLoading = true;
     private bool _loadFailed;
@@ -115,12 +116,13 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     private async Task SelectAnglerAsync(Guid anglerUserId)
     {
-        if (_catch is null || _catch.AnglerUserId == anglerUserId)
+        if (_catch is null || _catch.AnglerUserId == anglerUserId || _isSavingAngler)
         {
             return;
         }
 
         _anglerUpdateFailed = false;
+        _isSavingAngler = true;
         var updated = _catch with
         {
             UserId = anglerUserId,
@@ -134,12 +136,16 @@ public partial class CatchEdit : ComponentBase, IDisposable
             await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
             _catch = updated;
             _anglerName = _anglerOptions.FirstOrDefault(option => option.UserId == anglerUserId)?.DisplayName;
-            TryToSynchronisePending();
+            await SafeSynchronisePendingAsync();
         }
         catch (Exception exception)
         {
             await Logging.LogErrorAsync("correcting the catch angler", exception, CancellationToken.None);
             _anglerUpdateFailed = true;
+        }
+        finally
+        {
+            _isSavingAngler = false;
         }
     }
 
