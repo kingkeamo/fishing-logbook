@@ -91,22 +91,16 @@ public partial class AddTripNoteModal : ComponentBase, IDisposable
             return _latestLocal;
         }
 
-        var nowLocal = await LocalValueAsync(DateTimeOffset.UtcNow);
-        if (_earliestLocal.Length < LocalValueLength || nowLocal.Length < LocalValueLength)
-        {
-            return _latestLocal.Length < LocalValueLength ? nowLocal : _latestLocal;
-        }
-
-        var candidate = string.Concat(
-            _earliestLocal.AsSpan(0, TimePartIndex),
-            nowLocal.AsSpan(TimePartIndex, TimePartLength));
-        var instant = await ToInstantAsync(candidate);
-        if (instant is null || instant < Model.TripStartedOn)
+        // A trip may still be active on a later calendar day than it started, so the default
+        // must be "now" clamped to the trip's window, not the trip's start date with today's
+        // time spliced in.
+        var now = DateTimeOffset.UtcNow;
+        if (now < Model.TripStartedOn)
         {
             return _earliestLocal;
         }
 
-        return instant > Ceiling ? _latestLocal : candidate;
+        return now > Ceiling ? _latestLocal : await LocalValueAsync(now);
     }
 
     private async Task OnDateChanged(string? value)
