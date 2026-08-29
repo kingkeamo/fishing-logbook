@@ -1,12 +1,13 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Infrastructure.Tests.Repositories.TestSupport;
 
 namespace FishingLogBook.Infrastructure.Tests.Repositories.Repositories.TripRepositoryTests;
 
-public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
+public class WhenTestingGetSummariesForUser : BaseTripRepositoryTest
 {
-    public WhenTestingGetSummariesByOwnerUserId(PostgresFixture fixture)
+    public WhenTestingGetSummariesForUser(PostgresFixture fixture)
         : base(fixture)
     {
     }
@@ -18,7 +19,8 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         var ownerUserId = await CreateUserAsync();
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -37,7 +39,8 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         await Sut.UpsertAsync(foreign, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         result.Value.Should().ContainSingle();
@@ -64,7 +67,8 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         await Sut.UpsertAsync(newer, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         result.Value.Should().HaveCount(2);
@@ -87,7 +91,8 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         await Sut.UpsertAsync(active, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         result.Value.Select(trip => trip.Status)
@@ -103,7 +108,8 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         await Sut.UpsertAsync(trip, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         var summary = result.Value.Single();
@@ -124,12 +130,13 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         await AddCatchAsync(ownerUserId, busy.Id, "Pike");
         await AddCatchAsync(ownerUserId, busy.Id, "Brown Trout");
         await AddNoteAsync(busy.Id, ownerUserId);
-        await AddPhotographAsync(busy.Id);
-        await AddPhotographAsync(busy.Id);
-        await AddPhotographAsync(busy.Id);
+        await AddPhotographAsync(busy.Id, ownerUserId);
+        await AddPhotographAsync(busy.Id, ownerUserId);
+        await AddPhotographAsync(busy.Id, ownerUserId);
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         var busySummary = result.Value.Single(summary => summary.Id == busy.Id);
@@ -156,7 +163,8 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         await AddCatchAsync(otherUserId, foreign.Id);
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         result.Value.Should().ContainSingle();
@@ -173,7 +181,8 @@ public class WhenTestingGetSummariesByOwnerUserId : BaseTripRepositoryTest
         await Sut.UpsertAsync(trip, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetSummariesByOwnerUserIdAsync(ownerUserId, CancellationToken.None);
+        var result = await Sut.GetSummariesForUserAsync(
+            new GetMyTripsArgs { UserId = ownerUserId }, CancellationToken.None);
 
         // Assert
         var summary = result.Value.Single();

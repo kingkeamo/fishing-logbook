@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Tests.Common;
 using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -17,7 +18,7 @@ public class BaseTripNoteServiceTest
     protected static readonly DateTimeOffset StartedOn = DateTimeOffset.Parse("2026-08-17T07:00:00Z");
     protected static readonly DateTimeOffset RecordedOn = DateTimeOffset.Parse("2026-08-17T09:12:00Z");
 
-    protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
+    protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
     protected readonly ITripNoteRepository MockTripNoteRepository =
         Substitute.For<ITripNoteRepository>();
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
@@ -34,7 +35,7 @@ public class BaseTripNoteServiceTest
         MockTripNoteRepository.DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok());
         Sut = new TripNoteService(
-            MockTripRepository,
+            MockTripAccessService,
             MockTripNoteRepository,
             MockCurrentUser,
             TestMapper.Create());
@@ -42,29 +43,38 @@ public class BaseTripNoteServiceTest
 
     protected void GivenTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(new Trip
-            {
-                Id = TripId,
-                OwnerUserId = ownerUserId,
-                Status = status,
-                StartedOn = StartedOn,
-                EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
-            }));
+        MockTripAccessService.GivenOwner(BuildTrip(ownerUserId, status), CurrentUserId);
+    }
+
+    protected void GivenSharedTrip(TripStatusEnum status = TripStatusEnum.Active)
+    {
+        MockTripAccessService.GivenParticipant(BuildTrip(OtherUserId, status), CurrentUserId);
     }
 
     protected void GivenNoTrip()
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
+        MockTripAccessService.GivenNoAccess(TripId);
     }
 
-    protected static TripNote StoredNote(Guid tripId)
+    protected static Trip BuildTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
+    {
+        return new Trip
+        {
+            Id = TripId,
+            OwnerUserId = ownerUserId,
+            Status = status,
+            StartedOn = StartedOn,
+            EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
+        };
+    }
+
+    protected static TripNote StoredNote(Guid tripId, Guid? createdByUserId = null)
     {
         return new TripNote
         {
             Id = NoteId,
             TripId = tripId,
+            CreatedByUserId = createdByUserId ?? CurrentUserId,
             Text = "water dropped about a foot",
             RecordedOn = RecordedOn
         };

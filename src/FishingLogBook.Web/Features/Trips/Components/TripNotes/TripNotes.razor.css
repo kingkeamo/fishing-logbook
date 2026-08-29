@@ -8,3 +8,7 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
+
+.trip-note-author {
+    overflow-wrap: anywhere;
+}

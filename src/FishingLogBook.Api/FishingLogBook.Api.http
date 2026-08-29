@@ -294,3 +294,52 @@ Authorization: Bearer <access-token>
 }
 
 ###
+
+### Trip participants (requires a Cognito access token; never commit real tokens)
+
+GET {{FishingLogBook.Api_HostAddress}}/api/profiles/lookup?q=John Connolly
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+GET {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/participants
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/participants
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "userId": "00000000-0000-0000-0000-000000000000"
+}
+
+###
+
+DELETE {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/participants/00000000-0000-0000-0000-000000000000
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+GET {{FishingLogBook.Api_HostAddress}}/api/trips/invitations
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/invitation/accept
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/invitation/decline
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###

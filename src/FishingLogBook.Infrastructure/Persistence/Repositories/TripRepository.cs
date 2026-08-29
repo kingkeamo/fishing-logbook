@@ -1,4 +1,5 @@
 using Dapper;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Trips.Errors;
@@ -64,8 +65,8 @@ public sealed class TripRepository : ITripRepository
         }
     }
 
-    public async Task<Result<IReadOnlyList<TripSummary>>> GetSummariesByOwnerUserIdAsync(
-        Guid ownerUserId,
+    public async Task<Result<IReadOnlyList<TripSummary>>> GetSummariesForUserAsync(
+        GetMyTripsArgs args,
         CancellationToken cancellationToken)
     {
         try
@@ -74,6 +75,7 @@ public sealed class TripRepository : ITripRepository
             const string sql = """
                 SELECT
                     t."Id",
+                    t."OwnerUserId",
                     t."Status",
                     t."StartedOn",
                     t."EndedOn",
@@ -81,20 +83,36 @@ public sealed class TripRepository : ITripRepository
                     t."PlaceName",
                     (SELECT COUNT(*) FROM "Catch" c WHERE c."TripId" = t."Id") AS "CatchCount",
                     (SELECT COUNT(*) FROM "TripPhotograph" p WHERE p."TripId" = t."Id") AS "PhotographCount",
-                    (SELECT COUNT(*) FROM "TripNote" n WHERE n."TripId" = t."Id") AS "NoteCount"
+                    (SELECT COUNT(*) FROM "TripNote" n WHERE n."TripId" = t."Id") AS "NoteCount",
+                    (
+                        SELECT COUNT(*)
+                        FROM "TripParticipant" tp
+                        WHERE tp."TripId" = t."Id"
+                          AND tp."Status" = 'Accepted'
+                          AND tp."RemovedOn" IS NULL
+                    ) AS "ParticipantCount"
                 FROM "Trip" t
-                WHERE t."OwnerUserId" = @OwnerUserId
+                WHERE t."OwnerUserId" = @UserId
+                   OR EXISTS (
+                        SELECT 1
+                        FROM "TripParticipant" me
+                        WHERE me."TripId" = t."Id"
+                          AND me."UserId" = @UserId
+                          AND me."Status" = 'Accepted'
+                          AND me."RemovedOn" IS NULL
+                   )
                 ORDER BY t."StartedOn" DESC, t."Id" DESC;
                 """;
             var rows = await connection.QueryAsync<TripSummaryRow>(new CommandDefinition(
                 sql,
-                new { OwnerUserId = ownerUserId },
+                new { args.UserId },
                 cancellationToken: cancellationToken));
             IReadOnlyList<TripSummary> summaries =
             [
                 .. rows.Select(row => new TripSummary
                 {
                     Id = row.Id,
+                    OwnerUserId = row.OwnerUserId,
                     Status = ToStatus(row.Status),
                     StartedOn = row.StartedOn,
                     EndedOn = row.EndedOn,
@@ -102,14 +120,15 @@ public sealed class TripRepository : ITripRepository
                     PlaceName = row.PlaceName,
                     CatchCount = row.CatchCount,
                     PhotographCount = row.PhotographCount,
-                    NoteCount = row.NoteCount
+                    NoteCount = row.NoteCount,
+                    ParticipantCount = row.ParticipantCount
                 })
             ];
             return Result.Ok(summaries);
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed to load trip summaries for user {UserId}.", ownerUserId);
+            _logger.LogError(exception, "Failed to load trip summaries for user {UserId}.", args.UserId);
             return Result.Fail<IReadOnlyList<TripSummary>>(FailedMessage);
         }
     }
@@ -125,6 +144,7 @@ public sealed class TripRepository : ITripRepository
                 SELECT
                     c."Id",
                     c."UserId",
+                    c."AnglerUserId",
                     c."CaughtOn",
                     c."SpeciesName",
                     c."Weight",
@@ -364,6 +384,8 @@ public sealed class TripRepository : ITripRepository
     {
         public Guid Id { get; init; }
 
+        public Guid OwnerUserId { get; init; }
+
         public string? Status { get; init; }
 
         public DateTimeOffset StartedOn { get; init; }
@@ -379,6 +401,8 @@ public sealed class TripRepository : ITripRepository
         public int PhotographCount { get; init; }
 
         public int NoteCount { get; init; }
+
+        public int ParticipantCount { get; init; }
     }
 
     public sealed class TripPersistenceRow

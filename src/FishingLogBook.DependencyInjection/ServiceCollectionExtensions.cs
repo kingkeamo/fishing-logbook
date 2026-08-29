@@ -54,6 +54,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ICatchService, CatchService>();
+        services.AddScoped<ITripAccessService, TripAccessService>();
+        services.AddScoped<ITripParticipantService, TripParticipantService>();
+        services.AddScoped<IAnglerLookupService, AnglerLookupService>();
         services.AddScoped<ITripService, TripService>();
         services.AddScoped<ITripDetailService, TripDetailService>();
         services.AddScoped<ITripPhotographService, TripPhotographService>();
@@ -92,6 +95,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripRepository, TripRepository>();
         services.AddScoped<ITripPhotographRepository, TripPhotographRepository>();
         services.AddScoped<ITripNoteRepository, TripNoteRepository>();
+        services.AddScoped<ITripParticipantRepository, TripParticipantRepository>();
         services.AddScoped<IUserPlatformCapabilityRepository, UserPlatformCapabilityRepository>();
         services.AddScoped<IFishingCatalogueRepository, FishingCatalogueRepository>();
         services.AddScoped<IFishingLocationPreferenceRepository, FishingLocationPreferenceRepository>();

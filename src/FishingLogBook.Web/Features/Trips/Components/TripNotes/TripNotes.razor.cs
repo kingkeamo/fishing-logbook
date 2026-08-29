@@ -1,3 +1,4 @@
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
@@ -25,6 +26,10 @@ public partial class TripNotes : ComponentBase, IDisposable
     public TripModel Trip { get; set; } = default!;
 
     [Parameter]
+    [EditorRequired]
+    public Guid ViewerUserId { get; set; }
+
+    [Parameter]
     public EventCallback Changed { get; set; }
 
     [Parameter]
@@ -35,6 +40,9 @@ public partial class TripNotes : ComponentBase, IDisposable
 
     [Parameter]
     public TripStorageEnum NoteStorage { get; set; } = TripStorageEnum.LocalFirst;
+
+    [Parameter]
+    public IReadOnlyList<TripContributorDto> Contributors { get; set; } = [];
 
     [Inject]
     private ITripNoteStore NoteStore { get; set; } = default!;
@@ -73,7 +81,7 @@ public partial class TripNotes : ComponentBase, IDisposable
     private async Task<IReadOnlyList<TripNoteModel>> ReadStoredNotesAsync()
     {
         if (NoteStorage == TripStorageEnum.Server
-            || Trip.OwnerUserId == Guid.Empty
+            || ViewerUserId == Guid.Empty
             || Trip.Id == Guid.Empty)
         {
             return Trip.Notes ?? [];
@@ -82,7 +90,7 @@ public partial class TripNotes : ComponentBase, IDisposable
         try
         {
             return await NoteStore.GetForTripAsync(
-                Trip.OwnerUserId,
+                ViewerUserId,
                 Trip.Id,
                 _cancellationTokenSource.Token);
         }
@@ -102,6 +110,19 @@ public partial class TripNotes : ComponentBase, IDisposable
         return _localTimes.TryGetValue(noteId, out var value) ? value : string.Empty;
     }
 
+    private bool IsOwnNote(TripNoteModel note)
+    {
+        return note.CreatedByUserId == ViewerUserId;
+    }
+
+    private string ContributorName(Guid userId)
+    {
+        var contributor = Contributors.FirstOrDefault(candidate => candidate.UserId == userId);
+        return string.IsNullOrWhiteSpace(contributor?.DisplayName)
+            ? Loc["Trip_ContributorUnknown"].Value
+            : contributor.DisplayName;
+    }
+
     private async Task AddNoteAsync()
     {
         _removeFailed = false;
@@ -109,7 +130,7 @@ public partial class TripNotes : ComponentBase, IDisposable
             .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
                 new AddTripNoteModalModel(
                     Trip.Id,
-                    Trip.OwnerUserId,
+                    ViewerUserId,
                     Trip.StartedOn,
                     Trip.EndedOn,
                     NoteStorage),
@@ -132,7 +153,7 @@ public partial class TripNotes : ComponentBase, IDisposable
             ?? new TripNoteModel(
                 noteId,
                 Trip.Id,
-                Trip.OwnerUserId,
+                ViewerUserId,
                 text,
                 recordedOn,
                 SyncStatus.Synchronised);
@@ -140,7 +161,7 @@ public partial class TripNotes : ComponentBase, IDisposable
             .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
                 new AddTripNoteModalModel(
                     Trip.Id,
-                    Trip.OwnerUserId,
+                    ViewerUserId,
                     Trip.StartedOn,
                     Trip.EndedOn,
                     NoteStorage,
@@ -191,7 +212,7 @@ public partial class TripNotes : ComponentBase, IDisposable
             await NoteWriter.RemoveAsync(
                 new TripNoteRemovalModel(
                     Trip.Id,
-                    Trip.OwnerUserId,
+                    ViewerUserId,
                     noteId,
                     note?.SyncStatus ?? SyncStatus.Synchronised),
                 NoteStorage,

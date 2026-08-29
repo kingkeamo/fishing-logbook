@@ -78,3 +78,8 @@
     flex: 0 0 auto;
     opacity: 0.7;
 }
+
+.trip-timeline-contributor {
+    overflow-wrap: anywhere;
+    min-width: 0;
+}

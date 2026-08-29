@@ -5,7 +5,7 @@ namespace FishingLogBook.Web.Features.Trips.Models;
 public sealed record TripNoteModel(
     Guid Id,
     Guid TripId,
-    Guid OwnerUserId,
+    Guid CreatedByUserId,
     string Text,
     DateTimeOffset RecordedOn,
     SyncStatus SyncStatus = SyncStatus.SavedLocally,

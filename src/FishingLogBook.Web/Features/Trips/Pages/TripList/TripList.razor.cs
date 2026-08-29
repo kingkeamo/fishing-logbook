@@ -1,4 +1,5 @@
 using System.Globalization;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Catch.Models;
@@ -6,6 +7,7 @@ using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Localization;
@@ -20,14 +22,19 @@ public partial class TripList : ComponentBase, IDisposable
     private readonly Dictionary<Guid, string> _startedLabels = [];
 
     private IReadOnlyList<TripListItemModel> _trips = [];
+    private IReadOnlyList<TripInvitationDto> _invitations = [];
     private bool _isLoading = true;
     private bool _loadFailed;
+    private bool _isRespondingToInvitation;
 
     [Inject]
     private ITripStore TripStore { get; set; } = default!;
 
     [Inject]
     private ITripClient TripClient { get; set; } = default!;
+
+    [Inject]
+    private ITripParticipantClient ParticipantClient { get; set; } = default!;
 
     [Inject]
     private ICatchStore CatchStore { get; set; } = default!;
@@ -47,6 +54,87 @@ public partial class TripList : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
+        await LoadInvitationsAsync();
+    }
+
+    private async Task LoadInvitationsAsync()
+    {
+        try
+        {
+            _invitations = await ParticipantClient.GetMyInvitationsAsync(_cancellationTokenSource.Token);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _invitations = [];
+            await Logging.LogErrorAsync("loading trip invitations", exception, CancellationToken.None);
+        }
+    }
+
+    private string InviterName(TripInvitationDto invitation)
+    {
+        return string.IsNullOrWhiteSpace(invitation.OwnerDisplayName)
+            ? Loc["Trip_ContributorUnknown"].Value
+            : invitation.OwnerDisplayName;
+    }
+
+    private string InvitationSummary(TripInvitationDto invitation)
+    {
+        var place = string.IsNullOrWhiteSpace(invitation.PlaceName)
+            ? invitation.Title
+            : invitation.PlaceName;
+        return string.IsNullOrWhiteSpace(place)
+            ? invitation.StartedOn.ToLocalTime().ToString("d", CultureInfo.CurrentCulture)
+            : $"{place} · {invitation.StartedOn.ToLocalTime().ToString("d", CultureInfo.CurrentCulture)}";
+    }
+
+    private Task AcceptInvitationAsync(Guid tripId)
+    {
+        return RespondToInvitationAsync(tripId, accept: true);
+    }
+
+    private Task DeclineInvitationAsync(Guid tripId)
+    {
+        return RespondToInvitationAsync(tripId, accept: false);
+    }
+
+    private async Task RespondToInvitationAsync(Guid tripId, bool accept)
+    {
+        if (_isRespondingToInvitation)
+        {
+            return;
+        }
+
+        _isRespondingToInvitation = true;
+        try
+        {
+            var responded = accept
+                ? await ParticipantClient.AcceptAsync(tripId, _cancellationTokenSource.Token)
+                : await ParticipantClient.DeclineAsync(tripId, _cancellationTokenSource.Token);
+            if (!responded)
+            {
+                return;
+            }
+
+            await LoadInvitationsAsync();
+            await LoadAsync();
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "responding to a trip invitation",
+                exception,
+                CancellationToken.None);
+        }
+        finally
+        {
+            _isRespondingToInvitation = false;
+        }
     }
 
     private async Task LoadAsync()
@@ -158,7 +246,8 @@ public partial class TripList : ComponentBase, IDisposable
             PlaceName = summary.PlaceName,
             CatchCount = summary.CatchCount,
             PhotographCount = summary.PhotographCount,
-            NoteCount = summary.NoteCount
+            NoteCount = summary.NoteCount,
+            IsShared = summary.IsShared || summary.Role != TripParticipantConstants.Owner
         };
     }
 
@@ -170,7 +259,8 @@ public partial class TripList : ComponentBase, IDisposable
             PlaceName = trip.PlaceName,
             CatchCount = catches.Count(catchRecord => catchRecord.TripId == trip.Id),
             PhotographCount = trip.Photographs.Count,
-            NoteCount = trip.Notes.Count
+            NoteCount = trip.Notes.Count,
+            IsShared = trip.ParticipantUserIds.Count > 0 || trip.Origin == TripOriginEnum.Server
         };
     }
 

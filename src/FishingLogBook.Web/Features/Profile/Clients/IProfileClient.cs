@@ -12,6 +12,8 @@ public interface IProfileClient
 
     Task<PublicProfileDto> GetPublicAsync(Guid userId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<AnglerSummaryDto>> FindAnglersAsync(string query, CancellationToken cancellationToken);
+
     Task<PhotographUploadDto> CreatePhotographUploadAsync(
         PhotographUploadRequestDto request,
         CancellationToken cancellationToken);

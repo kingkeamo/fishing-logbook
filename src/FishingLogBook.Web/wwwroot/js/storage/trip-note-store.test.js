@@ -68,7 +68,7 @@ describe('Trip note store', () => {
         await seedTrip();
 
         await expect(save(note({ ownerUserId: '' })))
-            .rejects.toThrow('Owned Trip note id is required');
+            .rejects.toThrow('Trip note author is required');
     });
 
     it('rejects a note with no text', async () => {
@@ -80,14 +80,14 @@ describe('Trip note store', () => {
 
     it('rejects a note for a trip that is not stored', async () => {
         await expect(save(note()))
-            .rejects.toThrow('Trip note must belong to an owned Trip');
+            .rejects.toThrow('Trip note must belong to a writable Trip');
     });
 
     it('rejects a note for another anglers trip', async () => {
         await seedTrip({ ownerUserId: otherUserId });
 
         await expect(save(note()))
-            .rejects.toThrow('Trip note must belong to an owned Trip');
+            .rejects.toThrow('Trip note must belong to a writable Trip');
     });
 
     it('round-trips the note on the trip metadata', async () => {

@@ -30,7 +30,8 @@ public class WhenTestingRemove : BaseTripNotesTest
             .ThrowsAsync(new HttpRequestException("Offline."));
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-remove-{FirstNoteId:D}").Should().NotBeNull());
 
         // Act
@@ -50,7 +51,8 @@ public class WhenTestingRemove : BaseTripNotesTest
         var client = Substitute.For<ITripClient>();
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-remove-{FirstNoteId:D}").Should().NotBeNull());
 
         // Act
@@ -76,7 +78,8 @@ public class WhenTestingRemove : BaseTripNotesTest
         var client = Substitute.For<ITripClient>();
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-remove-{FirstNoteId:D}").Should().NotBeNull());
 
         // Act
@@ -102,6 +105,7 @@ public class WhenTestingRemove : BaseTripNotesTest
             modalService: ConfirmingModalService(confirm: false));
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.NoteStorage, TripStorageEnum.Server));
 
         // Act
@@ -125,6 +129,7 @@ public class WhenTestingRemove : BaseTripNotesTest
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.NoteStorage, TripStorageEnum.Server)
             .Add(component => component.Changed, () => changed++));
 
@@ -150,7 +155,8 @@ public class WhenTestingRemove : BaseTripNotesTest
         await store.SaveAsync(kept, CancellationToken.None);
         await using var context = CreateContext(store);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-remove-{FirstNoteId:D}").Should().NotBeNull());
 
         // Act

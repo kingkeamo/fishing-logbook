@@ -20,14 +20,14 @@ public class WhenTestingAdd : BaseTripNoteWriteServiceTest
 
         // Assert
         note.TripId.Should().Be(TripId);
-        note.OwnerUserId.Should().Be(OwnerUserId);
+        note.CreatedByUserId.Should().Be(OwnerUserId);
         note.Text.Should().Be("changed to olive nymph");
         note.RecordedOn.Should().Be(RecordedOn);
         note.SyncStatus.Should().Be(SyncStatus.SavedLocally);
         await MockNoteStore.Received(1).SaveAsync(
             Arg.Is<TripNoteModel>(saved =>
                 saved.TripId == TripId
-                && saved.OwnerUserId == OwnerUserId
+                && saved.CreatedByUserId == OwnerUserId
                 && saved.Text == "changed to olive nymph"
                 && saved.RecordedOn == RecordedOn
                 && saved.SyncStatus == SyncStatus.SavedLocally),

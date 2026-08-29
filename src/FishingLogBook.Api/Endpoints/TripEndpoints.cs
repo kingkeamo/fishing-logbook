@@ -36,6 +36,7 @@ public static class TripEndpoints
             .RequireAuthorization()
             .Produces<TripDetailDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -46,6 +47,7 @@ public static class TripEndpoints
             .Produces<PhotographUploadDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -56,6 +58,7 @@ public static class TripEndpoints
             .Produces<TripPhotographDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -66,6 +69,7 @@ public static class TripEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -76,6 +80,7 @@ public static class TripEndpoints
             .Produces<TripNoteDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -86,6 +91,7 @@ public static class TripEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -96,6 +102,7 @@ public static class TripEndpoints
             .Produces<TripCatchAssociationDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -165,9 +172,14 @@ public static class TripEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.Error is TripNoteNotFoundError)
+        if (response.Error is TripNoteNotFoundError or TripNotFoundError)
         {
             return Results.NotFound();
+        }
+
+        if (response.Error is TripContributionNotOwnedError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
         if (response.Error is TripNoteInvalidError or TripNoteOutsideTripError)
@@ -209,9 +221,14 @@ public static class TripEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.Error is TripNoteNotFoundError)
+        if (response.Error is TripNoteNotFoundError or TripNotFoundError)
         {
             return Results.NotFound();
+        }
+
+        if (response.Error is TripContributionNotOwnedError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
         if (response.IsFailure)
@@ -248,9 +265,14 @@ public static class TripEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.Error is TripPhotographNotFoundError)
+        if (response.Error is TripPhotographNotFoundError or TripNotFoundError)
         {
             return Results.NotFound();
+        }
+
+        if (response.Error is TripContributionNotOwnedError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
         if (response.IsFailure)
@@ -287,9 +309,14 @@ public static class TripEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.Error is TripPhotographNotFoundError)
+        if (response.Error is TripPhotographNotFoundError or TripNotFoundError)
         {
             return Results.NotFound();
+        }
+
+        if (response.Error is TripContributionNotOwnedError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
         if (response.Error is TripPhotographObjectKeyMismatchError)
@@ -331,9 +358,14 @@ public static class TripEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.Error is TripPhotographNotFoundError)
+        if (response.Error is TripPhotographNotFoundError or TripNotFoundError)
         {
             return Results.NotFound();
+        }
+
+        if (response.Error is TripContributionNotOwnedError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
         if (response.IsFailure)

@@ -5,4 +5,7 @@ public sealed record TripPhotographViewDto(
     string ContentType,
     DateTimeOffset AddedOn,
     string? Url = null,
-    DateTimeOffset? CapturedOn = null);
+    DateTimeOffset? CapturedOn = null)
+{
+    public Guid ContributedByUserId { get; init; }
+}

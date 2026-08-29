@@ -29,11 +29,11 @@
 
         <MudDivider />
 
-        <TripPhotographs Trip="Trip" Changed="OnContentChanged" />
+        <TripPhotographs Trip="Trip" ViewerUserId="ViewerUserId" Changed="OnContentChanged" />
 
         <MudDivider />
 
-        <TripNotes @ref="_notes" Trip="Trip" Changed="OnContentChanged" />
+        <TripNotes @ref="_notes" Trip="Trip" ViewerUserId="ViewerUserId" Changed="OnContentChanged" />
 
         <MudDivider />
 
@@ -78,6 +78,7 @@
             }
 
             <TripCatches Trip="Trip"
+                         ViewerUserId="ViewerUserId"
                          RecordCatchBaseHref="@RecordCatchBaseHref"
                          WeightUnit="WeightUnit"
                          LengthUnit="LengthUnit"

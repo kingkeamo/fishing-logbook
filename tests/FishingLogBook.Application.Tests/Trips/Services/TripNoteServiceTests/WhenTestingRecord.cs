@@ -27,7 +27,7 @@ public class WhenTestingRecord : BaseTripNoteServiceTest
         await MockTripNoteRepository.DidNotReceive().UpsertAsync(
             Arg.Any<TripNote>(),
             Arg.Any<CancellationToken>());
-        await MockTripRepository.DidNotReceive().GetByIdAsync(
+        await MockTripAccessService.DidNotReceive().RequireContributorAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -78,7 +78,7 @@ public class WhenTestingRecord : BaseTripNoteServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripNoteNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockTripNoteRepository.DidNotReceive().UpsertAsync(
             Arg.Any<TripNote>(),
             Arg.Any<CancellationToken>());
@@ -95,7 +95,7 @@ public class WhenTestingRecord : BaseTripNoteServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripNoteNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockTripNoteRepository.DidNotReceive().UpsertAsync(
             Arg.Any<TripNote>(),
             Arg.Any<CancellationToken>());

@@ -67,7 +67,7 @@ describe('Trip photograph store', () => {
         await seedTrip();
 
         await expect(save(photograph({ ownerUserId: '' })))
-            .rejects.toThrow('Owned Trip photograph id is required');
+            .rejects.toThrow('Trip photograph contributor is required');
     });
 
     it('rejects a photograph with no bytes', async () => {
@@ -79,14 +79,14 @@ describe('Trip photograph store', () => {
 
     it('rejects a photograph for a trip that is not stored', async () => {
         await expect(save(photograph()))
-            .rejects.toThrow('Trip photograph must belong to an owned Trip');
+            .rejects.toThrow('Trip photograph must belong to a writable Trip');
     });
 
     it('rejects a photograph for another anglers trip', async () => {
         await seedTrip({ ownerUserId: otherUserId });
 
         await expect(save(photograph()))
-            .rejects.toThrow('Trip photograph must belong to an owned Trip');
+            .rejects.toThrow('Trip photograph must belong to a writable Trip');
     });
 
     it('carries the photograph metadata on the trip and the bytes in its own store', async () => {

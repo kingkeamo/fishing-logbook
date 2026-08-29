@@ -23,7 +23,7 @@ public class WhenTestingDelete : BaseTripPhotographServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripPhotographNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockObjectStorage.DidNotReceive().DeleteObjectAsync(
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());

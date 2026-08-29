@@ -28,7 +28,7 @@ public class BaseTripServiceTest
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockTripRepository.UpsertAsync(Arg.Any<Trip>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(Persisted(call.ArgAt<Trip>(0))));
-        Sut = new TripService(MockTripRepository, MockCurrentUser, TestMapper.Create());
+        Sut = new TripService(MockTripRepository, TestMapper.Create());
     }
 
     protected static UpsertTripArgs UpsertArgs(

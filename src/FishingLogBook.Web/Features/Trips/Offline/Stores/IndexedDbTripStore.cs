@@ -34,33 +34,11 @@ public sealed class IndexedDbTripStore : ITripStore
 
     public async Task SaveAsync(TripModel trip, CancellationToken cancellationToken)
     {
-        if (trip.OwnerUserId == Guid.Empty)
-        {
-            throw new InvalidOperationException("A trip requires an owner.");
-        }
-
-        if (trip.Id == Guid.Empty)
-        {
-            throw new InvalidOperationException("A trip requires an identifier.");
-        }
-
+        RequireTrip(trip);
         var json = TripJson.Serialize(trip);
-        var outcome = await OfflineOperation.ExecuteAsync(
-            "write",
-            StoreName,
-            DiagnosticEventNames.OfflineDbWriteStarted,
-            DiagnosticEventNames.OfflineDbWriteCompleted,
-            DiagnosticEventNames.OfflineDbWriteFailed,
-            DiagnosticEventNames.OfflineDbWriteTimedOut,
-            _config.OperationTimeout,
-            _diagnostics,
-            async token =>
-            {
-                var module = await GetModuleAsync(token);
-                return await module.InvokeAsync<string>("putTrip", token, json);
-            },
-            cancellationToken,
-            _logging);
+        var outcome = await WriteAsync(
+            async (module, token) => await module.InvokeAsync<string>("putTrip", token, json),
+            cancellationToken);
 
         if (string.Equals(outcome, ActiveConflictOutcome, StringComparison.Ordinal))
         {
@@ -68,108 +46,82 @@ public sealed class IndexedDbTripStore : ITripStore
         }
     }
 
-    public async Task<IReadOnlyList<TripModel>> GetAllAsync(
-        Guid ownerUserId,
-        CancellationToken cancellationToken)
+    public async Task HydrateAsync(TripModel trip, Guid viewerUserId, CancellationToken cancellationToken)
     {
-        if (ownerUserId == Guid.Empty)
+        RequireTrip(trip);
+        if (!trip.CanContribute(viewerUserId))
         {
-            throw new InvalidOperationException("A trip owner is required.");
+            throw new InvalidOperationException("A shared trip can only be cached for a contributor.");
         }
 
-        var loaded = await OfflineOperation.ExecuteAsync(
+        var json = TripJson.Serialize(trip);
+        await WriteAsync(
+            async (module, token) => await module.InvokeAsync<string>(
+                "hydrateTrip",
+                token,
+                json,
+                viewerUserId.ToString("D")),
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<TripModel>> GetAllAsync(
+        Guid viewerUserId,
+        CancellationToken cancellationToken)
+    {
+        RequireViewer(viewerUserId);
+        var loaded = await ReadManyAsync(
             "metadata-read",
-            StoreName,
-            DiagnosticEventNames.OfflineDbReadStarted,
-            DiagnosticEventNames.OfflineDbReadCompleted,
-            DiagnosticEventNames.OfflineDbReadFailed,
-            DiagnosticEventNames.OfflineDbReadTimedOut,
-            _config.OperationTimeout,
-            _diagnostics,
-            async token =>
-            {
-                var module = await GetModuleAsync(token);
-                var records = await module.InvokeAsync<StoredTripRecord[]>(
-                    "getTrips",
-                    token,
-                    ownerUserId.ToString("D"));
-                return (IReadOnlyList<TripModel>)(records ?? [])
-                    .Select(record => TripJson.Deserialize(record.Json))
-                    .ToArray();
-            },
-            cancellationToken,
-            _logging);
-        return LocalTripVisibility.ForOwner(loaded, ownerUserId);
+            "getTrips",
+            [viewerUserId.ToString("D")],
+            cancellationToken);
+        return LocalTripAccess.ForViewer(loaded, viewerUserId);
     }
 
     public async Task<TripModel?> GetAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         CancellationToken cancellationToken)
     {
-        return await ReadSingleAsync(
-            ownerUserId,
+        RequireViewer(viewerUserId);
+        var loaded = await ReadSingleAsync(
             "single-read",
             "getTrip",
-            [ownerUserId.ToString("D"), tripId.ToString("D")],
+            [viewerUserId.ToString("D"), tripId.ToString("D")],
             cancellationToken);
+        return loaded is not null && loaded.CanContribute(viewerUserId) ? loaded : null;
     }
 
     public async Task<TripModel?> GetActiveAsync(Guid ownerUserId, CancellationToken cancellationToken)
     {
-        return await ReadSingleAsync(
-            ownerUserId,
+        RequireViewer(ownerUserId);
+        var loaded = await ReadSingleAsync(
             "active-read",
             "getActiveTrip",
             [ownerUserId.ToString("D")],
             cancellationToken);
+        return loaded is not null && loaded.IsOwnedBy(ownerUserId) ? loaded : null;
     }
 
     public async Task<IReadOnlyList<TripModel>> GetPendingAsync(
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
-        if (ownerUserId == Guid.Empty)
-        {
-            throw new InvalidOperationException("A trip owner is required.");
-        }
-
-        var loaded = await OfflineOperation.ExecuteAsync(
+        RequireViewer(ownerUserId);
+        var loaded = await ReadManyAsync(
             "pending-read",
-            StoreName,
-            DiagnosticEventNames.OfflineDbReadStarted,
-            DiagnosticEventNames.OfflineDbReadCompleted,
-            DiagnosticEventNames.OfflineDbReadFailed,
-            DiagnosticEventNames.OfflineDbReadTimedOut,
-            _config.OperationTimeout,
-            _diagnostics,
-            async token =>
-            {
-                var module = await GetModuleAsync(token);
-                var records = await module.InvokeAsync<StoredTripRecord[]>(
-                    "getPendingTrips",
-                    token,
-                    ownerUserId.ToString("D"));
-                return (IReadOnlyList<TripModel>)(records ?? [])
-                    .Select(record => TripJson.Deserialize(record.Json))
-                    .ToArray();
-            },
-            cancellationToken,
-            _logging);
-        return LocalTripVisibility.ForOwner(loaded, ownerUserId);
+            "getPendingTrips",
+            [ownerUserId.ToString("D")],
+            cancellationToken);
+        return LocalTripAccess.OwnedBy(loaded, ownerUserId);
     }
 
     public async Task<int> CleanupSyncedAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         DateTimeOffset olderThan,
         IReadOnlyCollection<Guid> retainedTripIds,
         CancellationToken cancellationToken)
     {
-        if (ownerUserId == Guid.Empty)
-        {
-            throw new InvalidOperationException("A trip owner is required.");
-        }
-
+        RequireViewer(viewerUserId);
         return await OfflineOperation.ExecuteAsync(
             "cleanup",
             StoreName,
@@ -185,7 +137,7 @@ public sealed class IndexedDbTripStore : ITripStore
                 return await module.InvokeAsync<int>(
                     "cleanupSyncedTrips",
                     token,
-                    ownerUserId.ToString("D"),
+                    viewerUserId.ToString("D"),
                     olderThan.ToUniversalTime().ToString("O"),
                     retainedTripIds.Select(tripId => tripId.ToString("D")).ToArray());
             },
@@ -193,19 +145,62 @@ public sealed class IndexedDbTripStore : ITripStore
             _logging);
     }
 
-    private async Task<TripModel?> ReadSingleAsync(
-        Guid ownerUserId,
+    private async Task<string> WriteAsync(
+        Func<IJSObjectReference, CancellationToken, Task<string>> invoke,
+        CancellationToken cancellationToken)
+    {
+        return await OfflineOperation.ExecuteAsync(
+            "write",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                return await invoke(module, token);
+            },
+            cancellationToken,
+            _logging);
+    }
+
+    private async Task<IReadOnlyList<TripModel>> ReadManyAsync(
         string operation,
         string jsFunction,
         object?[] arguments,
         CancellationToken cancellationToken)
     {
-        if (ownerUserId == Guid.Empty)
-        {
-            throw new InvalidOperationException("A trip owner is required.");
-        }
+        return await OfflineOperation.ExecuteAsync(
+            operation,
+            StoreName,
+            DiagnosticEventNames.OfflineDbReadStarted,
+            DiagnosticEventNames.OfflineDbReadCompleted,
+            DiagnosticEventNames.OfflineDbReadFailed,
+            DiagnosticEventNames.OfflineDbReadTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                var records = await module.InvokeAsync<StoredTripRecord[]>(jsFunction, token, arguments);
+                return (IReadOnlyList<TripModel>)(records ?? [])
+                    .Select(record => TripJson.Deserialize(record.Json))
+                    .ToArray();
+            },
+            cancellationToken,
+            _logging);
+    }
 
-        var loaded = await OfflineOperation.ExecuteAsync(
+    private async Task<TripModel?> ReadSingleAsync(
+        string operation,
+        string jsFunction,
+        object?[] arguments,
+        CancellationToken cancellationToken)
+    {
+        return await OfflineOperation.ExecuteAsync(
             operation,
             StoreName,
             DiagnosticEventNames.OfflineDbReadStarted,
@@ -222,7 +217,27 @@ public sealed class IndexedDbTripStore : ITripStore
             },
             cancellationToken,
             _logging);
-        return loaded is not null && loaded.OwnerUserId == ownerUserId ? loaded : null;
+    }
+
+    private static void RequireTrip(TripModel trip)
+    {
+        if (trip.OwnerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A trip requires an owner.");
+        }
+
+        if (trip.Id == Guid.Empty)
+        {
+            throw new InvalidOperationException("A trip requires an identifier.");
+        }
+    }
+
+    private static void RequireViewer(Guid viewerUserId)
+    {
+        if (viewerUserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A trip angler is required.");
+        }
     }
 
     private async Task<IJSObjectReference> GetModuleAsync(CancellationToken cancellationToken)

@@ -188,6 +188,7 @@ public class WhenTestingNotes : IClassFixture<SystemApiFactory>
             {
                 Id = noteId,
                 TripId = tripId,
+                CreatedByUserId = current!.UserId,
                 Text = "wind picked up",
                 RecordedOn = RecordedOn
             }));
@@ -217,6 +218,7 @@ public class WhenTestingNotes : IClassFixture<SystemApiFactory>
             {
                 Id = noteId,
                 TripId = tripId,
+                CreatedByUserId = current!.UserId,
                 Text = "wind picked up",
                 RecordedOn = RecordedOn
             }));

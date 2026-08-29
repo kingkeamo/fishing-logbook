@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Catches.Errors;
+using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -21,8 +22,7 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
     public async Task ItShouldFailWhenTheTripIsUnknown()
     {
         // Arrange
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
+        GivenNoAccess();
 
         // Act
         var result = await Sut.UpsertAsync(Args(tripId: TripId), CancellationToken.None);
@@ -36,11 +36,13 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
     }
 
     [Fact]
-    public async Task ItShouldFailWhenTheTripBelongsToAnotherAngler()
+    public async Task ItShouldFailWhenTheAnglerIsNotOnTheTrip()
     {
         // Arrange
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(Trip(Guid.Parse("99999999-9999-9999-9999-999999999999"))));
+        GivenAccess(TripAccess.Resolve(
+            Trip(Guid.Parse("99999999-9999-9999-9999-999999999999")),
+            OwnerUserId,
+            participant: null));
 
         // Act
         var result = await Sut.UpsertAsync(Args(tripId: TripId), CancellationToken.None);
@@ -57,11 +59,9 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
     public async Task ItShouldReportTheSameErrorForAnUnknownAndAnotherAnglersTrip()
     {
         // Arrange
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
+        GivenNoAccess();
         var unknown = await Sut.UpsertAsync(Args(tripId: TripId), CancellationToken.None);
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(Trip(Guid.NewGuid())));
+        GivenAccess(TripAccess.Resolve(Trip(Guid.NewGuid()), OwnerUserId, participant: null));
 
         // Act
         var otherOwner = await Sut.UpsertAsync(Args(tripId: TripId), CancellationToken.None);
@@ -75,15 +75,16 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
     public async Task ItShouldReturnFailureWhenTheTripLookupFails()
     {
         // Arrange
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<Trip?>("The trip store is unavailable."));
+        MockTripAccessService
+            .ResolveForAsync(TripId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<TripAccess>("The trip store is unavailable."));
 
         // Act
         var result = await Sut.UpsertAsync(Args(tripId: TripId), CancellationToken.None);
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Message.Should().Be("The trip store is unavailable.");
+        result.Errors[0].Should().BeOfType<CatchTripInvalidError>();
         await MockCatchRepository.DidNotReceive().UpsertAsync(
             Arg.Any<Catch>(),
             Arg.Any<CancellationToken>());
@@ -102,7 +103,8 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        await MockTripRepository.DidNotReceive().GetByIdAsync(
+        await MockTripAccessService.DidNotReceive().ResolveForAsync(
+            Arg.Any<Guid>(),
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
         await MockCatchRepository.Received(1).UpsertAsync(
@@ -115,8 +117,10 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
     {
         // Arrange
         var args = Args(tripId: TripId);
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(Trip(args.UserId, TripStatusEnum.Completed)));
+        GivenAccess(TripAccess.Resolve(
+            Trip(args.UserId, TripStatusEnum.Completed),
+            args.UserId,
+            participant: null));
         MockCatchRepository.UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
 
@@ -131,12 +135,24 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
     }
 
     [Fact]
-    public async Task ItShouldPersistTheTripWithoutCopyingItsLocation()
+    public async Task ItShouldAcceptACatchFromAnAcceptedParticipantOfASharedTrip()
     {
         // Arrange
         var args = Args(tripId: TripId);
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(TripWithLocation(args.UserId)));
+        var sharedTrip = Trip(Guid.Parse("99999999-9999-9999-9999-999999999999"));
+        GivenAccess(TripAccess.Resolve(
+            sharedTrip,
+            args.UserId,
+            new TripParticipant
+            {
+                Id = Guid.NewGuid(),
+                TripId = TripId,
+                UserId = args.UserId,
+                Status = TripParticipantStatusEnum.Accepted,
+                InvitedByUserId = sharedTrip.OwnerUserId,
+                InvitedOn = StartedOn.AddDays(-1),
+                RespondedOn = StartedOn.AddHours(-1)
+            }));
         MockCatchRepository.UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
 
@@ -146,7 +162,69 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.TripId.Should().Be(TripId);
-        await MockTripRepository.Received(1).GetByIdAsync(TripId, Arg.Any<CancellationToken>());
+        await MockCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(saved =>
+                saved.TripId == TripId
+                && saved.UserId == args.UserId
+                && saved.AnglerUserId == args.UserId
+                && saved.RecordedByUserId == args.UserId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectACatchFromAParticipantWhoWasRemoved()
+    {
+        // Arrange
+        var args = Args(tripId: TripId);
+        var sharedTrip = Trip(Guid.Parse("99999999-9999-9999-9999-999999999999"));
+        GivenAccess(TripAccess.Resolve(
+            sharedTrip,
+            args.UserId,
+            new TripParticipant
+            {
+                Id = Guid.NewGuid(),
+                TripId = TripId,
+                UserId = args.UserId,
+                Status = TripParticipantStatusEnum.Accepted,
+                InvitedByUserId = sharedTrip.OwnerUserId,
+                InvitedOn = StartedOn.AddDays(-1),
+                RespondedOn = StartedOn.AddHours(-1),
+                RemovedOn = StartedOn.AddHours(1)
+            }));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<CatchTripInvalidError>();
+        await MockCatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistTheTripWithoutCopyingItsLocation()
+    {
+        // Arrange
+        var args = Args(tripId: TripId);
+        GivenAccess(TripAccess.Resolve(
+            TripWithLocation(args.UserId),
+            args.UserId,
+            participant: null));
+        MockCatchRepository.UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.TripId.Should().Be(TripId);
+        await MockTripAccessService.Received(1).ResolveForAsync(
+            TripId,
+            args.UserId,
+            Arg.Any<CancellationToken>());
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(saved =>
                 saved.TripId == TripId
@@ -155,6 +233,20 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
                 && saved.AnglerUserId == args.UserId
                 && saved.RecordedByUserId == args.UserId),
             Arg.Any<CancellationToken>());
+    }
+
+    private void GivenAccess(TripAccess access)
+    {
+        MockTripAccessService
+            .ResolveForAsync(TripId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(access));
+    }
+
+    private void GivenNoAccess()
+    {
+        MockTripAccessService
+            .ResolveForAsync(TripId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<TripAccess>(new TripNotFoundError()));
     }
 
     private static Trip Trip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)

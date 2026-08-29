@@ -3,6 +3,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -10,6 +11,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Enums;
+using FishingLogBook.Web.Features.Trips.Modals.TripParticipants;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -37,6 +39,9 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _isReadOnlyHistory;
     private bool _isOnline = true;
+    private Guid _viewerUserId;
+    private IReadOnlyList<TripContributorDto> _contributors = [];
+    private string _role = TripParticipantConstants.Owner;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -58,6 +63,9 @@ public partial class ActiveTrip : ComponentBase, IDisposable
 
     [Inject]
     private ITripClient TripClient { get; set; } = default!;
+
+    [Inject]
+    private IModalService ModalService { get; set; } = default!;
 
     [Inject]
     private INetworkService Network { get; set; } = default!;
@@ -82,11 +90,19 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
     }
 
+    private bool IsOwner
+    {
+        get
+        {
+            return _role == TripParticipantConstants.Owner;
+        }
+    }
+
     private bool CanEdit
     {
         get
         {
-            return !IsCompleted && !_isReadOnlyHistory;
+            return !IsCompleted && !_isReadOnlyHistory && IsOwner;
         }
     }
 
@@ -219,22 +235,27 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            var ownerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
-            _trip = await TripStore.GetAsync(ownerUserId, TripId, cancellationToken);
+            var viewerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
+            _viewerUserId = viewerUserId;
+            _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken);
             if (_trip is not null)
             {
                 _isReadOnlyHistory = false;
+                _role = _trip.IsOwnedBy(viewerUserId)
+                    ? TripParticipantConstants.Owner
+                    : TripParticipantConstants.Participant;
                 _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
-                var catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
+                var catches = await LoadCatchesAsync(viewerUserId, cancellationToken);
                 _catchCount = catches?.Count(catchRecord => catchRecord.TripId == TripId);
                 _photographCount = _trip.Photographs.Count;
                 _noteCount = _trip.Notes.Count;
                 _timeline = TripTimeline.BuildLocal(_trip, catches ?? []);
+                await LoadContributorsAsync(cancellationToken);
                 await ReadPreferencesAsync(cancellationToken);
                 return;
             }
 
-            await LoadHistoricalAsync(ownerUserId, cancellationToken);
+            await LoadHistoricalAsync(viewerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -252,7 +273,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
     }
 
-    private async Task LoadHistoricalAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    private async Task LoadHistoricalAsync(Guid viewerUserId, CancellationToken cancellationToken)
     {
         var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
         if (detail is null)
@@ -261,26 +282,116 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
 
         _isReadOnlyHistory = true;
-        _trip = ToTripModel(detail.Trip, ownerUserId);
+        _role = detail.Role;
+        _contributors = detail.Contributors;
+        _trip = ToTripModel(detail, ParticipantUserIds(detail, viewerUserId));
         _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
         _catchCount = detail.Catches.Count;
         _photographCount = detail.Photographs.Count;
         _noteCount = detail.Notes.Count;
         _timeline = TripTimeline.BuildRemote(detail);
         await ReadPreferencesAsync(cancellationToken);
+        await HydrateSharedTripAsync(detail, viewerUserId, cancellationToken);
     }
 
-    private static TripModel ToTripModel(TripViewDto view, Guid ownerUserId)
+    private async Task LoadContributorsAsync(CancellationToken cancellationToken)
+    {
+        if (_trip is null || _trip.ParticipantUserIds.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
+            if (detail is not null)
+            {
+                _contributors = detail.Contributors;
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "reading the contributors of a trip",
+                exception,
+                CancellationToken.None);
+        }
+    }
+
+    private async Task HydrateSharedTripAsync(
+        TripDetailDto detail,
+        Guid viewerUserId,
+        CancellationToken cancellationToken)
+    {
+        if (_trip is null
+            || detail.Trip.Status != TripConstants.Active
+            || !_trip.CanContribute(viewerUserId))
+        {
+            return;
+        }
+
+        try
+        {
+            await TripStore.HydrateAsync(ToHydratedTrip(detail, _trip), viewerUserId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "caching a shared trip for offline use",
+                exception,
+                CancellationToken.None);
+        }
+    }
+
+    private static TripModel ToHydratedTrip(TripDetailDto detail, TripModel trip)
+    {
+        return trip with
+        {
+            Origin = TripOriginEnum.Server,
+            SyncedAt = DateTimeOffset.UtcNow,
+            Notes =
+            [
+                .. detail.Notes.Select(note => new TripNoteModel(
+                    note.Id,
+                    detail.Trip.Id,
+                    note.CreatedByUserId,
+                    note.Text,
+                    note.RecordedOn,
+                    SyncStatus.Synchronised,
+                    DateTimeOffset.UtcNow))
+            ]
+        };
+    }
+
+    private static IReadOnlyList<Guid> ParticipantUserIds(TripDetailDto detail, Guid viewerUserId)
+    {
+        if (detail.Role != TripParticipantConstants.Participant)
+        {
+            return [];
+        }
+
+        return [viewerUserId];
+    }
+
+    private static TripModel ToTripModel(TripDetailDto detail, IReadOnlyList<Guid> participantUserIds)
     {
         return new TripModel(
-            view.Id,
-            ownerUserId,
-            view.Status,
-            view.StartedOn,
-            view.EndedOn,
-            view.Title,
-            view.PlaceName,
-            SyncStatus: SyncStatus.Synchronised);
+            detail.Trip.Id,
+            detail.Trip.OwnerUserId,
+            detail.Trip.Status,
+            detail.Trip.StartedOn,
+            detail.Trip.EndedOn,
+            detail.Trip.Title,
+            detail.Trip.PlaceName,
+            SyncStatus: SyncStatus.Synchronised,
+            ParticipantUserIds: participantUserIds,
+            Origin: TripOriginEnum.Server);
     }
 
     private async Task ReadPreferencesAsync(CancellationToken cancellationToken)
@@ -306,6 +417,20 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     private async Task RetryAsync()
     {
         if (_isLoading)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task ShowParticipantsAsync()
+    {
+        var changed = await ModalService
+            .ShowAsync<TripParticipantsModal, TripParticipantsModalModel, TripParticipantsModalResult>(
+                new TripParticipantsModalModel(TripId),
+                _cancellationTokenSource.Token);
+        if (changed is null)
         {
             return;
         }

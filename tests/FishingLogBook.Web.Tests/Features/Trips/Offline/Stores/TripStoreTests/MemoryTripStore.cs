@@ -1,5 +1,6 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 
@@ -21,6 +22,17 @@ public sealed class MemoryTripStore : ITripStore
 
     public Func<Guid, Task>? BeforeSingleRead { get; set; }
 
+    public Task HydrateAsync(TripModel trip, Guid viewerUserId, CancellationToken cancellationToken)
+    {
+        if (!trip.CanContribute(viewerUserId))
+        {
+            throw new InvalidOperationException("A shared trip can only be cached for a contributor.");
+        }
+
+        _trips[trip.Id] = trip;
+        return Task.CompletedTask;
+    }
+
     public Task SaveAsync(TripModel trip, CancellationToken cancellationToken)
     {
         if (trip.OwnerUserId == Guid.Empty)
@@ -38,15 +50,15 @@ public sealed class MemoryTripStore : ITripStore
     }
 
     public Task<IReadOnlyList<TripModel>> GetAllAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken)
     {
         return Task.FromResult<IReadOnlyList<TripModel>>(
-            _trips.Values.Where(trip => trip.OwnerUserId == ownerUserId).ToList());
+            _trips.Values.Where(trip => trip.CanContribute(viewerUserId)).ToList());
     }
 
     public async Task<TripModel?> GetAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         CancellationToken cancellationToken)
     {
@@ -55,7 +67,7 @@ public sealed class MemoryTripStore : ITripStore
             await BeforeSingleRead(tripId);
         }
 
-        return _trips.TryGetValue(tripId, out var trip) && trip.OwnerUserId == ownerUserId
+        return _trips.TryGetValue(tripId, out var trip) && trip.CanContribute(viewerUserId)
             ? trip
             : null;
     }
@@ -75,14 +87,15 @@ public sealed class MemoryTripStore : ITripStore
         return Task.FromResult<IReadOnlyList<TripModel>>(
             _trips.Values
                 .Where(trip =>
-                    trip.OwnerUserId == ownerUserId
+                    trip.IsOwnedBy(ownerUserId)
+                    && trip.Origin == TripOriginEnum.Local
                     && trip.SyncStatus != SyncStatus.Synchronised)
                 .OrderBy(trip => trip.StartedOn)
                 .ToList());
     }
 
     public Task<int> CleanupSyncedAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         DateTimeOffset olderThan,
         IReadOnlyCollection<Guid> retainedTripIds,
         CancellationToken cancellationToken)
@@ -96,7 +109,7 @@ public sealed class MemoryTripStore : ITripStore
 
         var removable = _trips.Values
             .Where(trip =>
-                trip.OwnerUserId == ownerUserId
+                trip.CanContribute(viewerUserId)
                 && trip.Status == TripConstants.Completed
                 && trip.SyncStatus == SyncStatus.Synchronised
                 && trip.SyncedAt is not null

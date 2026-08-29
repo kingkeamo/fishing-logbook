@@ -6,6 +6,8 @@ public sealed class TripPhotograph
 
     public Guid TripId { get; init; }
 
+    public Guid ContributedByUserId { get; init; }
+
     public string ObjectKey { get; init; } = string.Empty;
 
     public string ContentType { get; init; } = string.Empty;

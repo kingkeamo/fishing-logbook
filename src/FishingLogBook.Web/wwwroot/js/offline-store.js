@@ -11,6 +11,7 @@ export {
 } from './storage/catch-store.js';
 export {
     putTrip,
+    hydrateTrip,
     getTrips,
     getTrip,
     getActiveTrip,

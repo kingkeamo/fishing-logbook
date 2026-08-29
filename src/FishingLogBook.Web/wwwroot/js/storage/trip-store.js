@@ -1,6 +1,11 @@
 import {
+    TRIP_LOCAL_ORIGIN,
     TRIP_PHOTO_STORE_NAME,
+    TRIP_SERVER_ORIGIN,
     TRIP_STORE_NAME,
+    canWriteTrip,
+    isLocalOriginTrip,
+    isTripOwner,
     normalisedOwnerId,
     runLogbookMultiStoreTransaction,
     runLogbookTransaction
@@ -22,8 +27,7 @@ export async function putTrip(json) {
 
     return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'write', (store, succeed, fail) => {
         const owner = normalisedOwnerId(trip.ownerUserId);
-        let storedPhotographs = null;
-        let storedNotes = null;
+        let stored = null;
         const request = store.openCursor();
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
@@ -40,16 +44,22 @@ export async function putTrip(json) {
                 }
 
                 if (cursor.value?.id === trip.id) {
-                    storedPhotographs = cursor.value.photographs ?? [];
-                    storedNotes = cursor.value.notes ?? [];
+                    stored = cursor.value;
                 }
 
                 cursor.continue();
                 return;
             }
 
-            trip.photographs = storedPhotographs ?? trip.photographs ?? [];
-            trip.notes = storedNotes ?? trip.notes ?? [];
+            if (stored && !isLocalOriginTrip(stored)) {
+                fail(new Error('A shared Trip cannot be written as a locally owned Trip'));
+                return;
+            }
+
+            trip.photographs = stored?.photographs ?? trip.photographs ?? [];
+            trip.notes = stored?.notes ?? trip.notes ?? [];
+            trip.participantUserIds = trip.participantUserIds ?? stored?.participantUserIds ?? [];
+            trip.origin = TRIP_LOCAL_ORIGIN;
             const write = store.put(trip);
             write.onerror = () => fail(write.error);
             write.onsuccess = () => succeed(TRIP_SAVED_OUTCOME);
@@ -57,9 +67,45 @@ export async function putTrip(json) {
     });
 }
 
-export async function getTrips(ownerUserId) {
-    const owner = normalisedOwnerId(ownerUserId);
-    if (!owner) {
+export async function hydrateTrip(json, viewerUserId) {
+    const trip = JSON.parse(json);
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!trip?.id || !normalisedOwnerId(trip.ownerUserId) || !viewer) {
+        throw new Error('Shared Trip id and viewer are required');
+    }
+
+    if (!canWriteTrip(trip, viewer)) {
+        throw new Error('Shared Trip is not writable by this angler');
+    }
+
+    return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'write', (store, succeed, fail) => {
+        const read = store.get(trip.id);
+        read.onerror = () => fail(read.error);
+        read.onsuccess = () => {
+            const stored = read.result;
+            if (stored && normalisedOwnerId(stored.ownerUserId) !== normalisedOwnerId(trip.ownerUserId)) {
+                fail(new Error('Trip ownership cannot be changed'));
+                return;
+            }
+
+            if (stored && isLocalOriginTrip(stored) && isTripOwner(stored, viewer)) {
+                succeed(TRIP_SAVED_OUTCOME);
+                return;
+            }
+
+            trip.origin = TRIP_SERVER_ORIGIN;
+            trip.notes = mergePending(stored?.notes, trip.notes);
+            trip.photographs = mergePending(stored?.photographs, trip.photographs);
+            const write = store.put(trip);
+            write.onerror = () => fail(write.error);
+            write.onsuccess = () => succeed(TRIP_SAVED_OUTCOME);
+        };
+    });
+}
+
+export async function getTrips(viewerUserId) {
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!viewer) {
         return [];
     }
 
@@ -70,7 +116,7 @@ export async function getTrips(ownerUserId) {
         request.onsuccess = () => {
             const cursor = request.result;
             if (cursor) {
-                if (normalisedOwnerId(cursor.value?.ownerUserId) === owner) {
+                if (canWriteTrip(cursor.value, viewer)) {
                     trips.push({ json: JSON.stringify(cursor.value) });
                 }
 
@@ -83,9 +129,9 @@ export async function getTrips(ownerUserId) {
     });
 }
 
-export async function getTrip(ownerUserId, tripId) {
-    const owner = normalisedOwnerId(ownerUserId);
-    if (!owner || typeof tripId !== 'string' || !tripId) {
+export async function getTrip(viewerUserId, tripId) {
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!viewer || typeof tripId !== 'string' || !tripId) {
         return null;
     }
 
@@ -94,7 +140,7 @@ export async function getTrip(ownerUserId, tripId) {
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
             const trip = request.result;
-            if (!trip || normalisedOwnerId(trip.ownerUserId) !== owner) {
+            if (!canWriteTrip(trip, viewer)) {
                 succeed(null);
                 return;
             }
@@ -143,7 +189,8 @@ export async function getPendingTrips(ownerUserId) {
         request.onsuccess = () => {
             const cursor = request.result;
             if (cursor) {
-                if (normalisedOwnerId(cursor.value?.ownerUserId) === owner
+                if (isTripOwner(cursor.value, owner)
+                    && isLocalOriginTrip(cursor.value)
                     && !isSynchronised(cursor.value?.syncStatus)) {
                     pending.push({ json: JSON.stringify(cursor.value) });
                 }
@@ -157,10 +204,10 @@ export async function getPendingTrips(ownerUserId) {
     });
 }
 
-export async function cleanupSyncedTrips(ownerUserId, olderThanIso, retainedTripIds) {
-    const owner = normalisedOwnerId(ownerUserId);
+export async function cleanupSyncedTrips(viewerUserId, olderThanIso, retainedTripIds) {
+    const viewer = normalisedOwnerId(viewerUserId);
     const cutoff = Date.parse(olderThanIso);
-    if (!owner || Number.isNaN(cutoff)) {
+    if (!viewer || Number.isNaN(cutoff)) {
         return 0;
     }
 
@@ -184,7 +231,7 @@ export async function cleanupSyncedTrips(ownerUserId, olderThanIso, retainedTrip
                     return;
                 }
 
-                if (normalisedOwnerId(cursor.value?.ownerUserId) === owner
+                if (canWriteTrip(cursor.value, viewer)
                     && !retained.has(normalisedOwnerId(cursor.value?.id))
                     && isEligibleForCleanup(cursor.value, cutoff)) {
                     for (const photograph of cursor.value.photographs ?? []) {
@@ -203,6 +250,13 @@ export async function cleanupSyncedTrips(ownerUserId, olderThanIso, retainedTrip
         });
 }
 
+function mergePending(stored, incoming) {
+    const pending = (stored ?? []).filter(entry => entry && !isSynchronised(entry.syncStatus));
+    const pendingIds = new Set(pending.map(entry => entry.id));
+    const server = (incoming ?? []).filter(entry => entry && !pendingIds.has(entry.id));
+    return [...server, ...pending];
+}
+
 function isEligibleForCleanup(trip, cutoff) {
     if (trip?.status !== TRIP_COMPLETED_STATUS || !isSynchronised(trip?.syncStatus)) {
         return false;
@@ -217,7 +271,9 @@ function isSynchronised(status) {
 }
 
 function isActiveForOwner(trip, owner) {
-    return normalisedOwnerId(trip?.ownerUserId) === owner && trip?.status === TRIP_ACTIVE_STATUS;
+    return isTripOwner(trip, owner)
+        && isLocalOriginTrip(trip)
+        && trip?.status === TRIP_ACTIVE_STATUS;
 }
 
 function conflictsWithActiveTrip(stored, incoming, owner) {

@@ -20,7 +20,7 @@ public class WhenTestingDelete : BaseTripNoteServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripNoteNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockTripNoteRepository.DidNotReceive().DeleteAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
@@ -39,7 +39,7 @@ public class WhenTestingDelete : BaseTripNoteServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripNoteNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockTripNoteRepository.DidNotReceive().DeleteAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());

@@ -1,3 +1,4 @@
+using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Trips;
 using FluentResults;
 
@@ -7,8 +8,8 @@ public interface ITripRepository
 {
     Task<Result<Trip?>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<Result<IReadOnlyList<TripSummary>>> GetSummariesByOwnerUserIdAsync(
-        Guid ownerUserId,
+    Task<Result<IReadOnlyList<TripSummary>>> GetSummariesForUserAsync(
+        GetMyTripsArgs args,
         CancellationToken cancellationToken);
 
     Task<Result<IReadOnlyList<TripCatchSummary>>> GetCatchSummariesByTripIdAsync(

@@ -147,7 +147,7 @@ public class WhenTestingRender : BaseTripTimelineTest
                         photographId: PhotographId,
                         photographUrl: "https://storage.test/one.jpg?signed=1")
                 })
-            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.TripId, TripId));
 
         // Assert
@@ -179,7 +179,7 @@ public class WhenTestingRender : BaseTripTimelineTest
                         StartedOn.AddMinutes(20),
                         photographId: PhotographId)
                 })
-            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.TripId, TripId));
 
         // Assert
@@ -214,7 +214,7 @@ public class WhenTestingRender : BaseTripTimelineTest
                         catchId: CatchId,
                         photographId: PhotographId)
                 })
-            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.TripId, TripId));
 
         // Assert
@@ -253,7 +253,7 @@ public class WhenTestingRender : BaseTripTimelineTest
                         catchId: CatchId,
                         photographId: PhotographId)
                 })
-            .Add(component => component.OwnerUserId, OwnerUserId)
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.TripId, TripId)
             .Add(component => component.AllowLocalMedia, false));
 

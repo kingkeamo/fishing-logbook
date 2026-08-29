@@ -33,9 +33,9 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
 
     public async Task SaveAsync(TripPhotographModel photograph, CancellationToken cancellationToken)
     {
-        if (photograph.OwnerUserId == Guid.Empty)
+        if (photograph.ContributedByUserId == Guid.Empty)
         {
-            throw new InvalidOperationException("A trip photograph requires an owner.");
+            throw new InvalidOperationException("A trip photograph requires a contributor.");
         }
 
         if (photograph.Id == Guid.Empty || photograph.TripId == Guid.Empty)
@@ -69,12 +69,12 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
     }
 
     public async Task<byte[]?> GetBytesAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid photographId,
         CancellationToken cancellationToken)
     {
-        RequireOwner(ownerUserId);
+        RequireViewer(viewerUserId);
         return await OfflineOperation.ExecuteAsync(
             "photo-read",
             StoreName,
@@ -90,7 +90,7 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
                 return await module.InvokeAsync<byte[]?>(
                     "getTripPhotographBytes",
                     token,
-                    ownerUserId.ToString("D"),
+                    viewerUserId.ToString("D"),
                     tripId.ToString("D"),
                     photographId.ToString("D"));
             },
@@ -99,12 +99,12 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
     }
 
     public async Task<bool> DeleteAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid photographId,
         CancellationToken cancellationToken)
     {
-        RequireOwner(ownerUserId);
+        RequireViewer(viewerUserId);
         return await OfflineOperation.ExecuteAsync(
             "delete",
             StoreName,
@@ -120,7 +120,7 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
                 return await module.InvokeAsync<bool>(
                     "deleteTripPhotograph",
                     token,
-                    ownerUserId.ToString("D"),
+                    viewerUserId.ToString("D"),
                     tripId.ToString("D"),
                     photographId.ToString("D"));
             },
@@ -129,10 +129,10 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
     }
 
     public async Task<IReadOnlyList<TripPhotographModel>> GetPendingAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken)
     {
-        RequireOwner(ownerUserId);
+        RequireViewer(viewerUserId);
         var loaded = await OfflineOperation.ExecuteAsync(
             "pending-read",
             StoreName,
@@ -148,21 +148,21 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
                 var records = await module.InvokeAsync<StoredTripRecord[]>(
                     "getPendingTripPhotographs",
                     token,
-                    ownerUserId.ToString("D"));
+                    viewerUserId.ToString("D"));
                 return (IReadOnlyList<TripPhotographModel>)(records ?? [])
                     .Select(record => TripJson.DeserializePhotograph(record.Json))
                     .ToArray();
             },
             cancellationToken,
             _logging);
-        return [.. loaded.Where(photograph => photograph.OwnerUserId == ownerUserId)];
+        return [.. loaded.Where(photograph => photograph.ContributedByUserId == viewerUserId)];
     }
 
     public async Task<IReadOnlyCollection<Guid>> GetTripsWithPendingPhotographsAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken)
     {
-        if (ownerUserId == Guid.Empty)
+        if (viewerUserId == Guid.Empty)
         {
             return [];
         }
@@ -182,18 +182,18 @@ public sealed class IndexedDbTripPhotographStore : ITripPhotographStore
                 return await module.InvokeAsync<Guid[]>(
                     "getTripsWithPendingPhotographs",
                     token,
-                    ownerUserId.ToString("D"));
+                    viewerUserId.ToString("D"));
             },
             cancellationToken,
             _logging);
         return loaded ?? [];
     }
 
-    private static void RequireOwner(Guid ownerUserId)
+    private static void RequireViewer(Guid viewerUserId)
     {
-        if (ownerUserId == Guid.Empty)
+        if (viewerUserId == Guid.Empty)
         {
-            throw new InvalidOperationException("A trip photograph owner is required.");
+            throw new InvalidOperationException("A trip photograph angler is required.");
         }
     }
 

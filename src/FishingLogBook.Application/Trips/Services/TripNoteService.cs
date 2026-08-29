@@ -14,18 +14,18 @@ public sealed class TripNoteService : ITripNoteService
 {
     private static readonly TimeSpan ClockSkewAllowance = TimeSpan.FromMinutes(5);
 
-    private readonly ITripRepository _tripRepository;
+    private readonly ITripAccessService _tripAccessService;
     private readonly ITripNoteRepository _tripNoteRepository;
     private readonly ICurrentUser _currentUser;
     private readonly IMapper _mapper;
 
     public TripNoteService(
-        ITripRepository tripRepository,
+        ITripAccessService tripAccessService,
         ITripNoteRepository tripNoteRepository,
         ICurrentUser currentUser,
         IMapper mapper)
     {
-        _tripRepository = tripRepository;
+        _tripAccessService = tripAccessService;
         _tripNoteRepository = tripNoteRepository;
         _currentUser = currentUser;
         _mapper = mapper;
@@ -41,13 +41,13 @@ public sealed class TripNoteService : ITripNoteService
             return Result.Fail<TripNoteDto>(new TripNoteInvalidError());
         }
 
-        var trip = await LoadOwnedTripAsync(args.TripId, cancellationToken);
-        if (trip.IsFailed)
+        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        if (access.IsFailed)
         {
-            return Result.Fail<TripNoteDto>(trip.Errors);
+            return Result.Fail<TripNoteDto>(access.Errors);
         }
 
-        if (!IsWithinTrip(trip.Value, args.RecordedOn))
+        if (!IsWithinTrip(access.Value.Trip, args.RecordedOn))
         {
             return Result.Fail<TripNoteDto>(new TripNoteOutsideTripError());
         }
@@ -63,12 +63,18 @@ public sealed class TripNoteService : ITripNoteService
             return Result.Fail<TripNoteDto>(new TripNoteNotFoundError());
         }
 
+        // Authorship is never inferred from trip ownership, and it is never taken from the client.
+        if (existing.Value is not null && existing.Value.CreatedByUserId != _currentUser.UserId)
+        {
+            return Result.Fail<TripNoteDto>(new TripContributionNotOwnedError());
+        }
+
         var saved = await _tripNoteRepository.UpsertAsync(
             new TripNote
             {
                 Id = args.NoteId,
                 TripId = args.TripId,
-                CreatedByUserId = existing.Value?.CreatedByUserId ?? _currentUser.UserId,
+                CreatedByUserId = _currentUser.UserId,
                 Text = text,
                 RecordedOn = args.RecordedOn
             },
@@ -82,10 +88,10 @@ public sealed class TripNoteService : ITripNoteService
         DeleteTripNoteArgs args,
         CancellationToken cancellationToken)
     {
-        var trip = await LoadOwnedTripAsync(args.TripId, cancellationToken);
-        if (trip.IsFailed)
+        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        if (access.IsFailed)
         {
-            return trip.ToResult();
+            return access.ToResult();
         }
 
         var note = await _tripNoteRepository.GetByIdAsync(args.NoteId, cancellationToken);
@@ -99,6 +105,11 @@ public sealed class TripNoteService : ITripNoteService
             return Result.Fail(new TripNoteNotFoundError());
         }
 
+        if (note.Value.CreatedByUserId != _currentUser.UserId)
+        {
+            return Result.Fail(new TripContributionNotOwnedError());
+        }
+
         return await _tripNoteRepository.DeleteAsync(args.NoteId, cancellationToken);
     }
 
@@ -110,21 +121,5 @@ public sealed class TripNoteService : ITripNoteService
         }
 
         return recordedOn <= (trip.EndedOn ?? DateTimeOffset.UtcNow.Add(ClockSkewAllowance));
-    }
-
-    private async Task<Result<Trip>> LoadOwnedTripAsync(Guid tripId, CancellationToken cancellationToken)
-    {
-        var trip = await _tripRepository.GetByIdAsync(tripId, cancellationToken);
-        if (trip.IsFailed)
-        {
-            return Result.Fail<Trip>(trip.Errors);
-        }
-
-        if (trip.Value is null || trip.Value.OwnerUserId != _currentUser.UserId)
-        {
-            return Result.Fail<Trip>(new TripNoteNotFoundError());
-        }
-
-        return Result.Ok(trip.Value);
     }
 }

@@ -25,6 +25,17 @@ public sealed class TripMappingRegistration : IRegister
             {
                 CreatedByUserId = source.CreatedByUserId
             });
+        config.NewConfig<TripPhotograph, TripPhotographDto>()
+            .MapWith(source => new TripPhotographDto(
+                source.Id,
+                source.TripId,
+                source.ObjectKey,
+                source.ContentType,
+                source.AddedOn,
+                source.CapturedOn)
+            {
+                ContributedByUserId = source.ContributedByUserId
+            });
         config.NewConfig<RecordTripNoteCommand, RecordTripNoteArgs>()
             .Map(destination => destination.NoteId, source => source.Note.NoteId)
             .Map(destination => destination.Text, source => source.Note.Text)
@@ -65,7 +76,9 @@ public sealed class TripMappingRegistration : IRegister
                 PlaceName = source.PlaceName,
                 CatchCount = source.CatchCount,
                 PhotographCount = source.PhotographCount,
-                NoteCount = source.NoteCount
+                NoteCount = source.NoteCount,
+                OwnerUserId = source.OwnerUserId,
+                ParticipantCount = source.ParticipantCount
             });
 
         config.NewConfig<TripCatchSummary, TripCatchSummaryDto>()
@@ -73,7 +86,8 @@ public sealed class TripMappingRegistration : IRegister
             {
                 SpeciesName = source.SpeciesName,
                 Weight = source.Weight,
-                Length = source.Length
+                Length = source.Length,
+                AnglerUserId = source.AnglerUserId
             });
 
         config.NewConfig<Trip, TripViewDto>()

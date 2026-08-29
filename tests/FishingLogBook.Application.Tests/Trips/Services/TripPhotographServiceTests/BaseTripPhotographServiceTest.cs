@@ -1,6 +1,7 @@
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Tests.Common;
 using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -23,7 +24,7 @@ public class BaseTripPhotographServiceTest
     protected static readonly string ExpectedObjectKey =
         $"trips/{CurrentUserId:D}/{TripId:D}/{PhotographId:D}";
 
-    protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
+    protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
     protected readonly ITripPhotographRepository MockTripPhotographRepository =
         Substitute.For<ITripPhotographRepository>();
     protected readonly IObjectStorage MockObjectStorage = Substitute.For<IObjectStorage>();
@@ -48,7 +49,7 @@ public class BaseTripPhotographServiceTest
                 Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<TripPhotograph>(0)));
         Sut = new TripPhotographService(
-            MockTripRepository,
+            MockTripAccessService,
             MockTripPhotographRepository,
             MockObjectStorage,
             MockCurrentUser,
@@ -58,29 +59,38 @@ public class BaseTripPhotographServiceTest
 
     protected void GivenTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(new Trip
-            {
-                Id = TripId,
-                OwnerUserId = ownerUserId,
-                Status = status,
-                StartedOn = StartedOn,
-                EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
-            }));
+        MockTripAccessService.GivenOwner(BuildTrip(ownerUserId, status), CurrentUserId);
+    }
+
+    protected void GivenSharedTrip(TripStatusEnum status = TripStatusEnum.Active)
+    {
+        MockTripAccessService.GivenParticipant(BuildTrip(OtherUserId, status), CurrentUserId);
     }
 
     protected void GivenNoTrip()
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
+        MockTripAccessService.GivenNoAccess(TripId);
     }
 
-    protected static TripPhotograph StoredPhotograph(Guid tripId)
+    protected static Trip BuildTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
+    {
+        return new Trip
+        {
+            Id = TripId,
+            OwnerUserId = ownerUserId,
+            Status = status,
+            StartedOn = StartedOn,
+            EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
+        };
+    }
+
+    protected static TripPhotograph StoredPhotograph(Guid tripId, Guid? contributedByUserId = null)
     {
         return new TripPhotograph
         {
             Id = PhotographId,
             TripId = tripId,
+            ContributedByUserId = contributedByUserId ?? CurrentUserId,
             ObjectKey = $"trips/{CurrentUserId:D}/{tripId:D}/{PhotographId:D}",
             ContentType = PhotographContentTypeConstants.Jpeg,
             AddedOn = AddedOn

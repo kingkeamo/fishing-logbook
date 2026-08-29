@@ -28,6 +28,10 @@ public partial class TripEditor : ComponentBase
     public TripModel Trip { get; set; } = default!;
 
     [Parameter]
+    [EditorRequired]
+    public Guid ViewerUserId { get; set; }
+
+    [Parameter]
     public IReadOnlyList<CatchModel> Catches { get; set; } = [];
 
     [Parameter]

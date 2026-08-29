@@ -1,10 +1,12 @@
 using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Tests.Common;
 using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using NSubstitute;
 
@@ -21,6 +23,9 @@ public class BaseTripDetailServiceTest
     protected readonly ITripNoteRepository MockTripNoteRepository = Substitute.For<ITripNoteRepository>();
     protected readonly ITripPhotographRepository MockTripPhotographRepository =
         Substitute.For<ITripPhotographRepository>();
+    protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
+    protected readonly IAnglerLookupService MockAnglerLookupService =
+        Substitute.For<IAnglerLookupService>();
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
     protected readonly IObjectStorage MockObjectStorage = Substitute.For<IObjectStorage>();
     protected readonly TripDetailService Sut;
@@ -29,8 +34,12 @@ public class BaseTripDetailServiceTest
     {
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
-        MockTripRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(StoredTrip()));
+        MockTripAccessService.GivenOwner(StoredTrip(), CurrentUserId);
+        MockAnglerLookupService.DescribeAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyDictionary<Guid, AnglerSummaryDto>>(
+                new Dictionary<Guid, AnglerSummaryDto>()));
         MockTripRepository.GetCatchSummariesByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripCatchSummary>>([]));
         MockTripNoteRepository.GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -44,10 +53,11 @@ public class BaseTripDetailServiceTest
                 Arg.Any<CancellationToken>())
             .Returns(call => new Uri($"https://storage.test/{call.ArgAt<string>(0)}?signed=1"));
         Sut = new TripDetailService(
-            MockTripRepository,
+            MockTripAccessService,
             MockTripNoteRepository,
             MockTripPhotographRepository,
-            MockCurrentUser,
+            MockTripRepository,
+            MockAnglerLookupService,
             MockObjectStorage,
             TestMapper.Create());
     }
@@ -85,12 +95,16 @@ public class BaseTripDetailServiceTest
         };
     }
 
-    protected static TripPhotograph Photograph(string objectKey, DateTimeOffset addedOn)
+    protected static TripPhotograph Photograph(
+        string objectKey,
+        DateTimeOffset addedOn,
+        Guid? contributedByUserId = null)
     {
         return new TripPhotograph
         {
             Id = Guid.NewGuid(),
             TripId = TripId,
+            ContributedByUserId = contributedByUserId ?? CurrentUserId,
             ObjectKey = objectKey,
             ContentType = PhotographContentTypeConstants.Jpeg,
             AddedOn = addedOn

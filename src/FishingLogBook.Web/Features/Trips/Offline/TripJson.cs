@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 
 namespace FishingLogBook.Web.Features.Trips.Offline;
@@ -35,7 +36,9 @@ internal static class TripJson
             record.SyncStatus,
             record.SyncedAt,
             [.. record.Photographs.Select(ToPhotograph)],
-            [.. record.Notes.Select(ToNote)]);
+            [.. record.Notes.Select(ToNote)],
+            record.ParticipantUserIds,
+            record.Origin);
     }
 
     private static StoredTrip ToRecord(TripModel trip)
@@ -61,7 +64,9 @@ internal static class TripJson
             trip.SyncStatus,
             trip.SyncedAt,
             [.. (trip.Photographs ?? []).Select(ToStoredPhotograph)],
-            [.. (trip.Notes ?? []).Select(ToStoredNote)]);
+            [.. (trip.Notes ?? []).Select(ToStoredNote)],
+            trip.ParticipantUserIds,
+            trip.Origin);
     }
 
     public static string SerializeNote(TripNoteModel note)
@@ -81,7 +86,7 @@ internal static class TripJson
         return new StoredTripNote(
             note.Id,
             note.TripId,
-            note.OwnerUserId,
+            note.CreatedByUserId,
             note.Text,
             note.RecordedOn,
             note.SyncStatus,
@@ -93,7 +98,7 @@ internal static class TripJson
         return new TripNoteModel(
             record.Id,
             record.TripId,
-            record.OwnerUserId,
+            record.Author,
             record.Text,
             record.RecordedOn,
             record.SyncStatus,
@@ -117,7 +122,7 @@ internal static class TripJson
         return new StoredTripPhotograph(
             photograph.Id,
             photograph.TripId,
-            photograph.OwnerUserId,
+            photograph.ContributedByUserId,
             photograph.ContentType,
             photograph.AddedOn,
             photograph.CapturedOn,
@@ -131,7 +136,7 @@ internal static class TripJson
         return new TripPhotographModel(
             record.Id,
             record.TripId,
-            record.OwnerUserId,
+            record.Contributor,
             record.ContentType,
             record.AddedOn,
             record.CapturedOn,
@@ -170,32 +175,58 @@ internal static class TripJson
         SyncStatus SyncStatus = SyncStatus.SavedLocally,
         DateTimeOffset? SyncedAt = null,
         IReadOnlyList<StoredTripPhotograph>? Photographs = null,
-        IReadOnlyList<StoredTripNote>? Notes = null)
+        IReadOnlyList<StoredTripNote>? Notes = null,
+        IReadOnlyList<Guid>? ParticipantUserIds = null,
+        TripOriginEnum Origin = TripOriginEnum.Local)
     {
         public IReadOnlyList<StoredTripPhotograph> Photographs { get; init; } = Photographs ?? [];
 
         public IReadOnlyList<StoredTripNote> Notes { get; init; } = Notes ?? [];
+
+        public IReadOnlyList<Guid> ParticipantUserIds { get; init; } = ParticipantUserIds ?? [];
     }
 
     private sealed record StoredTripNote(
         Guid Id,
         Guid TripId,
-        Guid OwnerUserId,
+        Guid CreatedByUserId,
         string Text,
         DateTimeOffset RecordedOn,
         SyncStatus SyncStatus = SyncStatus.SavedLocally,
-        DateTimeOffset? SyncedAt = null);
+        DateTimeOffset? SyncedAt = null)
+    {
+        public Guid OwnerUserId { get; init; }
+
+        public Guid Author
+        {
+            get
+            {
+                return CreatedByUserId == Guid.Empty ? OwnerUserId : CreatedByUserId;
+            }
+        }
+    }
 
     private sealed record StoredTripPhotograph(
         Guid Id,
         Guid TripId,
-        Guid OwnerUserId,
+        Guid ContributedByUserId,
         string ContentType,
         DateTimeOffset AddedOn,
         DateTimeOffset? CapturedOn = null,
         string? ObjectKey = null,
         SyncStatus SyncStatus = SyncStatus.SavedLocally,
-        DateTimeOffset? SyncedAt = null);
+        DateTimeOffset? SyncedAt = null)
+    {
+        public Guid OwnerUserId { get; init; }
+
+        public Guid Contributor
+        {
+            get
+            {
+                return ContributedByUserId == Guid.Empty ? OwnerUserId : ContributedByUserId;
+            }
+        }
+    }
 
     private sealed record StoredTripLocation(
         double Latitude,

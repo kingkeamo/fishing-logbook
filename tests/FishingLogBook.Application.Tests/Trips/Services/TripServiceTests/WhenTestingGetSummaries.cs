@@ -14,7 +14,9 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
     public async Task ItShouldReturnTheRepositoryFailure()
     {
         // Arrange
-        MockTripRepository.GetSummariesByOwnerUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
+        MockTripRepository.GetSummariesForUserAsync(
+                Arg.Is<GetMyTripsArgs>(args => args.UserId == CurrentUserId),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Fail<IReadOnlyList<TripSummary>>("Failed to save the trip."));
 
         // Act
@@ -24,8 +26,8 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        await MockTripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
-            CurrentUserId,
+        await MockTripRepository.Received(1).GetSummariesForUserAsync(
+            Arg.Is<GetMyTripsArgs>(args => args.UserId == CurrentUserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -33,7 +35,9 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
     public async Task ItShouldReturnAnEmptyListWhenTheAnglerHasNoTrips()
     {
         // Arrange
-        MockTripRepository.GetSummariesByOwnerUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
+        MockTripRepository.GetSummariesForUserAsync(
+                Arg.Is<GetMyTripsArgs>(args => args.UserId == CurrentUserId),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>([]));
 
         // Act
@@ -50,7 +54,9 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
     public async Task ItShouldRequestOnlyTheGivenOwnersTrips()
     {
         // Arrange
-        MockTripRepository.GetSummariesByOwnerUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
+        MockTripRepository.GetSummariesForUserAsync(
+                Arg.Is<GetMyTripsArgs>(args => args.UserId == CurrentUserId),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>([Summary()]));
 
         // Act
@@ -60,11 +66,11 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
 
         // Assert
         result.Value.Should().ContainSingle();
-        await MockTripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
-            CurrentUserId,
+        await MockTripRepository.Received(1).GetSummariesForUserAsync(
+            Arg.Is<GetMyTripsArgs>(args => args.UserId == CurrentUserId),
             Arg.Any<CancellationToken>());
-        await MockTripRepository.DidNotReceive().GetSummariesByOwnerUserIdAsync(
-            OtherUserId,
+        await MockTripRepository.DidNotReceive().GetSummariesForUserAsync(
+            Arg.Is<GetMyTripsArgs>(args => args.UserId == OtherUserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -73,7 +79,9 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
     {
         // Arrange
         var completedId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-        MockTripRepository.GetSummariesByOwnerUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
+        MockTripRepository.GetSummariesForUserAsync(
+                Arg.Is<GetMyTripsArgs>(args => args.UserId == CurrentUserId),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>(
             [
                 Summary(),
@@ -109,7 +117,9 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
     public async Task ItShouldReturnTheTitleAndPlaceSnapshot()
     {
         // Arrange
-        MockTripRepository.GetSummariesByOwnerUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
+        MockTripRepository.GetSummariesForUserAsync(
+                Arg.Is<GetMyTripsArgs>(args => args.UserId == CurrentUserId),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>(
                 [Summary(title: "Morning session", placeName: "Lough Corrib")]));
 
@@ -132,11 +142,14 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
         string? placeName = null,
         int catchCount = 0,
         int photographCount = 0,
-        int noteCount = 0)
+        int noteCount = 0,
+        Guid? ownerUserId = null,
+        int participantCount = 0)
     {
         return new TripSummary
         {
             Id = tripId ?? TripId,
+            OwnerUserId = ownerUserId ?? CurrentUserId,
             Status = status,
             StartedOn = StartedOn,
             EndedOn = endedOn,
@@ -144,7 +157,8 @@ public class WhenTestingGetSummaries : BaseTripServiceTest
             PlaceName = placeName,
             CatchCount = catchCount,
             PhotographCount = photographCount,
-            NoteCount = noteCount
+            NoteCount = noteCount,
+            ParticipantCount = participantCount
         };
     }
 }

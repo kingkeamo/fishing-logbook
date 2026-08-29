@@ -17,7 +17,7 @@ public sealed class CatchService : ICatchService
     private static readonly TimeSpan DownloadLifetime = TimeSpan.FromHours(1);
 
     private readonly ICatchRepository _catchRepository;
-    private readonly ITripRepository _tripRepository;
+    private readonly ITripAccessService _tripAccessService;
     private readonly ICurrentUser _currentUser;
     private readonly ICatchLocationPrivacyService _catchLocationPrivacyService;
     private readonly IObjectStorage _objectStorage;
@@ -25,14 +25,14 @@ public sealed class CatchService : ICatchService
 
     public CatchService(
         ICatchRepository catchRepository,
-        ITripRepository tripRepository,
+        ITripAccessService tripAccessService,
         ICurrentUser currentUser,
         ICatchLocationPrivacyService catchLocationPrivacyService,
         IObjectStorage objectStorage,
         IMapper mapper)
     {
         _catchRepository = catchRepository;
-        _tripRepository = tripRepository;
+        _tripAccessService = tripAccessService;
         _currentUser = currentUser;
         _catchLocationPrivacyService = catchLocationPrivacyService;
         _objectStorage = objectStorage;
@@ -276,18 +276,18 @@ public sealed class CatchService : ICatchService
             return Result.Ok<Guid?>(null);
         }
 
-        var trip = await _tripRepository.GetByIdAsync(tripId.Value, cancellationToken);
-        if (trip.IsFailed)
-        {
-            return Result.Fail<Guid?>(trip.Errors);
-        }
-
-        if (trip.Value is null || trip.Value.OwnerUserId != userId)
+        var access = await _tripAccessService.ResolveForAsync(tripId.Value, userId, cancellationToken);
+        if (access.IsFailed)
         {
             return Result.Fail<Guid?>(new CatchTripInvalidError());
         }
 
-        return Result.Ok<Guid?>(trip.Value.Id);
+        if (!access.Value.CanContribute)
+        {
+            return Result.Fail<Guid?>(new CatchTripInvalidError());
+        }
+
+        return Result.Ok<Guid?>(tripId.Value);
     }
 
     private static string? TrimToNull(string? value)

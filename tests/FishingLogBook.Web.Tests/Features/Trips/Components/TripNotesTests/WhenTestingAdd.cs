@@ -28,7 +28,8 @@ public class WhenTestingAdd : BaseTripNotesTest
 
         // Act
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.Find("#trip-notes").Should().NotBeNull();
@@ -48,7 +49,8 @@ public class WhenTestingAdd : BaseTripNotesTest
         var modalService = ConfirmingModalService();
         await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         await cut.Find("#trip-note-start").ClickAsync();
@@ -73,6 +75,7 @@ public class WhenTestingAdd : BaseTripNotesTest
         await using var context = CreateContext(store, modalService: ConfirmingModalService());
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.Changed, () => changed++));
 
         // Act
@@ -91,7 +94,8 @@ public class WhenTestingAdd : BaseTripNotesTest
         var note = Note(FirstNoteId, "wind picked up", StartedOn.AddHours(2));
         await using var context = CreateContext(store, modalService: ModalServiceAdding(note));
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         await cut.Find("#trip-note-start").ClickAsync();
@@ -115,7 +119,8 @@ public class WhenTestingAdd : BaseTripNotesTest
         var backdated = Note(FirstNoteId, "fish rising near the reeds", StartedOn.AddHours(1));
         await using var context = CreateContext(store, modalService: ModalServiceAdding(backdated));
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-{SecondNoteId:D}").Should().NotBeNull());
 
         // Act
@@ -138,6 +143,7 @@ public class WhenTestingAdd : BaseTripNotesTest
         await using var context = CreateContext(store, modalService: ModalServiceAdding(note));
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.Changed, () => changed++));
 
         // Act
@@ -156,7 +162,8 @@ public class WhenTestingAdd : BaseTripNotesTest
         var modalService = ConfirmingModalService();
         await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, CompletedTrip()));
+            parameters.Add(component => component.Trip, CompletedTrip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         await cut.Find("#trip-note-start").ClickAsync();
@@ -177,6 +184,7 @@ public class WhenTestingAdd : BaseTripNotesTest
         await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.NoteStorage, TripStorageEnum.Server));
 
         // Act
@@ -208,7 +216,8 @@ public class WhenTestingAdd : BaseTripNotesTest
 
         // Act
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         var rendered = cut.FindAll("#trip-notes-list .trip-note-text")
@@ -229,7 +238,8 @@ public class WhenTestingAdd : BaseTripNotesTest
 
         // Act
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.WaitForAssertion(() =>
@@ -251,7 +261,8 @@ public class WhenTestingAdd : BaseTripNotesTest
 
         // Act
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, CompletedTrip()));
+            parameters.Add(component => component.Trip, CompletedTrip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.WaitForAssertion(() =>
@@ -269,7 +280,8 @@ public class WhenTestingAdd : BaseTripNotesTest
 
         // Act
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip(Note(FirstNoteId, "from the snapshot"))));
+            parameters.Add(component => component.Trip, Trip(Note(FirstNoteId, "from the snapshot")))
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.WaitForAssertion(() =>
@@ -291,7 +303,8 @@ public class WhenTestingAdd : BaseTripNotesTest
 
         // Act
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.Find("#trip-notes").TextContent.Should().Contain("Notes de la sortie");

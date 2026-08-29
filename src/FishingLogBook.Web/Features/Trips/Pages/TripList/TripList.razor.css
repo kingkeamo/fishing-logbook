@@ -10,3 +10,11 @@
 .trip-list-place {
     overflow-wrap: anywhere;
 }
+
+::deep .trip-invitation-card {
+    min-width: 0;
+}
+
+::deep .trip-invitation-card .mud-typography {
+    overflow-wrap: anywhere;
+}

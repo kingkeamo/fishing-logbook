@@ -1,3 +1,4 @@
+using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -80,13 +81,14 @@ public abstract class BaseTripRepositoryTest
         }
     }
 
-    protected async Task AddPhotographAsync(Guid tripId)
+    protected async Task AddPhotographAsync(Guid tripId, Guid contributedByUserId)
     {
         var saved = await Photographs.UpsertAsync(
             new TripPhotograph
             {
                 Id = Guid.NewGuid(),
                 TripId = tripId,
+                ContributedByUserId = contributedByUserId,
                 ObjectKey = $"trips/{tripId:D}/{Guid.NewGuid():N}.jpg",
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = StartedOn.AddMinutes(20)

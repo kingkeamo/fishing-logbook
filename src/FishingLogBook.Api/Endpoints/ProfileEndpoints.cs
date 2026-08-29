@@ -2,6 +2,7 @@ using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Application.Profiles.Queries;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using MediatR;
 
@@ -33,6 +34,15 @@ public static class ProfileEndpoints
             .WithTags("Profiles")
             .RequireAuthorization()
             .Produces<ProfileDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
+        endpoints.MapGet("/api/profiles/lookup", FindAnglersAsync)
+            .WithName("FindAnglers")
+            .WithTags("Profiles")
+            .RequireAuthorization()
+            .Produces<IReadOnlyList<AnglerSummaryDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
@@ -106,6 +116,40 @@ public static class ProfileEndpoints
         }
 
         return ToDataResult(response.IsFailure, response.ErrorMessage, response.Profile, StatusCodes.Status503ServiceUnavailable);
+    }
+
+    private static async Task<IResult> FindAnglersAsync(
+        string? q,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new FindAnglersQuery
+            {
+                RequestingUserId = currentUser.UserId,
+                Query = q ?? string.Empty,
+                MaxResults = AnglerLookupConstants.MaxResults
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 } || response.Error is AnglerLookupQueryInvalidError)
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Anglers);
     }
 
     private static async Task<IResult> GetPublicAsync(

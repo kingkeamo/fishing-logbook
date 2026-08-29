@@ -192,6 +192,7 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
             {
                 Id = photographId,
                 TripId = tripId,
+                ContributedByUserId = current!.UserId,
                 ObjectKey = objectKey,
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = AddedOn

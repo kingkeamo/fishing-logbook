@@ -21,6 +21,9 @@ public sealed class TripTimelineService : ITripTimelineService
             .Select(catchRecord => new TripTimelineItemModel(TripTimelineKindEnum.Catch, catchRecord.CaughtOn)
             {
                 CatchId = catchRecord.Id,
+                ContributedByUserId = catchRecord.AnglerUserId == Guid.Empty
+                    ? catchRecord.UserId
+                    : catchRecord.AnglerUserId,
                 SpeciesName = catchRecord.SpeciesName,
                 Weight = catchRecord.Weight,
                 Length = catchRecord.Length,
@@ -37,6 +40,7 @@ public sealed class TripTimelineService : ITripTimelineService
             new TripTimelineItemModel(TripTimelineKindEnum.Photograph, photograph.OrderedOn)
             {
                 PhotographId = photograph.Id,
+                ContributedByUserId = photograph.ContributedByUserId,
                 ContentType = photograph.ContentType,
                 PhotographCount = 1
             }));
@@ -44,6 +48,7 @@ public sealed class TripTimelineService : ITripTimelineService
             new TripTimelineItemModel(TripTimelineKindEnum.Note, note.RecordedOn)
             {
                 NoteId = note.Id,
+                ContributedByUserId = note.CreatedByUserId,
                 Text = note.Text
             }));
         return Ordered(items, trip.Status, trip.EndedOn);
@@ -59,6 +64,7 @@ public sealed class TripTimelineService : ITripTimelineService
             new TripTimelineItemModel(TripTimelineKindEnum.Catch, summary.CaughtOn)
             {
                 CatchId = summary.Id,
+                ContributedByUserId = summary.AnglerUserId,
                 SpeciesName = summary.SpeciesName,
                 Weight = summary.Weight,
                 Length = summary.Length,
@@ -70,6 +76,7 @@ public sealed class TripTimelineService : ITripTimelineService
                 photograph.CapturedOn ?? photograph.AddedOn)
             {
                 PhotographId = photograph.Id,
+                ContributedByUserId = photograph.ContributedByUserId,
                 ContentType = photograph.ContentType,
                 PhotographUrl = photograph.Url,
                 PhotographCount = 1
@@ -78,6 +85,7 @@ public sealed class TripTimelineService : ITripTimelineService
             new TripTimelineItemModel(TripTimelineKindEnum.Note, note.RecordedOn)
             {
                 NoteId = note.Id,
+                ContributedByUserId = note.CreatedByUserId,
                 Text = note.Text
             }));
         return Ordered(items, detail.Trip.Status, detail.Trip.EndedOn);

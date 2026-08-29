@@ -6,6 +6,8 @@ public sealed class TripSummary
 {
     public Guid Id { get; init; }
 
+    public Guid OwnerUserId { get; init; }
+
     public TripStatusEnum Status { get; init; }
 
     public DateTimeOffset StartedOn { get; init; }
@@ -21,4 +23,14 @@ public sealed class TripSummary
     public int PhotographCount { get; init; }
 
     public int NoteCount { get; init; }
+
+    public int ParticipantCount { get; init; }
+
+    public bool IsShared
+    {
+        get
+        {
+            return ParticipantCount > 0;
+        }
+    }
 }

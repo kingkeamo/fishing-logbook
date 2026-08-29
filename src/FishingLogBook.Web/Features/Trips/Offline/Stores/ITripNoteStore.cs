@@ -7,27 +7,27 @@ public interface ITripNoteStore
     Task SaveAsync(TripNoteModel note, CancellationToken cancellationToken);
 
     Task<bool> DeleteAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid noteId,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<TripNoteModel>> GetForTripAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         CancellationToken cancellationToken);
 
     Task<TripNoteModel?> GetAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid noteId,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<TripNoteModel>> GetPendingAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyCollection<Guid>> GetTripsWithPendingNotesAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken);
 }

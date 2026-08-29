@@ -1,5 +1,4 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Capabilities.Errors;
 using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Trips.Errors;
@@ -15,16 +14,11 @@ namespace FishingLogBook.Application.Trips.Services;
 public sealed class TripService : ITripService
 {
     private readonly ITripRepository _tripRepository;
-    private readonly ICurrentUser _currentUser;
     private readonly IMapper _mapper;
 
-    public TripService(
-        ITripRepository tripRepository,
-        ICurrentUser currentUser,
-        IMapper mapper)
+    public TripService(ITripRepository tripRepository, IMapper mapper)
     {
         _tripRepository = tripRepository;
-        _currentUser = currentUser;
         _mapper = mapper;
     }
 
@@ -71,13 +65,21 @@ public sealed class TripService : ITripService
         GetMyTripsArgs args,
         CancellationToken cancellationToken)
     {
-        var loaded = await _tripRepository.GetSummariesByOwnerUserIdAsync(args.UserId, cancellationToken);
+        var loaded = await _tripRepository.GetSummariesForUserAsync(args, cancellationToken);
         if (loaded.IsFailed)
         {
             return Result.Fail<IReadOnlyList<TripSummaryDto>>(loaded.Errors);
         }
 
-        IReadOnlyList<TripSummaryDto> summaries = [.. loaded.Value.Select(_mapper.Map<TripSummaryDto>)];
+        IReadOnlyList<TripSummaryDto> summaries =
+        [
+            .. loaded.Value.Select(summary => _mapper.Map<TripSummaryDto>(summary) with
+            {
+                Role = summary.OwnerUserId == args.UserId
+                    ? TripParticipantConstants.Owner
+                    : TripParticipantConstants.Participant
+            })
+        ];
         return Result.Ok(summaries);
     }
 

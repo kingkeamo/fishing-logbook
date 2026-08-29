@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Infrastructure.Tests.Repositories.TestSupport;
 
 namespace FishingLogBook.Infrastructure.Tests.Repositories.Repositories.TripRepositoryTests;
