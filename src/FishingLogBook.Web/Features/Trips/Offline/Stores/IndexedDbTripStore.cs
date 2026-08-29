@@ -91,15 +91,15 @@ public sealed class IndexedDbTripStore : ITripStore
         return loaded is not null && loaded.CanContribute(viewerUserId) ? loaded : null;
     }
 
-    public async Task<TripModel?> GetActiveAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    public async Task<TripModel?> GetActiveAsync(Guid viewerUserId, CancellationToken cancellationToken)
     {
-        RequireViewer(ownerUserId);
+        RequireViewer(viewerUserId);
         var loaded = await ReadSingleAsync(
             "active-read",
             "getActiveTrip",
-            [ownerUserId.ToString("D")],
+            [viewerUserId.ToString("D")],
             cancellationToken);
-        return loaded is not null && loaded.IsOwnedBy(ownerUserId) ? loaded : null;
+        return loaded is not null && loaded.CanContribute(viewerUserId) ? loaded : null;
     }
 
     public async Task<IReadOnlyList<TripModel>> GetPendingAsync(

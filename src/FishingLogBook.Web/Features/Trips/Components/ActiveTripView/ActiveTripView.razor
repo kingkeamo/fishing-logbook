@@ -131,15 +131,15 @@
                          OnCatchesAttached="OnContentChanged" />
         }
 
-        @if (CanEdit && _showPhotographPicker)
+        @if (CanAddPhotographs && _showPhotographPicker)
         {
             <TripPhotographs Trip="Trip" ViewerUserId="ViewerUserId" ShowGallery="false" Changed="OnContentChanged" />
         }
 
-        @if (CanEdit || CanAddCatches)
+        @if (CanManageTrip || CanRecordCatch || CanAddCatches || CanAddPhotographs)
         {
             <MudGrid Spacing="2" Class="active-trip-actions" id="active-trip-actions">
-                @if (CanEdit)
+                @if (CanRecordCatch)
                 {
                     <MudItem xs="4">
                         <MudButton Variant="Variant.Filled"
@@ -167,7 +167,7 @@
                         </MudButton>
                     </MudItem>
                 }
-                @if (CanEdit)
+                @if (CanAddPhotographs)
                 {
                     <MudItem xs="4">
                         <MudButton Variant="Variant.Outlined"
@@ -180,6 +180,9 @@
                             @Loc["Trip_AddPhotograph"]
                         </MudButton>
                     </MudItem>
+                }
+                @if (CanManageTrip)
+                {
                     <MudItem xs="4">
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Primary"
@@ -207,7 +210,7 @@
             </MudGrid>
         }
 
-        @if (!CanEdit)
+        @if (!CanManageTrip)
         {
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Primary"

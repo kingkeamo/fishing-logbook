@@ -150,25 +150,29 @@ export async function getTrip(viewerUserId, tripId) {
     });
 }
 
-export async function getActiveTrip(ownerUserId) {
-    const owner = normalisedOwnerId(ownerUserId);
-    if (!owner) {
+export async function getActiveTrip(viewerUserId) {
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!viewer) {
         return null;
     }
 
     return runLogbookTransaction(TRIP_STORE_NAME, 'readonly', 'active-read', (store, succeed, fail) => {
+        let owned = null;
+        let shared = null;
         const request = store.openCursor();
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
             const cursor = request.result;
             if (!cursor) {
-                succeed(null);
+                const active = owned ?? shared;
+                succeed(active ? { json: JSON.stringify(active) } : null);
                 return;
             }
 
-            if (isActiveForOwner(cursor.value, owner)) {
-                succeed({ json: JSON.stringify(cursor.value) });
-                return;
+            if (isActiveForOwner(cursor.value, viewer)) {
+                owned = mostRecentlyStarted(owned, cursor.value);
+            } else if (isActiveForContributor(cursor.value, viewer)) {
+                shared = mostRecentlyStarted(shared, cursor.value);
             }
 
             cursor.continue();
@@ -274,6 +278,24 @@ function isActiveForOwner(trip, owner) {
     return isTripOwner(trip, owner)
         && isLocalOriginTrip(trip)
         && trip?.status === TRIP_ACTIVE_STATUS;
+}
+
+function isActiveForContributor(trip, viewer) {
+    return canWriteTrip(trip, viewer) && trip?.status === TRIP_ACTIVE_STATUS;
+}
+
+function mostRecentlyStarted(current, candidate) {
+    if (!current) {
+        return candidate;
+    }
+
+    const currentOn = Date.parse(current.startedOn ?? '');
+    const candidateOn = Date.parse(candidate.startedOn ?? '');
+    if (Number.isNaN(currentOn) || Number.isNaN(candidateOn) || currentOn === candidateOn) {
+        return String(candidate.id ?? '') > String(current.id ?? '') ? candidate : current;
+    }
+
+    return candidateOn > currentOn ? candidate : current;
 }
 
 function conflictsWithActiveTrip(stored, incoming, owner) {

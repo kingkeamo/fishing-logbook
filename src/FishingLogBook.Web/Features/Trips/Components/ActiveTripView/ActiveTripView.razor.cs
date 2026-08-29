@@ -80,7 +80,13 @@ public partial class ActiveTripView : ComponentBase
     public bool AllowLocalMedia { get; set; } = true;
 
     [Parameter]
-    public bool CanEdit { get; set; } = true;
+    public bool CanManageTrip { get; set; } = true;
+
+    [Parameter]
+    public bool CanAddPhotographs { get; set; } = true;
+
+    [Parameter]
+    public bool CanRecordCatch { get; set; } = true;
 
     [Parameter]
     public bool CanAddNotes { get; set; } = true;

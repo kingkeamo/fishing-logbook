@@ -12,11 +12,14 @@
                    id="active-trip-banner-view">
             @Loc["Trip_ViewTrip"]
         </MudButton>
-        <MudButton Variant="Variant.Text"
-                   Size="Size.Small"
-                   Href="@EditHref"
-                   id="active-trip-banner-update">
-            @Loc["Trip_Update"]
-        </MudButton>
+        @if (CanUpdate)
+        {
+            <MudButton Variant="Variant.Text"
+                       Size="Size.Small"
+                       Href="@EditHref"
+                       id="active-trip-banner-update">
+                @Loc["Trip_Update"]
+            </MudButton>
+        }
     </div>
 }

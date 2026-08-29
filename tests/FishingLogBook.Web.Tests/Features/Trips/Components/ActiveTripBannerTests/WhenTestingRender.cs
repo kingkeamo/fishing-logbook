@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Components.ActiveTripBanner;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
@@ -164,5 +165,67 @@ public class WhenTestingRender
     private static TripModel ActiveTrip()
     {
         return new TripModel(TripId, OwnerUserId, TripConstants.Active, StartedOn);
+    }
+
+    private static TripModel SharedActiveTrip()
+    {
+        return new TripModel(
+            TripId,
+            Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            TripConstants.Active,
+            StartedOn,
+            ParticipantUserIds: [OwnerUserId],
+            Origin: TripOriginEnum.Server);
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheBannerForASharedTripTheAnglerParticipatesIn()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var activeTrip = ActiveTripService(SharedActiveTrip());
+        await using var context = CreateContext(activeTrip);
+
+        // Act
+        var cut = context.Render<ActiveTripBanner>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#active-trip-banner").Should().NotBeNull());
+        cut.Find("#active-trip-banner-view").GetAttribute("href")
+            .Should().Be($"/trips/{TripId:D}");
+        await activeTrip.Received(1).GetActiveAsync(OwnerUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldHideTheUpdateActionOnASharedTripTheAnglerDoesNotOwn()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var activeTrip = ActiveTripService(SharedActiveTrip());
+        await using var context = CreateContext(activeTrip);
+
+        // Act
+        var cut = context.Render<ActiveTripBanner>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#active-trip-banner").Should().NotBeNull());
+        cut.FindAll("#active-trip-banner-update").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheUpdateActionOnTheAnglersOwnTrip()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var activeTrip = ActiveTripService(ActiveTrip());
+        await using var context = CreateContext(activeTrip);
+
+        // Act
+        var cut = context.Render<ActiveTripBanner>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#active-trip-banner-update").Should().NotBeNull());
+        cut.Find("#active-trip-banner-update").GetAttribute("href")
+            .Should().Be($"/trips/{TripId:D}/edit");
     }
 }

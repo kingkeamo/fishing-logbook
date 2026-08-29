@@ -98,7 +98,15 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         }
     }
 
-    private bool CanEdit
+    private bool IsContributor
+    {
+        get
+        {
+            return _role is TripParticipantConstants.Owner or TripParticipantConstants.Participant;
+        }
+    }
+
+    private bool CanManageTrip
     {
         get
         {
@@ -110,13 +118,17 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     {
         get
         {
-            return !_isReadOnlyHistory || _isOnline;
+            return IsContributor && (!_isReadOnlyHistory || _isOnline);
         }
     }
 
     private bool CanAddNotes => CanContribute;
 
     private bool CanAddCatches => CanContribute;
+
+    private bool CanAddPhotographs => !IsCompleted && CanContribute;
+
+    private bool CanRecordCatch => !IsCompleted && CanContribute;
 
     private TripStorageEnum NoteStorage
     {
@@ -238,6 +250,13 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             var viewerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
             _viewerUserId = viewerUserId;
             _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken);
+            TripDetailDto? shared = null;
+            if (_trip is { Origin: TripOriginEnum.Server })
+            {
+                shared = await RefreshSharedTripAsync(viewerUserId, cancellationToken);
+                _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken) ?? _trip;
+            }
+
             if (_trip is not null)
             {
                 _isReadOnlyHistory = false;
@@ -246,10 +265,12 @@ public partial class ActiveTrip : ComponentBase, IDisposable
                     : TripParticipantConstants.Participant;
                 _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
                 var catches = await LoadCatchesAsync(viewerUserId, cancellationToken);
-                _catchCount = catches?.Count(catchRecord => catchRecord.TripId == TripId);
-                _photographCount = _trip.Photographs.Count;
-                _noteCount = _trip.Notes.Count;
-                _timeline = TripTimeline.BuildLocal(_trip, catches ?? []);
+                _timeline = shared is null
+                    ? TripTimeline.BuildLocal(_trip, catches ?? [])
+                    : TripTimeline.BuildShared(shared, _trip, catches ?? []);
+                _catchCount = _timeline.Count(item => item.Kind == TripTimelineKindEnum.Catch);
+                _photographCount = _timeline.Count(item => item.Kind == TripTimelineKindEnum.Photograph);
+                _noteCount = _timeline.Count(item => item.Kind == TripTimelineKindEnum.Note);
                 await LoadContributorsAsync(cancellationToken);
                 await ReadPreferencesAsync(cancellationToken);
                 return;
@@ -294,9 +315,48 @@ public partial class ActiveTrip : ComponentBase, IDisposable
         await HydrateSharedTripAsync(detail, viewerUserId, cancellationToken);
     }
 
+    private async Task<TripDetailDto?> RefreshSharedTripAsync(
+        Guid viewerUserId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
+            if (detail is null)
+            {
+                return null;
+            }
+
+            _contributors = detail.Contributors;
+            var refreshed = ToTripModel(detail, ParticipantUserIds(detail, viewerUserId));
+            if (!refreshed.CanContribute(viewerUserId))
+            {
+                return detail;
+            }
+
+            await TripStore.HydrateAsync(
+                ToHydratedTrip(detail, refreshed),
+                viewerUserId,
+                cancellationToken);
+            return detail;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "refreshing a shared trip",
+                exception,
+                CancellationToken.None);
+            return null;
+        }
+    }
+
     private async Task LoadContributorsAsync(CancellationToken cancellationToken)
     {
-        if (_trip is null || _trip.ParticipantUserIds.Count == 0)
+        if (_trip is null || _trip.ParticipantUserIds.Count == 0 || _contributors.Count > 0)
         {
             return;
         }

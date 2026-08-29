@@ -62,7 +62,7 @@ public class WhenTestingHydrate
     }
 
     [Fact]
-    public async Task ItShouldNeverTreatASharedTripAsTheParticipantsOwnActiveTrip()
+    public async Task ItShouldSurfaceTheSharedActiveTripToTheParticipant()
     {
         // Arrange
         var store = new MemoryTripStore();
@@ -71,7 +71,24 @@ public class WhenTestingHydrate
         await store.HydrateAsync(SharedTrip(), ParticipantUserId, CancellationToken.None);
 
         // Assert
-        (await store.GetActiveAsync(ParticipantUserId, CancellationToken.None)).Should().BeNull();
+        var active = await store.GetActiveAsync(ParticipantUserId, CancellationToken.None);
+        active.Should().NotBeNull();
+        active!.Id.Should().Be(TripId);
+        active.OwnerUserId.Should().Be(OwnerUserId);
+        active.IsOwnedBy(ParticipantUserId).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldNeverSurfaceASharedActiveTripToANonParticipant()
+    {
+        // Arrange
+        var store = new MemoryTripStore();
+
+        // Act
+        await store.HydrateAsync(SharedTrip(), ParticipantUserId, CancellationToken.None);
+
+        // Assert
+        (await store.GetActiveAsync(StrangerUserId, CancellationToken.None)).Should().BeNull();
     }
 
     [Fact]

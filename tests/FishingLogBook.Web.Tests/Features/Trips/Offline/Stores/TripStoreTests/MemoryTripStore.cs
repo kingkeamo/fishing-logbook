@@ -72,11 +72,15 @@ public sealed class MemoryTripStore : ITripStore
             : null;
     }
 
-    public Task<TripModel?> GetActiveAsync(Guid ownerUserId, CancellationToken cancellationToken)
+    public Task<TripModel?> GetActiveAsync(Guid viewerUserId, CancellationToken cancellationToken)
     {
-        return Task.FromResult(
-            _trips.Values.FirstOrDefault(trip =>
-                trip.OwnerUserId == ownerUserId && trip.Status == TripConstants.Active));
+        var active = _trips.Values
+            .Where(trip => trip.CanContribute(viewerUserId) && trip.Status == TripConstants.Active)
+            .OrderByDescending(trip => trip.IsOwnedBy(viewerUserId) && trip.Origin == TripOriginEnum.Local)
+            .ThenByDescending(trip => trip.StartedOn)
+            .ThenByDescending(trip => trip.Id)
+            .FirstOrDefault();
+        return Task.FromResult(active);
     }
 
     public Task<IReadOnlyList<TripModel>> GetPendingAsync(

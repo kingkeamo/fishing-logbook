@@ -12,7 +12,7 @@ public interface ITripStore
 
     Task<TripModel?> GetAsync(Guid viewerUserId, Guid tripId, CancellationToken cancellationToken);
 
-    Task<TripModel?> GetActiveAsync(Guid ownerUserId, CancellationToken cancellationToken);
+    Task<TripModel?> GetActiveAsync(Guid viewerUserId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<TripModel>> GetPendingAsync(Guid ownerUserId, CancellationToken cancellationToken);
 

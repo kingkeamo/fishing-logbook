@@ -149,13 +149,23 @@ public partial class OfflineActiveTrip : ComponentBase
         await LoadAsync();
     }
 
-    private bool CanEdit
+    private bool CanManageTrip
     {
         get
         {
             return !IsCompleted && _trip?.IsOwnedBy(_viewerUserId) == true;
         }
     }
+
+    private bool CanAddPhotographs
+    {
+        get
+        {
+            return !IsCompleted && _trip?.CanContribute(_viewerUserId) == true;
+        }
+    }
+
+    private bool CanRecordCatch => CanAddPhotographs;
 
     private async Task FinishAsync()
     {

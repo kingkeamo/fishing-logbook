@@ -119,6 +119,87 @@ public class WhenTestingSharedTrip : BaseActiveTripTest
     }
 
     [Fact]
+    public async Task ItShouldLetAParticipantRecordACatchAndAddAPhotographOnASharedTrip()
+    {
+        // Arrange
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(CachedSharedTrip());
+        var tripClient = ClientReturning(TripParticipantConstants.Participant);
+        await using var context = CreateContext(store, tripClient: tripClient);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#active-trip-record-catch").Should().NotBeNull());
+        cut.Find("#active-trip-add-photo").Should().NotBeNull();
+        cut.Find("#active-trip-add-catch").Should().NotBeNull();
+        cut.Find("#trip-note-start").Should().NotBeNull();
+        cut.FindAll("#active-trip-finish").Should().BeEmpty();
+        cut.FindAll("#active-trip-update").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheOwnersNotesToAParticipantAfterTheSharedTripRefreshes()
+    {
+        // Arrange
+        var noteId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(CachedSharedTrip());
+        var tripClient = ClientReturning(
+            TripParticipantConstants.Participant,
+            notes: [new TripNoteDto(noteId, TripId, "the owner note", StartedOn.AddMinutes(20))
+            {
+                CreatedByUserId = SharedOwnerUserId
+            }]);
+        await using var context = CreateContext(store, tripClient: tripClient);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Markup.Should().Contain("the owner note"));
+        cut.Find("#active-trip-note-count").TextContent.Should().Contain("1");
+        await tripClient.Received(1).GetDetailAsync(TripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepAParticipantsUnsyncedNoteVisibleAlongsideTheServerDiary()
+    {
+        // Arrange
+        var serverNoteId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+        var localNoteId = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(CachedSharedTrip(new TripNoteModel(
+                localNoteId,
+                TripId,
+                OwnerUserId,
+                "my note not yet synced",
+                StartedOn.AddMinutes(40))));
+        var tripClient = ClientReturning(
+            TripParticipantConstants.Participant,
+            notes: [new TripNoteDto(serverNoteId, TripId, "the owner note", StartedOn.AddMinutes(20))
+            {
+                CreatedByUserId = SharedOwnerUserId
+            }]);
+        await using var context = CreateContext(store, tripClient: tripClient);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Markup.Should().Contain("my note not yet synced"));
+        cut.Markup.Should().Contain("the owner note");
+        cut.Find("#active-trip-note-count").TextContent.Should().Contain("2");
+    }
+
+    [Fact]
     public async Task ItShouldOfferTheParticipantTheSharedParticipantsSurface()
     {
         // Arrange
@@ -136,7 +217,9 @@ public class WhenTestingSharedTrip : BaseActiveTripTest
         await tripClient.Received(1).GetDetailAsync(TripId, Arg.Any<CancellationToken>());
     }
 
-    private static ITripClient ClientReturning(string role)
+    private static ITripClient ClientReturning(
+        string role,
+        IReadOnlyList<TripNoteDto>? notes = null)
     {
         var client = Substitute.For<ITripClient>();
         client.GetDetailAsync(TripId, Arg.Any<CancellationToken>())
@@ -148,6 +231,7 @@ public class WhenTestingSharedTrip : BaseActiveTripTest
                     StartedOn))
             {
                 Role = role,
+                Notes = notes ?? [],
                 Contributors =
                 [
                     new TripContributorDto(SharedOwnerUserId, "Mark", null) { IsOwner = true }
@@ -156,7 +240,7 @@ public class WhenTestingSharedTrip : BaseActiveTripTest
         return client;
     }
 
-    private static TripModel CachedSharedTrip()
+    private static TripModel CachedSharedTrip(params TripNoteModel[] notes)
     {
         return new TripModel(
             TripId,
@@ -165,6 +249,7 @@ public class WhenTestingSharedTrip : BaseActiveTripTest
             StartedOn,
             SyncStatus: SyncStatus.Synchronised,
             SyncedAt: StartedOn,
+            Notes: notes.Length == 0 ? null : notes,
             ParticipantUserIds: [OwnerUserId],
             Origin: TripOriginEnum.Server);
     }

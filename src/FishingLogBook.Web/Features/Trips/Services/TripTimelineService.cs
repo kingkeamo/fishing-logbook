@@ -91,6 +91,26 @@ public sealed class TripTimelineService : ITripTimelineService
         return Ordered(items, detail.Trip.Status, detail.Trip.EndedOn);
     }
 
+    public IReadOnlyList<TripTimelineItemModel> BuildShared(
+        TripDetailDto detail,
+        TripModel localTrip,
+        IReadOnlyList<CatchModel> catches)
+    {
+        var remote = BuildRemote(detail);
+        var known = remote
+            .Select(Identity)
+            .Where(id => id != Guid.Empty)
+            .ToHashSet();
+        var pending = BuildLocal(localTrip, catches)
+            .Where(item => Identity(item) != Guid.Empty && !known.Contains(Identity(item)));
+        return Ordered([.. remote, .. pending], detail.Trip.Status, detail.Trip.EndedOn);
+    }
+
+    private static Guid Identity(TripTimelineItemModel item)
+    {
+        return item.CatchId ?? item.NoteId ?? item.PhotographId ?? Guid.Empty;
+    }
+
     private static TripTimelineItemModel Started(DateTimeOffset startedOn)
     {
         return new TripTimelineItemModel(TripTimelineKindEnum.Started, startedOn);

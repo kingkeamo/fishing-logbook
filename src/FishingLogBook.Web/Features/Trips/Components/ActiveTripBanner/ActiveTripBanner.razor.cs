@@ -11,6 +11,7 @@ namespace FishingLogBook.Web.Features.Trips.Components.ActiveTripBanner;
 public partial class ActiveTripBanner : ComponentBase, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private Guid _viewerUserId;
 
     private TripModel? _trip;
 
@@ -34,6 +35,14 @@ public partial class ActiveTripBanner : ComponentBase, IDisposable
         }
     }
 
+    private bool CanUpdate
+    {
+        get
+        {
+            return _trip?.IsOwnedBy(_viewerUserId) == true;
+        }
+    }
+
     private string EditHref
     {
         get
@@ -53,8 +62,9 @@ public partial class ActiveTripBanner : ComponentBase, IDisposable
         var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            var ownerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
-            _trip = await ActiveTrip.GetActiveAsync(ownerUserId, cancellationToken);
+            var viewerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
+            _viewerUserId = viewerUserId;
+            _trip = await ActiveTrip.GetActiveAsync(viewerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

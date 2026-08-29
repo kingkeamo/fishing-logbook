@@ -103,6 +103,7 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
                 PlaceName = "Lough Corrib"
             })
             {
+                Role = TripParticipantConstants.Owner,
                 Notes = [new TripNoteDto(Guid.NewGuid(), TripId, "The wind dropped.", StartedOn.AddMinutes(20))],
                 Catches = [new TripCatchSummaryDto(catchId, StartedOn.AddHours(1)) { SpeciesName = "Pike" }]
             });
@@ -232,6 +233,7 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
                 PlaceName = "Lough Corrib"
             })
         {
+            Role = TripParticipantConstants.Owner,
             Catches = [new TripCatchSummaryDto(catchId, StartedOn.AddHours(1)) { SpeciesName = "Pike" }]
         };
     }
@@ -249,7 +251,10 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
                     StartedOn.AddHours(5))
                 {
                     PlaceName = "Lough Corrib"
-                }));
+                })
+            {
+                Role = TripParticipantConstants.Owner
+            });
         return tripClient;
     }
 }

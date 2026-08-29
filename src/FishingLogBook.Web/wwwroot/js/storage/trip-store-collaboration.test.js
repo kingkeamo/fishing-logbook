@@ -141,10 +141,14 @@ describe('Shared trip collaboration store', () => {
         expect(JSON.parse(forParticipant[0].json).id).toBe(JSON.parse(forOwner[0].json).id);
     });
 
-    it('never treats a hydrated shared trip as the participants own active trip', async () => {
+    it('surfaces a hydrated shared active trip without treating it as an owned trip', async () => {
         await hydrateShared();
 
-        expect(await getActiveTrip(participantUserId)).toBeNull();
+        const active = await getActiveTrip(participantUserId);
+
+        expect(JSON.parse(active.json).id).toBe(tripId);
+        expect(JSON.parse(active.json).ownerUserId).toBe(ownerUserId);
+        expect(await getPendingTrips(participantUserId)).toEqual([]);
     });
 
     it('never queues a hydrated shared trip for the trip upsert outbox', async () => {
@@ -366,5 +370,93 @@ describe('Shared trip collaboration store', () => {
         const stored = JSON.parse((await getTrip(participantUserId, tripId)).json);
         expect(stored.title).toBe('my own trip');
         expect(stored.origin).toBe('local');
+    });
+});
+
+describe('Shared trip active banner lookup', () => {
+    const ownerUserId = '11111111-1111-1111-1111-111111111111';
+    const participantUserId = '22222222-2222-2222-2222-222222222222';
+    const strangerUserId = '33333333-3333-3333-3333-333333333333';
+    const sharedTripId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    const ownTripId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+    const startedOn = '2026-08-26T05:32:00+00:00';
+
+    function shared(overrides = {}) {
+        return {
+            id: sharedTripId,
+            ownerUserId,
+            status: 'Active',
+            startedOn,
+            endedOn: null,
+            title: null,
+            placeName: null,
+            location: null,
+            syncStatus: 'synchronised',
+            syncedAt: startedOn,
+            photographs: [],
+            notes: [],
+            participantUserIds: [participantUserId],
+            origin: 'server',
+            ...overrides
+        };
+    }
+
+    function own(overrides = {}) {
+        return {
+            id: ownTripId,
+            ownerUserId: participantUserId,
+            status: 'Active',
+            startedOn: '2026-08-26T09:00:00+00:00',
+            endedOn: null,
+            title: null,
+            placeName: null,
+            location: null,
+            syncStatus: 'savedLocally',
+            syncedAt: null,
+            photographs: [],
+            notes: [],
+            participantUserIds: [],
+            origin: 'local',
+            ...overrides
+        };
+    }
+
+    it('gives a participant no active trip when the shared trip is finished', async () => {
+        await hydrateTrip(JSON.stringify(shared({ status: 'Completed', endedOn: startedOn })), participantUserId);
+
+        expect(await getActiveTrip(participantUserId)).toBeNull();
+    });
+
+    it('never surfaces a shared active trip to an angler who is not on it', async () => {
+        await hydrateTrip(JSON.stringify(shared()), participantUserId);
+
+        expect(await getActiveTrip(strangerUserId)).toBeNull();
+    });
+
+    it('surfaces the active shared trip to an accepted participant', async () => {
+        await hydrateTrip(JSON.stringify(shared()), participantUserId);
+
+        const active = await getActiveTrip(participantUserId);
+
+        expect(active).not.toBeNull();
+        expect(JSON.parse(active.json).id).toBe(sharedTripId);
+        expect(JSON.parse(active.json).ownerUserId).toBe(ownerUserId);
+    });
+
+    it('prefers the anglers own active trip over a shared one', async () => {
+        await hydrateTrip(JSON.stringify(shared()), participantUserId);
+        await putTrip(JSON.stringify(own()));
+
+        const active = await getActiveTrip(participantUserId);
+
+        expect(JSON.parse(active.json).id).toBe(ownTripId);
+    });
+
+    it('still lets the owner start their own trip while sharing another', async () => {
+        await hydrateTrip(JSON.stringify(shared()), participantUserId);
+
+        const outcome = await putTrip(JSON.stringify(own()));
+
+        expect(outcome).toBe(TRIP_SAVED_OUTCOME);
     });
 });
