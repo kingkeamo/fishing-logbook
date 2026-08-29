@@ -134,7 +134,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldDeriveAStableOwnerScopedObjectKey()
+    public async Task ItShouldDeriveAStableCatchScopedObjectKey()
     {
         // Arrange
         Reset();
@@ -169,7 +169,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         first!.ObjectKey.Should().Be(
-            $"catches/{current!.UserId:D}/{catchId:D}/{photographId:D}");
+            $"catch-photographs/{catchId:D}/{photographId:D}");
         second!.ObjectKey.Should().Be(first.ObjectKey);
         await _factory.CatchRepository.Received(2).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
@@ -228,7 +228,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
                 }));
         var request = new RecordPhotographDto(
             photographId,
-            $"catches/{current!.UserId:D}/{catchId:D}/{photographId:D}",
+            $"catch-photographs/{catchId:D}/{photographId:D}",
             "image/jpeg");
 
         // Act

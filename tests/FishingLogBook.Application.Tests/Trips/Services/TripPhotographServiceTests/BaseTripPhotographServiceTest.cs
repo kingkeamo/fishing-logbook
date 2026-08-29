@@ -22,7 +22,7 @@ public class BaseTripPhotographServiceTest
     protected static readonly DateTimeOffset AddedOn = DateTimeOffset.Parse("2026-08-17T09:00:00Z");
 
     protected static readonly string ExpectedObjectKey =
-        $"trips/{CurrentUserId:D}/{TripId:D}/{PhotographId:D}";
+        $"trip-photographs/{TripId:D}/{PhotographId:D}";
 
     protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
     protected readonly ITripPhotographRepository MockTripPhotographRepository =
@@ -91,7 +91,7 @@ public class BaseTripPhotographServiceTest
             Id = PhotographId,
             TripId = tripId,
             ContributedByUserId = contributedByUserId ?? CurrentUserId,
-            ObjectKey = $"trips/{CurrentUserId:D}/{tripId:D}/{PhotographId:D}",
+            ObjectKey = $"trip-photographs/{tripId:D}/{PhotographId:D}",
             ContentType = PhotographContentTypeConstants.Jpeg,
             AddedOn = AddedOn
         };

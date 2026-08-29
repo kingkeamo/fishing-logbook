@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Configuration;
+using FishingLogBook.Web.Features.Catch.Models;
 
 namespace FishingLogBook.Web.Features.Catch.Clients;
 
@@ -123,6 +124,32 @@ public sealed class CatchClient : ICatchClient
 
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task<CatchAnglerCorrectionResult> CorrectAnglerAsync(
+        Guid catchId,
+        Guid anglerUserId,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.PatchAsJsonAsync(
+            $"api/catches/{catchId:D}/angler",
+            new CorrectCatchAnglerDto(anglerUserId),
+            cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return new CatchAnglerCorrectionResult(null, null);
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadFromJsonAsync<CatchAnglerCorrectionErrorBody>(cancellationToken);
+            return new CatchAnglerCorrectionResult(null, body?.ErrorMessage);
+        }
+
+        var updated = await response.Content.ReadFromJsonAsync<CatchViewDto>(cancellationToken);
+        return new CatchAnglerCorrectionResult(updated, null);
+    }
+
+    private sealed record CatchAnglerCorrectionErrorBody(string? ErrorMessage);
 
     private static bool IsUnsynchronisedCatch(HttpResponseMessage response)
     {

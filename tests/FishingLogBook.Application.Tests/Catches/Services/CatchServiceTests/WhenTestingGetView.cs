@@ -159,7 +159,7 @@ public class WhenTestingGetView : BaseCatchServiceTest
         MockObjectStorage.IsConfigured.Returns(true);
         MockObjectStorage
             .CreateDownloadUrlAsync(
-                $"catches/{CurrentUserId:D}/{catchRecord.Id:D}/{photographId:D}",
+                $"catch-photographs/{catchRecord.Id:D}/{photographId:D}",
                 Arg.Any<TimeSpan>(),
                 Arg.Any<CancellationToken>())
             .Returns(new Uri("https://r2.test/signed-download"));

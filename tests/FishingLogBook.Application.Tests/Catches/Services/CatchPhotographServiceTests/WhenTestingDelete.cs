@@ -62,7 +62,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         await MockObjectStorage.Received(1).DeleteObjectAsync(
-            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
+            $"catch-photographs/{CatchId:D}/{PhotographId:D}",
             Arg.Any<CancellationToken>());
     }
 
@@ -87,7 +87,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
             Arg.Any<GetCatchPhotographArgs>(),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.Received(1).DeleteObjectAsync(
-            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
+            $"catch-photographs/{CatchId:D}/{PhotographId:D}",
             Arg.Any<CancellationToken>());
     }
 
@@ -121,7 +121,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
         result.IsSuccess.Should().BeTrue();
         operations.Should().Equal("object-storage", "database");
         await MockObjectStorage.Received(1).DeleteObjectAsync(
-            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
+            $"catch-photographs/{CatchId:D}/{PhotographId:D}",
             Arg.Any<CancellationToken>());
         await MockCatchRepository.Received(1).DeletePhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>

@@ -57,7 +57,6 @@ public sealed class TripPhotographService : ITripPhotographService
         }
 
         var objectKey = TripPhotographObjectKey.Build(
-            _currentUser.UserId,
             args.TripId,
             args.Request.PhotographId);
         var uploadUrl = await _objectStorage.CreateUploadUrlAsync(
@@ -79,7 +78,6 @@ public sealed class TripPhotographService : ITripPhotographService
         }
 
         var expected = TripPhotographObjectKey.Build(
-            _currentUser.UserId,
             args.TripId,
             args.PhotographId);
         if (!string.Equals(args.ObjectKey, expected, StringComparison.Ordinal))

@@ -67,7 +67,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return Result.Fail<PhotographUploadDto>(new CatchPhotographNotFoundError());
         }
 
-        var objectKey = CatchPhotographObjectKey.Build(owner.Value, args.CatchId, args.Request.PhotographId);
+        var objectKey = CatchPhotographObjectKey.Build(args.CatchId, args.Request.PhotographId);
         var uploadUrl = await _objectStorage.CreateUploadUrlAsync(
             objectKey,
             args.Request.ContentType,
@@ -104,7 +104,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return Result.Fail(new CatchPhotographNotFoundError());
         }
 
-        var expected = CatchPhotographObjectKey.Build(owner.Value, args.CatchId, args.PhotographId);
+        var expected = CatchPhotographObjectKey.Build(args.CatchId, args.PhotographId);
         return string.Equals(args.ObjectKey, expected, StringComparison.Ordinal)
             ? Result.Ok()
             : Result.Fail(new CatchPhotographObjectKeyMismatchError());
@@ -126,7 +126,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return photograph.ToResult();
         }
 
-        var objectKey = CatchPhotographObjectKey.Build(owner.Value, args.CatchId, args.PhotographId);
+        var objectKey = CatchPhotographObjectKey.Build(args.CatchId, args.PhotographId);
         try
         {
             await _objectStorage.DeleteObjectAsync(objectKey, cancellationToken);

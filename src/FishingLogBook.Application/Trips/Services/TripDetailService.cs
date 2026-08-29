@@ -178,7 +178,7 @@ public sealed class TripDetailService : ITripDetailService
         }
 
         return await CreateDownloadUrlAsync(
-            CatchPhotographObjectKey.Build(summary.UserId, summary.Id, photographId),
+            CatchPhotographObjectKey.Build(summary.Id, photographId),
             cancellationToken);
     }
 

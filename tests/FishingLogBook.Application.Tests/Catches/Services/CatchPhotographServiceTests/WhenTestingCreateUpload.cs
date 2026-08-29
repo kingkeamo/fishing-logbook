@@ -29,7 +29,7 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
         first.IsSuccess.Should().BeTrue();
         second.IsSuccess.Should().BeTrue();
         first.Value.ObjectKey.Should().Be(
-            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}");
+            $"catch-photographs/{CatchId:D}/{PhotographId:D}");
         second.Value.ObjectKey.Should().Be(first.Value.ObjectKey);
         await MockCatchRepository.Received(2).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
@@ -38,7 +38,7 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
                 && query.PhotographId == PhotographId),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.Received(2).CreateUploadUrlAsync(
-            $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}",
+            $"catch-photographs/{CatchId:D}/{PhotographId:D}",
             "image/jpeg",
             TimeSpan.FromMinutes(15),
             Arg.Any<CancellationToken>());
@@ -83,7 +83,7 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
     }
 
     [Fact]
-    public async Task ItShouldUseTheAnglersObjectKeyWhenTheRecorderIsUploadingForAnotherAngler()
+    public async Task ItShouldDeriveTheObjectKeyFromTheCatchRegardlessOfWhoTheAnglerIs()
     {
         // Arrange
         var anglerUserId = Guid.NewGuid();
@@ -108,7 +108,7 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.ObjectKey.Should().Be($"catches/{anglerUserId:D}/{CatchId:D}/{PhotographId:D}");
+        result.Value.ObjectKey.Should().Be($"catch-photographs/{CatchId:D}/{PhotographId:D}");
         await MockCatchRepository.Received(1).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
                 query.UserId == anglerUserId

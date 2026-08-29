@@ -555,6 +555,12 @@
   <data name="Catch_EditAnglerUpdateFailed" xml:space="preserve">
     <value>Couldn't update who caught this fish. Please try again.</value>
   </data>
+  <data name="Catch_ProvenanceOfflineNotice" xml:space="preserve">
+    <value>Go online to change who caught this fish.</value>
+  </data>
+  <data name="Catch_ProvenanceUpdate" xml:space="preserve">
+    <value>Update</value>
+  </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
     <value>Bait or lure</value>
   </data>

@@ -1,0 +1,75 @@
+@if (TripId is not null && !_isLoading)
+{
+    @if (_tripTitle is not null)
+    {
+        <MudStack Spacing="0" id="catch-provenance-trip-header">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditTripLabel"]</MudText>
+            <MudText Typo="Typo.body2" id="catch-provenance-trip-title">@_tripTitle</MudText>
+            @if (_tripStartedOnLabel is not null)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary" id="catch-provenance-trip-started-on">@_tripStartedOnLabel</MudText>
+            }
+        </MudStack>
+    }
+
+    @if (_anglerName is not null || ShowAnglerPicker)
+    {
+        <MudStack Spacing="2" id="catch-provenance-editor">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_CaughtByLabel"]</MudText>
+                @if (ShowAnglerPicker)
+                {
+                    <MudStack Row="true"
+                              Spacing="2"
+                              AlignItems="AlignItems.Center"
+                              Justify="Justify.SpaceBetween"
+                              Class="flex-wrap catch-provenance-angler-row"
+                              id="catch-provenance-angler-row">
+                        <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catch-provenance-angler-chips">
+                            @foreach (var angler in _anglerOptions)
+                            {
+                                var selected = angler.UserId == _selectedAnglerUserId;
+                                <MudChip T="string"
+                                         Color="@(selected ? Color.Primary : Color.Default)"
+                                         Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                         Disabled="@(_isUpdating || !_isOnline)"
+                                         OnClick="@(() => SelectAngler(angler.UserId))"
+                                         id="@($"catch-provenance-angler-{angler.UserId:D}")">
+                                    @angler.DisplayName
+                                </MudChip>
+                            }
+                        </MudStack>
+                        @if (_isOnline && HasPendingSelection)
+                        {
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       Disabled="_isUpdating"
+                                       OnClick="UpdateAsync"
+                                       id="catch-provenance-update">@Loc["Catch_ProvenanceUpdate"]</MudButton>
+                        }
+                    </MudStack>
+                    @if (!_isOnline)
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary" id="catch-provenance-offline">@Loc["Catch_ProvenanceOfflineNotice"]</MudText>
+                    }
+                    @if (_updateFailed)
+                    {
+                        <MudAlert Severity="Severity.Error" id="catch-provenance-update-failed">@(_updateErrorMessage ?? Loc["Catch_EditAnglerUpdateFailed"].Value)</MudAlert>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" id="catch-provenance-angler-name">@_anglerName</MudText>
+                }
+            </MudStack>
+            @if (ShowRecordedBy)
+            {
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_RecordedByLabel"]</MudText>
+                    <MudText Typo="Typo.body2" id="catch-provenance-recorder-name">@_recordedByName</MudText>
+                </MudStack>
+            }
+        </MudStack>
+    }
+}

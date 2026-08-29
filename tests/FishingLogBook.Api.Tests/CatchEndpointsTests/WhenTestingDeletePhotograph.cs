@@ -141,7 +141,7 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         await _factory.ObjectStorage.Received(1).DeleteObjectAsync(
-            $"catches/{current!.UserId:D}/{catchId:D}/{photographId:D}",
+            $"catch-photographs/{catchId:D}/{photographId:D}",
             Arg.Any<CancellationToken>());
         await _factory.CatchRepository.Received(1).DeletePhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>

@@ -239,10 +239,7 @@ public class BaseCatchEditTest
         string? speciesName = null,
         string? method = null,
         decimal? weight = null,
-        decimal? length = null,
-        Guid? anglerUserId = null,
-        Guid? recordedByUserId = null,
-        Guid? tripId = null)
+        decimal? length = null)
     {
         return new CatchModel(
             catchId,
@@ -261,12 +258,11 @@ public class BaseCatchEditTest
             UserId: OwnerUserId,
             SyncStatus: syncStatus,
             MetadataSyncStatus: metadataStatus,
-            AnglerUserId: anglerUserId ?? OwnerUserId,
-            RecordedByUserId: recordedByUserId ?? OwnerUserId,
+            AnglerUserId: OwnerUserId,
+            RecordedByUserId: OwnerUserId,
             Weight: weight,
             Length: length,
-            Method: method,
-            TripId: tripId);
+            Method: method);
     }
 
     private static ITimeService OffsetTime(TimeSpan offset)

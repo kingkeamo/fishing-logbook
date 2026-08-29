@@ -1,6 +1,7 @@
 @page "/catches/{CatchId:guid}/edit"
 @using Microsoft.AspNetCore.Authorization
 @using FishingLogBook.Web.Features.Catch.Components.CatchEditEditor
+@using FishingLogBook.Web.Features.Catch.Components.CatchProvenanceEditor
 @attribute [Authorize]
 
 <PageTitle>@Loc["Catch_EditPageTitle"]</PageTitle>
@@ -32,61 +33,7 @@
                 <MudText Typo="Typo.caption" Class="mud-text-secondary" id="catch-edit-catalogue-unavailable">@Loc["Catch_CatalogueUnavailable"]</MudText>
             }
 
-            @if (ShowTripHeader)
-            {
-                <MudStack Spacing="0" id="catch-edit-trip-header">
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditTripLabel"]</MudText>
-                    <MudText Typo="Typo.body2" id="catch-edit-trip-title">@_tripTitle</MudText>
-                    @if (_tripStartedOnLabel is not null)
-                    {
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary" id="catch-edit-trip-started-on">@_tripStartedOnLabel</MudText>
-                    }
-                </MudStack>
-            }
-
-            @if (ShowProvenance || ShowAnglerPicker)
-            {
-                <MudStack Spacing="2" id="catch-edit-provenance">
-                    @if (ShowAnglerPicker)
-                    {
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_CaughtByLabel"]</MudText>
-                            <MudStack Row="true" Spacing="1" Class="flex-wrap" id="catch-edit-angler-chips">
-                                @foreach (var angler in _anglerOptions)
-                                {
-                                    var selected = angler.UserId == _catch!.AnglerUserId;
-                                    <MudChip T="string"
-                                             Color="@(selected ? Color.Primary : Color.Default)"
-                                             Variant="@(selected ? Variant.Filled : Variant.Outlined)"
-                                             Disabled="_isSavingAngler"
-                                             OnClick="@(() => SelectAnglerAsync(angler.UserId))"
-                                             id="@($"catch-edit-angler-{angler.UserId:D}")">
-                                        @angler.DisplayName
-                                    </MudChip>
-                                }
-                            </MudStack>
-                            @if (_anglerUpdateFailed)
-                            {
-                                <MudAlert Severity="Severity.Error" id="catch-edit-angler-update-failed">@Loc["Catch_EditAnglerUpdateFailed"]</MudAlert>
-                            }
-                        </MudStack>
-                    }
-                    else if (_anglerName is not null)
-                    {
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_CaughtByLabel"]</MudText>
-                            <MudText Typo="Typo.body2" id="catch-edit-angler-name">@_anglerName</MudText>
-                        </MudStack>
-                    }
-                    @if (ShowRecordedBy)
-                    {
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_RecordedByLabel"]</MudText>
-                            <MudText Typo="Typo.body2" id="catch-edit-recorder-name">@_recordedByName</MudText>
-                        </MudStack>
-                    }
-                </MudStack>
-            }
+            <CatchProvenanceEditor CatchId="_catch.Id" TripId="_catch.TripId" />
 
             <MudExpansionPanels Elevation="1" MultiExpansion="true" id="catch-edit-photo-sections">
                 <MudExpansionPanel Text="@Loc["Catch_EditPhotographsSection"]" Expanded="true" id="catch-edit-photos-panel">

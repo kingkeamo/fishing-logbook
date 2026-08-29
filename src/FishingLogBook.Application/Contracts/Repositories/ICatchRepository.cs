@@ -34,4 +34,8 @@ public interface ICatchRepository
     Task<Result> UpdateLocationVisibilityAsync(
         PersistCatchLocationVisibilityArgs args,
         CancellationToken cancellationToken);
+
+    Task<Result> CorrectAnglerAsync(
+        PersistCatchAnglerArgs args,
+        CancellationToken cancellationToken);
 }

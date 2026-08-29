@@ -49,6 +49,17 @@ public static class CatchEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapPatch("/api/catches/{catchId:guid}/angler", CorrectAnglerAsync)
+            .WithName("CorrectCatchAngler")
+            .WithTags("Catches")
+            .RequireAuthorization()
+            .Produces<CatchViewDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         endpoints.MapPost("/api/catches/{catchId:guid}/photographs/upload-url", CreatePhotographUploadAsync)
             .WithName("CreateCatchPhotographUpload")
             .WithTags("Catches")
@@ -239,6 +250,60 @@ public static class CatchEndpoints
         }
 
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> CorrectAnglerAsync(
+        Guid catchId,
+        CorrectCatchAnglerDto body,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new CorrectCatchAnglerCommand
+            {
+                CatchId = catchId,
+                AnglerUserId = body.AnglerUserId
+            },
+            cancellationToken);
+        if (response.Error is CurrentUserUnresolvedError)
+        {
+            return Results.Unauthorized();
+        }
+
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is CatchNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.Error is CatchEditNotPermittedError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
+        }
+
+        if (response.Error is CatchNotOnTripError or CatchAnglerNotEligibleError)
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Catch);
     }
 
     private static async Task<IResult> CreatePhotographUploadAsync(

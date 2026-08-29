@@ -2,8 +2,8 @@ namespace FishingLogBook.Application.Trips;
 
 internal static class TripPhotographObjectKey
 {
-    public static string Build(Guid userId, Guid tripId, Guid photographId)
+    public static string Build(Guid tripId, Guid photographId)
     {
-        return $"trips/{userId:D}/{tripId:D}/{photographId:D}";
+        return $"trip-photographs/{tripId:D}/{photographId:D}";
     }
 }

@@ -101,6 +101,38 @@ public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldIgnoreAClientSuppliedAnglerChangeWhenEditingAnExistingCatch()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        var spoofedAnglerUserId = Guid.Parse("77777777-7777-7777-7777-777777777777");
+        GivenExistingCatch(catchId, RecorderUserId);
+        MockCurrentUser.UserId.Returns(RecorderUserId);
+        MockCatchRepository.UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
+
+        // Act
+        var result = await Sut.UpsertAsync(
+            EditArgs(catchId, RecorderUserId, anglerUserId: spoofedAnglerUserId),
+            CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.UserId.Should().Be(AnglerUserId);
+        result.Value.AnglerUserId.Should().Be(AnglerUserId);
+        await MockCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(saved =>
+                saved.Id == catchId
+                && saved.UserId == AnglerUserId
+                && saved.AnglerUserId == AnglerUserId),
+            Arg.Any<CancellationToken>());
+        await MockTripAccessService.DidNotReceive().ResolveForAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private void GivenExistingCatch(Guid catchId, Guid currentUserId)
     {
         MockCurrentUser.UserId.Returns(currentUserId);
@@ -115,18 +147,24 @@ public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
             }));
     }
 
-    private static UpsertCatchArgs EditArgs(Guid catchId, Guid currentUserId)
+    private static UpsertCatchArgs EditArgs(Guid catchId, Guid currentUserId, Guid? anglerUserId = null)
     {
+        var catchDto = new CatchDto(
+            catchId,
+            DateTimeOffset.Parse("2026-08-17T09:00:00Z"),
+            [new CatchPhotographDto(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)])
+        {
+            SpeciesName = "Pike"
+        };
+        if (anglerUserId is { } angler)
+        {
+            catchDto = catchDto with { AnglerUserId = angler };
+        }
+
         return new UpsertCatchArgs
         {
             UserId = currentUserId,
-            Catch = new CatchDto(
-                catchId,
-                DateTimeOffset.Parse("2026-08-17T09:00:00Z"),
-                [new CatchPhotographDto(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)])
-            {
-                SpeciesName = "Pike"
-            }
+            Catch = catchDto
         };
     }
 }

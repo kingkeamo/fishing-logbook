@@ -244,6 +244,39 @@ public sealed class CatchRepository : ICatchRepository
         }
     }
 
+    public async Task<Result> CorrectAnglerAsync(
+        PersistCatchAnglerArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            const string sql = """
+                UPDATE "Catch"
+                SET "UserId" = @AnglerUserId,
+                    "AnglerUserId" = @AnglerUserId
+                WHERE "Id" = @CatchId
+                  AND "TripId" IS NOT NULL;
+                """;
+            var updated = await connection.ExecuteAsync(new CommandDefinition(
+                sql,
+                new
+                {
+                    args.CatchId,
+                    args.AnglerUserId
+                },
+                cancellationToken: cancellationToken));
+            return updated == 1
+                ? Result.Ok()
+                : Result.Fail("Failed to correct the catch angler.");
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to correct the angler for catch {CatchId}.", args.CatchId);
+            return Result.Fail("Failed to correct the catch angler.");
+        }
+    }
+
     private static async Task UpsertCatchRowAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,

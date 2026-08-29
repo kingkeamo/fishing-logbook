@@ -15,4 +15,8 @@ public interface ICatchService
     Task<Result> UpdateLocationVisibilityAsync(
         UpdateCatchLocationVisibilityArgs args,
         CancellationToken cancellationToken);
+
+    Task<Result<CatchViewDto>> CorrectAnglerAsync(
+        CorrectCatchAnglerArgs args,
+        CancellationToken cancellationToken);
 }

@@ -143,9 +143,9 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var tripId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
-        var objectKey = $"trips/{current!.UserId:D}/{tripId:D}/{photographId:D}";
+        var objectKey = $"trip-photographs/{tripId:D}/{photographId:D}";
         _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(Trip(tripId, current.UserId, TripStatusEnum.Completed)));
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId, TripStatusEnum.Completed)));
         var capturedOn = StartedOn.AddMinutes(30);
 
         // Act
@@ -184,9 +184,9 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var tripId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
-        var objectKey = $"trips/{current!.UserId:D}/{tripId:D}/{photographId:D}";
+        var objectKey = $"trip-photographs/{tripId:D}/{photographId:D}";
         _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(Trip(tripId, current.UserId)));
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId)));
         _factory.TripPhotographRepository.GetByIdAsync(photographId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<TripPhotograph?>(new TripPhotograph
             {

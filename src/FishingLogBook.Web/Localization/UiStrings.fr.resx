@@ -555,6 +555,12 @@
   <data name="Catch_EditAnglerUpdateFailed" xml:space="preserve">
     <value>Impossible de mettre à jour qui a attrapé ce poisson. Veuillez réessayer.</value>
   </data>
+  <data name="Catch_ProvenanceOfflineNotice" xml:space="preserve">
+    <value>Connectez-vous pour modifier qui a attrapé ce poisson.</value>
+  </data>
+  <data name="Catch_ProvenanceUpdate" xml:space="preserve">
+    <value>Mettre à jour</value>
+  </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
     <value>Appât ou leurre</value>
   </data>

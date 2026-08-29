@@ -117,7 +117,7 @@ public class WhenTestingSharedTripPhotographs : BaseTripPhotographServiceTest
     }
 
     [Fact]
-    public async Task ItShouldScopeTheUploadKeyToTheContributorNotTheTripOwner()
+    public async Task ItShouldDeriveTheUploadKeyFromTheTripNotAnyUserIdentity()
     {
         // Arrange
         GivenSharedTrip();
@@ -129,6 +129,7 @@ public class WhenTestingSharedTripPhotographs : BaseTripPhotographServiceTest
         result.IsSuccess.Should().BeTrue();
         result.Value.ObjectKey.Should().Be(ExpectedObjectKey);
         result.Value.ObjectKey.Should().NotContain(OtherUserId.ToString("D"));
+        result.Value.ObjectKey.Should().NotContain(CurrentUserId.ToString("D"));
         await MockObjectStorage.Received(1).CreateUploadUrlAsync(
             ExpectedObjectKey,
             PhotographContentTypeConstants.Jpeg,

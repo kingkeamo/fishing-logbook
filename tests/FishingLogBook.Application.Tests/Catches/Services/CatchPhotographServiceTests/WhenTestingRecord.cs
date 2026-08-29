@@ -17,7 +17,7 @@ public class WhenTestingRecord : BaseCatchPhotographServiceTest
             CatchId = CatchId,
             PhotographId = PhotographId,
             ContentType = "image/jpeg",
-            ObjectKey = $"catches/{UserId:D}/{CatchId:D}/{PhotographId:D}"
+            ObjectKey = $"catch-photographs/{CatchId:D}/{PhotographId:D}"
         };
 
         // Act

@@ -4,6 +4,7 @@ using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FluentResults;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Catches.Services.CatchServiceTests;
@@ -38,6 +39,7 @@ public class BaseCatchServiceTest
             MockCurrentUser,
             MockCatchLocationPrivacyService,
             MockObjectStorage,
-            TestMapper.Create());
+            TestMapper.Create(),
+            NullLogger<CatchService>.Instance);
     }
 }

@@ -128,7 +128,7 @@ public class WhenTestingSharedTripContributions : IClassFixture<SystemApiFactory
                 Id = photographId,
                 TripId = tripId,
                 ContributedByUserId = ownerUserId,
-                ObjectKey = $"trips/{ownerUserId:D}/{tripId:D}/{photographId:D}",
+                ObjectKey = $"trip-photographs/{tripId:D}/{photographId:D}",
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = RecordedOn
             }));
@@ -177,7 +177,7 @@ public class WhenTestingSharedTripContributions : IClassFixture<SystemApiFactory
     }
 
     [Fact]
-    public async Task ItShouldScopeAParticipantPhotographUploadToTheirOwnObjectKey()
+    public async Task ItShouldDeriveAParticipantPhotographUploadKeyFromTheTripNotAnyUserIdentity()
     {
         // Arrange
         Reset();
@@ -198,8 +198,9 @@ public class WhenTestingSharedTripContributions : IClassFixture<SystemApiFactory
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var upload = await response.Content.ReadFromJsonAsync<PhotographUploadDto>();
-        upload!.ObjectKey.Should().Be($"trips/{current.UserId:D}/{tripId:D}/{photographId:D}");
+        upload!.ObjectKey.Should().Be($"trip-photographs/{tripId:D}/{photographId:D}");
         upload.ObjectKey.Should().NotContain(ownerUserId.ToString("D"));
+        upload.ObjectKey.Should().NotContain(current.UserId.ToString("D"));
     }
 
     [Fact]
