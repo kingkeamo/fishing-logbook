@@ -14,11 +14,16 @@ namespace FishingLogBook.Application.Trips.Services;
 public sealed class TripService : ITripService
 {
     private readonly ITripRepository _tripRepository;
+    private readonly ITripAccessService _tripAccessService;
     private readonly IMapper _mapper;
 
-    public TripService(ITripRepository tripRepository, IMapper mapper)
+    public TripService(
+        ITripRepository tripRepository,
+        ITripAccessService tripAccessService,
+        IMapper mapper)
     {
         _tripRepository = tripRepository;
+        _tripAccessService = tripAccessService;
         _mapper = mapper;
     }
 
@@ -50,6 +55,21 @@ public sealed class TripService : ITripService
         if (!trip.HasCoherentLifecycle())
         {
             return Result.Fail<TripDto>(new TripLifecycleInvalidError());
+        }
+
+        var existing = await _tripRepository.GetByIdAsync(trip.Id, cancellationToken);
+        if (existing.IsFailed)
+        {
+            return Result.Fail<TripDto>(existing.Errors);
+        }
+
+        if (existing.Value is not null)
+        {
+            var access = await _tripAccessService.RequireOwnerAsync(trip.Id, cancellationToken);
+            if (access.IsFailed)
+            {
+                return Result.Fail<TripDto>(access.Errors);
+            }
         }
 
         var saved = await _tripRepository.UpsertAsync(trip, cancellationToken);

@@ -19,6 +19,7 @@ public class BaseTripServiceTest
     protected static readonly DateTimeOffset StartedOn = DateTimeOffset.Parse("2026-08-26T05:32:00Z");
 
     protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
+    protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
     protected readonly TripService Sut;
 
@@ -26,9 +27,11 @@ public class BaseTripServiceTest
     {
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
+        MockTripRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(null));
         MockTripRepository.UpsertAsync(Arg.Any<Trip>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(Persisted(call.ArgAt<Trip>(0))));
-        Sut = new TripService(MockTripRepository, TestMapper.Create());
+        Sut = new TripService(MockTripRepository, MockTripAccessService, TestMapper.Create());
     }
 
     protected static UpsertTripArgs UpsertArgs(
