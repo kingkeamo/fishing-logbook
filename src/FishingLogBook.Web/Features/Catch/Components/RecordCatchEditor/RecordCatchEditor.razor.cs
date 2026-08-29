@@ -140,7 +140,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
             var trip = RequestedTripId is { } requested && requested != Guid.Empty
                 ? await TripStore.GetAsync(OwnerUserId, requested, _cancellationTokenSource.Token)
                 : await ActiveTripService.GetActiveAsync(OwnerUserId, _cancellationTokenSource.Token);
-            if (trip is null || trip.OwnerUserId != OwnerUserId)
+            if (trip is null)
             {
                 return;
             }
@@ -686,7 +686,7 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
                 OwnerUserId,
                 _associatedTrip.Id,
                 _cancellationTokenSource.Token);
-            return trip is not null && trip.OwnerUserId == OwnerUserId;
+            return trip is not null;
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
