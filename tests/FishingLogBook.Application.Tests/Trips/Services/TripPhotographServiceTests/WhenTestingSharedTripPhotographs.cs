@@ -74,6 +74,49 @@ public class WhenTestingSharedTripPhotographs : BaseTripPhotographServiceTest
     }
 
     [Fact]
+    public async Task ItShouldRefuseAnOverwriteByTheTripOwnerOfAnotherParticipantsPhotograph()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+        MockTripPhotographRepository.GetByIdAsync(PhotographId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<TripPhotograph?>(StoredPhotograph(TripId, OtherUserId)));
+
+        // Act
+        var result = await Sut.RecordAsync(RecordArgs(), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripContributionNotOwnedError>();
+        await MockTripPhotographRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripPhotograph>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRefuseADeleteByTheTripOwnerOfAnotherParticipantsPhotograph()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+        MockTripPhotographRepository.GetByIdAsync(PhotographId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<TripPhotograph?>(StoredPhotograph(TripId, OtherUserId)));
+
+        // Act
+        var result = await Sut.DeleteAsync(
+            new DeleteTripPhotographArgs { TripId = TripId, PhotographId = PhotographId },
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripContributionNotOwnedError>();
+        await MockObjectStorage.DidNotReceive().DeleteObjectAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        await MockTripPhotographRepository.DidNotReceive().DeleteAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldScopeTheUploadKeyToTheContributorNotTheTripOwner()
     {
         // Arrange

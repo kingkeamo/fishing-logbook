@@ -67,6 +67,46 @@ public class WhenTestingSharedTripNotes : BaseTripNoteServiceTest
     }
 
     [Fact]
+    public async Task ItShouldRefuseAnEditByTheTripOwnerOfAnotherParticipantsNote()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+        MockTripNoteRepository.GetByIdAsync(NoteId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<TripNote?>(StoredNote(TripId, OtherUserId)));
+
+        // Act
+        var result = await Sut.RecordAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripContributionNotOwnedError>();
+        await MockTripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRefuseADeleteByTheTripOwnerOfAnotherParticipantsNote()
+    {
+        // Arrange
+        GivenTrip(CurrentUserId);
+        MockTripNoteRepository.GetByIdAsync(NoteId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<TripNote?>(StoredNote(TripId, OtherUserId)));
+
+        // Act
+        var result = await Sut.DeleteAsync(
+            new DeleteTripNoteArgs { TripId = TripId, NoteId = NoteId },
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripContributionNotOwnedError>();
+        await MockTripNoteRepository.DidNotReceive().DeleteAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldLetAParticipantDeleteTheirOwnNote()
     {
         // Arrange
