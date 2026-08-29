@@ -160,6 +160,13 @@ describe('Trip photograph store', () => {
         expect(await getTripsWithPendingPhotographs(ownerUserId)).toEqual([]);
     });
 
+    it('does not hold a trip open for a photograph that permanently failed to synchronise', async () => {
+        await seedTrip();
+        await save(photograph({ syncStatus: 'failedToSynchronise' }));
+
+        expect(await getTripsWithPendingPhotographs(ownerUserId)).toEqual([]);
+    });
+
     it('removes the metadata and the bytes together', async () => {
         await seedTrip();
         await save(photograph());

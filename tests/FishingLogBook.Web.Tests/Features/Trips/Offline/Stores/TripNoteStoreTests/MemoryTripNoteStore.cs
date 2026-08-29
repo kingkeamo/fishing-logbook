@@ -112,7 +112,8 @@ public sealed class MemoryTripNoteStore : ITripNoteStore
             [.. _notes.Values
                 .Where(note =>
                     note.CreatedByUserId == ownerUserId
-                    && note.SyncStatus != SyncStatus.Synchronised)
+                    && note.SyncStatus != SyncStatus.Synchronised
+                    && note.SyncStatus != SyncStatus.FailedToSynchronise)
                 .Select(note => note.TripId)
                 .Distinct()]);
     }

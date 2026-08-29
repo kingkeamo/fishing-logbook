@@ -44,7 +44,10 @@ public sealed class TripPhotographSynchroniser : ITripPhotographSynchroniser
             return;
         }
 
-        var pending = await _store.GetPendingAsync(ownerUserId, cancellationToken);
+        IReadOnlyList<TripPhotographModel> pending =
+            (await _store.GetPendingAsync(ownerUserId, cancellationToken))
+            .Where(NeedsAutomaticSynchronisation)
+            .ToArray();
         if (pending.Count == 0 || !await _networkService.IsOnlineAsync(cancellationToken))
         {
             return;
@@ -115,11 +118,51 @@ public sealed class TripPhotographSynchroniser : ITripPhotographSynchroniser
                 photograph,
                 exception,
                 cancellationToken);
+            await MarkFailedAsync(ownerUserId, photograph, cancellationToken);
         }
         finally
         {
             _inFlight.TryRemove(photograph.Id, out _);
         }
+    }
+
+    private async Task MarkFailedAsync(
+        Guid ownerUserId,
+        TripPhotographModel photograph,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var bytes = await _store.GetBytesAsync(
+                ownerUserId,
+                photograph.TripId,
+                photograph.Id,
+                cancellationToken);
+            if (bytes is not { Length: > 0 })
+            {
+                return;
+            }
+
+            await _store.SaveAsync(
+                photograph with
+                {
+                    Bytes = bytes,
+                    SyncStatus = SyncStatus.FailedToSynchronise
+                },
+                cancellationToken);
+        }
+        catch (Exception storeException) when (storeException is not OperationCanceledException)
+        {
+            await _logging.LogErrorAsync(
+                "recording a failed trip photograph synchronisation",
+                storeException,
+                CancellationToken.None);
+        }
+    }
+
+    private static bool NeedsAutomaticSynchronisation(TripPhotographModel photograph)
+    {
+        return photograph.SyncStatus != SyncStatus.FailedToSynchronise;
     }
 
     private async Task SynchronisePhotographAsync(

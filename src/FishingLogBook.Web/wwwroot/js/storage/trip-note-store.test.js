@@ -145,6 +145,13 @@ describe('Trip note store', () => {
         expect(await getTripsWithPendingNotes(ownerUserId)).toEqual([]);
     });
 
+    it('does not hold a trip open for a note that permanently failed to synchronise', async () => {
+        await seedTrip();
+        await save(note({ syncStatus: 'failedToSynchronise' }));
+
+        expect(await getTripsWithPendingNotes(ownerUserId)).toEqual([]);
+    });
+
     it('removes only the deleted note', async () => {
         await seedTrip();
         await save(note());

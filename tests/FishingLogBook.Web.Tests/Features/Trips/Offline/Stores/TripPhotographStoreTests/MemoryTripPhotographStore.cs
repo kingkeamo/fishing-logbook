@@ -104,7 +104,8 @@ public sealed class MemoryTripPhotographStore : ITripPhotographStore
             [.. _photographs.Values
                 .Where(photograph =>
                     photograph.ContributedByUserId == ownerUserId
-                    && photograph.SyncStatus != SyncStatus.Synchronised)
+                    && photograph.SyncStatus != SyncStatus.Synchronised
+                    && photograph.SyncStatus != SyncStatus.FailedToSynchronise)
                 .Select(photograph => photograph.TripId)
                 .Distinct()]);
     }

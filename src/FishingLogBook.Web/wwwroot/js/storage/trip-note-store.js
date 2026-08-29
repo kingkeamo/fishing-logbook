@@ -109,7 +109,10 @@ export async function getPendingTripNotes(viewerUserId) {
 export async function getTripsWithPendingNotes(viewerUserId) {
     return scanWritableTrips(viewerUserId, (trip, collected, viewer) => {
         const pending = (trip.notes ?? []).some(note =>
-            note && contributorId(note) === viewer && !isSynchronised(note.syncStatus));
+            note
+            && contributorId(note) === viewer
+            && !isSynchronised(note.syncStatus)
+            && !isFailedToSynchronise(note.syncStatus));
         if (pending) {
             collected.push(trip.id);
         }
@@ -160,4 +163,8 @@ function byRecordedOn(first, second) {
 
 function isSynchronised(status) {
     return status === 'synchronised' || status === 3;
+}
+
+function isFailedToSynchronise(status) {
+    return status === 'failedToSynchronise' || status === 4;
 }

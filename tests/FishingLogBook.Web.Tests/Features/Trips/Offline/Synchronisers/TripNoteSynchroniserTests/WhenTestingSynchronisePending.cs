@@ -120,7 +120,7 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldKeepTheNotePendingWhenTheServerRejectsIt()
+    public async Task ItShouldMarkTheNoteAsFailedWhenTheServerRejectsIt()
     {
         // Arrange
         MockTripClient.RecordNoteAsync(
@@ -135,8 +135,9 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
+        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
         store.Stored(NoteId)!.SyncedAt.Should().BeNull();
+        store.Stored(NoteId)!.Text.Should().Be(CreateNote().Text);
         await MockDiagnostics.Received(1).LogAsync(
             DiagnosticLevel.Error,
             DiagnosticEventNames.TripNoteSyncFailed,
@@ -145,6 +146,63 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
                 metadata[DiagnosticMetadata.ErrorType] == nameof(HttpRequestException)),
             Arg.Any<Exception?>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldMarkTheNoteAsFailedWhenTheServerPermanentlyRejectsIt()
+    {
+        // Arrange - simulates a participant having been removed from the Trip.
+        MockTripClient.RecordNoteAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<RecordTripNoteDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns<TripNoteDto?>(_ => throw new HttpRequestException(
+                "The angler is no longer a participant on this Trip.",
+                inner: null,
+                System.Net.HttpStatusCode.Forbidden));
+        var store = await CreateStoreAsync(CreateNote());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        await MockTripClient.Received(1).RecordNoteAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<RecordTripNoteDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotMarkTheNoteAsFailedWhenSynchronisationIsCancelled()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        MockTripClient.RecordNoteAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<RecordTripNoteDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns<TripNoteDto?>(_ =>
+            {
+                cancellation.Cancel();
+                throw new OperationCanceledException(cancellation.Token);
+            });
+        var store = await CreateStoreAsync(CreateNote());
+        var sut = CreateSut(store);
+
+        // Act
+        try
+        {
+            await sut.SynchronisePendingAsync(OwnerUserId, cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+
+        // Assert
+        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
     }
 
     [Fact]
@@ -182,7 +240,7 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldRetryAFailedNoteAndSendItExactlyOnce()
+    public async Task ItShouldNotAutomaticallyRetryAFailedNote()
     {
         // Arrange
         var attempts = 0;
@@ -214,8 +272,9 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        attempts.Should().Be(2);
-        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        attempts.Should().Be(1);
+        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        store.Stored(NoteId).Should().NotBeNull();
     }
 
     [Fact]

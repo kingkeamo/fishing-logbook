@@ -136,7 +136,8 @@ export async function getTripsWithPendingPhotographs(viewerUserId) {
         const pending = (trip.photographs ?? []).some(photograph =>
             photograph
             && contributorId(photograph) === viewer
-            && !isSynchronised(photograph.syncStatus));
+            && !isSynchronised(photograph.syncStatus)
+            && !isFailedToSynchronise(photograph.syncStatus));
         if (pending) {
             collected.push(trip.id);
         }
@@ -191,4 +192,8 @@ function byOrderedOn(first, second) {
 
 function isSynchronised(status) {
     return status === 'synchronised' || status === 3;
+}
+
+function isFailedToSynchronise(status) {
+    return status === 'failedToSynchronise' || status === 4;
 }

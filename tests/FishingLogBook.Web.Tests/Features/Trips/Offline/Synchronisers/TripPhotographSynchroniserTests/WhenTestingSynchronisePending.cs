@@ -121,7 +121,7 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldKeepThePhotographPendingWhenTheUploadFails()
+    public async Task ItShouldMarkThePhotographAsFailedWhenTheUploadFails()
     {
         // Arrange
         MockTripClient.UploadPhotographAsync(
@@ -137,7 +137,7 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
         store.Stored(PhotographId)!.SyncedAt.Should().BeNull();
         await MockTripClient.DidNotReceive().RecordPhotographAsync(
             Arg.Any<Guid>(),
@@ -154,7 +154,67 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldRetryAFailedUploadOnTheNextRunAndRecordItOnce()
+    public async Task ItShouldMarkThePhotographAsFailedWhenTheServerPermanentlyRejectsIt()
+    {
+        // Arrange - simulates a participant having been removed from the Trip.
+        MockTripClient.UploadPhotographAsync(
+                Arg.Any<string>(),
+                Arg.Any<byte[]>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ => throw new HttpRequestException(
+                "The angler is no longer a participant on this Trip.",
+                inner: null,
+                System.Net.HttpStatusCode.Forbidden));
+        var store = await CreateStoreAsync(CreatePhotograph());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        await MockTripClient.Received(1).UploadPhotographAsync(
+            Arg.Any<string>(),
+            Arg.Any<byte[]>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotMarkThePhotographAsFailedWhenSynchronisationIsCancelled()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        MockTripClient.UploadPhotographAsync(
+                Arg.Any<string>(),
+                Arg.Any<byte[]>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                cancellation.Cancel();
+                throw new OperationCanceledException(cancellation.Token);
+            });
+        var store = await CreateStoreAsync(CreatePhotograph());
+        var sut = CreateSut(store);
+
+        // Act
+        try
+        {
+            await sut.SynchronisePendingAsync(OwnerUserId, cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+
+        // Assert
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
+    }
+
+    [Fact]
+    public async Task ItShouldNotAutomaticallyRetryAFailedUpload()
     {
         // Arrange
         var attempts = 0;
@@ -179,11 +239,12 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        attempts.Should().Be(2);
-        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.Synchronised);
-        await MockTripClient.Received(1).RecordPhotographAsync(
+        attempts.Should().Be(1);
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        store.Stored(PhotographId).Should().NotBeNull();
+        await MockTripClient.DidNotReceive().RecordPhotographAsync(
             TripId,
-            Arg.Is<RecordTripPhotographDto>(request => request.PhotographId == PhotographId),
+            Arg.Any<RecordTripPhotographDto>(),
             Arg.Any<CancellationToken>());
     }
 
