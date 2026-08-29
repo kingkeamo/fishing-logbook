@@ -34,6 +34,7 @@ public partial class CatchList : ComponentBase, IDisposable
 
     private IReadOnlyList<CatchModel> _allCatches = [];
     private IReadOnlyList<CatchModel> _remoteCatches = [];
+    private readonly Dictionary<Guid, CatchProvenanceNamesModel> _provenanceNames = [];
     private IReadOnlyList<CatchGroup> _filteredGroups = [];
     private IReadOnlyList<string> _methodOptions = [];
     private IReadOnlyList<string> _speciesOptions = [];
@@ -300,6 +301,11 @@ public partial class CatchList : ComponentBase, IDisposable
             }
 
             var remote = await CatchClient.GetAllAsync(cancellationToken);
+            foreach (var dto in remote)
+            {
+                _provenanceNames[dto.Id] = new CatchProvenanceNamesModel(dto.AnglerName, dto.RecordedByName);
+            }
+
             return new CatchLoadResult([.. remote.Select(ToCatchModel)], Failed: false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -523,6 +529,16 @@ public partial class CatchList : ComponentBase, IDisposable
     {
         return !string.IsNullOrWhiteSpace(value)
             && value.Contains(term, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    private string? AnglerNameFor(Guid catchId)
+    {
+        return _provenanceNames.TryGetValue(catchId, out var names) ? names.AnglerName : null;
+    }
+
+    private string? RecordedByNameFor(Guid catchId)
+    {
+        return _provenanceNames.TryGetValue(catchId, out var names) ? names.RecordedByName : null;
     }
 
     private DateTime LocalDateTime(Guid catchId)

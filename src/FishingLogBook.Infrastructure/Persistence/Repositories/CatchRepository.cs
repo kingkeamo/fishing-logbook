@@ -40,18 +40,37 @@ public sealed class CatchRepository : ICatchRepository
         }
     }
 
-    public async Task<Result<IReadOnlyList<Catch>>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<Result<CatchDetail?>> GetDetailForUserAsync(
+        Guid catchId,
+        Guid userId,
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
-            var catches = await LoadByUserIdAsync(connection, userId, cancellationToken);
+            return Result.Ok(await LoadDetailForUserAsync(connection, catchId, userId, cancellationToken));
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to load the catch {CatchId}.", catchId);
+            return Result.Fail<CatchDetail?>(FailedMessage);
+        }
+    }
+
+    public async Task<Result<IReadOnlyList<CatchDetail>>> GetActivityForUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            var catches = await LoadActivityForUserAsync(connection, userId, cancellationToken);
             return Result.Ok(catches);
         }
         catch (Exception exception)
         {
             _logger.LogError(exception, "Failed to load catches for user {UserId}.", userId);
-            return Result.Fail<IReadOnlyList<Catch>>(FailedMessage);
+            return Result.Fail<IReadOnlyList<CatchDetail>>(FailedMessage);
         }
     }
 
@@ -367,6 +386,16 @@ public sealed class CatchRepository : ICatchRepository
             return null;
         }
 
+        catchRow.Photographs = await LoadPhotographsAsync(connection, transaction, id, cancellationToken);
+        return _mapper.Map<Catch>(catchRow);
+    }
+
+    private static async Task<IReadOnlyList<CatchPhotograph>> LoadPhotographsAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
+        Guid catchId,
+        CancellationToken cancellationToken)
+    {
         const string photographSql = """
             SELECT "Id", "CatchId", "ContentType"
             FROM "CatchPhotograph"
@@ -375,15 +404,90 @@ public sealed class CatchRepository : ICatchRepository
             """;
         var photographs = await connection.QueryAsync<CatchPhotograph>(new CommandDefinition(
             photographSql,
-            new { CatchId = id },
+            new { CatchId = catchId },
             transaction,
             cancellationToken: cancellationToken));
-        catchRow.Photographs = photographs.ToArray();
-
-        return _mapper.Map<Catch>(catchRow);
+        return photographs.ToArray();
     }
 
-    private async Task<IReadOnlyList<Catch>> LoadByUserIdAsync(
+    private async Task<CatchDetail?> LoadDetailForUserAsync(
+        NpgsqlConnection connection,
+        Guid catchId,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        const string catchSql = """
+            SELECT
+                c."Id",
+                c."UserId",
+                COALESCE(c."AnglerUserId", c."UserId") AS "AnglerUserId",
+                COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
+                c."TripId",
+                c."CaughtOn",
+                c."SpeciesName",
+                c."Weight",
+                c."Length",
+                c."Method",
+                c."BaitOrLure",
+                c."Notes",
+                c."Latitude",
+                c."Longitude",
+                c."LocationAccuracyMetres",
+                c."LocationCapturedOn",
+                c."LocationSource",
+                c."LocationVisibility",
+                c."LocationConsentVersion",
+                angler_profile."DisplayName" AS "AnglerName",
+                recorder_profile."DisplayName" AS "RecordedByName"
+            FROM "Catch" c
+            LEFT JOIN "Profile" angler_profile
+                ON angler_profile."UserId" = COALESCE(c."AnglerUserId", c."UserId")
+            LEFT JOIN "Profile" recorder_profile
+                ON recorder_profile."UserId" = COALESCE(c."RecordedByUserId", c."UserId")
+            WHERE c."Id" = @CatchId
+              AND (
+                c."UserId" = @UserId
+                OR c."RecordedByUserId" = @UserId
+                OR EXISTS (
+                    SELECT 1
+                    FROM "Trip" t
+                    WHERE t."Id" = c."TripId"
+                      AND t."OwnerUserId" = @UserId
+                )
+                OR EXISTS (
+                    SELECT 1
+                    FROM "TripParticipant" tp
+                    WHERE tp."TripId" = c."TripId"
+                      AND tp."UserId" = @UserId
+                      AND tp."Status" = 'Accepted'
+                      AND tp."RemovedOn" IS NULL
+                )
+              );
+            """;
+        var row = await connection.QuerySingleOrDefaultAsync<CatchDetailRow>(new CommandDefinition(
+            catchSql,
+            new { CatchId = catchId, UserId = userId },
+            cancellationToken: cancellationToken));
+        if (row is null)
+        {
+            return null;
+        }
+
+        row.Photographs = await LoadPhotographsAsync(connection, transaction: null, catchId, cancellationToken);
+        return ToDetail(row);
+    }
+
+    private CatchDetail ToDetail(CatchDetailRow row)
+    {
+        return new CatchDetail
+        {
+            Catch = _mapper.Map<Catch>(row),
+            AnglerName = row.AnglerName,
+            RecordedByName = row.RecordedByName
+        };
+    }
+
+    private async Task<IReadOnlyList<CatchDetail>> LoadActivityForUserAsync(
         NpgsqlConnection connection,
         Guid userId,
         CancellationToken cancellationToken)
@@ -409,44 +513,55 @@ public sealed class CatchRepository : ICatchRepository
                 c."LocationSource",
                 c."LocationVisibility",
                 c."LocationConsentVersion",
-                p."Id",
-                p."CatchId",
-                p."ContentType"
+                angler_profile."DisplayName" AS "AnglerName",
+                recorder_profile."DisplayName" AS "RecordedByName",
+                p."Id" AS "PhotographId",
+                p."CatchId" AS "PhotographCatchId",
+                p."ContentType" AS "PhotographContentType"
             FROM "Catch" c
             LEFT JOIN "CatchPhotograph" p ON p."CatchId" = c."Id"
-            WHERE c."UserId" = @UserId
+            LEFT JOIN "Profile" angler_profile
+                ON angler_profile."UserId" = COALESCE(c."AnglerUserId", c."UserId")
+            LEFT JOIN "Profile" recorder_profile
+                ON recorder_profile."UserId" = COALESCE(c."RecordedByUserId", c."UserId")
+            WHERE c."UserId" = @UserId OR c."RecordedByUserId" = @UserId
             ORDER BY c."CaughtOn" DESC, p."Id";
             """;
 
-        var catchesById = new Dictionary<Guid, CatchPersistenceRow>();
+        var rowsById = new Dictionary<Guid, CatchDetailRow>();
         var photographsById = new Dictionary<Guid, List<CatchPhotograph>>();
         var order = new List<Guid>();
-        await connection.QueryAsync<CatchPersistenceRow, CatchPhotograph, CatchPersistenceRow>(
+        await connection.QueryAsync<CatchDetailRow, CatchPhotographRow, CatchDetailRow>(
             new CommandDefinition(sql, new { UserId = userId }, cancellationToken: cancellationToken),
-            (catchRow, photograph) =>
+            (row, photographRow) =>
             {
-                if (!catchesById.ContainsKey(catchRow.Id))
+                if (!rowsById.ContainsKey(row.Id))
                 {
-                    catchesById[catchRow.Id] = catchRow;
-                    photographsById[catchRow.Id] = [];
-                    order.Add(catchRow.Id);
+                    rowsById[row.Id] = row;
+                    photographsById[row.Id] = [];
+                    order.Add(row.Id);
                 }
 
-                if (photograph is not null)
+                if (photographRow is not null)
                 {
-                    photographsById[catchRow.Id].Add(photograph);
+                    photographsById[row.Id].Add(new CatchPhotograph
+                    {
+                        Id = photographRow.PhotographId,
+                        CatchId = photographRow.PhotographCatchId,
+                        ContentType = photographRow.PhotographContentType
+                    });
                 }
 
-                return catchRow;
+                return row;
             },
-            splitOn: "Id");
+            splitOn: "PhotographId");
 
         foreach (var id in order)
         {
-            catchesById[id].Photographs = photographsById[id];
+            rowsById[id].Photographs = photographsById[id];
         }
 
-        return order.Select(id => _mapper.Map<Catch>(catchesById[id])).ToArray();
+        return order.Select(id => ToDetail(rowsById[id])).ToArray();
     }
 
     private static CatchPersistenceParameters ToParameters(Catch catchRecord)
@@ -544,6 +659,62 @@ public sealed class CatchRepository : ICatchRepository
         public string? LocationConsentVersion { get; init; }
 
         public IReadOnlyList<CatchPhotograph> Photographs { get; set; } = [];
+    }
+
+    internal sealed class CatchDetailRow
+    {
+        public Guid Id { get; init; }
+
+        public Guid UserId { get; init; }
+
+        public Guid AnglerUserId { get; init; }
+
+        public Guid RecordedByUserId { get; init; }
+
+        public Guid? TripId { get; init; }
+
+        public DateTimeOffset CaughtOn { get; init; }
+
+        public string? SpeciesName { get; init; }
+
+        public decimal? Weight { get; init; }
+
+        public decimal? Length { get; init; }
+
+        public string? Method { get; init; }
+
+        public string? BaitOrLure { get; init; }
+
+        public string? Notes { get; init; }
+
+        public double? Latitude { get; init; }
+
+        public double? Longitude { get; init; }
+
+        public double? LocationAccuracyMetres { get; init; }
+
+        public DateTimeOffset? LocationCapturedOn { get; init; }
+
+        public string? LocationSource { get; init; }
+
+        public string? LocationVisibility { get; init; }
+
+        public string? LocationConsentVersion { get; init; }
+
+        public string? AnglerName { get; init; }
+
+        public string? RecordedByName { get; init; }
+
+        public IReadOnlyList<CatchPhotograph> Photographs { get; set; } = [];
+    }
+
+    private sealed class CatchPhotographRow
+    {
+        public Guid PhotographId { get; init; }
+
+        public Guid PhotographCatchId { get; init; }
+
+        public string PhotographContentType { get; init; } = string.Empty;
     }
 
     private sealed class CatchPersistenceParameters

@@ -26,7 +26,8 @@ public class WhenTestingGetView : BaseCatchServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Should().BeOfType<CurrentUserUnresolvedError>();
-        await MockCatchRepository.DidNotReceive().GetByIdAsync(
+        await MockCatchRepository.DidNotReceive().GetDetailForUserAsync(
+            Arg.Any<Guid>(),
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
         await MockCatchLocationPrivacyService.DidNotReceive().GetExposureAsync(
@@ -41,8 +42,8 @@ public class WhenTestingGetView : BaseCatchServiceTest
         // Arrange
         var catchId = Guid.NewGuid();
         MockCatchRepository
-            .GetByIdAsync(catchId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(null));
+            .GetDetailForUserAsync(catchId, CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(null));
 
         // Act
         var result = await Sut.GetViewAsync(new GetCatchArgs { CatchId = catchId }, CancellationToken.None);
@@ -78,8 +79,13 @@ public class WhenTestingGetView : BaseCatchServiceTest
             Notes = "Weedline"
         };
         MockCatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail
+            {
+                Catch = catchRecord,
+                AnglerName = "Owner Angler",
+                RecordedByName = "Owner Angler"
+            }));
         MockTripAccessService
             .ResolveForAsync(tripId, CurrentUserId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok(TripAccess.Resolve(
@@ -120,7 +126,9 @@ public class WhenTestingGetView : BaseCatchServiceTest
         result.Value.BaitOrLure.Should().Be("Spinner");
         result.Value.Notes.Should().Be("Weedline");
         result.Value.Location!.Mode.Should().Be(LocationDefaults.ExposureNone);
-        await MockCatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        result.Value.AnglerName.Should().Be("Owner Angler");
+        result.Value.RecordedByName.Should().Be("Owner Angler");
+        await MockCatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, CurrentUserId, Arg.Any<CancellationToken>());
         await MockCatchLocationPrivacyService.Received(1).GetExposureAsync(
             Arg.Is<Catch>(item => item.Id == catchRecord.Id && item.UserId == ownerUserId),
             CurrentUserId,
@@ -146,8 +154,8 @@ public class WhenTestingGetView : BaseCatchServiceTest
             Photographs = [new CatchPhotograph { Id = photographId, CatchId = Guid.Empty, ContentType = "image/jpeg" }]
         };
         MockCatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         MockObjectStorage.IsConfigured.Returns(true);
         MockObjectStorage
             .CreateDownloadUrlAsync(
@@ -184,8 +192,8 @@ public class WhenTestingGetView : BaseCatchServiceTest
             Photographs = [new CatchPhotograph { Id = photographId, CatchId = Guid.Empty, ContentType = "image/jpeg" }]
         };
         MockCatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         MockObjectStorage.IsConfigured.Returns(false);
 
         // Act

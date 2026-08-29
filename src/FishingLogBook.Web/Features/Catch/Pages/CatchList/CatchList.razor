@@ -111,6 +111,8 @@
                                                    WeightUnit="_weightUnit"
                                                    LengthUnit="_lengthUnit"
                                                    CurrentUserId="_currentUserId"
+                                                   AnglerName="@AnglerNameFor(catchRecord.Id)"
+                                                   RecordedByName="@RecordedByNameFor(catchRecord.Id)"
                                                    IsRetrying="_retrying.Contains(catchRecord.Id)"
                                                    OnRetry="RetryAsync"
                                                    OnLocationPrivacy="OpenLocationPrivacyAsync" />

@@ -35,7 +35,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        await _factory.CatchRepository.DidNotReceive().GetByIdAsync(
+        await _factory.CatchRepository.DidNotReceive().GetDetailForUserAsync(
+            Arg.Any<Guid>(),
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -53,7 +54,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchId, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchId, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -73,8 +74,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
         };
         _factory.CatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
 
         // Act
         var response = await client.GetAsync($"/api/catches/{catchRecord.Id:D}");
@@ -90,7 +91,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         body.AnglerUserId.Should().Be(current.UserId);
         body.RecordedByUserId.Should().Be(current.UserId);
         body.Location.Should().BeNull();
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -103,8 +104,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         current.Should().NotBeNull();
         var catchRecord = LocatedCatch(current!.UserId);
         _factory.CatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
 
         // Act
         var response = await client.GetAsync($"/api/catches/{catchRecord.Id:D}");
@@ -121,7 +122,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         body.Location!.Mode.Should().Be(LocationDefaults.ExposureExact);
         body.Location.Latitude.Should().Be(53.2707);
         body.Location.Longitude.Should().Be(-9.0568);
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -134,8 +135,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         owner.Should().NotBeNull();
         var catchRecord = LocatedCatch(owner!.UserId);
         _factory.CatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         var viewer = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: "private-viewer"));
 
         // Act
@@ -153,7 +154,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         body!.Location.Should().NotBeNull();
         body.Location!.Mode.Should().Be(LocationDefaults.ExposureNone);
         body.Location.Latitude.Should().BeNull();
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await _factory.UserPlatformCapabilityRepository.DidNotReceive().HasAsync(
             Arg.Any<FindUserPlatformCapabilityArgs>(),
             Arg.Any<CancellationToken>());
@@ -175,8 +176,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         owner.Should().NotBeNull();
         var catchRecord = LocatedCatch(owner!.UserId);
         _factory.CatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         var viewerClient = _factory.CreateAuthenticatedClient(
             TestJwt.CreateAccessToken(subject: $"viewer-{capability}"));
         var viewer = await viewerClient.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
@@ -198,7 +199,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         json.Should().NotContain("53.2707");
         json.Should().NotContain("-9.0568");
         json.Should().NotContain("\"latitude\":");
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await _factory.UserPlatformCapabilityRepository.DidNotReceive().HasAsync(
             Arg.Any<FindUserPlatformCapabilityArgs>(),
             Arg.Any<CancellationToken>());
@@ -214,8 +215,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         owner.Should().NotBeNull();
         var catchRecord = LocatedCatch(owner!.UserId, LocationDefaults.Approximate);
         _factory.CatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         var viewer = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: "approx-viewer"));
 
         // Act
@@ -235,7 +236,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         body.Location.ApproximateLatitude.Should().Be(53.275);
         body.Location.ApproximateLongitude.Should().Be(-9.075);
         body.Location.Latitude.Should().BeNull();
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -248,8 +249,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         owner.Should().NotBeNull();
         var catchRecord = LocatedCatch(owner!.UserId, LocationDefaults.FishingVenueOnly);
         _factory.CatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         var viewer = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: "venue-viewer"));
 
         // Act
@@ -265,7 +266,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         body!.Location!.Mode.Should().Be(LocationDefaults.ExposureFishingVenue);
         body.Location.Latitude.Should().BeNull();
         body.Location.FishingVenueId.Should().BeNull();
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -278,8 +279,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         owner.Should().NotBeNull();
         var catchRecord = LocatedCatch(owner!.UserId, LocationDefaults.Public);
         _factory.CatchRepository
-            .GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(catchRecord));
+            .GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         var viewer = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: "public-viewer"));
 
         // Act
@@ -295,7 +296,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         body!.Location!.Mode.Should().Be(LocationDefaults.ExposureExact);
         body.Location.Latitude.Should().Be(53.2707);
         body.Location.Longitude.Should().Be(-9.0568);
-        await _factory.CatchRepository.Received(1).GetByIdAsync(catchRecord.Id, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     private void ResetRepositories()
@@ -303,8 +304,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         _factory.CatchRepository.ClearReceivedCalls();
         _factory.UserPlatformCapabilityRepository.ClearReceivedCalls();
         _factory.CatchRepository
-            .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Catch?>(null));
+            .GetDetailForUserAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(null));
         _factory.UserPlatformCapabilityRepository
             .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(false));

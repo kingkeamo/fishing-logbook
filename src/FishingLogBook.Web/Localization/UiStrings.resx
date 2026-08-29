@@ -438,6 +438,12 @@
   <data name="Catch_RecordedBySomeoneElse" xml:space="preserve">
     <value>Recorded by someone else</value>
   </data>
+  <data name="Catch_RecordedFor" xml:space="preserve">
+    <value>Recorded for {0}</value>
+  </data>
+  <data name="Catch_RecordedByName" xml:space="preserve">
+    <value>Recorded by {0}</value>
+  </data>
   <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
     <value>Location privacy</value>
   </data>

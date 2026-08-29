@@ -130,10 +130,23 @@ public sealed class CatchService : ICatchService
 
     public async Task<Result<CatchViewDto>> GetViewAsync(GetCatchArgs args, CancellationToken cancellationToken)
     {
-        var loaded = await LoadForCurrentUserAsync(args.CatchId, cancellationToken);
+        if (!_currentUser.IsResolved)
+        {
+            return Result.Fail<CatchViewDto>(new CurrentUserUnresolvedError());
+        }
+
+        var loaded = await _catchRepository.GetDetailForUserAsync(
+            args.CatchId,
+            _currentUser.UserId,
+            cancellationToken);
         if (loaded.IsFailed)
         {
             return Result.Fail<CatchViewDto>(loaded.Errors);
+        }
+
+        if (loaded.Value is null)
+        {
+            return Result.Fail<CatchViewDto>(new CatchNotFoundError());
         }
 
         return Result.Ok(await ToViewDtoAsync(loaded.Value, cancellationToken));
@@ -143,16 +156,16 @@ public sealed class CatchService : ICatchService
         GetMyCatchesArgs args,
         CancellationToken cancellationToken)
     {
-        var loaded = await _catchRepository.GetByUserIdAsync(args.UserId, cancellationToken);
+        var loaded = await _catchRepository.GetActivityForUserAsync(args.UserId, cancellationToken);
         if (loaded.IsFailed)
         {
             return Result.Fail<IReadOnlyList<CatchViewDto>>(loaded.Errors);
         }
 
         var views = new List<CatchViewDto>(loaded.Value.Count);
-        foreach (var catchRecord in loaded.Value)
+        foreach (var catchDetail in loaded.Value)
         {
-            views.Add(await ToViewDtoAsync(catchRecord, cancellationToken));
+            views.Add(await ToViewDtoAsync(catchDetail, cancellationToken));
         }
 
         return Result.Ok<IReadOnlyList<CatchViewDto>>(views);
@@ -188,8 +201,9 @@ public sealed class CatchService : ICatchService
             cancellationToken);
     }
 
-    private async Task<CatchViewDto> ToViewDtoAsync(Catch catchRecord, CancellationToken cancellationToken)
+    private async Task<CatchViewDto> ToViewDtoAsync(CatchDetail catchDetail, CancellationToken cancellationToken)
     {
+        var catchRecord = catchDetail.Catch;
         var exposure = await _catchLocationPrivacyService.GetExposureAsync(
             catchRecord,
             _currentUser.UserId,
@@ -215,7 +229,9 @@ public sealed class CatchService : ICatchService
             exposure)
         {
             AnglerUserId = catchRecord.AnglerUserId,
+            AnglerName = catchDetail.AnglerName,
             RecordedByUserId = catchRecord.RecordedByUserId,
+            RecordedByName = catchDetail.RecordedByName,
             TripId = catchRecord.TripId,
             SpeciesName = catchRecord.SpeciesName,
             Weight = catchRecord.Weight,

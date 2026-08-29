@@ -33,7 +33,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        await _factory.CatchRepository.DidNotReceive().GetByUserIdAsync(
+        await _factory.CatchRepository.DidNotReceive().GetActivityForUserAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -47,15 +47,17 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         current.Should().NotBeNull();
         _factory.CatchRepository
-            .GetByUserIdAsync(current!.UserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<IReadOnlyList<Catch>>("Failed to save the catch."));
+            .GetActivityForUserAsync(current!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<IReadOnlyList<CatchDetail>>("Failed to save the catch."));
 
         // Act
         var response = await client.GetAsync("/api/catches");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
-        await _factory.CatchRepository.Received(1).GetByUserIdAsync(current.UserId, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetActivityForUserAsync(
+            current.UserId,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -75,7 +77,9 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
         body.Should().BeEmpty();
-        await _factory.CatchRepository.Received(1).GetByUserIdAsync(current!.UserId, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetActivityForUserAsync(
+            current!.UserId,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -96,8 +100,8 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
             SpeciesName = "Pike"
         };
         _factory.CatchRepository
-            .GetByUserIdAsync(current.UserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Catch>>([catchRecord]));
+            .GetActivityForUserAsync(current.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<CatchDetail>>([new CatchDetail { Catch = catchRecord }]));
 
         // Act
         var response = await client.GetAsync("/api/catches");
@@ -106,14 +110,60 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().ContainSingle(view => view.Id == catchRecord.Id && view.SpeciesName == "Pike");
-        await _factory.CatchRepository.Received(1).GetByUserIdAsync(current.UserId, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.Received(1).GetActivityForUserAsync(
+            current.UserId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldIncludeAndNameACatchRecordedForAnotherAngler()
+    {
+        // Arrange
+        ResetRepositories();
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: "list-recorder"));
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        current.Should().NotBeNull();
+        var anglerUserId = Guid.NewGuid();
+        var recordedForAnother = new Catch
+        {
+            Id = Guid.NewGuid(),
+            UserId = anglerUserId,
+            AnglerUserId = anglerUserId,
+            RecordedByUserId = current!.UserId,
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            SpeciesName = "Brown Trout"
+        };
+        _factory.CatchRepository
+            .GetActivityForUserAsync(current.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<CatchDetail>>(
+            [
+                new CatchDetail
+                {
+                    Catch = recordedForAnother,
+                    AnglerName = "Patrick Connolly",
+                    RecordedByName = "Current User"
+                }
+            ]));
+
+        // Act
+        var response = await client.GetAsync("/api/catches");
+        var body = await response.Content.ReadFromJsonAsync<IReadOnlyList<CatchViewDto>>(JsonOptions);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        body.Should().ContainSingle(view =>
+            view.Id == recordedForAnother.Id
+            && view.UserId == anglerUserId
+            && view.AnglerName == "Patrick Connolly"
+            && view.RecordedByUserId == current.UserId
+            && view.RecordedByName == "Current User");
     }
 
     private void ResetRepositories()
     {
         _factory.CatchRepository.ClearReceivedCalls();
         _factory.CatchRepository
-            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Catch>>([]));
+            .GetActivityForUserAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<CatchDetail>>([]));
     }
 }

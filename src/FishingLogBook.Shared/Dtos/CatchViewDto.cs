@@ -8,7 +8,11 @@ public sealed record CatchViewDto(
 {
     public Guid AnglerUserId { get; init; }
 
+    public string? AnglerName { get; init; }
+
     public Guid RecordedByUserId { get; init; }
+
+    public string? RecordedByName { get; init; }
 
     public Guid? TripId { get; init; }
 

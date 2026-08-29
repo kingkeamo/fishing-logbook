@@ -6,9 +6,9 @@ using FishingLogBook.Shared.Constants;
 namespace FishingLogBook.Infrastructure.Tests.Repositories.Repositories.CatchRepositoryTests;
 
 [Collection(PostgresCollection.Name)]
-public class WhenTestingGetByUserId : BaseCatchRepositoryTest
+public class WhenTestingGetActivityForUser : BaseCatchRepositoryTest
 {
-    public WhenTestingGetByUserId(PostgresFixture fixture)
+    public WhenTestingGetActivityForUser(PostgresFixture fixture)
         : base(fixture)
     {
     }
@@ -20,7 +20,7 @@ public class WhenTestingGetByUserId : BaseCatchRepositoryTest
         var userId = await CreateUserAsync();
 
         // Act
-        var result = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
+        var result = await Sut.GetActivityForUserAsync(userId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -39,11 +39,73 @@ public class WhenTestingGetByUserId : BaseCatchRepositoryTest
         await Sut.UpsertAsync(other, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetByUserIdAsync(ownerId, CancellationToken.None);
+        var result = await Sut.GetActivityForUserAsync(ownerId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Should().ContainSingle(catchRecord => catchRecord.Id == owned.Id);
+        result.Value.Should().ContainSingle(catchDetail => catchDetail.Catch.Id == owned.Id);
+    }
+
+    [Fact]
+    public async Task ItShouldIncludeACatchTheUserRecordedForAnotherAngler()
+    {
+        // Arrange
+        var anglerUserId = await CreateUserAsync();
+        var recorderUserId = await CreateUserAsync();
+        await CreateProfileAsync(anglerUserId, "Patrick Connolly");
+        var catchId = Guid.NewGuid();
+        var recordedForAnother = new Catch
+        {
+            Id = catchId,
+            UserId = anglerUserId,
+            AnglerUserId = anglerUserId,
+            RecordedByUserId = recorderUserId,
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            Photographs =
+            [
+                new CatchPhotograph
+                {
+                    Id = Guid.NewGuid(),
+                    CatchId = catchId,
+                    ContentType = PhotographContentTypeConstants.Jpeg
+                }
+            ]
+        };
+        await Sut.UpsertAsync(recordedForAnother, CancellationToken.None);
+
+        // Act
+        var anglerActivity = await Sut.GetActivityForUserAsync(anglerUserId, CancellationToken.None);
+        var recorderActivity = await Sut.GetActivityForUserAsync(recorderUserId, CancellationToken.None);
+
+        // Assert
+        anglerActivity.IsSuccess.Should().BeTrue();
+        anglerActivity.Value.Should().ContainSingle(catchDetail => catchDetail.Catch.Id == recordedForAnother.Id);
+        recorderActivity.IsSuccess.Should().BeTrue();
+        var recordedForPatrick = recorderActivity.Value.Should().ContainSingle(
+            catchDetail => catchDetail.Catch.Id == recordedForAnother.Id).Subject;
+        recordedForPatrick.Catch.UserId.Should().Be(anglerUserId);
+        recordedForPatrick.Catch.AnglerUserId.Should().Be(anglerUserId);
+        recordedForPatrick.Catch.RecordedByUserId.Should().Be(recorderUserId);
+        recordedForPatrick.AnglerName.Should().Be("Patrick Connolly");
+    }
+
+    [Fact]
+    public async Task ItShouldProjectDisplayNamesRegardlessOfProfileVisibility()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        await CreateProfileAsync(userId, "Hidden Angler", showDisplayName: false);
+        var catchRecord = NewCatch(userId);
+        await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+
+        // Act
+        var result = await Sut.GetActivityForUserAsync(userId, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var loaded = result.Value.Should().ContainSingle().Subject;
+        loaded.AnglerName.Should().Be("Hidden Angler");
+        loaded.RecordedByName.Should().Be("Hidden Angler");
     }
 
     [Fact]
@@ -52,7 +114,7 @@ public class WhenTestingGetByUserId : BaseCatchRepositoryTest
         // Arrange
         var userId = await CreateUserAsync();
         var older = NewCatch(userId);
-        var olderWithDate = new Domain.Catches.Catch
+        var olderWithDate = new Catch
         {
             Id = older.Id,
             UserId = older.UserId,
@@ -62,7 +124,7 @@ public class WhenTestingGetByUserId : BaseCatchRepositoryTest
             Photographs = older.Photographs
         };
         var newer = NewCatch(userId);
-        var newerWithDate = new Domain.Catches.Catch
+        var newerWithDate = new Catch
         {
             Id = newer.Id,
             UserId = newer.UserId,
@@ -75,15 +137,15 @@ public class WhenTestingGetByUserId : BaseCatchRepositoryTest
         await Sut.UpsertAsync(newerWithDate, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
+        var result = await Sut.GetActivityForUserAsync(userId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(2);
-        result.Value[0].Id.Should().Be(newerWithDate.Id);
-        result.Value[1].Id.Should().Be(olderWithDate.Id);
-        result.Value[0].Photographs.Should().ContainSingle();
-        result.Value[1].Photographs.Should().ContainSingle();
+        result.Value[0].Catch.Id.Should().Be(newerWithDate.Id);
+        result.Value[1].Catch.Id.Should().Be(olderWithDate.Id);
+        result.Value[0].Catch.Photographs.Should().ContainSingle();
+        result.Value[1].Catch.Photographs.Should().ContainSingle();
     }
 
     [Fact]
@@ -119,16 +181,16 @@ public class WhenTestingGetByUserId : BaseCatchRepositoryTest
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
+        var result = await Sut.GetActivityForUserAsync(userId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().ContainSingle();
-        result.Value[0].Photographs.Should().HaveCount(3);
-        result.Value[0].Photographs.Select(photograph => photograph.Id)
+        result.Value[0].Catch.Photographs.Should().HaveCount(3);
+        result.Value[0].Catch.Photographs.Select(photograph => photograph.Id)
             .Should()
             .BeEquivalentTo([firstPhoto, secondPhoto, thirdPhoto]);
-        result.Value[0].Photographs.Should()
+        result.Value[0].Catch.Photographs.Should()
             .OnlyContain(photograph => photograph.CatchId == catchId);
     }
 
@@ -173,13 +235,13 @@ public class WhenTestingGetByUserId : BaseCatchRepositoryTest
         await Sut.UpsertAsync(secondCatch, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
+        var result = await Sut.GetActivityForUserAsync(userId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().HaveCount(2);
-        var loadedFirst = result.Value.Single(catchRecord => catchRecord.Id == firstCatchId);
-        var loadedSecond = result.Value.Single(catchRecord => catchRecord.Id == secondCatchId);
+        var loadedFirst = result.Value.Single(catchDetail => catchDetail.Catch.Id == firstCatchId).Catch;
+        var loadedSecond = result.Value.Single(catchDetail => catchDetail.Catch.Id == secondCatchId).Catch;
         loadedFirst.Photographs.Should().HaveCount(2);
         loadedFirst.Photographs.Should().OnlyContain(photograph => photograph.CatchId == firstCatchId);
         loadedSecond.Photographs.Should().HaveCount(2);

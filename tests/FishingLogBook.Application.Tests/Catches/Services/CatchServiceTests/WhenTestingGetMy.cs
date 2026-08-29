@@ -13,8 +13,8 @@ public class WhenTestingGetMy : BaseCatchServiceTest
     {
         // Arrange
         MockCatchRepository
-            .GetByUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Fail<IReadOnlyList<Catch>>("Failed to save the catch."));
+            .GetActivityForUserAsync(CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<IReadOnlyList<CatchDetail>>("Failed to save the catch."));
 
         // Act
         var result = await Sut.GetMyAsync(new GetMyCatchesArgs { UserId = CurrentUserId }, CancellationToken.None);
@@ -32,8 +32,8 @@ public class WhenTestingGetMy : BaseCatchServiceTest
     {
         // Arrange
         MockCatchRepository
-            .GetByUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Catch>>([]));
+            .GetActivityForUserAsync(CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<CatchDetail>>([]));
 
         // Act
         var result = await Sut.GetMyAsync(new GetMyCatchesArgs { UserId = CurrentUserId }, CancellationToken.None);
@@ -66,8 +66,12 @@ public class WhenTestingGetMy : BaseCatchServiceTest
             SpeciesName = "Perch"
         };
         MockCatchRepository
-            .GetByUserIdAsync(CurrentUserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<IReadOnlyList<Catch>>([first, second]));
+            .GetActivityForUserAsync(CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<CatchDetail>>(
+            [
+                new CatchDetail { Catch = first },
+                new CatchDetail { Catch = second }
+            ]));
 
         // Act
         var result = await Sut.GetMyAsync(new GetMyCatchesArgs { UserId = CurrentUserId }, CancellationToken.None);
@@ -85,5 +89,46 @@ public class WhenTestingGetMy : BaseCatchServiceTest
             Arg.Is<Catch>(item => item.Id == second.Id),
             CurrentUserId,
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldIncludeAndNameACatchRecordedForAnotherAngler()
+    {
+        // Arrange
+        var anglerUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var recordedForAnother = new Catch
+        {
+            Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+            UserId = anglerUserId,
+            AnglerUserId = anglerUserId,
+            RecordedByUserId = CurrentUserId,
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            SpeciesName = "Brown Trout"
+        };
+        MockCatchRepository
+            .GetActivityForUserAsync(CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<CatchDetail>>(
+            [
+                new CatchDetail
+                {
+                    Catch = recordedForAnother,
+                    AnglerName = "Patrick Connolly",
+                    RecordedByName = "Current User"
+                }
+            ]));
+
+        // Act
+        var result = await Sut.GetMyAsync(new GetMyCatchesArgs { UserId = CurrentUserId }, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().ContainSingle(view =>
+            view.Id == recordedForAnother.Id
+            && view.UserId == anglerUserId
+            && view.AnglerUserId == anglerUserId
+            && view.AnglerName == "Patrick Connolly"
+            && view.RecordedByUserId == CurrentUserId
+            && view.RecordedByName == "Current User");
+        await MockCatchRepository.Received(1).GetActivityForUserAsync(CurrentUserId, Arg.Any<CancellationToken>());
     }
 }
