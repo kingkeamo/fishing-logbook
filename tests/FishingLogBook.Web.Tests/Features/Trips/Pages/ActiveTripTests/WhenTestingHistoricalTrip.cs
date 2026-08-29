@@ -64,7 +64,7 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
     }
 
     [Fact]
-    public async Task ItShouldNotAskTheServerForATripThatIsStillOnTheDevice()
+    public async Task ItShouldAskTheServerToMergeInOtherAnglersContributionsForATripStillOnTheDevice()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -78,9 +78,125 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#active-trip-card").Should().NotBeNull());
-        await tripClient.DidNotReceive().GetDetailAsync(
+        await tripClient.Received(1).GetDetailAsync(TripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNeverRewriteTheOwnersOwnLocalTripWhileMergingServerContributions()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = await StoreWithActiveTripAsync();
+        var tripClient = Substitute.For<ITripClient>();
+        tripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns(new TripDetailDto(new TripViewDto(TripId, OwnerUserId, TripConstants.Active, StartedOn))
+            {
+                Role = TripParticipantConstants.Owner
+            });
+        await using var context = CreateContext(store, tripClient: tripClient);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#active-trip-card").Should().NotBeNull());
+        await store.DidNotReceive().HydrateAsync(
+            Arg.Any<TripModel>(),
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowAParticipantsSyncedCatchOnTheOwnersTimeline()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var participantUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var store = await StoreWithActiveTripAsync();
+        var tripClient = Substitute.For<ITripClient>();
+        tripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns(new TripDetailDto(new TripViewDto(TripId, OwnerUserId, TripConstants.Active, StartedOn))
+            {
+                Role = TripParticipantConstants.Owner,
+                Catches =
+                [
+                    new TripCatchSummaryDto(catchId, StartedOn.AddMinutes(30))
+                    {
+                        SpeciesName = "Brown Trout",
+                        AnglerUserId = participantUserId
+                    }
+                ],
+                Contributors =
+                [
+                    new TripContributorDto(participantUserId, "Pat", null)
+                ]
+            });
+        await using var context = CreateContext(store, tripClient: tripClient);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-timeline-catch-{catchId:D}").TextContent.Should().Contain("Brown Trout"));
+        cut.Find("#active-trip-catch-count").TextContent.Should().Contain("1");
+    }
+
+    [Fact]
+    public async Task ItShouldShowAParticipantsSyncedNoteOnTheOwnersTimeline()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var noteId = Guid.NewGuid();
+        var participantUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var store = await StoreWithActiveTripAsync();
+        var tripClient = Substitute.For<ITripClient>();
+        tripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns(new TripDetailDto(new TripViewDto(TripId, OwnerUserId, TripConstants.Active, StartedOn))
+            {
+                Role = TripParticipantConstants.Owner,
+                Notes =
+                [
+                    new TripNoteDto(noteId, TripId, "What time are we starting tomorrow?", StartedOn.AddMinutes(15))
+                    {
+                        CreatedByUserId = participantUserId
+                    }
+                ]
+            });
+        await using var context = CreateContext(store, tripClient: tripClient);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Markup.Should().Contain("What time are we starting tomorrow?"));
+        cut.Find("#active-trip-note-count").TextContent.Should().Contain("1");
+    }
+
+    [Fact]
+    public async Task ItShouldStillWorkOfflineWhenTheOwnersServerMergeFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = await StoreWithActiveTripAsync();
+        var tripClient = Substitute.For<ITripClient>();
+        tripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("offline"));
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, tripClient: tripClient, logging: logging);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#active-trip-card").Should().NotBeNull());
+        cut.Find("#active-trip-record-catch").Should().NotBeNull();
     }
 
     [Fact]

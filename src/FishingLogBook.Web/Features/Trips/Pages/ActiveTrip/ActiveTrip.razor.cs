@@ -251,10 +251,13 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             _viewerUserId = viewerUserId;
             _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken);
             TripDetailDto? shared = null;
-            if (_trip is { Origin: TripOriginEnum.Server })
+            if (_trip is { Status: TripConstants.Active })
             {
-                shared = await RefreshSharedTripAsync(viewerUserId, cancellationToken);
-                _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken) ?? _trip;
+                shared = await RefreshSharedTripAsync(_trip, viewerUserId, cancellationToken);
+                if (_trip.Origin == TripOriginEnum.Server)
+                {
+                    _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken) ?? _trip;
+                }
             }
 
             if (_trip is not null)
@@ -316,6 +319,7 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     }
 
     private async Task<TripDetailDto?> RefreshSharedTripAsync(
+        TripModel localTrip,
         Guid viewerUserId,
         CancellationToken cancellationToken)
     {
@@ -328,6 +332,15 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             }
 
             _contributors = detail.Contributors;
+
+            // The owner's own trip stays the canonical local record: refreshing here is only
+            // to merge in other anglers' contributions for display, never to overwrite it or
+            // change its origin, which would corrupt the owner's ability to edit/finish it.
+            if (localTrip.IsOwnedBy(viewerUserId))
+            {
+                return detail;
+            }
+
             var refreshed = ToTripModel(detail, ParticipantUserIds(detail, viewerUserId));
             if (!refreshed.CanContribute(viewerUserId))
             {
