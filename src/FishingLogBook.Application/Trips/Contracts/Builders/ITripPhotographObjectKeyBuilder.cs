@@ -1,4 +1,4 @@
-namespace FishingLogBook.Application.Trips.Contracts.Services;
+namespace FishingLogBook.Application.Trips.Contracts.Builders;
 
 public interface ITripPhotographObjectKeyBuilder
 {

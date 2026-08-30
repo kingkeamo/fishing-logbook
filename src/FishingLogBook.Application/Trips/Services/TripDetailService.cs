@@ -1,4 +1,5 @@
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Catches.Contracts.Builders;
 using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Profiles.Contracts.Services;

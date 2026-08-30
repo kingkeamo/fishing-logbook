@@ -1,6 +1,6 @@
-using FishingLogBook.Application.Catches.Contracts.Services;
+using FishingLogBook.Application.Catches.Contracts.Builders;
 
-namespace FishingLogBook.Application.Catches.Services;
+namespace FishingLogBook.Application.Catches.Builders;
 
 public sealed class CatchPhotographObjectKeyBuilder : ICatchPhotographObjectKeyBuilder
 {

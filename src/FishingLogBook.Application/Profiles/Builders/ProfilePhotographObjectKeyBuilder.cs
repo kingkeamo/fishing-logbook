@@ -1,6 +1,6 @@
-using FishingLogBook.Application.Profiles.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Builders;
 
-namespace FishingLogBook.Application.Profiles.Services;
+namespace FishingLogBook.Application.Profiles.Builders;
 
 public sealed class ProfilePhotographObjectKeyBuilder : IProfilePhotographObjectKeyBuilder
 {

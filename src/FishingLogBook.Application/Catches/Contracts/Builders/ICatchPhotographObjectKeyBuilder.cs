@@ -1,4 +1,4 @@
-namespace FishingLogBook.Application.Catches.Contracts.Services;
+namespace FishingLogBook.Application.Catches.Contracts.Builders;
 
 public interface ICatchPhotographObjectKeyBuilder
 {

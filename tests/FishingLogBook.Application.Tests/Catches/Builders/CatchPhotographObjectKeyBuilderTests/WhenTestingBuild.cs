@@ -1,7 +1,8 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Catches.Builders;
 using FishingLogBook.Application.Catches.Services;
 
-namespace FishingLogBook.Application.Tests.Catches.Services.CatchPhotographObjectKeyBuilderTests;
+namespace FishingLogBook.Application.Tests.Catches.Builders.CatchPhotographObjectKeyBuilderTests;
 
 public class WhenTestingBuild
 {

@@ -1,4 +1,4 @@
-namespace FishingLogBook.Application.Profiles.Contracts.Services;
+namespace FishingLogBook.Application.Profiles.Contracts.Builders;
 
 public interface IProfilePhotographObjectKeyBuilder
 {

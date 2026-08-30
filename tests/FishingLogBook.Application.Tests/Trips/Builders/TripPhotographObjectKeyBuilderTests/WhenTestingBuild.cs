@@ -1,7 +1,7 @@
 using AwesomeAssertions;
-using FishingLogBook.Application.Trips.Services;
+using FishingLogBook.Application.Trips.Builders;
 
-namespace FishingLogBook.Application.Tests.Trips.Services.TripPhotographObjectKeyBuilderTests;
+namespace FishingLogBook.Application.Tests.Trips.Builders.TripPhotographObjectKeyBuilderTests;
 
 public class WhenTestingBuild
 {

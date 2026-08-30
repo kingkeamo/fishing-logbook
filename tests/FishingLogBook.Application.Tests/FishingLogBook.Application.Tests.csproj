@@ -31,4 +31,10 @@
     <ProjectReference Include="..\FishingLogBook.Tests.Common\FishingLogBook.Tests.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Catches\Builders\" />
+    <Folder Include="Profiles\Builders\" />
+    <Folder Include="Trips\Builders\" />
+  </ItemGroup>
+
 </Project>

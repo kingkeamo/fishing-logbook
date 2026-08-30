@@ -1,6 +1,6 @@
-using FishingLogBook.Application.Trips.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Builders;
 
-namespace FishingLogBook.Application.Trips.Services;
+namespace FishingLogBook.Application.Trips.Builders;
 
 public sealed class TripPhotographObjectKeyBuilder : ITripPhotographObjectKeyBuilder
 {

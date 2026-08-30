@@ -1,5 +1,6 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Builders;
 using FishingLogBook.Application.Trips.Contracts.Repositories;
 using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Errors;
