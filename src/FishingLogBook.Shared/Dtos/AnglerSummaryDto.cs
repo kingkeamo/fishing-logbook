@@ -4,4 +4,5 @@ public sealed record AnglerSummaryDto(
     Guid UserId,
     string? DisplayName,
     string? PhotographUrl,
-    string? HomeRegion);
+    string? HomeRegion,
+    string? Email);

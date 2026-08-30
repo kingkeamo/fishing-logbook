@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.FishingLocations.Contracts.Repositories;
 using FishingLogBook.Application.FishingLocations.Services;
 using FishingLogBook.Domain.FishingLocations;
 using FluentResults;

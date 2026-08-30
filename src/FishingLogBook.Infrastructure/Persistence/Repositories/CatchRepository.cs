@@ -1,8 +1,7 @@
 using Dapper;
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
 using FishingLogBook.Application.Catches.Errors;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
 using FishingLogBook.Domain.Catches;
 using FluentResults;
 using MapsterMapper;

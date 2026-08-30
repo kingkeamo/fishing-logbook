@@ -7,13 +7,24 @@
 
 <MudPaper Class="pa-3" Elevation="2" id="trip-editor">
     <MudStack Spacing="3">
-        <MudStack Spacing="0">
-            <MudText Typo="Typo.h5" id="trip-editor-heading">@Loc["Trip_EditTitle"]</MudText>
-            @if (SummaryLabel is not null)
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h5" id="trip-editor-heading">@Loc["Trip_EditTitle"]</MudText>
+                @if (SummaryLabel is not null)
+                {
+                    <MudText Typo="Typo.body2"
+                             Class="mud-text-secondary"
+                             id="trip-editor-summary">@SummaryLabel</MudText>
+                }
+            </MudStack>
+            @if (ShowParticipants)
             {
-                <MudText Typo="Typo.body2"
-                         Class="mud-text-secondary"
-                         id="trip-editor-summary">@SummaryLabel</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Group"
+                               Size="Size.Small"
+                               aria-label="@Loc["Trip_Participants"]"
+                               title="@Loc["Trip_Participants"]"
+                               OnClick="ShowParticipantsAsync"
+                               id="trip-editor-participants" />
             }
         </MudStack>
 

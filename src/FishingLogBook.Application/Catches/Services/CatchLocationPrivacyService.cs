@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Shared.Constants;

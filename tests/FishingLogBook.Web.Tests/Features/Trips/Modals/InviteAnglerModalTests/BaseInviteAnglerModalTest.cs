@@ -57,8 +57,9 @@ public class BaseInviteAnglerModalTest
     protected static AnglerSummaryDto Angler(
         string? displayName = "John Connolly",
         string? homeRegion = null,
-        Guid? userId = null)
+        Guid? userId = null,
+        string? email = null)
     {
-        return new AnglerSummaryDto(userId ?? MatchedUserId, displayName, null, homeRegion);
+        return new AnglerSummaryDto(userId ?? MatchedUserId, displayName, null, homeRegion, email);
     }
 }

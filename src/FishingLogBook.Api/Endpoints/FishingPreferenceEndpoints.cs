@@ -1,5 +1,5 @@
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.FishingPreferences.Commands;
 using FishingLogBook.Application.FishingPreferences.Errors;
 using FishingLogBook.Application.FishingPreferences.Queries;

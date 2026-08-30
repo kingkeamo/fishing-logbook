@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using MediatR;
 

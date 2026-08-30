@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Users.Contracts.Repositories;
 using FishingLogBook.Application.Users.Services;
 using FishingLogBook.Domain.Users;
 using FishingLogBook.Shared.Constants;

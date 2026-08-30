@@ -1,5 +1,5 @@
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
+using FishingLogBook.Application.Profiles.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using NSubstitute;

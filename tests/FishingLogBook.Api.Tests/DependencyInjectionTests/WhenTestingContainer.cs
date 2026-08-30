@@ -1,7 +1,10 @@
 using AwesomeAssertions;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Capabilities.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Services;
 using FishingLogBook.Application.SystemStatus;
+using FishingLogBook.Application.SystemStatus.Contracts.Repositories;
+using FishingLogBook.Application.Users.Contracts.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 

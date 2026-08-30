@@ -115,6 +115,35 @@ public class WhenTestingRender : BaseTripEditorTest
     }
 
     [Fact]
+    public async Task ItShouldNotShowTheParticipantsButtonByDefault()
+    {
+        // Arrange
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<TripEditor>(parameters => parameters
+            .Add(component => component.Trip, ActiveTrip()));
+
+        // Assert
+        cut.FindAll("#trip-editor-participants").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheParticipantsButtonWhenEnabled()
+    {
+        // Arrange
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<TripEditor>(parameters => parameters
+            .Add(component => component.Trip, ActiveTrip())
+            .Add(component => component.ShowParticipants, true));
+
+        // Assert
+        cut.Find("#trip-editor-participants").Should().NotBeNull();
+    }
+
+    [Fact]
     public async Task ItShouldOfferToRemoveACatchFromTheTripRatherThanDeleteIt()
     {
         // Arrange

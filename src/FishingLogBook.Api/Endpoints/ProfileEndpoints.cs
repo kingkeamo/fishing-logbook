@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Profiles.Commands;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Application.Profiles.Queries;

@@ -1,7 +1,10 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;

@@ -1,6 +1,6 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Users.Contracts.Services;
 using FluentValidation;
 using MapsterMapper;
 using MediatR;

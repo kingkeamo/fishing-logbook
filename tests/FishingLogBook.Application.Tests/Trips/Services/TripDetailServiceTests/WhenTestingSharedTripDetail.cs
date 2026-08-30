@@ -127,7 +127,7 @@ public class WhenTestingSharedTripDetail : BaseTripDetailServiceTest
             .Returns(Result.Ok<IReadOnlyDictionary<Guid, AnglerSummaryDto>>(
                 new Dictionary<Guid, AnglerSummaryDto>
                 {
-                    [OtherUserId] = new(OtherUserId, "Mark", null, null)
+                    [OtherUserId] = new(OtherUserId, "Mark", null, null, null)
                 }));
 
         // Act

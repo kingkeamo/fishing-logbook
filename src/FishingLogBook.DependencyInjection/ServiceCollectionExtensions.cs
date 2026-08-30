@@ -1,19 +1,35 @@
+using FishingLogBook.Application.Capabilities.Contracts.Repositories;
+using FishingLogBook.Application.Capabilities.Contracts.Services;
 using FishingLogBook.Application.Capabilities.Services;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Catches.Services;
 using FishingLogBook.Application.Common.Behaviours;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Common.Mappings;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Diagnostics;
+using FishingLogBook.Application.Diagnostics.Contracts.Services;
+using FishingLogBook.Application.FishingLocations.Contracts.Repositories;
+using FishingLogBook.Application.FishingLocations.Contracts.Services;
 using FishingLogBook.Application.FishingLocations.Services;
+using FishingLogBook.Application.FishingPreferences.Contracts.Repositories;
+using FishingLogBook.Application.FishingPreferences.Contracts.Services;
 using FishingLogBook.Application.FishingPreferences.Services;
+using FishingLogBook.Application.OfflineAccess.Contracts.Repositories;
+using FishingLogBook.Application.OfflineAccess.Contracts.Services;
 using FishingLogBook.Application.OfflineAccess.Services;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Contracts.Services;
 using FishingLogBook.Application.Profiles.Services;
 using FishingLogBook.Application.SystemStatus;
+using FishingLogBook.Application.SystemStatus.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Application.Users;
 using FishingLogBook.Application.Users.Commands;
+using FishingLogBook.Application.Users.Contracts.Repositories;
+using FishingLogBook.Application.Users.Contracts.Services;
 using FishingLogBook.Application.Users.Services;
 using FishingLogBook.Domain.Config;
 using FishingLogBook.Infrastructure.Logging;
@@ -68,6 +84,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFishingLocationPreferenceService, FishingLocationPreferenceService>();
         services.AddScoped<IFishingPreferenceService, FishingPreferenceService>();
         services.AddScoped<IOfflineAccessPreferenceService, OfflineAccessPreferenceService>();
+        services.AddSingleton<ICatchPhotographObjectKeyBuilder, CatchPhotographObjectKeyBuilder>();
+        services.AddSingleton<ITripPhotographObjectKeyBuilder, TripPhotographObjectKeyBuilder>();
+        services.AddSingleton<IProfilePhotographObjectKeyBuilder, ProfilePhotographObjectKeyBuilder>();
 
         return services;
     }

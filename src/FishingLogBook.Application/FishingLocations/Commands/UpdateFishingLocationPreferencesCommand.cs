@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.FishingLocations.Contracts.Services;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentValidation;

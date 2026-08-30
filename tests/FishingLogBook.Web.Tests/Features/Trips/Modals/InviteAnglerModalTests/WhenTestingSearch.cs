@@ -108,6 +108,23 @@ public class WhenTestingSearch : BaseInviteAnglerModalTest
     }
 
     [Fact]
+    public async Task ItShouldShowTheAnglerEmailWhenTheyHaveNoDisplayName()
+    {
+        // Arrange
+        var profileClient = ClientFinding(Angler(displayName: null, email: "e.connolly10+e2e@gmail.com"));
+        await using var context = CreateContext(profileClient);
+        var cut = await ShowModalAsync(context);
+
+        // Act
+        await cut.Find("#invite-angler-search").InputAsync(new() { Value = "e2e" });
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#invite-angler-result-{MatchedUserId:D}").TextContent
+                .Should().Contain("e.connolly10+e2e@gmail.com"));
+    }
+
+    [Fact]
     public async Task ItShouldShowTheMatchedAnglerWithTheirSharedRegion()
     {
         // Arrange

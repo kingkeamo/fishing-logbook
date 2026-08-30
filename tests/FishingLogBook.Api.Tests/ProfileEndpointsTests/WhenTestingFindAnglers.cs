@@ -115,7 +115,7 @@ public class WhenTestingFindAnglers : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldReturnTheSafeProfileFieldsWithoutAnEmail()
+    public async Task ItShouldReturnTheSafeProfileFields()
     {
         // Arrange
         Reset();
@@ -139,13 +139,42 @@ public class WhenTestingFindAnglers : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().NotContain("@");
         var anglers = await response.Content.ReadFromJsonAsync<IReadOnlyList<AnglerSummaryDto>>();
         anglers.Should().ContainSingle();
         anglers![0].UserId.Should().Be(matchedUserId);
         anglers[0].DisplayName.Should().Be("John Connolly");
         anglers[0].HomeRegion.Should().Be("Galway");
+        anglers[0].Email.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldReturnTheEmailWhenTheAnglerHasNoDisplayNameToFallBackOn()
+    {
+        // Arrange
+        Reset();
+        var matchedUserId = Guid.NewGuid();
+        _factory.ProfileRepository
+            .FindAnglersAsync(Arg.Any<FindAnglersArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<AnglerSummary>>(
+            [
+                new AnglerSummary
+                {
+                    UserId = matchedUserId,
+                    Email = "angler@example.test"
+                }
+            ]));
+        var client = _factory.CreateAuthenticatedClient(
+            TestJwt.CreateAccessToken(subject: "lookup-email-fallback"));
+
+        // Act
+        var response = await client.GetAsync("/api/profiles/lookup?q=angler");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var anglers = await response.Content.ReadFromJsonAsync<IReadOnlyList<AnglerSummaryDto>>();
+        anglers.Should().ContainSingle();
+        anglers![0].DisplayName.Should().BeNull();
+        anglers[0].Email.Should().Be("angler@example.test");
     }
 
     private void Reset()

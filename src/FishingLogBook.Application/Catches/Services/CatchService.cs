@@ -1,9 +1,10 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Catches.Errors;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
@@ -22,6 +23,7 @@ public sealed class CatchService : ICatchService
     private readonly ICurrentUser _currentUser;
     private readonly ICatchLocationPrivacyService _catchLocationPrivacyService;
     private readonly IObjectStorage _objectStorage;
+    private readonly ICatchPhotographObjectKeyBuilder _objectKeyBuilder;
     private readonly IMapper _mapper;
     private readonly ILogger<CatchService> _logger;
 
@@ -31,6 +33,7 @@ public sealed class CatchService : ICatchService
         ICurrentUser currentUser,
         ICatchLocationPrivacyService catchLocationPrivacyService,
         IObjectStorage objectStorage,
+        ICatchPhotographObjectKeyBuilder objectKeyBuilder,
         IMapper mapper,
         ILogger<CatchService> logger)
     {
@@ -39,6 +42,7 @@ public sealed class CatchService : ICatchService
         _currentUser = currentUser;
         _catchLocationPrivacyService = catchLocationPrivacyService;
         _objectStorage = objectStorage;
+        _objectKeyBuilder = objectKeyBuilder;
         _mapper = mapper;
         _logger = logger;
     }
@@ -315,7 +319,7 @@ public sealed class CatchService : ICatchService
             return null;
         }
 
-        var objectKey = CatchPhotographObjectKey.Build(catchId, photographId);
+        var objectKey = _objectKeyBuilder.Build(catchId, photographId);
         var url = await _objectStorage.CreateDownloadUrlAsync(objectKey, DownloadLifetime, cancellationToken);
         return url.ToString();
     }

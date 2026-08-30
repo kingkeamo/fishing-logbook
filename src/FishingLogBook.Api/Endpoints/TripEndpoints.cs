@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Capabilities.Errors;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Trips.Commands;
 using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Application.Trips.Queries;

@@ -41,9 +41,14 @@ public partial class InviteAnglerModal : ComponentBase, IDisposable
 
     private string DisplayName(AnglerSummaryDto angler)
     {
-        return string.IsNullOrWhiteSpace(angler.DisplayName)
+        if (!string.IsNullOrWhiteSpace(angler.DisplayName))
+        {
+            return angler.DisplayName;
+        }
+
+        return string.IsNullOrWhiteSpace(angler.Email)
             ? Loc["Trip_ContributorUnknown"].Value
-            : angler.DisplayName;
+            : angler.Email;
     }
 
     private async Task OnQueryChangedAsync(string value)

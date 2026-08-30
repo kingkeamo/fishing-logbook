@@ -1,6 +1,7 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Dtos;

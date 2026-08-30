@@ -1,6 +1,6 @@
 using Dapper;
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FluentResults;
@@ -111,13 +111,14 @@ public sealed class ProfileRepository : IProfileRepository
                     u."Id" AS "UserId",
                     CASE WHEN p."ShowDisplayName" THEN p."DisplayName" END AS "DisplayName",
                     CASE WHEN p."ShowPhotograph" THEN p."PhotographObjectKey" END AS "PhotographObjectKey",
-                    CASE WHEN p."ShowHomeRegion" THEN p."HomeRegion" END AS "HomeRegion"
+                    CASE WHEN p."ShowHomeRegion" THEN p."HomeRegion" END AS "HomeRegion",
+                    u."Email" AS "Email"
                 FROM "User" u
                 LEFT JOIN "Profile" p ON p."UserId" = u."Id"
                 WHERE u."Id" <> @RequestingUserId
                   AND (
-                        (COALESCE(p."ShowDisplayName", false) AND p."DisplayName" ILIKE @NamePattern)
-                     OR lower(u."Email") = lower(@Query)
+                        (COALESCE(p."ShowDisplayName", false) AND p."DisplayName" ILIKE @SearchPattern)
+                     OR u."Email" ILIKE @SearchPattern
                   )
                 ORDER BY p."DisplayName", u."Id"
                 LIMIT @MaxResults;
@@ -128,8 +129,7 @@ public sealed class ProfileRepository : IProfileRepository
                 new
                 {
                     args.RequestingUserId,
-                    args.Query,
-                    NamePattern = ToNamePattern(args.Query),
+                    SearchPattern = ToSearchPattern(args.Query),
                     args.MaxResults
                 },
                 cancellationToken: cancellationToken));
@@ -142,7 +142,7 @@ public sealed class ProfileRepository : IProfileRepository
         }
     }
 
-    private static string ToNamePattern(string query)
+    private static string ToSearchPattern(string query)
     {
         var escaped = query
             .Replace("\\", "\\\\", StringComparison.Ordinal)

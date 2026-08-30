@@ -1,7 +1,9 @@
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Catches.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Services;
 using FishingLogBook.Application.Tests.Common;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -28,10 +30,14 @@ public class BaseTripDetailServiceTest
         Substitute.For<IAnglerLookupService>();
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
     protected readonly IObjectStorage MockObjectStorage = Substitute.For<IObjectStorage>();
+    protected readonly ICatchPhotographObjectKeyBuilder MockCatchObjectKeyBuilder =
+        Substitute.For<ICatchPhotographObjectKeyBuilder>();
     protected readonly TripDetailService Sut;
 
     protected BaseTripDetailServiceTest()
     {
+        MockCatchObjectKeyBuilder.Build(Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(call => $"catch-photographs/{call.ArgAt<Guid>(0):D}/{call.ArgAt<Guid>(1):D}");
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockTripAccessService.GivenOwner(StoredTrip(), CurrentUserId);
@@ -59,6 +65,7 @@ public class BaseTripDetailServiceTest
             MockTripRepository,
             MockAnglerLookupService,
             MockObjectStorage,
+            MockCatchObjectKeyBuilder,
             TestMapper.Create());
     }
 

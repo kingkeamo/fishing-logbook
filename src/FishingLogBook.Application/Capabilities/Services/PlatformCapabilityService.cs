@@ -1,7 +1,8 @@
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Capabilities.Contracts.Repositories;
+using FishingLogBook.Application.Capabilities.Contracts.Services;
 using FishingLogBook.Application.Capabilities.Errors;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Users;
 using FluentResults;

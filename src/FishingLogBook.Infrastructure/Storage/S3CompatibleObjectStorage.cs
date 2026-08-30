@@ -1,8 +1,9 @@
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using FishingLogBook.Application.Contracts;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Domain.Config;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace FishingLogBook.Infrastructure.Storage;
@@ -12,14 +13,18 @@ public sealed class S3CompatibleObjectStorage : IObjectStorage, IDisposable
     private readonly ObjectStorageConfig _config;
     private readonly IAmazonS3? _client;
 
-    public S3CompatibleObjectStorage(IOptions<ObjectStorageConfig> configOptions)
+    public S3CompatibleObjectStorage(
+        IOptions<ObjectStorageConfig> configOptions,
+        ILogger<S3CompatibleObjectStorage> logger)
     {
         _config = configOptions.Value;
         if (!_config.IsConfigured)
         {
+            logger.LogInformation("Object storage is not configured; uploads and downloads will be unavailable.");
             return;
         }
 
+        logger.LogInformation("Object storage configured for bucket {BucketName}.", _config.BucketName);
         var credentials = new BasicAWSCredentials(_config.AccessKeyId, _config.SecretAccessKey);
         var amazonS3Config = new AmazonS3Config
         {

@@ -1,6 +1,6 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Capabilities.Contracts.Services;
 using FishingLogBook.Application.Catches.Services;
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;

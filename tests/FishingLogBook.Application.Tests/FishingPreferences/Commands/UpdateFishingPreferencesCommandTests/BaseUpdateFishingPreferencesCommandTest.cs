@@ -1,5 +1,5 @@
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.FishingPreferences.Commands;
+using FishingLogBook.Application.FishingPreferences.Contracts.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.FishingPreferences.Commands.UpdateFishingPreferencesCommandTests;

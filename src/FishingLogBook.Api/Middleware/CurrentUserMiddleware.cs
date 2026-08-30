@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Users.Commands;
 using FishingLogBook.Shared.Constants;
 using MediatR;

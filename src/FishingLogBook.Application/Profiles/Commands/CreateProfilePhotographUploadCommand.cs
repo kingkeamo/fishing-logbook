@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Services;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;

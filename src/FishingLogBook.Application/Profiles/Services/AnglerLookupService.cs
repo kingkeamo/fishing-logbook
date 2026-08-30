@@ -1,7 +1,7 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Contracts.Services;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Constants;
@@ -105,7 +105,8 @@ public sealed class AnglerLookupService : IAnglerLookupService
             angler.UserId,
             angler.DisplayName,
             await CreateDownloadUrlAsync(angler.PhotographObjectKey, cancellationToken),
-            angler.HomeRegion);
+            angler.HomeRegion,
+            angler.Email);
     }
 
     private async Task<string?> CreateDownloadUrlAsync(string? objectKey, CancellationToken cancellationToken)

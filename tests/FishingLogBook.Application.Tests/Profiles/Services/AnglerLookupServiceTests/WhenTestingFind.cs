@@ -115,19 +115,31 @@ public class WhenTestingFind : BaseAnglerLookupServiceTest
     }
 
     [Fact]
-    public async Task ItShouldNotExposeAnEmailInTheResultContract()
+    public async Task ItShouldOnlyExposeTheSafeProfileFieldsAndEmail()
     {
         // Arrange
         var properties = typeof(AnglerSummaryDto).GetProperties().Select(property => property.Name);
 
+        // Assert
+        properties.Should().BeEquivalentTo(["UserId", "DisplayName", "PhotographUrl", "HomeRegion", "Email"]);
+    }
+
+    [Fact]
+    public async Task ItShouldIncludeTheEmailSoTheClientCanFallBackToItWhenThereIsNoDisplayName()
+    {
+        // Arrange
+        MockProfileRepository.FindAnglersAsync(Arg.Any<FindAnglersArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<AnglerSummary>>(
+                [Angler(displayName: null, email: "angler@example.test")]));
+
         // Act
-        var emailLike = properties
-            .Where(name => name.Contains("Email", StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+        var result = await Sut.FindAsync(Args(), CancellationToken.None);
 
         // Assert
-        emailLike.Should().BeEmpty();
-        properties.Should().BeEquivalentTo(["UserId", "DisplayName", "PhotographUrl", "HomeRegion"]);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().ContainSingle();
+        result.Value[0].DisplayName.Should().BeNull();
+        result.Value[0].Email.Should().Be("angler@example.test");
     }
 
     [Fact]

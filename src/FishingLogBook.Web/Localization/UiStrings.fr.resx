@@ -1280,7 +1280,7 @@
     <value>Inviter</value>
   </data>
   <data name="Trip_InviteSearchLabel" xml:space="preserve">
-    <value>Rechercher par nom</value>
+    <value>Rechercher par nom ou e-mail</value>
   </data>
   <data name="Trip_InviteSearchHelp" xml:space="preserve">
     <value>Recherchez les pêcheurs qui utilisent déjà FishingLogBook. Saisissez au moins trois caractères.</value>

@@ -150,6 +150,29 @@ public class WhenTestingFindAnglers : BaseProfileRepositoryTest
         result.Value[0].DisplayName.Should().BeNull();
     }
 
+    [Fact]
+    public async Task ItShouldFindAnAnglerByPartOfTheirEmailCaseInsensitively()
+    {
+        // Arrange
+        var requestingUserId = await CreateUserAsync();
+        var emailLocalPart = Guid.NewGuid().ToString("N");
+        var email = $"{emailLocalPart}@example.test";
+        var user = new UserBuilder().WithEmail(email).Build();
+        var identity = new UserIdentityBuilder().ForUser(user).Build();
+        var created = await Users.CreateAsync(user, identity, CancellationToken.None);
+
+        // Act
+        var result = await Sut.FindAnglersAsync(
+            Args(requestingUserId, emailLocalPart[..8].ToUpperInvariant()),
+            CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().ContainSingle();
+        result.Value[0].UserId.Should().Be(created.Value);
+        result.Value[0].DisplayName.Should().BeNull();
+    }
+
     private static string UniqueName()
     {
         return $"Angler{Guid.NewGuid():N}"[..20];

@@ -1,6 +1,6 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
 using FishingLogBook.Application.Profiles.Services;
 using FishingLogBook.Domain.Profiles;
 using FluentResults;
@@ -37,14 +37,16 @@ public class BaseAnglerLookupServiceTest
     protected static AnglerSummary Angler(
         string? displayName = "John Connolly",
         string? photographObjectKey = null,
-        string? homeRegion = null)
+        string? homeRegion = null,
+        string? email = null)
     {
         return new AnglerSummary
         {
             UserId = MatchedUserId,
             DisplayName = displayName,
             PhotographObjectKey = photographObjectKey,
-            HomeRegion = homeRegion
+            HomeRegion = homeRegion,
+            Email = email
         };
     }
 }

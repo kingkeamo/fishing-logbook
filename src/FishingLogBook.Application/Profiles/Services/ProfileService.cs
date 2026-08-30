@@ -1,7 +1,8 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.FishingPreferences.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Contracts.Services;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FishingLogBook.Shared.Dtos;
@@ -17,15 +18,18 @@ public sealed class ProfileService : IProfileService
 
     private readonly IProfileRepository _profileRepository;
     private readonly IObjectStorage _objectStorage;
+    private readonly IProfilePhotographObjectKeyBuilder _objectKeyBuilder;
     private readonly IFishingPreferenceService _fishingPreferenceService;
 
     public ProfileService(
         IProfileRepository profileRepository,
         IObjectStorage objectStorage,
+        IProfilePhotographObjectKeyBuilder objectKeyBuilder,
         IFishingPreferenceService fishingPreferenceService)
     {
         _profileRepository = profileRepository;
         _objectStorage = objectStorage;
+        _objectKeyBuilder = objectKeyBuilder;
         _fishingPreferenceService = fishingPreferenceService;
     }
 
@@ -108,7 +112,7 @@ public sealed class ProfileService : IProfileService
             return Result.Fail<PhotographUploadDto>(ensured.Errors);
         }
 
-        var objectKey = ObjectKey(userId, request.PhotographId);
+        var objectKey = _objectKeyBuilder.Build(userId, request.PhotographId);
         var uploadUrl = await _objectStorage.CreateUploadUrlAsync(
             objectKey,
             request.ContentType,
@@ -121,7 +125,7 @@ public sealed class ProfileService : IProfileService
         RecordProfilePhotographArgs args,
         CancellationToken cancellationToken)
     {
-        if (!string.Equals(args.ObjectKey, ObjectKey(args.UserId, args.PhotographId), StringComparison.Ordinal))
+        if (!string.Equals(args.ObjectKey, _objectKeyBuilder.Build(args.UserId, args.PhotographId), StringComparison.Ordinal))
         {
             return Result.Fail<ProfileDto>(new PhotographObjectKeyMismatchError());
         }
@@ -247,11 +251,6 @@ public sealed class ProfileService : IProfileService
             ShowPreferredSpecies = args.ShowPreferredSpecies,
             OnboardingCompletedOn = current.OnboardingCompletedOn
         };
-    }
-
-    private static string ObjectKey(Guid userId, Guid photographId)
-    {
-        return $"profiles/{userId:D}/{photographId:D}";
     }
 
     private static string? TrimOrNull(string? value)

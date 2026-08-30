@@ -2,7 +2,7 @@ using FishingLogBook.Application.Capabilities.Errors;
 using FishingLogBook.Application.Catches.Commands;
 using FishingLogBook.Application.Catches.Errors;
 using FishingLogBook.Application.Catches.Queries;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using MediatR;
 

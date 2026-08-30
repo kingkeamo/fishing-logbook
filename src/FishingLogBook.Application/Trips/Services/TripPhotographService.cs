@@ -1,7 +1,7 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Dtos;
@@ -19,6 +19,7 @@ public sealed class TripPhotographService : ITripPhotographService
     private readonly ITripPhotographRepository _tripPhotographRepository;
     private readonly IObjectStorage _objectStorage;
     private readonly ICurrentUser _currentUser;
+    private readonly ITripPhotographObjectKeyBuilder _objectKeyBuilder;
     private readonly IMapper _mapper;
     private readonly ILogger<TripPhotographService> _logger;
 
@@ -27,6 +28,7 @@ public sealed class TripPhotographService : ITripPhotographService
         ITripPhotographRepository tripPhotographRepository,
         IObjectStorage objectStorage,
         ICurrentUser currentUser,
+        ITripPhotographObjectKeyBuilder objectKeyBuilder,
         IMapper mapper,
         ILogger<TripPhotographService> logger)
     {
@@ -34,6 +36,7 @@ public sealed class TripPhotographService : ITripPhotographService
         _tripPhotographRepository = tripPhotographRepository;
         _objectStorage = objectStorage;
         _currentUser = currentUser;
+        _objectKeyBuilder = objectKeyBuilder;
         _mapper = mapper;
         _logger = logger;
     }
@@ -56,7 +59,7 @@ public sealed class TripPhotographService : ITripPhotographService
             return Result.Fail<PhotographUploadDto>(access.Errors);
         }
 
-        var objectKey = TripPhotographObjectKey.Build(
+        var objectKey = _objectKeyBuilder.Build(
             args.TripId,
             args.Request.PhotographId);
         var uploadUrl = await _objectStorage.CreateUploadUrlAsync(
@@ -77,7 +80,7 @@ public sealed class TripPhotographService : ITripPhotographService
             return Result.Fail<TripPhotographDto>(access.Errors);
         }
 
-        var expected = TripPhotographObjectKey.Build(
+        var expected = _objectKeyBuilder.Build(
             args.TripId,
             args.PhotographId);
         if (!string.Equals(args.ObjectKey, expected, StringComparison.Ordinal))

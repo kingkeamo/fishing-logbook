@@ -1,9 +1,9 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Catches.Errors;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using Microsoft.Extensions.Logging;
@@ -17,17 +17,20 @@ public sealed class CatchPhotographService : ICatchPhotographService
     private readonly ICatchRepository _catchRepository;
     private readonly IObjectStorage _objectStorage;
     private readonly ICurrentUser _currentUser;
+    private readonly ICatchPhotographObjectKeyBuilder _objectKeyBuilder;
     private readonly ILogger<CatchPhotographService> _logger;
 
     public CatchPhotographService(
         ICatchRepository catchRepository,
         IObjectStorage objectStorage,
         ICurrentUser currentUser,
+        ICatchPhotographObjectKeyBuilder objectKeyBuilder,
         ILogger<CatchPhotographService> logger)
     {
         _catchRepository = catchRepository;
         _objectStorage = objectStorage;
         _currentUser = currentUser;
+        _objectKeyBuilder = objectKeyBuilder;
         _logger = logger;
     }
 
@@ -67,7 +70,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return Result.Fail<PhotographUploadDto>(new CatchPhotographNotFoundError());
         }
 
-        var objectKey = CatchPhotographObjectKey.Build(args.CatchId, args.Request.PhotographId);
+        var objectKey = _objectKeyBuilder.Build(args.CatchId, args.Request.PhotographId);
         var uploadUrl = await _objectStorage.CreateUploadUrlAsync(
             objectKey,
             args.Request.ContentType,
@@ -104,7 +107,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return Result.Fail(new CatchPhotographNotFoundError());
         }
 
-        var expected = CatchPhotographObjectKey.Build(args.CatchId, args.PhotographId);
+        var expected = _objectKeyBuilder.Build(args.CatchId, args.PhotographId);
         return string.Equals(args.ObjectKey, expected, StringComparison.Ordinal)
             ? Result.Ok()
             : Result.Fail(new CatchPhotographObjectKeyMismatchError());
@@ -126,7 +129,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
             return photograph.ToResult();
         }
 
-        var objectKey = CatchPhotographObjectKey.Build(args.CatchId, args.PhotographId);
+        var objectKey = _objectKeyBuilder.Build(args.CatchId, args.PhotographId);
         try
         {
             await _objectStorage.DeleteObjectAsync(objectKey, cancellationToken);

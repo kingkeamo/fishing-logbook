@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Trips;
 using FluentResults;

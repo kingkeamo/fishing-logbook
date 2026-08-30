@@ -1,8 +1,9 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Catches;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Catches.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Constants;
@@ -22,6 +23,7 @@ public sealed class TripDetailService : ITripDetailService
     private readonly ITripRepository _tripRepository;
     private readonly IAnglerLookupService _anglerLookupService;
     private readonly IObjectStorage _objectStorage;
+    private readonly ICatchPhotographObjectKeyBuilder _catchObjectKeyBuilder;
     private readonly IMapper _mapper;
 
     public TripDetailService(
@@ -31,6 +33,7 @@ public sealed class TripDetailService : ITripDetailService
         ITripRepository tripRepository,
         IAnglerLookupService anglerLookupService,
         IObjectStorage objectStorage,
+        ICatchPhotographObjectKeyBuilder catchObjectKeyBuilder,
         IMapper mapper)
     {
         _tripAccessService = tripAccessService;
@@ -39,6 +42,7 @@ public sealed class TripDetailService : ITripDetailService
         _tripRepository = tripRepository;
         _anglerLookupService = anglerLookupService;
         _objectStorage = objectStorage;
+        _catchObjectKeyBuilder = catchObjectKeyBuilder;
         _mapper = mapper;
     }
 
@@ -178,7 +182,7 @@ public sealed class TripDetailService : ITripDetailService
         }
 
         return await CreateDownloadUrlAsync(
-            CatchPhotographObjectKey.Build(summary.Id, photographId),
+            _catchObjectKeyBuilder.Build(summary.Id, photographId),
             cancellationToken);
     }
 

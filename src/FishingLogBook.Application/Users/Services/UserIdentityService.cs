@@ -1,6 +1,6 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Users.Contracts.Repositories;
+using FishingLogBook.Application.Users.Contracts.Services;
 using FishingLogBook.Domain.Users;
 using FluentResults;
 using MapsterMapper;

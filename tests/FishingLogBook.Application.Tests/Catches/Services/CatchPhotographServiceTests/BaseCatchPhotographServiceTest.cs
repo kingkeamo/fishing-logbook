@@ -1,7 +1,7 @@
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Catches.Services;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FluentResults;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,9 +24,13 @@ public class BaseCatchPhotographServiceTest
         Substitute.For<IObjectStorage>();
     protected readonly ICurrentUser MockCurrentUser =
         Substitute.For<ICurrentUser>();
+    protected readonly ICatchPhotographObjectKeyBuilder MockObjectKeyBuilder =
+        Substitute.For<ICatchPhotographObjectKeyBuilder>();
 
     protected BaseCatchPhotographServiceTest()
     {
+        MockObjectKeyBuilder.Build(Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(call => $"catch-photographs/{call.ArgAt<Guid>(0):D}/{call.ArgAt<Guid>(1):D}");
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(UserId);
         MockObjectStorage.IsConfigured.Returns(true);
@@ -66,6 +70,7 @@ public class BaseCatchPhotographServiceTest
             MockCatchRepository,
             MockObjectStorage,
             MockCurrentUser,
+            MockObjectKeyBuilder,
             NullLogger<CatchPhotographService>.Instance);
     }
 }

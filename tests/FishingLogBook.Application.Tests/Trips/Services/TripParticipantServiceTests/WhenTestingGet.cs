@@ -75,8 +75,8 @@ public class WhenTestingGet : BaseTripParticipantServiceTest
             .Returns(Result.Ok<IReadOnlyDictionary<Guid, AnglerSummaryDto>>(
                 new Dictionary<Guid, AnglerSummaryDto>
                 {
-                    [CurrentUserId] = new(CurrentUserId, "Eamonn", null, null),
-                    [InvitedUserId] = new(InvitedUserId, null, null, null)
+                    [CurrentUserId] = new(CurrentUserId, "Eamonn", null, null, null),
+                    [InvitedUserId] = new(InvitedUserId, null, null, null, null)
                 }));
         MockTripParticipantRepository.GetByTripIdAsync(TripId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripParticipant>>(

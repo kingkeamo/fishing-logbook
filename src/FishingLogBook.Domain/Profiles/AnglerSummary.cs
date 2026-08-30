@@ -6,6 +6,8 @@ public sealed class AnglerSummary
 
     public string? DisplayName { get; init; }
 
+    public string? Email { get; init; }
+
     public string? PhotographObjectKey { get; init; }
 
     public string? HomeRegion { get; init; }

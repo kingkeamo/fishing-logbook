@@ -1,5 +1,5 @@
 using Dapper;
-using FishingLogBook.Application.Contracts;
+using FishingLogBook.Application.SystemStatus.Contracts.Repositories;
 using FishingLogBook.Domain.SystemStatus;
 
 namespace FishingLogBook.Infrastructure.Persistence.Repositories;
