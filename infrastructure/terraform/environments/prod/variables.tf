@@ -28,6 +28,14 @@ variable "r2_location" {
   default     = "enam"
 }
 
+variable "r2_cors_allowed_origins" {
+  type        = list(string)
+  description = "Browser origins allowed to upload catch and trip photographs directly against the prod R2 bucket."
+  default = [
+    "https://app.catchbutdontforget.com",
+  ]
+}
+
 variable "cognito_callback_urls" {
   type        = list(string)
   description = "Allowed OAuth callback URLs for the PWA app client."

@@ -24,10 +24,24 @@ module "fly" {
 }
 
 module "r2" {
-  source      = "../../modules/r2"
-  environment = var.environment
-  account_id  = var.cloudflare_account_id
-  location    = var.r2_location
+  source               = "../../modules/r2"
+  environment          = var.environment
+  account_id           = var.cloudflare_account_id
+  location             = var.r2_location
+  cors_allowed_origins = var.r2_cors_allowed_origins
+}
+
+# Dedicated bucket for local Playwright E2E runs (tests/FishingLogBook.E2E), so
+# uploaded test photographs never land in the fishing-logbook-dev or
+# fishing-logbook-prod buckets. Not used by CI today - only local runs. Objects expire
+# automatically after 48 hours so disposable test photos never accumulate.
+module "r2_e2e" {
+  source                 = "../../modules/r2"
+  environment            = "e2e"
+  account_id             = var.cloudflare_account_id
+  location               = var.r2_location
+  cors_allowed_origins   = ["http://localhost:5019"]
+  object_expiration_days = 2
 }
 
 module "cloudflare_pages" {
