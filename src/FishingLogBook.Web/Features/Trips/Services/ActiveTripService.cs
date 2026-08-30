@@ -3,6 +3,7 @@ using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 
@@ -74,6 +75,7 @@ public sealed class ActiveTripService : IActiveTripService
 
     public async Task<TripModel> FinishAsync(TripModel trip, CancellationToken cancellationToken)
     {
+        RequireOwner(trip);
         var finished = trip with
         {
             Status = TripConstants.Completed,
@@ -92,6 +94,7 @@ public sealed class ActiveTripService : IActiveTripService
         string? placeName,
         CancellationToken cancellationToken)
     {
+        RequireOwner(trip);
         var current = await _tripStore.GetAsync(trip.OwnerUserId, trip.Id, cancellationToken);
         if (current is null)
         {
@@ -116,6 +119,7 @@ public sealed class ActiveTripService : IActiveTripService
 
     public async Task<TripModel?> TryAttachLocationAsync(TripModel trip, CancellationToken cancellationToken)
     {
+        RequireOwner(trip);
         if (trip.Location is not null || trip.Status != TripConstants.Active)
         {
             return null;
@@ -137,6 +141,14 @@ public sealed class ActiveTripService : IActiveTripService
         await _tripStore.SaveAsync(located, cancellationToken);
         Remember(trip.OwnerUserId, located);
         return located;
+    }
+
+    private static void RequireOwner(TripModel trip)
+    {
+        if (trip.Origin != TripOriginEnum.Local)
+        {
+            throw new InvalidOperationException("Only the trip owner can change a shared trip.");
+        }
     }
 
     public void Invalidate()

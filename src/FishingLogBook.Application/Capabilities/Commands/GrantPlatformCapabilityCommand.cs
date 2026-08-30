@@ -1,6 +1,6 @@
 using FishingLogBook.Application.Args;
+using FishingLogBook.Application.Capabilities.Contracts.Services;
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using FluentValidation;
 using MapsterMapper;

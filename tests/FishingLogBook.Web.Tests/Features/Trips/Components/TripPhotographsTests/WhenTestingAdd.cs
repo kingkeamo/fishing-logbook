@@ -24,7 +24,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
 
         // Act
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.Find("#trip-photographs").Should().NotBeNull();
@@ -41,7 +42,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
         var store = new MemoryTripPhotographStore();
         await using var context = CreateContext(store, preparation: FailingPreparation());
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("photo.jpg"));
@@ -60,7 +62,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
         var logging = Substitute.For<Web.Features.Diagnostics.Services.ILoggingService>();
         await using var context = CreateContext(store, logging: logging);
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("photo.jpg"));
@@ -83,7 +86,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
         var store = new MemoryTripPhotographStore();
         await using var context = CreateContext(store, preparation: PreparationFor(StrippedMetadata()));
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("photo.jpg"));
@@ -95,7 +99,7 @@ public class WhenTestingAdd : BaseTripPhotographsTest
         stored.AddedOn.Should().NotBe(default);
         stored.OrderedOn.Should().Be(stored.AddedOn);
         stored.TripId.Should().Be(TripId);
-        stored.OwnerUserId.Should().Be(OwnerUserId);
+        stored.ContributedByUserId.Should().Be(OwnerUserId);
     }
 
     [Fact]
@@ -109,7 +113,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
             preparation: PreparationFor(
                 Metadata(fileTimestamp, PhotographCapturedOnSourceEnum.FileLastModified)));
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("photo.jpg"));
@@ -130,7 +135,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
             preparation: PreparationFor(
                 Metadata(capturedOn, PhotographCapturedOnSourceEnum.ExifOriginal)));
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("photo.jpg"));
@@ -156,7 +162,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
                     latitude: 53.2707,
                     longitude: -9.0568)));
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("photo.jpg"));
@@ -174,7 +181,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
         var store = new MemoryTripPhotographStore();
         await using var context = CreateContext(store);
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("photo.jpg"));
@@ -198,7 +206,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
         var store = new MemoryTripPhotographStore();
         await using var context = CreateContext(store);
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("one.jpg"));
@@ -234,7 +243,8 @@ public class WhenTestingAdd : BaseTripPhotographsTest
 
         // Act
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip(StoredPhotograph(mine))));
+            parameters.Add(component => component.Trip, Trip(StoredPhotograph(mine)))
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.WaitForAssertion(() => cut.Find("#trip-photo-carousel").Should().NotBeNull());

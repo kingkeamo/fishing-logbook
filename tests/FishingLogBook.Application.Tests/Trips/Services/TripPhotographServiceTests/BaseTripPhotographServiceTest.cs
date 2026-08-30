@@ -1,6 +1,8 @@
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Tests.Common;
+using FishingLogBook.Application.Trips.Contracts.Builders;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -21,13 +23,15 @@ public class BaseTripPhotographServiceTest
     protected static readonly DateTimeOffset AddedOn = DateTimeOffset.Parse("2026-08-17T09:00:00Z");
 
     protected static readonly string ExpectedObjectKey =
-        $"trips/{CurrentUserId:D}/{TripId:D}/{PhotographId:D}";
+        $"trip-photographs/{TripId:D}/{PhotographId:D}";
 
-    protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
+    protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
     protected readonly ITripPhotographRepository MockTripPhotographRepository =
         Substitute.For<ITripPhotographRepository>();
     protected readonly IObjectStorage MockObjectStorage = Substitute.For<IObjectStorage>();
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
+    protected readonly ITripPhotographObjectKeyBuilder MockObjectKeyBuilder =
+        Substitute.For<ITripPhotographObjectKeyBuilder>();
     protected readonly TripPhotographService Sut;
 
     protected BaseTripPhotographServiceTest()
@@ -35,6 +39,8 @@ public class BaseTripPhotographServiceTest
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockObjectStorage.IsConfigured.Returns(true);
+        MockObjectKeyBuilder.Build(Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(call => $"trip-photographs/{call.ArgAt<Guid>(0):D}/{call.ArgAt<Guid>(1):D}");
         MockObjectStorage.CreateUploadUrlAsync(
                 Arg.Any<string>(),
                 Arg.Any<string>(),
@@ -48,40 +54,50 @@ public class BaseTripPhotographServiceTest
                 Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<TripPhotograph>(0)));
         Sut = new TripPhotographService(
-            MockTripRepository,
+            MockTripAccessService,
             MockTripPhotographRepository,
             MockObjectStorage,
             MockCurrentUser,
+            MockObjectKeyBuilder,
             TestMapper.Create(),
             NullLogger<TripPhotographService>.Instance);
     }
 
     protected void GivenTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(new Trip
-            {
-                Id = TripId,
-                OwnerUserId = ownerUserId,
-                Status = status,
-                StartedOn = StartedOn,
-                EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
-            }));
+        MockTripAccessService.GivenOwner(BuildTrip(ownerUserId, status), CurrentUserId);
+    }
+
+    protected void GivenSharedTrip(TripStatusEnum status = TripStatusEnum.Active)
+    {
+        MockTripAccessService.GivenParticipant(BuildTrip(OtherUserId, status), CurrentUserId);
     }
 
     protected void GivenNoTrip()
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
+        MockTripAccessService.GivenNoAccess(TripId);
     }
 
-    protected static TripPhotograph StoredPhotograph(Guid tripId)
+    protected static Trip BuildTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
+    {
+        return new Trip
+        {
+            Id = TripId,
+            OwnerUserId = ownerUserId,
+            Status = status,
+            StartedOn = StartedOn,
+            EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
+        };
+    }
+
+    protected static TripPhotograph StoredPhotograph(Guid tripId, Guid? contributedByUserId = null)
     {
         return new TripPhotograph
         {
             Id = PhotographId,
             TripId = tripId,
-            ObjectKey = $"trips/{CurrentUserId:D}/{tripId:D}/{PhotographId:D}",
+            ContributedByUserId = contributedByUserId ?? CurrentUserId,
+            ObjectKey = $"trip-photographs/{tripId:D}/{PhotographId:D}",
             ContentType = PhotographContentTypeConstants.Jpeg,
             AddedOn = AddedOn
         };

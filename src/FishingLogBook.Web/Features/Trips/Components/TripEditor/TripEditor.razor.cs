@@ -5,6 +5,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Web.Features.Trips.Modals.TripParticipants;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
@@ -28,6 +29,10 @@ public partial class TripEditor : ComponentBase
     public TripModel Trip { get; set; } = default!;
 
     [Parameter]
+    [EditorRequired]
+    public Guid ViewerUserId { get; set; }
+
+    [Parameter]
     public IReadOnlyList<CatchModel> Catches { get; set; } = [];
 
     [Parameter]
@@ -35,6 +40,9 @@ public partial class TripEditor : ComponentBase
 
     [Parameter]
     public string? SummaryLabel { get; set; }
+
+    [Parameter]
+    public bool ShowParticipants { get; set; }
 
     [Parameter]
     public WeightUnitEnum WeightUnit { get; set; } = WeightUnitEnum.Kg;
@@ -121,6 +129,20 @@ public partial class TripEditor : ComponentBase
     private async Task CancelAsync()
     {
         await OnClosed.InvokeAsync();
+    }
+
+    private async Task ShowParticipantsAsync()
+    {
+        var changed = await ModalService
+            .ShowAsync<TripParticipantsModal, TripParticipantsModalModel, TripParticipantsModalResult>(
+                new TripParticipantsModalModel(Trip.Id),
+                CancellationToken.None);
+        if (changed is null)
+        {
+            return;
+        }
+
+        await OnContentChanged.InvokeAsync();
     }
 
     private async Task RemoveCatchAsync(CatchModel associated)

@@ -121,9 +121,11 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldKeepThePhotographPendingWhenTheUploadFails()
+    public async Task ItShouldKeepThePhotographWaitingWhenTheUploadFailsTransiently()
     {
-        // Arrange
+        // Arrange - a raw object-storage PUT failure (e.g. an expired presigned URL, or a
+        // temporary storage outage) is always retried: the next sync pass requests a fresh
+        // presigned URL and tries again, rather than giving up permanently.
         MockTripClient.UploadPhotographAsync(
                 Arg.Any<string>(),
                 Arg.Any<byte[]>(),
@@ -137,7 +139,7 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         store.Stored(PhotographId)!.SyncedAt.Should().BeNull();
         await MockTripClient.DidNotReceive().RecordPhotographAsync(
             Arg.Any<Guid>(),
@@ -154,7 +156,67 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldRetryAFailedUploadOnTheNextRunAndRecordItOnce()
+    public async Task ItShouldMarkThePhotographAsFailedWhenTheServerPermanentlyRejectsIt()
+    {
+        // Arrange - simulates a participant having been removed from the Trip. This is
+        // enforced by our own API (TripAccessService, checked when requesting the upload
+        // URL), not by the raw object-storage PUT, so the rejection is simulated there.
+        MockTripClient.CreatePhotographUploadAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<PhotographUploadRequestDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns<PhotographUploadDto>(_ => throw new HttpRequestException(
+                "The angler is no longer a participant on this Trip.",
+                inner: null,
+                System.Net.HttpStatusCode.Forbidden));
+        var store = await CreateStoreAsync(CreatePhotograph());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        await MockTripClient.Received(1).CreatePhotographUploadAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<PhotographUploadRequestDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotMarkThePhotographAsFailedWhenSynchronisationIsCancelled()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        MockTripClient.UploadPhotographAsync(
+                Arg.Any<string>(),
+                Arg.Any<byte[]>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                cancellation.Cancel();
+                throw new OperationCanceledException(cancellation.Token);
+            });
+        var store = await CreateStoreAsync(CreatePhotograph());
+        var sut = CreateSut(store);
+
+        // Act
+        try
+        {
+            await sut.SynchronisePendingAsync(OwnerUserId, cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+
+        // Assert
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
+    }
+
+    [Fact]
+    public async Task ItShouldAutomaticallyRetryATransientlyFailedUpload()
     {
         // Arrange
         var attempts = 0;
@@ -183,7 +245,42 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
         store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.Synchronised);
         await MockTripClient.Received(1).RecordPhotographAsync(
             TripId,
-            Arg.Is<RecordTripPhotographDto>(request => request.PhotographId == PhotographId),
+            Arg.Any<RecordTripPhotographDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotAutomaticallyRetryAPermanentlyFailedUpload()
+    {
+        // Arrange
+        var attempts = 0;
+        MockTripClient.CreatePhotographUploadAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<PhotographUploadRequestDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns<PhotographUploadDto>(_ =>
+            {
+                attempts++;
+                throw new HttpRequestException(
+                    "The angler is no longer a participant on this Trip.",
+                    inner: null,
+                    System.Net.HttpStatusCode.Forbidden);
+            });
+        var store = await CreateStoreAsync(CreatePhotograph());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        attempts.Should().Be(1);
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        store.Stored(PhotographId).Should().NotBeNull();
+        await MockTripClient.DidNotReceive().RecordPhotographAsync(
+            TripId,
+            Arg.Any<RecordTripPhotographDto>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -273,7 +370,7 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     {
         // Arrange
         var capturedOn = AddedOn.AddHours(-1);
-        var expectedKey = $"trips/{OwnerUserId:D}/{TripId:D}/{PhotographId:D}";
+        var expectedKey = $"trip-photographs/{TripId:D}/{PhotographId:D}";
         var store = await CreateStoreAsync(CreatePhotograph(capturedOn: capturedOn));
         var sut = CreateSut(store);
 

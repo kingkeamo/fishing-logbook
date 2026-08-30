@@ -25,6 +25,10 @@ public partial class TripPhotographs : ComponentBase, IDisposable
     public TripModel Trip { get; set; } = default!;
 
     [Parameter]
+    [EditorRequired]
+    public Guid ViewerUserId { get; set; }
+
+    [Parameter]
     public EventCallback Changed { get; set; }
 
     [Parameter]
@@ -63,7 +67,7 @@ public partial class TripPhotographs : ComponentBase, IDisposable
             try
             {
                 var bytes = await PhotographStore.GetBytesAsync(
-                    Trip.OwnerUserId,
+                    ViewerUserId,
                     Trip.Id,
                     photograph.Id,
                     _cancellationTokenSource.Token);
@@ -110,7 +114,7 @@ public partial class TripPhotographs : ComponentBase, IDisposable
         var model = new TripPhotographModel(
             prepared.Id,
             Trip.Id,
-            Trip.OwnerUserId,
+            ViewerUserId,
             prepared.ContentType,
             DateTimeOffset.UtcNow,
             prepared.Metadata.HasTrustworthyCapturedOn ? prepared.Metadata.CapturedOn : null,
@@ -135,7 +139,7 @@ public partial class TripPhotographs : ComponentBase, IDisposable
     {
         _removeFailed = false;
         var photograph = _photographs.FirstOrDefault(item => item.Id == photographId);
-        if (photograph is null)
+        if (photograph is null || photograph.ContributedByUserId != ViewerUserId)
         {
             return;
         }
@@ -151,7 +155,7 @@ public partial class TripPhotographs : ComponentBase, IDisposable
             }
 
             await PhotographStore.DeleteAsync(
-                Trip.OwnerUserId,
+                ViewerUserId,
                 Trip.Id,
                 photographId,
                 _cancellationTokenSource.Token);

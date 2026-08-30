@@ -46,6 +46,12 @@ public partial class CatchCard : ComponentBase
     [Parameter]
     public bool ShowOnlineActions { get; set; } = true;
 
+    [Parameter]
+    public string? AnglerName { get; set; }
+
+    [Parameter]
+    public string? RecordedByName { get; set; }
+
     [Inject]
     private IMeasurementService Measurement { get; set; } = default!;
 
@@ -121,13 +127,17 @@ public partial class CatchCard : ComponentBase
             if (Catch.AnglerUserId != Guid.Empty &&
                 Catch.AnglerUserId != CurrentUserId)
             {
-                return Loc["Catch_RecordedForAnotherAngler"];
+                return string.IsNullOrWhiteSpace(AnglerName)
+                    ? Loc["Catch_RecordedForAnotherAngler"].Value
+                    : Loc["Catch_RecordedFor", AnglerName].Value;
             }
 
             if (Catch.RecordedByUserId != Guid.Empty &&
                 Catch.RecordedByUserId != CurrentUserId)
             {
-                return Loc["Catch_RecordedBySomeoneElse"];
+                return string.IsNullOrWhiteSpace(RecordedByName)
+                    ? Loc["Catch_RecordedBySomeoneElse"].Value
+                    : Loc["Catch_RecordedByName", RecordedByName].Value;
             }
 
             return null;

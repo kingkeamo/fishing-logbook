@@ -20,12 +20,23 @@
                                 @LocalTime(note.Id)
                             </MudText>
                             <MudText Typo="Typo.body2" Class="trip-note-text">@note.Text</MudText>
+                            @if (!IsOwnNote(note))
+                            {
+                                <MudText Typo="Typo.caption"
+                                         Class="mud-text-secondary trip-note-author"
+                                         id="@($"trip-note-author-{note.Id:D}")">
+                                    @ContributorName(note.CreatedByUserId)
+                                </MudText>
+                            }
                         </MudStack>
-                        <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                       Size="Size.Small"
-                                       aria-label="@Loc["Trip_NoteRemove"]"
-                                       OnClick="@(() => RemoveNoteAsync(note.Id))"
-                                       id="@($"trip-note-remove-{note.Id:D}")" />
+                        @if (IsOwnNote(note))
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                           Size="Size.Small"
+                                           aria-label="@Loc["Trip_NoteRemove"]"
+                                           OnClick="@(() => RemoveNoteAsync(note.Id))"
+                                           id="@($"trip-note-remove-{note.Id:D}")" />
+                        }
                     </MudStack>
                 </MudPaper>
             }

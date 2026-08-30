@@ -1,0 +1,16 @@
+.trip-participant {
+    min-width: 0;
+}
+
+::deep .trip-participant .mud-stack {
+    min-width: 0;
+}
+
+::deep .trip-participant .mud-typography {
+    overflow-wrap: anywhere;
+}
+
+::deep .trip-participant .mud-avatar,
+::deep .trip-participant .mud-icon-button {
+    flex-shrink: 0;
+}

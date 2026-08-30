@@ -21,6 +21,10 @@ public partial class TripCatches : ComponentBase, IDisposable
     public TripModel Trip { get; set; } = default!;
 
     [Parameter]
+    [EditorRequired]
+    public Guid ViewerUserId { get; set; }
+
+    [Parameter]
     public string RecordCatchBaseHref { get; set; } = "/catches/record";
 
     [Parameter]
@@ -65,7 +69,7 @@ public partial class TripCatches : ComponentBase, IDisposable
                     new AddTripCatchesModalModel(
                         new TripCatchScopeModel(
                             Trip.Id,
-                            Trip.OwnerUserId,
+                            ViewerUserId,
                             Trip.StartedOn,
                             Trip.EndedOn),
                         CatchStorage,

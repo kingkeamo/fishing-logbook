@@ -1,5 +1,5 @@
-using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.SystemStatus;
+using FishingLogBook.Application.SystemStatus.Contracts.Repositories;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.SystemStatus.SystemStatusServiceTests;

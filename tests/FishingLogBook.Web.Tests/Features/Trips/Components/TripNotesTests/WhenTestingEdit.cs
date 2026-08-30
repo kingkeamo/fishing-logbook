@@ -23,7 +23,8 @@ public class WhenTestingEdit : BaseTripNotesTest
         var modalService = ConfirmingModalService();
         await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-{FirstNoteId:D}").Should().NotBeNull());
 
         // Act
@@ -52,6 +53,7 @@ public class WhenTestingEdit : BaseTripNotesTest
         await using var context = CreateContext(store, modalService: ConfirmingModalService());
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.Changed, () => changed++));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-{FirstNoteId:D}").Should().NotBeNull());
 
@@ -76,12 +78,14 @@ public class WhenTestingEdit : BaseTripNotesTest
         var modalService = ModalServiceEditing(movedLater);
         await using var context = CreateContext(store, modalService: modalService);
         var cut = context.Render<TripNotesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-{SecondNoteId:D}").Should().NotBeNull());
 
         // Act
         await cut.InvokeAsync(() => cut.Instance.EditNoteAsync(FirstNoteId, early.Text, early.RecordedOn));
-        cut.Render(parameters => parameters.Add(component => component.Trip, Trip()));
+        cut.Render(parameters => parameters.Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         var rendered = cut.FindAll("#trip-notes-list .trip-note-text")
@@ -102,6 +106,7 @@ public class WhenTestingEdit : BaseTripNotesTest
         await using var context = CreateContext(store, modalService: ModalServiceEditing(edited));
         var cut = context.Render<TripNotesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.Changed, () => changed++));
         cut.WaitForAssertion(() => cut.Find($"#trip-note-{FirstNoteId:D}").Should().NotBeNull());
 
@@ -109,6 +114,7 @@ public class WhenTestingEdit : BaseTripNotesTest
         await cut.InvokeAsync(() => cut.Instance.EditNoteAsync(FirstNoteId, existing.Text, existing.RecordedOn));
         cut.Render(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.Changed, () => changed++));
 
         // Assert

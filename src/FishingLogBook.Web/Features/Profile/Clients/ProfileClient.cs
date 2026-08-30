@@ -46,6 +46,23 @@ public sealed class ProfileClient : IProfileClient
         return profile ?? throw new HttpRequestException("Public profile was missing.");
     }
 
+    public async Task<IReadOnlyList<AnglerSummaryDto>> FindAnglersAsync(
+        string query,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.GetAsync(
+            $"api/profiles/lookup?q={Uri.EscapeDataString(query)}",
+            cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
+
+        var anglers = await response.Content.ReadFromJsonAsync<IReadOnlyList<AnglerSummaryDto>>(
+            cancellationToken);
+        return anglers ?? [];
+    }
+
     public async Task<PhotographUploadDto> CreatePhotographUploadAsync(
         PhotographUploadRequestDto request,
         CancellationToken cancellationToken)

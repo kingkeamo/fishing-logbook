@@ -8,19 +8,23 @@ namespace FishingLogBook.Web.Tests.Features.Catch.Clients.CatchClientTests;
 public class WhenTestingSynchronisation : BaseCatchClientTest
 {
     [Fact]
-    public async Task ItShouldPostCatchMetadata()
+    public async Task ItShouldPostCatchMetadataAndReturnTheServerPersistedCatch()
     {
         // Arrange
-        var handler = new RecordingHandler(HttpStatusCode.OK);
-        var client = CreateClient(handler);
         var catchId = Guid.NewGuid();
         var dto = new CatchDto(
             catchId,
             DateTimeOffset.Parse("2026-08-17T12:00:00Z"),
             [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")]);
+        var anglerUserId = Guid.NewGuid();
+        var persisted = dto with { AnglerUserId = anglerUserId };
+        var handler = new RecordingHandler(
+            HttpStatusCode.OK,
+            JsonSerializer.Serialize(persisted, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+        var client = CreateClient(handler);
 
         // Act
-        await client.UpsertAsync(dto, CancellationToken.None);
+        var result = await client.UpsertAsync(dto, CancellationToken.None);
 
         // Assert
         handler.LastRequest!.Method.Should().Be(HttpMethod.Post);
@@ -29,6 +33,8 @@ public class WhenTestingSynchronisation : BaseCatchClientTest
             handler.LastBody!,
             new JsonSerializerOptions(JsonSerializerDefaults.Web));
         sent.Should().BeEquivalentTo(dto);
+        result.Should().NotBeNull();
+        result!.AnglerUserId.Should().Be(anglerUserId);
     }
 
     [Fact]

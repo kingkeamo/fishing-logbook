@@ -178,6 +178,86 @@ public class WhenTestingLoadResilience : BaseCatchEditTest
         await store.DidNotReceive().GetMetadataAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldLocalizeAndKeepTheTripForACatchTheCurrentUserOnlyRecorded()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var anglerUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var tripId = Guid.Parse("77777777-7777-7777-7777-777777777777");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
+            .Returns((CatchModel?)null);
+        var catchClient = Substitute.For<ICatchClient>();
+        catchClient.GetAsync(CatchId, Arg.Any<CancellationToken>())
+            .Returns(new CatchViewDto(CatchId, anglerUserId, StoredCaughtOn)
+            {
+                SpeciesName = "Recorded For Angler",
+                AnglerUserId = anglerUserId,
+                RecordedByUserId = OwnerUserId,
+                TripId = tripId,
+                Photographs =
+                [
+                    new CatchPhotographViewDto(
+                        PhotographId,
+                        PhotographContentTypeConstants.Jpeg,
+                        "https://storage.test/photo.jpg")
+                ]
+            });
+        catchClient.DownloadPhotographAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns([1, 2, 3]);
+        await using var context = CreateContext(store, catchClient: catchClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, CatchId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#catch-edit-load-failed").Should().BeEmpty());
+        cut.Find("#catch-edit-weight").Should().NotBeNull();
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(saved =>
+                saved.Id == CatchId
+                && saved.UserId == anglerUserId
+                && saved.AnglerUserId == anglerUserId
+                && saved.RecordedByUserId == OwnerUserId
+                && saved.TripId == tripId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotLocalizeACatchTheCurrentUserNeitherCaughtNorRecorded()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var anglerUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var recorderUserId = Guid.Parse("88888888-8888-8888-8888-888888888888");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
+            .Returns((CatchModel?)null);
+        var catchClient = Substitute.For<ICatchClient>();
+        catchClient.GetAsync(CatchId, Arg.Any<CancellationToken>())
+            .Returns(new CatchViewDto(CatchId, anglerUserId, StoredCaughtOn)
+            {
+                AnglerUserId = anglerUserId,
+                RecordedByUserId = recorderUserId,
+                Photographs =
+                [
+                    new CatchPhotographViewDto(
+                        PhotographId,
+                        PhotographContentTypeConstants.Jpeg,
+                        "https://storage.test/photo.jpg")
+                ]
+            });
+        await using var context = CreateContext(store, catchClient: catchClient);
+
+        // Act
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(p => p.CatchId, CatchId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-load-failed").Should().NotBeNull());
+        await store.DidNotReceive().SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+    }
+
     private static ICatchClient ServerCatchClient(string speciesName = "Server Perch")
     {
         var client = Substitute.For<ICatchClient>();

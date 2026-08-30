@@ -7,22 +7,22 @@ public interface ITripPhotographStore
     Task SaveAsync(TripPhotographModel photograph, CancellationToken cancellationToken);
 
     Task<byte[]?> GetBytesAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid photographId,
         CancellationToken cancellationToken);
 
     Task<bool> DeleteAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid photographId,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<TripPhotographModel>> GetPendingAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyCollection<Guid>> GetTripsWithPendingPhotographsAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken);
 }

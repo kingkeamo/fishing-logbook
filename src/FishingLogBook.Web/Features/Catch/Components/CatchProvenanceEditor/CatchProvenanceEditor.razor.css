@@ -1,0 +1,7 @@
+.catch-provenance-angler-row {
+    row-gap: 0.5rem;
+}
+
+.catch-provenance-angler-row ::deep .mud-button-root {
+    flex-shrink: 0;
+}

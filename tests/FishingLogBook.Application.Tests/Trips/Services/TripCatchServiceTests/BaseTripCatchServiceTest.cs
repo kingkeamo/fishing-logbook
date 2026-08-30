@@ -1,6 +1,8 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Tests.Common;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Services;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
@@ -20,7 +22,7 @@ public class BaseTripCatchServiceTest
     protected static readonly DateTimeOffset StartedOn = DateTimeOffset.Parse("2026-08-17T07:00:00Z");
     protected static readonly DateTimeOffset CaughtOn = DateTimeOffset.Parse("2026-08-17T09:12:00Z");
 
-    protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
+    protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
     protected readonly ICatchRepository MockCatchRepository = Substitute.For<ICatchRepository>();
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
     protected readonly TripCatchService Sut;
@@ -31,26 +33,34 @@ public class BaseTripCatchServiceTest
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockCatchRepository.AssociateTripAsync(Arg.Any<PersistCatchTripArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(true));
-        Sut = new TripCatchService(MockTripRepository, MockCatchRepository, MockCurrentUser);
+        Sut = new TripCatchService(MockTripAccessService, MockCatchRepository, MockCurrentUser);
     }
 
     protected void GivenTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(new Trip
-            {
-                Id = TripId,
-                OwnerUserId = ownerUserId,
-                Status = status,
-                StartedOn = StartedOn,
-                EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
-            }));
+        MockTripAccessService.GivenOwner(BuildTrip(ownerUserId, status), CurrentUserId);
+    }
+
+    protected void GivenSharedTrip(TripStatusEnum status = TripStatusEnum.Active)
+    {
+        MockTripAccessService.GivenParticipant(BuildTrip(OtherUserId, status), CurrentUserId);
     }
 
     protected void GivenNoTrip()
     {
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
+        MockTripAccessService.GivenNoAccess(TripId);
+    }
+
+    protected static Trip BuildTrip(Guid ownerUserId, TripStatusEnum status = TripStatusEnum.Active)
+    {
+        return new Trip
+        {
+            Id = TripId,
+            OwnerUserId = ownerUserId,
+            Status = status,
+            StartedOn = StartedOn,
+            EndedOn = status == TripStatusEnum.Completed ? StartedOn.AddHours(3) : null
+        };
     }
 
     protected void GivenCatch(

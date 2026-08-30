@@ -129,7 +129,7 @@ public sealed class IndexedDbCatchStore : ICatchStore
             },
             cancellationToken,
             _logging);
-        return loaded is not null && loaded.UserId == ownerUserId ? loaded : null;
+        return loaded is not null && IsVisibleTo(loaded, ownerUserId) ? loaded : null;
     }
 
     public async Task<CatchModel?> GetAsync(
@@ -163,7 +163,12 @@ public sealed class IndexedDbCatchStore : ICatchStore
             },
             cancellationToken,
             _logging);
-        return loaded is not null && loaded.UserId == ownerUserId ? loaded : null;
+        return loaded is not null && IsVisibleTo(loaded, ownerUserId) ? loaded : null;
+    }
+
+    private static bool IsVisibleTo(CatchModel catchRecord, Guid userId)
+    {
+        return catchRecord.UserId == userId || catchRecord.RecordedByUserId == userId;
     }
 
     public async Task UpdateSyncStateAsync(
@@ -189,6 +194,32 @@ public sealed class IndexedDbCatchStore : ICatchStore
             {
                 var module = await GetModuleAsync(token);
                 await module.InvokeVoidAsync("updateCatchMetadata", token, json);
+            },
+            cancellationToken,
+            _logging);
+    }
+
+    public async Task ReconcileMetadataAsync(CatchModel catchRecord, CancellationToken cancellationToken)
+    {
+        if (catchRecord.UserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch requires an owner.");
+        }
+
+        var json = CatchJson.SerializeMetadata(catchRecord);
+        await OfflineOperation.ExecuteAsync(
+            "write",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                await module.InvokeVoidAsync("reconcileCatchMetadata", token, json);
             },
             cancellationToken,
             _logging);

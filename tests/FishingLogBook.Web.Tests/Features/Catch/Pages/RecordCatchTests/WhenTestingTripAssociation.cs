@@ -5,6 +5,7 @@ using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
+using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -545,5 +546,52 @@ public class WhenTestingTripAssociation : BaseRecordCatchTest
                     "1")
                 : null,
             SyncStatus.SavedLocally);
+    }
+
+    [Fact]
+    public async Task ItShouldShowASharedTripAParticipantWasInvitedToAsTheActiveTrip()
+    {
+        // Arrange
+        var store = Substitute.For<ICatchStore>();
+        var sharedTrip = SharedTrip();
+        await using var context = CreateContext(store, activeTrip: ActiveTrip(sharedTrip));
+        var cut = context.Render<RecordCatch>();
+
+        // Assert
+        cut.Find("#catch-trip-association").Should().NotBeNull();
+        cut.Find("#catch-trip-name").TextContent.Should().Contain(sharedTrip.PlaceName);
+    }
+
+    [Fact]
+    public async Task ItShouldSaveACatchIntoASharedTripAParticipantIsRecordingInto()
+    {
+        // Arrange
+        var store = Substitute.For<ICatchStore>();
+        var sharedTrip = SharedTrip();
+        await using var context = CreateContext(
+            store,
+            activeTrip: ActiveTrip(sharedTrip),
+            tripStore: TripStoreWith(sharedTrip));
+        var cut = context.Render<RecordCatch>();
+        cut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("catch.jpg", 0xFF, 0xD8, 0xFF));
+
+        // Act
+        await cut.Find("#save-catch-button").ClickAsync();
+
+        // Assert
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord => catchRecord.TripId == sharedTrip.Id),
+            Arg.Any<CancellationToken>());
+    }
+
+    private static TripModel SharedTrip()
+    {
+        return Trip() with
+        {
+            OwnerUserId = OtherUserId,
+            PlaceName = "Costello & Fermoyle",
+            ParticipantUserIds = [OwnerUserId],
+            Origin = TripOriginEnum.Server
+        };
     }
 }

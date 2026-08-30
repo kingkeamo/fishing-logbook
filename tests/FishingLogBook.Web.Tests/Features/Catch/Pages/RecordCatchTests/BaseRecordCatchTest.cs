@@ -17,6 +17,7 @@ using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -50,7 +51,8 @@ public class BaseRecordCatchTest
         ITimeService? time = null,
         IPhotographMetadataService? photoMetadata = null,
         ITripStore? tripStore = null,
-        IActiveTripService? activeTrip = null)
+        IActiveTripService? activeTrip = null,
+        ITripParticipantClient? participantClient = null)
     {
         var metadata = photoMetadata ?? NoPhotoMetadata();
         var timeService = time ?? UtcTime();
@@ -74,6 +76,7 @@ public class BaseRecordCatchTest
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton(tripStore ?? Substitute.For<ITripStore>());
         context.Services.AddSingleton(activeTrip ?? QuietActiveTrip());
+        context.Services.AddSingleton(participantClient ?? QuietParticipantClient());
         context.Services.AddSingleton<ITripDisplayService>(new TripDisplayService(timeService));
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
@@ -274,6 +277,14 @@ public class BaseRecordCatchTest
         activeTrip.GetActiveAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((TripModel?)null);
         return activeTrip;
+    }
+
+    protected static ITripParticipantClient QuietParticipantClient()
+    {
+        var client = Substitute.For<ITripParticipantClient>();
+        client.GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((TripParticipantsDto?)null);
+        return client;
     }
 
     protected static ILogbookSynchroniser QuietSynchroniser()

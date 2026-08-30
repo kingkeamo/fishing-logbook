@@ -24,10 +24,13 @@ module "fly" {
 }
 
 module "r2" {
-  source      = "../../modules/r2"
-  environment = var.environment
-  account_id  = var.cloudflare_account_id
-  location    = var.r2_location
+  source               = "../../modules/r2"
+  environment          = var.environment
+  account_id           = var.cloudflare_account_id
+  location             = var.r2_location
+  cors_allowed_origins = var.r2_cors_allowed_origins
+  cors_allowed_methods = ["PUT"]
+  cors_allowed_headers = ["Content-Type", "X-Correlation-Id"]
 }
 
 module "cloudflare_pages" {

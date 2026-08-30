@@ -9,4 +9,8 @@ public sealed record TripCatchSummaryDto(Guid Id, DateTimeOffset CaughtOn)
     public decimal? Length { get; init; }
 
     public string? PhotographUrl { get; init; }
+
+    public Guid AnglerUserId { get; init; }
+
+    public Guid RecordedByUserId { get; init; }
 }

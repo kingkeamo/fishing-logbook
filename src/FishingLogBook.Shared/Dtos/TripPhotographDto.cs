@@ -6,4 +6,7 @@ public sealed record TripPhotographDto(
     string ObjectKey,
     string ContentType,
     DateTimeOffset AddedOn,
-    DateTimeOffset? CapturedOn = null);
+    DateTimeOffset? CapturedOn = null)
+{
+    public Guid ContributedByUserId { get; init; }
+}

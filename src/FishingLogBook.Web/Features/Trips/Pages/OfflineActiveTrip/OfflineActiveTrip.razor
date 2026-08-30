@@ -30,6 +30,8 @@
         else
         {
             <ActiveTripView Trip="_trip"
+                            ViewerUserId="_viewerUserId"
+                            Contributors="_contributors"
                             RecordCatchBaseHref="/offline/record"
                             TripBaseHref="/offline/trips"
                             LogbookHref="/offline/catches"
@@ -42,7 +44,9 @@
                             PhotographCount="_photographCount"
                             NoteCount="_noteCount"
                             Timeline="_timeline"
-                            CanEdit="CanEdit"
+                            CanManageTrip="CanManageTrip"
+                            CanAddPhotographs="CanAddPhotographs"
+                            CanRecordCatch="CanRecordCatch"
                             OnContentChanged="LoadAsync"
                             OnFinish="FinishAsync" />
         }

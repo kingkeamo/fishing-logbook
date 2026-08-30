@@ -1,5 +1,5 @@
-using FishingLogBook.Application.Contracts;
 using FishingLogBook.Application.Diagnostics;
+using FishingLogBook.Application.Diagnostics.Contracts.Services;
 using FishingLogBook.Domain.Config;
 using Microsoft.Extensions.Options;
 using NSubstitute;

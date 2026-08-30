@@ -22,9 +22,7 @@ public partial class CatchEdit
             if (_catch is null)
             {
                 _loadFailed = true;
-                return;
             }
-
         }
         catch (Exception exception)
         {
@@ -71,7 +69,9 @@ public partial class CatchEdit
             return null;
         }
 
-        if (remote is null || remote.UserId != ownerUserId || remote.Photographs.Count == 0)
+        if (remote is null
+            || (remote.UserId != ownerUserId && remote.RecordedByUserId != ownerUserId)
+            || remote.Photographs.Count == 0)
         {
             return null;
         }
@@ -121,7 +121,8 @@ public partial class CatchEdit
             remote.Length,
             remote.Method,
             remote.BaitOrLure,
-            remote.Notes);
+            remote.Notes,
+            TripId: remote.TripId);
 
         try
         {

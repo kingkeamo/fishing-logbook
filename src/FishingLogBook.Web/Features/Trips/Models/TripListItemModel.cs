@@ -18,6 +18,8 @@ public sealed record TripListItemModel(
 
     public int NoteCount { get; init; }
 
+    public bool IsShared { get; init; }
+
     public bool IsActive
     {
         get

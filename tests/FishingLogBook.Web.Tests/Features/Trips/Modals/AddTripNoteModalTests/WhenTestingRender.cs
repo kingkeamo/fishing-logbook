@@ -28,18 +28,19 @@ public class WhenTestingRender : BaseAddTripNoteModalTest
     }
 
     [Fact]
-    public async Task ItShouldOpenOnTheTripDateWithTheCurrentTime()
+    public async Task ItShouldOpenOnTodaysDateWithTheCurrentTimeForATripThatStartedEarlierToday()
     {
         // Arrange
         var offset = OffsetPuttingLocalTimeAt(new TimeSpan(23, 59, 0));
+        var startedToday = DateTimeOffset.UtcNow.AddHours(-1);
         await using var context = CreateContext(time: TestTimeService.WithOffset(offset));
 
         // Act
-        var (cut, _) = await ShowModalAsync(context);
+        var (cut, _) = await ShowModalAsync(context, startedOn: startedToday);
 
         // Assert
-        var tripLocal = TestTimeService.ToDateTimeLocal(StartedOn, offset);
-        cut.WaitForAssertion(() => DateValue(cut).Should().Be(tripLocal[..10]));
+        var todayLocal = TestTimeService.ToDateTimeLocal(DateTimeOffset.UtcNow, offset);
+        cut.WaitForAssertion(() => DateValue(cut).Should().Be(todayLocal[..10]));
         TimeValue(cut).Should().Be("23:59");
     }
 
@@ -47,16 +48,34 @@ public class WhenTestingRender : BaseAddTripNoteModalTest
     public async Task ItShouldOpenAtTheTripStartWhenTheCurrentTimeWouldFallBeforeIt()
     {
         // Arrange
+        var startedInTheFuture = DateTimeOffset.UtcNow.AddMinutes(5);
         var offset = OffsetPuttingLocalTimeAt(TimeSpan.Zero);
+        await using var context = CreateContext(time: TestTimeService.WithOffset(offset));
+
+        // Act
+        var (cut, _) = await ShowModalAsync(context, startedOn: startedInTheFuture);
+
+        // Assert
+        var tripLocal = TestTimeService.ToDateTimeLocal(startedInTheFuture, offset);
+        cut.WaitForAssertion(() => DateValue(cut).Should().Be(tripLocal[..10]));
+        TimeValue(cut).Should().Be(tripLocal[11..16]);
+    }
+
+    [Fact]
+    public async Task ItShouldOpenOnTodaysDateRatherThanTheTripsStartDateForATripStillActiveFromAnEarlierDay()
+    {
+        // Arrange
+        var offset = OffsetPuttingLocalTimeAt(new TimeSpan(9, 0, 0));
         await using var context = CreateContext(time: TestTimeService.WithOffset(offset));
 
         // Act
         var (cut, _) = await ShowModalAsync(context);
 
         // Assert
-        var tripLocal = TestTimeService.ToDateTimeLocal(StartedOn, offset);
-        cut.WaitForAssertion(() => DateValue(cut).Should().Be(tripLocal[..10]));
-        TimeValue(cut).Should().Be(tripLocal[11..16]);
+        var todayLocal = TestTimeService.ToDateTimeLocal(DateTimeOffset.UtcNow, offset);
+        var tripStartLocal = TestTimeService.ToDateTimeLocal(StartedOn, offset);
+        cut.WaitForAssertion(() => DateValue(cut).Should().Be(todayLocal[..10]));
+        DateValue(cut).Should().NotBe(tripStartLocal[..10]);
     }
 
     [Fact]

@@ -1,6 +1,5 @@
 using Dapper;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.FishingLocations.Contracts.Repositories;
 using FishingLogBook.Application.FishingLocations.Errors;
 using FishingLogBook.Domain.FishingLocations;
 using FluentResults;

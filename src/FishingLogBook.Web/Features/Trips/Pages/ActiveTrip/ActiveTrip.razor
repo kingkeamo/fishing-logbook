@@ -28,6 +28,10 @@
         else
         {
             <ActiveTripView Trip="_trip"
+                            ViewerUserId="_viewerUserId"
+                            Contributors="_contributors"
+                            ShowParticipants="true"
+                            OnShowParticipants="ShowParticipantsAsync"
                             StartedLabel="@StartedLabel"
                             ElapsedLabel="@DurationLabel"
                             GeneratedTitle="@GeneratedTitle"
@@ -37,7 +41,9 @@
                             NoteCount="_noteCount"
                             Timeline="_timeline"
                             AllowLocalMedia="!_isReadOnlyHistory"
-                            CanEdit="CanEdit"
+                            CanManageTrip="CanManageTrip"
+                            CanAddPhotographs="CanAddPhotographs"
+                            CanRecordCatch="CanRecordCatch"
                             CanAddNotes="CanAddNotes"
                             CanAddCatches="CanAddCatches"
                             NoteStorage="NoteStorage"

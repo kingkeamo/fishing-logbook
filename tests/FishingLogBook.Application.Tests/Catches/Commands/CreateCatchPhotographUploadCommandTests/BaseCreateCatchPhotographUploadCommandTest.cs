@@ -1,6 +1,6 @@
 using FishingLogBook.Application.Catches.Commands;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Common.Mappings;
-using FishingLogBook.Application.Contracts.Services;
 using Mapster;
 using NSubstitute;
 

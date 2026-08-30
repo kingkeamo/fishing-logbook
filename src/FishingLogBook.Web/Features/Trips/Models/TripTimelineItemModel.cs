@@ -12,6 +12,10 @@ public sealed record TripTimelineItemModel(
 
     public Guid? PhotographId { get; init; }
 
+    public Guid ContributedByUserId { get; init; }
+
+    public Guid RecordedByUserId { get; init; }
+
     public decimal? Weight { get; init; }
 
     public decimal? Length { get; init; }

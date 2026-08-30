@@ -1,14 +1,16 @@
 import {
     TRIP_STORE_NAME,
+    canWriteTrip,
+    contributorId,
     normalisedOwnerId,
     runLogbookTransaction
 } from './logbook-database.js';
 
 export async function putTripNote(json) {
     const note = JSON.parse(json);
-    const owner = normalisedOwnerId(note?.ownerUserId);
-    if (!note?.id || !note?.tripId || !owner) {
-        throw new Error('Owned Trip note id is required');
+    const author = contributorId(note);
+    if (!note?.id || !note?.tripId || !author) {
+        throw new Error('Trip note author is required');
     }
 
     if (typeof note.text !== 'string' || note.text.trim().length === 0) {
@@ -20,8 +22,8 @@ export async function putTripNote(json) {
         read.onerror = () => fail(read.error);
         read.onsuccess = () => {
             const trip = read.result;
-            if (!trip || normalisedOwnerId(trip.ownerUserId) !== owner) {
-                fail(new Error('Trip note must belong to an owned Trip'));
+            if (!canWriteTrip(trip, author)) {
+                fail(new Error('Trip note must belong to a writable Trip'));
                 return;
             }
 
@@ -33,9 +35,9 @@ export async function putTripNote(json) {
     });
 }
 
-export async function deleteTripNote(ownerUserId, tripId, noteId) {
-    const owner = normalisedOwnerId(ownerUserId);
-    if (!owner || !tripId || !noteId) {
+export async function deleteTripNote(viewerUserId, tripId, noteId) {
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!viewer || !tripId || !noteId) {
         return false;
     }
 
@@ -44,13 +46,14 @@ export async function deleteTripNote(ownerUserId, tripId, noteId) {
         read.onerror = () => fail(read.error);
         read.onsuccess = () => {
             const trip = read.result;
-            if (!trip || normalisedOwnerId(trip.ownerUserId) !== owner) {
+            if (!canWriteTrip(trip, viewer)) {
                 succeed(false);
                 return;
             }
 
             const existing = trip.notes ?? [];
-            const remaining = existing.filter(entry => entry?.id !== noteId);
+            const remaining = existing.filter(entry =>
+                entry?.id !== noteId || contributorId(entry) !== viewer);
             if (remaining.length === existing.length) {
                 succeed(false);
                 return;
@@ -64,9 +67,9 @@ export async function deleteTripNote(ownerUserId, tripId, noteId) {
     });
 }
 
-export async function getTripNotes(ownerUserId, tripId) {
-    const owner = normalisedOwnerId(ownerUserId);
-    if (!owner || !tripId) {
+export async function getTripNotes(viewerUserId, tripId) {
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!viewer || !tripId) {
         return [];
     }
 
@@ -75,7 +78,7 @@ export async function getTripNotes(ownerUserId, tripId) {
         read.onerror = () => fail(read.error);
         read.onsuccess = () => {
             const trip = read.result;
-            if (!trip || normalisedOwnerId(trip.ownerUserId) !== owner) {
+            if (!canWriteTrip(trip, viewer)) {
                 succeed([]);
                 return;
             }
@@ -88,32 +91,37 @@ export async function getTripNotes(ownerUserId, tripId) {
     });
 }
 
-export async function getTripNote(ownerUserId, tripId, noteId) {
-    const notes = await getTripNotes(ownerUserId, tripId);
+export async function getTripNote(viewerUserId, tripId, noteId) {
+    const notes = await getTripNotes(viewerUserId, tripId);
     return notes.find(entry => JSON.parse(entry.json).id === noteId) ?? null;
 }
 
-export async function getPendingTripNotes(ownerUserId) {
-    return scanOwnedTrips(ownerUserId, (trip, collected) => {
+export async function getPendingTripNotes(viewerUserId) {
+    return scanWritableTrips(viewerUserId, (trip, collected, viewer) => {
         for (const note of trip.notes ?? []) {
-            if (note && !isSynchronised(note.syncStatus)) {
+            if (note && contributorId(note) === viewer && !isSynchronised(note.syncStatus)) {
                 collected.push({ json: JSON.stringify(note) });
             }
         }
     });
 }
 
-export async function getTripsWithPendingNotes(ownerUserId) {
-    return scanOwnedTrips(ownerUserId, (trip, collected) => {
-        if ((trip.notes ?? []).some(note => note && !isSynchronised(note.syncStatus))) {
+export async function getTripsWithPendingNotes(viewerUserId) {
+    return scanWritableTrips(viewerUserId, (trip, collected, viewer) => {
+        const pending = (trip.notes ?? []).some(note =>
+            note
+            && contributorId(note) === viewer
+            && !isSynchronised(note.syncStatus)
+            && !isFailedToSynchronise(note.syncStatus));
+        if (pending) {
             collected.push(trip.id);
         }
     });
 }
 
-function scanOwnedTrips(ownerUserId, collect) {
-    const owner = normalisedOwnerId(ownerUserId);
-    if (!owner) {
+function scanWritableTrips(viewerUserId, collect) {
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!viewer) {
         return Promise.resolve([]);
     }
 
@@ -128,8 +136,8 @@ function scanOwnedTrips(ownerUserId, collect) {
                 return;
             }
 
-            if (normalisedOwnerId(cursor.value?.ownerUserId) === owner) {
-                collect(cursor.value, collected);
+            if (canWriteTrip(cursor.value, viewer)) {
+                collect(cursor.value, collected, viewer);
             }
 
             cursor.continue();
@@ -155,4 +163,8 @@ function byRecordedOn(first, second) {
 
 function isSynchronised(status) {
     return status === 'synchronised' || status === 3;
+}
+
+function isFailedToSynchronise(status) {
+    return status === 'failedToSynchronise' || status === 4;
 }

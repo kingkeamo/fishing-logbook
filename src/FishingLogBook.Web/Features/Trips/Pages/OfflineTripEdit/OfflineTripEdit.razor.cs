@@ -22,6 +22,7 @@ public partial class OfflineTripEdit : ComponentBase
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _isLoading = true;
     private bool _loadFailed;
+    private Guid _viewerUserId;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -78,6 +79,7 @@ public partial class OfflineTripEdit : ComponentBase
         {
             var owner = OfflineOwnerContext.Owner
                 ?? throw new InvalidOperationException("Offline access is locked.");
+            _viewerUserId = owner.UserId;
             _trip = await TripStore.GetAsync(owner.UserId, TripId, CancellationToken.None);
             if (_trip is null)
             {

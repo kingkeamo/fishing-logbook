@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Offline.Dependencies;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -44,7 +45,9 @@ public sealed class TripNoteSynchroniser : ITripNoteSynchroniser
             return;
         }
 
-        var pending = await _store.GetPendingAsync(ownerUserId, cancellationToken);
+        IReadOnlyList<TripNoteModel> pending = (await _store.GetPendingAsync(ownerUserId, cancellationToken))
+            .Where(NeedsAutomaticSynchronisation)
+            .ToArray();
         if (pending.Count == 0 || !await _networkService.IsOnlineAsync(cancellationToken))
         {
             return;
@@ -115,11 +118,47 @@ public sealed class TripNoteSynchroniser : ITripNoteSynchroniser
                 note,
                 exception,
                 cancellationToken);
+            await MarkFailedAsync(ownerUserId, note, exception, cancellationToken);
         }
         finally
         {
             _inFlight.TryRemove(note.Id, out _);
         }
+    }
+
+    private async Task MarkFailedAsync(
+        Guid ownerUserId,
+        TripNoteModel note,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var current = await _store.GetAsync(ownerUserId, note.TripId, note.Id, cancellationToken);
+            if (current is null || current.SyncStatus == SyncStatus.Synchronised)
+            {
+                return;
+            }
+
+            var targetStatus = SynchronisationFailureClassifier.Classify(exception) == SynchronisationFailureKind.Permanent
+                ? SyncStatus.FailedToSynchronise
+                : SyncStatus.WaitingToSynchronise;
+            await _store.SaveAsync(
+                current with { SyncStatus = targetStatus },
+                cancellationToken);
+        }
+        catch (Exception storeException) when (storeException is not OperationCanceledException)
+        {
+            await _logging.LogErrorAsync(
+                "recording a failed trip note synchronisation",
+                storeException,
+                CancellationToken.None);
+        }
+    }
+
+    private static bool NeedsAutomaticSynchronisation(TripNoteModel note)
+    {
+        return note.SyncStatus != SyncStatus.FailedToSynchronise;
     }
 
     private async Task SynchroniseNoteAsync(

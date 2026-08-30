@@ -1,0 +1,91 @@
+@namespace FishingLogBook.Web.Features.Trips.Modals.InviteAngler
+
+<MudDialog id="invite-angler-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="invite-angler-modal-title">@Loc["Trip_InviteAngler"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" AlignItems="AlignItems.Stretch">
+            <MudTextField T="string"
+                          Value="_query"
+                          ValueChanged="OnQueryChangedAsync"
+                          Label="@Loc["Trip_InviteSearchLabel"]"
+                          HelperText="@Loc["Trip_InviteSearchHelp"]"
+                          Immediate="true"
+                          DebounceInterval="400"
+                          Variant="Variant.Outlined"
+                          id="invite-angler-search" />
+
+            @if (_isSearching)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" id="invite-angler-searching" />
+            }
+            else if (_hasSearched && _results.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Class="mud-text-secondary" id="invite-angler-empty">
+                    @Loc["Trip_InviteNoResults"]
+                </MudText>
+            }
+
+            @if (_results.Count > 0)
+            {
+                <MudStack Spacing="2" id="invite-angler-results">
+                    @foreach (var angler in _results)
+                    {
+                        <MudPaper Elevation="0"
+                                  Class="invite-angler-result"
+                                  id="@($"invite-angler-result-{angler.UserId:D}")">
+                            <MudStack Row="true"
+                                      Spacing="2"
+                                      AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween">
+                                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudAvatar Size="Size.Small">
+                                        @if (angler.PhotographUrl is { Length: > 0 } photographUrl)
+                                        {
+                                            <MudImage Src="@photographUrl" Alt="@DisplayName(angler)" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                                        }
+                                    </MudAvatar>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2">@DisplayName(angler)</MudText>
+                                        @if (angler.HomeRegion is { Length: > 0 } homeRegion)
+                                        {
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                @homeRegion
+                                            </MudText>
+                                        }
+                                    </MudStack>
+                                </MudStack>
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           Disabled="_isInviting"
+                                           OnClick="@(() => InviteAsync(angler.UserId))"
+                                           id="@($"invite-angler-invite-{angler.UserId:D}")">
+                                    @Loc["Trip_Invite"]
+                                </MudButton>
+                            </MudStack>
+                        </MudPaper>
+                    }
+                </MudStack>
+            }
+
+            @if (_failedMessage is not null)
+            {
+                <MudAlert Severity="Severity.Error" id="invite-angler-failed">@_failedMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   OnClick="Cancel"
+                   id="invite-angler-cancel">
+            @Loc["Modal_Cancel"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

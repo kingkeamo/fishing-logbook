@@ -1,14 +1,17 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
+using FishingLogBook.Application.Catches.Contracts.Builders;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Catches.Errors;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using MapsterMapper;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Application.Catches.Services;
 
@@ -17,26 +20,32 @@ public sealed class CatchService : ICatchService
     private static readonly TimeSpan DownloadLifetime = TimeSpan.FromHours(1);
 
     private readonly ICatchRepository _catchRepository;
-    private readonly ITripRepository _tripRepository;
+    private readonly ITripAccessService _tripAccessService;
     private readonly ICurrentUser _currentUser;
     private readonly ICatchLocationPrivacyService _catchLocationPrivacyService;
     private readonly IObjectStorage _objectStorage;
+    private readonly ICatchPhotographObjectKeyBuilder _objectKeyBuilder;
     private readonly IMapper _mapper;
+    private readonly ILogger<CatchService> _logger;
 
     public CatchService(
         ICatchRepository catchRepository,
-        ITripRepository tripRepository,
+        ITripAccessService tripAccessService,
         ICurrentUser currentUser,
         ICatchLocationPrivacyService catchLocationPrivacyService,
         IObjectStorage objectStorage,
-        IMapper mapper)
+        ICatchPhotographObjectKeyBuilder objectKeyBuilder,
+        IMapper mapper,
+        ILogger<CatchService> logger)
     {
         _catchRepository = catchRepository;
-        _tripRepository = tripRepository;
+        _tripAccessService = tripAccessService;
         _currentUser = currentUser;
         _catchLocationPrivacyService = catchLocationPrivacyService;
         _objectStorage = objectStorage;
+        _objectKeyBuilder = objectKeyBuilder;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task<Result<CatchDto>> UpsertAsync(UpsertCatchArgs args, CancellationToken cancellationToken)
@@ -72,12 +81,34 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchDto>(trip.Errors);
         }
 
+        var existingResult = await _catchRepository.GetByIdAsync(args.Catch.Id, cancellationToken);
+        if (existingResult.IsFailed)
+        {
+            return Result.Fail<CatchDto>(existingResult.Errors);
+        }
+
+        var existing = existingResult.Value;
+        if (existing is not null
+            && existing.AnglerUserId != args.UserId
+            && existing.RecordedByUserId != args.UserId)
+        {
+            return Result.Fail<CatchDto>(new CatchEditNotPermittedError());
+        }
+
+        var identity = existing is not null
+            ? Result.Ok((UserId: existing.UserId, AnglerUserId: existing.AnglerUserId))
+            : await ResolveAnglerAsync(args, trip.Value, cancellationToken);
+        if (identity.IsFailed)
+        {
+            return Result.Fail<CatchDto>(identity.Errors);
+        }
+
         var catchRecord = new Catch
         {
             Id = args.Catch.Id,
-            UserId = args.UserId,
-            AnglerUserId = args.UserId,
-            RecordedByUserId = args.UserId,
+            UserId = identity.Value.UserId,
+            AnglerUserId = identity.Value.AnglerUserId,
+            RecordedByUserId = existing?.RecordedByUserId ?? args.UserId,
             TripId = trip.Value,
             CaughtOn = args.Catch.CaughtOn,
             SpeciesName = TrimToNull(args.Catch.SpeciesName),
@@ -108,10 +139,23 @@ public sealed class CatchService : ICatchService
 
     public async Task<Result<CatchViewDto>> GetViewAsync(GetCatchArgs args, CancellationToken cancellationToken)
     {
-        var loaded = await LoadForCurrentUserAsync(args.CatchId, cancellationToken);
+        if (!_currentUser.IsResolved)
+        {
+            return Result.Fail<CatchViewDto>(new CurrentUserUnresolvedError());
+        }
+
+        var loaded = await _catchRepository.GetDetailForUserAsync(
+            args.CatchId,
+            _currentUser.UserId,
+            cancellationToken);
         if (loaded.IsFailed)
         {
             return Result.Fail<CatchViewDto>(loaded.Errors);
+        }
+
+        if (loaded.Value is null)
+        {
+            return Result.Fail<CatchViewDto>(new CatchNotFoundError());
         }
 
         return Result.Ok(await ToViewDtoAsync(loaded.Value, cancellationToken));
@@ -121,16 +165,16 @@ public sealed class CatchService : ICatchService
         GetMyCatchesArgs args,
         CancellationToken cancellationToken)
     {
-        var loaded = await _catchRepository.GetByUserIdAsync(args.UserId, cancellationToken);
+        var loaded = await _catchRepository.GetActivityForUserAsync(args.UserId, cancellationToken);
         if (loaded.IsFailed)
         {
             return Result.Fail<IReadOnlyList<CatchViewDto>>(loaded.Errors);
         }
 
         var views = new List<CatchViewDto>(loaded.Value.Count);
-        foreach (var catchRecord in loaded.Value)
+        foreach (var catchDetail in loaded.Value)
         {
-            views.Add(await ToViewDtoAsync(catchRecord, cancellationToken));
+            views.Add(await ToViewDtoAsync(catchDetail, cancellationToken));
         }
 
         return Result.Ok<IReadOnlyList<CatchViewDto>>(views);
@@ -166,8 +210,68 @@ public sealed class CatchService : ICatchService
             cancellationToken);
     }
 
-    private async Task<CatchViewDto> ToViewDtoAsync(Catch catchRecord, CancellationToken cancellationToken)
+    public async Task<Result<CatchViewDto>> CorrectAnglerAsync(
+        CorrectCatchAnglerArgs args,
+        CancellationToken cancellationToken)
     {
+        var loaded = await LoadForCurrentUserAsync(args.CatchId, cancellationToken);
+        if (loaded.IsFailed)
+        {
+            return Result.Fail<CatchViewDto>(loaded.Errors);
+        }
+
+        var existing = loaded.Value;
+        if (existing.AnglerUserId != _currentUser.UserId && existing.RecordedByUserId != _currentUser.UserId)
+        {
+            return Result.Fail<CatchViewDto>(new CatchEditNotPermittedError());
+        }
+
+        if (existing.TripId is not { } tripId)
+        {
+            return Result.Fail<CatchViewDto>(new CatchNotOnTripError());
+        }
+
+        if (args.AnglerUserId != existing.AnglerUserId)
+        {
+            var anglerAccess = await _tripAccessService.ResolveForAsync(tripId, args.AnglerUserId, cancellationToken);
+            if (anglerAccess.IsFailed || !anglerAccess.Value.CanContribute)
+            {
+                return Result.Fail<CatchViewDto>(new CatchAnglerNotEligibleError());
+            }
+
+            var corrected = await _catchRepository.CorrectAnglerAsync(
+                new PersistCatchAnglerArgs
+                {
+                    CatchId = args.CatchId,
+                    AnglerUserId = args.AnglerUserId
+                },
+                cancellationToken);
+            if (corrected.IsFailed)
+            {
+                return Result.Fail<CatchViewDto>(corrected.Errors);
+            }
+        }
+
+        var refreshed = await _catchRepository.GetDetailForUserAsync(
+            args.CatchId,
+            _currentUser.UserId,
+            cancellationToken);
+        if (refreshed.IsFailed)
+        {
+            return Result.Fail<CatchViewDto>(refreshed.Errors);
+        }
+
+        if (refreshed.Value is null)
+        {
+            return Result.Fail<CatchViewDto>(new CatchNotFoundError());
+        }
+
+        return Result.Ok(await ToViewDtoAsync(refreshed.Value, cancellationToken));
+    }
+
+    private async Task<CatchViewDto> ToViewDtoAsync(CatchDetail catchDetail, CancellationToken cancellationToken)
+    {
+        var catchRecord = catchDetail.Catch;
         var exposure = await _catchLocationPrivacyService.GetExposureAsync(
             catchRecord,
             _currentUser.UserId,
@@ -180,7 +284,6 @@ public sealed class CatchService : ICatchService
                 photograph.Id,
                 photograph.ContentType,
                 await CreatePhotographUrlAsync(
-                    catchRecord.UserId,
                     catchRecord.Id,
                     photograph.Id,
                     cancellationToken)));
@@ -193,7 +296,9 @@ public sealed class CatchService : ICatchService
             exposure)
         {
             AnglerUserId = catchRecord.AnglerUserId,
+            AnglerName = catchDetail.AnglerName,
             RecordedByUserId = catchRecord.RecordedByUserId,
+            RecordedByName = catchDetail.RecordedByName,
             TripId = catchRecord.TripId,
             SpeciesName = catchRecord.SpeciesName,
             Weight = catchRecord.Weight,
@@ -206,7 +311,6 @@ public sealed class CatchService : ICatchService
     }
 
     private async Task<string?> CreatePhotographUrlAsync(
-        Guid userId,
         Guid catchId,
         Guid photographId,
         CancellationToken cancellationToken)
@@ -216,7 +320,7 @@ public sealed class CatchService : ICatchService
             return null;
         }
 
-        var objectKey = CatchPhotographObjectKey.Build(userId, catchId, photographId);
+        var objectKey = _objectKeyBuilder.Build(catchId, photographId);
         var url = await _objectStorage.CreateDownloadUrlAsync(objectKey, DownloadLifetime, cancellationToken);
         return url.ToString();
     }
@@ -276,18 +380,46 @@ public sealed class CatchService : ICatchService
             return Result.Ok<Guid?>(null);
         }
 
-        var trip = await _tripRepository.GetByIdAsync(tripId.Value, cancellationToken);
-        if (trip.IsFailed)
-        {
-            return Result.Fail<Guid?>(trip.Errors);
-        }
-
-        if (trip.Value is null || trip.Value.OwnerUserId != userId)
+        var access = await _tripAccessService.ResolveForAsync(tripId.Value, userId, cancellationToken);
+        if (access.IsFailed)
         {
             return Result.Fail<Guid?>(new CatchTripInvalidError());
         }
 
-        return Result.Ok<Guid?>(trip.Value.Id);
+        if (!access.Value.CanContribute)
+        {
+            return Result.Fail<Guid?>(new CatchTripInvalidError());
+        }
+
+        return Result.Ok<Guid?>(tripId.Value);
+    }
+
+    private async Task<Result<(Guid UserId, Guid AnglerUserId)>> ResolveAnglerAsync(
+        UpsertCatchArgs args,
+        Guid? tripId,
+        CancellationToken cancellationToken)
+    {
+        var requestedAngler = args.Catch.AnglerUserId == Guid.Empty
+            ? args.UserId
+            : args.Catch.AnglerUserId;
+
+        if (requestedAngler == args.UserId)
+        {
+            return Result.Ok((UserId: args.UserId, AnglerUserId: args.UserId));
+        }
+
+        if (tripId is null)
+        {
+            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+        }
+
+        var anglerAccess = await _tripAccessService.ResolveForAsync(tripId.Value, requestedAngler, cancellationToken);
+        if (anglerAccess.IsFailed || !anglerAccess.Value.CanContribute)
+        {
+            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+        }
+
+        return Result.Ok((UserId: requestedAngler, AnglerUserId: requestedAngler));
     }
 
     private static string? TrimToNull(string? value)

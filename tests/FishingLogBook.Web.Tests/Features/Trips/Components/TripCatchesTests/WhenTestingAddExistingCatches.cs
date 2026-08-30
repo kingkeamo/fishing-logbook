@@ -22,7 +22,8 @@ public class WhenTestingAddExistingCatches : BaseTripCatchesTest
 
         // Act
         var cut = context.Render<TripCatchesComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Assert
         cut.Find("#trip-catches-record").GetAttribute("href").Should().Be($"/catches/record?tripId={TripId:D}");
@@ -41,7 +42,8 @@ public class WhenTestingAddExistingCatches : BaseTripCatchesTest
         var modalService = ModalServiceAdding();
         await using var context = CreateContext(modalService);
         var cut = context.Render<TripCatchesComponent>(parameters =>
-            parameters.Add(component => component.Trip, CompletedTrip()));
+            parameters.Add(component => component.Trip, CompletedTrip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
 
         // Act
         await cut.Find("#trip-catches-add").ClickAsync();
@@ -66,6 +68,7 @@ public class WhenTestingAddExistingCatches : BaseTripCatchesTest
         await using var context = CreateContext(modalService);
         var cut = context.Render<TripCatchesComponent>(parameters => parameters
             .Add(component => component.Trip, CompletedTrip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.CatchStorage, TripStorageEnum.Server));
 
         // Act
@@ -86,6 +89,7 @@ public class WhenTestingAddExistingCatches : BaseTripCatchesTest
         await using var context = CreateContext(ModalServiceAdding());
         var cut = context.Render<TripCatchesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.OnCatchesAttached, () => attached++));
 
         // Act
@@ -105,6 +109,7 @@ public class WhenTestingAddExistingCatches : BaseTripCatchesTest
             new AddTripCatchesModalResult([PikeCatchId, TroutCatchId], [])));
         var cut = context.Render<TripCatchesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.OnCatchesAttached, () => attached++));
 
         // Act
@@ -125,6 +130,7 @@ public class WhenTestingAddExistingCatches : BaseTripCatchesTest
             new AddTripCatchesModalResult([PikeCatchId], [TroutCatchId])));
         var cut = context.Render<TripCatchesComponent>(parameters => parameters
             .Add(component => component.Trip, Trip())
+            .Add(component => component.ViewerUserId, OwnerUserId)
             .Add(component => component.OnCatchesAttached, () => attached++));
 
         // Act

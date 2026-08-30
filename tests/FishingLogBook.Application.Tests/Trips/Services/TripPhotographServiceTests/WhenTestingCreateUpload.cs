@@ -21,7 +21,7 @@ public class WhenTestingCreateUpload : BaseTripPhotographServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripPhotographNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockObjectStorage.DidNotReceive().CreateUploadUrlAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
@@ -40,7 +40,7 @@ public class WhenTestingCreateUpload : BaseTripPhotographServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripPhotographNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockObjectStorage.DidNotReceive().CreateUploadUrlAsync(
             Arg.Any<string>(),
             Arg.Any<string>(),
@@ -74,7 +74,6 @@ public class WhenTestingCreateUpload : BaseTripPhotographServiceTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.ObjectKey.Should().Be(ExpectedObjectKey);
-        result.Value.ObjectKey.Should().NotStartWith("catches/");
         result.Value.UploadUrl.Should().Be("https://storage.test/upload");
         await MockObjectStorage.Received(1).CreateUploadUrlAsync(
             ExpectedObjectKey,

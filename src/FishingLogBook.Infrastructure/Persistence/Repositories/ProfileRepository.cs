@@ -1,6 +1,6 @@
 using Dapper;
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
 using FishingLogBook.Application.Profiles.Errors;
 using FishingLogBook.Domain.Profiles;
 using FluentResults;
@@ -69,6 +69,86 @@ public sealed class ProfileRepository : IProfileRepository
             _logger.LogError(exception, "Failed to load angler profile {UserId}.", userId);
             return Result.Fail<Profile?>(FailedMessage);
         }
+    }
+
+    public async Task<Result<IReadOnlyList<Profile>>> GetByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds,
+        CancellationToken cancellationToken)
+    {
+        if (userIds.Count == 0)
+        {
+            return Result.Ok<IReadOnlyList<Profile>>([]);
+        }
+
+        try
+        {
+            const string sql = $"""
+                {SelectSql}
+                WHERE "UserId" = ANY(@UserIds);
+                """;
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            var profiles = await connection.QueryAsync<Profile>(new CommandDefinition(
+                sql,
+                new { UserIds = userIds.ToArray() },
+                cancellationToken: cancellationToken));
+            return Result.Ok<IReadOnlyList<Profile>>([.. profiles]);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to load {Count} angler profiles.", userIds.Count);
+            return Result.Fail<IReadOnlyList<Profile>>(FailedMessage);
+        }
+    }
+
+    public async Task<Result<IReadOnlyList<AnglerSummary>>> FindAnglersAsync(
+        FindAnglersArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            const string sql = """
+                SELECT
+                    u."Id" AS "UserId",
+                    CASE WHEN p."ShowDisplayName" THEN p."DisplayName" END AS "DisplayName",
+                    CASE WHEN p."ShowPhotograph" THEN p."PhotographObjectKey" END AS "PhotographObjectKey",
+                    CASE WHEN p."ShowHomeRegion" THEN p."HomeRegion" END AS "HomeRegion",
+                    u."Email" AS "Email"
+                FROM "User" u
+                LEFT JOIN "Profile" p ON p."UserId" = u."Id"
+                WHERE u."Id" <> @RequestingUserId
+                  AND (
+                        (COALESCE(p."ShowDisplayName", false) AND p."DisplayName" ILIKE @SearchPattern)
+                     OR u."Email" ILIKE @SearchPattern
+                  )
+                ORDER BY p."DisplayName", u."Id"
+                LIMIT @MaxResults;
+                """;
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            var rows = await connection.QueryAsync<AnglerSummary>(new CommandDefinition(
+                sql,
+                new
+                {
+                    args.RequestingUserId,
+                    SearchPattern = ToSearchPattern(args.Query),
+                    args.MaxResults
+                },
+                cancellationToken: cancellationToken));
+            return Result.Ok<IReadOnlyList<AnglerSummary>>([.. rows]);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to look up anglers for user {UserId}.", args.RequestingUserId);
+            return Result.Fail<IReadOnlyList<AnglerSummary>>(FailedMessage);
+        }
+    }
+
+    private static string ToSearchPattern(string query)
+    {
+        var escaped = query
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("%", "\\%", StringComparison.Ordinal)
+            .Replace("_", "\\_", StringComparison.Ordinal);
+        return $"%{escaped}%";
     }
 
     public async Task<Result<Profile>> UpsertAsync(Profile profile, CancellationToken cancellationToken)

@@ -76,14 +76,16 @@ public abstract class BaseTripPhotographRepositoryTest
         Guid tripId,
         Guid? photographId = null,
         DateTimeOffset? capturedOn = null,
-        DateTimeOffset? addedOn = null)
+        DateTimeOffset? addedOn = null,
+        Guid? contributedByUserId = null)
     {
         var id = photographId ?? Guid.NewGuid();
         return new TripPhotograph
         {
             Id = id,
             TripId = tripId,
-            ObjectKey = $"trips/{userId:D}/{tripId:D}/{id:D}",
+            ContributedByUserId = contributedByUserId ?? userId,
+            ObjectKey = $"trip-photographs/{tripId:D}/{id:D}",
             ContentType = PhotographContentTypeConstants.Jpeg,
             CapturedOn = capturedOn,
             AddedOn = addedOn ?? StartedOn.AddHours(1)

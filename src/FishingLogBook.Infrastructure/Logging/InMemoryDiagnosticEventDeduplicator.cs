@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using FishingLogBook.Application.Contracts;
+using FishingLogBook.Application.Diagnostics.Contracts.Services;
 
 namespace FishingLogBook.Infrastructure.Logging;
 

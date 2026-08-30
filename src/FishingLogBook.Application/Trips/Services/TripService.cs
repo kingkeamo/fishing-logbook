@@ -1,7 +1,6 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Capabilities.Errors;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -15,16 +14,16 @@ namespace FishingLogBook.Application.Trips.Services;
 public sealed class TripService : ITripService
 {
     private readonly ITripRepository _tripRepository;
-    private readonly ICurrentUser _currentUser;
+    private readonly ITripAccessService _tripAccessService;
     private readonly IMapper _mapper;
 
     public TripService(
         ITripRepository tripRepository,
-        ICurrentUser currentUser,
+        ITripAccessService tripAccessService,
         IMapper mapper)
     {
         _tripRepository = tripRepository;
-        _currentUser = currentUser;
+        _tripAccessService = tripAccessService;
         _mapper = mapper;
     }
 
@@ -58,6 +57,21 @@ public sealed class TripService : ITripService
             return Result.Fail<TripDto>(new TripLifecycleInvalidError());
         }
 
+        var existing = await _tripRepository.GetByIdAsync(trip.Id, cancellationToken);
+        if (existing.IsFailed)
+        {
+            return Result.Fail<TripDto>(existing.Errors);
+        }
+
+        if (existing.Value is not null)
+        {
+            var access = await _tripAccessService.RequireOwnerAsync(trip.Id, cancellationToken);
+            if (access.IsFailed)
+            {
+                return Result.Fail<TripDto>(access.Errors);
+            }
+        }
+
         var saved = await _tripRepository.UpsertAsync(trip, cancellationToken);
         if (saved.IsFailed)
         {
@@ -71,13 +85,21 @@ public sealed class TripService : ITripService
         GetMyTripsArgs args,
         CancellationToken cancellationToken)
     {
-        var loaded = await _tripRepository.GetSummariesByOwnerUserIdAsync(args.UserId, cancellationToken);
+        var loaded = await _tripRepository.GetSummariesForUserAsync(args, cancellationToken);
         if (loaded.IsFailed)
         {
             return Result.Fail<IReadOnlyList<TripSummaryDto>>(loaded.Errors);
         }
 
-        IReadOnlyList<TripSummaryDto> summaries = [.. loaded.Value.Select(_mapper.Map<TripSummaryDto>)];
+        IReadOnlyList<TripSummaryDto> summaries =
+        [
+            .. loaded.Value.Select(summary => _mapper.Map<TripSummaryDto>(summary) with
+            {
+                Role = summary.OwnerUserId == args.UserId
+                    ? TripParticipantConstants.Owner
+                    : TripParticipantConstants.Participant
+            })
+        ];
         return Result.Ok(summaries);
     }
 

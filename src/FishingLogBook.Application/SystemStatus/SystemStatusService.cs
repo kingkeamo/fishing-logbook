@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts;
+using FishingLogBook.Application.SystemStatus.Contracts.Repositories;
 using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Application.SystemStatus;

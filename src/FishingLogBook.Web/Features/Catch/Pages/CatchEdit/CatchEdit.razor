@@ -1,6 +1,7 @@
 @page "/catches/{CatchId:guid}/edit"
 @using Microsoft.AspNetCore.Authorization
 @using FishingLogBook.Web.Features.Catch.Components.CatchEditEditor
+@using FishingLogBook.Web.Features.Catch.Components.CatchProvenanceEditor
 @attribute [Authorize]
 
 <PageTitle>@Loc["Catch_EditPageTitle"]</PageTitle>
@@ -31,6 +32,8 @@
             {
                 <MudText Typo="Typo.caption" Class="mud-text-secondary" id="catch-edit-catalogue-unavailable">@Loc["Catch_CatalogueUnavailable"]</MudText>
             }
+
+            <CatchProvenanceEditor CatchId="_catch.Id" TripId="_catch.TripId" />
 
             <MudExpansionPanels Elevation="1" MultiExpansion="true" id="catch-edit-photo-sections">
                 <MudExpansionPanel Text="@Loc["Catch_EditPhotographsSection"]" Expanded="true" id="catch-edit-photos-panel">

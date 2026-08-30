@@ -287,7 +287,7 @@ test('keeps no photograph EXIF metadata in the persisted image bytes', async ({ 
 
     const stored = await page.evaluate(async catchId => {
         const db = await new Promise((resolve, reject) => {
-            const request = indexedDB.open('FishingLogBook', 4);
+            const request = indexedDB.open('FishingLogBook');
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });
@@ -402,7 +402,7 @@ test('keeps no photograph EXIF metadata in bytes added through Edit Catch', asyn
 
     const stored = await page.evaluate(async catchId => {
         const db = await new Promise((resolve, reject) => {
-            const request = indexedDB.open('FishingLogBook', 4);
+            const request = indexedDB.open('FishingLogBook');
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => reject(request.error);
         });

@@ -123,7 +123,7 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
             $"/api/trips/{tripId:D}/photographs",
             new RecordTripPhotographDto(
                 photographId,
-                $"catches/{current.UserId:D}/{tripId:D}/{photographId:D}",
+                $"catch-photographs/{tripId:D}/{photographId:D}",
                 PhotographContentTypeConstants.Jpeg,
                 AddedOn));
 
@@ -143,9 +143,9 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var tripId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
-        var objectKey = $"trips/{current!.UserId:D}/{tripId:D}/{photographId:D}";
+        var objectKey = $"trip-photographs/{tripId:D}/{photographId:D}";
         _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(Trip(tripId, current.UserId, TripStatusEnum.Completed)));
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId, TripStatusEnum.Completed)));
         var capturedOn = StartedOn.AddMinutes(30);
 
         // Act
@@ -184,14 +184,15 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var tripId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
-        var objectKey = $"trips/{current!.UserId:D}/{tripId:D}/{photographId:D}";
+        var objectKey = $"trip-photographs/{tripId:D}/{photographId:D}";
         _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(Trip(tripId, current.UserId)));
+            .Returns(Result.Ok<Trip?>(Trip(tripId, current!.UserId)));
         _factory.TripPhotographRepository.GetByIdAsync(photographId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<TripPhotograph?>(new TripPhotograph
             {
                 Id = photographId,
                 TripId = tripId,
+                ContributedByUserId = current!.UserId,
                 ObjectKey = objectKey,
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = AddedOn
@@ -224,7 +225,7 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
             {
                 Id = photographId,
                 TripId = Guid.NewGuid(),
-                ObjectKey = "trips/other/other/other",
+                ObjectKey = "trip-photographs/other-trip/other-photograph",
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = AddedOn
             }));

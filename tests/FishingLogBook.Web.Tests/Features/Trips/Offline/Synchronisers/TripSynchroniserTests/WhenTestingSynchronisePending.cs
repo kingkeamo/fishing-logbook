@@ -84,7 +84,10 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
     {
         // Arrange
         MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>())
-            .Returns<TripDto?>(_ => throw new HttpRequestException("rejected"));
+            .Returns<TripDto?>(_ => throw new HttpRequestException(
+                "rejected",
+                null,
+                System.Net.HttpStatusCode.BadRequest));
         var store = await CreateStoreAsync(CreateTrip());
         var sut = CreateSut(store);
 
@@ -107,29 +110,14 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
 
 
     [Fact]
-    public async Task ItShouldSendAConflictedTripOnlyOncePerRunAndSettleOnTheNextRun()
+    public async Task ItShouldNotRetryATripAfterAConflictedRejection()
     {
         // Arrange
-        var attempts = 0;
-        var endedOn = StartedOn.AddHours(2);
         MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                attempts++;
-                if (attempts == 1)
-                {
-                    throw new HttpRequestException(
-                        "another active trip exists",
-                        null,
-                        System.Net.HttpStatusCode.Conflict);
-                }
-
-                return call.ArgAt<TripDto>(0) with
-                {
-                    Status = TripConstants.Completed,
-                    EndedOn = endedOn
-                };
-            });
+            .Returns<TripDto?>(_ => throw new HttpRequestException(
+                "another active trip exists",
+                null,
+                System.Net.HttpStatusCode.Conflict));
         var store = await CreateStoreAsync(CreateTrip());
         var sut = CreateSut(store);
 
@@ -141,15 +129,15 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
 
         // Assert
         afterConflict!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
-        attempts.Should().Be(2);
+        await MockTripClient.Received(1).UpsertAsync(
+            Arg.Any<TripDto>(),
+            Arg.Any<CancellationToken>());
         var settled = await store.GetAsync(OwnerUserId, TripId, CancellationToken.None);
-        settled!.SyncStatus.Should().Be(SyncStatus.Synchronised);
-        settled.Status.Should().Be(TripConstants.Completed);
-        settled.EndedOn.Should().Be(endedOn);
+        settled!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
     }
 
     [Fact]
-    public async Task ItShouldRetryATripThatPreviouslyFailed()
+    public async Task ItShouldNotRetryATripThatWasPermanentlyRejected()
     {
         // Arrange
         var store = await CreateStoreAsync(
@@ -160,11 +148,71 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        await MockTripClient.Received(1).UpsertAsync(
-            Arg.Is<TripDto>(trip => trip.Id == TripId),
+        await MockTripClient.DidNotReceive().UpsertAsync(
+            Arg.Any<TripDto>(),
             Arg.Any<CancellationToken>());
         var stored = await store.GetAsync(OwnerUserId, TripId, CancellationToken.None);
-        stored!.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        stored!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+    }
+
+    [Fact]
+    public async Task ItShouldMarkATripPermanentlyFailedWhenTheServerForbidsIt()
+    {
+        // Arrange
+        var store = await CreateStoreAsync(CreateTrip());
+        var sut = CreateSut(store);
+        MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>())
+            .Returns<TripDto?>(_ => throw new HttpRequestException(
+                "forbidden",
+                null,
+                System.Net.HttpStatusCode.Forbidden));
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        var stored = await store.GetAsync(OwnerUserId, TripId, CancellationToken.None);
+        stored!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+
+        // Act again - a second sync pass must not retry a permanently rejected trip
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockTripClient.Received(1).UpsertAsync(
+            Arg.Any<TripDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRetryATripThatFailedTransientlyAndThenSucceed()
+    {
+        // Arrange
+        var store = await CreateStoreAsync(CreateTrip());
+        var sut = CreateSut(store);
+        MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>())
+            .Returns<TripDto?>(
+                _ => throw new HttpRequestException(
+                    "service unavailable",
+                    null,
+                    System.Net.HttpStatusCode.ServiceUnavailable),
+                call => call.ArgAt<TripDto>(0));
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        var afterFirstAttempt = await store.GetAsync(OwnerUserId, TripId, CancellationToken.None);
+        afterFirstAttempt!.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockTripClient.Received(2).UpsertAsync(
+            Arg.Any<TripDto>(),
+            Arg.Any<CancellationToken>());
+        var afterRetry = await store.GetAsync(OwnerUserId, TripId, CancellationToken.None);
+        afterRetry!.SyncStatus.Should().Be(SyncStatus.Synchronised);
     }
 
     [Fact]

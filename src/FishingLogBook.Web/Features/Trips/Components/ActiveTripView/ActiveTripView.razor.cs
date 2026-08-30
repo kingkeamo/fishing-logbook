@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -19,6 +20,19 @@ public partial class ActiveTripView : ComponentBase
     [Parameter]
     [EditorRequired]
     public TripModel Trip { get; set; } = default!;
+
+    [Parameter]
+    [EditorRequired]
+    public Guid ViewerUserId { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<TripContributorDto> Contributors { get; set; } = [];
+
+    [Parameter]
+    public bool ShowParticipants { get; set; }
+
+    [Parameter]
+    public EventCallback OnShowParticipants { get; set; }
 
     [Parameter]
     public string? StartedLabel { get; set; }
@@ -66,7 +80,13 @@ public partial class ActiveTripView : ComponentBase
     public bool AllowLocalMedia { get; set; } = true;
 
     [Parameter]
-    public bool CanEdit { get; set; } = true;
+    public bool CanManageTrip { get; set; } = true;
+
+    [Parameter]
+    public bool CanAddPhotographs { get; set; } = true;
+
+    [Parameter]
+    public bool CanRecordCatch { get; set; } = true;
 
     [Parameter]
     public bool CanAddNotes { get; set; } = true;

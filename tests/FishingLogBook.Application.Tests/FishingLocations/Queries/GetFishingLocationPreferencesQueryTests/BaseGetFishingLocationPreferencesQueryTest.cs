@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.FishingLocations.Contracts.Services;
 using FishingLogBook.Application.FishingLocations.Queries;
 using NSubstitute;
 

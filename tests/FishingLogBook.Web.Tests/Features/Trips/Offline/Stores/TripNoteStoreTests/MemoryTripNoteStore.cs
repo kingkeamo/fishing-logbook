@@ -18,7 +18,7 @@ public sealed class MemoryTripNoteStore : ITripNoteStore
 
     public Task SaveAsync(TripNoteModel note, CancellationToken cancellationToken)
     {
-        if (note.OwnerUserId == Guid.Empty)
+        if (note.CreatedByUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A trip note requires an owner.");
         }
@@ -47,7 +47,7 @@ public sealed class MemoryTripNoteStore : ITripNoteStore
     {
         DeleteCalls++;
         if (!_notes.TryGetValue(noteId, out var note)
-            || note.OwnerUserId != ownerUserId
+            || note.CreatedByUserId != ownerUserId
             || note.TripId != tripId)
         {
             return Task.FromResult(false);
@@ -67,7 +67,7 @@ public sealed class MemoryTripNoteStore : ITripNoteStore
         ForTripCalls++;
         return Task.FromResult<IReadOnlyList<TripNoteModel>>(
             [.. _notes.Values
-                .Where(note => note.OwnerUserId == ownerUserId && note.TripId == tripId)
+                .Where(note => note.CreatedByUserId == ownerUserId && note.TripId == tripId)
                 .OrderBy(note => note.RecordedOn)
                 .ThenBy(note => note.Id)]);
     }
@@ -96,7 +96,7 @@ public sealed class MemoryTripNoteStore : ITripNoteStore
         [
             .. _notes.Values
                 .Where(note =>
-                    note.OwnerUserId == ownerUserId
+                    note.CreatedByUserId == ownerUserId
                     && note.SyncStatus != SyncStatus.Synchronised)
                 .OrderBy(note => note.RecordedOn)
                 .ThenBy(note => note.Id)
@@ -111,8 +111,9 @@ public sealed class MemoryTripNoteStore : ITripNoteStore
         return Task.FromResult<IReadOnlyCollection<Guid>>(
             [.. _notes.Values
                 .Where(note =>
-                    note.OwnerUserId == ownerUserId
-                    && note.SyncStatus != SyncStatus.Synchronised)
+                    note.CreatedByUserId == ownerUserId
+                    && note.SyncStatus != SyncStatus.Synchronised
+                    && note.SyncStatus != SyncStatus.FailedToSynchronise)
                 .Select(note => note.TripId)
                 .Distinct()]);
     }

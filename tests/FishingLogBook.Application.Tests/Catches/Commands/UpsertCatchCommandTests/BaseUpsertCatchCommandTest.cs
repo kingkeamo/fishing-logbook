@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Catches.Commands;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Catches.Commands.UpsertCatchCommandTests;

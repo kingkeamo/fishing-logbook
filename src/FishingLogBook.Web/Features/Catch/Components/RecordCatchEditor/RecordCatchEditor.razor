@@ -196,6 +196,27 @@
                         </MudButton>
                     }
 
+                    @if (ShowAnglerSelector)
+                    {
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.caption">@Loc["Catch_AnglerLabel"]</MudText>
+                            <MudStack Row="true" Spacing="1" Class="flex-wrap" id="record-catch-angler-chips">
+                                @foreach (var angler in AnglerOptions)
+                                {
+                                    var selected = angler.UserId == _selectedAnglerUserId;
+                                    <MudChip T="string"
+                                             Color="@(selected ? Color.Primary : Color.Default)"
+                                             Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                             Disabled="_isSaved"
+                                             OnClick="@(() => SelectAngler(angler.UserId))"
+                                             id="@($"record-catch-angler-{angler.UserId:D}")">
+                                        @angler.DisplayName
+                                    </MudChip>
+                                }
+                            </MudStack>
+                        </MudStack>
+                    }
+
                     @if (ShowTripAssociation)
                     {
                         <MudStack Row="true"
@@ -249,7 +270,7 @@
                                        Size="Size.Small"
                                        Color="Color.Primary"
                                        StartIcon="@FishingLogBookIcons.FishingTrip"
-                                       OnClick="RejoinTrip"
+                                       OnClick="RejoinTripAsync"
                                        Class="catch-trip-action"
                                        id="catch-trip-rejoin">
                                 @Loc["Catch_TripRejoin"]

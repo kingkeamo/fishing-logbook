@@ -22,7 +22,7 @@ public class WhenTestingRecord : BaseTripPhotographServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripPhotographNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockTripPhotographRepository.DidNotReceive().UpsertAsync(
             Arg.Any<TripPhotograph>(),
             Arg.Any<CancellationToken>());
@@ -39,7 +39,7 @@ public class WhenTestingRecord : BaseTripPhotographServiceTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        result.Errors[0].Should().BeOfType<TripPhotographNotFoundError>();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
         await MockTripPhotographRepository.DidNotReceive().UpsertAsync(
             Arg.Any<TripPhotograph>(),
             Arg.Any<CancellationToken>());
@@ -69,7 +69,7 @@ public class WhenTestingRecord : BaseTripPhotographServiceTest
 
         // Act
         var result = await Sut.RecordAsync(
-            Args(objectKey: $"catches/{CurrentUserId:D}/{TripId:D}/{PhotographId:D}"),
+            Args(objectKey: $"catch-photographs/{TripId:D}/{PhotographId:D}"),
             CancellationToken.None);
 
         // Assert

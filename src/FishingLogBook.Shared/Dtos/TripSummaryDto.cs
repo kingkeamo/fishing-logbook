@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Constants;
+
 namespace FishingLogBook.Shared.Dtos;
 
 public sealed record TripSummaryDto(
@@ -15,4 +17,18 @@ public sealed record TripSummaryDto(
     public int PhotographCount { get; init; }
 
     public int NoteCount { get; init; }
+
+    public Guid OwnerUserId { get; init; }
+
+    public string Role { get; init; } = TripParticipantConstants.Owner;
+
+    public int ParticipantCount { get; init; }
+
+    public bool IsShared
+    {
+        get
+        {
+            return ParticipantCount > 0;
+        }
+    }
 }

@@ -28,7 +28,7 @@ public class WhenTestingIndexedDbInteraction
 
         // Act
         var act = () => sut.SaveAsync(
-            NewPhotograph() with { OwnerUserId = Guid.Empty },
+            NewPhotograph() with { ContributedByUserId = Guid.Empty },
             CancellationToken.None);
 
         // Assert

@@ -489,6 +489,71 @@ public class WhenTestingRender : BaseCatchCardTest
     }
 
     [Fact]
+    public async Task ItShouldShowTheResolvedAnglerNameWhenRecordingForAnotherAngler()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, anglerUserId: OtherUserId, recordedByUserId: OwnerUserId);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday)
+            .Add(card => card.CurrentUserId, OwnerUserId)
+            .Add(card => card.AnglerName, "Patrick Connolly"));
+
+        // Assert
+        cut.Find($"#catch-card-provenance-{catchId:D}").TextContent
+            .Should().Contain("Recorded for Patrick Connolly");
+    }
+
+    [Fact]
+    public async Task ItShouldShowTheResolvedRecorderNameWhenSomeoneElseRecordedIt()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, anglerUserId: OwnerUserId, recordedByUserId: OtherUserId);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday)
+            .Add(card => card.CurrentUserId, OwnerUserId)
+            .Add(card => card.RecordedByName, "Myles Costello"));
+
+        // Assert
+        cut.Find($"#catch-card-provenance-{catchId:D}").TextContent
+            .Should().Contain("Recorded by Myles Costello");
+    }
+
+    [Fact]
+    public async Task ItShouldFallBackToTheGenericLabelWhenNoNameIsResolved()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.NewGuid();
+        var stored = StoredCatch(catchId, anglerUserId: OtherUserId, recordedByUserId: OwnerUserId);
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<CatchCard>(parameters => parameters
+            .Add(card => card.Catch, stored)
+            .Add(card => card.LocalCaughtOn, LocalToday)
+            .Add(card => card.LocalToday, LocalToday)
+            .Add(card => card.CurrentUserId, OwnerUserId));
+
+        // Assert
+        cut.Find($"#catch-card-provenance-{catchId:D}").TextContent
+            .Should().Contain("Recorded for another angler");
+    }
+
+    [Fact]
     public async Task ItShouldBeQuietWhenTheCatchIsFullySynchronised()
     {
         // Arrange

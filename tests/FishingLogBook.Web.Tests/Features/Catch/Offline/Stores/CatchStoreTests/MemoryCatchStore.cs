@@ -117,7 +117,7 @@ public sealed class MemoryCatchStore : ICatchStore
         }
 
         var item = _catches.GetValueOrDefault(catchId);
-        return Task.FromResult(item is not null && item.UserId == ownerUserId
+        return Task.FromResult(item is not null && IsVisibleTo(item, ownerUserId)
             ? item with
             {
                 Photographs = item.Photographs
@@ -143,7 +143,7 @@ public sealed class MemoryCatchStore : ICatchStore
             await BeforeSingleRead(catchId);
         }
 
-        if (!_catches.TryGetValue(catchId, out var stored) || stored.UserId != ownerUserId)
+        if (!_catches.TryGetValue(catchId, out var stored) || !IsVisibleTo(stored, ownerUserId))
         {
             return null;
         }
@@ -176,7 +176,7 @@ public sealed class MemoryCatchStore : ICatchStore
         Guid photographId,
         CancellationToken cancellationToken)
     {
-        if (!_catches.TryGetValue(catchId, out var existing) || existing.UserId != ownerUserId)
+        if (!_catches.TryGetValue(catchId, out var existing) || !IsVisibleTo(existing, ownerUserId))
         {
             return Task.FromResult<byte[]?>(null);
         }
@@ -199,6 +199,49 @@ public sealed class MemoryCatchStore : ICatchStore
             photograph => photograph.Id);
         _catches[catchRecord.Id] = existing with
         {
+            SyncStatus = catchRecord.SyncStatus,
+            MetadataSyncStatus = catchRecord.MetadataSyncStatus,
+            SyncedAt = catchRecord.SyncedAt,
+            Photographs = existing.Photographs
+                .Select(photograph => incomingPhotographs.TryGetValue(
+                    photograph.Id,
+                    out var incoming)
+                    ? photograph with
+                    {
+                        SyncStatus = incoming.SyncStatus,
+                        ObjectKey = incoming.ObjectKey
+                    }
+                    : photograph)
+                .ToArray()
+        };
+        return Task.CompletedTask;
+    }
+
+    public Task ReconcileMetadataAsync(
+        CatchModel catchRecord,
+        CancellationToken cancellationToken)
+    {
+        if (!_catches.TryGetValue(catchRecord.Id, out var existing))
+        {
+            throw new InvalidOperationException("Owned Catch was not found.");
+        }
+
+        var incomingPhotographs = catchRecord.Photographs.ToDictionary(
+            photograph => photograph.Id);
+        _catches[catchRecord.Id] = existing with
+        {
+            CaughtOn = catchRecord.CaughtOn,
+            UserId = catchRecord.UserId,
+            AnglerUserId = catchRecord.AnglerUserId,
+            RecordedByUserId = catchRecord.RecordedByUserId,
+            TripId = catchRecord.TripId,
+            SpeciesName = catchRecord.SpeciesName,
+            Weight = catchRecord.Weight,
+            Length = catchRecord.Length,
+            Method = catchRecord.Method,
+            BaitOrLure = catchRecord.BaitOrLure,
+            Notes = catchRecord.Notes,
+            Location = catchRecord.Location,
             SyncStatus = catchRecord.SyncStatus,
             MetadataSyncStatus = catchRecord.MetadataSyncStatus,
             SyncedAt = catchRecord.SyncedAt,
@@ -251,6 +294,11 @@ public sealed class MemoryCatchStore : ICatchStore
         }
 
         return Task.FromResult(eligible.Length);
+    }
+
+    private static bool IsVisibleTo(CatchModel catchRecord, Guid userId)
+    {
+        return catchRecord.UserId == userId || catchRecord.RecordedByUserId == userId;
     }
 
     private CatchModel WithPhotographBytes(CatchModel catchRecord)

@@ -102,9 +102,7 @@ public class WhenTestingUpsert : BaseTripPhotographRepositoryTest
         var saved = await Sut.UpsertAsync(photograph, CancellationToken.None);
 
         // Assert
-        saved.Value.ObjectKey.Should().Be($"trips/{userId:D}/{trip.Id:D}/{photograph.Id:D}");
-        saved.Value.ObjectKey.Should().StartWith("trips/");
-        saved.Value.ObjectKey.Should().NotStartWith("catches/");
+        saved.Value.ObjectKey.Should().Be($"trip-photographs/{trip.Id:D}/{photograph.Id:D}");
     }
 
     [Fact]

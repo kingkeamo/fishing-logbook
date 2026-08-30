@@ -84,12 +84,14 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         // Arrange
         Reset();
         var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        var catchId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        GivenCatchOwnedByCurrentUser(catchId, current!.UserId);
         _factory.CatchRepository.GetPhotographAsync(
                 Arg.Any<GetCatchPhotographArgs>(),
                 Arg.Any<CancellationToken>())
             .Returns(Result.Fail<CatchPhotograph?>("database unavailable"));
-        var catchId = Guid.NewGuid();
-        var photographId = Guid.NewGuid();
 
         // Act
         var response = await client.PostAsJsonAsync(
@@ -132,7 +134,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
-    public async Task ItShouldDeriveAStableOwnerScopedObjectKey()
+    public async Task ItShouldDeriveAStableCatchScopedObjectKey()
     {
         // Arrange
         Reset();
@@ -140,6 +142,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var catchId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
+        GivenCatchOwnedByCurrentUser(catchId, current!.UserId);
         _factory.CatchRepository.GetPhotographAsync(
                 Arg.Any<GetCatchPhotographArgs>(),
                 Arg.Any<CancellationToken>())
@@ -166,7 +169,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         first!.ObjectKey.Should().Be(
-            $"catches/{current!.UserId:D}/{catchId:D}/{photographId:D}");
+            $"catch-photographs/{catchId:D}/{photographId:D}");
         second!.ObjectKey.Should().Be(first.ObjectKey);
         await _factory.CatchRepository.Received(2).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
@@ -212,6 +215,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var catchId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
+        GivenCatchOwnedByCurrentUser(catchId, current!.UserId);
         _factory.CatchRepository.GetPhotographAsync(
                 Arg.Any<GetCatchPhotographArgs>(),
                 Arg.Any<CancellationToken>())
@@ -224,7 +228,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
                 }));
         var request = new RecordPhotographDto(
             photographId,
-            $"catches/{current!.UserId:D}/{catchId:D}/{photographId:D}",
+            $"catch-photographs/{catchId:D}/{photographId:D}",
             "image/jpeg");
 
         // Act
@@ -255,8 +259,10 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         // Arrange
         Reset();
         var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var catchId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
+        GivenCatchOwnedByCurrentUser(catchId, current!.UserId);
         _factory.CatchRepository.GetPhotographAsync(
                 Arg.Any<GetCatchPhotographArgs>(),
                 Arg.Any<CancellationToken>())
@@ -273,7 +279,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
             $"/api/catches/{catchId:D}/photographs",
             new RecordPhotographDto(
                 photographId,
-                "catches/another-user/replacement",
+                "catch-photographs/another-catch/replacement",
                 "image/jpeg"));
 
         // Assert
@@ -283,6 +289,18 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
                 query.CatchId == catchId
                 && query.PhotographId == photographId),
             Arg.Any<CancellationToken>());
+    }
+
+    private void GivenCatchOwnedByCurrentUser(Guid catchId, Guid currentUserId)
+    {
+        _factory.CatchRepository.GetByIdAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(new Catch
+            {
+                Id = catchId,
+                UserId = currentUserId,
+                AnglerUserId = currentUserId,
+                RecordedByUserId = currentUserId
+            }));
     }
 
     private void Reset()

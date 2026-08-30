@@ -1,7 +1,7 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
-using FishingLogBook.Application.Trips.Errors;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Dtos;
@@ -13,16 +13,16 @@ public sealed class TripCatchService : ITripCatchService
 {
     private static readonly TimeSpan ClockSkewAllowance = TimeSpan.FromMinutes(5);
 
-    private readonly ITripRepository _tripRepository;
+    private readonly ITripAccessService _tripAccessService;
     private readonly ICatchRepository _catchRepository;
     private readonly ICurrentUser _currentUser;
 
     public TripCatchService(
-        ITripRepository tripRepository,
+        ITripAccessService tripAccessService,
         ICatchRepository catchRepository,
         ICurrentUser currentUser)
     {
-        _tripRepository = tripRepository;
+        _tripAccessService = tripAccessService;
         _catchRepository = catchRepository;
         _currentUser = currentUser;
     }
@@ -31,17 +31,17 @@ public sealed class TripCatchService : ITripCatchService
         AssociateTripCatchesArgs args,
         CancellationToken cancellationToken)
     {
-        var trip = await LoadOwnedTripAsync(args.TripId, cancellationToken);
-        if (trip.IsFailed)
+        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        if (access.IsFailed)
         {
-            return Result.Fail<TripCatchAssociationDto>(trip.Errors);
+            return Result.Fail<TripCatchAssociationDto>(access.Errors);
         }
 
         var associated = new List<Guid>();
         var rejected = new List<Guid>();
         foreach (var catchId in args.CatchIds.Distinct())
         {
-            var outcome = await AssociateOneAsync(trip.Value, catchId, cancellationToken);
+            var outcome = await AssociateOneAsync(access.Value.Trip, catchId, cancellationToken);
             if (outcome.IsFailed)
             {
                 return Result.Fail<TripCatchAssociationDto>(outcome.Errors);
@@ -99,21 +99,5 @@ public sealed class TripCatchService : ITripCatchService
         }
 
         return candidate.CaughtOn <= (trip.EndedOn ?? DateTimeOffset.UtcNow.Add(ClockSkewAllowance));
-    }
-
-    private async Task<Result<Trip>> LoadOwnedTripAsync(Guid tripId, CancellationToken cancellationToken)
-    {
-        var trip = await _tripRepository.GetByIdAsync(tripId, cancellationToken);
-        if (trip.IsFailed)
-        {
-            return Result.Fail<Trip>(trip.Errors);
-        }
-
-        if (trip.Value is null || trip.Value.OwnerUserId != _currentUser.UserId)
-        {
-            return Result.Fail<Trip>(new TripNotFoundError());
-        }
-
-        return Result.Ok(trip.Value);
     }
 }

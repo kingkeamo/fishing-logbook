@@ -24,9 +24,19 @@ else
                              id="@ItemId(item)">
                 <ItemContent>
                     <MudStack Spacing="1" Class="trip-timeline-entry">
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary trip-timeline-time">
-                            @TimeLabel(item, showDate)
-                        </MudText>
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary trip-timeline-time">
+                                @TimeLabel(item, showDate)
+                            </MudText>
+                            @if (ContributorName(item) is { } contributor)
+                            {
+                                <MudText Typo="Typo.caption"
+                                         Class="mud-text-secondary trip-timeline-contributor"
+                                         id="@($"{ItemId(item)}-contributor")">
+                                    @contributor
+                                </MudText>
+                            }
+                        </MudStack>
 
                         @switch (item.Kind)
                         {
@@ -66,6 +76,14 @@ else
                                                          Class="mud-text-secondary"
                                                          id="@($"{ItemId(item)}-measurements")">@measurements</MudText>
                                             }
+                                            @if (RecordedByName(item) is { } recordedBy)
+                                            {
+                                                <MudText Typo="Typo.caption"
+                                                         Class="mud-text-secondary trip-timeline-catch-recorder"
+                                                         id="@($"{ItemId(item)}-recorded-by")">
+                                                    @Loc["Trip_Timeline_RecordedBy", recordedBy]
+                                                </MudText>
+                                            }
                                         </MudStack>
                                         @if (CatchHref(item) is { } href)
                                         {
@@ -88,7 +106,7 @@ else
                                           Class="trip-timeline-note">
                                     <MudText Typo="Typo.body2"
                                              Class="trip-timeline-note-text">@item.Text</MudText>
-                                    @if (CanEditNotes && item.NoteId is { } noteId)
+                                    @if (CanEditNotes && IsOwnContribution(item) && item.NoteId is { } noteId)
                                     {
                                         <MudStack Row="true" Spacing="0" Class="trip-timeline-note-actions">
                                             <MudIconButton Icon="@Icons.Material.Filled.Edit"

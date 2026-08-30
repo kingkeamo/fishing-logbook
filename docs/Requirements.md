@@ -1624,9 +1624,23 @@ An active trip must remain recoverable after the application is closed and reope
 
 A completed trip should be presented as a chronological record of the day, interleaving trip start and finish, photographs, notes and catches by time.
 
+## Trip collaboration
+
+Anglers who fish together participate in one shared trip: one trip, one trip id, one
+timeline, several participating anglers.
+
+The trip owner invites an existing FishingLogBook angler, who accepts or declines. Only
+accepted participants may contribute. Participants add their own catches, notes and trip
+photographs, and those contributions keep their real author. The owner alone edits
+trip-level details, finishes the trip and manages participants. Removing a participant
+ends their future write access but leaves their existing contributions in the diary.
+
+Once an accepted participant has the shared trip on their device, their own catches,
+notes and photographs stay offline-first and synchronise back into the same trip.
+Inviting, accepting, declining and membership changes require connectivity.
+
 ## Out of scope for the first Trip implementation
 
-- participants and invitations
 - guided trip and client workflows
 - video
 - fishing venues and fisheries

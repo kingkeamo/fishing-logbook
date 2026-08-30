@@ -1,6 +1,5 @@
 using Dapper;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
 using FishingLogBook.Domain.Trips;
 using FluentResults;
 using Microsoft.Extensions.Logging;

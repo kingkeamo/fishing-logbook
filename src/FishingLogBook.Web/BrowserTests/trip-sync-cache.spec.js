@@ -100,7 +100,7 @@ async function seedCatch(page) {
     }, { catchStoreModule, ownerUserId, seededCatchId });
 }
 
-test('the pending scan returns only this angler unsynchronised trips', async ({ page }) => {
+test('the pending scan returns only this angler unsynchronised trips, excluding permanently failed ones', async ({ page }) => {
     await saveTrips(page, [
         trip('aaaaaaaa-0000-0000-0000-000000000001', { status: 'Completed', endedOn }),
         trip('aaaaaaaa-0000-0000-0000-000000000002', { syncStatus: 'failedToSynchronise' }),
@@ -109,8 +109,7 @@ test('the pending scan returns only this angler unsynchronised trips', async ({ 
     ]);
 
     expect(await readPending(page, ownerUserId)).toEqual([
-        'aaaaaaaa-0000-0000-0000-000000000001',
-        'aaaaaaaa-0000-0000-0000-000000000002'
+        'aaaaaaaa-0000-0000-0000-000000000001'
     ]);
 });
 

@@ -12,6 +12,46 @@
             <MudText Typo="Typo.body2" Class="mud-text-secondary">@Loc["Trip_ListSubtitle"]</MudText>
         </MudStack>
 
+        @if (_invitations.Count > 0)
+        {
+            <MudStack Spacing="2" id="trip-invitations">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Trip_Invitations"]</MudText>
+                @foreach (var invitation in _invitations)
+                {
+                    <MudPaper Class="pa-3 trip-invitation-card"
+                              Elevation="1"
+                              id="@($"trip-invitation-{invitation.TripId:D}")">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.body2" id="@($"trip-invitation-from-{invitation.TripId:D}")">
+                                @Loc["Trip_InvitationFrom", InviterName(invitation)]
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                @InvitationSummary(invitation)
+                            </MudText>
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           Disabled="_isRespondingToInvitation"
+                                           OnClick="@(() => AcceptInvitationAsync(invitation.TripId))"
+                                           id="@($"trip-invitation-accept-{invitation.TripId:D}")">
+                                    @Loc["Trip_InvitationAccept"]
+                                </MudButton>
+                                <MudButton Variant="Variant.Text"
+                                           Color="Color.Default"
+                                           Size="Size.Small"
+                                           Disabled="_isRespondingToInvitation"
+                                           OnClick="@(() => DeclineInvitationAsync(invitation.TripId))"
+                                           id="@($"trip-invitation-decline-{invitation.TripId:D}")">
+                                    @Loc["Trip_InvitationDecline"]
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+
         @if (_loadFailed)
         {
             <MudAlert Severity="Severity.Error" id="trip-list-load-failed">
@@ -81,17 +121,30 @@
                                                  id="@($"trip-list-place-{trip.Id:D}")">@trip.PlaceName</MudText>
                                     }
                                 </MudStack>
-                                @if (trip.IsActive)
-                                {
-                                    <MudChip T="string"
-                                             Size="Size.Small"
-                                             Color="Color.Secondary"
-                                             Variant="Variant.Filled"
-                                             Icon="@Icons.Material.Filled.PlayArrow"
-                                             id="@($"trip-list-active-{trip.Id:D}")">
-                                        @Loc["Trip_ActiveLabel"]
-                                    </MudChip>
-                                }
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                    @if (trip.IsShared)
+                                    {
+                                        <MudChip T="string"
+                                                 Size="Size.Small"
+                                                 Color="Color.Default"
+                                                 Variant="Variant.Outlined"
+                                                 Icon="@Icons.Material.Filled.Group"
+                                                 id="@($"trip-list-shared-{trip.Id:D}")">
+                                            @Loc["Trip_SharedLabel"]
+                                        </MudChip>
+                                    }
+                                    @if (trip.IsActive)
+                                    {
+                                        <MudChip T="string"
+                                                 Size="Size.Small"
+                                                 Color="Color.Secondary"
+                                                 Variant="Variant.Filled"
+                                                 Icon="@Icons.Material.Filled.PlayArrow"
+                                                 id="@($"trip-list-active-{trip.Id:D}")">
+                                            @Loc["Trip_ActiveLabel"]
+                                        </MudChip>
+                                    }
+                                </MudStack>
                             </MudStack>
 
                             <MudStack Row="true" Spacing="4" Class="flex-wrap">

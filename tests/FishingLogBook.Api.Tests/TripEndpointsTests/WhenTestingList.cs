@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
 using FishingLogBook.Api.Tests.TestSupport;
+using FishingLogBook.Application.Args;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
 using FishingLogBook.Shared.Constants;
@@ -34,8 +35,8 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        await _factory.TripRepository.DidNotReceive().GetSummariesByOwnerUserIdAsync(
-            Arg.Any<Guid>(),
+        await _factory.TripRepository.DidNotReceive().GetSummariesForUserAsync(
+            Arg.Any<GetMyTripsArgs>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -45,7 +46,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         // Arrange
         ResetRepositories();
         _factory.TripRepository
-            .GetSummariesByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .GetSummariesForUserAsync(Arg.Any<GetMyTripsArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Fail<IReadOnlyList<TripSummary>>("Failed to save the trip."));
         var client = _factory.CreateAuthenticatedClient();
 
@@ -54,8 +55,8 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
-        await _factory.TripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
-            Arg.Any<Guid>(),
+        await _factory.TripRepository.Received(1).GetSummariesForUserAsync(
+            Arg.Any<GetMyTripsArgs>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -76,8 +77,8 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var trips = await response.Content.ReadFromJsonAsync<IReadOnlyList<TripSummaryDto>>();
         trips.Should().BeEmpty();
-        await _factory.TripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
-            current!.UserId,
+        await _factory.TripRepository.Received(1).GetSummariesForUserAsync(
+            Arg.Is<GetMyTripsArgs>(args => args.UserId == current!.UserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -93,7 +94,9 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         var activeId = Guid.NewGuid();
         var completedId = Guid.NewGuid();
         _factory.TripRepository
-            .GetSummariesByOwnerUserIdAsync(current!.UserId, Arg.Any<CancellationToken>())
+            .GetSummariesForUserAsync(
+                Arg.Is<GetMyTripsArgs>(args => args.UserId == current!.UserId),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>(
             [
                 new TripSummary
@@ -129,8 +132,8 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         completed.CatchCount.Should().Be(4);
         completed.PhotographCount.Should().Be(2);
         completed.NoteCount.Should().Be(1);
-        await _factory.TripRepository.Received(1).GetSummariesByOwnerUserIdAsync(
-            current.UserId,
+        await _factory.TripRepository.Received(1).GetSummariesForUserAsync(
+            Arg.Is<GetMyTripsArgs>(args => args.UserId == current.UserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -143,7 +146,9 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
             TestJwt.CreateAccessToken(subject: "trip-list-no-amplification"));
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         _factory.TripRepository
-            .GetSummariesByOwnerUserIdAsync(current!.UserId, Arg.Any<CancellationToken>())
+            .GetSummariesForUserAsync(
+                Arg.Is<GetMyTripsArgs>(args => args.UserId == current!.UserId),
+                Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>(
             [
                 new TripSummary { Id = Guid.NewGuid(), Status = TripStatusEnum.Completed, StartedOn = StartedOn },
@@ -172,7 +177,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         _factory.TripNoteRepository.ClearReceivedCalls();
         _factory.TripPhotographRepository.ClearReceivedCalls();
         _factory.TripRepository
-            .GetSummariesByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .GetSummariesForUserAsync(Arg.Any<GetMyTripsArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>([]));
     }
 }

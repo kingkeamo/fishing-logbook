@@ -1,6 +1,6 @@
 using FishingLogBook.Application.Capabilities.Errors;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
 
 namespace FishingLogBook.Api.Authorization;
 

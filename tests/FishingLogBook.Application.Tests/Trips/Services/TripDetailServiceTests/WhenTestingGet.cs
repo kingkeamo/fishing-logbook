@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Capabilities.Errors;
+using FishingLogBook.Application.Tests.Common;
 using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -17,6 +18,8 @@ public class WhenTestingGet : BaseTripDetailServiceTest
     {
         // Arrange
         MockCurrentUser.IsResolved.Returns(false);
+        MockTripAccessService.RequireContributorAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<TripAccess>(new CurrentUserUnresolvedError()));
 
         // Act
         var result = await Sut.GetAsync(new GetTripArgs { TripId = TripId }, CancellationToken.None);
@@ -24,7 +27,7 @@ public class WhenTestingGet : BaseTripDetailServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Should().BeOfType<CurrentUserUnresolvedError>();
-        await MockTripRepository.DidNotReceive().GetByIdAsync(
+        await MockTripRepository.DidNotReceive().GetCatchSummariesByTripIdAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
         await MockTripNoteRepository.DidNotReceive().GetByTripIdAsync(
@@ -36,8 +39,7 @@ public class WhenTestingGet : BaseTripDetailServiceTest
     public async Task ItShouldReportNotFoundWhenTheTripDoesNotExist()
     {
         // Arrange
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(null));
+        MockTripAccessService.GivenNoAccess(TripId);
 
         // Act
         var result = await Sut.GetAsync(new GetTripArgs { TripId = TripId }, CancellationToken.None);
@@ -54,8 +56,7 @@ public class WhenTestingGet : BaseTripDetailServiceTest
     public async Task ItShouldReportNotFoundForAnotherAnglersTrip()
     {
         // Arrange
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(StoredTrip(ownerUserId: OtherUserId)));
+        MockTripAccessService.GivenOwner(StoredTrip(ownerUserId: OtherUserId), CurrentUserId);
 
         // Act
         var result = await Sut.GetAsync(new GetTripArgs { TripId = TripId }, CancellationToken.None);
@@ -159,12 +160,13 @@ public class WhenTestingGet : BaseTripDetailServiceTest
     public async Task ItShouldReturnTheCompletedTripWithItsTimelineContent()
     {
         // Arrange
-        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok<Trip?>(StoredTrip(
+        MockTripAccessService.GivenOwner(
+            StoredTrip(
                 status: TripStatusEnum.Completed,
                 endedOn: StartedOn.AddHours(6),
                 title: "Day with Dad",
-                placeName: "Lough Corrib")));
+                placeName: "Lough Corrib"),
+            CurrentUserId);
         MockTripNoteRepository.GetByTripIdAsync(TripId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripNote>>(
             [

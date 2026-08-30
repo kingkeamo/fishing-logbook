@@ -180,3 +180,38 @@ export function normalisedOwnerId(value) {
 
     return normalised;
 }
+
+export const TRIP_LOCAL_ORIGIN = 'local';
+export const TRIP_SERVER_ORIGIN = 'server';
+
+export function tripOrigin(trip) {
+    return trip?.origin === TRIP_SERVER_ORIGIN ? TRIP_SERVER_ORIGIN : TRIP_LOCAL_ORIGIN;
+}
+
+export function isLocalOriginTrip(trip) {
+    return tripOrigin(trip) === TRIP_LOCAL_ORIGIN;
+}
+
+export function isTripOwner(trip, userId) {
+    const user = normalisedOwnerId(userId);
+    return user !== '' && normalisedOwnerId(trip?.ownerUserId) === user;
+}
+
+export function tripParticipantIds(trip) {
+    return (Array.isArray(trip?.participantUserIds) ? trip.participantUserIds : [])
+        .map(normalisedOwnerId)
+        .filter(Boolean);
+}
+
+export function canWriteTrip(trip, userId) {
+    const user = normalisedOwnerId(userId);
+    if (!trip || user === '') {
+        return false;
+    }
+
+    return isTripOwner(trip, user) || tripParticipantIds(trip).includes(user);
+}
+
+export function contributorId(entry) {
+    return normalisedOwnerId(entry?.createdByUserId ?? entry?.contributedByUserId ?? entry?.ownerUserId);
+}

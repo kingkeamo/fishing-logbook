@@ -1,6 +1,6 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Users.Commands;
+using FishingLogBook.Application.Users.Contracts.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Users.Commands.ResolveCurrentUserCommandTests;

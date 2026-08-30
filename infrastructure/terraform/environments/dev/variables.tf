@@ -28,6 +28,16 @@ variable "r2_location" {
   default     = "enam"
 }
 
+variable "r2_cors_allowed_origins" {
+  type        = list(string)
+  description = "Browser origins allowed to upload/download catch and trip photographs directly against the dev R2 bucket."
+  default = [
+    "https://localhost:7005",
+    "http://localhost:5019",
+    "https://fishing-logbook-dev.pages.dev",
+  ]
+}
+
 variable "cognito_callback_urls" {
   type        = list(string)
   description = "Exact OAuth callback URLs for the PWA app client."

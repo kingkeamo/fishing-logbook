@@ -14,7 +14,7 @@ internal static class LocalCatchVisibility
         }
 
         return records
-            .Where(record => record.UserId == ownerUserId)
+            .Where(record => record.UserId == ownerUserId || record.RecordedByUserId == ownerUserId)
             .ToArray();
     }
 }

@@ -1,5 +1,5 @@
 using FishingLogBook.Application.Capabilities.Commands;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Capabilities.Contracts.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Capabilities.Commands.GrantPlatformCapabilityCommandTests;

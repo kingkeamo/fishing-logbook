@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.FishingPreferences.Contracts.Repositories;
 using FishingLogBook.Application.FishingPreferences.Services;
 using FishingLogBook.Domain.Catalogue;
 using NSubstitute;

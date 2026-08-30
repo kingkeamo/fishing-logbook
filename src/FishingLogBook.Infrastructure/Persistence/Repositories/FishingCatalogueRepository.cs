@@ -1,5 +1,5 @@
 using Dapper;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.FishingPreferences.Contracts.Repositories;
 using FishingLogBook.Domain.Catalogue;
 using FluentResults;
 using Microsoft.Extensions.Logging;
@@ -37,6 +37,11 @@ public sealed class FishingCatalogueRepository : IFishingCatalogueRepository
                 cancellationToken: cancellationToken));
             return Result.Ok<IReadOnlyList<FishingMethod>>([.. rows]);
         }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug(exception, "Fishing method catalogue read was cancelled.");
+            throw;
+        }
         catch (Exception exception)
         {
             _logger.LogError(exception, MethodsFailedMessage);
@@ -58,6 +63,11 @@ public sealed class FishingCatalogueRepository : IFishingCatalogueRepository
                 sql,
                 cancellationToken: cancellationToken));
             return Result.Ok<IReadOnlyList<Species>>([.. rows]);
+        }
+        catch (OperationCanceledException exception) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug(exception, "Species catalogue read was cancelled.");
+            throw;
         }
         catch (Exception exception)
         {

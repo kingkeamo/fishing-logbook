@@ -1,4 +1,5 @@
 using System.Globalization;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -26,7 +27,7 @@ public partial class TripTimeline : ComponentBase, IDisposable
     public IReadOnlyList<TripTimelineItemModel> Items { get; set; } = [];
 
     [Parameter]
-    public Guid OwnerUserId { get; set; }
+    public Guid ViewerUserId { get; set; }
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -36,6 +37,9 @@ public partial class TripTimeline : ComponentBase, IDisposable
 
     [Parameter]
     public bool CanEditNotes { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<TripContributorDto> Contributors { get; set; } = [];
 
     [Parameter]
     public EventCallback<Guid> OnDeleteNote { get; set; }
@@ -138,12 +142,12 @@ public partial class TripTimeline : ComponentBase, IDisposable
         {
             var bytes = item.Kind == TripTimelineKindEnum.Photograph
                 ? await TripPhotographStore.GetBytesAsync(
-                    OwnerUserId,
+                    ViewerUserId,
                     TripId,
                     item.PhotographId!.Value,
                     _cancellationTokenSource.Token)
                 : await CatchStore.GetPhotographBytesAsync(
-                    OwnerUserId,
+                    ViewerUserId,
                     item.CatchId ?? Guid.Empty,
                     item.PhotographId!.Value,
                     _cancellationTokenSource.Token);
@@ -314,5 +318,45 @@ public partial class TripTimeline : ComponentBase, IDisposable
     {
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
+    }
+
+    private bool IsOwnContribution(TripTimelineItemModel item)
+    {
+        return item.ContributedByUserId == Guid.Empty || item.ContributedByUserId == ViewerUserId;
+    }
+
+    private string? ContributorName(TripTimelineItemModel item)
+    {
+        if (item.Kind == TripTimelineKindEnum.Catch)
+        {
+            return AnglerName(item);
+        }
+
+        if (IsOwnContribution(item))
+        {
+            return null;
+        }
+
+        return DisplayNameFor(item.ContributedByUserId);
+    }
+
+    private string AnglerName(TripTimelineItemModel item)
+    {
+        return DisplayNameFor(item.ContributedByUserId);
+    }
+
+    private string? RecordedByName(TripTimelineItemModel item)
+    {
+        return item.RecordedByUserId == Guid.Empty || item.RecordedByUserId == item.ContributedByUserId
+            ? null
+            : DisplayNameFor(item.RecordedByUserId);
+    }
+
+    private string DisplayNameFor(Guid userId)
+    {
+        var contributor = Contributors.FirstOrDefault(candidate => candidate.UserId == userId);
+        return string.IsNullOrWhiteSpace(contributor?.DisplayName)
+            ? Loc["Trip_ContributorUnknown"].Value
+            : contributor.DisplayName;
     }
 }

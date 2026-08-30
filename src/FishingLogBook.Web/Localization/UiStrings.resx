@@ -438,6 +438,12 @@
   <data name="Catch_RecordedBySomeoneElse" xml:space="preserve">
     <value>Recorded by someone else</value>
   </data>
+  <data name="Catch_RecordedFor" xml:space="preserve">
+    <value>Recorded for {0}</value>
+  </data>
+  <data name="Catch_RecordedByName" xml:space="preserve">
+    <value>Recorded by {0}</value>
+  </data>
   <data name="Catch_ManageLocationPrivacy" xml:space="preserve">
     <value>Location privacy</value>
   </data>
@@ -530,6 +536,30 @@
   </data>
   <data name="Catch_EditMethod" xml:space="preserve">
     <value>Fishing method</value>
+  </data>
+  <data name="Catch_EditTripLabel" xml:space="preserve">
+    <value>Trip</value>
+  </data>
+  <data name="Catch_AnglerLabel" xml:space="preserve">
+    <value>Angler</value>
+  </data>
+  <data name="Catch_AnglerMe" xml:space="preserve">
+    <value>Me</value>
+  </data>
+  <data name="Catch_CaughtByLabel" xml:space="preserve">
+    <value>Caught by</value>
+  </data>
+  <data name="Catch_RecordedByLabel" xml:space="preserve">
+    <value>Recorded by</value>
+  </data>
+  <data name="Catch_EditAnglerUpdateFailed" xml:space="preserve">
+    <value>Couldn't update who caught this fish. Please try again.</value>
+  </data>
+  <data name="Catch_ProvenanceOfflineNotice" xml:space="preserve">
+    <value>Go online to change who caught this fish.</value>
+  </data>
+  <data name="Catch_ProvenanceUpdate" xml:space="preserve">
+    <value>Update</value>
   </data>
   <data name="Catch_EditBaitOrLure" xml:space="preserve">
     <value>Bait or lure</value>
@@ -1081,6 +1111,9 @@
   <data name="Trip_Timeline_CatchUnknownSpecies" xml:space="preserve">
     <value>Catch recorded</value>
   </data>
+  <data name="Trip_Timeline_RecordedBy" xml:space="preserve">
+    <value>Recorded by {0}</value>
+  </data>
   <data name="Trip_Timeline_Photograph" xml:space="preserve">
     <value>Photograph</value>
   </data>
@@ -1212,5 +1245,83 @@
   </data>
   <data name="Trip_StatusFinished" xml:space="preserve">
     <value>Finished</value>
+  </data>
+  <data name="Modal_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Trip_Participants" xml:space="preserve">
+    <value>Anglers on this trip</value>
+  </data>
+  <data name="Trip_ParticipantsLoadFailed" xml:space="preserve">
+    <value>We could not load the anglers on this trip.</value>
+  </data>
+  <data name="Trip_ParticipantsActionFailed" xml:space="preserve">
+    <value>That change could not be saved. Try again.</value>
+  </data>
+  <data name="Trip_ParticipantsOwnerOnly" xml:space="preserve">
+    <value>Only the angler who started this trip can invite or remove anglers.</value>
+  </data>
+  <data name="Trip_ParticipantOwner" xml:space="preserve">
+    <value>Started this trip</value>
+  </data>
+  <data name="Trip_ParticipantPending" xml:space="preserve">
+    <value>Invitation pending</value>
+  </data>
+  <data name="Trip_ParticipantAccepted" xml:space="preserve">
+    <value>Fishing this trip</value>
+  </data>
+  <data name="Trip_ParticipantDeclined" xml:space="preserve">
+    <value>Declined</value>
+  </data>
+  <data name="Trip_InviteAngler" xml:space="preserve">
+    <value>Invite angler</value>
+  </data>
+  <data name="Trip_Invite" xml:space="preserve">
+    <value>Invite</value>
+  </data>
+  <data name="Trip_InviteSearchLabel" xml:space="preserve">
+    <value>Search by name or email</value>
+  </data>
+  <data name="Trip_InviteSearchHelp" xml:space="preserve">
+    <value>Search anglers already using FishingLogBook. Enter at least three characters.</value>
+  </data>
+  <data name="Trip_InviteNoResults" xml:space="preserve">
+    <value>No matching angler was found.</value>
+  </data>
+  <data name="Trip_InviteSearchFailed" xml:space="preserve">
+    <value>We could not search for anglers. Try again.</value>
+  </data>
+  <data name="Trip_InviteFailed" xml:space="preserve">
+    <value>That angler could not be invited. They may already be on this trip.</value>
+  </data>
+  <data name="Trip_RemoveParticipant" xml:space="preserve">
+    <value>Remove angler</value>
+  </data>
+  <data name="Trip_RemoveParticipantTitle" xml:space="preserve">
+    <value>Remove this angler?</value>
+  </data>
+  <data name="Trip_RemoveParticipantMessage" xml:space="preserve">
+    <value>They will no longer be able to add to this trip. Their catches, notes and photographs stay in the diary.</value>
+  </data>
+  <data name="Trip_Invitations" xml:space="preserve">
+    <value>Trip invitations</value>
+  </data>
+  <data name="Trip_InvitationFrom" xml:space="preserve">
+    <value>{0} invited you to fish this trip.</value>
+  </data>
+  <data name="Trip_InvitationAccept" xml:space="preserve">
+    <value>Accept</value>
+  </data>
+  <data name="Trip_InvitationDecline" xml:space="preserve">
+    <value>Decline</value>
+  </data>
+  <data name="Trip_ContributorUnknown" xml:space="preserve">
+    <value>Another angler</value>
+  </data>
+  <data name="Trip_SharedLabel" xml:space="preserve">
+    <value>Shared</value>
+  </data>
+  <data name="Trip_ParticipantOnlyAction" xml:space="preserve">
+    <value>Only the angler who started this trip can do that.</value>
   </data>
 </root>

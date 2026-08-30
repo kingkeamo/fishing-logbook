@@ -74,7 +74,11 @@ if (migration.status !== 0) throw new Error(`E2E migrations failed.\n${migration
 run('dotnet', ['run', '--project', 'src/FishingLogBook.Api', '--launch-profile', 'https'], {
     ASPNETCORE_ENVIRONMENT: 'Development',
     ConnectionStrings__Postgres: connection,
-    DOTNET_SYSTEM_NET_DISABLEIPV6: '1'
+    DOTNET_SYSTEM_NET_DISABLEIPV6: '1',
+    // Photograph uploads during E2E runs must never land in the dev or prod R2
+    // buckets. This reuses whatever R2 credentials are already configured
+    // locally (dotnet user-secrets), only overriding which bucket they write to.
+    ObjectStorage__BucketName: 'fishing-logbook-e2e'
 });
 await waitFor('http://localhost:5110/health', 'API');
 

@@ -33,9 +33,9 @@ public sealed class IndexedDbTripNoteStore : ITripNoteStore
 
     public async Task SaveAsync(TripNoteModel note, CancellationToken cancellationToken)
     {
-        if (note.OwnerUserId == Guid.Empty)
+        if (note.CreatedByUserId == Guid.Empty)
         {
-            throw new InvalidOperationException("A trip note requires an owner.");
+            throw new InvalidOperationException("A trip note requires an author.");
         }
 
         if (note.Id == Guid.Empty || note.TripId == Guid.Empty)
@@ -68,12 +68,12 @@ public sealed class IndexedDbTripNoteStore : ITripNoteStore
     }
 
     public async Task<bool> DeleteAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid noteId,
         CancellationToken cancellationToken)
     {
-        RequireOwner(ownerUserId);
+        RequireViewer(viewerUserId);
         return await OfflineOperation.ExecuteAsync(
             "delete",
             StoreName,
@@ -89,7 +89,7 @@ public sealed class IndexedDbTripNoteStore : ITripNoteStore
                 return await module.InvokeAsync<bool>(
                     "deleteTripNote",
                     token,
-                    ownerUserId.ToString("D"),
+                    viewerUserId.ToString("D"),
                     tripId.ToString("D"),
                     noteId.ToString("D"));
             },
@@ -98,26 +98,26 @@ public sealed class IndexedDbTripNoteStore : ITripNoteStore
     }
 
     public async Task<IReadOnlyList<TripNoteModel>> GetForTripAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         CancellationToken cancellationToken)
     {
-        RequireOwner(ownerUserId);
+        RequireViewer(viewerUserId);
         var loaded = await ReadNotesAsync(
             "metadata-read",
             "getTripNotes",
-            [ownerUserId.ToString("D"), tripId.ToString("D")],
+            [viewerUserId.ToString("D"), tripId.ToString("D")],
             cancellationToken);
-        return [.. loaded.Where(note => note.OwnerUserId == ownerUserId && note.TripId == tripId)];
+        return [.. loaded.Where(note => note.TripId == tripId)];
     }
 
     public async Task<TripNoteModel?> GetAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         Guid tripId,
         Guid noteId,
         CancellationToken cancellationToken)
     {
-        var notes = await GetForTripAsync(ownerUserId, tripId, cancellationToken);
+        var notes = await GetForTripAsync(viewerUserId, tripId, cancellationToken);
         return notes.FirstOrDefault(note => note.Id == noteId);
     }
 
@@ -149,10 +149,10 @@ public sealed class IndexedDbTripNoteStore : ITripNoteStore
     }
 
     public async Task<IReadOnlyList<TripNoteModel>> GetPendingAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken)
     {
-        RequireOwner(ownerUserId);
+        RequireViewer(viewerUserId);
         var loaded = await OfflineOperation.ExecuteAsync(
             "pending-read",
             StoreName,
@@ -168,21 +168,21 @@ public sealed class IndexedDbTripNoteStore : ITripNoteStore
                 var records = await module.InvokeAsync<StoredTripRecord[]>(
                     "getPendingTripNotes",
                     token,
-                    ownerUserId.ToString("D"));
+                    viewerUserId.ToString("D"));
                 return (IReadOnlyList<TripNoteModel>)(records ?? [])
                     .Select(record => TripJson.DeserializeNote(record.Json))
                     .ToArray();
             },
             cancellationToken,
             _logging);
-        return [.. loaded.Where(note => note.OwnerUserId == ownerUserId)];
+        return [.. loaded.Where(note => note.CreatedByUserId == viewerUserId)];
     }
 
     public async Task<IReadOnlyCollection<Guid>> GetTripsWithPendingNotesAsync(
-        Guid ownerUserId,
+        Guid viewerUserId,
         CancellationToken cancellationToken)
     {
-        if (ownerUserId == Guid.Empty)
+        if (viewerUserId == Guid.Empty)
         {
             return [];
         }
@@ -202,18 +202,18 @@ public sealed class IndexedDbTripNoteStore : ITripNoteStore
                 return await module.InvokeAsync<Guid[]>(
                     "getTripsWithPendingNotes",
                     token,
-                    ownerUserId.ToString("D"));
+                    viewerUserId.ToString("D"));
             },
             cancellationToken,
             _logging);
         return loaded ?? [];
     }
 
-    private static void RequireOwner(Guid ownerUserId)
+    private static void RequireViewer(Guid viewerUserId)
     {
-        if (ownerUserId == Guid.Empty)
+        if (viewerUserId == Guid.Empty)
         {
-            throw new InvalidOperationException("A trip note owner is required.");
+            throw new InvalidOperationException("A trip note angler is required.");
         }
     }
 

@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Services;
@@ -23,6 +24,8 @@ public partial class OfflineActiveTrip : ComponentBase
     private int? _photographCount;
     private int? _noteCount;
     private IReadOnlyList<TripTimelineItemModel> _timeline = [];
+    private IReadOnlyList<TripContributorDto> _contributors = [];
+    private Guid _viewerUserId;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -112,6 +115,7 @@ public partial class OfflineActiveTrip : ComponentBase
         {
             var owner = OfflineOwnerContext.Owner
                 ?? throw new InvalidOperationException("Offline access is locked.");
+            _viewerUserId = owner.UserId;
             _trip = await TripStore.GetAsync(owner.UserId, TripId, CancellationToken.None);
             if (_trip is not null)
             {
@@ -145,17 +149,27 @@ public partial class OfflineActiveTrip : ComponentBase
         await LoadAsync();
     }
 
-    private bool CanEdit
+    private bool CanManageTrip
     {
         get
         {
-            return !IsCompleted;
+            return !IsCompleted && _trip?.IsOwnedBy(_viewerUserId) == true;
         }
     }
 
+    private bool CanAddPhotographs
+    {
+        get
+        {
+            return !IsCompleted && _trip?.CanContribute(_viewerUserId) == true;
+        }
+    }
+
+    private bool CanRecordCatch => CanAddPhotographs;
+
     private async Task FinishAsync()
     {
-        if (_trip is null || _isFinishing || IsCompleted)
+        if (_trip is null || _isFinishing || IsCompleted || !_trip.IsOwnedBy(_viewerUserId))
         {
             return;
         }

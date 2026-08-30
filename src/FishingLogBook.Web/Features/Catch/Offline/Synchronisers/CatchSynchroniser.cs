@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Offline.Dependencies;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -347,7 +348,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         try
         {
             var sent = ToDto(catchRecord);
-            await _client.UpsertAsync(sent, cancellationToken);
+            var persisted = await _client.UpsertAsync(sent, cancellationToken);
             var stored = await _store.GetMetadataAsync(
                 catchRecord.UserId,
                 catchRecord.Id,
@@ -370,8 +371,14 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                 return refreshed;
             }
 
-            catchRecord = refreshed with { MetadataSyncStatus = SyncStatus.Synchronised };
-            await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
+            // Reconcile from what the server actually persisted, not from what was sent -
+            // the server is free to preserve/normalise authoritative fields (e.g. a Caught
+            // By correction made elsewhere), and the client must not silently overwrite that
+            // with a stale queued payload just because the POST succeeded.
+            catchRecord = (persisted is null ? refreshed : WithAuthoritativeFields(refreshed, persisted))
+                with
+            { MetadataSyncStatus = SyncStatus.Synchronised };
+            await _store.ReconcileMetadataAsync(catchRecord, cancellationToken);
             await SafeLogAsync(
                 DiagnosticLevel.Information,
                 DiagnosticEventNames.CatchMetadataSyncSucceeded,
@@ -384,10 +391,13 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         }
         catch (Exception exception) when (IsSynchronisationFailure(exception, cancellationToken))
         {
+            var targetStatus = SynchronisationFailureClassifier.Classify(exception) == SynchronisationFailureKind.Permanent
+                ? SyncStatus.FailedToSynchronise
+                : SyncStatus.WaitingToSynchronise;
             catchRecord = catchRecord with
             {
-                SyncStatus = SyncStatus.FailedToSynchronise,
-                MetadataSyncStatus = SyncStatus.FailedToSynchronise
+                SyncStatus = targetStatus,
+                MetadataSyncStatus = targetStatus
             };
             await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
             await SafeLogAsync(
@@ -447,11 +457,19 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                 catchRecord.Id,
                 new PhotographUploadRequestDto(photograph.Id, photograph.ContentType),
                 cancellationToken);
-            await _client.UploadPhotographAsync(
-                upload.UploadUrl,
-                photograph.Bytes,
-                photograph.ContentType,
-                cancellationToken);
+            try
+            {
+                await _client.UploadPhotographAsync(
+                    upload.UploadUrl,
+                    photograph.Bytes,
+                    photograph.ContentType,
+                    cancellationToken);
+            }
+            catch (Exception uploadException) when (uploadException is not OperationCanceledException)
+            {
+                throw new TransientSynchronisationException(uploadException);
+            }
+
             await _client.RecordPhotographAsync(
                 catchRecord.Id,
                 new RecordPhotographDto(
@@ -486,10 +504,13 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                     cancellationToken);
             }
 
+            var targetStatus = SynchronisationFailureClassifier.Classify(exception) == SynchronisationFailureKind.Permanent
+                ? SyncStatus.FailedToSynchronise
+                : SyncStatus.WaitingToSynchronise;
             catchRecord = WithPhotographStatus(
                 catchRecord,
                 photographId,
-                SyncStatus.FailedToSynchronise,
+                targetStatus,
                 objectKey: null);
             await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
             await SafeLogAsync(
@@ -707,7 +728,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
 
         if (exception is not null)
         {
-            metadata[DiagnosticMetadata.ErrorType] = exception.GetType().Name;
+            metadata[DiagnosticMetadata.ErrorType] = (exception.InnerException ?? exception).GetType().Name;
         }
 
         try
@@ -905,6 +926,34 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
             BaitOrLure = catchRecord.BaitOrLure,
             Notes = catchRecord.Notes,
             TripId = catchRecord.TripId
+        };
+    }
+
+    private static CatchModel WithAuthoritativeFields(CatchModel catchRecord, CatchDto persisted)
+    {
+        return catchRecord with
+        {
+            CaughtOn = persisted.CaughtOn,
+            UserId = persisted.UserId,
+            AnglerUserId = persisted.AnglerUserId,
+            RecordedByUserId = persisted.RecordedByUserId,
+            TripId = persisted.TripId,
+            SpeciesName = persisted.SpeciesName,
+            Weight = persisted.Weight,
+            Length = persisted.Length,
+            Method = persisted.Method,
+            BaitOrLure = persisted.BaitOrLure,
+            Notes = persisted.Notes,
+            Location = persisted.Location is null
+                ? null
+                : new CatchLocationModel(
+                    persisted.Location.Latitude,
+                    persisted.Location.Longitude,
+                    persisted.Location.AccuracyMetres,
+                    persisted.Location.CapturedOn,
+                    persisted.Location.Source,
+                    persisted.Location.Visibility,
+                    persisted.Location.ConsentVersion)
         };
     }
 

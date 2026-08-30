@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts;
+using FishingLogBook.Application.Diagnostics.Contracts.Services;
 using FishingLogBook.Domain.Config;
 using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;

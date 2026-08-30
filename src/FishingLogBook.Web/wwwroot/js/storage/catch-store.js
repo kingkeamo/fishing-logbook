@@ -169,6 +169,12 @@ export async function updateCatchMetadata(json) {
     });
 }
 
+function isVisibleTo(record, owner) {
+    const userId = normalisedOwnerId(record?.userId);
+    const recordedByUserId = normalisedOwnerId(record?.recordedByUserId);
+    return userId === owner || (recordedByUserId && recordedByUserId === owner);
+}
+
 export async function getCatchPhotographBytes(ownerUserId, catchId, photographId) {
     const owner = normalisedOwnerId(ownerUserId);
     if (!owner || !catchId || !photographId) {
@@ -181,7 +187,7 @@ export async function getCatchPhotographBytes(ownerUserId, catchId, photographId
         read.onsuccess = () => {
             const catchRecord = read.result;
             const owns = catchRecord
-                && normalisedOwnerId(catchRecord.userId) === owner
+                && isVisibleTo(catchRecord, owner)
                 && (catchRecord.photographs ?? []).some((photograph) => photograph.id === photographId);
             if (!owns) {
                 succeed(null);
@@ -223,6 +229,63 @@ export async function updateCatchTrip(json) {
     });
 }
 
+export async function reconcileCatchMetadata(json) {
+    const catchRecord = JSON.parse(json);
+    if (!catchRecord?.id || !normalisedOwnerId(catchRecord.userId)) {
+        throw new Error('Owned Catch id is required');
+    }
+
+    await runCatchTransaction(CATCH_STORE_NAME, 'readwrite', 'sync-state-write', (store, succeed, fail) => {
+        const existingRequest = store.get(catchRecord.id);
+        existingRequest.onerror = () => fail(existingRequest.error);
+        existingRequest.onsuccess = () => {
+            const existing = existingRequest.result;
+            if (!existing) {
+                fail(new Error('Owned Catch was not found'));
+                return;
+            }
+
+            const incomingPhotographs = new Map(
+                (catchRecord.photographs || []).map((photograph) => [photograph.id, photograph])
+            );
+            const photographs = (existing.photographs || []).map((photograph) => {
+                const incoming = incomingPhotographs.get(photograph.id);
+                if (!incoming) {
+                    return photograph;
+                }
+
+                return {
+                    ...photograph,
+                    syncStatus: incoming.syncStatus,
+                    objectKey: incoming.objectKey
+                };
+            });
+
+            const updateRequest = store.put({
+                ...existing,
+                caughtOn: catchRecord.caughtOn,
+                userId: catchRecord.userId,
+                anglerUserId: catchRecord.anglerUserId,
+                recordedByUserId: catchRecord.recordedByUserId,
+                tripId: catchRecord.tripId,
+                speciesName: catchRecord.speciesName,
+                weight: catchRecord.weight,
+                length: catchRecord.length,
+                method: catchRecord.method,
+                baitOrLure: catchRecord.baitOrLure,
+                notes: catchRecord.notes,
+                location: catchRecord.location,
+                syncStatus: catchRecord.syncStatus,
+                metadataSyncStatus: catchRecord.metadataSyncStatus,
+                syncedAt: catchRecord.syncedAt,
+                photographs
+            });
+            updateRequest.onsuccess = () => succeed();
+            updateRequest.onerror = () => fail(updateRequest.error);
+        };
+    });
+}
+
 function hasMetadataDifference(existing, incoming) {
     const metadataFields = [
         'caughtOn',
@@ -256,7 +319,7 @@ export async function getAllCatchesWithPhotographs(ownerUserId) {
         catchRequest.onsuccess = () => {
             const cursor = catchRequest.result;
             if (cursor) {
-                if (normalisedOwnerId(cursor.value?.userId) === owner) {
+                if (isVisibleTo(cursor.value, owner)) {
                     catches.push(cursor.value);
                 }
 
@@ -298,7 +361,7 @@ export async function getCatchMetadata(ownerUserId) {
         request.onsuccess = () => {
             const cursor = request.result;
             if (cursor) {
-                if (normalisedOwnerId(cursor.value?.userId) === owner) {
+                if (isVisibleTo(cursor.value, owner)) {
                     catches.push({ json: JSON.stringify(cursor.value), photographs: [] });
                 }
 
@@ -322,7 +385,7 @@ export async function getCatchMetadataById(ownerUserId, catchId) {
         request.onerror = () => fail(request.error);
         request.onsuccess = () => {
             const record = request.result;
-            succeed(record && normalisedOwnerId(record.userId) === owner
+            succeed(record && isVisibleTo(record, owner)
                 ? { json: JSON.stringify(record), photographs: [] }
                 : null);
         };
@@ -342,7 +405,7 @@ export async function getCatchWithPhotographs(ownerUserId, catchId) {
         catchRequest.onerror = () => fail(catchRequest.error);
         catchRequest.onsuccess = () => {
             const record = catchRequest.result;
-            if (!record || normalisedOwnerId(record.userId) !== owner) {
+            if (!record || !isVisibleTo(record, owner)) {
                 succeed(null);
                 return;
             }
@@ -431,7 +494,7 @@ export async function cleanupSyncedCatches(ownerUserId, olderThanIso) {
             }
 
             const record = cursor.value;
-            if (normalisedOwnerId(record?.userId) === owner && isEligibleForCleanup(record, cutoff)) {
+            if (isVisibleTo(record, owner) && isEligibleForCleanup(record, cutoff)) {
                 for (const photograph of record.photographs || []) {
                     photoStore.delete(photograph.id);
                 }

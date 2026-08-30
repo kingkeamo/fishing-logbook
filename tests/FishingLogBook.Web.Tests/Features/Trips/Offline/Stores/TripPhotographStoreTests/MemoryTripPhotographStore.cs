@@ -22,7 +22,7 @@ public sealed class MemoryTripPhotographStore : ITripPhotographStore
 
     public Task SaveAsync(TripPhotographModel photograph, CancellationToken cancellationToken)
     {
-        if (photograph.OwnerUserId == Guid.Empty)
+        if (photograph.ContributedByUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A trip photograph requires an owner.");
         }
@@ -55,7 +55,7 @@ public sealed class MemoryTripPhotographStore : ITripPhotographStore
 
         _byteReads.Add(photographId);
         if (!_photographs.TryGetValue(photographId, out var photograph)
-            || photograph.OwnerUserId != ownerUserId
+            || photograph.ContributedByUserId != ownerUserId
             || photograph.TripId != tripId)
         {
             return null;
@@ -71,7 +71,7 @@ public sealed class MemoryTripPhotographStore : ITripPhotographStore
         CancellationToken cancellationToken)
     {
         if (!_photographs.TryGetValue(photographId, out var photograph)
-            || photograph.OwnerUserId != ownerUserId
+            || photograph.ContributedByUserId != ownerUserId
             || photograph.TripId != tripId)
         {
             return Task.FromResult(false);
@@ -90,7 +90,7 @@ public sealed class MemoryTripPhotographStore : ITripPhotographStore
         return Task.FromResult<IReadOnlyList<TripPhotographModel>>(
             [.. _photographs.Values
                 .Where(photograph =>
-                    photograph.OwnerUserId == ownerUserId
+                    photograph.ContributedByUserId == ownerUserId
                     && photograph.SyncStatus != SyncStatus.Synchronised)
                 .OrderBy(photograph => photograph.OrderedOn)]);
     }
@@ -103,8 +103,9 @@ public sealed class MemoryTripPhotographStore : ITripPhotographStore
         return Task.FromResult<IReadOnlyCollection<Guid>>(
             [.. _photographs.Values
                 .Where(photograph =>
-                    photograph.OwnerUserId == ownerUserId
-                    && photograph.SyncStatus != SyncStatus.Synchronised)
+                    photograph.ContributedByUserId == ownerUserId
+                    && photograph.SyncStatus != SyncStatus.Synchronised
+                    && photograph.SyncStatus != SyncStatus.FailedToSynchronise)
                 .Select(photograph => photograph.TripId)
                 .Distinct()]);
     }

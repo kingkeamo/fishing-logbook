@@ -75,10 +75,25 @@ public class WhenTestingGetTripsAwaitingDependents : BaseTripDependencyServiceTe
     }
 
     [Fact]
-    public async Task ItShouldHoldTheTripWhenALinkedCatchFailedToSynchronise()
+    public async Task ItShouldNotHoldTheTripWhenALinkedCatchPermanentlyFailedToSynchronise()
+    {
+        // Arrange - simulates a participant having been removed from the Trip. Automatic
+        // sync has already given up on this catch, so it must not keep the Trip retained
+        // as "still waiting to sync" forever.
+        await GivenCatchAsync(CatchId, TripId, SyncStatus.FailedToSynchronise);
+
+        // Act
+        var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        awaiting.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldHoldTheTripWhileALinkedCatchIsStillWaitingToSynchronise()
     {
         // Arrange
-        await GivenCatchAsync(CatchId, TripId, SyncStatus.FailedToSynchronise);
+        await GivenCatchAsync(CatchId, TripId, SyncStatus.WaitingToSynchronise);
 
         // Act
         var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
@@ -129,6 +144,19 @@ public class WhenTestingGetTripsAwaitingDependents : BaseTripDependencyServiceTe
         // Assert
         awaiting.Should().Equal(TripId);
         TripPhotographStore.BytesReadFor.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldNotHoldTheTripWhenAPhotographPermanentlyFailedToSynchronise()
+    {
+        // Arrange - simulates a participant having been removed from the Trip.
+        await GivenTripPhotographAsync(Guid.NewGuid(), TripId, SyncStatus.FailedToSynchronise);
+
+        // Act
+        var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        awaiting.Should().BeEmpty();
     }
 
     [Fact]
@@ -187,6 +215,19 @@ public class WhenTestingGetTripsAwaitingDependents : BaseTripDependencyServiceTe
         awaiting.Should().Equal(TripId);
         TripPhotographStore.BytesReadFor.Should().BeEmpty();
         CatchStore.PhotographBytesReadFor.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldNotHoldTheTripWhenANotePermanentlyFailedToSynchronise()
+    {
+        // Arrange - simulates a participant having been removed from the Trip.
+        await GivenTripNoteAsync(Guid.NewGuid(), TripId, SyncStatus.FailedToSynchronise);
+
+        // Act
+        var awaiting = await Sut.GetTripsAwaitingDependentsAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        awaiting.Should().BeEmpty();
     }
 
     [Fact]

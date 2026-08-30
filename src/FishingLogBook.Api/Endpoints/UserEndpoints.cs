@@ -1,4 +1,4 @@
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.OfflineAccess.Commands;
 using FishingLogBook.Application.OfflineAccess.Queries;
 using FishingLogBook.Shared.Dtos;

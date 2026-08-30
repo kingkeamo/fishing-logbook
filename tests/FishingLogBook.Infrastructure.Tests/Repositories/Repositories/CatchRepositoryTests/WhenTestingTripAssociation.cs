@@ -58,8 +58,8 @@ public class WhenTestingTripAssociation : BaseCatchRepositoryTest
         saved.Value.TripId.Should().Be(trip.Id);
         var loaded = await Sut.GetByIdAsync(saved.Value.Id, CancellationToken.None);
         loaded.Value!.TripId.Should().Be(trip.Id);
-        var listed = await Sut.GetByUserIdAsync(userId, CancellationToken.None);
-        listed.Value.Single(item => item.Id == saved.Value.Id).TripId.Should().Be(trip.Id);
+        var listed = await Sut.GetActivityForUserAsync(userId, CancellationToken.None);
+        listed.Value.Single(item => item.Catch.Id == saved.Value.Id).Catch.TripId.Should().Be(trip.Id);
     }
 
     [Fact]

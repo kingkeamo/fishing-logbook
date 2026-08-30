@@ -87,8 +87,10 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
         // Arrange
         Reset();
         var client = _factory.CreateAuthenticatedClient();
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var catchId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
+        GivenCatchOwnedByCurrentUser(catchId, current!.UserId);
         _factory.CatchRepository.GetPhotographAsync(
                 Arg.Any<GetCatchPhotographArgs>(),
                 Arg.Any<CancellationToken>())
@@ -121,6 +123,7 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
         var catchId = Guid.NewGuid();
         var photographId = Guid.NewGuid();
+        GivenCatchOwnedByCurrentUser(catchId, current!.UserId);
         _factory.CatchRepository.GetPhotographAsync(
                 Arg.Any<GetCatchPhotographArgs>(),
                 Arg.Any<CancellationToken>())
@@ -138,7 +141,7 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         await _factory.ObjectStorage.Received(1).DeleteObjectAsync(
-            $"catches/{current!.UserId:D}/{catchId:D}/{photographId:D}",
+            $"catch-photographs/{catchId:D}/{photographId:D}",
             Arg.Any<CancellationToken>());
         await _factory.CatchRepository.Received(1).DeletePhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
@@ -146,6 +149,18 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
                 && query.CatchId == catchId
                 && query.PhotographId == photographId),
             Arg.Any<CancellationToken>());
+    }
+
+    private void GivenCatchOwnedByCurrentUser(Guid catchId, Guid currentUserId)
+    {
+        _factory.CatchRepository.GetByIdAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(new Catch
+            {
+                Id = catchId,
+                UserId = currentUserId,
+                AnglerUserId = currentUserId,
+                RecordedByUserId = currentUserId
+            }));
     }
 
     private void Reset()

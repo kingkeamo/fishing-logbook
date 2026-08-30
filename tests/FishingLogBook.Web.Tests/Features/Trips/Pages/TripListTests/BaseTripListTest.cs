@@ -29,7 +29,8 @@ public class BaseTripListTest
         ITripStore tripStore,
         ITripClient tripClient,
         ICatchStore? catchStore = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        ITripParticipantClient? participantClient = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -37,6 +38,7 @@ public class BaseTripListTest
         context.Services.AddLocalization();
         context.Services.AddSingleton(tripStore);
         context.Services.AddSingleton(tripClient);
+        context.Services.AddSingleton(participantClient ?? QuietParticipantClient());
         context.Services.AddSingleton(catchStore ?? QuietCatchStore());
         context.Services.AddSingleton(SignedInOwner());
         context.Services.AddSingleton<ITimeService>(TestTimeService.WithOffset(TimeSpan.Zero));
@@ -46,6 +48,14 @@ public class BaseTripListTest
         var authorization = context.AddAuthorization();
         authorization.SetAuthorized("tester@example.test");
         return context;
+    }
+
+    protected static ITripParticipantClient QuietParticipantClient()
+    {
+        var client = Substitute.For<ITripParticipantClient>();
+        client.GetMyInvitationsAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<TripInvitationDto>>([]));
+        return client;
     }
 
     protected static ITripStore StoreWith(params TripModel[] trips)

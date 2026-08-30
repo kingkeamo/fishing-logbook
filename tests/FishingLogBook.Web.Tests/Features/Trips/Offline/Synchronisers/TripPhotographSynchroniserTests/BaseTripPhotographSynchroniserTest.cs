@@ -52,7 +52,7 @@ public class BaseTripPhotographSynchroniserTest
                 var tripId = call.ArgAt<Guid>(0);
                 var request = call.ArgAt<PhotographUploadRequestDto>(1);
                 return new PhotographUploadDto(
-                    $"trips/{OwnerUserId:D}/{tripId:D}/{request.PhotographId:D}",
+                    $"trip-photographs/{tripId:D}/{request.PhotographId:D}",
                     $"https://storage.test/{request.PhotographId:D}");
             });
     }

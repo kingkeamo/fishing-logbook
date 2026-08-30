@@ -1,11 +1,13 @@
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Capabilities.Errors;
-using FishingLogBook.Application.Catches;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
-using FishingLogBook.Application.Trips.Errors;
+using FishingLogBook.Application.Catches.Contracts.Builders;
+using FishingLogBook.Application.Catches.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Profiles.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Services;
+using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 using MapsterMapper;
@@ -16,71 +18,143 @@ public sealed class TripDetailService : ITripDetailService
 {
     private static readonly TimeSpan DownloadLifetime = TimeSpan.FromMinutes(15);
 
-    private readonly ITripRepository _tripRepository;
+    private readonly ITripAccessService _tripAccessService;
     private readonly ITripNoteRepository _tripNoteRepository;
     private readonly ITripPhotographRepository _tripPhotographRepository;
-    private readonly ICurrentUser _currentUser;
+    private readonly ITripRepository _tripRepository;
+    private readonly IAnglerLookupService _anglerLookupService;
     private readonly IObjectStorage _objectStorage;
+    private readonly ICatchPhotographObjectKeyBuilder _catchObjectKeyBuilder;
     private readonly IMapper _mapper;
 
     public TripDetailService(
-        ITripRepository tripRepository,
+        ITripAccessService tripAccessService,
         ITripNoteRepository tripNoteRepository,
         ITripPhotographRepository tripPhotographRepository,
-        ICurrentUser currentUser,
+        ITripRepository tripRepository,
+        IAnglerLookupService anglerLookupService,
         IObjectStorage objectStorage,
+        ICatchPhotographObjectKeyBuilder catchObjectKeyBuilder,
         IMapper mapper)
     {
-        _tripRepository = tripRepository;
+        _tripAccessService = tripAccessService;
         _tripNoteRepository = tripNoteRepository;
         _tripPhotographRepository = tripPhotographRepository;
-        _currentUser = currentUser;
+        _tripRepository = tripRepository;
+        _anglerLookupService = anglerLookupService;
         _objectStorage = objectStorage;
+        _catchObjectKeyBuilder = catchObjectKeyBuilder;
         _mapper = mapper;
     }
 
     public async Task<Result<TripDetailDto>> GetAsync(GetTripArgs args, CancellationToken cancellationToken)
     {
-        if (!_currentUser.IsResolved)
+        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        if (access.IsFailed)
         {
-            return Result.Fail<TripDetailDto>(new CurrentUserUnresolvedError());
+            return Result.Fail<TripDetailDto>(access.Errors);
         }
 
-        var loaded = await _tripRepository.GetByIdAsync(args.TripId, cancellationToken);
-        if (loaded.IsFailed)
+        var trip = access.Value.Trip;
+        var content = await LoadContentAsync(args.TripId, cancellationToken);
+        if (content.IsFailed)
         {
-            return Result.Fail<TripDetailDto>(loaded.Errors);
+            return Result.Fail<TripDetailDto>(content.Errors);
         }
 
-        if (loaded.Value is null || loaded.Value.OwnerUserId != _currentUser.UserId)
+        var contributors = await DescribeContributorsAsync(trip, content.Value, cancellationToken);
+        if (contributors.IsFailed)
         {
-            return Result.Fail<TripDetailDto>(new TripNotFoundError());
+            return Result.Fail<TripDetailDto>(contributors.Errors);
         }
 
-        var notes = await _tripNoteRepository.GetByTripIdAsync(args.TripId, cancellationToken);
+        return Result.Ok(new TripDetailDto(_mapper.Map<TripViewDto>(trip))
+        {
+            Role = ToRole(access.Value.Role),
+            Notes = [.. content.Value.Notes.OrderBy(note => note.RecordedOn).Select(_mapper.Map<TripNoteDto>)],
+            Photographs = await ToViewsAsync(content.Value.Photographs, cancellationToken),
+            Catches = await ToCatchSummariesAsync(content.Value.Catches, cancellationToken),
+            Contributors = contributors.Value
+        });
+    }
+
+    private async Task<Result<TripContent>> LoadContentAsync(Guid tripId, CancellationToken cancellationToken)
+    {
+        var notes = await _tripNoteRepository.GetByTripIdAsync(tripId, cancellationToken);
         if (notes.IsFailed)
         {
-            return Result.Fail<TripDetailDto>(notes.Errors);
+            return Result.Fail<TripContent>(notes.Errors);
         }
 
-        var photographs = await _tripPhotographRepository.GetByTripIdAsync(args.TripId, cancellationToken);
+        var photographs = await _tripPhotographRepository.GetByTripIdAsync(tripId, cancellationToken);
         if (photographs.IsFailed)
         {
-            return Result.Fail<TripDetailDto>(photographs.Errors);
+            return Result.Fail<TripContent>(photographs.Errors);
         }
 
-        var catches = await _tripRepository.GetCatchSummariesByTripIdAsync(args.TripId, cancellationToken);
+        var catches = await _tripRepository.GetCatchSummariesByTripIdAsync(tripId, cancellationToken);
         if (catches.IsFailed)
         {
-            return Result.Fail<TripDetailDto>(catches.Errors);
+            return Result.Fail<TripContent>(catches.Errors);
         }
 
-        return Result.Ok(new TripDetailDto(_mapper.Map<TripViewDto>(loaded.Value))
+        return Result.Ok(new TripContent(notes.Value, photographs.Value, catches.Value));
+    }
+
+    private async Task<Result<IReadOnlyList<TripContributorDto>>> DescribeContributorsAsync(
+        Trip trip,
+        TripContent content,
+        CancellationToken cancellationToken)
+    {
+        var userIds = ContributorUserIds(trip, content);
+        var described = await _anglerLookupService.DescribeAsync(userIds, cancellationToken);
+        if (described.IsFailed)
         {
-            Notes = [.. notes.Value.OrderBy(note => note.RecordedOn).Select(_mapper.Map<TripNoteDto>)],
-            Photographs = await ToViewsAsync(photographs.Value, cancellationToken),
-            Catches = await ToCatchSummariesAsync(catches.Value, cancellationToken)
-        });
+            return Result.Fail<IReadOnlyList<TripContributorDto>>(described.Errors);
+        }
+
+        IReadOnlyList<TripContributorDto> contributors =
+        [
+            .. userIds.Select(userId => ToContributor(userId, trip.OwnerUserId, described.Value))
+        ];
+        return Result.Ok(contributors);
+    }
+
+    private static IReadOnlyList<Guid> ContributorUserIds(Trip trip, TripContent content)
+    {
+        return
+        [
+            .. content.Notes
+                .Select(note => note.CreatedByUserId)
+                .Concat(content.Photographs.Select(photograph => photograph.ContributedByUserId))
+                .Concat(content.Catches.Select(summary => summary.AnglerUserId))
+                .Concat(content.Catches.Select(summary => summary.RecordedByUserId))
+                .Append(trip.OwnerUserId)
+                .Where(userId => userId != Guid.Empty)
+                .Distinct()
+        ];
+    }
+
+    private static TripContributorDto ToContributor(
+        Guid userId,
+        Guid ownerUserId,
+        IReadOnlyDictionary<Guid, AnglerSummaryDto> described)
+    {
+        var angler = described.GetValueOrDefault(userId);
+        return new TripContributorDto(userId, angler?.DisplayName, angler?.PhotographUrl)
+        {
+            IsOwner = userId == ownerUserId
+        };
+    }
+
+    private static string ToRole(TripAccessRoleEnum role)
+    {
+        return role switch
+        {
+            TripAccessRoleEnum.Owner => TripParticipantConstants.Owner,
+            TripAccessRoleEnum.Participant => TripParticipantConstants.Participant,
+            _ => TripParticipantConstants.None
+        };
     }
 
     private async Task<IReadOnlyList<TripCatchSummaryDto>> ToCatchSummariesAsync(
@@ -109,7 +183,7 @@ public sealed class TripDetailService : ITripDetailService
         }
 
         return await CreateDownloadUrlAsync(
-            CatchPhotographObjectKey.Build(summary.UserId, summary.Id, photographId),
+            _catchObjectKeyBuilder.Build(summary.Id, photographId),
             cancellationToken);
     }
 
@@ -125,7 +199,10 @@ public sealed class TripDetailService : ITripDetailService
                 photograph.ContentType,
                 photograph.AddedOn,
                 await CreateDownloadUrlAsync(photograph.ObjectKey, cancellationToken),
-                photograph.CapturedOn));
+                photograph.CapturedOn)
+            {
+                ContributedByUserId = photograph.ContributedByUserId
+            });
         }
 
         return views;
@@ -141,4 +218,9 @@ public sealed class TripDetailService : ITripDetailService
         var url = await _objectStorage.CreateDownloadUrlAsync(objectKey, DownloadLifetime, cancellationToken);
         return url.ToString();
     }
+
+    private sealed record TripContent(
+        IReadOnlyList<TripNote> Notes,
+        IReadOnlyList<TripPhotograph> Photographs,
+        IReadOnlyList<TripCatchSummary> Catches);
 }

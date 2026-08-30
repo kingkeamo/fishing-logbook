@@ -1,5 +1,5 @@
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.OfflineAccess.Contracts.Repositories;
+using FishingLogBook.Application.OfflineAccess.Contracts.Services;
 using FishingLogBook.Shared.Dtos;
 using FluentResults;
 

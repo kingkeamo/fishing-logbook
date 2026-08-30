@@ -1,5 +1,5 @@
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.Trips.Commands;
+using FishingLogBook.Application.Trips.Contracts.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Trips.Commands.AssociateTripCatchesCommandTests;

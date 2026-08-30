@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Application.Tests.Common;
 using FishingLogBook.Application.Trips.Errors;
 using FishingLogBook.Domain.Enums;
 using FishingLogBook.Domain.Trips;
@@ -253,5 +254,68 @@ public class WhenTestingUpsert : BaseTripServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Should().BeOfType<TripAlreadyActiveError>();
+    }
+
+    [Fact]
+    public async Task ItShouldFailClosedWhenAnUnrelatedUserEditsAnExistingTrip()
+    {
+        // Arrange
+        var existing = StoredTrip();
+        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(existing));
+        MockTripAccessService.GivenNoAccess(TripId);
+        var args = UpsertArgs(userId: OtherUserId);
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNotFoundError>();
+        await MockTripRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Trip>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAParticipantEditingAnExistingTrip()
+    {
+        // Arrange
+        var existing = StoredTrip();
+        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(existing));
+        MockTripAccessService.GivenParticipant(existing, OtherUserId);
+        var args = UpsertArgs(userId: OtherUserId);
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripOwnerActionRequiredError>();
+        await MockTripRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Trip>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAllowTheOwnerToEditAnExistingTrip()
+    {
+        // Arrange
+        var existing = StoredTrip();
+        MockTripRepository.GetByIdAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(existing));
+        MockTripAccessService.GivenOwner(existing, CurrentUserId);
+        var args = UpsertArgs(title: "Updated title");
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await MockTripAccessService.Received(1).RequireOwnerAsync(TripId, Arg.Any<CancellationToken>());
+        await MockTripRepository.Received(1).UpsertAsync(
+            Arg.Is<Trip>(trip => trip.Id == TripId && trip.Title == "Updated title"),
+            Arg.Any<CancellationToken>());
     }
 }

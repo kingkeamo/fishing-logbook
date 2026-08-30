@@ -11,4 +11,9 @@ public interface ITripTimelineService
         IReadOnlyList<CatchModel> catches);
 
     IReadOnlyList<TripTimelineItemModel> BuildRemote(TripDetailDto detail);
+
+    IReadOnlyList<TripTimelineItemModel> BuildShared(
+        TripDetailDto detail,
+        TripModel localTrip,
+        IReadOnlyList<CatchModel> catches);
 }

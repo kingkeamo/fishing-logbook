@@ -3,8 +3,16 @@ using System.Net.Http.Headers;
 using FishingLogBook.Api.Configuration;
 using FishingLogBook.Api.Tests.TestSupport;
 using FishingLogBook.Application.Args;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Capabilities.Contracts.Repositories;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.FishingLocations.Contracts.Repositories;
+using FishingLogBook.Application.FishingPreferences.Contracts.Repositories;
+using FishingLogBook.Application.OfflineAccess.Contracts.Repositories;
+using FishingLogBook.Application.Profiles.Contracts.Repositories;
+using FishingLogBook.Application.SystemStatus.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
+using FishingLogBook.Application.Users.Contracts.Repositories;
 using FishingLogBook.Domain.Catalogue;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Domain.Enums;
@@ -42,6 +50,9 @@ public class SystemApiFactory : WebApplicationFactory<Program>
     public ICatchRepository CatchRepository { get; } = Substitute.For<ICatchRepository>();
 
     public ITripRepository TripRepository { get; } = Substitute.For<ITripRepository>();
+
+    public ITripParticipantRepository TripParticipantRepository { get; } =
+        Substitute.For<ITripParticipantRepository>();
 
     public ITripPhotographRepository TripPhotographRepository { get; } =
         Substitute.For<ITripPhotographRepository>();
@@ -121,7 +132,7 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             .GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Trip?>(null));
         TripRepository
-            .GetSummariesByOwnerUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .GetSummariesForUserAsync(Arg.Any<GetMyTripsArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>([]));
         TripRepository
             .GetCatchSummariesByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -132,6 +143,24 @@ public class SystemApiFactory : WebApplicationFactory<Program>
         TripPhotographRepository
             .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripPhotograph>>([]));
+        TripParticipantRepository
+            .FindAsync(Arg.Any<FindTripParticipantArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<TripParticipant?>(null));
+        TripParticipantRepository
+            .GetByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripParticipant>>([]));
+        TripParticipantRepository
+            .GetPendingInvitationsByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<TripParticipant>>([]));
+        TripParticipantRepository
+            .UpsertAsync(Arg.Any<TripParticipant>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<TripParticipant>(0)));
+        ProfileRepository
+            .GetByUserIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<Profile>>([]));
+        ProfileRepository
+            .FindAnglersAsync(Arg.Any<FindAnglersArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<AnglerSummary>>([]));
         UserPlatformCapabilityRepository
             .HasAsync(Arg.Any<FindUserPlatformCapabilityArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(false));
@@ -258,7 +287,9 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<ITripRepository>();
             services.RemoveAll<ITripPhotographRepository>();
             services.RemoveAll<ITripNoteRepository>();
+            services.RemoveAll<ITripParticipantRepository>();
             services.AddSingleton(TripRepository);
+            services.AddSingleton(TripParticipantRepository);
             services.AddSingleton(TripPhotographRepository);
             services.AddSingleton(TripNoteRepository);
             services.RemoveAll<IFishingCatalogueRepository>();

@@ -10,7 +10,7 @@
 # Create the state bucket once, manually, before the first init. It must be private and
 # separate from the catch-photo buckets.
 
-bucket = "fishing-logbook-tfstate"
+bucket = "fishing-logbook-tfstate-dev"
 
 endpoints = {
   s3 = "https://<cloudflare-account-id>.r2.cloudflarestorage.com"

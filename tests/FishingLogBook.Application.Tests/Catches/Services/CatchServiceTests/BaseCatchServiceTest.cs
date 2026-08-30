@@ -1,7 +1,12 @@
+using FishingLogBook.Application.Catches.Contracts.Builders;
+using FishingLogBook.Application.Catches.Contracts.Repositories;
+using FishingLogBook.Application.Catches.Contracts.Services;
 using FishingLogBook.Application.Catches.Services;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
+using FishingLogBook.Application.Trips.Contracts.Services;
+using FishingLogBook.Domain.Catches;
+using FluentResults;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Catches.Services.CatchServiceTests;
@@ -10,7 +15,7 @@ public class BaseCatchServiceTest
 {
     protected readonly ICatchRepository MockCatchRepository = Substitute.For<ICatchRepository>();
 
-    protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
+    protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
 
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
 
@@ -18,6 +23,9 @@ public class BaseCatchServiceTest
         Substitute.For<ICatchLocationPrivacyService>();
 
     protected readonly IObjectStorage MockObjectStorage = Substitute.For<IObjectStorage>();
+
+    protected readonly ICatchPhotographObjectKeyBuilder MockObjectKeyBuilder =
+        Substitute.For<ICatchPhotographObjectKeyBuilder>();
 
     protected readonly CatchService Sut;
 
@@ -28,12 +36,18 @@ public class BaseCatchServiceTest
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockObjectStorage.IsConfigured.Returns(false);
+        MockObjectKeyBuilder.Build(Arg.Any<Guid>(), Arg.Any<Guid>())
+            .Returns(call => $"catch-photographs/{call.ArgAt<Guid>(0):D}/{call.ArgAt<Guid>(1):D}");
+        MockCatchRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Catch?>(null));
         Sut = new CatchService(
             MockCatchRepository,
-            MockTripRepository,
+            MockTripAccessService,
             MockCurrentUser,
             MockCatchLocationPrivacyService,
             MockObjectStorage,
-            TestMapper.Create());
+            MockObjectKeyBuilder,
+            TestMapper.Create(),
+            NullLogger<CatchService>.Instance);
     }
 }

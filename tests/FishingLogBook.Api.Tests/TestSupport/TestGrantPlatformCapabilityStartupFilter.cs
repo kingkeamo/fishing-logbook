@@ -1,6 +1,6 @@
 using FishingLogBook.Api.Authorization;
 using FishingLogBook.Application.Capabilities.Commands;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Builder;

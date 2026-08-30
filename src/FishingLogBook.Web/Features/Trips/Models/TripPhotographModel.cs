@@ -5,7 +5,7 @@ namespace FishingLogBook.Web.Features.Trips.Models;
 public sealed record TripPhotographModel(
     Guid Id,
     Guid TripId,
-    Guid OwnerUserId,
+    Guid ContributedByUserId,
     string ContentType,
     DateTimeOffset AddedOn,
     DateTimeOffset? CapturedOn = null,

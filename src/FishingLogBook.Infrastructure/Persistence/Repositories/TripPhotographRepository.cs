@@ -1,6 +1,5 @@
 using Dapper;
-using FishingLogBook.Application.Contracts;
-using FishingLogBook.Application.Contracts.Repositories;
+using FishingLogBook.Application.Trips.Contracts.Repositories;
 using FishingLogBook.Domain.Trips;
 using FluentResults;
 using MapsterMapper;
@@ -17,6 +16,7 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
         SELECT
             "Id",
             "TripId",
+            "ContributedByUserId",
             "ObjectKey",
             "ContentType",
             "CapturedOn",
@@ -93,6 +93,7 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
                 INSERT INTO "TripPhotograph" (
                     "Id",
                     "TripId",
+                    "ContributedByUserId",
                     "ObjectKey",
                     "ContentType",
                     "CapturedOn",
@@ -100,6 +101,7 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
                 VALUES (
                     @Id,
                     @TripId,
+                    @ContributedByUserId,
                     @ObjectKey,
                     @ContentType,
                     @CapturedOn,
@@ -161,6 +163,7 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
         {
             Id = photograph.Id,
             TripId = photograph.TripId,
+            ContributedByUserId = photograph.ContributedByUserId,
             ObjectKey = photograph.ObjectKey,
             ContentType = photograph.ContentType,
             CapturedOn = photograph.CapturedOn?.ToUniversalTime(),
@@ -173,6 +176,8 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
         public Guid Id { get; init; }
 
         public Guid TripId { get; init; }
+
+        public Guid ContributedByUserId { get; init; }
 
         public string ObjectKey { get; init; } = string.Empty;
 
@@ -188,6 +193,8 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
         public Guid Id { get; init; }
 
         public Guid TripId { get; init; }
+
+        public Guid ContributedByUserId { get; init; }
 
         public string ObjectKey { get; init; } = string.Empty;
 

@@ -1,0 +1,103 @@
+@namespace FishingLogBook.Web.Features.Trips.Modals.TripParticipants
+@using FishingLogBook.Shared.Constants
+
+<MudDialog id="trip-participants-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="trip-participants-modal-title">@Loc["Trip_Participants"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" AlignItems="AlignItems.Stretch">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" id="trip-participants-loading" />
+            }
+            else if (_loadFailed)
+            {
+                <MudAlert Severity="Severity.Warning" id="trip-participants-load-failed">
+                    @Loc["Trip_ParticipantsLoadFailed"]
+                </MudAlert>
+            }
+            else
+            {
+                <MudStack Spacing="2" id="trip-participants-list">
+                    @foreach (var participant in _participants)
+                    {
+                        <MudPaper Elevation="0"
+                                  Class="trip-participant"
+                                  id="@($"trip-participant-{participant.UserId:D}")">
+                            <MudStack Row="true"
+                                      Spacing="2"
+                                      AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween">
+                                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudAvatar Size="Size.Small">
+                                        @if (participant.PhotographUrl is { Length: > 0 } photographUrl)
+                                        {
+                                            <MudImage Src="@photographUrl" Alt="@DisplayName(participant)" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                                        }
+                                    </MudAvatar>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2">@DisplayName(participant)</MudText>
+                                        <MudText Typo="Typo.caption"
+                                                 Class="mud-text-secondary"
+                                                 id="@($"trip-participant-status-{participant.UserId:D}")">
+                                            @StatusLabel(participant)
+                                        </MudText>
+                                    </MudStack>
+                                </MudStack>
+                                @if (CanRemove(participant))
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.PersonRemove"
+                                                   Size="Size.Small"
+                                                   Disabled="_isBusy"
+                                                   aria-label="@Loc["Trip_RemoveParticipant"]"
+                                                   title="@Loc["Trip_RemoveParticipant"]"
+                                                   OnClick="@(() => RemoveAsync(participant.UserId))"
+                                                   id="@($"trip-participant-remove-{participant.UserId:D}")" />
+                                }
+                            </MudStack>
+                        </MudPaper>
+                    }
+                </MudStack>
+
+                @if (IsOwner)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               Disabled="_isBusy"
+                               OnClick="InviteAsync"
+                               id="trip-participants-invite">
+                        @Loc["Trip_InviteAngler"]
+                    </MudButton>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary" id="trip-participants-owner-only">
+                        @Loc["Trip_ParticipantsOwnerOnly"]
+                    </MudText>
+                }
+
+                @if (_actionFailed)
+                {
+                    <MudAlert Severity="Severity.Error" id="trip-participants-action-failed">
+                        @Loc["Trip_ParticipantsActionFailed"]
+                    </MudAlert>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   OnClick="Close"
+                   id="trip-participants-close">
+            @Loc["Modal_Close"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

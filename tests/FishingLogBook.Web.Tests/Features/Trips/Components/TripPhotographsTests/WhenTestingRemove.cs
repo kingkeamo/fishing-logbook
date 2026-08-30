@@ -33,7 +33,8 @@ public class WhenTestingRemove : BaseTripPhotographsTest
             .ThrowsAsync(new HttpRequestException("Offline."));
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip(stored)));
+            parameters.Add(component => component.Trip, Trip(stored))
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find("#trip-photo-remove").Should().NotBeNull());
 
         // Act
@@ -55,7 +56,8 @@ public class WhenTestingRemove : BaseTripPhotographsTest
         var client = Substitute.For<ITripClient>();
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip(stored)));
+            parameters.Add(component => component.Trip, Trip(stored))
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find("#trip-photo-remove").Should().NotBeNull());
 
         // Act
@@ -80,7 +82,8 @@ public class WhenTestingRemove : BaseTripPhotographsTest
         var client = Substitute.For<ITripClient>();
         await using var context = CreateContext(store, tripClient: client);
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip(stored)));
+            parameters.Add(component => component.Trip, Trip(stored))
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.Find("#trip-photo-remove").Should().NotBeNull());
 
         // Act
@@ -106,7 +109,8 @@ public class WhenTestingRemove : BaseTripPhotographsTest
         await store.SaveAsync(removed with { Bytes = [4, 5, 6] }, CancellationToken.None);
         await using var context = CreateContext(store);
         var cut = context.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip(removed, kept)));
+            parameters.Add(component => component.Trip, Trip(removed, kept))
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cut.WaitForAssertion(() => cut.FindAll("#trip-photo-remove").Should().NotBeEmpty());
 
         // Act
@@ -132,7 +136,8 @@ public class WhenTestingRemove : BaseTripPhotographsTest
                 Metadata(galleryCapturedOn, PhotographCapturedOnSourceEnum.ExifOriginal),
                 PhotographSourceEnum.Gallery));
         var galleryCut = galleryContext.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         galleryCut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("gallery.jpg"));
         galleryCut.WaitForAssertion(() => store.Count.Should().Be(1));
         var galleryId = store.Pending().Single().Id;
@@ -142,7 +147,8 @@ public class WhenTestingRemove : BaseTripPhotographsTest
             store,
             preparation: PreparationFor(StrippedMetadata(), PhotographSourceEnum.Camera));
         var cameraCut = cameraContext.Render<TripPhotographsComponent>(parameters =>
-            parameters.Add(component => component.Trip, Trip()));
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId));
         cameraCut.FindComponents<InputFile>()[0].UploadFiles(JpegFile("camera.jpg"));
         cameraCut.WaitForAssertion(() => store.Count.Should().Be(2));
 

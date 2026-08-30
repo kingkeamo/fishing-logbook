@@ -1,6 +1,6 @@
+using FishingLogBook.Application.Capabilities.Contracts.Repositories;
 using FishingLogBook.Application.Capabilities.Services;
-using FishingLogBook.Application.Contracts.Repositories;
-using FishingLogBook.Application.Contracts.Services;
+using FishingLogBook.Application.Common.Contracts.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Application.Tests.Capabilities.Services.PlatformCapabilityServiceTests;

@@ -1,6 +1,7 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Common.Offline.Synchronisers;
@@ -45,6 +46,9 @@ public partial class CatchEdit : ComponentBase, IDisposable
 
     [Inject]
     private ICatchClient CatchClient { get; set; } = default!;
+
+    [Inject]
+    private INetworkService Network { get; set; } = default!;
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;

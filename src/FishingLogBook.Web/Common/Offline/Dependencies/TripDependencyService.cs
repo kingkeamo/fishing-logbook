@@ -75,7 +75,11 @@ public sealed class TripDependencyService : ITripDependencyService
             return false;
         }
 
-        return catchRecord.SyncStatus != SyncStatus.Synchronised
-            || catchRecord.MetadataSyncStatus != SyncStatus.Synchronised;
+        return IsAwaitingServer(catchRecord.SyncStatus) || IsAwaitingServer(catchRecord.MetadataSyncStatus);
+    }
+
+    private static bool IsAwaitingServer(SyncStatus status)
+    {
+        return status != SyncStatus.Synchronised && status != SyncStatus.FailedToSynchronise;
     }
 }

@@ -18,14 +18,25 @@
                                  id="active-trip-title">@Trip.Title</MudText>
                     }
                 </MudStack>
-                <MudChip T="string"
-                         Size="Size.Small"
-                         Color="@(IsCompleted ? Color.Default : Color.Secondary)"
-                         Variant="Variant.Filled"
-                         Icon="@(IsCompleted ? Icons.Material.Filled.Check : Icons.Material.Filled.PlayArrow)"
-                         id="active-trip-status">
-                    @(IsCompleted ? Loc["Trip_StatusFinished"] : Loc["Trip_ActiveLabel"])
-                </MudChip>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                    @if (ShowParticipants)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Group"
+                                       Size="Size.Small"
+                                       aria-label="@Loc["Trip_Participants"]"
+                                       title="@Loc["Trip_Participants"]"
+                                       OnClick="OnShowParticipants"
+                                       id="active-trip-participants" />
+                    }
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Color="@(IsCompleted ? Color.Default : Color.Secondary)"
+                             Variant="Variant.Filled"
+                             Icon="@(IsCompleted ? Icons.Material.Filled.Check : Icons.Material.Filled.PlayArrow)"
+                             id="active-trip-status">
+                        @(IsCompleted ? Loc["Trip_StatusFinished"] : Loc["Trip_ActiveLabel"])
+                    </MudChip>
+                </MudStack>
             </MudStack>
 
             <MudGrid Spacing="1" Class="active-trip-facts" id="active-trip-facts">
@@ -83,7 +94,8 @@
         </MudGrid>
 
         <TripTimeline Items="Timeline"
-                      OwnerUserId="Trip.OwnerUserId"
+                      ViewerUserId="ViewerUserId"
+                      Contributors="Contributors"
                       TripId="Trip.Id"
                       AllowLocalMedia="AllowLocalMedia"
                       CanEditNotes="CanAddNotes"
@@ -97,6 +109,8 @@
         {
             <TripNotes @ref="_notes"
                        Trip="Trip"
+                       ViewerUserId="ViewerUserId"
+                       Contributors="Contributors"
                        ShowList="false"
                        UseFloatingTrigger="true"
                        NoteStorage="NoteStorage"
@@ -107,6 +121,7 @@
         {
             <TripCatches @ref="_catches"
                          Trip="Trip"
+                         ViewerUserId="ViewerUserId"
                          RecordCatchBaseHref="@RecordCatchBaseHref"
                          CatchStorage="NoteStorage"
                          ShowRecordAction="false"
@@ -116,15 +131,15 @@
                          OnCatchesAttached="OnContentChanged" />
         }
 
-        @if (CanEdit && _showPhotographPicker)
+        @if (CanAddPhotographs && _showPhotographPicker)
         {
-            <TripPhotographs Trip="Trip" ShowGallery="false" Changed="OnContentChanged" />
+            <TripPhotographs Trip="Trip" ViewerUserId="ViewerUserId" ShowGallery="false" Changed="OnContentChanged" />
         }
 
-        @if (CanEdit || CanAddCatches)
+        @if (CanManageTrip || CanRecordCatch || CanAddCatches || CanAddPhotographs)
         {
             <MudGrid Spacing="2" Class="active-trip-actions" id="active-trip-actions">
-                @if (CanEdit)
+                @if (CanRecordCatch)
                 {
                     <MudItem xs="4">
                         <MudButton Variant="Variant.Filled"
@@ -152,7 +167,7 @@
                         </MudButton>
                     </MudItem>
                 }
-                @if (CanEdit)
+                @if (CanAddPhotographs)
                 {
                     <MudItem xs="4">
                         <MudButton Variant="Variant.Outlined"
@@ -165,6 +180,9 @@
                             @Loc["Trip_AddPhotograph"]
                         </MudButton>
                     </MudItem>
+                }
+                @if (CanManageTrip)
+                {
                     <MudItem xs="4">
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Primary"
@@ -192,7 +210,7 @@
             </MudGrid>
         }
 
-        @if (!CanEdit)
+        @if (!CanManageTrip)
         {
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Primary"

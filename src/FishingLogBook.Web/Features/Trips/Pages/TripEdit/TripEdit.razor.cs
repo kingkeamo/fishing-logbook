@@ -24,6 +24,7 @@ public partial class TripEdit : ComponentBase, IDisposable
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _isLoading = true;
     private bool _loadFailed;
+    private Guid _viewerUserId;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -80,6 +81,7 @@ public partial class TripEdit : ComponentBase, IDisposable
         try
         {
             var ownerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
+            _viewerUserId = ownerUserId;
             _trip = await TripStore.GetAsync(ownerUserId, TripId, cancellationToken);
             if (_trip is null)
             {

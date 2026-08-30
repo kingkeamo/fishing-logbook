@@ -1,5 +1,5 @@
+using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Common.Responses;
-using FishingLogBook.Application.Contracts.Services;
 using FishingLogBook.Application.FishingLocations.Commands;
 using FishingLogBook.Application.FishingLocations.Errors;
 using FishingLogBook.Application.FishingLocations.Queries;
