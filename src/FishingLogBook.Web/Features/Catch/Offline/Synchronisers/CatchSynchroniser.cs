@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Offline.Dependencies;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Clients;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
@@ -384,10 +385,13 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
         }
         catch (Exception exception) when (IsSynchronisationFailure(exception, cancellationToken))
         {
+            var targetStatus = SynchronisationFailureClassifier.Classify(exception) == SynchronisationFailureKind.Permanent
+                ? SyncStatus.FailedToSynchronise
+                : SyncStatus.WaitingToSynchronise;
             catchRecord = catchRecord with
             {
-                SyncStatus = SyncStatus.FailedToSynchronise,
-                MetadataSyncStatus = SyncStatus.FailedToSynchronise
+                SyncStatus = targetStatus,
+                MetadataSyncStatus = targetStatus
             };
             await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
             await SafeLogAsync(
@@ -447,11 +451,19 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                 catchRecord.Id,
                 new PhotographUploadRequestDto(photograph.Id, photograph.ContentType),
                 cancellationToken);
-            await _client.UploadPhotographAsync(
-                upload.UploadUrl,
-                photograph.Bytes,
-                photograph.ContentType,
-                cancellationToken);
+            try
+            {
+                await _client.UploadPhotographAsync(
+                    upload.UploadUrl,
+                    photograph.Bytes,
+                    photograph.ContentType,
+                    cancellationToken);
+            }
+            catch (Exception uploadException) when (uploadException is not OperationCanceledException)
+            {
+                throw new TransientSynchronisationException(uploadException);
+            }
+
             await _client.RecordPhotographAsync(
                 catchRecord.Id,
                 new RecordPhotographDto(
@@ -486,10 +498,13 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
                     cancellationToken);
             }
 
+            var targetStatus = SynchronisationFailureClassifier.Classify(exception) == SynchronisationFailureKind.Permanent
+                ? SyncStatus.FailedToSynchronise
+                : SyncStatus.WaitingToSynchronise;
             catchRecord = WithPhotographStatus(
                 catchRecord,
                 photographId,
-                SyncStatus.FailedToSynchronise,
+                targetStatus,
                 objectKey: null);
             await _store.UpdateSyncStateAsync(catchRecord, cancellationToken);
             await SafeLogAsync(
@@ -707,7 +722,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
 
         if (exception is not null)
         {
-            metadata[DiagnosticMetadata.ErrorType] = exception.GetType().Name;
+            metadata[DiagnosticMetadata.ErrorType] = (exception.InnerException ?? exception).GetType().Name;
         }
 
         try

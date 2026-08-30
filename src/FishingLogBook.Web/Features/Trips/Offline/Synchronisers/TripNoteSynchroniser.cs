@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Offline.Dependencies;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -117,7 +118,7 @@ public sealed class TripNoteSynchroniser : ITripNoteSynchroniser
                 note,
                 exception,
                 cancellationToken);
-            await MarkFailedAsync(ownerUserId, note, cancellationToken);
+            await MarkFailedAsync(ownerUserId, note, exception, cancellationToken);
         }
         finally
         {
@@ -128,6 +129,7 @@ public sealed class TripNoteSynchroniser : ITripNoteSynchroniser
     private async Task MarkFailedAsync(
         Guid ownerUserId,
         TripNoteModel note,
+        Exception exception,
         CancellationToken cancellationToken)
     {
         try
@@ -138,8 +140,11 @@ public sealed class TripNoteSynchroniser : ITripNoteSynchroniser
                 return;
             }
 
+            var targetStatus = SynchronisationFailureClassifier.Classify(exception) == SynchronisationFailureKind.Permanent
+                ? SyncStatus.FailedToSynchronise
+                : SyncStatus.WaitingToSynchronise;
             await _store.SaveAsync(
-                current with { SyncStatus = SyncStatus.FailedToSynchronise },
+                current with { SyncStatus = targetStatus },
                 cancellationToken);
         }
         catch (Exception storeException) when (storeException is not OperationCanceledException)

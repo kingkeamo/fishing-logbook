@@ -120,7 +120,7 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldMarkTheNoteAsFailedWhenTheServerRejectsIt()
+    public async Task ItShouldKeepTheNoteWaitingWhenTheServerIsTemporarilyUnavailable()
     {
         // Arrange
         MockTripClient.RecordNoteAsync(
@@ -135,7 +135,7 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         store.Stored(NoteId)!.SyncedAt.Should().BeNull();
         store.Stored(NoteId)!.Text.Should().Be(CreateNote().Text);
         await MockDiagnostics.Received(1).LogAsync(
@@ -240,7 +240,7 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldNotAutomaticallyRetryAFailedNote()
+    public async Task ItShouldAutomaticallyRetryATransientlyFailedNote()
     {
         // Arrange
         var attempts = 0;
@@ -262,6 +262,37 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
                     call.ArgAt<Guid>(0),
                     request.Text,
                     request.RecordedOn);
+            });
+        var store = await CreateStoreAsync(CreateNote());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        attempts.Should().Be(2);
+        store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        store.Stored(NoteId).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldNotAutomaticallyRetryAPermanentlyFailedNote()
+    {
+        // Arrange
+        var attempts = 0;
+        MockTripClient.RecordNoteAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<RecordTripNoteDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns<TripNoteDto?>(_ =>
+            {
+                attempts++;
+                throw new HttpRequestException(
+                    "The angler is no longer a participant on this Trip.",
+                    inner: null,
+                    System.Net.HttpStatusCode.Forbidden);
             });
         var store = await CreateStoreAsync(CreateNote());
         var sut = CreateSut(store);

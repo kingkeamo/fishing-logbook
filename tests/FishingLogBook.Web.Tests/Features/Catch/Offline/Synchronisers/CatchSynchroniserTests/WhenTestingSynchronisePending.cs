@@ -84,8 +84,8 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
 
         // Assert
-        saved!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
-        saved.MetadataSyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        saved!.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+        saved.MetadataSyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         saved.Location.Should().Be(expected.Location);
         saved.Photographs.Should().HaveCount(3);
         saved.Photographs.Should().OnlyContain(
@@ -125,12 +125,12 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
 
         // Assert
-        saved!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        saved!.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         saved.MetadataSyncStatus.Should().Be(SyncStatus.Synchronised);
         saved.Photographs.Single(item => item.Id == PhotographAId)
             .SyncStatus.Should().Be(SyncStatus.Synchronised);
         saved.Photographs.Single(item => item.Id == PhotographBId)
-            .SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+            .SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         saved.Photographs.Single(item => item.Id == PhotographCId)
             .SyncStatus.Should().Be(SyncStatus.Synchronised);
         saved.Location!.Visibility.Should().Be("Private");
@@ -302,7 +302,7 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         saved.Single(item => item.Id == CatchId).SyncStatus
             .Should().Be(SyncStatus.Synchronised);
         saved.Single(item => item.Id == catchBId).SyncStatus
-            .Should().Be(SyncStatus.FailedToSynchronise);
+            .Should().Be(SyncStatus.WaitingToSynchronise);
         saved.Single(item => item.Id == catchCId).SyncStatus
             .Should().Be(SyncStatus.Synchronised);
         await MockCatchClient.Received(3).UpsertAsync(
@@ -668,5 +668,101 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
             Arg.Any<Guid>(),
             Arg.Any<PhotographUploadRequestDto>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAutomaticallyRetryATransientlyFailedCatchAndThenSucceed()
+    {
+        // Arrange
+        var attempts = 0;
+        MockCatchClient.UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                attempts++;
+                if (attempts == 1)
+                {
+                    throw new HttpRequestException(
+                        "service unavailable",
+                        null,
+                        HttpStatusCode.ServiceUnavailable);
+                }
+
+                return Task.CompletedTask;
+            });
+        var store = await CreateStoreAsync(CreateCatch());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        var afterFirstAttempt = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+
+        // Assert
+        afterFirstAttempt!.MetadataSyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockCatchClient.Received(2).UpsertAsync(
+            Arg.Any<CatchDto>(),
+            Arg.Any<CancellationToken>());
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+        saved!.MetadataSyncStatus.Should().Be(SyncStatus.Synchronised);
+    }
+
+    [Fact]
+    public async Task ItShouldNotAutomaticallyRetryAPermanentlyFailedCatch()
+    {
+        // Arrange
+        MockCatchClient.UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException(
+                "validation failed",
+                null,
+                HttpStatusCode.BadRequest));
+        var store = await CreateStoreAsync(CreateCatch());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+
+        // Assert
+        saved!.MetadataSyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+
+        // Act - a second sync pass must not retry a permanently rejected catch
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        await MockCatchClient.Received(1).UpsertAsync(
+            Arg.Any<CatchDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotMarkTheCatchFailedWhenSynchronisationIsCancelled()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        MockCatchClient.UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>())
+            .Returns<Task>(_ =>
+            {
+                cancellation.Cancel();
+                throw new OperationCanceledException(cancellation.Token);
+            });
+        var store = await CreateStoreAsync(CreateCatch());
+        var sut = CreateSut(store);
+
+        // Act
+        try
+        {
+            await sut.SynchronisePendingAsync(OwnerUserId, cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+
+        // Assert
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+        saved!.MetadataSyncStatus.Should().NotBe(SyncStatus.FailedToSynchronise);
     }
 }

@@ -188,7 +188,7 @@ public class WhenTestingMissingServerCatch : BaseCatchSynchroniserTest
             Arg.Any<CatchDto>(),
             Arg.Any<CancellationToken>());
         var stored = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
-        stored!.Photographs[0].SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        stored!.Photographs[0].SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
     }
 
     private static FishingLogBook.Web.Features.Catch.Models.CatchModel

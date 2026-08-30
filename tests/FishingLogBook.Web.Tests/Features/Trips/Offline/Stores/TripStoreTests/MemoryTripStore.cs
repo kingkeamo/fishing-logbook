@@ -93,7 +93,8 @@ public sealed class MemoryTripStore : ITripStore
                 .Where(trip =>
                     trip.IsOwnedBy(ownerUserId)
                     && trip.Origin == TripOriginEnum.Local
-                    && trip.SyncStatus != SyncStatus.Synchronised)
+                    && trip.SyncStatus != SyncStatus.Synchronised
+                    && trip.SyncStatus != SyncStatus.FailedToSynchronise)
                 .OrderBy(trip => trip.StartedOn)
                 .ToList());
     }

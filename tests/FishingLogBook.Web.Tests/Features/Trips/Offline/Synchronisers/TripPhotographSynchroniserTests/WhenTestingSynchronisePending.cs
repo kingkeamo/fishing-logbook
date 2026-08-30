@@ -121,9 +121,11 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldMarkThePhotographAsFailedWhenTheUploadFails()
+    public async Task ItShouldKeepThePhotographWaitingWhenTheUploadFailsTransiently()
     {
-        // Arrange
+        // Arrange - a raw object-storage PUT failure (e.g. an expired presigned URL, or a
+        // temporary storage outage) is always retried: the next sync pass requests a fresh
+        // presigned URL and tries again, rather than giving up permanently.
         MockTripClient.UploadPhotographAsync(
                 Arg.Any<string>(),
                 Arg.Any<byte[]>(),
@@ -137,7 +139,7 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
         await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         store.Stored(PhotographId)!.SyncedAt.Should().BeNull();
         await MockTripClient.DidNotReceive().RecordPhotographAsync(
             Arg.Any<Guid>(),
@@ -156,13 +158,14 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     [Fact]
     public async Task ItShouldMarkThePhotographAsFailedWhenTheServerPermanentlyRejectsIt()
     {
-        // Arrange - simulates a participant having been removed from the Trip.
-        MockTripClient.UploadPhotographAsync(
-                Arg.Any<string>(),
-                Arg.Any<byte[]>(),
-                Arg.Any<string>(),
+        // Arrange - simulates a participant having been removed from the Trip. This is
+        // enforced by our own API (TripAccessService, checked when requesting the upload
+        // URL), not by the raw object-storage PUT, so the rejection is simulated there.
+        MockTripClient.CreatePhotographUploadAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<PhotographUploadRequestDto>(),
                 Arg.Any<CancellationToken>())
-            .Returns(_ => throw new HttpRequestException(
+            .Returns<PhotographUploadDto>(_ => throw new HttpRequestException(
                 "The angler is no longer a participant on this Trip.",
                 inner: null,
                 System.Net.HttpStatusCode.Forbidden));
@@ -175,10 +178,9 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
 
         // Assert
         store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.FailedToSynchronise);
-        await MockTripClient.Received(1).UploadPhotographAsync(
-            Arg.Any<string>(),
-            Arg.Any<byte[]>(),
-            Arg.Any<string>(),
+        await MockTripClient.Received(1).CreatePhotographUploadAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<PhotographUploadRequestDto>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -214,7 +216,7 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldNotAutomaticallyRetryAFailedUpload()
+    public async Task ItShouldAutomaticallyRetryATransientlyFailedUpload()
     {
         // Arrange
         var attempts = 0;
@@ -229,6 +231,40 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
                 return attempts == 1
                     ? throw new HttpRequestException("Storage unavailable.")
                     : Task.CompletedTask;
+            });
+        var store = await CreateStoreAsync(CreatePhotograph());
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        attempts.Should().Be(2);
+        store.Stored(PhotographId)!.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        await MockTripClient.Received(1).RecordPhotographAsync(
+            TripId,
+            Arg.Any<RecordTripPhotographDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotAutomaticallyRetryAPermanentlyFailedUpload()
+    {
+        // Arrange
+        var attempts = 0;
+        MockTripClient.CreatePhotographUploadAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<PhotographUploadRequestDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns<PhotographUploadDto>(_ =>
+            {
+                attempts++;
+                throw new HttpRequestException(
+                    "The angler is no longer a participant on this Trip.",
+                    inner: null,
+                    System.Net.HttpStatusCode.Forbidden);
             });
         var store = await CreateStoreAsync(CreatePhotograph());
         var sut = CreateSut(store);

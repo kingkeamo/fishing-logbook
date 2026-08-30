@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Offline.Dependencies;
+using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -118,7 +119,7 @@ public sealed class TripPhotographSynchroniser : ITripPhotographSynchroniser
                 photograph,
                 exception,
                 cancellationToken);
-            await MarkFailedAsync(ownerUserId, photograph, cancellationToken);
+            await MarkFailedAsync(ownerUserId, photograph, exception, cancellationToken);
         }
         finally
         {
@@ -129,6 +130,7 @@ public sealed class TripPhotographSynchroniser : ITripPhotographSynchroniser
     private async Task MarkFailedAsync(
         Guid ownerUserId,
         TripPhotographModel photograph,
+        Exception exception,
         CancellationToken cancellationToken)
     {
         try
@@ -143,11 +145,14 @@ public sealed class TripPhotographSynchroniser : ITripPhotographSynchroniser
                 return;
             }
 
+            var targetStatus = SynchronisationFailureClassifier.Classify(exception) == SynchronisationFailureKind.Permanent
+                ? SyncStatus.FailedToSynchronise
+                : SyncStatus.WaitingToSynchronise;
             await _store.SaveAsync(
                 photograph with
                 {
                     Bytes = bytes,
-                    SyncStatus = SyncStatus.FailedToSynchronise
+                    SyncStatus = targetStatus
                 },
                 cancellationToken);
         }
@@ -192,11 +197,19 @@ public sealed class TripPhotographSynchroniser : ITripPhotographSynchroniser
             photograph.TripId,
             new PhotographUploadRequestDto(photograph.Id, photograph.ContentType),
             cancellationToken);
-        await _client.UploadPhotographAsync(
-            upload.UploadUrl,
-            bytes,
-            photograph.ContentType,
-            cancellationToken);
+        try
+        {
+            await _client.UploadPhotographAsync(
+                upload.UploadUrl,
+                bytes,
+                photograph.ContentType,
+                cancellationToken);
+        }
+        catch (Exception uploadException) when (uploadException is not OperationCanceledException)
+        {
+            throw new TransientSynchronisationException(uploadException);
+        }
+
         await _client.RecordPhotographAsync(
             photograph.TripId,
             new RecordTripPhotographDto(
@@ -250,7 +263,7 @@ public sealed class TripPhotographSynchroniser : ITripPhotographSynchroniser
         };
         if (exception is not null)
         {
-            metadata[DiagnosticMetadata.ErrorType] = exception.GetType().Name;
+            metadata[DiagnosticMetadata.ErrorType] = (exception.InnerException ?? exception).GetType().Name;
         }
 
         try

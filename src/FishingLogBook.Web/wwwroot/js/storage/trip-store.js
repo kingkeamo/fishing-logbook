@@ -14,6 +14,7 @@ import {
 export const TRIP_ACTIVE_STATUS = 'Active';
 export const TRIP_COMPLETED_STATUS = 'Completed';
 export const TRIP_SYNCHRONISED_STATUS = 'synchronised';
+export const TRIP_FAILED_STATUS = 'failedToSynchronise';
 export const TRIP_SAVED_OUTCOME = 'saved';
 export const TRIP_ACTIVE_CONFLICT_OUTCOME = 'activeConflict';
 
@@ -195,7 +196,8 @@ export async function getPendingTrips(ownerUserId) {
             if (cursor) {
                 if (isTripOwner(cursor.value, owner)
                     && isLocalOriginTrip(cursor.value)
-                    && !isSynchronised(cursor.value?.syncStatus)) {
+                    && !isSynchronised(cursor.value?.syncStatus)
+                    && !isFailedToSynchronise(cursor.value?.syncStatus)) {
                     pending.push({ json: JSON.stringify(cursor.value) });
                 }
 
@@ -272,6 +274,10 @@ function isEligibleForCleanup(trip, cutoff) {
 
 function isSynchronised(status) {
     return status === TRIP_SYNCHRONISED_STATUS || status === 3;
+}
+
+function isFailedToSynchronise(status) {
+    return status === TRIP_FAILED_STATUS || status === 4;
 }
 
 function isActiveForOwner(trip, owner) {

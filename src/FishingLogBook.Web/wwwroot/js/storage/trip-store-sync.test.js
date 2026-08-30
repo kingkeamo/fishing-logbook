@@ -73,13 +73,16 @@ describe('Trip store synchronisation support', () => {
             expect(await getPendingTrips(ownerUserId)).toEqual([]);
         });
 
-        it('includes a trip that failed to synchronise', async () => {
+        it('excludes a trip that permanently failed to synchronise', async () => {
             await save(trip({ syncStatus: 'failedToSynchronise' }));
 
-            const pending = await getPendingTrips(ownerUserId);
+            expect(await getPendingTrips(ownerUserId)).toEqual([]);
+        });
 
-            expect(pending).toHaveLength(1);
-            expect(JSON.parse(pending[0].json).syncStatus).toBe('failedToSynchronise');
+        it('excludes a trip permanently failed under a numeric status', async () => {
+            await save(trip({ syncStatus: 4 }));
+
+            expect(await getPendingTrips(ownerUserId)).toEqual([]);
         });
 
         it('returns every locally saved trip for the owner', async () => {
