@@ -1,0 +1,41 @@
+export async function signIn(page, applicationOrigin, username, password) {
+    await page.goto('/');
+    await page.locator('#landing-sign-in').click();
+    await page.waitForURL(url => !url.hostname.includes('localhost'));
+    await page.locator('input[name="username"], #signInFormUsername').fill(username);
+    await page.locator('input[name="password"], #signInFormPassword').fill(password);
+    await page.locator('button[type="submit"], input[type="submit"]').first().click();
+    await page.waitForURL(url =>
+        url.origin === applicationOrigin
+        && !url.pathname.includes('/authentication/login-callback'), { timeout: 45_000 });
+    await page.waitForURL(url =>
+        url.origin === applicationOrigin
+        && ['/catches', '/onboarding'].includes(url.pathname), { timeout: 90_000 });
+    await completeOnboardingWhenRequired(page);
+}
+
+export async function completeOnboardingWhenRequired(page) {
+    if (new URL(page.url()).pathname === '/catches') return;
+
+    await page.locator('#onboarding-loading').waitFor({ state: 'hidden' });
+    await page.locator('#onboarding-next').waitFor({ state: 'visible' });
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-method-Fly').click();
+    await page.locator('#onboarding-species-more-Fly').click();
+    await page.locator('#catalogue-picker-modal-option-BrownTrout').click();
+    await page.locator('#catalogue-picker-modal-save').click();
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-skip-location').click();
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-next').click();
+    await page.locator('#onboarding-finish').click();
+    await page.waitForURL(url => new URL(url).pathname === '/catches', { timeout: 30_000 });
+}
+
+export async function readSessionStorage(page) {
+    return page.evaluate(() => Object.fromEntries(
+        Array.from({ length: window.sessionStorage.length }, (_, index) => {
+            const key = window.sessionStorage.key(index);
+            return [key, window.sessionStorage.getItem(key)];
+        })));
+}
