@@ -26,4 +26,18 @@ public class WhenTestingGetAllMethods : BaseFishingCatalogueRepositoryTest
         result.Value.Should().OnlyContain(method => method.Id != Guid.Empty);
         result.Value.Should().OnlyContain(method => method.CreatedOn != default);
     }
+
+    [Fact]
+    public async Task ItShouldPropagateCancellationRatherThanReturnAFailureResult()
+    {
+        // Arrange
+        using var cancellationTokenSource = new CancellationTokenSource();
+        await cancellationTokenSource.CancelAsync();
+
+        // Act
+        var act = () => Sut.GetAllMethodsAsync(cancellationTokenSource.Token);
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
 }

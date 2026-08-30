@@ -27,4 +27,18 @@ public class WhenTestingGetAllSpecies : BaseFishingCatalogueRepositoryTest
         result.Value.Should().ContainSingle(species => species.Code == "RainbowTrout");
         result.Value.Should().OnlyContain(species => species.Id != Guid.Empty);
     }
+
+    [Fact]
+    public async Task ItShouldPropagateCancellationRatherThanReturnAFailureResult()
+    {
+        // Arrange
+        using var cancellationTokenSource = new CancellationTokenSource();
+        await cancellationTokenSource.CancelAsync();
+
+        // Act
+        var act = () => Sut.GetAllSpeciesAsync(cancellationTokenSource.Token);
+
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
 }
