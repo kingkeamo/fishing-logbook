@@ -6,7 +6,8 @@ import {
     getTrip,
     getTrips,
     hydrateTrip,
-    putTrip
+    putTrip,
+    revokeParticipantAccess
 } from './trip-store.js';
 import {
     deleteTripNote,
@@ -151,6 +152,47 @@ describe('Shared trip collaboration store', () => {
         expect(await getPendingTrips(participantUserId)).toEqual([]);
     });
 
+    it('revokes a removed participant\'s cached access to a server-origin shared trip', async () => {
+        await hydrateShared();
+        expect(await getTrip(participantUserId, tripId)).not.toBeNull();
+
+        const revoked = await revokeParticipantAccess(participantUserId, tripId);
+
+        expect(revoked).toBe(true);
+        expect(await getTrip(participantUserId, tripId)).toBeNull();
+        expect(await getActiveTrip(participantUserId)).toBeNull();
+    });
+
+    it('never removes the trip record itself when revoking stale participant access', async () => {
+        await hydrateShared();
+
+        await revokeParticipantAccess(participantUserId, tripId);
+
+        // The record still exists for the owner - only the removed participant's own access
+        // was revoked, the Trip and its data were not deleted.
+        const forOwner = await getTrip(ownerUserId, tripId);
+        expect(forOwner).not.toBeNull();
+        expect(JSON.parse(forOwner.json).id).toBe(tripId);
+    });
+
+    it('does nothing when revoking access to a locally-created trip', async () => {
+        expect(await putTrip(JSON.stringify(ownedTrip()))).toBe(TRIP_SAVED_OUTCOME);
+
+        const revoked = await revokeParticipantAccess(participantUserId, tripId);
+
+        expect(revoked).toBe(false);
+        expect(await getTrip(participantUserId, tripId)).not.toBeNull();
+    });
+
+    it('does nothing when revoking access for the trip owner', async () => {
+        await hydrateShared();
+
+        const revoked = await revokeParticipantAccess(ownerUserId, tripId);
+
+        expect(revoked).toBe(false);
+        expect(await getTrip(ownerUserId, tripId)).not.toBeNull();
+    });
+
     it('never queues a hydrated shared trip for the trip upsert outbox', async () => {
         await hydrateShared(participantUserId, { syncStatus: 'savedLocally', syncedAt: null });
 
@@ -212,6 +254,41 @@ describe('Shared trip collaboration store', () => {
         expect(pending).toHaveLength(1);
         expect(JSON.parse(pending[0].json).id).toBe(noteId);
         expect(await getTripsWithPendingNotes(participantUserId)).toEqual([tripId]);
+    });
+
+    it('keeps a pending trip note when the trip is hydrated again without it', async () => {
+        await hydrateShared();
+        await putTripNote(JSON.stringify(note({ syncStatus: 'waitingToSynchronise' })));
+
+        // A later authoritative refresh carries only server-confirmed notes - N1 has not
+        // synced yet, so the server has never heard of it.
+        await hydrateShared(participantUserId, { notes: [] });
+
+        const notes = await getTripNotes(participantUserId, tripId);
+        expect(notes).toHaveLength(1);
+        const stored = JSON.parse(notes[0].json);
+        expect(stored.id).toBe(noteId);
+        expect(stored.syncStatus).toBe('waitingToSynchronise');
+    });
+
+    it('keeps a pending trip photograph when the trip is hydrated again without it', async () => {
+        await hydrateShared();
+        await putTripPhotograph(
+            JSON.stringify(photograph({ syncStatus: 'waitingToSynchronise' })),
+            new Uint8Array([1, 2, 3]));
+
+        // A later authoritative refresh carries only server-confirmed photographs - the
+        // pending photograph has not synced yet, so the server has never heard of it.
+        await hydrateShared(participantUserId, { photographs: [] });
+
+        const bytes = await getTripPhotographBytes(participantUserId, tripId, photographId);
+        expect(bytes).not.toBeNull();
+
+        const pending = await getPendingTripPhotographs(participantUserId);
+        expect(pending).toHaveLength(1);
+        const stored = JSON.parse(pending[0].json);
+        expect(stored.id).toBe(photographId);
+        expect(stored.syncStatus).toBe('waitingToSynchronise');
     });
 
     it('shows every contributors notes in one shared timeline', async () => {

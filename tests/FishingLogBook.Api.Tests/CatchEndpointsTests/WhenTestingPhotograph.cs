@@ -279,7 +279,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
             $"/api/catches/{catchId:D}/photographs",
             new RecordPhotographDto(
                 photographId,
-                "catches/another-user/replacement",
+                "catch-photographs/another-catch/replacement",
                 "image/jpeg"));
 
         // Assert

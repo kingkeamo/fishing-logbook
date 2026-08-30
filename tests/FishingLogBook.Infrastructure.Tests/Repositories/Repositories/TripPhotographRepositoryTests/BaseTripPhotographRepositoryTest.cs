@@ -85,7 +85,7 @@ public abstract class BaseTripPhotographRepositoryTest
             Id = id,
             TripId = tripId,
             ContributedByUserId = contributedByUserId ?? userId,
-            ObjectKey = $"trips/{userId:D}/{tripId:D}/{id:D}",
+            ObjectKey = $"trip-photographs/{tripId:D}/{id:D}",
             ContentType = PhotographContentTypeConstants.Jpeg,
             CapturedOn = capturedOn,
             AddedOn = addedOn ?? StartedOn.AddHours(1)

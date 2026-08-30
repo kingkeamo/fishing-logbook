@@ -99,6 +99,26 @@ public sealed class MemoryTripStore : ITripStore
                 .ToList());
     }
 
+    public Task<bool> RevokeParticipantAccessAsync(
+        Guid viewerUserId,
+        Guid tripId,
+        CancellationToken cancellationToken)
+    {
+        if (!_trips.TryGetValue(tripId, out var trip)
+            || trip.Origin == TripOriginEnum.Local
+            || trip.IsOwnedBy(viewerUserId)
+            || !trip.ParticipantUserIds.Contains(viewerUserId))
+        {
+            return Task.FromResult(false);
+        }
+
+        _trips[tripId] = trip with
+        {
+            ParticipantUserIds = trip.ParticipantUserIds.Where(id => id != viewerUserId).ToArray()
+        };
+        return Task.FromResult(true);
+    }
+
     public Task<int> CleanupSyncedAsync(
         Guid viewerUserId,
         DateTimeOffset olderThan,

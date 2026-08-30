@@ -69,7 +69,7 @@ public class WhenTestingRecord : BaseTripPhotographServiceTest
 
         // Act
         var result = await Sut.RecordAsync(
-            Args(objectKey: $"catches/{CurrentUserId:D}/{TripId:D}/{PhotographId:D}"),
+            Args(objectKey: $"catch-photographs/{TripId:D}/{PhotographId:D}"),
             CancellationToken.None);
 
         // Assert

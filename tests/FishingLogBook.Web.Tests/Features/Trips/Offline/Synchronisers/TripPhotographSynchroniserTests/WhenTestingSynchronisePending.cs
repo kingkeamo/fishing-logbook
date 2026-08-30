@@ -370,7 +370,7 @@ public class WhenTestingSynchronisePending : BaseTripPhotographSynchroniserTest
     {
         // Arrange
         var capturedOn = AddedOn.AddHours(-1);
-        var expectedKey = $"trips/{OwnerUserId:D}/{TripId:D}/{PhotographId:D}";
+        var expectedKey = $"trip-photographs/{TripId:D}/{PhotographId:D}";
         var store = await CreateStoreAsync(CreatePhotograph(capturedOn: capturedOn));
         var sut = CreateSut(store);
 

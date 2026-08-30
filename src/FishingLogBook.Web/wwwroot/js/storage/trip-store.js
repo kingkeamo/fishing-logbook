@@ -8,7 +8,8 @@ import {
     isTripOwner,
     normalisedOwnerId,
     runLogbookMultiStoreTransaction,
-    runLogbookTransaction
+    runLogbookTransaction,
+    tripParticipantIds
 } from './logbook-database.js';
 
 export const TRIP_ACTIVE_STATUS = 'Active';
@@ -100,6 +101,42 @@ export async function hydrateTrip(json, viewerUserId) {
             const write = store.put(trip);
             write.onerror = () => fail(write.error);
             write.onsuccess = () => succeed(TRIP_SAVED_OUTCOME);
+        };
+    });
+}
+
+// Revokes this viewer's cached access to a server-origin shared Trip once an authoritative
+// online check (a fresh detail fetch, or absence from the authoritative Trip list) confirms
+// they are no longer an owner or accepted participant. Never touches a locally-created Trip -
+// its absence from the server is expected until it has synced. Only removes the viewer from
+// participantUserIds; the Trip record and its notes/photographs are left in place, so genuine
+// local evidence is not destroyed, it just stops being presented as writable to this viewer.
+export async function revokeParticipantAccess(viewerUserId, tripId) {
+    const viewer = normalisedOwnerId(viewerUserId);
+    if (!viewer || typeof tripId !== 'string' || !tripId) {
+        return false;
+    }
+
+    return runLogbookTransaction(TRIP_STORE_NAME, 'readwrite', 'write', (store, succeed, fail) => {
+        const read = store.get(tripId);
+        read.onerror = () => fail(read.error);
+        read.onsuccess = () => {
+            const trip = read.result;
+            if (!trip || isLocalOriginTrip(trip) || isTripOwner(trip, viewer)) {
+                succeed(false);
+                return;
+            }
+
+            const participants = tripParticipantIds(trip);
+            if (!participants.includes(viewer)) {
+                succeed(false);
+                return;
+            }
+
+            trip.participantUserIds = participants.filter((id) => id !== viewer);
+            const write = store.put(trip);
+            write.onerror = () => fail(write.error);
+            write.onsuccess = () => succeed(true);
         };
     });
 }

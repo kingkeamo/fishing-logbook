@@ -256,7 +256,10 @@ public partial class ActiveTrip : ComponentBase, IDisposable
                 shared = await RefreshSharedTripAsync(_trip, viewerUserId, cancellationToken);
                 if (_trip.Origin == TripOriginEnum.Server)
                 {
-                    _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken) ?? _trip;
+                    // No fallback to the stale in-memory copy here: if access was just
+                    // revoked, the re-read correctly comes back null, and that must be
+                    // honoured rather than papered over with what we had before.
+                    _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken);
                 }
             }
 
@@ -328,6 +331,14 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
             if (detail is null)
             {
+                // The authoritative server no longer returns this Trip for the current viewer
+                // (e.g. they were removed as a participant). A cached server-origin Trip must
+                // not keep presenting as writable on the strength of stale local membership.
+                if (localTrip.Origin == TripOriginEnum.Server)
+                {
+                    await TripStore.RevokeParticipantAccessAsync(viewerUserId, TripId, cancellationToken);
+                }
+
                 return null;
             }
 
@@ -344,6 +355,11 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             var refreshed = ToTripModel(detail, ParticipantUserIds(detail, viewerUserId));
             if (!refreshed.CanContribute(viewerUserId))
             {
+                if (localTrip.Origin == TripOriginEnum.Server)
+                {
+                    await TripStore.RevokeParticipantAccessAsync(viewerUserId, TripId, cancellationToken);
+                }
+
                 return detail;
             }
 

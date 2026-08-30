@@ -6,6 +6,7 @@ export {
     getCatchWithPhotographs,
     getCatchPhotographBytes,
     updateCatchMetadata,
+    reconcileCatchMetadata,
     updateCatchTrip,
     cleanupSyncedCatches
 } from './storage/catch-store.js';
@@ -16,6 +17,7 @@ export {
     getTrip,
     getActiveTrip,
     getPendingTrips,
+    revokeParticipantAccess,
     cleanupSyncedTrips
 } from './storage/trip-store.js';
 export {

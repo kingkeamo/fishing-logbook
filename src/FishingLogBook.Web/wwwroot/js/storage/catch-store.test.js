@@ -10,6 +10,7 @@ import {
     getCatchWithPhotographs,
     openCatchDatabase,
     putCatchWithPhotographs,
+    reconcileCatchMetadata,
     updateCatchMetadata
 } from './catch-store.js';
 import * as indexedDb from './indexed-db.js';
@@ -218,6 +219,80 @@ describe('Catch store', () => {
         );
         expect(reopened[0].photographs[0].bytesBase64).toBe(
             btoa(String.fromCharCode(1, 2, 3))
+        );
+    });
+
+    it('updateCatchMetadata never overwrites the Caught By angler, unlike reconcileCatchMetadata', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = '11111111-1111-1111-1111-111111111111';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                anglerUserId: ownerUserId,
+                recordedByUserId: ownerUserId,
+                syncStatus: 0,
+                metadataSyncStatus: 0,
+                photographs: [{
+                    id: photographId,
+                    catchId,
+                    contentType: 'image/jpeg',
+                    syncStatus: 0
+                }]
+            }),
+            [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([9, 9, 9])
+            }]
+        );
+
+        // A stale queued payload still shows the angler as the owner - updateCatchMetadata
+        // must never adopt a different angler, only sync-state fields.
+        await updateCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            anglerUserId: otherUserId,
+            recordedByUserId: ownerUserId,
+            syncStatus: 3,
+            metadataSyncStatus: 3,
+            photographs: []
+        }));
+
+        const afterUpdate = JSON.parse(
+            (await getAllCatchesWithPhotographs(ownerUserId))[0].json
+        );
+        expect(afterUpdate.anglerUserId).toBe(ownerUserId);
+
+        // reconcileCatchMetadata is the authoritative-server-truth path - it must adopt the
+        // server-confirmed angler, and preserve the existing photograph bytes while doing so.
+        await reconcileCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: otherUserId,
+            anglerUserId: otherUserId,
+            recordedByUserId: ownerUserId,
+            syncStatus: 3,
+            metadataSyncStatus: 3,
+            photographs: [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                syncStatus: 3,
+                objectKey: `catch-photographs/${catchId}/${photographId}`
+            }]
+        }));
+
+        const reconciled = await getAllCatchesWithPhotographs(otherUserId);
+        const metadata = JSON.parse(reconciled[0].json);
+        expect(metadata.userId).toBe(otherUserId);
+        expect(metadata.anglerUserId).toBe(otherUserId);
+        expect(metadata.recordedByUserId).toBe(ownerUserId);
+        expect(metadata.photographs[0].objectKey).toBe(
+            `catch-photographs/${catchId}/${photographId}`
+        );
+        expect(reconciled[0].photographs[0].bytesBase64).toBe(
+            btoa(String.fromCharCode(9, 9, 9))
         );
     });
 

@@ -89,7 +89,7 @@ public abstract class BaseTripRepositoryTest
                 Id = Guid.NewGuid(),
                 TripId = tripId,
                 ContributedByUserId = contributedByUserId,
-                ObjectKey = $"trips/{tripId:D}/{Guid.NewGuid():N}.jpg",
+                ObjectKey = $"trip-photographs/{tripId:D}/{Guid.NewGuid():N}.jpg",
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = StartedOn.AddMinutes(20)
             },

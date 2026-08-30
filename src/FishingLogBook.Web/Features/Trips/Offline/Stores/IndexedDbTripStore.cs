@@ -145,6 +145,34 @@ public sealed class IndexedDbTripStore : ITripStore
             _logging);
     }
 
+    public async Task<bool> RevokeParticipantAccessAsync(
+        Guid viewerUserId,
+        Guid tripId,
+        CancellationToken cancellationToken)
+    {
+        RequireViewer(viewerUserId);
+        return await OfflineOperation.ExecuteAsync(
+            "write",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                return await module.InvokeAsync<bool>(
+                    "revokeParticipantAccess",
+                    token,
+                    viewerUserId.ToString("D"),
+                    tripId.ToString("D"));
+            },
+            cancellationToken,
+            _logging);
+    }
+
     private async Task<string> WriteAsync(
         Func<IJSObjectReference, CancellationToken, Task<string>> invoke,
         CancellationToken cancellationToken)

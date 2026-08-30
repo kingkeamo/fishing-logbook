@@ -22,6 +22,11 @@ public interface ICatchStore
 
     Task UpdateSyncStateAsync(CatchModel catchRecord, CancellationToken cancellationToken);
 
+    // Unlike UpdateSyncStateAsync, this also overwrites identity/detail fields from a
+    // confirmed server-persisted record - use only once a sync response is known to match
+    // what was sent (no concurrent local edit raced the request).
+    Task ReconcileMetadataAsync(CatchModel catchRecord, CancellationToken cancellationToken);
+
     Task UpdateTripAsync(
         Guid ownerUserId,
         Guid catchId,

@@ -14,6 +14,8 @@ namespace FishingLogBook.Web.Features.Catch.Components.CatchProvenanceEditor;
 
 public partial class CatchProvenanceEditor : ComponentBase, IDisposable
 {
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
     private bool _isLoading = true;
     private bool _isOnline;
     private bool _isUpdating;
@@ -74,12 +76,12 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
             return;
         }
 
-        _isOnline = await Network.IsOnlineAsync(CancellationToken.None);
-        await LoadAsync(tripId);
+        _isOnline = await Network.IsOnlineAsync(_cancellationTokenSource.Token);
+        await LoadAsync(tripId, _cancellationTokenSource.Token);
         _isLoading = false;
     }
 
-    private async Task LoadAsync(Guid tripId)
+    private async Task LoadAsync(Guid tripId, CancellationToken cancellationToken)
     {
         if (!_isOnline)
         {
@@ -88,7 +90,7 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
 
         try
         {
-            var catchView = await CatchClient.GetAsync(CatchId, CancellationToken.None);
+            var catchView = await CatchClient.GetAsync(CatchId, cancellationToken);
             if (catchView is null)
             {
                 return;
@@ -100,14 +102,14 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
             _recordedByUserId = catchView.RecordedByUserId;
             _recordedByName = catchView.RecordedByName;
 
-            var detail = await TripClient.GetDetailAsync(tripId, CancellationToken.None);
+            var detail = await TripClient.GetDetailAsync(tripId, cancellationToken);
             if (detail is not null)
             {
                 _tripTitle = detail.Trip.Title;
-                _tripStartedOnLabel = await FormatStartedOnAsync(detail.Trip.StartedOn);
+                _tripStartedOnLabel = await FormatStartedOnAsync(detail.Trip.StartedOn, cancellationToken);
             }
 
-            var participants = await ParticipantClient.GetAsync(tripId, CancellationToken.None);
+            var participants = await ParticipantClient.GetAsync(tripId, cancellationToken);
             if (participants is not null)
             {
                 _anglerOptions =
@@ -123,15 +125,18 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
                 ];
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
         catch (Exception exception)
         {
             await Logging.LogErrorAsync("loading catch provenance", exception, CancellationToken.None);
         }
     }
 
-    private async Task<string?> FormatStartedOnAsync(DateTimeOffset startedOn)
+    private async Task<string?> FormatStartedOnAsync(DateTimeOffset startedOn, CancellationToken cancellationToken)
     {
-        var startedLocal = await Time.ToDateTimeLocalValueAsync(startedOn, CancellationToken.None);
+        var startedLocal = await Time.ToDateTimeLocalValueAsync(startedOn, cancellationToken);
         return DateTime.TryParseExact(
             startedLocal,
             "yyyy-MM-ddTHH:mm",
@@ -168,7 +173,7 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
             var result = await CatchClient.CorrectAnglerAsync(
                 CatchId,
                 _selectedAnglerUserId,
-                CancellationToken.None);
+                _cancellationTokenSource.Token);
             if (result.Catch is null)
             {
                 _updateFailed = true;
@@ -181,6 +186,9 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
             _anglerName = result.Catch.AnglerName;
             _recordedByUserId = result.Catch.RecordedByUserId;
             _recordedByName = result.Catch.RecordedByName;
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
         }
         catch (Exception exception)
         {
@@ -200,21 +208,34 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
 
     private async Task UpdateConnectivityAsync(bool isOnline)
     {
-        await InvokeAsync(async () =>
+        var cancellationToken = _cancellationTokenSource.Token;
+        try
         {
-            var reconnected = isOnline && !_isOnline;
-            _isOnline = isOnline;
-            if (reconnected && TripId is { } tripId && _anglerOptions.Count == 0)
+            await InvokeAsync(async () =>
             {
-                await LoadAsync(tripId);
-            }
+                var reconnected = isOnline && !_isOnline;
+                _isOnline = isOnline;
+                if (reconnected && TripId is { } tripId && _anglerOptions.Count == 0)
+                {
+                    await LoadAsync(tripId, cancellationToken);
+                }
 
-            StateHasChanged();
-        });
+                StateHasChanged();
+            });
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("handling a connectivity change", exception, CancellationToken.None);
+        }
     }
 
     public void Dispose()
     {
         Network.ConnectivityChanged -= OnConnectivityChanged;
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
     }
 }

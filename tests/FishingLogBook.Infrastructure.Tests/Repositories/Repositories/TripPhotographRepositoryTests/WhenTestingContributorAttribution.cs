@@ -25,7 +25,7 @@ public class WhenTestingContributorAttribution : BaseTripPhotographRepositoryTes
             {
                 Id = Guid.NewGuid(),
                 TripId = tripId,
-                ObjectKey = $"trips/{ownerUserId:D}/{tripId:D}/{Guid.NewGuid():D}",
+                ObjectKey = $"trip-photographs/{tripId:D}/{Guid.NewGuid():D}",
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = StartedOn.AddHours(1)
             },
@@ -94,6 +94,6 @@ public class WhenTestingContributorAttribution : BaseTripPhotographRepositoryTes
         // Assert
         var stored = await Sut.GetByIdAsync(photograph.Id, CancellationToken.None);
         stored.Value!.ContributedByUserId.Should().Be(participantUserId);
-        stored.Value.ObjectKey.Should().Contain(participantUserId.ToString("D"));
+        stored.Value.ObjectKey.Should().Be(photograph.ObjectKey);
     }
 }

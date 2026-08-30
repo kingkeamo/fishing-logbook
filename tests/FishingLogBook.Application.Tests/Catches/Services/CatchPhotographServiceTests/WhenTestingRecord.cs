@@ -48,7 +48,7 @@ public class WhenTestingRecord : BaseCatchPhotographServiceTest
                 CatchId = CatchId,
                 PhotographId = PhotographId,
                 ContentType = "image/jpeg",
-                ObjectKey = "catches/another-user/replacement"
+                ObjectKey = "catch-photographs/another-catch/replacement"
             },
             CancellationToken.None);
 

@@ -229,6 +229,63 @@ export async function updateCatchTrip(json) {
     });
 }
 
+export async function reconcileCatchMetadata(json) {
+    const catchRecord = JSON.parse(json);
+    if (!catchRecord?.id || !normalisedOwnerId(catchRecord.userId)) {
+        throw new Error('Owned Catch id is required');
+    }
+
+    await runCatchTransaction(CATCH_STORE_NAME, 'readwrite', 'sync-state-write', (store, succeed, fail) => {
+        const existingRequest = store.get(catchRecord.id);
+        existingRequest.onerror = () => fail(existingRequest.error);
+        existingRequest.onsuccess = () => {
+            const existing = existingRequest.result;
+            if (!existing) {
+                fail(new Error('Owned Catch was not found'));
+                return;
+            }
+
+            const incomingPhotographs = new Map(
+                (catchRecord.photographs || []).map((photograph) => [photograph.id, photograph])
+            );
+            const photographs = (existing.photographs || []).map((photograph) => {
+                const incoming = incomingPhotographs.get(photograph.id);
+                if (!incoming) {
+                    return photograph;
+                }
+
+                return {
+                    ...photograph,
+                    syncStatus: incoming.syncStatus,
+                    objectKey: incoming.objectKey
+                };
+            });
+
+            const updateRequest = store.put({
+                ...existing,
+                caughtOn: catchRecord.caughtOn,
+                userId: catchRecord.userId,
+                anglerUserId: catchRecord.anglerUserId,
+                recordedByUserId: catchRecord.recordedByUserId,
+                tripId: catchRecord.tripId,
+                speciesName: catchRecord.speciesName,
+                weight: catchRecord.weight,
+                length: catchRecord.length,
+                method: catchRecord.method,
+                baitOrLure: catchRecord.baitOrLure,
+                notes: catchRecord.notes,
+                location: catchRecord.location,
+                syncStatus: catchRecord.syncStatus,
+                metadataSyncStatus: catchRecord.metadataSyncStatus,
+                syncedAt: catchRecord.syncedAt,
+                photographs
+            });
+            updateRequest.onsuccess = () => succeed();
+            updateRequest.onerror = () => fail(updateRequest.error);
+        };
+    });
+}
+
 function hasMetadataDifference(existing, incoming) {
     const metadataFields = [
         'caughtOn',

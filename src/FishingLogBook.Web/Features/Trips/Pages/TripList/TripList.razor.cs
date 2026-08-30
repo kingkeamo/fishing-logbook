@@ -145,19 +145,31 @@ public partial class TripList : ComponentBase, IDisposable
         try
         {
             var ownerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
-            var localTask = LoadLocalAsync(ownerUserId, cancellationToken);
+            var localTripsTask = LoadLocalTripsAsync(ownerUserId, cancellationToken);
             var remoteTask = LoadRemoteAsync(cancellationToken);
-            var local = await localTask;
+            var localTrips = await localTripsTask;
             var remote = await remoteTask;
-            if (local is null && remote is null)
+            if (localTrips is null && remote is null)
             {
                 _loadFailed = true;
                 _trips = [];
                 return;
             }
 
+            if (localTrips is not null && remote is not null)
+            {
+                localTrips = await ReconcileStaleSharedTripsAsync(
+                    ownerUserId,
+                    localTrips,
+                    remote,
+                    cancellationToken);
+            }
+
+            var catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
+            var local = localTrips?.Select(trip => ToItem(trip, catches)).ToArray();
+
             _loadFailed = remote is null;
-            _trips = Merge(local ?? [], remote ?? []);
+            _trips = Merge(local ?? [], remote?.Select(ToItem).ToArray() ?? []);
             await ComputeStartedLabelsAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -176,20 +188,13 @@ public partial class TripList : ComponentBase, IDisposable
         }
     }
 
-    private async Task<IReadOnlyList<TripListItemModel>?> LoadLocalAsync(
+    private async Task<IReadOnlyList<TripModel>?> LoadLocalTripsAsync(
         Guid ownerUserId,
         CancellationToken cancellationToken)
     {
         try
         {
-            var trips = await TripStore.GetAllAsync(ownerUserId, cancellationToken);
-            if (trips.Count == 0)
-            {
-                return [];
-            }
-
-            var catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
-            return [.. trips.Select(trip => ToItem(trip, catches))];
+            return await TripStore.GetAllAsync(ownerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -200,6 +205,53 @@ public partial class TripList : ComponentBase, IDisposable
             await Logging.LogErrorAsync("reading local trips", exception, CancellationToken.None);
             return null;
         }
+    }
+
+    // A successful authoritative refresh is the only thing allowed to revoke a cached
+    // server-origin Trip's local participant access - e.g. the owner removed this angler
+    // while they were offline. A locally-created Trip is never touched here: its absence
+    // from the server is expected and normal until it has synced.
+    private async Task<IReadOnlyList<TripModel>> ReconcileStaleSharedTripsAsync(
+        Guid viewerUserId,
+        IReadOnlyList<TripModel> localTrips,
+        IReadOnlyList<TripSummaryDto> authoritativeTrips,
+        CancellationToken cancellationToken)
+    {
+        var authoritativeIds = authoritativeTrips.Select(trip => trip.Id).ToHashSet();
+        var stale = localTrips
+            .Where(trip => trip.Origin == TripOriginEnum.Server && !authoritativeIds.Contains(trip.Id))
+            .ToArray();
+        if (stale.Length == 0)
+        {
+            return localTrips;
+        }
+
+        var revokedIds = new HashSet<Guid>();
+        foreach (var trip in stale)
+        {
+            try
+            {
+                if (await TripStore.RevokeParticipantAccessAsync(viewerUserId, trip.Id, cancellationToken))
+                {
+                    revokedIds.Add(trip.Id);
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                await Logging.LogErrorAsync(
+                    "revoking stale shared trip access",
+                    exception,
+                    CancellationToken.None);
+            }
+        }
+
+        return revokedIds.Count == 0
+            ? localTrips
+            : [.. localTrips.Where(trip => !revokedIds.Contains(trip.Id))];
     }
 
     private async Task<IReadOnlyList<CatchModel>> LoadCatchesAsync(
@@ -221,12 +273,11 @@ public partial class TripList : ComponentBase, IDisposable
         }
     }
 
-    private async Task<IReadOnlyList<TripListItemModel>?> LoadRemoteAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<TripSummaryDto>?> LoadRemoteAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var summaries = await TripClient.GetMyAsync(cancellationToken);
-            return [.. summaries.Select(ToItem)];
+            return await TripClient.GetMyAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

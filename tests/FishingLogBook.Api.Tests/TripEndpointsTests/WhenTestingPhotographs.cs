@@ -123,7 +123,7 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
             $"/api/trips/{tripId:D}/photographs",
             new RecordTripPhotographDto(
                 photographId,
-                $"catches/{current.UserId:D}/{tripId:D}/{photographId:D}",
+                $"catch-photographs/{tripId:D}/{photographId:D}",
                 PhotographContentTypeConstants.Jpeg,
                 AddedOn));
 
@@ -225,7 +225,7 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
             {
                 Id = photographId,
                 TripId = Guid.NewGuid(),
-                ObjectKey = "trips/other/other/other",
+                ObjectKey = "trip-photographs/other-trip/other-photograph",
                 ContentType = PhotographContentTypeConstants.Jpeg,
                 AddedOn = AddedOn
             }));

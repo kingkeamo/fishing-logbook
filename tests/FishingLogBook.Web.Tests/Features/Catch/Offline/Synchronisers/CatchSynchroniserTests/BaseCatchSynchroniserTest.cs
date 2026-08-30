@@ -57,7 +57,7 @@ public class BaseCatchSynchroniserTest
                 var catchId = call.ArgAt<Guid>(0);
                 var request = call.ArgAt<PhotographUploadRequestDto>(1);
                 var objectKey =
-                    $"catches/{OwnerUserId:D}/{catchId:D}/{request.PhotographId:D}";
+                    $"catch-photographs/{catchId:D}/{request.PhotographId:D}";
                 return new PhotographUploadDto(
                     objectKey,
                     $"https://storage.test/{request.PhotographId:D}");

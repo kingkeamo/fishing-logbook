@@ -283,7 +283,7 @@ public class WhenTestingSave : BaseCatchStoreTest
             PhotographContentTypeConstants.Jpeg,
             [1, 2, 3],
             SyncStatus.Synchronised,
-            "catches/photo");
+            "catch-photographs/photo");
         await Sut.SaveAsync(
             new CatchModel(
                 catchId,
@@ -330,7 +330,7 @@ public class WhenTestingSave : BaseCatchStoreTest
         saved.Photographs.Should().ContainSingle();
         saved.Photographs[0].Id.Should().Be(photographId);
         saved.Photographs[0].SyncStatus.Should().Be(SyncStatus.Synchronised);
-        saved.Photographs[0].ObjectKey.Should().Be("catches/photo");
+        saved.Photographs[0].ObjectKey.Should().Be("catch-photographs/photo");
         saved.UserId.Should().Be(OwnerUserId);
         saved.AnglerUserId.Should().Be(OwnerUserId);
         saved.RecordedByUserId.Should().Be(OwnerUserId);

@@ -108,6 +108,43 @@ public class WhenTestingSearch : BaseInviteAnglerModalTest
     }
 
     [Fact]
+    public async Task ItShouldKeepTheNewerSearchResultWhenAnOlderSearchCompletesAfterIt()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var staleUserId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        var staleSearch = new TaskCompletionSource<IReadOnlyList<AnglerSummaryDto>>();
+        var freshSearch = new TaskCompletionSource<IReadOnlyList<AnglerSummaryDto>>();
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.FindAnglersAsync("Pat", Arg.Any<CancellationToken>())
+            .Returns(staleSearch.Task);
+        profileClient.FindAnglersAsync("Patrick", Arg.Any<CancellationToken>())
+            .Returns(freshSearch.Task);
+        await using var context = CreateContext(profileClient);
+        var cut = await ShowModalAsync(context);
+
+        // Act - search A starts, then search B starts before A has resolved
+        _ = cut.Find("#invite-angler-search").InputAsync(new() { Value = "Pat" });
+        _ = cut.Find("#invite-angler-search").InputAsync(new() { Value = "Patrick" });
+
+        // Act - B (the newer search) completes first
+        freshSearch.SetResult([Angler(displayName: "Patrick Connolly", userId: MatchedUserId)]);
+        cut.WaitForAssertion(() =>
+            cut.Find($"#invite-angler-result-{MatchedUserId:D}").Should().NotBeNull());
+
+        // Act - A (the older, now-stale search) completes after B
+        staleSearch.SetResult([Angler(displayName: "Pat Someone", userId: staleUserId)]);
+
+        // Assert - the stale result never appears, and the newer result remains
+        cut.FindAll($"#invite-angler-result-{staleUserId:D}").Should().BeEmpty();
+        cut.Find($"#invite-angler-result-{MatchedUserId:D}").TextContent
+            .Should().Contain("Patrick Connolly");
+        cut.FindAll("#invite-angler-results")
+            .Should().ContainSingle()
+            .Which.QuerySelectorAll(".invite-angler-result").Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task ItShouldShowTheAnglerEmailWhenTheyHaveNoDisplayName()
     {
         // Arrange

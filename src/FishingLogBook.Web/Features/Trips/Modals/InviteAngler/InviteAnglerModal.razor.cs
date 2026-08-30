@@ -14,6 +14,8 @@ public partial class InviteAnglerModal : ComponentBase, IDisposable
 {
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+    private CancellationTokenSource? _searchCancellationTokenSource;
+    private int _searchGeneration;
     private IReadOnlyList<AnglerSummaryDto> _results = [];
     private string _query = string.Empty;
     private string? _failedMessage;
@@ -57,8 +59,10 @@ public partial class InviteAnglerModal : ComponentBase, IDisposable
         _failedMessage = null;
         if (!AnglerLookupConstants.IsQueryValid(_query))
         {
+            CancelActiveSearch();
             _results = [];
             _hasSearched = false;
+            _isSearching = false;
             return;
         }
 
@@ -67,19 +71,34 @@ public partial class InviteAnglerModal : ComponentBase, IDisposable
 
     private async Task SearchAsync()
     {
+        CancelActiveSearch();
+        var searchCts = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token);
+        _searchCancellationTokenSource = searchCts;
+        var generation = ++_searchGeneration;
+        var query = _query.Trim();
+
         _isSearching = true;
         try
         {
-            _results = await ProfileClient.FindAnglersAsync(
-                _query.Trim(),
-                _cancellationTokenSource.Token);
+            var results = await ProfileClient.FindAnglersAsync(query, searchCts.Token);
+            if (generation != _searchGeneration)
+            {
+                return;
+            }
+
+            _results = results;
             _hasSearched = true;
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        catch (OperationCanceledException) when (searchCts.IsCancellationRequested)
         {
         }
         catch (Exception exception)
         {
+            if (generation != _searchGeneration)
+            {
+                return;
+            }
+
             _results = [];
             _hasSearched = true;
             _failedMessage = Loc["Trip_InviteSearchFailed"].Value;
@@ -87,8 +106,18 @@ public partial class InviteAnglerModal : ComponentBase, IDisposable
         }
         finally
         {
-            _isSearching = false;
+            if (generation == _searchGeneration)
+            {
+                _isSearching = false;
+            }
         }
+    }
+
+    private void CancelActiveSearch()
+    {
+        _searchCancellationTokenSource?.Cancel();
+        _searchCancellationTokenSource?.Dispose();
+        _searchCancellationTokenSource = null;
     }
 
     private async Task InviteAsync(Guid userId)
@@ -135,6 +164,7 @@ public partial class InviteAnglerModal : ComponentBase, IDisposable
 
     public void Dispose()
     {
+        CancelActiveSearch();
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
     }

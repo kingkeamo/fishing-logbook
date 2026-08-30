@@ -33,7 +33,7 @@ public class WhenTestingMissingServerCatch : BaseCatchSynchroniserTest
 
                 var request = call.ArgAt<PhotographUploadRequestDto>(1);
                 return new PhotographUploadDto(
-                    $"catches/{OwnerUserId:D}/{CatchId:D}/{request.PhotographId:D}",
+                    $"catch-photographs/{CatchId:D}/{request.PhotographId:D}",
                     $"https://storage.test/{request.PhotographId:D}");
             });
         var sut = CreateSut(store);

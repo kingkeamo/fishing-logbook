@@ -2,6 +2,8 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Features.Trips.Clients;
+using FishingLogBook.Web.Features.Trips.Enums;
+using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
@@ -131,6 +133,61 @@ public class WhenTestingRender : BaseTripListTest
         cut.Find($"#trip-list-catches-{RemoteTripId:D}").TextContent.Should().Contain("1 catch");
         cut.Find($"#trip-list-active-{RemoteTripId:D}").Should().NotBeNull();
         cut.FindAll("#trip-list .trip-list-card").Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task ItShouldRevokeAndStopShowingAServerOriginTripTheServerNoLongerReturnsForThisAngler()
+    {
+        // Arrange - this angler was removed as a participant while offline: the cached
+        // server-origin Trip still lists them, but the authoritative refresh no longer does.
+        using var culture = TestCulture.Use(CultureNames.English);
+        var otherOwnerId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000099");
+        var staleSharedTrip = new TripModel(
+            RemoteTripId,
+            otherOwnerId,
+            TripConstants.Active,
+            StartedOn,
+            ParticipantUserIds: [OwnerUserId],
+            Origin: TripOriginEnum.Server);
+        var store = StoreWith(staleSharedTrip);
+        store.RevokeParticipantAccessAsync(OwnerUserId, RemoteTripId, Arg.Any<CancellationToken>())
+            .Returns(true);
+        var client = ClientWith();
+        await using var context = CreateContext(store, client);
+
+        // Act
+        var cut = context.Render<TripListPage>();
+
+        // Assert - the stale server-origin Trip no longer appears...
+        cut.WaitForAssertion(() => cut.FindAll("#trip-list .trip-list-card").Should().BeEmpty());
+
+        // ...and access was genuinely revoked in the store, not merely hidden in this render.
+        await store.Received(1).RevokeParticipantAccessAsync(
+            OwnerUserId,
+            RemoteTripId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotRevokeALocallyCreatedTripMerelyBecauseItIsAbsentFromTheServer()
+    {
+        // Arrange - a locally-created, not-yet-synced Trip is expected to be absent from the
+        // authoritative list until it syncs; that must never revoke local access to it.
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = StoreWith(LocalTrip(placeName: "River Moy"));
+        var client = ClientWith();
+        await using var context = CreateContext(store, client);
+
+        // Act
+        var cut = context.Render<TripListPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find($"#trip-list-place-{LocalTripId:D}").TextContent.Should().Contain("River Moy"));
+        await store.DidNotReceive().RevokeParticipantAccessAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

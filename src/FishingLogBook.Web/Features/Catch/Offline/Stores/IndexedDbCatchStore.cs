@@ -199,6 +199,32 @@ public sealed class IndexedDbCatchStore : ICatchStore
             _logging);
     }
 
+    public async Task ReconcileMetadataAsync(CatchModel catchRecord, CancellationToken cancellationToken)
+    {
+        if (catchRecord.UserId == Guid.Empty)
+        {
+            throw new InvalidOperationException("A catch requires an owner.");
+        }
+
+        var json = CatchJson.SerializeMetadata(catchRecord);
+        await OfflineOperation.ExecuteAsync(
+            "write",
+            StoreName,
+            DiagnosticEventNames.OfflineDbWriteStarted,
+            DiagnosticEventNames.OfflineDbWriteCompleted,
+            DiagnosticEventNames.OfflineDbWriteFailed,
+            DiagnosticEventNames.OfflineDbWriteTimedOut,
+            _config.OperationTimeout,
+            _diagnostics,
+            async token =>
+            {
+                var module = await GetModuleAsync(token);
+                await module.InvokeVoidAsync("reconcileCatchMetadata", token, json);
+            },
+            cancellationToken,
+            _logging);
+    }
+
     public async Task UpdateTripAsync(
         Guid ownerUserId,
         Guid catchId,

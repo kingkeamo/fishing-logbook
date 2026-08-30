@@ -217,6 +217,32 @@ public class WhenTestingSharedTrip : BaseActiveTripTest
         await tripClient.Received(1).GetDetailAsync(TripId, Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldRevokeAndStopShowingAServerOriginTripAfterTheOwnerRemovesThisParticipant()
+    {
+        // Arrange - the authoritative server no longer returns this Trip for the current
+        // viewer (they were removed as a participant), but the locally cached copy still
+        // lists them - it must not keep presenting as writable on that stale evidence.
+        var store = Substitute.For<ITripStore>();
+        store.GetAsync(OwnerUserId, TripId, Arg.Any<CancellationToken>())
+            .Returns(CachedSharedTrip(), (TripModel?)null);
+        var tripClient = Substitute.For<ITripClient>();
+        tripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>())
+            .Returns((TripDetailDto?)null);
+        await using var context = CreateContext(store, tripClient: tripClient);
+
+        // Act
+        var cut = context.Render<ActiveTripPage>(parameters =>
+            parameters.Add(page => page.TripId, TripId));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#trip-not-found").Should().NotBeNull());
+        await store.Received(1).RevokeParticipantAccessAsync(
+            OwnerUserId,
+            TripId,
+            Arg.Any<CancellationToken>());
+    }
+
     private static ITripClient ClientReturning(
         string role,
         IReadOnlyList<TripNoteDto>? notes = null)

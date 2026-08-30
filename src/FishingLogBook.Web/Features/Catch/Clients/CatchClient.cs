@@ -18,13 +18,14 @@ public sealed class CatchClient : ICatchClient
         _anonymousClient = httpClientFactory.CreateClient(HttpClientNames.Anonymous);
     }
 
-    public async Task UpsertAsync(CatchDto catchRecord, CancellationToken cancellationToken)
+    public async Task<CatchDto?> UpsertAsync(CatchDto catchRecord, CancellationToken cancellationToken)
     {
         using var response = await _apiClient.PostAsJsonAsync(
             "api/catches",
             catchRecord,
             cancellationToken);
         response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<CatchDto>(cancellationToken);
     }
 
     public async Task<IReadOnlyList<CatchViewDto>> GetAllAsync(CancellationToken cancellationToken)

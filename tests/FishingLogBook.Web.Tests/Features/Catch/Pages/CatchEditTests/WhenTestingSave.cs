@@ -122,7 +122,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 SyncStatus.Synchronised,
                 SyncStatus.Synchronised,
                 SyncStatus.Synchronised,
-                "catches/photo"));
+                "catch-photographs/photo"));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         var synchroniser = QuietSynchroniser();
@@ -161,7 +161,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 SyncStatus.Synchronised,
                 SyncStatus.Synchronised,
                 SyncStatus.Synchronised,
-                "catches/photo",
+                "catch-photographs/photo",
                 caughtOn: UtcPlusFourCaughtOn));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -339,7 +339,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 SyncStatus.Synchronised,
                 SyncStatus.Synchronised,
                 SyncStatus.Synchronised,
-                "catches/photo",
+                "catch-photographs/photo",
                 location));
         store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -392,7 +392,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 && catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id == Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
                 && catchRecord.Photographs[0].SyncStatus == SyncStatus.Synchronised
-                && catchRecord.Photographs[0].ObjectKey == "catches/photo"),
+                && catchRecord.Photographs[0].ObjectKey == "catch-photographs/photo"),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
         await time.Received(1).FromDateTimeLocalValueAsync("2026-08-17T09:15", Arg.Any<CancellationToken>());
