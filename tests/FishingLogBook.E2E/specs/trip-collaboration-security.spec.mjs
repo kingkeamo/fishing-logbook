@@ -83,7 +83,11 @@ test.describe('Trip collaboration security', () => {
             `${apiOrigin}/api/trips/${tripId}/notes`,
             {
                 headers: { authorization },
-                data: { text: 'should not be accepted after removal', startedOn: new Date().toISOString() },
+                data: {
+                    noteId: crypto.randomUUID(),
+                    text: 'should not be accepted after removal',
+                    recordedOn: new Date().toISOString()
+                },
                 failOnStatusCode: false
             });
         expect([401, 403, 404]).toContain(contributionAttempt.status());
