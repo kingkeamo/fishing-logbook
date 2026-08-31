@@ -1,10 +1,20 @@
 export async function signIn(page, applicationOrigin, username, password) {
     await page.goto('/');
     await page.locator('#landing-sign-in').click();
-    await page.waitForURL(url => !url.hostname.includes('localhost'));
-    await page.locator('input[name="username"], #signInFormUsername').fill(username);
-    await page.locator('input[name="password"], #signInFormPassword').fill(password);
-    await page.locator('button[type="submit"], input[type="submit"]').first().click();
+    // Cognito may already hold a live SSO session for this account (e.g. it was just
+    // signed in elsewhere in this run) and silently bounce straight back to the app's
+    // callback instead of showing the hosted-UI form. Waiting only for "left
+    // localhost" races that instant round trip, so watch for either outcome instead
+    // of assuming the form will appear.
+    await page.waitForURL(url =>
+        !url.hostname.includes('localhost')
+        || (url.origin === applicationOrigin && url.pathname.includes('/authentication/login-callback')));
+    if (!new URL(page.url()).hostname.includes('localhost')) {
+        await page.locator('input[name="username"], #signInFormUsername').fill(username);
+        await page.locator('input[name="password"], #signInFormPassword').fill(password);
+        await page.locator('button[type="submit"], input[type="submit"]').first().click();
+    }
+
     await page.waitForURL(url =>
         url.origin === applicationOrigin
         && !url.pathname.includes('/authentication/login-callback'), { timeout: 45_000 });

@@ -25,6 +25,7 @@ test.describe('Trip collaboration', () => {
     let participant;
 
     test.beforeAll(async () => {
+        test.setTimeout(90_000);
         browser = await chromium.launch();
         owner = await createAuthenticatedContext(browser, 1);
         participant = await createAuthenticatedContext(browser, 2);
@@ -33,9 +34,9 @@ test.describe('Trip collaboration', () => {
     });
 
     test.afterAll(async () => {
-        await owner.context.close();
-        await participant.context.close();
-        await browser.close();
+        await owner?.context.close();
+        await participant?.context.close();
+        await browser?.close();
     });
 
     test('owner invites, participant accepts, and both contexts see the shared Trip after reload', async () => {

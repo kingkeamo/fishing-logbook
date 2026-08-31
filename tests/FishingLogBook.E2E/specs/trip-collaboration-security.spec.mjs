@@ -22,6 +22,7 @@ test.describe('Trip collaboration security', () => {
     let unrelated;
 
     test.beforeAll(async () => {
+        test.setTimeout(150_000);
         browser = await chromium.launch();
         owner = await createAuthenticatedContext(browser, 1);
         participant = await createAuthenticatedContext(browser, 2);
@@ -32,10 +33,10 @@ test.describe('Trip collaboration security', () => {
     });
 
     test.afterAll(async () => {
-        await owner.context.close();
-        await participant.context.close();
-        await unrelated.context.close();
-        await browser.close();
+        await owner?.context.close();
+        await participant?.context.close();
+        await unrelated?.context.close();
+        await browser?.close();
     });
 
     test('an unrelated angler cannot open a shared Trip merely by navigating to its id', async () => {

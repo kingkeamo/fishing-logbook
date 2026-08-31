@@ -10,7 +10,7 @@ export async function ensureDisplayName(page, displayName) {
     if (profile.displayName === displayName) return;
 
     const authorization = response.request().headers().authorization;
-    await page.request.put(response.url(), {
+    const update = await page.request.put(response.url(), {
         headers: { authorization },
         data: {
             displayName,
@@ -24,4 +24,8 @@ export async function ensureDisplayName(page, displayName) {
             preferredLengthUnit: profile.preferredLengthUnit
         }
     });
+    if (!update.ok()) {
+        const body = await update.text();
+        throw new Error(`Failed to set display name "${displayName}": HTTP ${update.status()} ${body}`);
+    }
 }

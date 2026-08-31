@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { signIn, readSessionStorage } from './cognito-login.mjs';
 
 const credentialCache = new Map();
@@ -20,8 +22,23 @@ async function authenticatedState(browser, baseURL, userNumber) {
         return credentialCache.get(userNumber);
     }
 
-    const { username, password } = credentialsFor(userNumber);
     const applicationOrigin = new URL(baseURL).origin;
+
+    // User 1 already has a live Cognito SSO session from global setup's own sign-in
+    // (support/auth.setup.mjs). A second interactive login for the same real account
+    // races Cognito's silent SSO bounce-back (the hosted UI skips the form and
+    // redirects to the callback before our own navigation waits start watching for
+    // it), so reuse the storage state global setup already captured instead of
+    // logging in again.
+    if (userNumber === 1) {
+        const storageState = JSON.parse(await readFile(resolve('.auth/e2e-user.json'), 'utf8'));
+        const sessionStorage = JSON.parse(await readFile(resolve('.auth/e2e-session.json'), 'utf8'));
+        const state = { storageState, sessionStorage, origin: applicationOrigin };
+        credentialCache.set(userNumber, state);
+        return state;
+    }
+
+    const { username, password } = credentialsFor(userNumber);
     const context = await browser.newContext({ baseURL, ignoreHTTPSErrors: true });
     try {
         const page = await context.newPage();
