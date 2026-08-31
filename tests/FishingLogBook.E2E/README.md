@@ -51,6 +51,31 @@ traces because network metadata can contain bearer tokens and uploads screenshot
 only. Never upload `.auth` or log credentials/tokens. The disposable database is removed
 after the run, so no shared DEV/private-alpha Catch data is read, changed or deleted.
 
+## Multi-user Trip/collaboration journeys
+
+`trip-collaboration.spec.mjs` and `trip-collaboration-security.spec.mjs` need a second and
+third dedicated Cognito E2E identity, in addition to the primary user consumed by global
+setup:
+
+```powershell
+$env:E2E_COGNITO_USERNAME_2 = "<second dedicated E2E user>"
+$env:E2E_COGNITO_PASSWORD_2 = "<secret>"
+$env:E2E_COGNITO_USERNAME_3 = "<third dedicated E2E user>"
+$env:E2E_COGNITO_PASSWORD_3 = "<secret>"
+```
+
+`support/multi-user-auth.mjs` exports `createAuthenticatedContext(browser, userNumber)`
+(`1`, `2` or `3`), which performs the real Cognito sign-in for that user once per worker
+process (cached in memory only, never written to disk) and then hands back a fresh,
+isolated `{ context, page }` pair per call, so cookies/localStorage/IndexedDB never leak
+between users even though the interactive login itself only runs once. It reuses the same
+`support/cognito-login.mjs` sign-in/onboarding logic as the primary user's
+`support/auth.setup.mjs`, rather than duplicating the flow. `support/angler-identity.mjs`
+sets a deterministic, distinct display name for a user's profile via the real Profile API
+(no-op once already set), so collaboration assertions can key off actual displayed names
+rather than raw ids. Specs needing only the primary user still use the default
+`../support/fixtures.mjs` `test`/`page`.
+
 ## Coverage boundary
 
 The suite proves an authenticated online journey and an online-to-offline-to-reconnect
