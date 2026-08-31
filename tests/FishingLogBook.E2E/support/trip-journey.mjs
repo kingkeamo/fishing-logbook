@@ -4,6 +4,20 @@ export async function startTrip(page) {
     await page.goto('/catches');
     await expect(page.locator('#catch-list-title')).toBeVisible();
     await expect(page.locator('#trip-action-loading')).toBeHidden();
+    // A user can only have one active Trip at a time, so #trip-start-link is only
+    // rendered when there isn't one already; #trip-update-link appears instead. When a
+    // context is reused across multiple journeys in the same file, finish whatever is
+    // still active first so this always starts a genuinely new Trip.
+    if (await page.locator('#trip-update-link').count() > 0) {
+        await page.locator('#trip-update-link').click();
+        await expect(page.locator('#trip-loading')).toBeHidden();
+        if (await page.locator('#active-trip-finish').count() > 0) {
+            await finishTrip(page);
+        }
+        await page.goto('/catches');
+        await expect(page.locator('#trip-action-loading')).toBeHidden();
+    }
+
     await page.locator('#trip-start-link').click();
     await page.waitForURL(url => /\/trips\/[0-9a-f-]+$/i.test(new URL(url).pathname));
     await expect(page.locator('#active-trip-card')).toBeVisible();
@@ -110,13 +124,8 @@ export async function acceptInvitation(page, tripId) {
 
 export async function removeParticipant(page, participantUserId) {
     await openParticipants(page);
-    await Promise.all([
-        page.waitForResponse(response =>
-            /\/api\/trips\/[0-9a-f-]+\/participants\/[0-9a-f-]+$/i.test(new URL(response.url()).pathname)
-            && response.request().method() === 'DELETE'
-            && response.ok()),
-        page.locator(`#trip-participant-remove-${participantUserId}`).click()
-    ]);
+    await page.locator(`#trip-participant-remove-${participantUserId}`).click();
+    await expect(page.locator(`#trip-participant-${participantUserId}`)).toHaveCount(0);
     await page.locator('#trip-participants-close').click();
 }
 

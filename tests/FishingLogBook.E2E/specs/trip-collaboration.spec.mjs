@@ -1,4 +1,4 @@
-import { test, expect, chromium } from '@playwright/test';
+import { test, expect, chromium, firefox } from '@playwright/test';
 import { createAuthenticatedContext } from '../support/multi-user-auth.mjs';
 import { ensureDisplayName } from '../support/angler-identity.mjs';
 import { testName } from '../support/catch-journey.mjs';
@@ -10,7 +10,8 @@ import {
     addTripNote,
     recordCatchForAngler,
     openCatchEditFromList,
-    correctCaughtBy
+    correctCaughtBy,
+    openParticipants
 } from '../support/trip-journey.mjs';
 
 const anglerOneName = 'E2E Angler One';
@@ -19,24 +20,20 @@ const anglerTwoName = 'E2E Angler Two';
 test.describe('Trip collaboration', () => {
     test.describe.configure({ mode: 'serial' });
 
-    /** @type {import('@playwright/test').Browser} */
-    let browser;
     let owner;
     let participant;
 
     test.beforeAll(async () => {
-        test.setTimeout(90_000);
-        browser = await chromium.launch();
-        owner = await createAuthenticatedContext(browser, 1);
-        participant = await createAuthenticatedContext(browser, 2);
+        test.setTimeout(240_000);
+        owner = await createAuthenticatedContext(chromium, 1);
+        participant = await createAuthenticatedContext(firefox, 2);
         await ensureDisplayName(owner.page, anglerOneName);
         await ensureDisplayName(participant.page, anglerTwoName);
     });
 
     test.afterAll(async () => {
-        await owner?.context.close();
-        await participant?.context.close();
-        await browser?.close();
+        await owner?.browser.close();
+        await participant?.browser.close();
     });
 
     test('owner invites, participant accepts, and both contexts see the shared Trip after reload', async () => {
@@ -59,6 +56,7 @@ test.describe('Trip collaboration', () => {
 
         await owner.page.reload();
         await expect(owner.page.locator('#trip-loading')).toBeHidden();
+        await openParticipants(owner.page);
         await expect(owner.page.locator(`#trip-participant-status-${invitedUserId}`)).not.toHaveText('');
     });
 

@@ -1,4 +1,4 @@
-import { test, expect, chromium } from '@playwright/test';
+import { test, expect, chromium, firefox, webkit } from '@playwright/test';
 import { createAuthenticatedContext } from '../support/multi-user-auth.mjs';
 import { ensureDisplayName } from '../support/angler-identity.mjs';
 import {
@@ -15,28 +15,24 @@ const anglerThreeName = 'E2E Angler Three';
 test.describe('Trip collaboration security', () => {
     test.describe.configure({ mode: 'serial' });
 
-    /** @type {import('@playwright/test').Browser} */
-    let browser;
     let owner;
     let participant;
     let unrelated;
 
     test.beforeAll(async () => {
-        test.setTimeout(150_000);
-        browser = await chromium.launch();
-        owner = await createAuthenticatedContext(browser, 1);
-        participant = await createAuthenticatedContext(browser, 2);
-        unrelated = await createAuthenticatedContext(browser, 3);
+        test.setTimeout(300_000);
+        owner = await createAuthenticatedContext(chromium, 1);
+        participant = await createAuthenticatedContext(firefox, 2);
+        unrelated = await createAuthenticatedContext(webkit, 3);
         await ensureDisplayName(owner.page, anglerOneName);
         await ensureDisplayName(participant.page, anglerTwoName);
         await ensureDisplayName(unrelated.page, anglerThreeName);
     });
 
     test.afterAll(async () => {
-        await owner?.context.close();
-        await participant?.context.close();
-        await unrelated?.context.close();
-        await browser?.close();
+        await owner?.browser.close();
+        await participant?.browser.close();
+        await unrelated?.browser.close();
     });
 
     test('an unrelated angler cannot open a shared Trip merely by navigating to its id', async () => {

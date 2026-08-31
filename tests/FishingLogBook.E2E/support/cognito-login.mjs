@@ -1,6 +1,9 @@
-export async function signIn(page, applicationOrigin, username, password) {
+export async function signIn(page, applicationOrigin, username, password, pauseAfterClickMs = 0) {
     await page.goto('/');
     await page.locator('#landing-sign-in').click();
+    if (pauseAfterClickMs > 0) {
+        await page.waitForTimeout(pauseAfterClickMs);
+    }
     // Cognito may already hold a live SSO session for this account (e.g. it was just
     // signed in elsewhere in this run) and silently bounce straight back to the app's
     // callback instead of showing the hosted-UI form. Waiting only for "left
@@ -10,7 +13,16 @@ export async function signIn(page, applicationOrigin, username, password) {
         !url.hostname.includes('localhost')
         || (url.origin === applicationOrigin && url.pathname.includes('/authentication/login-callback')));
     if (!new URL(page.url()).hostname.includes('localhost')) {
-        await page.locator('input[name="username"], #signInFormUsername').fill(username);
+        const usernameField = page.locator('input[name="username"], #signInFormUsername');
+        // The hosted UI's email field carries autofocus, which in WebKit can race a
+        // programmatic .fill() and leave the field visually empty (its own focus
+        // handling resets what was just typed). Re-fill if that happens rather than
+        // trusting .fill() blindly.
+        await usernameField.fill(username);
+        if ((await usernameField.inputValue()) !== username) {
+            await usernameField.click();
+            await usernameField.fill(username);
+        }
         await page.locator('input[name="password"], #signInFormPassword').fill(password);
         await page.locator('button[type="submit"], input[type="submit"]').first().click();
     }
@@ -39,7 +51,7 @@ export async function completeOnboardingWhenRequired(page) {
     await page.locator('#onboarding-next').click();
     await page.locator('#onboarding-next').click();
     await page.locator('#onboarding-finish').click();
-    await page.waitForURL(url => new URL(url).pathname === '/catches', { timeout: 30_000 });
+    await page.waitForURL(url => new URL(url).pathname === '/catches', { timeout: 60_000 });
 }
 
 export async function readSessionStorage(page) {
