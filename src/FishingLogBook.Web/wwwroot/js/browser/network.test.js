@@ -57,6 +57,7 @@ describe('network', () => {
         expect(helper.invokeMethodAsync).toHaveBeenNthCalledWith(2, 'OnBrowserConnectivityChanged', true);
         expect(targetWindow.removeEventListener).toHaveBeenCalledWith('online', handlers.online);
         expect(targetWindow.removeEventListener).toHaveBeenCalledWith('offline', handlers.offline);
+        expect(targetWindow.removeEventListener).toHaveBeenCalledWith('pageshow', handlers.pageshow);
     });
 
     it('registers only one connectivity monitor', () => {
@@ -72,7 +73,40 @@ describe('network', () => {
         api.startMonitoring(helper);
         api.startMonitoring(helper);
 
-        expect(targetWindow.addEventListener).toHaveBeenCalledTimes(2);
+        expect(targetWindow.addEventListener).toHaveBeenCalledTimes(3);
+    });
+
+    it('rechecks usability from startMonitoring when the page resumes or becomes visible', () => {
+        const windowHandlers = {};
+        const documentHandlers = {};
+        const helper = { invokeMethodAsync: vi.fn() };
+        const document = {
+            visibilityState: 'hidden',
+            addEventListener(name, callback) {
+                documentHandlers[name] = callback;
+            },
+            removeEventListener: vi.fn()
+        };
+        const targetWindow = {
+            navigator: { onLine: true },
+            document,
+            addEventListener(name, callback) {
+                windowHandlers[name] = callback;
+            },
+            removeEventListener: vi.fn()
+        };
+        const api = createNetworkApi(targetWindow);
+        api.startMonitoring(helper);
+
+        windowHandlers.pageshow();
+        document.visibilityState = 'visible';
+        documentHandlers.visibilitychange();
+        api.stopMonitoring();
+
+        expect(helper.invokeMethodAsync).toHaveBeenNthCalledWith(1, 'OnBrowserUsable');
+        expect(helper.invokeMethodAsync).toHaveBeenNthCalledWith(2, 'OnBrowserUsable');
+        expect(targetWindow.removeEventListener).toHaveBeenCalledWith('pageshow', windowHandlers.pageshow);
+        expect(document.removeEventListener).toHaveBeenCalledWith('visibilitychange', documentHandlers.visibilitychange);
     });
 
     it('invokes the helper when the page resumes or becomes visible', () => {

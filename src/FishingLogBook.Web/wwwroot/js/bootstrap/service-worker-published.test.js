@@ -376,4 +376,16 @@ describe('published service worker', () => {
         expect(worker.fetch).toHaveBeenCalledOnce();
         expect(worker.cache.match).not.toHaveBeenCalled();
     });
+
+    it('always fetches health from the network without using the cache', async () => {
+        const worker = createWorker({
+            match: async () => new TestResponse('cached-health')
+        });
+
+        const result = await worker.dispatchFetch('https://app.test/health', { mode: 'cors' }).response;
+
+        expect(result.body).toBe('network');
+        expect(worker.fetch).toHaveBeenCalledWith(expect.anything(), { cache: 'no-store' });
+        expect(worker.cache.match).not.toHaveBeenCalled();
+    });
 });

@@ -213,6 +213,30 @@ public class WhenTestingRender
     }
 
     [Fact]
+    public async Task ItShouldSkipTheOnlineOwnerLookupWhenViewerUserIdIsProvided()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        var activeTrip = ActiveTripService(ActiveTrip());
+        await using var context = CreateContext(activeTrip, owner);
+
+        // Act
+        var cut = context.Render<ActiveTripBanner>(parameters => parameters
+            .Add(banner => banner.ViewerUserId, OwnerUserId)
+            .Add(banner => banner.TripBaseHref, "/offline/trips"));
+
+        // Assert
+        cut.WaitForAssertion(() =>
+            cut.Find("#active-trip-banner-view").GetAttribute("href")
+                .Should().Be($"/offline/trips/{TripId:D}"));
+        cut.Find("#active-trip-banner-update").GetAttribute("href")
+            .Should().Be($"/offline/trips/{TripId:D}/edit");
+        await activeTrip.Received(1).GetActiveAsync(OwnerUserId, Arg.Any<CancellationToken>());
+        await owner.DidNotReceive().GetUserIdAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldKeepTheUpdateActionOnTheAnglersOwnTrip()
     {
         // Arrange

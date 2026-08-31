@@ -62,6 +62,12 @@ test.describe('Published offline application shell', () => {
 
     test('opens read-only offline diagnostics from the shared header during cold offline startup', async ({ context, page }) => {
         const apiGuard = guardOfflineApiRequests(context);
+        await context.addInitScript(() => {
+            Object.defineProperty(Navigator.prototype, 'onLine', {
+                configurable: true,
+                get: () => false
+            });
+        });
 
         await cachePublishedShell(page);
         apiGuard.enable();

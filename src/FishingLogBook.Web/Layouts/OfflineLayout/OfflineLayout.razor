@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
+@using FishingLogBook.Web.Common.Icons
 @using FishingLogBook.Web.Features.OfflineAccess.Enums
+@using FishingLogBook.Web.Features.Trips.Components.ActiveTripBanner
 
 <MudThemeProvider Theme="_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -32,11 +34,21 @@
         <MudNavMenu>
             <MudNavLink Href="/offline/catches" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.MenuBook" id="offline-catches-nav-link">@Loc["Catch_LogbookNav"]</MudNavLink>
             <MudNavLink Href="/offline/record" Icon="@Icons.Material.Filled.AddAPhoto" id="offline-record-nav-link">@Loc["Catch_RecordNav"]</MudNavLink>
+            @if (_activeTrip is not null)
+            {
+                <MudNavLink Href="@($"/offline/trips/{_activeTrip.Id:D}")"
+                            Icon="@FishingLogBookIcons.FishingTrip"
+                            id="offline-trips-nav-link">@Loc["Trip_Nav"]</MudNavLink>
+            }
             <MudNavLink OnClick="Lock" Icon="@Icons.Material.Filled.Lock" id="offline-lock-nav-link">@Loc["OfflineAccess_Lock"]</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent>
         <div class="offline-mode-banner" id="offline-mode-banner">@Loc["OfflineAccess_Mode"]</div>
+        @if (OfflineOwnerContext.Owner is { } owner)
+        {
+            <ActiveTripBanner ViewerUserId="owner.UserId" TripBaseHref="/offline/trips" />
+        }
         @if (OfflineReconnect.State is OfflineReconnectStateEnum.ConnectivityRestored
              or OfflineReconnectStateEnum.RecoveringAuthentication
              or OfflineReconnectStateEnum.VerifyingOwner

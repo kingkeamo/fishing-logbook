@@ -55,7 +55,7 @@ public class WhenTestingDescribe : BaseAnglerLookupServiceTest
     }
 
     [Fact]
-    public async Task ItShouldHideEveryFieldTheAnglerKeepsPrivate()
+    public async Task ItShouldHidePhotographAndHomeRegionTheAnglerKeepsPrivate()
     {
         // Arrange
         MockProfileRepository.GetByUserIdsAsync(
@@ -80,12 +80,69 @@ public class WhenTestingDescribe : BaseAnglerLookupServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value[MatchedUserId].DisplayName.Should().BeNull();
+        result.Value[MatchedUserId].DisplayName.Should().Be("John Connolly");
         result.Value[MatchedUserId].PhotographUrl.Should().BeNull();
         result.Value[MatchedUserId].HomeRegion.Should().BeNull();
         await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
             Arg.Any<string>(),
             Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnTheStoredDisplayNameEvenWhenShowDisplayNameIsFalse()
+    {
+        // Arrange
+        MockProfileRepository.GetByUserIdsAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<Profile>>(
+            [
+                new Profile
+                {
+                    UserId = MatchedUserId,
+                    DisplayName = "John Connolly",
+                    ShowDisplayName = false
+                }
+            ]));
+
+        // Act
+        var result = await Sut.DescribeAsync([MatchedUserId], CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value[MatchedUserId].DisplayName.Should().Be("John Connolly");
+        await MockProfileRepository.Received(1).GetByUserIdsAsync(
+            Arg.Is<IReadOnlyCollection<Guid>>(userIds =>
+                userIds.Count == 1 && userIds.Contains(MatchedUserId)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldLeaveDisplayNameEmptyWhenTheProfileHasNoStoredName()
+    {
+        // Arrange
+        MockProfileRepository.GetByUserIdsAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<Profile>>(
+            [
+                new Profile
+                {
+                    UserId = MatchedUserId,
+                    DisplayName = null,
+                    ShowDisplayName = true
+                }
+            ]));
+
+        // Act
+        var result = await Sut.DescribeAsync([MatchedUserId], CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value[MatchedUserId].DisplayName.Should().BeNull();
+        await MockProfileRepository.Received(1).GetByUserIdsAsync(
+            Arg.Is<IReadOnlyCollection<Guid>>(userIds => userIds.Contains(MatchedUserId)),
             Arg.Any<CancellationToken>());
     }
 

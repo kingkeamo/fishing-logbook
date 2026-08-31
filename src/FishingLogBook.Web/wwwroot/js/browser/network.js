@@ -6,18 +6,28 @@ export function createNetworkApi(targetWindow) {
         startMonitoring: (helper) => {
             if (monitoring) return;
 
-            const notify = () => helper.invokeMethodAsync(
+            const notifyConnectivity = () => helper.invokeMethodAsync(
                 'OnBrowserConnectivityChanged',
                 targetWindow.navigator.onLine);
-            targetWindow.addEventListener('online', notify);
-            targetWindow.addEventListener('offline', notify);
-            monitoring = { notify };
+            const notifyUsable = () => helper.invokeMethodAsync('OnBrowserUsable');
+            const notifyVisible = () => {
+                if (targetWindow.document?.visibilityState === 'visible') {
+                    helper.invokeMethodAsync('OnBrowserUsable');
+                }
+            };
+            targetWindow.addEventListener('online', notifyConnectivity);
+            targetWindow.addEventListener('offline', notifyConnectivity);
+            targetWindow.addEventListener('pageshow', notifyUsable);
+            targetWindow.document?.addEventListener('visibilitychange', notifyVisible);
+            monitoring = { notifyConnectivity, notifyUsable, notifyVisible };
         },
         stopMonitoring: () => {
             if (!monitoring) return;
 
-            targetWindow.removeEventListener('online', monitoring.notify);
-            targetWindow.removeEventListener('offline', monitoring.notify);
+            targetWindow.removeEventListener('online', monitoring.notifyConnectivity);
+            targetWindow.removeEventListener('offline', monitoring.notifyConnectivity);
+            targetWindow.removeEventListener('pageshow', monitoring.notifyUsable);
+            targetWindow.document?.removeEventListener('visibilitychange', monitoring.notifyVisible);
             monitoring = undefined;
         },
         onOnline: (helper) => {
