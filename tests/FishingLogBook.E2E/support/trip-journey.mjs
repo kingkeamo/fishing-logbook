@@ -50,14 +50,10 @@ export async function addTripNote(page, text) {
 }
 
 export async function addTripPhotograph(page, file) {
-    await page.locator('#trip-add-photo').click();
-    await Promise.all([
-        page.waitForResponse(response =>
-            /\/api\/trips\/[0-9a-f-]+\/photographs$/i.test(new URL(response.url()).pathname)
-            && response.request().method() === 'POST'
-            && response.ok()),
-        page.locator('#trip-photo-gallery input, #trip-photo-gallery').setInputFiles(file)
-    ]);
+    const existingCount = await page.locator('.trip-timeline-photograph').count();
+    await page.locator('#active-trip-add-photo').click();
+    await page.locator('#trip-photo-gallery input, #trip-photo-gallery').setInputFiles(file);
+    await expect(page.locator('.trip-timeline-photograph')).toHaveCount(existingCount + 1);
 }
 
 export async function finishTrip(page) {
