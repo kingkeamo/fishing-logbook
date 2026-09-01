@@ -135,12 +135,15 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = apiBaseAddress;
         })
             .AddHttpMessageHandler<AuthorizationMessageHandler>()
-            .AddHttpMessageHandler<CorrelationDelegatingHandler>();
+            .AddHttpMessageHandler<CorrelationDelegatingHandler>()
+            .ConfigureGetReadResilience();
 
         services.AddHttpClient(HttpClientNames.Anonymous, client =>
         {
             client.BaseAddress = apiBaseAddress;
-        }).AddHttpMessageHandler<CorrelationDelegatingHandler>();
+        })
+            .AddHttpMessageHandler<CorrelationDelegatingHandler>()
+            .ConfigureGetReadResilience();
     }
 
     private static AuthorizationMessageHandler CreateApiAuthorizationMessageHandler(
