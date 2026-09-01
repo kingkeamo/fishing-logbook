@@ -47,7 +47,8 @@ test.describe('Published offline application shell', () => {
         expect(apiGuard.requests).toEqual([]);
     });
 
-    test('does not offer Open Offline on Landing while genuinely online, even with offline access configured', async ({ page }) => {
+    test('does not offer Open Offline on Landing while genuinely online, even with offline access configured', async ({ context, page }) => {
+        await stubApiHealth(context, { reachable: true });
         await addPrfAuthenticator(page);
         await cachePublishedShell(page);
         await provisionOfflineOwner(page);
@@ -58,6 +59,20 @@ test.describe('Published offline application shell', () => {
         await expect(page.locator('#landing-open-offline')).toHaveCount(0);
         await expect(page.locator('#landing-create-account')).toBeVisible();
         await expect(page.locator('#landing-sign-in')).toBeVisible();
+    });
+
+    test('offers Open Offline on Landing when the API is unreachable, even with the browser online', async ({ context, page }) => {
+        await stubApiHealth(context, { reachable: false });
+        await addPrfAuthenticator(page);
+        await cachePublishedShell(page);
+        await provisionOfflineOwner(page);
+
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await expect(page.locator('#public-landing-page')).toBeVisible({ timeout: 15000 });
+
+        await expect(page.locator('#landing-open-offline')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('#landing-create-account')).toHaveCount(0);
+        await expect(page.locator('#landing-sign-in')).toHaveCount(0);
     });
 
     test('opens read-only offline diagnostics from the shared header during cold offline startup', async ({ context, page }) => {
@@ -190,6 +205,36 @@ function guardOfflineApiRequests(context) {
         throw new Error(`Offline route attempted an API request: ${url.origin}${url.pathname}`);
     });
     return { requests, enable: () => { enabled = true; } };
+}
+
+function stubApiHealth(context, { reachable }) {
+    return context.route(url => url.pathname.endsWith('/health'), async route => {
+        if (!reachable) {
+            await route.abort('connectionrefused');
+            return;
+        }
+
+        if (route.request().method() === 'OPTIONS') {
+            await route.fulfill({
+                status: 204,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': '*',
+                    'Access-Control-Allow-Methods': 'GET,OPTIONS'
+                }
+            });
+            return;
+        }
+
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            headers: {
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: '{"status":"Healthy"}'
+        });
+    });
 }
 
 async function cachePublishedShell(page) {
