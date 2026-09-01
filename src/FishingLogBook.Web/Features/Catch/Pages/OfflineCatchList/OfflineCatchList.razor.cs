@@ -22,6 +22,7 @@ public partial class OfflineCatchList : ComponentBase
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private bool _isLoading = true;
     private bool _loadFailed;
+    private bool _accessLocked;
     private TripModel? _activeTrip;
     private bool _isStartingTrip;
 
@@ -41,12 +42,36 @@ public partial class OfflineCatchList : ComponentBase
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
+        return LoadAsync();
+    }
+
+    private async Task RetryLoadAsync()
+    {
+        if (_isLoading || _accessLocked)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _loadFailed = false;
+        _accessLocked = false;
         try
         {
-            var owner = OfflineOwnerContext.Owner
-                ?? throw new InvalidOperationException("Offline access is locked.");
+            var owner = OfflineOwnerContext.Owner;
+            if (owner is null)
+            {
+                _accessLocked = true;
+                _catches = [];
+                return;
+            }
+
             _ownerUserId = owner.UserId;
             _catches = LocalCatchVisibility.ForOwner(
                 await CatchStore.GetAllAsync(owner.UserId, CancellationToken.None),
@@ -63,6 +88,7 @@ public partial class OfflineCatchList : ComponentBase
         {
             await Logging.LogErrorAsync("loading offline catches", exception, CancellationToken.None);
             _loadFailed = true;
+            _catches = [];
         }
         finally
         {

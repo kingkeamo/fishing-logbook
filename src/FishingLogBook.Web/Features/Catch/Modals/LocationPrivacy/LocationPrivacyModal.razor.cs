@@ -5,6 +5,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -25,8 +26,6 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
     private bool _missingLocation;
     private bool _saveFailed;
     private bool _savedOnDevice;
-    private bool _restoreCatchSync;
-    private bool _restoreMetadataSync;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -42,6 +41,9 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
 
     [Inject]
     private ILocalCatchOwnerService LocalCatchOwner { get; set; } = default!;
+
+    [Inject]
+    private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
@@ -76,8 +78,12 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
 
             _visibility = _catch.Location.Visibility;
         }
-        catch (Exception)
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("loading catch location privacy", exception, CancellationToken.None);
             _loadFailed = true;
             _catch = null;
         }
@@ -121,6 +127,14 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
         {
             return;
         }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("saving catch location privacy", exception, CancellationToken.None);
+            if (!_savedOnDevice)
+            {
+                _saveFailed = true;
+            }
+        }
         finally
         {
             _isSaving = false;
@@ -133,22 +147,19 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
         {
             var updated = _catch! with
             {
-                Location = _catch.Location! with { Visibility = _visibility },
-                SyncStatus = _catch.SyncStatus == SyncStatus.Synchronised
-                    ? SyncStatus.WaitingToSynchronise
-                    : _catch.SyncStatus,
-                MetadataSyncStatus = _catch.MetadataSyncStatus == SyncStatus.Synchronised
-                    ? SyncStatus.WaitingToSynchronise
-                    : _catch.MetadataSyncStatus
+                Location = _catch.Location! with { Visibility = _visibility }
             };
-            _restoreCatchSync = _catch.SyncStatus == SyncStatus.Synchronised;
-            _restoreMetadataSync = _catch.MetadataSyncStatus == SyncStatus.Synchronised;
             await CatchStore.SaveAsync(updated, _cancellationTokenSource.Token);
             _catch = updated;
             return true;
         }
-        catch (Exception)
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("saving catch location privacy locally", exception, CancellationToken.None);
             _saveFailed = true;
             return false;
         }
@@ -162,32 +173,60 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
                 CatchId,
                 _visibility,
                 _cancellationTokenSource.Token);
-            await RestoreSynchronisedAfterSuccessfulPropagateAsync();
         }
-        catch (HttpRequestException)
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
-            return;
+            throw;
         }
-        catch (TaskCanceledException)
+        catch (Exception exception) when (IsRecoverablePropagationFailure(exception))
         {
-            return;
+            await Logging.LogErrorAsync(
+                "updating catch location visibility",
+                exception,
+                CancellationToken.None);
+            await PersistWaitingToSynchroniseAsync();
         }
     }
 
-    private async Task RestoreSynchronisedAfterSuccessfulPropagateAsync()
+    private async Task PersistWaitingToSynchroniseAsync()
     {
-        if (_catch is null || (!_restoreCatchSync && !_restoreMetadataSync))
+        if (_catch is null
+            || (_catch.SyncStatus != SyncStatus.Synchronised
+                && _catch.MetadataSyncStatus != SyncStatus.Synchronised))
         {
             return;
         }
 
-        var restored = _catch with
+        try
         {
-            SyncStatus = _restoreCatchSync ? SyncStatus.Synchronised : _catch.SyncStatus,
-            MetadataSyncStatus = _restoreMetadataSync ? SyncStatus.Synchronised : _catch.MetadataSyncStatus
-        };
-        await CatchStore.SaveAsync(restored, _cancellationTokenSource.Token);
-        _catch = restored;
+            var waiting = _catch with
+            {
+                SyncStatus = _catch.SyncStatus == SyncStatus.Synchronised
+                    ? SyncStatus.WaitingToSynchronise
+                    : _catch.SyncStatus,
+                MetadataSyncStatus = _catch.MetadataSyncStatus == SyncStatus.Synchronised
+                    ? SyncStatus.WaitingToSynchronise
+                    : _catch.MetadataSyncStatus
+            };
+            await CatchStore.SaveAsync(waiting, _cancellationTokenSource.Token);
+            _catch = waiting;
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync(
+                "queueing location privacy for synchronisation",
+                exception,
+                CancellationToken.None);
+        }
+    }
+
+    private static bool IsRecoverablePropagationFailure(Exception exception)
+    {
+        return exception is HttpRequestException or TaskCanceledException or TimeoutException;
     }
 
     private void Cancel()

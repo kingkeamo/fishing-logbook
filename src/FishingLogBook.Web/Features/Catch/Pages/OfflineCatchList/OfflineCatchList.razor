@@ -43,9 +43,20 @@
             </MudStack>
         </MudStack>
 
-        @if (_loadFailed)
+        @if (_accessLocked)
         {
-            <MudAlert Severity="Severity.Error" id="offline-catch-list-load-failed">@Loc["Catch_LoadFailed"]</MudAlert>
+            <MudAlert Severity="Severity.Info" id="offline-catch-list-access-locked">@Loc["OfflineAccess_UnlockFailed"]</MudAlert>
+        }
+        else if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="offline-catch-list-load-failed">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Justify="Justify.SpaceBetween">
+                    <span>@Loc["Catch_LoadFailed"]</span>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small"
+                               OnClick="RetryLoadAsync" Disabled="_isLoading"
+                               id="offline-catch-list-load-retry">@Loc["Catch_LoadRetry"]</MudButton>
+                </MudStack>
+            </MudAlert>
         }
         else if (_isLoading)
         {

@@ -8,6 +8,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
@@ -24,7 +25,8 @@ public class BaseLocationPrivacyModalTest
     protected static BunitContext CreateContext(
         ICatchStore store,
         ICatchClient? client = null,
-        ILocalCatchOwnerService? owner = null)
+        ILocalCatchOwnerService? owner = null,
+        ILoggingService? logging = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -33,8 +35,17 @@ public class BaseLocationPrivacyModalTest
         context.Services.AddSingleton(store);
         context.Services.AddSingleton(client ?? Substitute.For<ICatchClient>());
         context.Services.AddSingleton(owner ?? SignedInOwner());
+        context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
         return context;
+    }
+
+    protected static ILoggingService QuietLogging()
+    {
+        var logging = Substitute.For<ILoggingService>();
+        logging.LogErrorAsync(Arg.Any<string>(), Arg.Any<Exception>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        return logging;
     }
 
     protected static async Task<(IRenderedComponent<MudDialogProvider> Cut, IDialogReference Dialog)> ShowModalAsync(
