@@ -104,6 +104,10 @@ async function onFetch(event) {
         return fetch(event.request);
     }
 
+    if (url.pathname.endsWith('/health')) {
+        return fetch(event.request, { cache: 'no-store' });
+    }
+
     const shouldServeIndexHtml = event.request.mode === 'navigate'
         && !manifestUrlList.some(manifestUrl => manifestUrl === event.request.url);
 

@@ -31,6 +31,7 @@ public class WhenTestingRender : BaseOfflineLayoutTest
         cut.Find("#offline-catches-nav-link").Should().NotBeNull();
         cut.Find("#offline-record-nav-link").Should().NotBeNull();
         cut.Find("#offline-lock-nav-link").Should().NotBeNull();
+        cut.FindAll("#offline-trips-nav-link").Should().BeEmpty();
         cut.FindAll("#profile-nav-link").Should().BeEmpty();
         cut.FindAll("#app-update-banner").Should().BeEmpty();
         cut.FindAll("#user-menu-button").Should().BeEmpty();

@@ -27,11 +27,17 @@ public partial class ActiveTripBanner : ComponentBase, IDisposable
     [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
+    [Parameter]
+    public Guid ViewerUserId { get; set; }
+
+    [Parameter]
+    public string TripBaseHref { get; set; } = "/trips";
+
     private string ViewHref
     {
         get
         {
-            return _trip is null ? "/catches" : $"/trips/{_trip.Id:D}";
+            return TripHref(string.Empty);
         }
     }
 
@@ -47,8 +53,19 @@ public partial class ActiveTripBanner : ComponentBase, IDisposable
     {
         get
         {
-            return _trip is null ? "/catches" : $"/trips/{_trip.Id:D}/edit";
+            return TripHref("/edit");
         }
+    }
+
+    private string TripHref(string suffix)
+    {
+        if (_trip is null)
+        {
+            return "/catches";
+        }
+
+        var root = string.IsNullOrWhiteSpace(TripBaseHref) ? "/trips" : TripBaseHref.TrimEnd('/');
+        return $"{root}/{_trip.Id:D}{suffix}";
     }
 
     protected override async Task OnInitializedAsync()
@@ -62,9 +79,10 @@ public partial class ActiveTripBanner : ComponentBase, IDisposable
         var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            var viewerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
-            _viewerUserId = viewerUserId;
-            _trip = await ActiveTrip.GetActiveAsync(viewerUserId, cancellationToken);
+            _viewerUserId = ViewerUserId != Guid.Empty
+                ? ViewerUserId
+                : await LocalOwner.GetUserIdAsync(cancellationToken);
+            _trip = await ActiveTrip.GetActiveAsync(_viewerUserId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

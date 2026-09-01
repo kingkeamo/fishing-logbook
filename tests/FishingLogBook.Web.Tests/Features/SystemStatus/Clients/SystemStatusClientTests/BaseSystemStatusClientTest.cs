@@ -6,9 +6,14 @@ namespace FishingLogBook.Web.Tests.Features.SystemStatus.Clients.SystemStatusCli
 
 public class BaseSystemStatusClientTest
 {
-    protected static SystemStatusClient CreateClient(RecordingHandler handler)
+    protected static SystemStatusClient CreateClient(HttpMessageHandler handler)
     {
         return new SystemStatusClient(new HttpClient(handler) { BaseAddress = new Uri("https://api.test/") });
+    }
+
+    protected static SystemStatusClient CreateClient(RecordingHandler handler)
+    {
+        return CreateClient((HttpMessageHandler)handler);
     }
 
     protected sealed class RecordingHandler(HttpStatusCode statusCode, string responseBody) : HttpMessageHandler

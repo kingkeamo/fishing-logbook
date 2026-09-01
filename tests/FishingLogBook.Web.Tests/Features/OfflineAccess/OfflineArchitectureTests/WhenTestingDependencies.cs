@@ -64,6 +64,8 @@ public class WhenTestingDependencies : BaseOfflineArchitectureTest
         // Assert
         directOnlineDependencies.Should().BeEmpty();
         injectedTypes.Should().Contain(type => type.Name == "IOfflineReconnectService");
+        injectedTypes.Should().Contain(type => type.Name == "IActiveTripService");
+        injectedTypes.Should().Contain(type => type.Name == "ILoggingService");
     }
 
     [Fact]

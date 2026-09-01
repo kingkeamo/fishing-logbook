@@ -79,7 +79,7 @@ public sealed class AnglerLookupService : IAnglerLookupService
                 new AnglerSummary
                 {
                     UserId = profile.UserId,
-                    DisplayName = profile.ShowDisplayName ? profile.DisplayName : null,
+                    DisplayName = profile.DisplayName,
                     PhotographObjectKey = profile.ShowPhotograph ? profile.PhotographObjectKey : null,
                     HomeRegion = profile.ShowHomeRegion ? profile.HomeRegion : null
                 },

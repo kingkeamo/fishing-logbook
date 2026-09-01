@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Features.SystemStatus.Clients;
 using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Browser.Network;
@@ -5,21 +6,32 @@ namespace FishingLogBook.Web.Browser.Network;
 public sealed class NetworkService : INetworkService, IAsyncDisposable
 {
     private readonly IJSRuntime _jsRuntime;
+    private readonly ISystemStatusClient _systemStatusClient;
     private readonly ILogger<NetworkService> _logger;
     private DotNetObjectReference<NetworkService>? _dotNetReference;
+    private int _probeGeneration;
     private bool _monitoring;
 
     public event Action<bool>? ConnectivityChanged;
 
-    public NetworkService(IJSRuntime jsRuntime, ILogger<NetworkService> logger)
+    public NetworkService(
+        IJSRuntime jsRuntime,
+        ISystemStatusClient systemStatusClient,
+        ILogger<NetworkService> logger)
     {
         _jsRuntime = jsRuntime;
+        _systemStatusClient = systemStatusClient;
         _logger = logger;
     }
 
     public async Task<bool> IsOnlineAsync(CancellationToken cancellationToken)
     {
-        return await _jsRuntime.InvokeAsync<bool>("fishingLogBookNetwork.isOnline", cancellationToken);
+        if (!await IsBrowserOnlineAsync(cancellationToken))
+        {
+            return false;
+        }
+
+        return await _systemStatusClient.IsApiReachableAsync(cancellationToken);
     }
 
     public async Task StartMonitoringAsync(CancellationToken cancellationToken)
@@ -49,7 +61,20 @@ public sealed class NetworkService : INetworkService, IAsyncDisposable
     [JSInvokable]
     public void OnBrowserConnectivityChanged(bool isOnline)
     {
-        ConnectivityChanged?.Invoke(isOnline);
+        if (!isOnline)
+        {
+            Interlocked.Increment(ref _probeGeneration);
+            ConnectivityChanged?.Invoke(false);
+            return;
+        }
+
+        _ = PublishReachabilityAsync();
+    }
+
+    [JSInvokable]
+    public void OnBrowserUsable()
+    {
+        _ = PublishReachabilityAsync();
     }
 
     public async ValueTask DisposeAsync()
@@ -67,5 +92,30 @@ public sealed class NetworkService : INetworkService, IAsyncDisposable
         }
 
         _dotNetReference?.Dispose();
+    }
+
+    private async Task PublishReachabilityAsync()
+    {
+        var generation = Interlocked.Increment(ref _probeGeneration);
+        bool reachable;
+        try
+        {
+            reachable = await IsOnlineAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogDebug(exception, "Could not verify API reachability after a browser event.");
+            reachable = false;
+        }
+
+        if (generation == Volatile.Read(ref _probeGeneration))
+        {
+            ConnectivityChanged?.Invoke(reachable);
+        }
+    }
+
+    private async Task<bool> IsBrowserOnlineAsync(CancellationToken cancellationToken)
+    {
+        return await _jsRuntime.InvokeAsync<bool>("fishingLogBookNetwork.isOnline", cancellationToken);
     }
 }
