@@ -187,6 +187,117 @@ public class WhenTestingUpdateOwn : IClassFixture<SystemApiFactory>
             Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ItShouldStoreTheAuthenticatedEmailWhenDisplayNameIsBlank(string? displayName)
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(own!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+
+        // Act
+        var response = await client.PutAsJsonAsync(
+            "/api/profiles/me",
+            ValidRequest() with { DisplayName = displayName });
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<ProfileDto>();
+        body.Should().NotBeNull();
+        body!.DisplayName.Should().Be(TestJwt.Email);
+        body.ShowDisplayName.Should().BeTrue();
+        await _factory.ProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == own.UserId
+                && profile.DisplayName == TestJwt.Email
+                && profile.ShowDisplayName),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepAnExistingDisplayNameWhenTheSubmittedValueIsBlank()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        var existing = new Profile { UserId = Guid.NewGuid(), DisplayName = "Eamonn" };
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        existing = new Profile { UserId = own!.UserId, DisplayName = "Eamonn", ShowDisplayName = true };
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(own.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(existing));
+
+        // Act
+        var response = await client.PutAsJsonAsync(
+            "/api/profiles/me",
+            ValidRequest() with { DisplayName = "  " });
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<ProfileDto>();
+        body.Should().NotBeNull();
+        body!.DisplayName.Should().Be("Eamonn");
+        await _factory.ProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == own.UserId
+                && profile.DisplayName == "Eamonn"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepShowDisplayNameFalseWhenStoringTheEmailFallback()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString("N");
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: subject));
+        var own = await client.GetFromJsonAsync<ProfileDto>("/api/profiles/me");
+        own.Should().NotBeNull();
+        _factory.ProfileRepository.ClearReceivedCalls();
+        _factory.ProfileRepository
+            .GetByUserIdAsync(own!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+
+        // Act
+        var response = await client.PutAsJsonAsync(
+            "/api/profiles/me",
+            ValidRequest() with { DisplayName = null, ShowDisplayName = false });
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<ProfileDto>();
+        body.Should().NotBeNull();
+        body!.DisplayName.Should().Be(TestJwt.Email);
+        body.ShowDisplayName.Should().BeFalse();
+        await _factory.ProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == own.UserId
+                && profile.DisplayName == TestJwt.Email
+                && !profile.ShowDisplayName),
+            Arg.Any<CancellationToken>());
+    }
+
     private static UpdateProfileDto ValidRequest()
     {
         return new UpdateProfileDto(

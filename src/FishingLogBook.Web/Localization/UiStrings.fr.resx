@@ -831,6 +831,7 @@
   <data name="Onboarding_WelcomeStep" xml:space="preserve"><value>Bienvenue</value></data>
   <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Bienvenue dans Catch But Don’t Forget</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Configurez votre carnet de pêche privé, utilisable hors ligne, en une minute environ.</value></data>
+  <data name="Onboarding_DisplayNameHelp" xml:space="preserve"><value>Les autres pêcheurs pourront voir ce nom. S’il est laissé vide, votre adresse e-mail sera utilisée.</value></data>
   <data name="Onboarding_PreferencesStep" xml:space="preserve"><value>Préférences</value></data>
   <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>Définissez vos préférences de pêche</value></data>
   <data name="Onboarding_PreferencesBody" xml:space="preserve"><value>Choisissez votre type de pêche, les espèces recherchées et vos unités de mesure. Vous pourrez les modifier dans votre profil.</value></data>

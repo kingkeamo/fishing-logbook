@@ -159,6 +159,26 @@ public class WhenTestingGetPublic : BaseProfileServiceTest
     }
 
     [Fact]
+    public async Task ItShouldOmitAnEmailFallbackDisplayNameWhenShowDisplayNameIsFalse()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        StubVisibleProfile(userId, profile => profile.WithDisplayName("angler@example.test").HideDisplayName());
+
+        // Act
+        var result = await Sut.GetPublicAsync(userId, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.DisplayName.Should().BeNull();
+        result.Value.HomeRegion.Should().Be("Westmeath");
+        await MockProfileRepository.Received(1).GetByUserIdAsync(userId, Arg.Any<CancellationToken>());
+        await MockProfileRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Profile>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldOmitPhotographWhenShowPhotographIsFalse()
     {
         // Arrange

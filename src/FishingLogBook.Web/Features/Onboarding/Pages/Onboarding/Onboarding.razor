@@ -23,6 +23,20 @@
                             <MudStack Spacing="2" Class="py-4">
                                 <MudText Typo="Typo.h4">@Loc["Onboarding_WelcomeTitle"]</MudText>
                                 <MudText>@Loc["Onboarding_WelcomeBody"]</MudText>
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                    <MudTextField @bind-Value="_displayName"
+                                                  Label="@Loc["Profile_DisplayName"]"
+                                                  Variant="Variant.Outlined"
+                                                  Immediate="true"
+                                                  Class="flex-grow-1"
+                                                  id="onboarding-display-name" />
+                                    <MudTooltip Text="@Loc["Onboarding_DisplayNameHelp"]">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Info"
+                                                       Size="Size.Small"
+                                                       aria-label="@Loc["Onboarding_DisplayNameHelp"]"
+                                                       id="onboarding-display-name-help" />
+                                    </MudTooltip>
+                                </MudStack>
                             </MudStack>
                         </MudStep>
                         <MudStep Title="@Loc["Onboarding_PreferencesStep"]">

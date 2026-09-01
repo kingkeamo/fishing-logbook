@@ -57,7 +57,8 @@ public class WhenTestingCreatePhotographUpload : BaseProfileServiceTest
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("Failed to load angler profile.");
         await MockProfileRepository.Received(1).UpsertAsync(
-            Arg.Is<Profile>(profile => profile.UserId == userId && profile.DisplayName == null),
+            Arg.Is<Profile>(profile =>
+                profile.UserId == userId && profile.DisplayName == CurrentUserEmail),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.DidNotReceive().CreateUploadUrlAsync(
             Arg.Any<string>(),
@@ -92,7 +93,8 @@ public class WhenTestingCreatePhotographUpload : BaseProfileServiceTest
         result.Value.ObjectKey.Should().Be(objectKey);
         result.Value.UploadUrl.Should().Be("https://storage.test/upload");
         await MockProfileRepository.Received(1).UpsertAsync(
-            Arg.Is<Profile>(profile => profile.UserId == userId),
+            Arg.Is<Profile>(profile =>
+                profile.UserId == userId && profile.DisplayName == CurrentUserEmail),
             Arg.Any<CancellationToken>());
         await MockObjectStorage.Received(1).CreateUploadUrlAsync(
             objectKey,
