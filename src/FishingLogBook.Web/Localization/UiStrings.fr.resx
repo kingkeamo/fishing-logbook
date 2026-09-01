@@ -621,6 +621,18 @@
   <data name="Catch_EditLoadOfflineFailed" xml:space="preserve">
     <value>Cette prise n'est pas encore enregistrée sur cet appareil. Connectez-vous à Internet et réessayez.</value>
   </data>
+  <data name="Catch_ViewPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Prise</value>
+  </data>
+  <data name="Catch_ViewTitle" xml:space="preserve">
+    <value>Prise</value>
+  </data>
+  <data name="Catch_ViewLoadFailed" xml:space="preserve">
+    <value>Cette prise n'a pas pu être chargée.</value>
+  </data>
+  <data name="Catch_ViewLocation" xml:space="preserve">
+    <value>Lieu</value>
+  </data>
   <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
     <value>FishingLogBook - Confidentialité de la localisation</value>
   </data>

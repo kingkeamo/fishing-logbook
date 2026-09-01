@@ -268,7 +268,20 @@ public partial class TripTimeline : ComponentBase, IDisposable
 
     private string? CatchHref(TripTimelineItemModel item)
     {
-        return item.CatchId is { } catchId ? $"{CatchBaseHref}/{catchId:D}/edit" : null;
+        if (item.CatchId is not { } catchId)
+        {
+            return null;
+        }
+
+        return CanEditCatch(item)
+            ? $"{CatchBaseHref}/{catchId:D}/edit"
+            : $"/catches/{catchId:D}";
+    }
+
+    private bool CanEditCatch(TripTimelineItemModel item)
+    {
+        return item.ContributedByUserId == ViewerUserId
+            || item.RecordedByUserId == ViewerUserId;
     }
 
     private static DateTime? ParseLocalValue(string value)
