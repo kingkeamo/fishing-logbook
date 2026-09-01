@@ -690,6 +690,9 @@
   <data name="Catch_LocationPrivacySavedPendingSync" xml:space="preserve">
     <value>Privacy saved on this device. It will update when synchronisation is available.</value>
   </data>
+  <data name="Catch_LocationPrivacyQueueFailed" xml:space="preserve">
+    <value>Saved on this device, but we couldn't queue the server update. Please try again.</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profile</value>
   </data>
@@ -827,6 +830,9 @@
   </data>
   <data name="App_UnhandledErrorSnackbar" xml:space="preserve">
     <value>Something went wrong. Please try again.</value>
+  </data>
+  <data name="App_LogbookSyncFailed" xml:space="preserve">
+    <value>Your data is still saved on this device. Synchronisation can retry.</value>
   </data>
   <data name="Action_TryAgain" xml:space="preserve">
     <value>Try again</value>

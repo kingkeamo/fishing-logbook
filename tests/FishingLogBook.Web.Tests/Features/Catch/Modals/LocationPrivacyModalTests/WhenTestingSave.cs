@@ -11,6 +11,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -237,22 +238,37 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         cut.WaitForAssertion(() =>
             cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty());
         cut.Markup.Should().NotContain("Location privacy could not be saved");
-        await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord =>
-                catchRecord.Id == catchId
-                && catchRecord.Location != null
-                && catchRecord.Location.Visibility == LocationDefaults.Private
-                && catchRecord.Location.Latitude == 53.2707
-                && catchRecord.Location.Longitude == -9.0568
-                && catchRecord.Location.AccuracyMetres == 12
-                && catchRecord.Location.CapturedOn == capturedOn
-                && catchRecord.Location.Source == LocationDefaults.DeviceGps
-                && catchRecord.Location.ConsentVersion == LocationDefaults.ConsentVersion
-                && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
-                && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise
-                && catchRecord.Photographs.All(
-                    photograph => photograph.SyncStatus == SyncStatus.Synchronised)),
-            Arg.Any<CancellationToken>());
+        Received.InOrder(() =>
+        {
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Private
+                    && catchRecord.SyncStatus == SyncStatus.Synchronised
+                    && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised),
+                Arg.Any<CancellationToken>());
+            client.UpdateLocationVisibilityAsync(
+                catchId,
+                LocationDefaults.Private,
+                Arg.Any<CancellationToken>());
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Private
+                    && catchRecord.Location.Latitude == 53.2707
+                    && catchRecord.Location.Longitude == -9.0568
+                    && catchRecord.Location.AccuracyMetres == 12
+                    && catchRecord.Location.CapturedOn == capturedOn
+                    && catchRecord.Location.Source == LocationDefaults.DeviceGps
+                    && catchRecord.Location.ConsentVersion == LocationDefaults.ConsentVersion
+                    && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
+                    && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise
+                    && catchRecord.Photographs.All(
+                        photograph => photograph.SyncStatus == SyncStatus.Synchronised)),
+                Arg.Any<CancellationToken>());
+        });
         await client.Received(1).UpdateLocationVisibilityAsync(
             catchId,
             LocationDefaults.Private,
@@ -380,7 +396,7 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
     }
 
     [Fact]
-    public async Task ItShouldRestoreSynchronisedWhenTheServerAcceptsTheVisibility()
+    public async Task ItShouldKeepSynchronisedWhenTheServerAcceptsTheVisibility()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -413,13 +429,108 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
                     catchRecord.Id == catchId
                     && catchRecord.Location != null
                     && catchRecord.Location.Visibility == LocationDefaults.Public
-                    && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
-                    && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
+                    && catchRecord.SyncStatus == SyncStatus.Synchronised
+                    && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised),
                 Arg.Any<CancellationToken>());
             client.UpdateLocationVisibilityAsync(
                 catchId,
                 LocationDefaults.Public,
                 Arg.Any<CancellationToken>());
+        });
+        await store.Received(1).SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
+        await ShouldHaveClosedAsSaved(dialog);
+    }
+
+    [Fact]
+    public async Task ItShouldLogWhenTheLocalSaveFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId));
+        var exception = new InvalidOperationException("IndexedDB failed.");
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(exception);
+        var client = Substitute.For<ICatchClient>();
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, client, logging: logging);
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
+        cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
+        await cut.Find("#catch-location-privacy-public").ClickAsync();
+
+        // Act
+        await cut.Find("#catch-location-privacy-save").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-save-failed").Should().NotBeNull());
+        await logging.Received(1).LogErrorAsync(
+            "saving catch location privacy locally",
+            exception,
+            CancellationToken.None);
+        await client.DidNotReceive().UpdateLocationVisibilityAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+        dialog.Result.IsCompleted.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldStayOpenWhenQueueingVisibilityFailsWithTimeout()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
+            .Returns(LocatedCatch(catchId, LocationDefaults.Private) with
+            {
+                SyncStatus = SyncStatus.Synchronised,
+                MetadataSyncStatus = SyncStatus.Synchronised
+            });
+        var saves = 0;
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                saves += 1;
+                return saves == 1
+                    ? Task.CompletedTask
+                    : throw new TimeoutException("write timed out after 5000ms.");
+            });
+        var client = Substitute.For<ICatchClient>();
+        client.UpdateLocationVisibilityAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException());
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, client, logging: logging);
+        var (cut, dialog) = await ShowModalAsync(context, catchId);
+        cut.WaitForAssertion(() => cut.Find("#catch-location-privacy-public").Should().NotBeNull());
+        await cut.Find("#catch-location-privacy-public").ClickAsync();
+
+        // Act
+        await cut.Find("#catch-location-privacy-save").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-location-privacy-queue-failed").TextContent
+                .Should()
+                .Contain("Saved on this device, but we couldn't queue the server update");
+            cut.Find("#catch-location-privacy-saved").TextContent
+                .Should()
+                .Contain("Location privacy saved on this device");
+        });
+        cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty();
+        await logging.Received(1).LogErrorAsync(
+            "updating catch location visibility",
+            Arg.Any<HttpRequestException>(),
+            CancellationToken.None);
+        await logging.Received(1).LogErrorAsync(
+            "queueing location privacy for synchronisation",
+            Arg.Any<TimeoutException>(),
+            CancellationToken.None);
+        Received.InOrder(() =>
+        {
             store.SaveAsync(
                 Arg.Is<CatchModel>(catchRecord =>
                     catchRecord.Id == catchId
@@ -428,8 +539,16 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
                     && catchRecord.SyncStatus == SyncStatus.Synchronised
                     && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised),
                 Arg.Any<CancellationToken>());
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Public
+                    && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
+                    && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
+                Arg.Any<CancellationToken>());
         });
-        await ShouldHaveClosedAsSaved(dialog);
+        dialog.Result.IsCompleted.Should().BeFalse();
     }
 
     private static CatchClient CreateCatchClient(UnsynchronisedCatchHandler apiHandler)

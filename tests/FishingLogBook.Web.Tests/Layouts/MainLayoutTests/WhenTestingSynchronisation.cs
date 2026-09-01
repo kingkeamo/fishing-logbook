@@ -1,11 +1,14 @@
+using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Layouts.MainLayout;
+using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Layouts.MainLayoutTests;
@@ -187,6 +190,38 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
             "logbook synchronisation",
             Arg.Is<Exception>(exception => exception.Message == "boom"),
             CancellationToken.None);
+        await diagnosticSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowALocalisedSnackbarWhenLogbookSynchronisationFails()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var logbookSynchroniser = Substitute.For<ILogbookSynchroniser>();
+        logbookSynchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("sync failed")));
+        var diagnosticSynchroniser = Substitute.For<IDiagnosticSynchroniser>();
+        await using var context = CreateContext(
+            isAuthenticated: true,
+            logbookSynchroniser,
+            diagnosticSynchroniser);
+        context.Services.GetRequiredService<NavigationManager>().NavigateTo("/catches");
+        var logging = context.Services.GetRequiredService<ILoggingService>();
+        var snackbar = context.Services.GetRequiredService<ISnackbar>();
+
+        // Act
+        context.Render<MainLayout>();
+        await Task.Delay(20);
+
+        // Assert
+        await logging.Received(1).LogErrorAsync(
+            "logbook synchronisation",
+            Arg.Is<Exception>(exception => exception.Message == "sync failed"),
+            CancellationToken.None);
+        snackbar.ShownSnackbars.Should().ContainSingle(
+            message => message.Message.Contains("still saved on this device")
+                && message.Severity == Severity.Warning);
         await diagnosticSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 }

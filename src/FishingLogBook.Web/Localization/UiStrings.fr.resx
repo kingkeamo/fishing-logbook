@@ -690,6 +690,9 @@
   <data name="Catch_LocationPrivacySavedPendingSync" xml:space="preserve">
     <value>Confidentialité enregistrée sur cet appareil. Elle sera mise à jour lorsque la synchronisation sera disponible.</value>
   </data>
+  <data name="Catch_LocationPrivacyQueueFailed" xml:space="preserve">
+    <value>Enregistré sur cet appareil, mais la mise à jour serveur n'a pas pu être mise en file d'attente. Veuillez réessayer.</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profil</value>
   </data>
@@ -971,6 +974,9 @@
   <data name="Onboarding_OfflineAccessStep" xml:space="preserve"><value>Accès hors ligne</value></data>
   <data name="Onboarding_OfflineAccessOptional" xml:space="preserve"><value>L’accès hors ligne est facultatif. Choisissez Ouvrir mon carnet pour continuer sans le configurer.</value></data>
   <data name="OfflineAccess_OpenOffline" xml:space="preserve"><value>Ouvrir hors ligne</value></data>
+  <data name="App_LogbookSyncFailed" xml:space="preserve">
+    <value>Vos données sont toujours enregistrées sur cet appareil. La synchronisation peut réessayer.</value>
+  </data>
   <data name="OfflineAccess_UnlockFailed" xml:space="preserve"><value>Impossible d’ouvrir l’accès hors ligne. Réessayez ou connectez-vous lorsque vous avez une connexion.</value></data>
   <data name="OfflineAccess_Mode" xml:space="preserve"><value>Mode hors ligne</value></data>
   <data name="OfflineReconnect_Reconnecting" xml:space="preserve"><value>Vérification de votre connexion…</value></data>

@@ -40,6 +40,9 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private ILoggingService Logging { get; set; } = default!;
 
     [Inject]
+    private ISnackbar Snackbar { get; set; } = default!;
+
+    [Inject]
     private IJSRuntime JsRuntime { get; set; } = default!;
 
     [Inject]
@@ -113,6 +116,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
                 "logbook synchronisation",
                 exception,
                 CancellationToken.None);
+            Snackbar.Add(Loc["App_LogbookSyncFailed"], Severity.Warning);
         }
 
         try

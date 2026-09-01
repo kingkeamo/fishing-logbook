@@ -7,6 +7,7 @@ using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Localization;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -127,7 +128,8 @@ public class WhenTestingRender : BaseLocationPrivacyModalTest
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("IndexedDB failed."));
-        await using var context = CreateContext(store);
+        var logging = QuietLogging();
+        await using var context = CreateContext(store, logging: logging);
 
         // Act
         var (cut, dialog) = await ShowModalAsync(context, catchId);
@@ -138,6 +140,10 @@ public class WhenTestingRender : BaseLocationPrivacyModalTest
                 .Should()
                 .Contain("This catch could not be loaded"));
         await store.Received(1).GetAsync(OwnerUserId, catchId, Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "loading catch location privacy",
+            Arg.Any<InvalidOperationException>(),
+            CancellationToken.None);
         dialog.Result.IsCompleted.Should().BeFalse();
     }
 

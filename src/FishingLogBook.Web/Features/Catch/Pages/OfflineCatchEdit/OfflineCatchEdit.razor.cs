@@ -17,6 +17,7 @@ public partial class OfflineCatchEdit : ComponentBase
     private AnglerPreferencesModel _preferences = AnglerPreferencesModel.Empty;
     private bool _isLoading = true;
     private bool _loadFailed;
+    private bool _accessLocked;
 
     [Parameter]
     public Guid CatchId { get; set; }
@@ -53,12 +54,36 @@ public partial class OfflineCatchEdit : ComponentBase
         }
     }
 
-    protected override async Task OnParametersSetAsync()
+    protected override Task OnParametersSetAsync()
     {
+        return LoadAsync();
+    }
+
+    private async Task RetryLoadAsync()
+    {
+        if (_isLoading || _accessLocked)
+        {
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _loadFailed = false;
+        _accessLocked = false;
+        _catch = null;
         try
         {
-            var owner = OfflineOwnerContext.Owner
-                ?? throw new InvalidOperationException("Offline access is locked.");
+            var owner = OfflineOwnerContext.Owner;
+            if (owner is null)
+            {
+                _accessLocked = true;
+                return;
+            }
+
             _catch = await CatchStore.GetAsync(owner.UserId, CatchId, CancellationToken.None);
             if (_catch is null || _catch.UserId != owner.UserId)
             {
@@ -73,6 +98,7 @@ public partial class OfflineCatchEdit : ComponentBase
         {
             await Logging.LogErrorAsync("loading a catch for offline editing", exception, CancellationToken.None);
             _loadFailed = true;
+            _catch = null;
         }
         finally
         {

@@ -76,6 +76,13 @@
                     </MudAlert>
                 }
 
+                @if (_queueFailed)
+                {
+                    <MudAlert Severity="Severity.Warning" id="catch-location-privacy-queue-failed">
+                        @Loc["Catch_LocationPrivacyQueueFailed"]
+                    </MudAlert>
+                }
+
                 @if (_saveFailed)
                 {
                     <MudAlert Severity="Severity.Error" id="catch-location-privacy-save-failed">
