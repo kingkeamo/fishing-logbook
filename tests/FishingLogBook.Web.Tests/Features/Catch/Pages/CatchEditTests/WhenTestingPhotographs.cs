@@ -140,9 +140,43 @@ public class WhenTestingPhotographs : BaseCatchEditTest
             var call = store.ReceivedCalls().Last();
             var saved = (CatchModel)call.GetArguments()[0]!;
             saved.Photographs.Should().HaveCount(2);
+            saved.MetadataSyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
             saved.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         });
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldMarkMetadataPendingWhenAddingAPhotographToASynchronisedCatch()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        var store = Substitute.For<ICatchStore>();
+        store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
+            .Returns(StoredCatch(CatchId, SyncStatus.Synchronised, SyncStatus.Synchronised, SyncStatus.Synchronised));
+        store.SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        await using var context = CreateContext(store);
+        var cut = context.Render<CatchEdit>(parameters => parameters.Add(page => page.CatchId, CatchId));
+        cut.WaitForAssertion(() => cut.Find("#catch-edit-photo-camera").Should().NotBeNull());
+
+        // Act
+        cut.FindComponents<InputFile>()[0].UploadFiles(
+            InputFileContent.CreateFromBinary(
+                [0xFF, 0xD8, 0xFF],
+                "photo.jpg",
+                contentType: PhotographContentTypeConstants.Jpeg));
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("#catch-edit-photo-unpreparable").Should().BeEmpty());
+        await store.Received(1).SaveAsync(
+            Arg.Is<CatchModel>(catchRecord =>
+                catchRecord.Photographs.Count == 2
+                && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise
+                && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
+                && catchRecord.Photographs[0].SyncStatus == SyncStatus.Synchronised
+                && catchRecord.Photographs[1].SyncStatus == SyncStatus.SavedLocally),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -257,6 +291,7 @@ public class WhenTestingPhotographs : BaseCatchEditTest
                     == SyncStatus.PendingDeletion
                 && catchRecord.Photographs.Single(item => item.Id == SecondPhotographId).SyncStatus
                     == SyncStatus.Synchronised
+                && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise
                 && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());

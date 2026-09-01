@@ -598,6 +598,55 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
     }
 
     [Fact]
+    public async Task ItShouldUpsertMetadataBeforeUploadingANewPhotographOnASynchronisedCatch()
+    {
+        // Arrange
+        var photographs = new[]
+        {
+            CreatePhotograph(PhotographAId, CatchId, SyncStatus.Synchronised) with
+            {
+                ObjectKey = "catch-photographs/a"
+            },
+            CreatePhotograph(PhotographBId, CatchId, SyncStatus.SavedLocally)
+        };
+        var catchRecord = CreateCatch(
+            catchStatus: SyncStatus.Synchronised,
+            metadataStatus: SyncStatus.WaitingToSynchronise,
+            photographs: photographs) with
+        {
+            SyncStatus = SyncStatus.WaitingToSynchronise
+        };
+        var store = await CreateStoreAsync(catchRecord);
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+        var saved = await store.GetAsync(OwnerUserId, CatchId, CancellationToken.None);
+
+        // Assert
+        saved!.MetadataSyncStatus.Should().Be(SyncStatus.Synchronised);
+        saved.Photographs.Should().HaveCount(2);
+        saved.Photographs.Single(item => item.Id == PhotographBId).SyncStatus.Should().Be(SyncStatus.Synchronised);
+        Received.InOrder(() =>
+        {
+            MockCatchClient.UpsertAsync(
+                Arg.Is<CatchDto>(dto =>
+                    dto.Id == CatchId
+                    && dto.Photographs.Count == 2
+                    && dto.Photographs.Any(photo => photo.Id == PhotographBId)),
+                Arg.Any<CancellationToken>());
+            MockCatchClient.CreatePhotographUploadAsync(
+                CatchId,
+                Arg.Is<PhotographUploadRequestDto>(request => request.PhotographId == PhotographBId),
+                Arg.Any<CancellationToken>());
+        });
+        await MockCatchClient.DidNotReceive().CreatePhotographUploadAsync(
+            CatchId,
+            Arg.Is<PhotographUploadRequestDto>(request => request.PhotographId == PhotographAId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldDeleteAPendingDeletionPhotographFromTheServerAndRemoveItLocally()
     {
         // Arrange
