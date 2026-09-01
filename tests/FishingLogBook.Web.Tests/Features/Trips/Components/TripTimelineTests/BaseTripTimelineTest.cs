@@ -86,7 +86,9 @@ public class BaseTripTimelineTest
         Guid? photographId = null,
         string? photographUrl = null,
         decimal? weight = null,
-        decimal? length = null)
+        decimal? length = null,
+        Guid contributedByUserId = default,
+        Guid recordedByUserId = default)
     {
         return new TripTimelineItemModel(kind, occurredOn)
         {
@@ -98,7 +100,9 @@ public class BaseTripTimelineTest
             PhotographUrl = photographUrl,
             ContentType = PhotographContentTypeConstants.Jpeg,
             Weight = weight,
-            Length = length
+            Length = length,
+            ContributedByUserId = contributedByUserId,
+            RecordedByUserId = recordedByUserId
         };
     }
 }

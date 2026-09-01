@@ -1,0 +1,111 @@
+@page "/catches/{CatchId:guid}"
+@using Microsoft.AspNetCore.Authorization
+@using FishingLogBook.Web.Features.Photographs.Components.PhotographCarousel
+@attribute [Authorize]
+
+<PageTitle>@Loc["Catch_ViewPageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="catch-view-container">
+    <MudStack Spacing="4" AlignItems="AlignItems.Stretch">
+        <MudText Typo="Typo.h4" Align="Align.Center" id="catch-view-title">@Loc["Catch_ViewTitle"]</MudText>
+
+        @if (_loadFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="catch-view-load-failed">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Justify="Justify.SpaceBetween">
+                    <span>@Loc["Catch_ViewLoadFailed"]</span>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small"
+                               OnClick="RetryLoadAsync" Disabled="_isLoading"
+                               id="catch-view-load-retry">@Loc["Catch_LoadRetry"]</MudButton>
+                </MudStack>
+            </MudAlert>
+        }
+        else if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center" id="catch-view-loading" />
+        }
+        else if (_catch is not null)
+        {
+            <MudPaper Class="pa-4" Elevation="2" id="catch-view-details">
+                <MudStack Spacing="4">
+                    <PhotographCarousel Photographs="CarouselPhotographs"
+                                        IdPrefix="catch-view" />
+
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditSpecies"]</MudText>
+                        <MudText Typo="Typo.h6" id="catch-view-species">@SpeciesLabel</MudText>
+                    </MudStack>
+
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditCaughtOn"]</MudText>
+                        <MudText Typo="Typo.body1" id="catch-view-caught-on">@CaughtOnLabel</MudText>
+                    </MudStack>
+
+                    @if (WeightLabel is not null)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditWeight"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-weight">@WeightLabel</MudText>
+                        </MudStack>
+                    }
+
+                    @if (LengthLabel is not null)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditLength"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-length">@LengthLabel</MudText>
+                        </MudStack>
+                    }
+
+                    @if (HasMethod)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditMethod"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-method">@_catch.Method</MudText>
+                        </MudStack>
+                    }
+
+                    @if (HasBaitOrLure)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditBaitOrLure"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-bait">@_catch.BaitOrLure</MudText>
+                        </MudStack>
+                    }
+
+                    @if (HasNotes)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_EditNotes"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-notes">@_catch.Notes</MudText>
+                        </MudStack>
+                    }
+
+                    @if (HasAnglerName)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_CaughtByLabel"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-caught-by">@_catch.AnglerName</MudText>
+                        </MudStack>
+                    }
+
+                    @if (HasRecordedByName)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_RecordedByLabel"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-recorded-by">@_catch.RecordedByName</MudText>
+                        </MudStack>
+                    }
+
+                    @if (LocationLabel is not null)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Loc["Catch_ViewLocation"]</MudText>
+                            <MudText Typo="Typo.body1" id="catch-view-location">@LocationLabel</MudText>
+                        </MudStack>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+</MudContainer>

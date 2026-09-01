@@ -621,6 +621,18 @@
   <data name="Catch_EditLoadOfflineFailed" xml:space="preserve">
     <value>This catch isn't saved on this device yet. Connect to the internet and try again.</value>
   </data>
+  <data name="Catch_ViewPageTitle" xml:space="preserve">
+    <value>FishingLogBook - Catch</value>
+  </data>
+  <data name="Catch_ViewTitle" xml:space="preserve">
+    <value>Catch</value>
+  </data>
+  <data name="Catch_ViewLoadFailed" xml:space="preserve">
+    <value>This catch could not be loaded.</value>
+  </data>
+  <data name="Catch_ViewLocation" xml:space="preserve">
+    <value>Location</value>
+  </data>
   <data name="Catch_LocationPrivacyPageTitle" xml:space="preserve">
     <value>FishingLogBook - Location privacy</value>
   </data>
