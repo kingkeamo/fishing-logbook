@@ -477,7 +477,7 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
     }
 
     [Fact]
-    public async Task ItShouldStillCloseWhenQueueingVisibilityFailsWithTimeout()
+    public async Task ItShouldStayOpenWhenQueueingVisibilityFailsWithTimeout()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -511,7 +511,16 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
         await cut.Find("#catch-location-privacy-save").ClickAsync();
 
         // Assert
-        cut.WaitForAssertion(() => cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty());
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#catch-location-privacy-queue-failed").TextContent
+                .Should()
+                .Contain("Saved on this device, but we couldn't queue the server update");
+            cut.Find("#catch-location-privacy-saved").TextContent
+                .Should()
+                .Contain("Location privacy saved on this device");
+        });
+        cut.FindAll("#catch-location-privacy-save-failed").Should().BeEmpty();
         await logging.Received(1).LogErrorAsync(
             "updating catch location visibility",
             Arg.Any<HttpRequestException>(),
@@ -520,8 +529,26 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
             "queueing location privacy for synchronisation",
             Arg.Any<TimeoutException>(),
             CancellationToken.None);
-        await store.Received(2).SaveAsync(Arg.Any<CatchModel>(), Arg.Any<CancellationToken>());
-        await ShouldHaveClosedAsSaved(dialog);
+        Received.InOrder(() =>
+        {
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Public
+                    && catchRecord.SyncStatus == SyncStatus.Synchronised
+                    && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised),
+                Arg.Any<CancellationToken>());
+            store.SaveAsync(
+                Arg.Is<CatchModel>(catchRecord =>
+                    catchRecord.Id == catchId
+                    && catchRecord.Location != null
+                    && catchRecord.Location.Visibility == LocationDefaults.Public
+                    && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
+                    && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
+                Arg.Any<CancellationToken>());
+        });
+        dialog.Result.IsCompleted.Should().BeFalse();
     }
 
     private static CatchClient CreateCatchClient(UnsynchronisedCatchHandler apiHandler)

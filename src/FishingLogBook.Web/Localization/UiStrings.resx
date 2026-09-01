@@ -690,6 +690,9 @@
   <data name="Catch_LocationPrivacySavedPendingSync" xml:space="preserve">
     <value>Privacy saved on this device. It will update when synchronisation is available.</value>
   </data>
+  <data name="Catch_LocationPrivacyQueueFailed" xml:space="preserve">
+    <value>Saved on this device, but we couldn't queue the server update. Please try again.</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profile</value>
   </data>

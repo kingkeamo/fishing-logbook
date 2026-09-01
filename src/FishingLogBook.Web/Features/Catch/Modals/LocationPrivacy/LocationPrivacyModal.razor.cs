@@ -26,6 +26,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
     private bool _missingLocation;
     private bool _saveFailed;
     private bool _savedOnDevice;
+    private bool _queueFailed;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -98,6 +99,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
         _visibility = visibility;
         _saveFailed = false;
         _savedOnDevice = false;
+        _queueFailed = false;
     }
 
     private async Task SaveAsync()
@@ -110,6 +112,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
         _isSaving = true;
         _saveFailed = false;
         _savedOnDevice = false;
+        _queueFailed = false;
         try
         {
             if (!await TryPersistLocalVisibilityAsync())
@@ -119,7 +122,12 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
 
             _savedOnDevice = true;
             await InvokeAsync(StateHasChanged);
-            await PropagateVisibilityAsync();
+            if (!await PropagateVisibilityAsync())
+            {
+                _queueFailed = true;
+                return;
+            }
+
             await Task.Delay(SavedFeedbackDelay, _cancellationTokenSource.Token);
             MudDialog.Close(DialogResult.Ok(new LocationPrivacyModalResult(true)));
         }
@@ -165,7 +173,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
         }
     }
 
-    private async Task PropagateVisibilityAsync()
+    private async Task<bool> PropagateVisibilityAsync()
     {
         try
         {
@@ -173,6 +181,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
                 CatchId,
                 _visibility,
                 _cancellationTokenSource.Token);
+            return true;
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
@@ -184,17 +193,21 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
                 "updating catch location visibility",
                 exception,
                 CancellationToken.None);
-            await PersistWaitingToSynchroniseAsync();
+            return await PersistWaitingToSynchroniseAsync();
         }
     }
 
-    private async Task PersistWaitingToSynchroniseAsync()
+    private async Task<bool> PersistWaitingToSynchroniseAsync()
     {
-        if (_catch is null
-            || (_catch.SyncStatus != SyncStatus.Synchronised
-                && _catch.MetadataSyncStatus != SyncStatus.Synchronised))
+        if (_catch is null)
         {
-            return;
+            return false;
+        }
+
+        if (_catch.SyncStatus != SyncStatus.Synchronised
+            && _catch.MetadataSyncStatus != SyncStatus.Synchronised)
+        {
+            return true;
         }
 
         try
@@ -210,6 +223,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
             };
             await CatchStore.SaveAsync(waiting, _cancellationTokenSource.Token);
             _catch = waiting;
+            return true;
         }
         catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
         {
@@ -221,6 +235,7 @@ public partial class LocationPrivacyModal : ComponentBase, IDisposable
                 "queueing location privacy for synchronisation",
                 exception,
                 CancellationToken.None);
+            return false;
         }
     }
 

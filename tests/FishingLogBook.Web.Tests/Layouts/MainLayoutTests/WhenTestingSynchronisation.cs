@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Offline;
@@ -7,7 +8,6 @@ using FishingLogBook.Web.Layouts.MainLayout;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using AwesomeAssertions;
 using MudBlazor;
 using NSubstitute;
 

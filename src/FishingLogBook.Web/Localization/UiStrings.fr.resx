@@ -690,6 +690,9 @@
   <data name="Catch_LocationPrivacySavedPendingSync" xml:space="preserve">
     <value>Confidentialité enregistrée sur cet appareil. Elle sera mise à jour lorsque la synchronisation sera disponible.</value>
   </data>
+  <data name="Catch_LocationPrivacyQueueFailed" xml:space="preserve">
+    <value>Enregistré sur cet appareil, mais la mise à jour serveur n'a pas pu être mise en file d'attente. Veuillez réessayer.</value>
+  </data>
   <data name="Profile_Nav" xml:space="preserve">
     <value>Profil</value>
   </data>
