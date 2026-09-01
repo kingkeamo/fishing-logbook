@@ -11,6 +11,36 @@ namespace FishingLogBook.Application.Tests.Catches.Services.CatchPhotographServi
 public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
 {
     [Fact]
+    public async Task ItShouldReturnNotFoundWhenThePhotographDoesNotExistYet()
+    {
+        // Arrange
+        MockCatchRepository.GetPhotographAsync(
+                Arg.Any<GetCatchPhotographArgs>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchPhotograph?>(null));
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.CreateUploadAsync(
+            new CreateCatchPhotographUploadArgs
+            {
+                CatchId = CatchId,
+                Request = new PhotographUploadRequestDto(PhotographId, "image/jpeg")
+            },
+            CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors.Should().ContainSingle()
+            .Which.Should().BeOfType<CatchPhotographNotFoundError>();
+        await MockObjectStorage.DidNotReceive().CreateUploadUrlAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldDeriveTheSameObjectKeyForRepeatedRequests()
     {
         // Arrange

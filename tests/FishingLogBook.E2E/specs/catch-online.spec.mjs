@@ -6,6 +6,38 @@ import {
     testName
 } from '../support/catch-journey.mjs';
 
+test('User adds another photograph from Edit Catch and it persists', async ({ page }) => {
+    const id = await createCatch(page, true);
+    const before = await reloadServerCatches(page);
+    expect(before.find(candidate => candidate.id === id)?.photographs).toHaveLength(1);
+
+    await page.goto('/catches');
+    await page.locator(`#catch-card-menu-${id}`).click();
+    await page.locator(`#catch-card-edit-${id}`).click();
+    await expect(page.locator('#catch-edit-loading')).toBeHidden();
+
+    const uploadUrl = page.waitForResponse(response =>
+        /\/api\/catches\/[0-9a-f-]+\/photographs\/upload-url$/i.test(new URL(response.url()).pathname)
+        && response.request().method() === 'POST'
+        && response.ok());
+    const recorded = page.waitForResponse(response =>
+        /\/api\/catches\/[0-9a-f-]+\/photographs$/i.test(new URL(response.url()).pathname)
+        && response.request().method() === 'POST'
+        && response.ok());
+
+    await page.locator('#catch-edit-photo-gallery input, #catch-edit-photo-gallery').setInputFiles([{
+        name: 'second.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')
+    }]);
+
+    await uploadUrl;
+    await recorded;
+
+    const after = await reloadServerCatches(page);
+    expect(after.find(candidate => candidate.id === id)?.photographs).toHaveLength(2);
+});
+
 test('@smoke records a catch and retains its catalogue values and photo after reload', async ({ page }) => {
     const id = await createCatch(page, true);
 

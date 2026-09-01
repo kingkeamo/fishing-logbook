@@ -52,6 +52,7 @@ public partial class CatchEdit
                     photograph.ContentType,
                     photograph.Bytes)
             ],
+            MetadataSyncStatus = SyncStatus.WaitingToSynchronise,
             SyncStatus = PendingOverallStatus(current.SyncStatus)
         };
     }
@@ -140,6 +141,7 @@ public partial class CatchEdit
             Photographs = [.. _catch.Photographs.Select(photograph => photograph.Id == photographId
                 ? photograph with { SyncStatus = SyncStatus.PendingDeletion }
                 : photograph)],
+            MetadataSyncStatus = SyncStatus.WaitingToSynchronise,
             SyncStatus = PendingOverallStatus(_catch.SyncStatus)
         };
 
