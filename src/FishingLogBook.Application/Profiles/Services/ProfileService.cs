@@ -21,17 +21,20 @@ public sealed class ProfileService : IProfileService
     private readonly IObjectStorage _objectStorage;
     private readonly IProfilePhotographObjectKeyBuilder _objectKeyBuilder;
     private readonly IFishingPreferenceService _fishingPreferenceService;
+    private readonly ICurrentUser _currentUser;
 
     public ProfileService(
         IProfileRepository profileRepository,
         IObjectStorage objectStorage,
         IProfilePhotographObjectKeyBuilder objectKeyBuilder,
-        IFishingPreferenceService fishingPreferenceService)
+        IFishingPreferenceService fishingPreferenceService,
+        ICurrentUser currentUser)
     {
         _profileRepository = profileRepository;
         _objectStorage = objectStorage;
         _objectKeyBuilder = objectKeyBuilder;
         _fishingPreferenceService = fishingPreferenceService;
+        _currentUser = currentUser;
     }
 
     public bool IsObjectStorageConfigured => _objectStorage.IsConfigured;
@@ -153,7 +156,13 @@ public sealed class ProfileService : IProfileService
             return Result.Ok(profile);
         }
 
-        return await _profileRepository.UpsertAsync(CreateDefault(userId), cancellationToken);
+        return await _profileRepository.UpsertAsync(
+            new Profile
+            {
+                UserId = userId,
+                DisplayName = TrimOrNull(_currentUser.Email)
+            },
+            cancellationToken);
     }
 
     private async Task<ProfileDto> ToOwnDtoAsync(Profile profile, CancellationToken cancellationToken)
@@ -233,12 +242,12 @@ public sealed class ProfileService : IProfileService
         return new Profile { UserId = userId };
     }
 
-    private static Profile ApplyUpdate(Profile current, UpdateProfileArgs args)
+    private Profile ApplyUpdate(Profile current, UpdateProfileArgs args)
     {
         return new Profile
         {
             UserId = args.UserId,
-            DisplayName = TrimOrNull(args.DisplayName),
+            DisplayName = ResolveDisplayName(args.DisplayName, current.DisplayName),
             PhotographId = current.PhotographId,
             PhotographObjectKey = current.PhotographObjectKey,
             PhotographContentType = current.PhotographContentType,
@@ -252,6 +261,23 @@ public sealed class ProfileService : IProfileService
             ShowPreferredSpecies = args.ShowPreferredSpecies,
             OnboardingCompletedOn = current.OnboardingCompletedOn
         };
+    }
+
+    private string? ResolveDisplayName(string? submitted, string? current)
+    {
+        var trimmedSubmitted = TrimOrNull(submitted);
+        if (trimmedSubmitted is not null)
+        {
+            return trimmedSubmitted;
+        }
+
+        var trimmedCurrent = TrimOrNull(current);
+        if (trimmedCurrent is not null)
+        {
+            return trimmedCurrent;
+        }
+
+        return TrimOrNull(_currentUser.Email);
     }
 
     private static string? TrimOrNull(string? value)

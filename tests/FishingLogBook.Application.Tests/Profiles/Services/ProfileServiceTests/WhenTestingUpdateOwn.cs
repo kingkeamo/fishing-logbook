@@ -209,14 +209,109 @@ public class WhenTestingUpdateOwn : BaseProfileServiceTest
             Arg.Any<CancellationToken>());
     }
 
-    private static UpdateProfileArgs ValidArgs(Guid userId)
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ItShouldStoreTheAuthenticatedEmailWhenDisplayNameIsBlank(string? displayName)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var args = ValidArgs(userId, displayName);
+        MockProfileRepository
+            .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        MockProfileRepository
+            .UpsertAsync(Arg.Any<Profile>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Profile>(0)));
+
+        // Act
+        var result = await Sut.UpdateOwnAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.DisplayName.Should().Be(CurrentUserEmail);
+        result.Value.ShowDisplayName.Should().BeTrue();
+        await MockProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == userId
+                && profile.DisplayName == CurrentUserEmail
+                && profile.ShowDisplayName),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ItShouldKeepAnExistingNonBlankDisplayNameWhenTheSubmittedValueIsBlank(string? displayName)
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var existing = new ProfileBuilder()
+            .WithUserId(userId)
+            .WithDisplayName("Eamonn")
+            .Build();
+        var args = ValidArgs(userId, displayName);
+        MockProfileRepository
+            .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(existing));
+        MockProfileRepository
+            .UpsertAsync(Arg.Any<Profile>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Profile>(0)));
+
+        // Act
+        var result = await Sut.UpdateOwnAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.DisplayName.Should().Be("Eamonn");
+        await MockProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == userId
+                && profile.DisplayName == "Eamonn"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotChangeShowDisplayNameWhenStoringTheEmailFallback()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var args = ValidArgs(userId, displayName: null, showDisplayName: false);
+        MockProfileRepository
+            .GetByUserIdAsync(userId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Profile?>(null));
+        MockProfileRepository
+            .UpsertAsync(Arg.Any<Profile>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Profile>(0)));
+
+        // Act
+        var result = await Sut.UpdateOwnAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.DisplayName.Should().Be(CurrentUserEmail);
+        result.Value.ShowDisplayName.Should().BeFalse();
+        await MockProfileRepository.Received(1).UpsertAsync(
+            Arg.Is<Profile>(profile =>
+                profile.UserId == userId
+                && profile.DisplayName == CurrentUserEmail
+                && !profile.ShowDisplayName),
+            Arg.Any<CancellationToken>());
+    }
+
+    private static UpdateProfileArgs ValidArgs(
+        Guid userId,
+        string? displayName = "Eamonn",
+        bool showDisplayName = true)
     {
         return new UpdateProfileArgs
         {
             UserId = userId,
-            DisplayName = "Eamonn",
+            DisplayName = displayName,
             HomeRegion = "Westmeath",
-            ShowDisplayName = true,
+            ShowDisplayName = showDisplayName,
             ShowPhotograph = false,
             ShowHomeRegion = true,
             ShowPreferredFishingMethods = true,

@@ -22,6 +22,7 @@ public partial class Onboarding : ComponentBase, IDisposable
     private bool _locationHandled;
     private bool _offlineAccessReady;
     private string? _preferenceValidationMessage;
+    private string? _displayName;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
     private FishingCatalogueDto _catalogue = new([], []);
@@ -51,6 +52,7 @@ public partial class Onboarding : ComponentBase, IDisposable
         _profile = await profileTask;
         _catalogue = await catalogueTask;
         ApplyPreferences(await preferencesTask);
+        _displayName = _profile.DisplayName;
         _weightUnit = _profile.PreferredWeightUnit;
         _lengthUnit = _profile.PreferredLengthUnit;
         _isLoading = false;
@@ -110,7 +112,7 @@ public partial class Onboarding : ComponentBase, IDisposable
         try
         {
             _profile = await ProfileClient.UpdateOwnAsync(new UpdateProfileDto(
-                _profile.DisplayName,
+                _displayName,
                 _profile.HomeRegion,
                 _profile.ShowDisplayName,
                 _profile.ShowPhotograph,
@@ -119,6 +121,7 @@ public partial class Onboarding : ComponentBase, IDisposable
                 _profile.ShowPreferredSpecies,
                 _weightUnit,
                 _lengthUnit), _cancellationTokenSource.Token);
+            _displayName = _profile.DisplayName;
             var preferences = await FishingPreferenceClient.UpdatePreferencesAsync(
                 BuildFishingPreferencesUpdate(),
                 _cancellationTokenSource.Token);

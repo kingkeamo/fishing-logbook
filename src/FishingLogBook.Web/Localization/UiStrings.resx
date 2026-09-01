@@ -831,6 +831,7 @@
   <data name="Onboarding_WelcomeStep" xml:space="preserve"><value>Welcome</value></data>
   <data name="Onboarding_WelcomeTitle" xml:space="preserve"><value>Welcome to Catch But Don’t Forget</value></data>
   <data name="Onboarding_WelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Set up your private, offline-friendly fishing logbook in about a minute.</value></data>
+  <data name="Onboarding_DisplayNameHelp" xml:space="preserve"><value>Other anglers may see this name. If left blank, your email address will be used.</value></data>
   <data name="Onboarding_PreferencesStep" xml:space="preserve"><value>Preferences</value></data>
   <data name="Onboarding_PreferencesTitle" xml:space="preserve"><value>Set your fishing preferences</value></data>
   <data name="Onboarding_PreferencesBody" xml:space="preserve"><value>Choose what you fish for and the measurements you use. You can change these later in Profile.</value></data>
