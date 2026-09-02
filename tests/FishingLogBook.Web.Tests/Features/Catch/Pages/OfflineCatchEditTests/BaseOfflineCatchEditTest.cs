@@ -71,8 +71,7 @@ public class BaseOfflineCatchEditTest
         DateTimeOffset.UtcNow,
         [new CatchPhotographModel(Guid.Parse("44444444-4444-4444-4444-444444444444"), CatchId, "image/jpeg", [1, 2, 3])],
         "Brown Trout",
-        UserId: ownerUserId,
-        AnglerUserId: ownerUserId,
+        CaughtByUserId: ownerUserId,
         RecordedByUserId: ownerUserId,
         Notes: "Before");
 }

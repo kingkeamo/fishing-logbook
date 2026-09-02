@@ -343,8 +343,8 @@ public class WhenTestingSave : BaseLocationPrivacyModalTest
                     && catchRecord.Location.Longitude == -9.0568
                     && catchRecord.Location.AccuracyMetres == 12
                     && catchRecord.Location.Source == LocationDefaults.DeviceGps
-                    && catchRecord.UserId == OwnerUserId
-                    && catchRecord.AnglerUserId == OwnerUserId
+                    && catchRecord.CaughtByUserId == OwnerUserId
+                    && catchRecord.CaughtByUserId == OwnerUserId
                     && catchRecord.RecordedByUserId == OwnerUserId),
                 Arg.Any<CancellationToken>());
             client.UpdateLocationVisibilityAsync(

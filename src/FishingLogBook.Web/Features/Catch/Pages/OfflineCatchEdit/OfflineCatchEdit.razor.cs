@@ -85,7 +85,8 @@ public partial class OfflineCatchEdit : ComponentBase
             }
 
             _catch = await CatchStore.GetAsync(owner.UserId, CatchId, CancellationToken.None);
-            if (_catch is null || _catch.UserId != owner.UserId)
+            if (_catch is null
+                || (_catch.CaughtByUserId != owner.UserId && _catch.RecordedByUserId != owner.UserId))
             {
                 _loadFailed = true;
                 return;

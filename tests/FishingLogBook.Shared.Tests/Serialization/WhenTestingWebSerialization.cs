@@ -69,8 +69,7 @@ public class WhenTestingWebSerialization : BaseSerializationTest
                 LocationDefaults.Private,
                 LocationDefaults.ConsentVersion))
         {
-            UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            AnglerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            CaughtByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             RecordedByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111")
         };
 
@@ -116,8 +115,7 @@ public class WhenTestingWebSerialization : BaseSerializationTest
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")])
         {
-            UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            AnglerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            CaughtByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             RecordedByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             SpeciesName = "Pike",
             Weight = 2.5m,
@@ -204,7 +202,6 @@ public class WhenTestingWebSerialization : BaseSerializationTest
                 Longitude = -9.0568
             })
         {
-            AnglerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             RecordedByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111")
         };
 

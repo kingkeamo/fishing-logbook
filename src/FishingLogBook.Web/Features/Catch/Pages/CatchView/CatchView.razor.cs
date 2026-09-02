@@ -104,7 +104,7 @@ public partial class CatchView : ComponentBase, IDisposable
 
     private bool HasRecordedByName =>
         !string.IsNullOrWhiteSpace(_catch?.RecordedByName)
-        && _catch.RecordedByUserId != _catch.AnglerUserId;
+        && _catch.RecordedByUserId != _catch.CaughtByUserId;
 
     private string? LocationLabel
     {

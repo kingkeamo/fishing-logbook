@@ -198,7 +198,7 @@ public class WhenTestingCatches : IClassFixture<SystemApiFactory>
             Arg.Is<PersistCatchTripArgs>(args =>
                 args.CatchId == catchId
                 && args.TripId == tripId
-                && args.UserId == current.UserId),
+                && args.CaughtByUserId == current.UserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -230,7 +230,7 @@ public class WhenTestingCatches : IClassFixture<SystemApiFactory>
             Arg.Is<PersistCatchTripArgs>(args =>
                 args.CatchId == catchId
                 && args.TripId == tripId
-                && args.UserId == current.UserId),
+                && args.CaughtByUserId == current.UserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -258,8 +258,7 @@ public class WhenTestingCatches : IClassFixture<SystemApiFactory>
         return new Catch
         {
             Id = catchId,
-            UserId = userId,
-            AnglerUserId = userId,
+            CaughtByUserId = userId,
             RecordedByUserId = userId,
             CaughtOn = caughtOn ?? CaughtOn,
             TripId = tripId

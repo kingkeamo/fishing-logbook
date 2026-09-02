@@ -84,8 +84,7 @@ public class WhenTestingRender : BaseCatchCardTest
                 "image/jpeg",
                 RemoteUrl: "https://r2.test/signed-download")],
             SpeciesName: "Brown Trout",
-            UserId: OwnerUserId,
-            AnglerUserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             RecordedByUserId: OwnerUserId);
         await using var context = CreateContext();
 
@@ -411,8 +410,7 @@ public class WhenTestingRender : BaseCatchCardTest
                     Guid.NewGuid(), catchId, "image/jpeg", RemoteUrl: "https://r2.test/two")
             ],
             SpeciesName: "Brown Trout",
-            UserId: OwnerUserId,
-            AnglerUserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             RecordedByUserId: OwnerUserId);
         await using var context = CreateContext();
 
@@ -432,7 +430,7 @@ public class WhenTestingRender : BaseCatchCardTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
-        var stored = StoredCatch(catchId, anglerUserId: OwnerUserId, recordedByUserId: OwnerUserId);
+        var stored = StoredCatch(catchId, caughtByUserId: OwnerUserId, recordedByUserId: OwnerUserId);
         await using var context = CreateContext();
 
         // Act
@@ -452,7 +450,7 @@ public class WhenTestingRender : BaseCatchCardTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
-        var stored = StoredCatch(catchId, anglerUserId: OtherUserId, recordedByUserId: OwnerUserId);
+        var stored = StoredCatch(catchId, caughtByUserId: OtherUserId, recordedByUserId: OwnerUserId);
         await using var context = CreateContext();
 
         // Act
@@ -474,7 +472,7 @@ public class WhenTestingRender : BaseCatchCardTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
-        var stored = StoredCatch(catchId, anglerUserId: OwnerUserId, recordedByUserId: OtherUserId);
+        var stored = StoredCatch(catchId, caughtByUserId: OwnerUserId, recordedByUserId: OtherUserId);
         await using var context = CreateContext();
 
         // Act
@@ -494,7 +492,7 @@ public class WhenTestingRender : BaseCatchCardTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
-        var stored = StoredCatch(catchId, anglerUserId: OtherUserId, recordedByUserId: OwnerUserId);
+        var stored = StoredCatch(catchId, caughtByUserId: OtherUserId, recordedByUserId: OwnerUserId);
         await using var context = CreateContext();
 
         // Act
@@ -516,7 +514,7 @@ public class WhenTestingRender : BaseCatchCardTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
-        var stored = StoredCatch(catchId, anglerUserId: OwnerUserId, recordedByUserId: OtherUserId);
+        var stored = StoredCatch(catchId, caughtByUserId: OwnerUserId, recordedByUserId: OtherUserId);
         await using var context = CreateContext();
 
         // Act
@@ -538,7 +536,7 @@ public class WhenTestingRender : BaseCatchCardTest
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
         var catchId = Guid.NewGuid();
-        var stored = StoredCatch(catchId, anglerUserId: OtherUserId, recordedByUserId: OwnerUserId);
+        var stored = StoredCatch(catchId, caughtByUserId: OtherUserId, recordedByUserId: OwnerUserId);
         await using var context = CreateContext();
 
         // Act

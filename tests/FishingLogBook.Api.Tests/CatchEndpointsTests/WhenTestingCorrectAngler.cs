@@ -100,8 +100,7 @@ public class WhenTestingCorrectAngler : IClassFixture<SystemApiFactory>
         var catchRecord = new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = current!.UserId,
-            AnglerUserId = current.UserId,
+            CaughtByUserId = current.UserId,
             RecordedByUserId = current.UserId,
             TripId = null,
             CaughtOn = StartedOn
@@ -202,8 +201,7 @@ public class WhenTestingCorrectAngler : IClassFixture<SystemApiFactory>
                 Catch = new Catch
                 {
                     Id = catchRecord.Id,
-                    UserId = correctedAnglerUserId,
-                    AnglerUserId = correctedAnglerUserId,
+                    CaughtByUserId = correctedAnglerUserId,
                     RecordedByUserId = recorder.UserId,
                     TripId = TripId,
                     CaughtOn = StartedOn
@@ -220,11 +218,11 @@ public class WhenTestingCorrectAngler : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<CatchViewDto>();
-        body!.AnglerUserId.Should().Be(correctedAnglerUserId);
+        body!.CaughtByUserId.Should().Be(correctedAnglerUserId);
         body.RecordedByUserId.Should().Be(recorder.UserId);
         await _factory.CatchRepository.Received(1).CorrectAnglerAsync(
             Arg.Is<PersistCatchAnglerArgs>(args =>
-                args.CatchId == catchRecord.Id && args.AnglerUserId == correctedAnglerUserId),
+                args.CatchId == catchRecord.Id && args.CaughtByUserId == correctedAnglerUserId),
             Arg.Any<CancellationToken>());
         await _factory.CatchRepository.DidNotReceive().UpsertAsync(
             Arg.Any<Catch>(),
@@ -266,8 +264,7 @@ public class WhenTestingCorrectAngler : IClassFixture<SystemApiFactory>
         return new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
-            AnglerUserId = anglerUserId,
+            CaughtByUserId = anglerUserId,
             RecordedByUserId = recordedByUserId,
             TripId = TripId,
             CaughtOn = StartedOn

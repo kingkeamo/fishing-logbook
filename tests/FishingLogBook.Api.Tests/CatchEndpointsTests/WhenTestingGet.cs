@@ -68,8 +68,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         var catchRecord = new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = current!.UserId,
-            AnglerUserId = current.UserId,
+            CaughtByUserId = current.UserId,
             RecordedByUserId = current.UserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
         };
@@ -87,8 +86,8 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         json.Should().NotContain("\"latitude\":");
         json.Should().NotContain("53.2707");
         body.Should().NotBeNull();
-        body!.UserId.Should().Be(current.UserId);
-        body.AnglerUserId.Should().Be(current.UserId);
+        body!.CaughtByUserId.Should().Be(current.UserId);
+        body.CaughtByUserId.Should().Be(current.UserId);
         body.RecordedByUserId.Should().Be(current.UserId);
         body.Location.Should().BeNull();
         await _factory.CatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -317,8 +316,7 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
         return new Catch
         {
             Id = catchId,
-            UserId = ownerUserId,
-            AnglerUserId = ownerUserId,
+            CaughtByUserId = ownerUserId,
             RecordedByUserId = ownerUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Location = CatchLocation.TryCreate(

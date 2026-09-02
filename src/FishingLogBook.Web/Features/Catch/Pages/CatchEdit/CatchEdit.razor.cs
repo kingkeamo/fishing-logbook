@@ -120,7 +120,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
         _catch = saved.Catch;
         if (saved.MetadataChanged)
         {
-            TryToSynchronisePending();
+            TryToRetryCatchAsync();
         }
 
         return Task.CompletedTask;
@@ -133,7 +133,7 @@ public partial class CatchEdit : ComponentBase, IDisposable
             _catch = saved.Catch;
             if (saved.MetadataChanged)
             {
-                TryToSynchronisePending();
+                TryToRetryCatchAsync();
             }
         }
 
@@ -143,6 +143,11 @@ public partial class CatchEdit : ComponentBase, IDisposable
     private void TryToSynchronisePending()
     {
         _ = SafeSynchronisePendingAsync();
+    }
+
+    private void TryToRetryCatchAsync()
+    {
+        _ = SafeRetryCatchAsync();
     }
 
     private async Task SafeSynchronisePendingAsync()
@@ -158,6 +163,22 @@ public partial class CatchEdit : ComponentBase, IDisposable
         catch (Exception exception)
         {
             await Logging.LogErrorAsync("logbook synchronisation", exception, CancellationToken.None);
+        }
+    }
+
+    private async Task SafeRetryCatchAsync()
+    {
+        var cancellationToken = _cancellationTokenSource.Token;
+        try
+        {
+            await LogbookSynchroniser.RetryAsync(CatchId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            await Logging.LogErrorAsync("catch synchronisation", exception, CancellationToken.None);
         }
     }
 

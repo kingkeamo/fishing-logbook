@@ -268,7 +268,7 @@ public static class CatchEndpoints
             new CorrectCatchAnglerCommand
             {
                 CatchId = catchId,
-                AnglerUserId = body.AnglerUserId
+                CaughtByUserId = body.CaughtByUserId
             },
             cancellationToken);
         if (response.Error is CurrentUserUnresolvedError)

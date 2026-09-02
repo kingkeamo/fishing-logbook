@@ -32,7 +32,7 @@ public class WhenTestingServerCatches : BaseCatchListTest
                 new CatchViewDto(serverCatchId, OwnerUserId, DateTimeOffset.UtcNow)
                 {
                     SpeciesName = "Perch",
-                    AnglerUserId = OwnerUserId,
+                    CaughtByUserId = OwnerUserId,
                     RecordedByUserId = OwnerUserId
                 }
             ]);
@@ -63,7 +63,7 @@ public class WhenTestingServerCatches : BaseCatchListTest
                 new CatchViewDto(sharedId, OwnerUserId, DateTimeOffset.UtcNow)
                 {
                     SpeciesName = "Server Pike",
-                    AnglerUserId = OwnerUserId,
+                    CaughtByUserId = OwnerUserId,
                     RecordedByUserId = OwnerUserId
                 }
             ]);

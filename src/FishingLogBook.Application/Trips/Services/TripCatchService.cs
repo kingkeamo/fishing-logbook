@@ -80,7 +80,7 @@ public sealed class TripCatchService : ITripCatchService
             new PersistCatchTripArgs
             {
                 CatchId = catchId,
-                UserId = _currentUser.UserId,
+                CaughtByUserId = _currentUser.UserId,
                 TripId = trip.Id
             },
             cancellationToken);
@@ -88,7 +88,7 @@ public sealed class TripCatchService : ITripCatchService
 
     private bool IsEligible(Catch? candidate, Trip trip)
     {
-        if (candidate is null || candidate.UserId != _currentUser.UserId || candidate.TripId is not null)
+        if (candidate is null || candidate.CaughtByUserId != _currentUser.UserId || candidate.TripId is not null)
         {
             return false;
         }

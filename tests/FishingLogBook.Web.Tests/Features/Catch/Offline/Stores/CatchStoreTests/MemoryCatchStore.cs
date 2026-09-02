@@ -38,7 +38,7 @@ public sealed class MemoryCatchStore : ICatchStore
 
     public Task SaveAsync(CatchModel catchRecord, CancellationToken cancellationToken)
     {
-        if (catchRecord.UserId == Guid.Empty)
+        if (catchRecord.CaughtByUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A catch requires an owner.");
         }
@@ -157,7 +157,8 @@ public sealed class MemoryCatchStore : ICatchStore
         Guid? tripId,
         CancellationToken cancellationToken)
     {
-        if (!_catches.TryGetValue(catchId, out var existing) || existing.UserId != ownerUserId)
+        if (!_catches.TryGetValue(catchId, out var existing)
+            || (existing.CaughtByUserId != ownerUserId && existing.RecordedByUserId != ownerUserId))
         {
             throw new InvalidOperationException("Owned Catch was not found.");
         }
@@ -190,7 +191,7 @@ public sealed class MemoryCatchStore : ICatchStore
         CancellationToken cancellationToken)
     {
         if (!_catches.TryGetValue(catchRecord.Id, out var existing)
-            || existing.UserId != catchRecord.UserId)
+            || existing.CaughtByUserId != catchRecord.CaughtByUserId)
         {
             throw new InvalidOperationException("Owned Catch was not found.");
         }
@@ -231,8 +232,7 @@ public sealed class MemoryCatchStore : ICatchStore
         _catches[catchRecord.Id] = existing with
         {
             CaughtOn = catchRecord.CaughtOn,
-            UserId = catchRecord.UserId,
-            AnglerUserId = catchRecord.AnglerUserId,
+            CaughtByUserId = catchRecord.CaughtByUserId,
             RecordedByUserId = catchRecord.RecordedByUserId,
             TripId = catchRecord.TripId,
             SpeciesName = catchRecord.SpeciesName,
@@ -274,7 +274,8 @@ public sealed class MemoryCatchStore : ICatchStore
         }
 
         var eligible = _catches.Values
-            .Where(catchRecord => catchRecord.UserId == ownerUserId)
+            .Where(catchRecord => catchRecord.CaughtByUserId == ownerUserId
+                || catchRecord.RecordedByUserId == ownerUserId)
             .Where(catchRecord => catchRecord.SyncStatus == SyncStatus.Synchronised
                 && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised
                 && catchRecord.Photographs.All(
@@ -298,7 +299,7 @@ public sealed class MemoryCatchStore : ICatchStore
 
     private static bool IsVisibleTo(CatchModel catchRecord, Guid userId)
     {
-        return catchRecord.UserId == userId || catchRecord.RecordedByUserId == userId;
+        return catchRecord.CaughtByUserId == userId || catchRecord.RecordedByUserId == userId;
     }
 
     private CatchModel WithPhotographBytes(CatchModel catchRecord)

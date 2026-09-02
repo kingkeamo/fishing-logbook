@@ -87,7 +87,7 @@ public sealed class TripMappingRegistration : IRegister
                 SpeciesName = source.SpeciesName,
                 Weight = source.Weight,
                 Length = source.Length,
-                AnglerUserId = source.AnglerUserId,
+                CaughtByUserId = source.CaughtByUserId,
                 RecordedByUserId = source.RecordedByUserId
             });
 

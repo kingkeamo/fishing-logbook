@@ -21,11 +21,9 @@ public sealed class TripTimelineService : ITripTimelineService
             .Select(catchRecord => new TripTimelineItemModel(TripTimelineKindEnum.Catch, catchRecord.CaughtOn)
             {
                 CatchId = catchRecord.Id,
-                ContributedByUserId = catchRecord.AnglerUserId == Guid.Empty
-                    ? catchRecord.UserId
-                    : catchRecord.AnglerUserId,
+                ContributedByUserId = catchRecord.CaughtByUserId,
                 RecordedByUserId = catchRecord.RecordedByUserId == Guid.Empty
-                    ? catchRecord.UserId
+                    ? catchRecord.CaughtByUserId
                     : catchRecord.RecordedByUserId,
                 SpeciesName = catchRecord.SpeciesName,
                 Weight = catchRecord.Weight,
@@ -67,7 +65,7 @@ public sealed class TripTimelineService : ITripTimelineService
             new TripTimelineItemModel(TripTimelineKindEnum.Catch, summary.CaughtOn)
             {
                 CatchId = summary.Id,
-                ContributedByUserId = summary.AnglerUserId,
+                ContributedByUserId = summary.CaughtByUserId,
                 RecordedByUserId = summary.RecordedByUserId,
                 SpeciesName = summary.SpeciesName,
                 Weight = summary.Weight,

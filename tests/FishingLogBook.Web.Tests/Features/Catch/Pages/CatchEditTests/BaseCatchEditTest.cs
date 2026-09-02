@@ -207,6 +207,8 @@ public class BaseCatchEditTest
         var synchroniser = Substitute.For<ILogbookSynchroniser>();
         synchroniser.SynchronisePendingAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
+        synchroniser.RetryAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
         return synchroniser;
     }
 
@@ -255,10 +257,9 @@ public class BaseCatchEditTest
             ],
             SpeciesName: speciesName,
             Location: location,
-            UserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             SyncStatus: syncStatus,
             MetadataSyncStatus: metadataStatus,
-            AnglerUserId: OwnerUserId,
             RecordedByUserId: OwnerUserId,
             Weight: weight,
             Length: length,

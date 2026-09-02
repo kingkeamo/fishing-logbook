@@ -32,6 +32,12 @@ function runCatchWithPhotographsTransaction(mode, operationName, execute) {
 
 export async function putCatchWithPhotographs(json, photographs) {
     const catchRecord = JSON.parse(json);
+    const caughtByUserId = resolveCaughtByUserId(catchRecord);
+    if (caughtByUserId) {
+        catchRecord.caughtByUserId = caughtByUserId;
+        catchRecord.userId = caughtByUserId;
+        catchRecord.anglerUserId = caughtByUserId;
+    }
     const photos = Array.isArray(photographs) ? photographs : [];
     if (!catchRecord?.id) {
         throw new Error('Catch id is required');
@@ -113,7 +119,8 @@ function writePhotographs(photoStore, photos, succeed, fail) {
 
 export async function updateCatchMetadata(json) {
     const catchRecord = JSON.parse(json);
-    if (!catchRecord?.id || !normalisedOwnerId(catchRecord.userId)) {
+    const caughtByUserId = resolveCaughtByUserId(catchRecord);
+    if (!catchRecord?.id || !caughtByUserId) {
         throw new Error('Owned Catch id is required');
     }
 
@@ -122,7 +129,10 @@ export async function updateCatchMetadata(json) {
         existingRequest.onerror = () => fail(existingRequest.error);
         existingRequest.onsuccess = () => {
             const existing = existingRequest.result;
-            if (!existing || normalisedOwnerId(existing.userId) !== normalisedOwnerId(catchRecord.userId)) {
+            // Legacy userId is the ownership key for sync-state writes; stale queued payloads
+            // may carry a wrong anglerUserId that must not affect ownership resolution here.
+            const incomingOwnerId = normalisedOwnerId(catchRecord.userId) || caughtByUserId;
+            if (!existing || resolveCaughtByUserId(existing) !== incomingOwnerId) {
                 fail(new Error('Owned Catch was not found'));
                 return;
             }
@@ -169,10 +179,16 @@ export async function updateCatchMetadata(json) {
     });
 }
 
+function resolveCaughtByUserId(record) {
+    return normalisedOwnerId(record?.caughtByUserId)
+        || normalisedOwnerId(record?.anglerUserId)
+        || normalisedOwnerId(record?.userId);
+}
+
 function isVisibleTo(record, owner) {
-    const userId = normalisedOwnerId(record?.userId);
+    const caughtByUserId = resolveCaughtByUserId(record);
     const recordedByUserId = normalisedOwnerId(record?.recordedByUserId);
-    return userId === owner || (recordedByUserId && recordedByUserId === owner);
+    return caughtByUserId === owner || (recordedByUserId && recordedByUserId === owner);
 }
 
 export async function getCatchPhotographBytes(ownerUserId, catchId, photographId) {
@@ -213,7 +229,7 @@ export async function updateCatchTrip(json) {
         existingRequest.onerror = () => fail(existingRequest.error);
         existingRequest.onsuccess = () => {
             const existing = existingRequest.result;
-            if (!existing || normalisedOwnerId(existing.userId) !== owner) {
+            if (!existing || !isVisibleTo(existing, owner)) {
                 fail(new Error('Owned Catch was not found'));
                 return;
             }
@@ -231,7 +247,8 @@ export async function updateCatchTrip(json) {
 
 export async function reconcileCatchMetadata(json) {
     const catchRecord = JSON.parse(json);
-    if (!catchRecord?.id || !normalisedOwnerId(catchRecord.userId)) {
+    const caughtByUserId = resolveCaughtByUserId(catchRecord);
+    if (!catchRecord?.id || !caughtByUserId) {
         throw new Error('Owned Catch id is required');
     }
 
@@ -260,24 +277,31 @@ export async function reconcileCatchMetadata(json) {
                     objectKey: incoming.objectKey
                 };
             });
+            const preserveLocalMetadata = hasMetadataDifference(catchRecord, existing)
+                || !isSynchronisedStatus(existing.metadataSyncStatus);
 
             const updateRequest = store.put({
                 ...existing,
-                caughtOn: catchRecord.caughtOn,
-                userId: catchRecord.userId,
-                anglerUserId: catchRecord.anglerUserId,
-                recordedByUserId: catchRecord.recordedByUserId,
-                tripId: catchRecord.tripId,
-                speciesName: catchRecord.speciesName,
-                weight: catchRecord.weight,
-                length: catchRecord.length,
-                method: catchRecord.method,
-                baitOrLure: catchRecord.baitOrLure,
-                notes: catchRecord.notes,
-                location: catchRecord.location,
-                syncStatus: catchRecord.syncStatus,
-                metadataSyncStatus: catchRecord.metadataSyncStatus,
-                syncedAt: catchRecord.syncedAt,
+                caughtOn: preserveLocalMetadata ? existing.caughtOn : catchRecord.caughtOn,
+                caughtByUserId,
+                userId: caughtByUserId,
+                anglerUserId: caughtByUserId,
+                recordedByUserId: preserveLocalMetadata
+                    ? existing.recordedByUserId
+                    : catchRecord.recordedByUserId,
+                tripId: preserveLocalMetadata ? existing.tripId : catchRecord.tripId,
+                speciesName: preserveLocalMetadata ? existing.speciesName : catchRecord.speciesName,
+                weight: preserveLocalMetadata ? existing.weight : catchRecord.weight,
+                length: preserveLocalMetadata ? existing.length : catchRecord.length,
+                method: preserveLocalMetadata ? existing.method : catchRecord.method,
+                baitOrLure: preserveLocalMetadata ? existing.baitOrLure : catchRecord.baitOrLure,
+                notes: preserveLocalMetadata ? existing.notes : catchRecord.notes,
+                location: preserveLocalMetadata ? existing.location : catchRecord.location,
+                syncStatus: preserveLocalMetadata ? existing.syncStatus : catchRecord.syncStatus,
+                metadataSyncStatus: preserveLocalMetadata
+                    ? existing.metadataSyncStatus
+                    : catchRecord.metadataSyncStatus,
+                syncedAt: preserveLocalMetadata ? existing.syncedAt : catchRecord.syncedAt,
                 photographs
             });
             updateRequest.onsuccess = () => succeed();
@@ -290,6 +314,7 @@ function hasMetadataDifference(existing, incoming) {
     const metadataFields = [
         'caughtOn',
         'speciesName',
+        'caughtByUserId',
         'anglerUserId',
         'recordedByUserId',
         'weight',
@@ -297,7 +322,8 @@ function hasMetadataDifference(existing, incoming) {
         'method',
         'baitOrLure',
         'notes',
-        'tripId'
+        'tripId',
+        'location'
     ];
     return metadataFields.some((field) =>
         Object.hasOwn(incoming, field)

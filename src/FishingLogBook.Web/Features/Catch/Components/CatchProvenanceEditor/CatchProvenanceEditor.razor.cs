@@ -96,8 +96,8 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
                 return;
             }
 
-            _persistedAnglerUserId = catchView.AnglerUserId;
-            _selectedAnglerUserId = catchView.AnglerUserId;
+            _persistedAnglerUserId = catchView.CaughtByUserId;
+            _selectedAnglerUserId = catchView.CaughtByUserId;
             _anglerName = catchView.AnglerName;
             _recordedByUserId = catchView.RecordedByUserId;
             _recordedByName = catchView.RecordedByName;
@@ -181,8 +181,8 @@ public partial class CatchProvenanceEditor : ComponentBase, IDisposable
                 return;
             }
 
-            _persistedAnglerUserId = result.Catch.AnglerUserId;
-            _selectedAnglerUserId = result.Catch.AnglerUserId;
+            _persistedAnglerUserId = result.Catch.CaughtByUserId;
+            _selectedAnglerUserId = result.Catch.CaughtByUserId;
             _anglerName = result.Catch.AnglerName;
             _recordedByUserId = result.Catch.RecordedByUserId;
             _recordedByName = result.Catch.RecordedByName;

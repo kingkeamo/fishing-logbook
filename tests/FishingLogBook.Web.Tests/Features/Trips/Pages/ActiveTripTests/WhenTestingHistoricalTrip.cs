@@ -125,7 +125,7 @@ public class WhenTestingHistoricalTrip : BaseActiveTripTest
                     new TripCatchSummaryDto(catchId, StartedOn.AddMinutes(30))
                     {
                         SpeciesName = "Brown Trout",
-                        AnglerUserId = participantUserId
+                        CaughtByUserId = participantUserId
                     }
                 ],
                 Contributors =

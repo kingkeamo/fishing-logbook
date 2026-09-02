@@ -99,10 +99,9 @@ public class BaseTripDependencyServiceTest
                 catchId,
                 StartedOn.AddHours(1),
                 [new CatchPhotographModel(Guid.NewGuid(), catchId, "image/jpeg", [1, 2, 3])],
-                UserId: owner,
+                CaughtByUserId: owner,
                 SyncStatus: syncStatus,
                 MetadataSyncStatus: metadataSyncStatus ?? syncStatus,
-                AnglerUserId: owner,
                 RecordedByUserId: owner,
                 TripId: tripId),
             CancellationToken.None);

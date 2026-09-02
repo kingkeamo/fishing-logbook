@@ -104,7 +104,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         cut.FindAll("#catch-saved").Should().BeEmpty();
         cut.Find("#save-catch-button").Should().NotBeNull();
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.Id != Guid.Empty
                 && catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id != Guid.Empty
@@ -139,8 +139,8 @@ public class WhenTestingSave : BaseRecordCatchTest
 
         // Assert
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
-                catchRecord.AnglerUserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
+                catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.RecordedByUserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Id == photographId
@@ -190,7 +190,7 @@ public class WhenTestingSave : BaseRecordCatchTest
 
         // Assert
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Bytes != null
                 && catchRecord.SpeciesName == null
@@ -265,7 +265,7 @@ public class WhenTestingSave : BaseRecordCatchTest
         saved[0].Photographs[0].Id.Should().NotBe(saved[0].Id);
         saved.Should().OnlyContain(catchRecord => catchRecord.SpeciesName == null);
         await store.Received(2).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.Id != Guid.Empty
                 && catchRecord.Photographs.Count == 1
                 && catchRecord.Photographs[0].Bytes != null),
@@ -366,7 +366,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             cut.FindAll("#catch-save-failed").Should().BeEmpty();
         });
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.SyncStatus == SyncStatus.SavedLocally),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
@@ -409,7 +409,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             cut.FindAll("#save-catch-button").Should().BeEmpty();
         });
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.SyncStatus == SyncStatus.SavedLocally),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
@@ -452,7 +452,7 @@ public class WhenTestingSave : BaseRecordCatchTest
             cut.FindAll("#save-catch-button").Should().BeEmpty();
         });
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId),
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId),
             Arg.Any<CancellationToken>());
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
@@ -493,8 +493,8 @@ public class WhenTestingSave : BaseRecordCatchTest
             order.Should().Equal("save", "sync");
         });
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
-                catchRecord.AnglerUserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
+                catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.RecordedByUserId == OwnerUserId &&
                 catchRecord.SyncStatus == SyncStatus.SavedLocally),
             Arg.Any<CancellationToken>());

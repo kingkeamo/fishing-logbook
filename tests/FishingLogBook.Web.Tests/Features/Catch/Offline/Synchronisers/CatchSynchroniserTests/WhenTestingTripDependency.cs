@@ -143,8 +143,8 @@ public class WhenTestingTripDependency : BaseCatchSynchroniserTest
             Arg.Is<CatchDto>(dto =>
                 dto.Id == CatchId
                 && dto.TripId == TripId
-                && dto.UserId == OwnerUserId
-                && dto.AnglerUserId == OwnerUserId),
+                && dto.CaughtByUserId == OwnerUserId
+                && dto.CaughtByUserId == OwnerUserId),
             Arg.Any<CancellationToken>());
     }
 

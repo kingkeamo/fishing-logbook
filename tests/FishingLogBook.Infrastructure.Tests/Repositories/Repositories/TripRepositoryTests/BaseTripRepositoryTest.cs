@@ -46,8 +46,7 @@ public abstract class BaseTripRepositoryTest
         var catchRecord = new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
-            AnglerUserId = userId,
+            CaughtByUserId = userId,
             RecordedByUserId = userId,
             TripId = tripId,
             SpeciesName = speciesName,

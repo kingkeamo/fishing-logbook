@@ -124,8 +124,8 @@ public partial class CatchCard : ComponentBase
     {
         get
         {
-            if (Catch.AnglerUserId != Guid.Empty &&
-                Catch.AnglerUserId != CurrentUserId)
+            if (Catch.CaughtByUserId != Guid.Empty &&
+                Catch.CaughtByUserId != CurrentUserId)
             {
                 return string.IsNullOrWhiteSpace(AnglerName)
                     ? Loc["Catch_RecordedForAnotherAngler"].Value

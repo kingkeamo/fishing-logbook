@@ -1,3 +1,4 @@
+using System.Threading;
 using FishingLogBook.Web.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
@@ -8,6 +9,7 @@ namespace FishingLogBook.Web.Common.Offline.Synchronisers;
 public sealed class LogbookSynchroniser : ILogbookSynchroniser
 {
     private readonly SemaphoreSlim _runLock = new(1, 1);
+    private int _rerunRequested;
     private readonly ITripSynchroniser _tripSynchroniser;
     private readonly ITripPhotographSynchroniser _tripPhotographSynchroniser;
     private readonly ITripNoteSynchroniser _tripNoteSynchroniser;
@@ -43,12 +45,19 @@ public sealed class LogbookSynchroniser : ILogbookSynchroniser
     {
         if (!await _runLock.WaitAsync(0, cancellationToken))
         {
+            Interlocked.Exchange(ref _rerunRequested, 1);
             return;
         }
 
         try
         {
-            await RunTripsThenCatchesAsync(ownerUserId, cancellationToken);
+            do
+            {
+                Interlocked.Exchange(ref _rerunRequested, 0);
+                await RunTripsThenCatchesAsync(ownerUserId, cancellationToken);
+            }
+            while (Interlocked.Exchange(ref _rerunRequested, 0) == 1
+                && !cancellationToken.IsCancellationRequested);
         }
         finally
         {

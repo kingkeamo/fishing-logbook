@@ -61,7 +61,7 @@ public class WhenTestingSharedTripCatches : BaseTripCatchServiceTest
             Arg.Is<PersistCatchTripArgs>(args =>
                 args.CatchId == CatchId
                 && args.TripId == TripId
-                && args.UserId == CurrentUserId),
+                && args.CaughtByUserId == CurrentUserId),
             Arg.Any<CancellationToken>());
     }
 

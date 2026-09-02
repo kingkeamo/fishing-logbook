@@ -50,15 +50,14 @@ public class WhenTestingGetActivityForUser : BaseCatchRepositoryTest
     public async Task ItShouldIncludeACatchTheUserRecordedForAnotherAngler()
     {
         // Arrange
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var recorderUserId = await CreateUserAsync();
-        await CreateProfileAsync(anglerUserId, "Patrick Connolly");
+        await CreateProfileAsync(CaughtByUserId, "Patrick Connolly");
         var catchId = Guid.NewGuid();
         var recordedForAnother = new Catch
         {
             Id = catchId,
-            UserId = anglerUserId,
-            AnglerUserId = anglerUserId,
+            CaughtByUserId = CaughtByUserId,
             RecordedByUserId = recorderUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Photographs =
@@ -74,7 +73,7 @@ public class WhenTestingGetActivityForUser : BaseCatchRepositoryTest
         await Sut.UpsertAsync(recordedForAnother, CancellationToken.None);
 
         // Act
-        var anglerActivity = await Sut.GetActivityForUserAsync(anglerUserId, CancellationToken.None);
+        var anglerActivity = await Sut.GetActivityForUserAsync(CaughtByUserId, CancellationToken.None);
         var recorderActivity = await Sut.GetActivityForUserAsync(recorderUserId, CancellationToken.None);
 
         // Assert
@@ -83,8 +82,8 @@ public class WhenTestingGetActivityForUser : BaseCatchRepositoryTest
         recorderActivity.IsSuccess.Should().BeTrue();
         var recordedForPatrick = recorderActivity.Value.Should().ContainSingle(
             catchDetail => catchDetail.Catch.Id == recordedForAnother.Id).Subject;
-        recordedForPatrick.Catch.UserId.Should().Be(anglerUserId);
-        recordedForPatrick.Catch.AnglerUserId.Should().Be(anglerUserId);
+        recordedForPatrick.Catch.CaughtByUserId.Should().Be(CaughtByUserId);
+        recordedForPatrick.Catch.CaughtByUserId.Should().Be(CaughtByUserId);
         recordedForPatrick.Catch.RecordedByUserId.Should().Be(recorderUserId);
         recordedForPatrick.AnglerName.Should().Be("Patrick Connolly");
     }
@@ -117,8 +116,7 @@ public class WhenTestingGetActivityForUser : BaseCatchRepositoryTest
         var olderWithDate = new Catch
         {
             Id = older.Id,
-            UserId = older.UserId,
-            AnglerUserId = older.AnglerUserId,
+            CaughtByUserId = older.CaughtByUserId,
             RecordedByUserId = older.RecordedByUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-15T08:00:00Z"),
             Photographs = older.Photographs
@@ -127,8 +125,7 @@ public class WhenTestingGetActivityForUser : BaseCatchRepositoryTest
         var newerWithDate = new Catch
         {
             Id = newer.Id,
-            UserId = newer.UserId,
-            AnglerUserId = newer.AnglerUserId,
+            CaughtByUserId = newer.CaughtByUserId,
             RecordedByUserId = newer.RecordedByUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-18T08:00:00Z"),
             Photographs = newer.Photographs

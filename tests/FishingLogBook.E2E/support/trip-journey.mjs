@@ -18,7 +18,10 @@ export async function startTrip(page) {
         await expect(page.locator('#trip-action-loading')).toBeHidden();
     }
 
-    await page.locator('#trip-start-link').click();
+    const startTrip = page.locator('#trip-start-link');
+    await expect(startTrip).toBeVisible();
+    await expect(startTrip).toBeEnabled();
+    await startTrip.click();
     await page.waitForURL(url => /\/trips\/[0-9a-f-]+$/i.test(new URL(url).pathname));
     await expect(page.locator('#active-trip-card')).toBeVisible();
     return tripIdFromUrl(page);
@@ -87,7 +90,10 @@ export async function openParticipants(page) {
 
 export async function inviteAngler(page, tripId, displayName) {
     await openParticipants(page);
-    await page.locator('#trip-participants-invite').click();
+    const invite = page.locator('#trip-participants-invite');
+    await expect(invite).toBeVisible();
+    await expect(invite).toBeEnabled();
+    await invite.click();
     await expect(page.locator('#invite-angler-modal')).toBeVisible();
     await page.locator('#invite-angler-search').fill(displayName);
     const search = page.waitForResponse(response =>
@@ -125,6 +131,14 @@ export async function acceptInvitation(page, tripId) {
 export async function removeParticipant(page, participantUserId) {
     await openParticipants(page);
     await page.locator(`#trip-participant-remove-${participantUserId}`).click();
+    await expect(page.locator('#confirm-modal')).toBeVisible();
+    await Promise.all([
+        page.waitForResponse(response =>
+            /\/api\/trips\/[0-9a-f-]+\/participants\/[0-9a-f-]+$/i.test(new URL(response.url()).pathname)
+            && response.request().method() === 'DELETE'
+            && response.ok()),
+        page.locator('#confirm-modal-confirm').click()
+    ]);
     await expect(page.locator(`#trip-participant-${participantUserId}`)).toHaveCount(0);
     await page.locator('#trip-participants-close').click();
 }

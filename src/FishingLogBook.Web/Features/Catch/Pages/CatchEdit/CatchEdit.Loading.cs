@@ -70,7 +70,7 @@ public partial class CatchEdit
         }
 
         if (remote is null
-            || (remote.UserId != ownerUserId && remote.RecordedByUserId != ownerUserId)
+            || (remote.CaughtByUserId != ownerUserId && remote.RecordedByUserId != ownerUserId)
             || remote.Photographs.Count == 0)
         {
             return null;
@@ -112,10 +112,9 @@ public partial class CatchEdit
             photographs,
             remote.SpeciesName,
             ToLocationModel(remote.Location),
-            remote.UserId,
+            remote.CaughtByUserId,
             SyncStatus.Synchronised,
             SyncStatus.Synchronised,
-            remote.AnglerUserId,
             remote.RecordedByUserId,
             remote.Weight,
             remote.Length,

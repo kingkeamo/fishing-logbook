@@ -24,7 +24,7 @@ public sealed class CatchLocationPrivacyService : ICatchLocationPrivacyService
             return null;
         }
 
-        if (viewerUserId == catchRecord.UserId)
+        if (viewerUserId == catchRecord.CaughtByUserId)
         {
             return Exact(catchRecord.Location);
         }

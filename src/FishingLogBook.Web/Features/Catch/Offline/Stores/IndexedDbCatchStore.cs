@@ -34,7 +34,7 @@ public sealed class IndexedDbCatchStore : ICatchStore
 
     public async Task SaveAsync(CatchModel catchRecord, CancellationToken cancellationToken)
     {
-        if (catchRecord.UserId == Guid.Empty)
+        if (catchRecord.CaughtByUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A catch requires an owner.");
         }
@@ -168,14 +168,14 @@ public sealed class IndexedDbCatchStore : ICatchStore
 
     private static bool IsVisibleTo(CatchModel catchRecord, Guid userId)
     {
-        return catchRecord.UserId == userId || catchRecord.RecordedByUserId == userId;
+        return catchRecord.CaughtByUserId == userId || catchRecord.RecordedByUserId == userId;
     }
 
     public async Task UpdateSyncStateAsync(
         CatchModel catchRecord,
         CancellationToken cancellationToken)
     {
-        if (catchRecord.UserId == Guid.Empty)
+        if (catchRecord.CaughtByUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A catch requires an owner.");
         }
@@ -201,7 +201,7 @@ public sealed class IndexedDbCatchStore : ICatchStore
 
     public async Task ReconcileMetadataAsync(CatchModel catchRecord, CancellationToken cancellationToken)
     {
-        if (catchRecord.UserId == Guid.Empty)
+        if (catchRecord.CaughtByUserId == Guid.Empty)
         {
             throw new InvalidOperationException("A catch requires an owner.");
         }

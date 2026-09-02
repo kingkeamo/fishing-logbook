@@ -30,12 +30,12 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     public async Task ItShouldAllowTheAnglerToReadTheirOwnCatch()
     {
         // Arrange
-        var anglerUserId = await CreateUserAsync();
-        var catchRecord = NewCatch(anglerUserId);
+        var CaughtByUserId = await CreateUserAsync();
+        var catchRecord = NewCatch(CaughtByUserId);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetDetailForUserAsync(catchRecord.Id, anglerUserId, CancellationToken.None);
+        var result = await Sut.GetDetailForUserAsync(catchRecord.Id, CaughtByUserId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -47,9 +47,9 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     public async Task ItShouldAllowTheRecorderToReadACatchTheyRecordedForAnotherAngler()
     {
         // Arrange
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var recorderUserId = await CreateUserAsync();
-        var catchRecord = NewCatch(anglerUserId, recorderUserId, tripId: null);
+        var catchRecord = NewCatch(CaughtByUserId, recorderUserId, tripId: null);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
@@ -66,10 +66,10 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     {
         // Arrange
         var ownerUserId = await CreateUserAsync();
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var tripId = await CreateTripAsync(ownerUserId);
-        await AddParticipantAsync(tripId, anglerUserId, ownerUserId);
-        var catchRecord = NewCatch(anglerUserId, anglerUserId, tripId);
+        await AddParticipantAsync(tripId, CaughtByUserId, ownerUserId);
+        var catchRecord = NewCatch(CaughtByUserId, CaughtByUserId, tripId);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
@@ -86,12 +86,12 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     {
         // Arrange
         var ownerUserId = await CreateUserAsync();
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var viewerUserId = await CreateUserAsync();
         var tripId = await CreateTripAsync(ownerUserId);
-        await AddParticipantAsync(tripId, anglerUserId, ownerUserId);
+        await AddParticipantAsync(tripId, CaughtByUserId, ownerUserId);
         await AddParticipantAsync(tripId, viewerUserId, ownerUserId);
-        var catchRecord = NewCatch(anglerUserId, anglerUserId, tripId);
+        var catchRecord = NewCatch(CaughtByUserId, CaughtByUserId, tripId);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
@@ -108,12 +108,12 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     {
         // Arrange
         var ownerUserId = await CreateUserAsync();
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var pendingUserId = await CreateUserAsync();
         var tripId = await CreateTripAsync(ownerUserId);
-        await AddParticipantAsync(tripId, anglerUserId, ownerUserId);
+        await AddParticipantAsync(tripId, CaughtByUserId, ownerUserId);
         await AddParticipantAsync(tripId, pendingUserId, ownerUserId, TripParticipantStatusEnum.Pending);
-        var catchRecord = NewCatch(anglerUserId, anglerUserId, tripId);
+        var catchRecord = NewCatch(CaughtByUserId, CaughtByUserId, tripId);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
@@ -129,16 +129,16 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     {
         // Arrange
         var ownerUserId = await CreateUserAsync();
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var removedUserId = await CreateUserAsync();
         var tripId = await CreateTripAsync(ownerUserId);
-        await AddParticipantAsync(tripId, anglerUserId, ownerUserId);
+        await AddParticipantAsync(tripId, CaughtByUserId, ownerUserId);
         await AddParticipantAsync(
             tripId,
             removedUserId,
             ownerUserId,
             removedOn: TripStartedOn.AddHours(2));
-        var catchRecord = NewCatch(anglerUserId, anglerUserId, tripId);
+        var catchRecord = NewCatch(CaughtByUserId, CaughtByUserId, tripId);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
@@ -153,9 +153,9 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     public async Task ItShouldRejectAnUnrelatedUserOutsideAnySharedTrip()
     {
         // Arrange
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var unrelatedUserId = await CreateUserAsync();
-        var catchRecord = NewCatch(anglerUserId);
+        var catchRecord = NewCatch(CaughtByUserId);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
@@ -170,15 +170,15 @@ public class WhenTestingGetDetailForUser : BaseCatchRepositoryTest
     public async Task ItShouldProjectAnglerAndRecorderNamesOnADetailRead()
     {
         // Arrange
-        var anglerUserId = await CreateUserAsync();
+        var CaughtByUserId = await CreateUserAsync();
         var recorderUserId = await CreateUserAsync();
-        await CreateProfileAsync(anglerUserId, "Patrick Connolly");
+        await CreateProfileAsync(CaughtByUserId, "Patrick Connolly");
         await CreateProfileAsync(recorderUserId, "Myles Costello");
-        var catchRecord = NewCatch(anglerUserId, recorderUserId, tripId: null);
+        var catchRecord = NewCatch(CaughtByUserId, recorderUserId, tripId: null);
         await Sut.UpsertAsync(catchRecord, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetDetailForUserAsync(catchRecord.Id, anglerUserId, CancellationToken.None);
+        var result = await Sut.GetDetailForUserAsync(catchRecord.Id, CaughtByUserId, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();

@@ -140,14 +140,14 @@ public class WhenTestingPhotographs : BaseCatchEditTest
             var call = store.ReceivedCalls().Last();
             var saved = (CatchModel)call.GetArguments()[0]!;
             saved.Photographs.Should().HaveCount(2);
-            saved.MetadataSyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+            saved.MetadataSyncStatus.Should().Be(SyncStatus.Synchronised);
             saved.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
         });
         await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ItShouldMarkMetadataPendingWhenAddingAPhotographToASynchronisedCatch()
+    public async Task ItShouldLeaveMetadataSynchronisedWhenAddingAPhotographToASynchronisedCatch()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -172,7 +172,7 @@ public class WhenTestingPhotographs : BaseCatchEditTest
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Photographs.Count == 2
-                && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise
+                && catchRecord.MetadataSyncStatus == SyncStatus.Synchronised
                 && catchRecord.SyncStatus == SyncStatus.WaitingToSynchronise
                 && catchRecord.Photographs[0].SyncStatus == SyncStatus.Synchronised
                 && catchRecord.Photographs[1].SyncStatus == SyncStatus.SavedLocally),

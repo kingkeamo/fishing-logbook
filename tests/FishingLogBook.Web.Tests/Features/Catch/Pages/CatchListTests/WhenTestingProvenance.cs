@@ -27,7 +27,6 @@ public class WhenTestingProvenance : BaseCatchListTest
                 StoredCatch(
                     catchId,
                     DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
-                    anglerUserId: OwnerUserId,
                     recordedByUserId: OwnerUserId)
             ]);
         await using var context = CreateContext(store);
@@ -53,7 +52,7 @@ public class WhenTestingProvenance : BaseCatchListTest
                 StoredCatch(
                     catchId,
                     DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
-                    anglerUserId: OtherUserId,
+                    CaughtByUserId: OtherUserId,
                     recordedByUserId: OwnerUserId)
             ]);
         await using var context = CreateContext(store);
@@ -85,7 +84,6 @@ public class WhenTestingProvenance : BaseCatchListTest
             [
                 new CatchViewDto(catchId, OtherUserId, DateTimeOffset.Parse("2026-08-17T08:00:00Z"))
                 {
-                    AnglerUserId = OtherUserId,
                     AnglerName = "Patrick Connolly",
                     RecordedByUserId = OwnerUserId,
                     RecordedByName = "Current User",

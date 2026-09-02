@@ -89,25 +89,24 @@ public sealed class CatchService : ICatchService
 
         var existing = existingResult.Value;
         if (existing is not null
-            && existing.AnglerUserId != args.UserId
+            && existing.CaughtByUserId != args.UserId
             && existing.RecordedByUserId != args.UserId)
         {
             return Result.Fail<CatchDto>(new CatchEditNotPermittedError());
         }
 
-        var identity = existing is not null
-            ? Result.Ok((UserId: existing.UserId, AnglerUserId: existing.AnglerUserId))
-            : await ResolveAnglerAsync(args, trip.Value, cancellationToken);
-        if (identity.IsFailed)
+        var caughtByUserId = existing is not null
+            ? existing.CaughtByUserId
+            : await ResolveCaughtByUserIdAsync(args, trip.Value, cancellationToken);
+        if (caughtByUserId.IsFailed)
         {
-            return Result.Fail<CatchDto>(identity.Errors);
+            return Result.Fail<CatchDto>(caughtByUserId.Errors);
         }
 
         var catchRecord = new Catch
         {
             Id = args.Catch.Id,
-            UserId = identity.Value.UserId,
-            AnglerUserId = identity.Value.AnglerUserId,
+            CaughtByUserId = caughtByUserId.Value,
             RecordedByUserId = existing?.RecordedByUserId ?? args.UserId,
             TripId = trip.Value,
             CaughtOn = args.Catch.CaughtOn,
@@ -190,7 +189,7 @@ public sealed class CatchService : ICatchService
             return loaded.ToResult();
         }
 
-        if (loaded.Value.UserId != _currentUser.UserId)
+        if (loaded.Value.CaughtByUserId != _currentUser.UserId)
         {
             return Result.Fail(new CatchNotOwnedError());
         }
@@ -204,7 +203,7 @@ public sealed class CatchService : ICatchService
             new PersistCatchLocationVisibilityArgs
             {
                 CatchId = args.CatchId,
-                UserId = _currentUser.UserId,
+                CaughtByUserId = _currentUser.UserId,
                 Visibility = args.Visibility
             },
             cancellationToken);
@@ -221,7 +220,7 @@ public sealed class CatchService : ICatchService
         }
 
         var existing = loaded.Value;
-        if (existing.AnglerUserId != _currentUser.UserId && existing.RecordedByUserId != _currentUser.UserId)
+        if (existing.CaughtByUserId != _currentUser.UserId && existing.RecordedByUserId != _currentUser.UserId)
         {
             return Result.Fail<CatchViewDto>(new CatchEditNotPermittedError());
         }
@@ -231,9 +230,9 @@ public sealed class CatchService : ICatchService
             return Result.Fail<CatchViewDto>(new CatchNotOnTripError());
         }
 
-        if (args.AnglerUserId != existing.AnglerUserId)
+        if (args.CaughtByUserId != existing.CaughtByUserId)
         {
-            var anglerAccess = await _tripAccessService.ResolveForAsync(tripId, args.AnglerUserId, cancellationToken);
+            var anglerAccess = await _tripAccessService.ResolveForAsync(tripId, args.CaughtByUserId, cancellationToken);
             if (anglerAccess.IsFailed || !anglerAccess.Value.CanContribute)
             {
                 return Result.Fail<CatchViewDto>(new CatchAnglerNotEligibleError());
@@ -243,7 +242,7 @@ public sealed class CatchService : ICatchService
                 new PersistCatchAnglerArgs
                 {
                     CatchId = args.CatchId,
-                    AnglerUserId = args.AnglerUserId
+                    CaughtByUserId = args.CaughtByUserId
                 },
                 cancellationToken);
             if (corrected.IsFailed)
@@ -291,11 +290,10 @@ public sealed class CatchService : ICatchService
 
         return new CatchViewDto(
             catchRecord.Id,
-            catchRecord.UserId,
+            catchRecord.CaughtByUserId,
             catchRecord.CaughtOn,
             exposure)
         {
-            AnglerUserId = catchRecord.AnglerUserId,
             AnglerName = catchDetail.AnglerName,
             RecordedByUserId = catchRecord.RecordedByUserId,
             RecordedByName = catchDetail.RecordedByName,
@@ -394,32 +392,32 @@ public sealed class CatchService : ICatchService
         return Result.Ok<Guid?>(tripId.Value);
     }
 
-    private async Task<Result<(Guid UserId, Guid AnglerUserId)>> ResolveAnglerAsync(
+    private async Task<Result<Guid>> ResolveCaughtByUserIdAsync(
         UpsertCatchArgs args,
         Guid? tripId,
         CancellationToken cancellationToken)
     {
-        var requestedAngler = args.Catch.AnglerUserId == Guid.Empty
+        var requestedAngler = args.Catch.CaughtByUserId == Guid.Empty
             ? args.UserId
-            : args.Catch.AnglerUserId;
+            : args.Catch.CaughtByUserId;
 
         if (requestedAngler == args.UserId)
         {
-            return Result.Ok((UserId: args.UserId, AnglerUserId: args.UserId));
+            return Result.Ok(args.UserId);
         }
 
         if (tripId is null)
         {
-            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+            return Result.Fail<Guid>(new CatchAnglerNotEligibleError());
         }
 
         var anglerAccess = await _tripAccessService.ResolveForAsync(tripId.Value, requestedAngler, cancellationToken);
         if (anglerAccess.IsFailed || !anglerAccess.Value.CanContribute)
         {
-            return Result.Fail<(Guid, Guid)>(new CatchAnglerNotEligibleError());
+            return Result.Fail<Guid>(new CatchAnglerNotEligibleError());
         }
 
-        return Result.Ok((UserId: requestedAngler, AnglerUserId: requestedAngler));
+        return Result.Ok(requestedAngler);
     }
 
     private static string? TrimToNull(string? value)

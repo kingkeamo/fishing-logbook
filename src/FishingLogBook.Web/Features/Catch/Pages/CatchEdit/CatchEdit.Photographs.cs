@@ -52,7 +52,6 @@ public partial class CatchEdit
                     photograph.ContentType,
                     photograph.Bytes)
             ],
-            MetadataSyncStatus = SyncStatus.WaitingToSynchronise,
             SyncStatus = PendingOverallStatus(current.SyncStatus)
         };
     }

@@ -2,12 +2,10 @@ namespace FishingLogBook.Shared.Dtos;
 
 public sealed record CatchViewDto(
     Guid Id,
-    Guid UserId,
+    Guid CaughtByUserId,
     DateTimeOffset CaughtOn,
     CatchLocationExposureDto? Location = null)
 {
-    public Guid AnglerUserId { get; init; }
-
     public string? AnglerName { get; init; }
 
     public Guid RecordedByUserId { get; init; }

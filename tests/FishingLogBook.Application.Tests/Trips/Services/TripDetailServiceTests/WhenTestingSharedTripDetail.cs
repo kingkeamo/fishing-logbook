@@ -89,8 +89,7 @@ public class WhenTestingSharedTripDetail : BaseTripDetailServiceTest
                 new TripCatchSummary
                 {
                     Id = Guid.NewGuid(),
-                    UserId = CurrentUserId,
-                    AnglerUserId = CurrentUserId,
+                    CaughtByUserId = CurrentUserId,
                     CaughtOn = StartedOn.AddMinutes(30),
                     SpeciesName = "Pike"
                 }
@@ -101,7 +100,7 @@ public class WhenTestingSharedTripDetail : BaseTripDetailServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.Catches[0].AnglerUserId.Should().Be(CurrentUserId);
+        result.Value.Catches[0].CaughtByUserId.Should().Be(CurrentUserId);
     }
 
     [Fact]

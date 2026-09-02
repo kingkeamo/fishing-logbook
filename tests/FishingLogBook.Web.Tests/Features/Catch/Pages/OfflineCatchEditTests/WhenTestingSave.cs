@@ -91,7 +91,7 @@ public class WhenTestingSave : BaseOfflineCatchEditTest
         // Assert
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord => catchRecord.Id == CatchId
-                && catchRecord.UserId == OwnerUserId
+                && catchRecord.CaughtByUserId == OwnerUserId
                 && catchRecord.Notes == "After"
                 && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
             Arg.Any<CancellationToken>());

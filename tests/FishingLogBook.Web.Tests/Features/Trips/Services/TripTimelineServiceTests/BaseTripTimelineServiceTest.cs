@@ -49,7 +49,7 @@ public class BaseTripTimelineServiceTest
             caughtOn,
             photographs,
             speciesName,
-            UserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             TripId: tripId);
     }
 

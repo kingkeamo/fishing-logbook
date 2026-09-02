@@ -74,7 +74,6 @@ public class BaseOfflineCatchListTest
         DateTimeOffset.UtcNow,
         [new CatchPhotographModel(Guid.NewGuid(), Guid.Empty, "image/jpeg", [1, 2, 3])],
         species,
-        UserId: userId,
-        AnglerUserId: userId,
+        CaughtByUserId: userId,
         RecordedByUserId: userId);
 }

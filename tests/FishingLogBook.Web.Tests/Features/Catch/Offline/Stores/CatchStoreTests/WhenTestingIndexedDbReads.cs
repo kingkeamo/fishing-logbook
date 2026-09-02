@@ -219,7 +219,7 @@ public class WhenTestingIndexedDbReads
                 CatchId,
                 PhotographContentTypeConstants.Jpeg,
                 withBytes ? [1, 2, 3] : null)],
-            UserId: ownerUserId);
+            CaughtByUserId: ownerUserId);
         return new StoredCatchRecord
         {
             Json = CatchJson.SerializeMetadata(model),

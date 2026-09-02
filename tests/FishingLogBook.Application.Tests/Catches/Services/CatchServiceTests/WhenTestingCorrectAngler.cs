@@ -49,8 +49,7 @@ public class WhenTestingCorrectAngler : BaseCatchServiceTest
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = catchId,
-                UserId = OriginalAnglerUserId,
-                AnglerUserId = OriginalAnglerUserId,
+                CaughtByUserId = OriginalAnglerUserId,
                 RecordedByUserId = RecorderUserId,
                 TripId = null,
                 CaughtOn = StartedOn
@@ -208,11 +207,11 @@ public class WhenTestingCorrectAngler : BaseCatchServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.AnglerUserId.Should().Be(CorrectedAnglerUserId);
+        result.Value.CaughtByUserId.Should().Be(CorrectedAnglerUserId);
         result.Value.RecordedByUserId.Should().Be(RecorderUserId);
         await MockCatchRepository.Received(1).CorrectAnglerAsync(
             Arg.Is<PersistCatchAnglerArgs>(args =>
-                args.CatchId == catchId && args.AnglerUserId == CorrectedAnglerUserId),
+                args.CatchId == catchId && args.CaughtByUserId == CorrectedAnglerUserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -235,7 +234,7 @@ public class WhenTestingCorrectAngler : BaseCatchServiceTest
         result.IsSuccess.Should().BeTrue();
         await MockCatchRepository.Received(1).CorrectAnglerAsync(
             Arg.Is<PersistCatchAnglerArgs>(args =>
-                args.CatchId == catchId && args.AnglerUserId == CorrectedAnglerUserId),
+                args.CatchId == catchId && args.CaughtByUserId == CorrectedAnglerUserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -260,7 +259,7 @@ public class WhenTestingCorrectAngler : BaseCatchServiceTest
         result.IsSuccess.Should().BeTrue();
         await MockCatchRepository.Received(1).CorrectAnglerAsync(
             Arg.Is<PersistCatchAnglerArgs>(args =>
-                args.CatchId == catchId && args.AnglerUserId == TripOwnerUserId),
+                args.CatchId == catchId && args.CaughtByUserId == TripOwnerUserId),
             Arg.Any<CancellationToken>());
     }
 
@@ -327,17 +326,16 @@ public class WhenTestingCorrectAngler : BaseCatchServiceTest
                 })));
     }
 
-    private void GivenTheRefreshedDetailIsReturned(Guid catchId, Guid? anglerUserId = null)
+    private void GivenTheRefreshedDetailIsReturned(Guid catchId, Guid? caughtByUserId = null)
     {
-        var angler = anglerUserId ?? CorrectedAnglerUserId;
+        var angler = caughtByUserId ?? CorrectedAnglerUserId;
         MockCatchRepository.GetDetailForUserAsync(catchId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<CatchDetail?>(new CatchDetail
             {
                 Catch = new Catch
                 {
                     Id = catchId,
-                    UserId = angler,
-                    AnglerUserId = angler,
+                    CaughtByUserId = angler,
                     RecordedByUserId = RecorderUserId,
                     TripId = TripId,
                     CaughtOn = StartedOn
@@ -355,8 +353,7 @@ public class WhenTestingCorrectAngler : BaseCatchServiceTest
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = catchId,
-                UserId = OriginalAnglerUserId,
-                AnglerUserId = OriginalAnglerUserId,
+                CaughtByUserId = OriginalAnglerUserId,
                 RecordedByUserId = RecorderUserId,
                 TripId = TripId,
                 CaughtOn = StartedOn,
@@ -383,12 +380,12 @@ public class WhenTestingCorrectAngler : BaseCatchServiceTest
         };
     }
 
-    private static CorrectCatchAnglerArgs Args(Guid catchId, Guid anglerUserId)
+    private static CorrectCatchAnglerArgs Args(Guid catchId, Guid CaughtByUserId)
     {
         return new CorrectCatchAnglerArgs
         {
             CatchId = catchId,
-            AnglerUserId = anglerUserId
+            CaughtByUserId = CaughtByUserId
         };
     }
 }

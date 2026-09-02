@@ -73,8 +73,7 @@ public class BaseTripCatchServiceTest
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = catchId,
-                UserId = userId,
-                AnglerUserId = userId,
+                CaughtByUserId = userId,
                 RecordedByUserId = userId,
                 CaughtOn = caughtOn ?? CaughtOn,
                 TripId = tripId

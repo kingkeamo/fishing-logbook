@@ -76,7 +76,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 && catchRecord.Notes == "Changed before rebind failure"
                 && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
             Arg.Any<CancellationToken>());
-        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).RetryAsync(catchId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -269,7 +269,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 && catchRecord.CaughtOn == correctedUtc
                 && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
             Arg.Any<CancellationToken>());
-        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).RetryAsync(catchId, Arg.Any<CancellationToken>());
         await time.Received(1).FromDateTimeLocalValueAsync("2026-08-17T15:00", Arg.Any<CancellationToken>());
         await time.Received(2).ToDateTimeLocalValueAsync(
             Arg.Is<DateTimeOffset>(caughtOn => caughtOn == UtcPlusFourCaughtOn),
@@ -314,7 +314,7 @@ public class WhenTestingSave : BaseCatchEditTest
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Id == catchId && catchRecord.CaughtOn == expectedUtc),
             Arg.Any<CancellationToken>());
-        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).RetryAsync(catchId, Arg.Any<CancellationToken>());
         await time.Received(1).FromDateTimeLocalValueAsync(localValue, Arg.Any<CancellationToken>());
     }
 
@@ -381,8 +381,8 @@ public class WhenTestingSave : BaseCatchEditTest
                 && catchRecord.BaitOrLure == "Spinner"
                 && catchRecord.Notes == "Weedline"
                 && catchRecord.CaughtOn == DateTimeOffset.Parse("2026-08-17T09:15:00Z")
-                && catchRecord.UserId == OwnerUserId
-                && catchRecord.AnglerUserId == OwnerUserId
+                && catchRecord.CaughtByUserId == OwnerUserId
+                && catchRecord.CaughtByUserId == OwnerUserId
                 && catchRecord.RecordedByUserId == OwnerUserId
                 && catchRecord.Location != null
                 && catchRecord.Location.Latitude == 53.2707
@@ -394,7 +394,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 && catchRecord.Photographs[0].SyncStatus == SyncStatus.Synchronised
                 && catchRecord.Photographs[0].ObjectKey == "catch-photographs/photo"),
             Arg.Any<CancellationToken>());
-        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).RetryAsync(catchId, Arg.Any<CancellationToken>());
         await time.Received(1).FromDateTimeLocalValueAsync("2026-08-17T09:15", Arg.Any<CancellationToken>());
     }
 
@@ -437,7 +437,7 @@ public class WhenTestingSave : BaseCatchEditTest
                 && catchRecord.SpeciesName == "Pike"
                 && catchRecord.MetadataSyncStatus == SyncStatus.WaitingToSynchronise),
             Arg.Any<CancellationToken>());
-        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).RetryAsync(catchId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -473,6 +473,6 @@ public class WhenTestingSave : BaseCatchEditTest
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.Id == catchId && catchRecord.SpeciesName == "Brown Trout"),
             Arg.Any<CancellationToken>());
-        await synchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
+        await synchroniser.Received(1).RetryAsync(catchId, Arg.Any<CancellationToken>());
     }
 }

@@ -18,7 +18,7 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         var ownerCatch = CreateCatch();
         var otherCatch = CreateCatch(
             catchId: Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-            userId: OtherUserId);
+            caughtByUserId: OtherUserId);
         var store = await CreateStoreAsync(ownerCatch, otherCatch);
         MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(OtherUserId);
         var sut = CreateSut(store);
@@ -29,10 +29,10 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         // Assert
         await MockLocalCatchOwner.DidNotReceive().GetUserIdAsync(Arg.Any<CancellationToken>());
         await MockCatchClient.Received(1).UpsertAsync(
-            Arg.Is<CatchDto>(dto => dto.UserId == OwnerUserId && dto.Id == ownerCatch.Id),
+            Arg.Is<CatchDto>(dto => dto.CaughtByUserId == OwnerUserId && dto.Id == ownerCatch.Id),
             Arg.Any<CancellationToken>());
         await MockCatchClient.DidNotReceive().UpsertAsync(
-            Arg.Is<CatchDto>(dto => dto.UserId == OtherUserId),
+            Arg.Is<CatchDto>(dto => dto.CaughtByUserId == OtherUserId),
             Arg.Any<CancellationToken>());
         var untouched = await store.GetAsync(OtherUserId, otherCatch.Id, CancellationToken.None);
         untouched!.SyncStatus.Should().Be(SyncStatus.SavedLocally);
@@ -93,8 +93,8 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         await MockCatchClient.Received(1).UpsertAsync(
             Arg.Is<CatchDto>(dto =>
                 dto.Id == CatchId
-                && dto.UserId == OwnerUserId
-                && dto.AnglerUserId == OwnerUserId
+                && dto.CaughtByUserId == OwnerUserId
+                && dto.CaughtByUserId == OwnerUserId
                 && dto.RecordedByUserId == OwnerUserId
                 && dto.Location != null
                 && dto.Location.Latitude == 53.2707
@@ -184,7 +184,7 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
     public async Task ItShouldNotSynchroniseUserACatchWhileUserBIsSignedIn()
     {
         // Arrange
-        var store = await CreateStoreAsync(CreateCatch(userId: OwnerUserId));
+        var store = await CreateStoreAsync(CreateCatch(caughtByUserId: OwnerUserId));
         MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>())
             .Returns(OtherUserId);
         var sut = CreateSut(store);
@@ -472,8 +472,8 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         await MockCatchClient.Received(1).UpsertAsync(
             Arg.Is<CatchDto>(dto =>
                 dto.Id == CatchId
-                && dto.UserId == OwnerUserId
-                && dto.AnglerUserId == OwnerUserId
+                && dto.CaughtByUserId == OwnerUserId
+                && dto.CaughtByUserId == OwnerUserId
                 && dto.RecordedByUserId == OwnerUserId
                 && dto.Photographs.Count == 3
                 && dto.Location != null
@@ -485,6 +485,42 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
             Arg.Is<string>(url => url.StartsWith("https://storage.test/")),
             Arg.Is<byte[]>(bytes => bytes.SequenceEqual(new byte[] { 1, 2, 3 })),
             "image/jpeg",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReReadLocalMetadataBeforeUpsert()
+    {
+        var originalCaughtOn = DateTimeOffset.Parse("2026-08-17T12:00:00Z");
+        var updatedCaughtOn = DateTimeOffset.Parse("2025-06-14T06:32:10Z");
+        var original = CreateCatch() with
+        {
+            CaughtOn = originalCaughtOn,
+            MetadataSyncStatus = SyncStatus.WaitingToSynchronise
+        };
+        var store = await CreateStoreAsync(original);
+        var readCount = 0;
+        store.BeforeSingleRead = async _ =>
+        {
+            readCount += 1;
+            if (readCount != 2)
+            {
+                return;
+            }
+
+            var edited = original with
+            {
+                CaughtOn = updatedCaughtOn,
+                MetadataSyncStatus = SyncStatus.WaitingToSynchronise
+            };
+            await store.SaveAsync(edited, CancellationToken.None);
+        };
+
+        var sut = CreateSut(store);
+        await sut.SynchronisePendingAsync(CancellationToken.None);
+
+        await MockCatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(dto => dto.CaughtOn == updatedCaughtOn),
             Arg.Any<CancellationToken>());
     }
 
@@ -823,7 +859,7 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
     [Fact]
     public async Task ItShouldReconcileTheLocalCatchFromTheServerPersistedProvenanceRatherThanTheStaleQueuedPayload()
     {
-        // Arrange - a catch was recorded locally under Myles (UserId/AnglerUserId/RecordedByUserId
+        // Arrange - a catch was recorded locally under Myles (UserId/CaughtByUserId/RecordedByUserId
         // all Myles) and is still queued to sync, but the server has since been corrected
         // elsewhere so its authoritative Caught By is now Patrick, while Recorded By stays Myles.
         var synchronisedPhotographs = new[]
@@ -845,8 +881,7 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
                 .ToArray(),
             null)
         {
-            UserId = OtherUserId,
-            AnglerUserId = OtherUserId,
+            CaughtByUserId = OtherUserId,
             RecordedByUserId = OwnerUserId,
             SpeciesName = staleLocal.SpeciesName
         };
@@ -861,10 +896,10 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
         // Assert - the local record now reflects the server's authoritative provenance, not
         // the stale payload it queued before the correction happened elsewhere. Myles (the
         // original recorder) must still be able to see it - visibility is RecordedByUserId,
-        // not just UserId/AnglerUserId - even though he is no longer the Caught By angler.
+        // not just UserId/CaughtByUserId - even though he is no longer the Caught By angler.
         saved.Should().NotBeNull();
-        saved!.UserId.Should().Be(OtherUserId);
-        saved.AnglerUserId.Should().Be(OtherUserId);
+        saved!.CaughtByUserId.Should().Be(OtherUserId);
+        saved.CaughtByUserId.Should().Be(OtherUserId);
         saved.RecordedByUserId.Should().Be(OwnerUserId);
         saved.MetadataSyncStatus.Should().Be(SyncStatus.Synchronised);
         saved.SyncStatus.Should().Be(SyncStatus.Synchronised);
@@ -889,7 +924,7 @@ public class WhenTestingSynchronisePending : BaseCatchSynchroniserTest
 
         // Assert
         saved!.MetadataSyncStatus.Should().Be(SyncStatus.Synchronised);
-        saved.UserId.Should().Be(OwnerUserId);
-        saved.AnglerUserId.Should().Be(OwnerUserId);
+        saved.CaughtByUserId.Should().Be(OwnerUserId);
+        saved.CaughtByUserId.Should().Be(OwnerUserId);
     }
 }

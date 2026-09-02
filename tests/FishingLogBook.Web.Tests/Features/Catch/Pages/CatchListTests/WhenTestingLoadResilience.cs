@@ -145,10 +145,9 @@ public class WhenTestingLoadResilience : BaseCatchListTest
                 Bytes: null,
                 SyncStatus.Synchronised)],
             SpeciesName: "Synced Pike",
-            UserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             SyncStatus: SyncStatus.Synchronised,
             MetadataSyncStatus: SyncStatus.Synchronised,
-            AnglerUserId: OwnerUserId,
             RecordedByUserId: OwnerUserId);
         var store = Substitute.For<ICatchStore>();
         store.GetMetadataAsync(OwnerUserId, Arg.Any<CancellationToken>())
@@ -160,7 +159,7 @@ public class WhenTestingLoadResilience : BaseCatchListTest
                 new CatchViewDto(sharedId, OwnerUserId, DateTimeOffset.UtcNow)
                 {
                     SpeciesName = "Synced Pike",
-                    AnglerUserId = OwnerUserId,
+                    CaughtByUserId = OwnerUserId,
                     RecordedByUserId = OwnerUserId,
                     Photographs =
                     [
@@ -211,7 +210,7 @@ public class WhenTestingLoadResilience : BaseCatchListTest
                 new CatchViewDto(sharedId, OwnerUserId, DateTimeOffset.UtcNow)
                 {
                     SpeciesName = "Fresh server name",
-                    AnglerUserId = OwnerUserId,
+                    CaughtByUserId = OwnerUserId,
                     RecordedByUserId = OwnerUserId
                 }
             ]);
@@ -247,10 +246,9 @@ public class WhenTestingLoadResilience : BaseCatchListTest
                 Bytes: null,
                 SyncStatus.Synchronised)],
             SpeciesName: "Synced Pike",
-            UserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             SyncStatus: SyncStatus.Synchronised,
             MetadataSyncStatus: SyncStatus.Synchronised,
-            AnglerUserId: OwnerUserId,
             RecordedByUserId: OwnerUserId);
         var pending = StoredCatch(
             pendingId,
@@ -268,7 +266,7 @@ public class WhenTestingLoadResilience : BaseCatchListTest
                 new CatchViewDto(syncedId, OwnerUserId, DateTimeOffset.UtcNow)
                 {
                     SpeciesName = "Synced Pike",
-                    AnglerUserId = OwnerUserId,
+                    CaughtByUserId = OwnerUserId,
                     RecordedByUserId = OwnerUserId,
                     Photographs =
                     [
@@ -413,7 +411,7 @@ public class WhenTestingLoadResilience : BaseCatchListTest
                 new CatchViewDto(ServerCatchId, OwnerUserId, DateTimeOffset.UtcNow.AddDays(-1))
                 {
                     SpeciesName = "Perch",
-                    AnglerUserId = OwnerUserId,
+                    CaughtByUserId = OwnerUserId,
                     RecordedByUserId = OwnerUserId
                 }
             ]);

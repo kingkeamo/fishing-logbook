@@ -173,7 +173,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         second!.ObjectKey.Should().Be(first.ObjectKey);
         await _factory.CatchRepository.Received(2).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == current.UserId
+                query.CaughtByUserId == current.UserId
                 && query.CatchId == catchId
                 && query.PhotographId == photographId),
             Arg.Any<CancellationToken>());
@@ -244,7 +244,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
         second.StatusCode.Should().Be(HttpStatusCode.NoContent);
         await _factory.CatchRepository.Received(2).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == current.UserId
+                query.CaughtByUserId == current.UserId
                 && query.CatchId == catchId
                 && query.PhotographId == photographId),
             Arg.Any<CancellationToken>());
@@ -297,8 +297,7 @@ public class WhenTestingPhotograph : IClassFixture<SystemApiFactory>
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = catchId,
-                UserId = currentUserId,
-                AnglerUserId = currentUserId,
+                CaughtByUserId = currentUserId,
                 RecordedByUserId = currentUserId
             }));
     }

@@ -48,8 +48,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Id.Should().Be(catchId);
-        result.Value.UserId.Should().Be(userId);
-        result.Value.AnglerUserId.Should().Be(userId);
+        result.Value.CaughtByUserId.Should().Be(userId);
         result.Value.RecordedByUserId.Should().Be(userId);
         result.Value.Photographs.Should().HaveCount(2);
         result.Value.Photographs.Select(photograph => photograph.Id)
@@ -67,7 +66,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         var updated = new Catch
         {
             Id = original.Id,
-            UserId = userId,
+            CaughtByUserId = userId,
+            RecordedByUserId = userId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T12:00:00Z"),
             Photographs = original.Photographs
         };
@@ -82,7 +82,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value.Should().NotBeNull();
         loaded.Value!.Id.Should().Be(original.Id);
         loaded.Value.CaughtOn.Should().Be(updated.CaughtOn);
-        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.CaughtByUserId.Should().Be(userId);
         loaded.Value.RecordedByUserId.Should().Be(userId);
         loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
         loaded.Value.Location.Should().BeNull();
@@ -100,8 +100,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
             new Catch
             {
                 Id = catchId,
-                UserId = userId,
-                AnglerUserId = userId,
+                CaughtByUserId = userId,
                 RecordedByUserId = userId,
                 CaughtOn = caughtOn,
                 Photographs =
@@ -231,7 +230,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         var updated = new Catch
         {
             Id = original.Id,
-            UserId = userId,
+            CaughtByUserId = userId,
+            RecordedByUserId = userId,
             CaughtOn = updatedCaughtOn,
             Photographs = original.Photographs
         };
@@ -249,7 +249,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value.Location.Longitude.Should().Be(location.Longitude);
         loaded.Value.Location.AccuracyMetres.Should().Be(location.AccuracyMetres);
         loaded.Value.Location.Visibility.Should().Be(LocationDefaults.Private);
-        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.CaughtByUserId.Should().Be(userId);
         loaded.Value.RecordedByUserId.Should().Be(userId);
         loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
     }
@@ -358,7 +358,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         var hijack = new Catch
         {
             Id = original.Id,
-            UserId = otherUserId,
+            CaughtByUserId = otherUserId,
             CaughtOn = original.CaughtOn,
             Photographs = original.Photographs
         };
@@ -371,8 +371,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Should().BeOfType<CatchOwnershipConflictError>();
         loaded.Value.Should().NotBeNull();
-        loaded.Value!.UserId.Should().Be(ownerId);
-        loaded.Value.AnglerUserId.Should().Be(ownerId);
+        loaded.Value.CaughtByUserId.Should().Be(ownerId);
         loaded.Value.RecordedByUserId.Should().Be(ownerId);
     }
 
@@ -462,8 +461,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         var retried = new Catch
         {
             Id = original.Id,
-            UserId = userId,
-            AnglerUserId = otherUserId,
+            CaughtByUserId = userId,
             RecordedByUserId = otherUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T12:00:00Z"),
             Photographs = original.Photographs
@@ -475,11 +473,10 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.AnglerUserId.Should().Be(userId);
+        result.Value.CaughtByUserId.Should().Be(userId);
         result.Value.RecordedByUserId.Should().Be(userId);
         loaded.Value.Should().NotBeNull();
-        loaded.Value!.UserId.Should().Be(userId);
-        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value!.CaughtByUserId.Should().Be(userId);
         loaded.Value.RecordedByUserId.Should().Be(userId);
         loaded.Value.CaughtOn.Should().Be(retried.CaughtOn);
     }
@@ -494,8 +491,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         var updated = new Catch
         {
             Id = original.Id,
-            UserId = userId,
-            AnglerUserId = Guid.NewGuid(),
+            CaughtByUserId = userId,
             RecordedByUserId = Guid.NewGuid(),
             CaughtOn = DateTimeOffset.Parse("2026-08-17T12:30:00Z"),
             SpeciesName = "Pike",
@@ -523,8 +519,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value.BaitOrLure.Should().Be("Spinner");
         loaded.Value.Notes.Should().Be("Weedline");
         loaded.Value.CaughtOn.Should().Be(updated.CaughtOn);
-        loaded.Value.UserId.Should().Be(userId);
-        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.CaughtByUserId.Should().Be(userId);
         loaded.Value.RecordedByUserId.Should().Be(userId);
         loaded.Value.Photographs.Select(photograph => photograph.Id)
             .Should()
@@ -542,7 +537,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         var updated = new Catch
         {
             Id = original.Id,
-            UserId = userId,
+            CaughtByUserId = userId,
+            RecordedByUserId = userId,
             CaughtOn = original.CaughtOn,
             SpeciesName = "Perch",
             Weight = 0.8m,
@@ -563,7 +559,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         loaded.Value.Location.Longitude.Should().Be(location.Longitude);
         loaded.Value.Location.Visibility.Should().Be(LocationDefaults.Private);
         loaded.Value.Photographs[0].Id.Should().Be(original.Photographs[0].Id);
-        loaded.Value.AnglerUserId.Should().Be(userId);
+        loaded.Value.CaughtByUserId.Should().Be(userId);
         loaded.Value.RecordedByUserId.Should().Be(userId);
     }
 
@@ -625,8 +621,7 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.UserId.Should().Be(userId);
-        result.Value.AnglerUserId.Should().Be(userId);
+        result.Value!.CaughtByUserId.Should().Be(userId);
         result.Value.RecordedByUserId.Should().Be(userId);
     }
 }

@@ -44,7 +44,7 @@ public class WhenTestingHandle : BaseUpsertCatchCommandTest
     {
         // Arrange
         var command = ValidCommand();
-        var saved = command.Catch with { UserId = command.UserId };
+        var saved = command.Catch with { CaughtByUserId = command.UserId };
         MockCatchService
             .UpsertAsync(Arg.Any<UpsertCatchArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(saved));

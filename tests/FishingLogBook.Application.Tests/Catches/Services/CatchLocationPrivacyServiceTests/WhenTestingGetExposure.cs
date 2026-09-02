@@ -16,7 +16,6 @@ public class WhenTestingGetExposure : BaseCatchLocationPrivacyServiceTest
         var catchRecord = new FishingLogBook.Domain.Catches.Catch
         {
             Id = Guid.NewGuid(),
-            UserId = OwnerUserId,
             CaughtOn = DateTimeOffset.UtcNow
         };
 

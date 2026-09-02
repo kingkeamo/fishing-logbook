@@ -142,8 +142,7 @@ public sealed class TripRepository : ITripRepository
             const string sql = """
                 SELECT
                     c."Id",
-                    c."UserId",
-                    c."AnglerUserId",
+                    COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId") AS "CaughtByUserId",
                     COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
                     c."CaughtOn",
                     c."SpeciesName",

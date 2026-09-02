@@ -28,7 +28,7 @@ public class WhenTestingDeletePhotograph : BaseCatchRepositoryTest
         var result = await Sut.DeletePhotographAsync(
             new GetCatchPhotographArgs
             {
-                UserId = otherUserId,
+                CaughtByUserId = otherUserId,
                 CatchId = catchRecord.Id,
                 PhotographId = photograph.Id
             },
@@ -39,7 +39,7 @@ public class WhenTestingDeletePhotograph : BaseCatchRepositoryTest
         var stillOwned = await Sut.GetPhotographAsync(
             new GetCatchPhotographArgs
             {
-                UserId = ownerUserId,
+                CaughtByUserId = ownerUserId,
                 CatchId = catchRecord.Id,
                 PhotographId = photograph.Id
             },
@@ -58,7 +58,7 @@ public class WhenTestingDeletePhotograph : BaseCatchRepositoryTest
         saved.IsSuccess.Should().BeTrue();
         var args = new GetCatchPhotographArgs
         {
-            UserId = ownerUserId,
+            CaughtByUserId = ownerUserId,
             CatchId = catchRecord.Id,
             PhotographId = photograph.Id
         };
@@ -98,7 +98,7 @@ public class WhenTestingDeletePhotograph : BaseCatchRepositoryTest
         var result = await Sut.DeletePhotographAsync(
             new GetCatchPhotographArgs
             {
-                UserId = ownerUserId,
+                CaughtByUserId = ownerUserId,
                 CatchId = catchId,
                 PhotographId = toDelete.Id
             },
@@ -107,10 +107,10 @@ public class WhenTestingDeletePhotograph : BaseCatchRepositoryTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         var deleted = await Sut.GetPhotographAsync(
-            new GetCatchPhotographArgs { UserId = ownerUserId, CatchId = catchId, PhotographId = toDelete.Id },
+            new GetCatchPhotographArgs { CaughtByUserId = ownerUserId, CatchId = catchId, PhotographId = toDelete.Id },
             CancellationToken.None);
         var kept = await Sut.GetPhotographAsync(
-            new GetCatchPhotographArgs { UserId = ownerUserId, CatchId = catchId, PhotographId = toKeep.Id },
+            new GetCatchPhotographArgs { CaughtByUserId = ownerUserId, CatchId = catchId, PhotographId = toKeep.Id },
             CancellationToken.None);
         deleted.Value.Should().BeNull();
         kept.Value.Should().NotBeNull();
