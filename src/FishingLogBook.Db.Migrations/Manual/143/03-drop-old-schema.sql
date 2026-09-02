@@ -43,28 +43,25 @@ begin
     end loop;
 end $$;
 
--- Re-prove complete source/destination equality. Equal counts plus full-row
--- EXCEPT comparisons are sufficient because each source table has a unique key.
+-- Re-prove that every old source row exists unchanged in the destination.
+-- Additional lowercase rows created after cutover are intentionally allowed.
 do $$
 begin
-    if (select count(*) from "User") <> (select count(*) from users)
-        or exists (
+    if exists (
             select "Id", "Email", "CreatedOn", "OfflineAccessEnabled", "OfflineAccessEnabledAt" from "User"
             except
             select id, email, createdon, offlineaccessenabled, offlineaccessenabledat from users
         )
     then raise exception 'FLB#143 cleanup blocked: users differ from old User.'; end if;
 
-    if (select count(*) from "UserIdentity") <> (select count(*) from useridentities)
-        or exists (
+    if exists (
             select "Id", "UserId", "Provider", "Subject", "CreatedOn" from "UserIdentity"
             except
             select id, userid, provider, subject, createdon from useridentities
         )
     then raise exception 'FLB#143 cleanup blocked: useridentities differ from old UserIdentity.'; end if;
 
-    if (select count(*) from "Profile") <> (select count(*) from profiles)
-        or exists (
+    if exists (
             select "UserId", "DisplayName", "PhotographId", "PhotographObjectKey",
                 "PhotographContentType", "HomeRegion", "PreferredWeightUnit",
                 "PreferredLengthUnit", "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
@@ -81,43 +78,37 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: profiles differ from old Profile.'; end if;
 
-    if (select count(*) from "PlatformCapability") <> (select count(*) from platformcapabilities)
-        or exists (
+    if exists (
             select "Code", "CreatedOn" from "PlatformCapability"
             except select code, createdon from platformcapabilities
         )
     then raise exception 'FLB#143 cleanup blocked: platformcapabilities differ from old PlatformCapability.'; end if;
 
-    if (select count(*) from "UserPlatformCapability") <> (select count(*) from userplatformcapabilities)
-        or exists (
+    if exists (
             select "UserId", "CapabilityCode", "CreatedOn" from "UserPlatformCapability"
             except select userid, capabilitycode, createdon from userplatformcapabilities
         )
     then raise exception 'FLB#143 cleanup blocked: userplatformcapabilities differ from old UserPlatformCapability.'; end if;
 
-    if (select count(*) from "FishingMethod") <> (select count(*) from fishingmethods)
-        or exists (
+    if exists (
             select "Id", "Code", "Name", "CreatedOn" from "FishingMethod"
             except select id, code, name, createdon from fishingmethods
         )
     then raise exception 'FLB#143 cleanup blocked: fishingmethods differ from old FishingMethod.'; end if;
 
-    if (select count(*) from "Species") <> (select count(*) from species)
-        or exists (
+    if exists (
             select "Id", "Code", "Name", "CreatedOn" from "Species"
             except select id, code, name, createdon from species
         )
     then raise exception 'FLB#143 cleanup blocked: species differ from old Species.'; end if;
 
-    if (select count(*) from "UserFishingMethodPreference") <> (select count(*) from userfishingmethodpreferences)
-        or exists (
+    if exists (
             select "UserId", "FishingMethodId", "IsDefault", "CreatedOn" from "UserFishingMethodPreference"
             except select userid, fishingmethodid, isdefault, createdon from userfishingmethodpreferences
         )
     then raise exception 'FLB#143 cleanup blocked: userfishingmethodpreferences differ from old UserFishingMethodPreference.'; end if;
 
-    if (select count(*) from "UserFishingSpeciesPreference") <> (select count(*) from userfishingspeciespreferences)
-        or exists (
+    if exists (
             select "UserId", "FishingMethodId", "SpeciesId", "IsDefault", "CreatedOn"
             from "UserFishingSpeciesPreference"
             except
@@ -126,8 +117,7 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: userfishingspeciespreferences differ from old UserFishingSpeciesPreference.'; end if;
 
-    if (select count(*) from "Trip") <> (select count(*) from trips)
-        or exists (
+    if exists (
             select "Id", "OwnerUserId", "Title", "PlaceName", "Status", "StartedOn", "EndedOn",
                 "Latitude", "Longitude", "LocationAccuracyMetres", "LocationCapturedOn",
                 "LocationSource", "LocationVisibility", "LocationConsentVersion",
@@ -142,8 +132,7 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: trips differ from old Trip.'; end if;
 
-    if (select count(*) from "TripParticipant") <> (select count(*) from tripparticipants)
-        or exists (
+    if exists (
             select "Id", "TripId", "UserId", "Status", "InvitedByUserId", "InvitedOn",
                 "RespondedOn", "RemovedOn", "CreatedOn", "UpdatedOn"
             from "TripParticipant"
@@ -154,8 +143,7 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: tripparticipants differ from old TripParticipant.'; end if;
 
-    if (select count(*) from "TripPhotograph") <> (select count(*) from tripphotographs)
-        or exists (
+    if exists (
             select "Id", "TripId", "ObjectKey", "ContentType", "CapturedOn", "AddedOn",
                 "ContributedByUserId", "CreatedOn", "UpdatedOn"
             from "TripPhotograph"
@@ -166,8 +154,7 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: tripphotographs differ from old TripPhotograph.'; end if;
 
-    if (select count(*) from "TripNote") <> (select count(*) from tripnotes)
-        or exists (
+    if exists (
             select "Id", "TripId", "CreatedByUserId", "Text", "RecordedOn", "CreatedOn", "UpdatedOn"
             from "TripNote"
             except
@@ -176,8 +163,7 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: tripnotes differ from old TripNote.'; end if;
 
-    if (select count(*) from "UserFishingLocationPreference") <> (select count(*) from userfishinglocationpreferences)
-        or exists (
+    if exists (
             select "Id", "UserId", "Name", "IsDefault", "CreatedOn"
             from "UserFishingLocationPreference"
             except
@@ -186,8 +172,7 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: userfishinglocationpreferences differ from old UserFishingLocationPreference.'; end if;
 
-    if (select count(*) from "Catch") <> (select count(*) from catches)
-        or exists (
+    if exists (
             select "Id",
                 coalesce("CaughtByUserId", "AnglerUserId", "UserId"),
                 coalesce("RecordedByUserId", "UserId"),
@@ -205,8 +190,7 @@ begin
         )
     then raise exception 'FLB#143 cleanup blocked: catches differ from canonical old Catch values.'; end if;
 
-    if (select count(*) from "CatchPhotograph") <> (select count(*) from catchphotographs)
-        or exists (
+    if exists (
             select "Id", "CatchId", "ContentType" from "CatchPhotograph"
             except select id, catchid, contenttype from catchphotographs
         )
