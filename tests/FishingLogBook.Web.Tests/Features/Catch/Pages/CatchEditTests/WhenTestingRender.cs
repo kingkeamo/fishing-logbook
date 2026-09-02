@@ -209,7 +209,7 @@ public class WhenTestingRender : BaseCatchEditTest
         catchClient.GetAsync(catchId, Arg.Any<CancellationToken>())
             .Returns(new CatchViewDto(catchId, OwnerUserId, StoredCaughtOn)
             {
-                AnglerUserId = OwnerUserId,
+                CaughtByUserId = OwnerUserId,
                 RecordedByUserId = OwnerUserId,
                 SpeciesName = "Pike",
                 Photographs = [new CatchPhotographViewDto(photographId, PhotographContentTypeConstants.Jpeg, "https://r2.test/one")]
@@ -277,7 +277,7 @@ public class WhenTestingRender : BaseCatchEditTest
         catchClient.GetAsync(catchId, Arg.Any<CancellationToken>())
             .Returns(new CatchViewDto(catchId, OtherUserId, StoredCaughtOn)
             {
-                AnglerUserId = OtherUserId,
+                CaughtByUserId = OtherUserId,
                 RecordedByUserId = OtherUserId,
                 Photographs = [new CatchPhotographViewDto(Guid.NewGuid(), PhotographContentTypeConstants.Jpeg, "https://r2.test/one")]
             });

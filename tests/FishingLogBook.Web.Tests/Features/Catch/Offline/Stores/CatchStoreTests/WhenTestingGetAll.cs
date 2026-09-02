@@ -50,7 +50,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
                 ownerCatchId,
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 [new CatchPhotographModel(ownerPhotoId, ownerCatchId, PhotographContentTypeConstants.Jpeg, [4, 5, 6])],
-                UserId: OwnerUserId),
+                CaughtByUserId: OwnerUserId),
             CancellationToken.None);
         await Sut.SaveAsync(
             new CatchModel(
@@ -58,7 +58,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
                 DateTimeOffset.Parse("2026-08-17T09:00:00Z"),
                 [new CatchPhotographModel(otherPhotoId, otherCatchId, PhotographContentTypeConstants.Jpeg, [7, 8, 9])],
                 Location: otherLocation,
-                UserId: OtherUserId),
+                CaughtByUserId: OtherUserId),
             CancellationToken.None);
 
         // Act
@@ -68,13 +68,13 @@ public class WhenTestingGetAll : BaseCatchStoreTest
         // Assert
         ownerView.Should().ContainSingle();
         ownerView[0].Id.Should().Be(ownerCatchId);
-        ownerView[0].UserId.Should().Be(OwnerUserId);
+        ownerView[0].CaughtByUserId.Should().Be(OwnerUserId);
         ownerView[0].Photographs[0].Id.Should().Be(ownerPhotoId);
         ownerView[0].Photographs[0].Bytes.Should().Equal(4, 5, 6);
         ownerView.Should().NotContain(catchRecord => catchRecord.Id == otherCatchId);
         otherView.Should().ContainSingle();
         otherView[0].Id.Should().Be(otherCatchId);
-        otherView[0].UserId.Should().Be(OtherUserId);
+        otherView[0].CaughtByUserId.Should().Be(OtherUserId);
         otherView[0].Location.Should().Be(otherLocation);
         otherView[0].Photographs[0].Bytes.Should().Equal(7, 8, 9);
         otherView.Should().NotContain(catchRecord => catchRecord.Id == ownerCatchId);
@@ -108,7 +108,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
         // Assert
         firstSignerView.Should().BeEmpty();
         originalOwnerView.Should().BeEmpty();
-        BackingCatches[unscopedId].UserId.Should().Be(Guid.Empty);
+        BackingCatches[unscopedId].CaughtByUserId.Should().Be(Guid.Empty);
         BackingCatches[unscopedId].Location.Should().Be(location);
         BackingPhotographs[unscopedPhoto].Should().Equal(4, 5, 6);
         firstSignerView.Should().NotContain(catchRecord => catchRecord.Id == unscopedId);
@@ -139,7 +139,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
                     ownerCatchId,
                     PhotographContentTypeConstants.Jpeg,
                     [2])],
-                UserId: OwnerUserId),
+                CaughtByUserId: OwnerUserId),
             CancellationToken.None);
 
         // Act
@@ -150,9 +150,9 @@ public class WhenTestingGetAll : BaseCatchStoreTest
         otherView.Should().BeEmpty();
         ownerView.Should().ContainSingle();
         ownerView[0].Id.Should().Be(ownerCatchId);
-        ownerView[0].UserId.Should().Be(OwnerUserId);
+        ownerView[0].CaughtByUserId.Should().Be(OwnerUserId);
         ownerView.Should().NotContain(catchRecord => catchRecord.Id == unscopedId);
-        BackingCatches[unscopedId].UserId.Should().Be(Guid.Empty);
+        BackingCatches[unscopedId].CaughtByUserId.Should().Be(Guid.Empty);
         BackingPhotographs[unscopedPhoto].Should().Equal(1);
     }
 
@@ -167,7 +167,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
                 catchId,
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [4, 5, 6])],
-                UserId: OwnerUserId),
+                CaughtByUserId: OwnerUserId),
             CancellationToken.None);
 
         // Act
@@ -176,7 +176,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
         // Assert
         saved.Should().ContainSingle();
         saved[0].Id.Should().Be(catchId);
-        saved[0].UserId.Should().Be(OwnerUserId);
+        saved[0].CaughtByUserId.Should().Be(OwnerUserId);
         saved[0].Photographs[0].Id.Should().Be(photographId);
         saved[0].Photographs[0].Bytes.Should().Equal(4, 5, 6);
     }
@@ -198,7 +198,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
                     new CatchPhotographModel(photoB, catchId, PhotographContentTypeConstants.Png, [2, 2, 2]),
                     new CatchPhotographModel(photoC, catchId, PhotographContentTypeConstants.Webp, [3, 3, 3])
                 ],
-                UserId: OwnerUserId),
+                CaughtByUserId: OwnerUserId),
             CancellationToken.None);
         var reopened = new MemoryCatchStore(BackingCatches, BackingPhotographs);
 
@@ -208,7 +208,7 @@ public class WhenTestingGetAll : BaseCatchStoreTest
         // Assert
         saved.Should().ContainSingle();
         saved[0].Id.Should().Be(catchId);
-        saved[0].UserId.Should().Be(OwnerUserId);
+        saved[0].CaughtByUserId.Should().Be(OwnerUserId);
         saved[0].Photographs.Select(photograph => photograph.Id).Should().Equal(photoA, photoB, photoC);
         saved[0].Photographs.Select(photograph => photograph.CatchId).Should().OnlyContain(id => id == catchId);
         saved[0].Photographs[0].Bytes.Should().Equal(1, 1, 1);

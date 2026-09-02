@@ -91,7 +91,7 @@ public class WhenTestingTripAssociation : BaseRecordCatchTest
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(catchRecord =>
                 catchRecord.TripId == TripId
-                && catchRecord.UserId == OwnerUserId
+                && catchRecord.CaughtByUserId == OwnerUserId
                 && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
     }

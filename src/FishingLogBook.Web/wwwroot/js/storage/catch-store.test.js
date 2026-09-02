@@ -124,7 +124,8 @@ describe('Catch store', () => {
         const catchRecord = JSON.parse(reopened[0].json);
 
         expect(catchRecord.userId).toBe(ownerUserId);
-        expect(catchRecord.anglerUserId).toBeUndefined();
+        expect(catchRecord.anglerUserId).toBe(ownerUserId);
+        expect(catchRecord.caughtByUserId).toBe(ownerUserId);
         expect(catchRecord.recordedByUserId).toBeUndefined();
     });
 
@@ -296,6 +297,84 @@ describe('Catch store', () => {
         );
     });
 
+    it('preserves pending local metadata when a stale reconcile arrives', async () => {
+        const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const photographId = '11111111-1111-1111-1111-111111111111';
+        await putCatchWithPhotographs(
+            JSON.stringify({
+                id: catchId,
+                userId: ownerUserId,
+                anglerUserId: ownerUserId,
+                recordedByUserId: ownerUserId,
+                caughtOn: '2025-06-14T06:32:10.000Z',
+                location: {
+                    latitude: 53.2707,
+                    longitude: -9.0568,
+                    source: 'PhotoMetadata',
+                    visibility: 'Private'
+                },
+                syncStatus: 1,
+                metadataSyncStatus: 1,
+                photographs: [{
+                    id: photographId,
+                    catchId,
+                    contentType: 'image/jpeg',
+                    syncStatus: 3
+                }, {
+                    id: '22222222-2222-2222-2222-222222222222',
+                    catchId,
+                    contentType: 'image/jpeg',
+                    syncStatus: 1
+                }]
+            }),
+            [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([1, 2, 3])
+            }, {
+                id: '22222222-2222-2222-2222-222222222222',
+                catchId,
+                contentType: 'image/jpeg',
+                bytes: new Uint8Array([4, 5, 6])
+            }]
+        );
+
+        await reconcileCatchMetadata(JSON.stringify({
+            id: catchId,
+            userId: ownerUserId,
+            anglerUserId: ownerUserId,
+            recordedByUserId: ownerUserId,
+            caughtOn: '2026-08-20T08:15:00.000Z',
+            location: null,
+            syncStatus: 3,
+            metadataSyncStatus: 3,
+            photographs: [{
+                id: photographId,
+                catchId,
+                contentType: 'image/jpeg',
+                syncStatus: 3,
+                objectKey: `catch-photographs/${catchId}/${photographId}`
+            }, {
+                id: '22222222-2222-2222-2222-222222222222',
+                catchId,
+                contentType: 'image/jpeg',
+                syncStatus: 3,
+                objectKey: `catch-photographs/${catchId}/22222222-2222-2222-2222-222222222222`
+            }]
+        }));
+
+        const metadata = JSON.parse(
+            (await getAllCatchesWithPhotographs(ownerUserId))[0].json
+        );
+        expect(metadata.caughtOn).toBe('2025-06-14T06:32:10.000Z');
+        expect(metadata.location.latitude).toBe(53.2707);
+        expect(metadata.metadataSyncStatus).toBe(1);
+        expect(metadata.photographs[1].objectKey).toBe(
+            `catch-photographs/${catchId}/22222222-2222-2222-2222-222222222222`
+        );
+    });
+
     it('does not let another user overwrite sync state', async () => {
         const catchId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
         await putCatchWithPhotographs(
@@ -425,7 +504,8 @@ describe('Catch store', () => {
         const ownerView = await getAllCatchesWithPhotographs(ownerUserId);
         const stored = JSON.parse(ownerView[0].json);
         expect(stored.location.visibility).toBe('Private');
-        expect(stored.syncStatus).toBe(3);
+        expect(stored.syncStatus).toBe(1);
+        expect(stored.metadataSyncStatus).toBe(1);
         expect(stored.photographs[0].syncStatus).toBe(3);
     });
 

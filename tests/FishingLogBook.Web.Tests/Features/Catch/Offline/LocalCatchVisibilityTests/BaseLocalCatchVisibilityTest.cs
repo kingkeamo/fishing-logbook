@@ -14,6 +14,6 @@ public class BaseLocalCatchVisibilityTest
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg, [1])],
-            UserId: userId);
+            CaughtByUserId: userId);
     }
 }

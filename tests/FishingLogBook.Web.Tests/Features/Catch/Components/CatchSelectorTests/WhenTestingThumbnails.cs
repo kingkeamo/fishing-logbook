@@ -15,7 +15,7 @@ public class WhenTestingThumbnails : BaseCatchSelectorTest
     {
         // Arrange
         await using var context = CreateContext();
-        var withoutPhoto = new CatchModel(PikeCatchId, CaughtOn, [], "Pike", UserId: OwnerUserId);
+        var withoutPhoto = new CatchModel(PikeCatchId, CaughtOn, [], "Pike", CaughtByUserId: OwnerUserId);
 
         // Act
         var cut = context.Render<CatchSelector>(parameters => parameters
@@ -45,7 +45,7 @@ public class WhenTestingThumbnails : BaseCatchSelectorTest
                     RemoteUrl: "https://storage.test/pike.jpg?signed=1")
             ],
             "Pike",
-            UserId: OwnerUserId);
+            CaughtByUserId: OwnerUserId);
 
         // Act
         var cut = context.Render<CatchSelector>(parameters => parameters
@@ -75,7 +75,7 @@ public class WhenTestingThumbnails : BaseCatchSelectorTest
             CaughtOn,
             [new CatchPhotographModel(photographId, PikeCatchId, PhotographContentTypeConstants.Jpeg)],
             "Pike",
-            UserId: OwnerUserId);
+            CaughtByUserId: OwnerUserId);
 
         // Act
         var cut = context.Render<CatchSelector>(parameters => parameters

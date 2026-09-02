@@ -122,7 +122,8 @@ public class WhenTestingUpdateLocationVisibility : IClassFixture<SystemApiFactor
         var catchRecord = new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = current!.UserId,
+            CaughtByUserId = current!.UserId,
+            RecordedByUserId = current.UserId,
             CaughtOn = DateTimeOffset.UtcNow
         };
         _factory.CatchRepository
@@ -166,7 +167,7 @@ public class WhenTestingUpdateLocationVisibility : IClassFixture<SystemApiFactor
         await _factory.CatchRepository.Received(1).UpdateLocationVisibilityAsync(
             Arg.Is<PersistCatchLocationVisibilityArgs>(args =>
                 args.CatchId == catchRecord.Id
-                && args.UserId == current.UserId
+                && args.CaughtByUserId == current.UserId
                 && args.Visibility == LocationDefaults.Public),
             Arg.Any<CancellationToken>());
         await _factory.CatchRepository.DidNotReceive().UpsertAsync(
@@ -191,7 +192,8 @@ public class WhenTestingUpdateLocationVisibility : IClassFixture<SystemApiFactor
         return new Catch
         {
             Id = catchId,
-            UserId = ownerUserId,
+            CaughtByUserId = ownerUserId,
+            RecordedByUserId = ownerUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Location = CatchLocation.TryCreate(
                 53.2707,

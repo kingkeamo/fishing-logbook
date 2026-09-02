@@ -165,8 +165,8 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(saved =>
                 saved.TripId == TripId
-                && saved.UserId == args.UserId
-                && saved.AnglerUserId == args.UserId
+                && saved.CaughtByUserId == args.UserId
+                && saved.CaughtByUserId == args.UserId
                 && saved.RecordedByUserId == args.UserId),
             Arg.Any<CancellationToken>());
     }
@@ -229,8 +229,8 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
             Arg.Is<Catch>(saved =>
                 saved.TripId == TripId
                 && saved.Location == null
-                && saved.UserId == args.UserId
-                && saved.AnglerUserId == args.UserId
+                && saved.CaughtByUserId == args.UserId
+                && saved.CaughtByUserId == args.UserId
                 && saved.RecordedByUserId == args.UserId),
             Arg.Any<CancellationToken>());
     }

@@ -50,8 +50,7 @@ public class WhenTestingGetMy : BaseCatchServiceTest
         var first = new Catch
         {
             Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            UserId = CurrentUserId,
-            AnglerUserId = CurrentUserId,
+            CaughtByUserId = CurrentUserId,
             RecordedByUserId = CurrentUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             SpeciesName = "Pike"
@@ -59,8 +58,7 @@ public class WhenTestingGetMy : BaseCatchServiceTest
         var second = new Catch
         {
             Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-            UserId = CurrentUserId,
-            AnglerUserId = CurrentUserId,
+            CaughtByUserId = CurrentUserId,
             RecordedByUserId = CurrentUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-16T08:00:00Z"),
             SpeciesName = "Perch"
@@ -99,8 +97,7 @@ public class WhenTestingGetMy : BaseCatchServiceTest
         var recordedForAnother = new Catch
         {
             Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-            UserId = anglerUserId,
-            AnglerUserId = anglerUserId,
+            CaughtByUserId = anglerUserId,
             RecordedByUserId = CurrentUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             SpeciesName = "Brown Trout"
@@ -124,8 +121,8 @@ public class WhenTestingGetMy : BaseCatchServiceTest
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().ContainSingle(view =>
             view.Id == recordedForAnother.Id
-            && view.UserId == anglerUserId
-            && view.AnglerUserId == anglerUserId
+            && view.CaughtByUserId == anglerUserId
+            && view.CaughtByUserId == anglerUserId
             && view.AnglerName == "Patrick Connolly"
             && view.RecordedByUserId == CurrentUserId
             && view.RecordedByName == "Current User");

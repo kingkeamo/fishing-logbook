@@ -45,8 +45,7 @@ public class BaseCatchPhotographServiceTest
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = CatchId,
-                UserId = UserId,
-                AnglerUserId = UserId,
+                CaughtByUserId = UserId,
                 RecordedByUserId = UserId
             }));
         MockCatchRepository.GetPhotographAsync(

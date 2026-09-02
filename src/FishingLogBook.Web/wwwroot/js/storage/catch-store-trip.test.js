@@ -139,6 +139,28 @@ describe('Catch store trip association', () => {
         expect(stored.caughtOn).toBe('2026-08-17T08:00:00+00:00');
     });
 
+    it('lets the recorder attach a trip to a catch logged for another angler', async () => {
+        const recorderUserId = '33333333-3333-3333-3333-333333333333';
+        await save(catchRecord({
+            userId: otherUserId,
+            anglerUserId: otherUserId,
+            recordedByUserId: recorderUserId,
+            tripId: null,
+            metadataSyncStatus: 'synchronised'
+        }));
+
+        await updateCatchTrip(JSON.stringify({
+            id: catchId,
+            userId: recorderUserId,
+            tripId,
+            metadataSyncStatus: 'savedLocally'
+        }));
+
+        const stored = JSON.parse((await getCatchMetadataById(recorderUserId, catchId)).json);
+        expect(stored.tripId).toBe(tripId);
+        expect(stored.metadataSyncStatus).toBe('savedLocally');
+    });
+
     it('keeps the photograph bytes when a catch is attached to a trip', async () => {
         await save(catchRecord({ tripId: null }));
 

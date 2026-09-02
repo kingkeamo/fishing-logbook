@@ -93,8 +93,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         var catchRecord = new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = current!.UserId,
-            AnglerUserId = current.UserId,
+            CaughtByUserId = current.UserId,
             RecordedByUserId = current.UserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             SpeciesName = "Pike"
@@ -127,8 +126,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         var recordedForAnother = new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = anglerUserId,
-            AnglerUserId = anglerUserId,
+            CaughtByUserId = anglerUserId,
             RecordedByUserId = current!.UserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             SpeciesName = "Brown Trout"
@@ -153,7 +151,7 @@ public class WhenTestingList : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().ContainSingle(view =>
             view.Id == recordedForAnother.Id
-            && view.UserId == anglerUserId
+            && view.CaughtByUserId == anglerUserId
             && view.AnglerName == "Patrick Connolly"
             && view.RecordedByUserId == current.UserId
             && view.RecordedByName == "Current User");

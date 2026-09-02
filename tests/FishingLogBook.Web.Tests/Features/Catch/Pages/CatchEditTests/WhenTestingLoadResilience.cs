@@ -183,17 +183,16 @@ public class WhenTestingLoadResilience : BaseCatchEditTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var anglerUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var caughtByUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
         var tripId = Guid.Parse("77777777-7777-7777-7777-777777777777");
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
             .Returns((CatchModel?)null);
         var catchClient = Substitute.For<ICatchClient>();
         catchClient.GetAsync(CatchId, Arg.Any<CancellationToken>())
-            .Returns(new CatchViewDto(CatchId, anglerUserId, StoredCaughtOn)
+            .Returns(new CatchViewDto(CatchId, caughtByUserId, StoredCaughtOn)
             {
                 SpeciesName = "Recorded For Angler",
-                AnglerUserId = anglerUserId,
                 RecordedByUserId = OwnerUserId,
                 TripId = tripId,
                 Photographs =
@@ -217,8 +216,7 @@ public class WhenTestingLoadResilience : BaseCatchEditTest
         await store.Received(1).SaveAsync(
             Arg.Is<CatchModel>(saved =>
                 saved.Id == CatchId
-                && saved.UserId == anglerUserId
-                && saved.AnglerUserId == anglerUserId
+                && saved.CaughtByUserId == caughtByUserId
                 && saved.RecordedByUserId == OwnerUserId
                 && saved.TripId == tripId),
             Arg.Any<CancellationToken>());
@@ -229,16 +227,15 @@ public class WhenTestingLoadResilience : BaseCatchEditTest
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
-        var anglerUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        var caughtByUserId = Guid.Parse("99999999-9999-9999-9999-999999999999");
         var recorderUserId = Guid.Parse("88888888-8888-8888-8888-888888888888");
         var store = Substitute.For<ICatchStore>();
         store.GetAsync(OwnerUserId, CatchId, Arg.Any<CancellationToken>())
             .Returns((CatchModel?)null);
         var catchClient = Substitute.For<ICatchClient>();
         catchClient.GetAsync(CatchId, Arg.Any<CancellationToken>())
-            .Returns(new CatchViewDto(CatchId, anglerUserId, StoredCaughtOn)
+            .Returns(new CatchViewDto(CatchId, caughtByUserId, StoredCaughtOn)
             {
-                AnglerUserId = anglerUserId,
                 RecordedByUserId = recorderUserId,
                 Photographs =
                 [
@@ -265,7 +262,7 @@ public class WhenTestingLoadResilience : BaseCatchEditTest
             .Returns(new CatchViewDto(CatchId, OwnerUserId, StoredCaughtOn)
             {
                 SpeciesName = speciesName,
-                AnglerUserId = OwnerUserId,
+                CaughtByUserId = OwnerUserId,
                 RecordedByUserId = OwnerUserId,
                 Photographs =
                 [

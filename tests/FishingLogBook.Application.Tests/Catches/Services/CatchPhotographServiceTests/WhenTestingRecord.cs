@@ -29,7 +29,7 @@ public class WhenTestingRecord : BaseCatchPhotographServiceTest
         second.IsSuccess.Should().BeTrue();
         await MockCatchRepository.Received(2).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == UserId
+                query.CaughtByUserId == UserId
                 && query.CatchId == CatchId
                 && query.PhotographId == PhotographId),
             Arg.Any<CancellationToken>());
@@ -58,7 +58,7 @@ public class WhenTestingRecord : BaseCatchPhotographServiceTest
             .Which.Should().BeOfType<CatchPhotographObjectKeyMismatchError>();
         await MockCatchRepository.Received(1).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == UserId
+                query.CaughtByUserId == UserId
                 && query.CatchId == CatchId
                 && query.PhotographId == PhotographId),
             Arg.Any<CancellationToken>());

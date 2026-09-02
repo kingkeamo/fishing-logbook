@@ -145,7 +145,7 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
             Arg.Any<CancellationToken>());
         await _factory.CatchRepository.Received(1).DeletePhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == current.UserId
+                query.CaughtByUserId == current.UserId
                 && query.CatchId == catchId
                 && query.PhotographId == photographId),
             Arg.Any<CancellationToken>());
@@ -157,8 +157,7 @@ public class WhenTestingDeletePhotograph : IClassFixture<SystemApiFactory>
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = catchId,
-                UserId = currentUserId,
-                AnglerUserId = currentUserId,
+                CaughtByUserId = currentUserId,
                 RecordedByUserId = currentUserId
             }));
     }

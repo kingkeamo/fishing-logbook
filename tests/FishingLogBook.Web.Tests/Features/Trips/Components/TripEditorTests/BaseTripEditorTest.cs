@@ -142,7 +142,7 @@ public class BaseTripEditorTest
             StartedOn.AddMinutes(30),
             [],
             speciesName,
-            UserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             Weight: weight,
             Length: length,
             TripId: TripId);

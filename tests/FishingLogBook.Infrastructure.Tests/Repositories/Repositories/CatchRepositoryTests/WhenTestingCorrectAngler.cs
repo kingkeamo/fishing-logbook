@@ -19,7 +19,7 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
         var args = new PersistCatchAnglerArgs
         {
             CatchId = Guid.NewGuid(),
-            AnglerUserId = Guid.NewGuid()
+            CaughtByUserId = Guid.NewGuid()
         };
 
         // Act
@@ -41,7 +41,7 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
         var args = new PersistCatchAnglerArgs
         {
             CatchId = catchRecord.Id,
-            AnglerUserId = correctedAnglerUserId
+            CaughtByUserId = correctedAnglerUserId
         };
 
         // Act
@@ -50,8 +50,8 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
 
         // Assert
         result.IsFailed.Should().BeTrue();
-        loaded.Value!.UserId.Should().Be(recorderUserId);
-        loaded.Value.AnglerUserId.Should().Be(recorderUserId);
+        loaded.Value!.CaughtByUserId.Should().Be(recorderUserId);
+        loaded.Value.CaughtByUserId.Should().Be(recorderUserId);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
         var args = new PersistCatchAnglerArgs
         {
             CatchId = catchRecord.Id,
-            AnglerUserId = correctedAnglerUserId
+            CaughtByUserId = correctedAnglerUserId
         };
 
         // Act
@@ -79,8 +79,8 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
         // Assert
         result.IsSuccess.Should().BeTrue();
         loaded.Value.Should().NotBeNull();
-        loaded.Value!.UserId.Should().Be(correctedAnglerUserId);
-        loaded.Value.AnglerUserId.Should().Be(correctedAnglerUserId);
+        loaded.Value!.CaughtByUserId.Should().Be(correctedAnglerUserId);
+        loaded.Value.CaughtByUserId.Should().Be(correctedAnglerUserId);
         loaded.Value.RecordedByUserId.Should().Be(recorderUserId);
         loaded.Value.TripId.Should().Be(tripId);
     }
@@ -102,7 +102,7 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
         var args = new PersistCatchAnglerArgs
         {
             CatchId = catchRecord.Id,
-            AnglerUserId = correctedAnglerUserId
+            CaughtByUserId = correctedAnglerUserId
         };
 
         // Act
@@ -112,7 +112,7 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
         // Assert
         detail.IsSuccess.Should().BeTrue();
         detail.Value.Should().NotBeNull();
-        detail.Value!.Catch.AnglerUserId.Should().Be(correctedAnglerUserId);
+        detail.Value!.Catch.CaughtByUserId.Should().Be(correctedAnglerUserId);
         detail.Value.Catch.RecordedByUserId.Should().Be(recorderUserId);
         detail.Value.AnglerName.Should().Be("Patrick Connolly");
         detail.Value.RecordedByName.Should().Be("Myles Costello");

@@ -134,7 +134,7 @@ public class WhenTestingUpsertWithATrip : IClassFixture<SystemApiFactory>
             Arg.Is<Catch>(item =>
                 item.Id == dto.Id
                 && item.TripId == tripId
-                && item.UserId == current.UserId
+                && item.CaughtByUserId == current.UserId
                 && item.Location == null),
             Arg.Any<CancellationToken>());
     }

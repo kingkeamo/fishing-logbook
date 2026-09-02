@@ -139,7 +139,7 @@ public class WhenTestingAssociateTrip : BaseCatchRepositoryTest
         return new PersistCatchTripArgs
         {
             CatchId = catchId,
-            UserId = userId,
+            CaughtByUserId = userId,
             TripId = tripId
         };
     }
@@ -149,8 +149,7 @@ public class WhenTestingAssociateTrip : BaseCatchRepositoryTest
         return new Catch
         {
             Id = seed.Id,
-            UserId = seed.UserId,
-            AnglerUserId = seed.AnglerUserId,
+            CaughtByUserId = seed.CaughtByUserId,
             RecordedByUserId = seed.RecordedByUserId,
             TripId = tripId,
             CaughtOn = seed.CaughtOn,

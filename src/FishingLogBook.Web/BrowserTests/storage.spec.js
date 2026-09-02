@@ -58,7 +58,8 @@ test.describe('Catch IndexedDB', () => {
         const catchRecord = JSON.parse(records[0].json);
         expect(catchRecord.id).toBe('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
         expect(catchRecord.userId).toBe('11111111-1111-1111-1111-111111111111');
-        expect(catchRecord.anglerUserId).toBeUndefined();
+        expect(catchRecord.anglerUserId).toBe(catchRecord.userId);
+        expect(catchRecord.caughtByUserId).toBe(catchRecord.userId);
         expect(catchRecord.recordedByUserId).toBeUndefined();
     });
 

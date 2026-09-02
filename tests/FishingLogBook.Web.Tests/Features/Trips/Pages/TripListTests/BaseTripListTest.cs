@@ -101,7 +101,7 @@ public class BaseTripListTest
             catchId,
             StartedOn.AddMinutes(30),
             [],
-            UserId: OwnerUserId,
+            CaughtByUserId: OwnerUserId,
             TripId: tripId);
     }
 

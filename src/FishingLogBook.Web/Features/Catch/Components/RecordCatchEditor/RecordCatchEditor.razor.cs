@@ -655,7 +655,6 @@ public partial class RecordCatchEditor : ComponentBase, IDisposable
                     anglerUserId,
                     SyncStatus.SavedLocally,
                     SyncStatus.SavedLocally,
-                    anglerUserId,
                     OwnerUserId,
                     Method: method,
                     Weight: _weight,

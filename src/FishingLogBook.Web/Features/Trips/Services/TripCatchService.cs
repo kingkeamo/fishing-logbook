@@ -91,7 +91,7 @@ public sealed class TripCatchService : ITripCatchService
 
     private static bool IsEligible(CatchModel candidate, TripCatchScopeModel scope)
     {
-        if (candidate.TripId is not null || candidate.UserId != scope.OwnerUserId)
+        if (candidate.TripId is not null || candidate.CaughtByUserId != scope.OwnerUserId)
         {
             return false;
         }
@@ -115,10 +115,9 @@ public sealed class TripCatchService : ITripCatchService
                 photograph.ContentType,
                 RemoteUrl: photograph.Url))],
             SpeciesName: dto.SpeciesName,
-            UserId: dto.UserId,
+            CaughtByUserId: dto.CaughtByUserId,
             SyncStatus: SyncStatus.Synchronised,
             MetadataSyncStatus: SyncStatus.Synchronised,
-            AnglerUserId: dto.AnglerUserId,
             RecordedByUserId: dto.RecordedByUserId,
             Weight: dto.Weight,
             Length: dto.Length,

@@ -11,7 +11,7 @@ public class WhenTestingRetry : BaseCatchSynchroniserTest
     public async Task ItShouldNotRetryAnotherUsersCatch()
     {
         // Arrange
-        var store = await CreateStoreAsync(CreateCatch(userId: OwnerUserId));
+        var store = await CreateStoreAsync(CreateCatch(caughtByUserId: OwnerUserId));
         MockLocalCatchOwner.GetUserIdAsync(Arg.Any<CancellationToken>())
             .Returns(OtherUserId);
         var sut = CreateSut(store);
@@ -54,8 +54,8 @@ public class WhenTestingRetry : BaseCatchSynchroniserTest
         saved.Location.Should().Be(catchRecord.Location);
         saved.Photographs.Should().OnlyContain(
             photograph => photograph.SyncStatus == SyncStatus.Synchronised);
-        saved.UserId.Should().Be(OwnerUserId);
-        saved.AnglerUserId.Should().Be(OwnerUserId);
+        saved.CaughtByUserId.Should().Be(OwnerUserId);
+        saved.CaughtByUserId.Should().Be(OwnerUserId);
         saved.RecordedByUserId.Should().Be(OwnerUserId);
         await MockCatchClient.DidNotReceive()
             .UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>());

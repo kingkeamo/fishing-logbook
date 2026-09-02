@@ -44,7 +44,7 @@ public class WhenTestingForOwner : BaseLocalCatchVisibilityTest
         // Assert
         visible.Should().ContainSingle();
         visible[0].Id.Should().Be(owned.Id);
-        visible[0].UserId.Should().Be(OwnerUserId);
+        visible[0].CaughtByUserId.Should().Be(OwnerUserId);
     }
 
     [Fact]

@@ -231,7 +231,7 @@ public class WhenTestingCleanup : BaseCatchStoreTest
             catchId,
             Now,
             photographs,
-            UserId: ownerUserId,
+            CaughtByUserId: ownerUserId,
             SyncStatus: syncStatus,
             MetadataSyncStatus: metadataSyncStatus,
             SyncedAt: syncedAt);
@@ -262,7 +262,7 @@ public class WhenTestingCleanup : BaseCatchStoreTest
             catchId,
             caughtOn ?? Now,
             [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1, 2, 3], photographStatus)],
-            UserId: ownerUserId,
+            CaughtByUserId: ownerUserId,
             SyncStatus: SyncStatus.SavedLocally,
             MetadataSyncStatus: SyncStatus.SavedLocally);
         await Sut.SaveAsync(catchRecord, CancellationToken.None);

@@ -68,7 +68,7 @@ public class BaseTripCatchServiceTest
             caughtOn,
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)],
             "Pike",
-            UserId: userId ?? OwnerUserId,
+            CaughtByUserId: userId ?? OwnerUserId,
             TripId: tripId);
     }
 

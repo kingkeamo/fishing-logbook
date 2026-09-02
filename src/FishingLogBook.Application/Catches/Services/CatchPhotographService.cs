@@ -148,7 +148,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
         return await _catchRepository.DeletePhotographAsync(
             new GetCatchPhotographArgs
             {
-                UserId = owner.Value,
+                CaughtByUserId = owner.Value,
                 CatchId = args.CatchId,
                 PhotographId = args.PhotographId
             },
@@ -169,13 +169,13 @@ public sealed class CatchPhotographService : ICatchPhotographService
         }
 
         if (loaded.Value is null
-            || (loaded.Value.AnglerUserId != _currentUser.UserId
+            || (loaded.Value.CaughtByUserId != _currentUser.UserId
                 && loaded.Value.RecordedByUserId != _currentUser.UserId))
         {
             return Result.Fail<Guid>(new CatchPhotographNotFoundError());
         }
 
-        return Result.Ok(loaded.Value.UserId);
+        return Result.Ok(loaded.Value.CaughtByUserId);
     }
 
     private async Task<Result<Domain.Catches.CatchPhotograph>> LoadOwnedPhotographAsync(
@@ -187,7 +187,7 @@ public sealed class CatchPhotographService : ICatchPhotographService
         var loaded = await _catchRepository.GetPhotographAsync(
             new GetCatchPhotographArgs
             {
-                UserId = catchOwnerUserId,
+                CaughtByUserId = catchOwnerUserId,
                 CatchId = catchId,
                 PhotographId = photographId
             },

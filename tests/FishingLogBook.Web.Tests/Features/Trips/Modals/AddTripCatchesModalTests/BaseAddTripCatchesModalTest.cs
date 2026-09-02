@@ -99,6 +99,6 @@ public class BaseAddTripCatchesModalTest
             caughtOn ?? StartedOn.AddHours(2),
             [new CatchPhotographModel(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)],
             speciesName,
-            UserId: OwnerUserId);
+            CaughtByUserId: OwnerUserId);
     }
 }

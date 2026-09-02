@@ -18,8 +18,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = CatchId,
-                UserId = Guid.NewGuid(),
-                AnglerUserId = Guid.NewGuid(),
+                CaughtByUserId = Guid.NewGuid(),
                 RecordedByUserId = Guid.NewGuid()
             }));
         var sut = CreateSut();
@@ -125,7 +124,7 @@ public class WhenTestingDelete : BaseCatchPhotographServiceTest
             Arg.Any<CancellationToken>());
         await MockCatchRepository.Received(1).DeletePhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == UserId
+                query.CaughtByUserId == UserId
                 && query.CatchId == CatchId
                 && query.PhotographId == PhotographId),
             Arg.Any<CancellationToken>());

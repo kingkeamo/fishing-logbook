@@ -78,12 +78,13 @@ public class BaseCatchSynchroniserTest
 
     protected static CatchModel CreateCatch(
         Guid? catchId = null,
-        Guid? userId = null,
+        Guid? caughtByUserId = null,
         SyncStatus catchStatus = SyncStatus.SavedLocally,
         SyncStatus metadataStatus = SyncStatus.SavedLocally,
         IReadOnlyList<CatchPhotographModel>? photographs = null)
     {
         var id = catchId ?? CatchId;
+        var anglerUserId = caughtByUserId ?? OwnerUserId;
         return new CatchModel(
             id,
             DateTimeOffset.Parse("2026-08-17T12:00:00Z"),
@@ -102,11 +103,10 @@ public class BaseCatchSynchroniserTest
                 "DeviceGps",
                 "Private",
                 "1"),
-            userId ?? OwnerUserId,
-            catchStatus,
-            metadataStatus,
-            AnglerUserId: userId ?? OwnerUserId,
-            RecordedByUserId: userId ?? OwnerUserId);
+            CaughtByUserId: anglerUserId,
+            SyncStatus: catchStatus,
+            MetadataSyncStatus: metadataStatus,
+            RecordedByUserId: anglerUserId);
     }
 
     protected static CatchPhotographModel CreatePhotograph(

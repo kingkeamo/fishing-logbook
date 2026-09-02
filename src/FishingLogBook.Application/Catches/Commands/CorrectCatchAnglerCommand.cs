@@ -12,7 +12,7 @@ public sealed class CorrectCatchAnglerCommand : IRequest<CorrectCatchAnglerRespo
 {
     public Guid CatchId { get; init; }
 
-    public Guid AnglerUserId { get; init; }
+    public Guid CaughtByUserId { get; init; }
 }
 
 public sealed class CorrectCatchAnglerResponse : ValidatedResponse
@@ -54,7 +54,7 @@ public sealed class CorrectCatchAnglerCommandValidator : AbstractValidator<Corre
     {
         RuleFor(command => command.CatchId)
             .NotEmpty();
-        RuleFor(command => command.AnglerUserId)
+        RuleFor(command => command.CaughtByUserId)
             .NotEmpty();
     }
 }

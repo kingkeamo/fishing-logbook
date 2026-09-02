@@ -63,7 +63,7 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
         second.Value.ObjectKey.Should().Be(first.Value.ObjectKey);
         await MockCatchRepository.Received(2).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == UserId
+                query.CaughtByUserId == UserId
                 && query.CatchId == CatchId
                 && query.PhotographId == PhotographId),
             Arg.Any<CancellationToken>());
@@ -82,8 +82,7 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = CatchId,
-                UserId = Guid.NewGuid(),
-                AnglerUserId = Guid.NewGuid(),
+                CaughtByUserId = Guid.NewGuid(),
                 RecordedByUserId = Guid.NewGuid()
             }));
         var sut = CreateSut();
@@ -116,13 +115,12 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
     public async Task ItShouldDeriveTheObjectKeyFromTheCatchRegardlessOfWhoTheAnglerIs()
     {
         // Arrange
-        var anglerUserId = Guid.NewGuid();
+        var CaughtByUserId = Guid.NewGuid();
         MockCatchRepository.GetByIdAsync(CatchId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = CatchId,
-                UserId = anglerUserId,
-                AnglerUserId = anglerUserId,
+                CaughtByUserId = CaughtByUserId,
                 RecordedByUserId = UserId
             }));
         var sut = CreateSut();
@@ -141,7 +139,7 @@ public class WhenTestingCreateUpload : BaseCatchPhotographServiceTest
         result.Value.ObjectKey.Should().Be($"catch-photographs/{CatchId:D}/{PhotographId:D}");
         await MockCatchRepository.Received(1).GetPhotographAsync(
             Arg.Is<GetCatchPhotographArgs>(query =>
-                query.UserId == anglerUserId
+                query.CaughtByUserId == CaughtByUserId
                 && query.CatchId == CatchId
                 && query.PhotographId == PhotographId),
             Arg.Any<CancellationToken>());

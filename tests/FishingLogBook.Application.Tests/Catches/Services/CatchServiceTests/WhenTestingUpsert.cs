@@ -90,7 +90,7 @@ public class WhenTestingUpsert : BaseCatchServiceTest
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Should().BeOfType<CatchOwnershipConflictError>();
         await MockCatchRepository.Received(1).UpsertAsync(
-            Arg.Is<Catch>(item => item.UserId == args.UserId && item.Id == args.Catch.Id),
+            Arg.Is<Catch>(item => item.CaughtByUserId == args.UserId && item.Id == args.Catch.Id),
             Arg.Any<CancellationToken>());
     }
 
@@ -118,14 +118,14 @@ public class WhenTestingUpsert : BaseCatchServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.UserId.Should().Be(authenticatedUserId);
-        result.Value.AnglerUserId.Should().Be(authenticatedUserId);
+        result.Value.CaughtByUserId.Should().Be(authenticatedUserId);
+        result.Value.CaughtByUserId.Should().Be(authenticatedUserId);
         result.Value.RecordedByUserId.Should().Be(authenticatedUserId);
         result.Value.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
-                item.UserId == authenticatedUserId
-                && item.AnglerUserId == authenticatedUserId
+                item.CaughtByUserId == authenticatedUserId
+                && item.CaughtByUserId == authenticatedUserId
                 && item.RecordedByUserId == authenticatedUserId
                 && item.Id == catchId
                 && item.Photographs.Count == 1
@@ -151,8 +151,7 @@ public class WhenTestingUpsert : BaseCatchServiceTest
                 DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
                 [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Png)])
             {
-                UserId = spoofedAnglerUserId,
-                AnglerUserId = spoofedAnglerUserId,
+                CaughtByUserId = spoofedAnglerUserId,
                 RecordedByUserId = spoofedAnglerUserId
             }
         };
@@ -243,7 +242,7 @@ public class WhenTestingUpsert : BaseCatchServiceTest
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
                 item.Id == args.Catch.Id
-                && item.UserId == args.UserId
+                && item.CaughtByUserId == args.UserId
                 && item.Location != null
                 && item.Location.Latitude == 53.2707
                 && item.Location.Longitude == -9.0568
@@ -252,7 +251,7 @@ public class WhenTestingUpsert : BaseCatchServiceTest
                 && item.Location.Source == LocationDefaults.DeviceGps
                 && item.Location.Visibility == LocationDefaults.Private
                 && item.Location.ConsentVersion == LocationDefaults.ConsentVersion
-                && item.AnglerUserId == args.UserId
+                && item.CaughtByUserId == args.UserId
                 && item.RecordedByUserId == args.UserId),
             Arg.Any<CancellationToken>());
     }
@@ -320,14 +319,14 @@ public class WhenTestingUpsert : BaseCatchServiceTest
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
                 item.Id == args.Catch.Id
-                && item.UserId == args.UserId
+                && item.CaughtByUserId == args.UserId
                 && item.SpeciesName == "Pike"
                 && item.Weight == 2.5m
                 && item.Length == 64m
                 && item.Method == "Lure"
                 && item.BaitOrLure == "Spinner"
                 && item.Notes == "Weedline"
-                && item.AnglerUserId == args.UserId
+                && item.CaughtByUserId == args.UserId
                 && item.RecordedByUserId == args.UserId),
             Arg.Any<CancellationToken>());
     }

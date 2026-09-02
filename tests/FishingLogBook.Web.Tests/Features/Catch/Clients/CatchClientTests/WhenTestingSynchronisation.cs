@@ -16,8 +16,8 @@ public class WhenTestingSynchronisation : BaseCatchClientTest
             catchId,
             DateTimeOffset.Parse("2026-08-17T12:00:00Z"),
             [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")]);
-        var anglerUserId = Guid.NewGuid();
-        var persisted = dto with { AnglerUserId = anglerUserId };
+        var caughtByUserId = Guid.NewGuid();
+        var persisted = dto with { CaughtByUserId = caughtByUserId };
         var handler = new RecordingHandler(
             HttpStatusCode.OK,
             JsonSerializer.Serialize(persisted, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
@@ -34,7 +34,7 @@ public class WhenTestingSynchronisation : BaseCatchClientTest
             new JsonSerializerOptions(JsonSerializerDefaults.Web));
         sent.Should().BeEquivalentTo(dto);
         result.Should().NotBeNull();
-        result!.AnglerUserId.Should().Be(anglerUserId);
+        result!.CaughtByUserId.Should().Be(caughtByUserId);
     }
 
     [Fact]

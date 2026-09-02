@@ -23,7 +23,8 @@ public class BaseCatchLocationPrivacyServiceTest
         return new Catch
         {
             Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            UserId = ownerUserId,
+            CaughtByUserId = ownerUserId,
+            RecordedByUserId = ownerUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Location = CatchLocation.TryCreate(
                 latitude,

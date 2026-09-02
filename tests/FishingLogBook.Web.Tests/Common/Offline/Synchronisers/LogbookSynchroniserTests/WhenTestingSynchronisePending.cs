@@ -129,7 +129,7 @@ public class WhenTestingSynchronisePending : BaseLogbookSynchroniserTest
     }
 
     [Fact]
-    public async Task ItShouldNotStartASecondRunWhileOneIsInProgress()
+    public async Task ItShouldRerunWhenAnotherSynchronisationIsRequestedWhileOneIsInProgress()
     {
         // Arrange
         var release = new TaskCompletionSource();
@@ -144,9 +144,9 @@ public class WhenTestingSynchronisePending : BaseLogbookSynchroniserTest
         await Task.WhenAll(first, second);
 
         // Assert
-        await MockTripSynchroniser.Received(1)
+        await MockTripSynchroniser.Received(2)
             .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>());
-        await MockCatchSynchroniser.Received(1)
+        await MockCatchSynchroniser.Received(2)
             .SynchronisePendingAsync(OwnerUserId, Arg.Any<CancellationToken>());
     }
 

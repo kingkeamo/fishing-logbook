@@ -68,7 +68,8 @@ public class WhenTestingUpdateLocationVisibility : BaseCatchServiceTest
         var catchRecord = new Catch
         {
             Id = Guid.NewGuid(),
-            UserId = CurrentUserId,
+            CaughtByUserId = CurrentUserId,
+            RecordedByUserId = CurrentUserId,
             CaughtOn = DateTimeOffset.UtcNow
         };
         MockCatchRepository
@@ -116,7 +117,7 @@ public class WhenTestingUpdateLocationVisibility : BaseCatchServiceTest
         await MockCatchRepository.Received(1).UpdateLocationVisibilityAsync(
             Arg.Is<PersistCatchLocationVisibilityArgs>(persist =>
                 persist.CatchId == catchRecord.Id
-                && persist.UserId == CurrentUserId
+                && persist.CaughtByUserId == CurrentUserId
                 && persist.Visibility == LocationDefaults.Approximate),
             Arg.Any<CancellationToken>());
         await MockCatchRepository.DidNotReceive().UpsertAsync(
@@ -130,7 +131,8 @@ public class WhenTestingUpdateLocationVisibility : BaseCatchServiceTest
         return new Catch
         {
             Id = catchId,
-            UserId = ownerUserId,
+            CaughtByUserId = ownerUserId,
+            RecordedByUserId = ownerUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Location = CatchLocation.TryCreate(
                 53.2707,

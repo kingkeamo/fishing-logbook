@@ -169,8 +169,8 @@ public class WhenTestingTripAssociation : BaseCatchRepositoryTest
             CancellationToken.None);
 
         // Assert
-        saved.Value.UserId.Should().Be(userId);
-        saved.Value.AnglerUserId.Should().Be(userId);
+        saved.Value.CaughtByUserId.Should().Be(userId);
+        saved.Value.CaughtByUserId.Should().Be(userId);
         saved.Value.RecordedByUserId.Should().Be(userId);
         saved.Value.Location.Should().BeNull();
     }
@@ -208,8 +208,7 @@ public class WhenTestingTripAssociation : BaseCatchRepositoryTest
         return new Catch
         {
             Id = seed.Id,
-            UserId = seed.UserId,
-            AnglerUserId = seed.AnglerUserId,
+            CaughtByUserId = seed.CaughtByUserId,
             RecordedByUserId = seed.RecordedByUserId,
             TripId = tripId,
             CaughtOn = seed.CaughtOn,

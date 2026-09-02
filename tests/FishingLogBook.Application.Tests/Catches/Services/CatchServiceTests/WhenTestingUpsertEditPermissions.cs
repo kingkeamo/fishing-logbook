@@ -11,7 +11,7 @@ namespace FishingLogBook.Application.Tests.Catches.Services.CatchServiceTests;
 
 public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
 {
-    private static readonly Guid AnglerUserId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    private static readonly Guid CaughtByUserId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid RecorderUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid OwnerUserId = Guid.Parse("55555555-5555-5555-5555-555555555555");
     private static readonly Guid ThirdParticipantUserId = Guid.Parse("66666666-6666-6666-6666-666666666666");
@@ -56,20 +56,20 @@ public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
         // Arrange
         var catchId = Guid.NewGuid();
         GivenExistingCatch(catchId, RecorderUserId);
-        MockCurrentUser.UserId.Returns(AnglerUserId);
+        MockCurrentUser.UserId.Returns(CaughtByUserId);
         MockCatchRepository.UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
 
         // Act
-        var result = await Sut.UpsertAsync(EditArgs(catchId, AnglerUserId), CancellationToken.None);
+        var result = await Sut.UpsertAsync(EditArgs(catchId, CaughtByUserId), CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(saved =>
                 saved.Id == catchId
-                && saved.UserId == AnglerUserId
-                && saved.AnglerUserId == AnglerUserId
+                && saved.CaughtByUserId == CaughtByUserId
+                && saved.CaughtByUserId == CaughtByUserId
                 && saved.RecordedByUserId == RecorderUserId),
             Arg.Any<CancellationToken>());
     }
@@ -89,14 +89,14 @@ public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.UserId.Should().Be(AnglerUserId);
-        result.Value.AnglerUserId.Should().Be(AnglerUserId);
+        result.Value.CaughtByUserId.Should().Be(CaughtByUserId);
+        result.Value.CaughtByUserId.Should().Be(CaughtByUserId);
         result.Value.RecordedByUserId.Should().Be(RecorderUserId);
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(saved =>
                 saved.Id == catchId
-                && saved.UserId == AnglerUserId
-                && saved.AnglerUserId == AnglerUserId
+                && saved.CaughtByUserId == CaughtByUserId
+                && saved.CaughtByUserId == CaughtByUserId
                 && saved.RecordedByUserId == RecorderUserId),
             Arg.Any<CancellationToken>());
     }
@@ -114,18 +114,18 @@ public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
 
         // Act
         var result = await Sut.UpsertAsync(
-            EditArgs(catchId, RecorderUserId, anglerUserId: spoofedAnglerUserId),
+            EditArgs(catchId, RecorderUserId, caughtByUserId: spoofedAnglerUserId),
             CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.UserId.Should().Be(AnglerUserId);
-        result.Value.AnglerUserId.Should().Be(AnglerUserId);
+        result.Value.CaughtByUserId.Should().Be(CaughtByUserId);
+        result.Value.CaughtByUserId.Should().Be(CaughtByUserId);
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(saved =>
                 saved.Id == catchId
-                && saved.UserId == AnglerUserId
-                && saved.AnglerUserId == AnglerUserId),
+                && saved.CaughtByUserId == CaughtByUserId
+                && saved.CaughtByUserId == CaughtByUserId),
             Arg.Any<CancellationToken>());
         await MockTripAccessService.DidNotReceive().ResolveForAsync(
             Arg.Any<Guid>(),
@@ -140,14 +140,13 @@ public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
             .Returns(Result.Ok<Catch?>(new Catch
             {
                 Id = catchId,
-                UserId = AnglerUserId,
-                AnglerUserId = AnglerUserId,
+                CaughtByUserId = CaughtByUserId,
                 RecordedByUserId = RecorderUserId,
                 CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
             }));
     }
 
-    private static UpsertCatchArgs EditArgs(Guid catchId, Guid currentUserId, Guid? anglerUserId = null)
+    private static UpsertCatchArgs EditArgs(Guid catchId, Guid currentUserId, Guid? caughtByUserId = null)
     {
         var catchDto = new CatchDto(
             catchId,
@@ -156,9 +155,9 @@ public class WhenTestingUpsertEditPermissions : BaseCatchServiceTest
         {
             SpeciesName = "Pike"
         };
-        if (anglerUserId is { } angler)
+        if (caughtByUserId is { } angler)
         {
-            catchDto = catchDto with { AnglerUserId = angler };
+            catchDto = catchDto with { CaughtByUserId = angler };
         }
 
         return new UpsertCatchArgs

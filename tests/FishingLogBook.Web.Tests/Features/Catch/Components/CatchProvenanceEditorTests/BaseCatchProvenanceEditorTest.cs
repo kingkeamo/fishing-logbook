@@ -121,7 +121,7 @@ public class BaseCatchProvenanceEditorTest
     {
         return new CatchViewDto(CatchId, anglerUserId, StoredCaughtOn)
         {
-            AnglerUserId = anglerUserId,
+            CaughtByUserId = anglerUserId,
             AnglerName = anglerName,
             RecordedByUserId = recordedByUserId,
             RecordedByName = recordedByName,

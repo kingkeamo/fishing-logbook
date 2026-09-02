@@ -2,7 +2,7 @@ namespace FishingLogBook.Application.Args;
 
 public sealed class GetCatchPhotographArgs
 {
-    public Guid UserId { get; init; }
+    public Guid CaughtByUserId { get; init; }
 
     public Guid CatchId { get; init; }
 

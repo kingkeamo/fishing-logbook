@@ -25,7 +25,7 @@ public class WhenTestingGetPhotograph : BaseCatchRepositoryTest
         var result = await Sut.GetPhotographAsync(
             new GetCatchPhotographArgs
             {
-                UserId = ownerUserId,
+                CaughtByUserId = ownerUserId,
                 CatchId = catchRecord.Id,
                 PhotographId = photograph.Id
             },
@@ -54,7 +54,7 @@ public class WhenTestingGetPhotograph : BaseCatchRepositoryTest
         var result = await Sut.GetPhotographAsync(
             new GetCatchPhotographArgs
             {
-                UserId = otherUserId,
+                CaughtByUserId = otherUserId,
                 CatchId = catchRecord.Id,
                 PhotographId = photograph.Id
             },

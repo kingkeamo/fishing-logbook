@@ -79,8 +79,8 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
                 PhotographContentTypeConstants.Png,
                 PhotographContentTypeConstants.Webp);
         restored.Photographs.Should().OnlyContain(photograph => photograph.CatchId == catchId);
-        restored.UserId.Should().Be(Guid.Empty);
-        restored.AnglerUserId.Should().Be(Guid.Empty);
+        restored.CaughtByUserId.Should().Be(Guid.Empty);
+        restored.CaughtByUserId.Should().Be(Guid.Empty);
         restored.RecordedByUserId.Should().Be(Guid.Empty);
     }
 
@@ -104,8 +104,8 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         // Assert
         restored.Id.Should().Be(catchId);
         restored.Location.Should().BeNull();
-        restored.UserId.Should().Be(Guid.Empty);
-        restored.AnglerUserId.Should().Be(Guid.Empty);
+        restored.CaughtByUserId.Should().Be(Guid.Empty);
+        restored.CaughtByUserId.Should().Be(Guid.Empty);
         restored.RecordedByUserId.Should().Be(Guid.Empty);
         restored.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
     }
@@ -121,7 +121,7 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
-            UserId: userId);
+            CaughtByUserId: userId);
 
         // Act
         var json = CatchJson.SerializeMetadata(catchRecord);
@@ -129,8 +129,8 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
 
         // Assert
         json.Should().Contain("\"userId\":\"11111111-1111-1111-1111-111111111111\"");
-        restored.UserId.Should().Be(userId);
-        restored.AnglerUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
         restored.RecordedByUserId.Should().Be(userId);
         restored.Id.Should().Be(catchId);
     }
@@ -146,8 +146,7 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
-            UserId: userId,
-            AnglerUserId: userId,
+            CaughtByUserId: userId,
             RecordedByUserId: userId);
 
         // Act
@@ -157,8 +156,8 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         // Assert
         json.Should().Contain("\"anglerUserId\":\"11111111-1111-1111-1111-111111111111\"");
         json.Should().Contain("\"recordedByUserId\":\"11111111-1111-1111-1111-111111111111\"");
-        restored.UserId.Should().Be(userId);
-        restored.AnglerUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
         restored.RecordedByUserId.Should().Be(userId);
     }
 
@@ -181,8 +180,8 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         var restored = CatchJson.Deserialize(json, photographs);
 
         // Assert
-        restored.UserId.Should().Be(userId);
-        restored.AnglerUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
         restored.RecordedByUserId.Should().Be(userId);
     }
 
@@ -205,8 +204,8 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         var restored = CatchJson.Deserialize(json, photographs);
 
         // Assert
-        restored.UserId.Should().Be(userId);
-        restored.AnglerUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
         restored.RecordedByUserId.Should().Be(userId);
         restored.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
     }
@@ -230,11 +229,11 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         var restored = CatchJson.Deserialize(json, photographs);
 
         // Assert
-        restored.UserId.Should().Be(userId);
-        restored.AnglerUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
+        restored.CaughtByUserId.Should().Be(userId);
         restored.RecordedByUserId.Should().Be(userId);
-        restored.AnglerUserId.Should().Be(restored.UserId);
-        restored.RecordedByUserId.Should().Be(restored.UserId);
+        restored.CaughtByUserId.Should().Be(restored.CaughtByUserId);
+        restored.RecordedByUserId.Should().Be(restored.CaughtByUserId);
     }
 
     [Fact]
@@ -316,7 +315,7 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         restored.BaitOrLure.Should().BeNull();
         restored.Notes.Should().BeNull();
         restored.SpeciesName.Should().BeNull();
-        restored.UserId.Should().Be(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+        restored.CaughtByUserId.Should().Be(Guid.Parse("11111111-1111-1111-1111-111111111111"));
         restored.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
     }
 
@@ -332,8 +331,7 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographModel(photographId, catchId, PhotographContentTypeConstants.Jpeg, [1])],
             "Pike",
-            UserId: userId,
-            AnglerUserId: userId,
+            CaughtByUserId: userId,
             RecordedByUserId: userId,
             Weight: 2.5m,
             Length: 64m,

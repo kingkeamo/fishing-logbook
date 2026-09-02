@@ -4,9 +4,7 @@ public sealed class TripCatchSummary
 {
     public Guid Id { get; init; }
 
-    public Guid UserId { get; init; }
-
-    public Guid AnglerUserId { get; init; }
+    public Guid CaughtByUserId { get; init; }
 
     public Guid RecordedByUserId { get; init; }
 

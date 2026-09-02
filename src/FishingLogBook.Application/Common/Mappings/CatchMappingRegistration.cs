@@ -1,6 +1,5 @@
 using FishingLogBook.Application.Args;
 using FishingLogBook.Application.Catches.Commands;
-using FishingLogBook.Application.Catches.Queries;
 using FishingLogBook.Domain.Catches;
 using FishingLogBook.Shared.Dtos;
 using Mapster;
@@ -38,8 +37,7 @@ public sealed class CatchMappingRegistration : IRegister
                         source.Location.Visibility,
                         source.Location.ConsentVersion))
             {
-                UserId = source.UserId,
-                AnglerUserId = source.AnglerUserId,
+                CaughtByUserId = source.CaughtByUserId,
                 RecordedByUserId = source.RecordedByUserId,
                 TripId = source.TripId,
                 SpeciesName = source.SpeciesName,

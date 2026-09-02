@@ -21,7 +21,7 @@ public class BaseCatchViewTest
     protected static readonly Guid CatchId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
     protected static readonly Guid PhotographId = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    protected static readonly Guid AnglerUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    protected static readonly Guid CaughtByUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     protected static readonly Guid RecorderUserId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     protected static readonly DateTimeOffset CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z");
 
@@ -90,7 +90,6 @@ public class BaseCatchViewTest
     {
         return new CatchViewDto(CatchId, OwnerUserId, CaughtOn, location)
         {
-            AnglerUserId = AnglerUserId,
             AnglerName = anglerName,
             RecordedByUserId = RecorderUserId,
             RecordedByName = recordedByName,

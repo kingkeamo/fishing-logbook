@@ -66,8 +66,7 @@ public class WhenTestingGetView : BaseCatchServiceTest
         var catchRecord = new Catch
         {
             Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            UserId = ownerUserId,
-            AnglerUserId = ownerUserId,
+            CaughtByUserId = ownerUserId,
             RecordedByUserId = ownerUserId,
             TripId = tripId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
@@ -116,8 +115,8 @@ public class WhenTestingGetView : BaseCatchServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.UserId.Should().Be(ownerUserId);
-        result.Value.AnglerUserId.Should().Be(ownerUserId);
+        result.Value.CaughtByUserId.Should().Be(ownerUserId);
+        result.Value.CaughtByUserId.Should().Be(ownerUserId);
         result.Value.RecordedByUserId.Should().Be(ownerUserId);
         result.Value.SpeciesName.Should().Be("Pike");
         result.Value.Weight.Should().Be(2.5m);
@@ -130,7 +129,7 @@ public class WhenTestingGetView : BaseCatchServiceTest
         result.Value.RecordedByName.Should().Be("Owner Angler");
         await MockCatchRepository.Received(1).GetDetailForUserAsync(catchRecord.Id, CurrentUserId, Arg.Any<CancellationToken>());
         await MockCatchLocationPrivacyService.Received(1).GetExposureAsync(
-            Arg.Is<Catch>(item => item.Id == catchRecord.Id && item.UserId == ownerUserId),
+            Arg.Is<Catch>(item => item.Id == catchRecord.Id && item.CaughtByUserId == ownerUserId),
             CurrentUserId,
             Arg.Any<CancellationToken>());
         await MockCatchLocationPrivacyService.DidNotReceive().GetExposureAsync(
@@ -147,8 +146,7 @@ public class WhenTestingGetView : BaseCatchServiceTest
         var catchRecord = new Catch
         {
             Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            UserId = CurrentUserId,
-            AnglerUserId = CurrentUserId,
+            CaughtByUserId = CurrentUserId,
             RecordedByUserId = CurrentUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Photographs = [new CatchPhotograph { Id = photographId, CatchId = Guid.Empty, ContentType = "image/jpeg" }]
@@ -185,8 +183,7 @@ public class WhenTestingGetView : BaseCatchServiceTest
         var catchRecord = new Catch
         {
             Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-            UserId = CurrentUserId,
-            AnglerUserId = CurrentUserId,
+            CaughtByUserId = CurrentUserId,
             RecordedByUserId = CurrentUserId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Photographs = [new CatchPhotograph { Id = photographId, CatchId = Guid.Empty, ContentType = "image/jpeg" }]

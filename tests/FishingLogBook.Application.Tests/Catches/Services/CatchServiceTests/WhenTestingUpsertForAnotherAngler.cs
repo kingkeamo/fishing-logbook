@@ -14,7 +14,7 @@ namespace FishingLogBook.Application.Tests.Catches.Services.CatchServiceTests;
 public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
 {
     private static readonly Guid RecorderUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid AnglerUserId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    private static readonly Guid CaughtByUserId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     private static readonly Guid TripId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     private static readonly DateTimeOffset StartedOn = DateTimeOffset.Parse("2026-08-17T07:00:00Z");
 
@@ -24,11 +24,11 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
         // Arrange
         GivenRecorderCanContribute();
         MockTripAccessService
-            .ResolveForAsync(TripId, AnglerUserId, Arg.Any<CancellationToken>())
-            .Returns(Result.Ok(TripAccess.Resolve(Trip(), AnglerUserId, participant: null)));
+            .ResolveForAsync(TripId, CaughtByUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok(TripAccess.Resolve(Trip(), CaughtByUserId, participant: null)));
 
         // Act
-        var result = await Sut.UpsertAsync(Args(AnglerUserId), CancellationToken.None);
+        var result = await Sut.UpsertAsync(Args(CaughtByUserId), CancellationToken.None);
 
         // Assert
         result.IsFailed.Should().BeTrue();
@@ -42,22 +42,22 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
         // Arrange
         GivenRecorderCanContribute();
         MockTripAccessService
-            .ResolveForAsync(TripId, AnglerUserId, Arg.Any<CancellationToken>())
+            .ResolveForAsync(TripId, CaughtByUserId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok(TripAccess.Resolve(
                 Trip(),
-                AnglerUserId,
+                CaughtByUserId,
                 new TripParticipant
                 {
                     Id = Guid.NewGuid(),
                     TripId = TripId,
-                    UserId = AnglerUserId,
+                    UserId = CaughtByUserId,
                     Status = TripParticipantStatusEnum.Pending,
                     InvitedByUserId = Trip().OwnerUserId,
                     InvitedOn = StartedOn.AddDays(-1)
                 })));
 
         // Act
-        var result = await Sut.UpsertAsync(Args(AnglerUserId), CancellationToken.None);
+        var result = await Sut.UpsertAsync(Args(CaughtByUserId), CancellationToken.None);
 
         // Assert
         result.IsFailed.Should().BeTrue();
@@ -71,15 +71,15 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
         // Arrange
         GivenRecorderCanContribute();
         MockTripAccessService
-            .ResolveForAsync(TripId, AnglerUserId, Arg.Any<CancellationToken>())
+            .ResolveForAsync(TripId, CaughtByUserId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok(TripAccess.Resolve(
                 Trip(),
-                AnglerUserId,
+                CaughtByUserId,
                 new TripParticipant
                 {
                     Id = Guid.NewGuid(),
                     TripId = TripId,
-                    UserId = AnglerUserId,
+                    UserId = CaughtByUserId,
                     Status = TripParticipantStatusEnum.Declined,
                     InvitedByUserId = Trip().OwnerUserId,
                     InvitedOn = StartedOn.AddDays(-1),
@@ -87,7 +87,7 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
                 })));
 
         // Act
-        var result = await Sut.UpsertAsync(Args(AnglerUserId), CancellationToken.None);
+        var result = await Sut.UpsertAsync(Args(CaughtByUserId), CancellationToken.None);
 
         // Assert
         result.IsFailed.Should().BeTrue();
@@ -101,15 +101,15 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
         // Arrange
         GivenRecorderCanContribute();
         MockTripAccessService
-            .ResolveForAsync(TripId, AnglerUserId, Arg.Any<CancellationToken>())
+            .ResolveForAsync(TripId, CaughtByUserId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok(TripAccess.Resolve(
                 Trip(),
-                AnglerUserId,
+                CaughtByUserId,
                 new TripParticipant
                 {
                     Id = Guid.NewGuid(),
                     TripId = TripId,
-                    UserId = AnglerUserId,
+                    UserId = CaughtByUserId,
                     Status = TripParticipantStatusEnum.Accepted,
                     InvitedByUserId = Trip().OwnerUserId,
                     InvitedOn = StartedOn.AddDays(-1),
@@ -118,7 +118,7 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
                 })));
 
         // Act
-        var result = await Sut.UpsertAsync(Args(AnglerUserId), CancellationToken.None);
+        var result = await Sut.UpsertAsync(Args(CaughtByUserId), CancellationToken.None);
 
         // Assert
         result.IsFailed.Should().BeTrue();
@@ -145,8 +145,8 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
         result.IsSuccess.Should().BeTrue();
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(saved =>
-                saved.UserId == trip.OwnerUserId
-                && saved.AnglerUserId == trip.OwnerUserId
+                saved.CaughtByUserId == trip.OwnerUserId
+                && saved.CaughtByUserId == trip.OwnerUserId
                 && saved.RecordedByUserId == RecorderUserId),
             Arg.Any<CancellationToken>());
     }
@@ -157,15 +157,15 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
         // Arrange
         GivenRecorderCanContribute();
         MockTripAccessService
-            .ResolveForAsync(TripId, AnglerUserId, Arg.Any<CancellationToken>())
+            .ResolveForAsync(TripId, CaughtByUserId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok(TripAccess.Resolve(
                 Trip(),
-                AnglerUserId,
+                CaughtByUserId,
                 new TripParticipant
                 {
                     Id = Guid.NewGuid(),
                     TripId = TripId,
-                    UserId = AnglerUserId,
+                    UserId = CaughtByUserId,
                     Status = TripParticipantStatusEnum.Accepted,
                     InvitedByUserId = Trip().OwnerUserId,
                     InvitedOn = StartedOn.AddDays(-1),
@@ -174,20 +174,20 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
         MockCatchRepository.UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
 
-        var args = Args(AnglerUserId, spoofedRecorderUserId: Guid.NewGuid());
+        var args = Args(CaughtByUserId, spoofedRecorderUserId: Guid.NewGuid());
 
         // Act
         var result = await Sut.UpsertAsync(args, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value.UserId.Should().Be(AnglerUserId);
-        result.Value.AnglerUserId.Should().Be(AnglerUserId);
+        result.Value.CaughtByUserId.Should().Be(CaughtByUserId);
+        result.Value.CaughtByUserId.Should().Be(CaughtByUserId);
         result.Value.RecordedByUserId.Should().Be(RecorderUserId);
         await MockCatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(saved =>
-                saved.UserId == AnglerUserId
-                && saved.AnglerUserId == AnglerUserId
+                saved.CaughtByUserId == CaughtByUserId
+                && saved.CaughtByUserId == CaughtByUserId
                 && saved.RecordedByUserId == RecorderUserId),
             Arg.Any<CancellationToken>());
     }
@@ -234,7 +234,7 @@ public class WhenTestingUpsertForAnotherAngler : BaseCatchServiceTest
                 [new CatchPhotographDto(Guid.NewGuid(), catchId, PhotographContentTypeConstants.Jpeg)])
             {
                 TripId = TripId,
-                AnglerUserId = selectedAnglerUserId,
+                CaughtByUserId = selectedAnglerUserId,
                 RecordedByUserId = spoofedRecorderUserId ?? RecorderUserId
             }
         };

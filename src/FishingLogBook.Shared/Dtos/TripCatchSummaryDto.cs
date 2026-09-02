@@ -10,7 +10,7 @@ public sealed record TripCatchSummaryDto(Guid Id, DateTimeOffset CaughtOn)
 
     public string? PhotographUrl { get; init; }
 
-    public Guid AnglerUserId { get; init; }
+    public Guid CaughtByUserId { get; init; }
 
     public Guid RecordedByUserId { get; init; }
 }

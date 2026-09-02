@@ -16,6 +16,7 @@ internal static class CatchJson
 
     public static string SerializeMetadata(CatchModel catchRecord)
     {
+        var caughtByUserId = catchRecord.CaughtByUserId;
         var metadata = new CatchMetadata(
             catchRecord.Id,
             catchRecord.CaughtOn,
@@ -29,10 +30,9 @@ internal static class CatchJson
                     photograph.ObjectKey))
                 .ToArray(),
             catchRecord.Location,
-            catchRecord.UserId,
+            caughtByUserId,
             catchRecord.SyncStatus,
             catchRecord.MetadataSyncStatus,
-            catchRecord.AnglerUserId,
             catchRecord.RecordedByUserId,
             catchRecord.Weight,
             catchRecord.Length,
@@ -40,7 +40,9 @@ internal static class CatchJson
             catchRecord.BaitOrLure,
             catchRecord.Notes,
             catchRecord.SyncedAt,
-            catchRecord.TripId);
+            catchRecord.TripId,
+            UserId: caughtByUserId,
+            AnglerUserId: caughtByUserId);
         return JsonSerializer.Serialize(metadata, Options);
     }
 
@@ -55,17 +57,17 @@ internal static class CatchJson
         CatchMetadata metadata,
         IReadOnlyList<CatchPhotographModel> photographs)
     {
+        var caughtByUserId = ResolveCaughtByUserId(metadata);
         return new CatchModel(
             metadata.Id,
             metadata.CaughtOn,
             photographs,
             metadata.SpeciesName,
             metadata.Location,
-            metadata.UserId,
+            caughtByUserId,
             metadata.SyncStatus,
             metadata.MetadataSyncStatus,
-            metadata.AnglerUserId == Guid.Empty ? metadata.UserId : metadata.AnglerUserId,
-            metadata.RecordedByUserId == Guid.Empty ? metadata.UserId : metadata.RecordedByUserId,
+            metadata.RecordedByUserId == Guid.Empty ? caughtByUserId : metadata.RecordedByUserId,
             metadata.Weight,
             metadata.Length,
             metadata.Method,
@@ -89,6 +91,21 @@ internal static class CatchJson
                 photograph.ObjectKey))
             .ToArray();
         return ToModel(metadata, photographs);
+    }
+
+    private static Guid ResolveCaughtByUserId(CatchMetadata metadata)
+    {
+        if (metadata.CaughtByUserId != Guid.Empty)
+        {
+            return metadata.CaughtByUserId;
+        }
+
+        if (metadata.AnglerUserId != Guid.Empty)
+        {
+            return metadata.AnglerUserId;
+        }
+
+        return metadata.UserId;
     }
 
     private static IReadOnlyList<CatchPhotographModel> OrderPhotographs(
@@ -136,10 +153,9 @@ internal static class CatchJson
         string? SpeciesName,
         IReadOnlyList<CatchPhotographMetadata> Photographs,
         CatchLocationModel? Location = null,
-        Guid UserId = default,
+        Guid CaughtByUserId = default,
         SyncStatus SyncStatus = SyncStatus.SavedLocally,
         SyncStatus MetadataSyncStatus = SyncStatus.SavedLocally,
-        Guid AnglerUserId = default,
         Guid RecordedByUserId = default,
         decimal? Weight = null,
         decimal? Length = null,
@@ -147,7 +163,9 @@ internal static class CatchJson
         string? BaitOrLure = null,
         string? Notes = null,
         DateTimeOffset? SyncedAt = null,
-        Guid? TripId = null);
+        Guid? TripId = null,
+        Guid UserId = default,
+        Guid AnglerUserId = default);
 
     private sealed record CatchPhotographMetadata(
         Guid Id,

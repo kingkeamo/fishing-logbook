@@ -135,8 +135,7 @@ public abstract class BaseCatchRepositoryTest
         return new Catch
         {
             Id = id,
-            UserId = userId,
-            AnglerUserId = userId,
+            CaughtByUserId = userId,
             RecordedByUserId = userId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             Photographs = photos
@@ -144,7 +143,7 @@ public abstract class BaseCatchRepositoryTest
     }
 
     protected static Catch NewCatch(
-        Guid anglerUserId,
+        Guid CaughtByUserId,
         Guid recordedByUserId,
         Guid? tripId,
         Guid? catchId = null)
@@ -153,8 +152,7 @@ public abstract class BaseCatchRepositoryTest
         return new Catch
         {
             Id = id,
-            UserId = anglerUserId,
-            AnglerUserId = anglerUserId,
+            CaughtByUserId = CaughtByUserId,
             RecordedByUserId = recordedByUserId,
             TripId = tripId,
             CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
@@ -191,8 +189,7 @@ public abstract class BaseCatchRepositoryTest
         return new Catch
         {
             Id = catchRecord.Id,
-            UserId = catchRecord.UserId,
-            AnglerUserId = catchRecord.AnglerUserId,
+            CaughtByUserId = catchRecord.CaughtByUserId,
             RecordedByUserId = catchRecord.RecordedByUserId,
             CaughtOn = catchRecord.CaughtOn,
             SpeciesName = catchRecord.SpeciesName,

@@ -97,7 +97,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
         // Assert
         await location.DidNotReceive().TryCaptureAsync(Arg.Any<bool>(), Arg.Any<CancellationToken>());
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId && catchRecord.Location == null && catchRecord.Photographs.Count == 1),
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId && catchRecord.Location == null && catchRecord.Photographs.Count == 1),
             Arg.Any<CancellationToken>());
         cut.WaitForAssertion(() =>
         {
@@ -133,7 +133,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
         // Assert
         await location.Received(1).TryCaptureAsync(false, Arg.Any<CancellationToken>());
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId && catchRecord.Location == null),
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
         cut.WaitForAssertion(() => cut.Find("#catch-saved").TextContent.Should().Contain("Catch saved on this device"));
         cut.FindAll("#catch-location-saved").Should().BeEmpty();
@@ -159,7 +159,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
 
         // Assert
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId && catchRecord.Location == null && catchRecord.Photographs.Count == 1),
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId && catchRecord.Location == null && catchRecord.Photographs.Count == 1),
             Arg.Any<CancellationToken>());
         cut.WaitForAssertion(() =>
         {
@@ -190,7 +190,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
         // Assert
         await location.Received(1).TryCaptureAsync(false, Arg.Any<CancellationToken>());
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId && catchRecord.Location == null),
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId && catchRecord.Location == null),
             Arg.Any<CancellationToken>());
         cut.WaitForAssertion(() => cut.Find("#catch-saved").TextContent.Should().Contain("Catch saved on this device"));
         cut.FindAll("#catch-location-saved").Should().BeEmpty();
@@ -367,7 +367,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
         saved[1].Location.Should().Be(secondLocation);
         saved[1].Location.Should().NotBe(saved[0].Location);
         await store.Received(2).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId && catchRecord.Location != null),
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId && catchRecord.Location != null),
             Arg.Any<CancellationToken>());
     }
 
@@ -392,7 +392,7 @@ public class WhenTestingLocation : BaseRecordCatchTest
 
         // Assert
         await store.Received(1).SaveAsync(
-            Arg.Is<CatchModel>(catchRecord => catchRecord.UserId == OwnerUserId &&
+            Arg.Is<CatchModel>(catchRecord => catchRecord.CaughtByUserId == OwnerUserId &&
                 catchRecord.Location == captured
                 && catchRecord.Location!.Source == LocationDefaults.DeviceGps
                 && catchRecord.Location.Visibility == LocationDefaults.Private

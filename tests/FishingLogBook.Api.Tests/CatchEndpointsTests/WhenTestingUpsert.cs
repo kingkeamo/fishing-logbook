@@ -83,16 +83,16 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
-        body!.UserId.Should().Be(current!.UserId);
-        body.AnglerUserId.Should().Be(current.UserId);
+        body!.CaughtByUserId.Should().Be(current!.UserId);
+        body.CaughtByUserId.Should().Be(current.UserId);
         body.RecordedByUserId.Should().Be(current.UserId);
         body.RecordedByUserId.Should().NotBe(spoofedRecorder);
         body.Id.Should().Be(catchId);
         body.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId);
         await _factory.CatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
-                item.UserId == current.UserId
-                && item.AnglerUserId == current.UserId
+                item.CaughtByUserId == current.UserId
+                && item.CaughtByUserId == current.UserId
                 && item.RecordedByUserId == current.UserId
                 && item.Id == catchId
                 && item.Photographs[0].Id == photographId),
@@ -111,8 +111,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
             [new CatchPhotographDto(photographId, catchId, PhotographContentTypeConstants.Jpeg)])
         {
-            UserId = spoofedAngler,
-            AnglerUserId = spoofedAngler
+            CaughtByUserId = spoofedAngler
         };
         ResetCatchRepository();
         var client = _factory.CreateAuthenticatedClient();
@@ -187,7 +186,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         body.Should().NotBeNull();
         body!.Id.Should().Be(dto.Id);
         body.CaughtOn.Should().Be(dto.CaughtOn);
-        body.UserId.Should().Be(current!.UserId);
+        body.CaughtByUserId.Should().Be(current!.UserId);
         body.Photographs.Should().ContainSingle();
         body.Location.Should().BeNull();
         await _factory.CatchRepository.Received(1).UpsertAsync(
@@ -244,11 +243,11 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         body.Method.Should().Be("Lure");
         body.BaitOrLure.Should().Be("Spinner");
         body.Notes.Should().Be("Weedline");
-        body.UserId.Should().Be(current!.UserId);
+        body.CaughtByUserId.Should().Be(current!.UserId);
         await _factory.CatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
                 item.Id == dto.Id
-                && item.UserId == current.UserId
+                && item.CaughtByUserId == current.UserId
                 && item.SpeciesName == "Pike"
                 && item.Weight == 2.5m
                 && item.Length == 64m
@@ -319,7 +318,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
-        body!.UserId.Should().Be(current!.UserId);
+        body!.CaughtByUserId.Should().Be(current!.UserId);
         body.Location.Should().Be(location);
         body.Location!.Visibility.Should().Be(LocationDefaults.Private);
         body.Location.Source.Should().Be(LocationDefaults.DeviceGps);
@@ -327,7 +326,7 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         await _factory.CatchRepository.Received(1).UpsertAsync(
             Arg.Is<Catch>(item =>
                 item.Id == catchId
-                && item.UserId == current.UserId
+                && item.CaughtByUserId == current.UserId
                 && item.Location != null
                 && item.Location.Latitude == 53.2707
                 && item.Location.Longitude == -9.0568
@@ -362,9 +361,9 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         current.Should().NotBeNull();
         body.Should().NotBeNull();
-        body!.UserId.Should().Be(current!.UserId);
+        body!.CaughtByUserId.Should().Be(current!.UserId);
         await _factory.CatchRepository.Received(1).UpsertAsync(
-            Arg.Is<Catch>(item => item.Id == dto.Id && item.UserId == current.UserId),
+            Arg.Is<Catch>(item => item.Id == dto.Id && item.CaughtByUserId == current.UserId),
             Arg.Any<CancellationToken>());
         await _factory.UserPlatformCapabilityRepository.DidNotReceive().HasAsync(
             Arg.Any<FindUserPlatformCapabilityArgs>(),
@@ -403,9 +402,9 @@ public class WhenTestingUpsert : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body.Should().NotBeNull();
-        body!.UserId.Should().Be(current!.UserId);
+        body!.CaughtByUserId.Should().Be(current!.UserId);
         await _factory.CatchRepository.Received(1).UpsertAsync(
-            Arg.Is<Catch>(item => item.Id == dto.Id && item.UserId == current.UserId),
+            Arg.Is<Catch>(item => item.Id == dto.Id && item.CaughtByUserId == current.UserId),
             Arg.Any<CancellationToken>());
         await _factory.UserPlatformCapabilityRepository.DidNotReceive().HasAsync(
             Arg.Any<FindUserPlatformCapabilityArgs>(),

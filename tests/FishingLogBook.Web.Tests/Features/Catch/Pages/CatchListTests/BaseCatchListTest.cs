@@ -148,7 +148,7 @@ public class BaseCatchListTest
         decimal? weight = null,
         decimal? length = null,
         CatchLocationModel? location = null,
-        Guid? anglerUserId = null,
+        Guid? CaughtByUserId = null,
         Guid? recordedByUserId = null,
         bool withPhotograph = true)
     {
@@ -160,10 +160,9 @@ public class BaseCatchListTest
                 : [],
             SpeciesName: speciesName,
             Location: location,
-            UserId: OwnerUserId,
+            CaughtByUserId: CaughtByUserId ?? OwnerUserId,
             SyncStatus: syncStatus,
             MetadataSyncStatus: syncStatus,
-            AnglerUserId: anglerUserId ?? OwnerUserId,
             RecordedByUserId: recordedByUserId ?? OwnerUserId,
             Weight: weight,
             Length: length,
