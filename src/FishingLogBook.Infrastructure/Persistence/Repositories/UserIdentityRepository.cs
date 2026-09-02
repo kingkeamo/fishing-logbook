@@ -90,11 +90,11 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
         CancellationToken cancellationToken)
     {
         const string insertUserSql = """
-            INSERT INTO "User" ("Id", "Email")
+            INSERT INTO users (id, email)
             VALUES (@Id, @Email);
             """;
         const string insertIdentitySql = """
-            INSERT INTO "UserIdentity" ("Id", "UserId", "Provider", "Subject")
+            INSERT INTO useridentities (id, userid, provider, subject)
             VALUES (@Id, @UserId, @Provider, @Subject);
             """;
 
@@ -145,9 +145,9 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
         CancellationToken cancellationToken)
     {
         const string sql = """
-            UPDATE "User"
-            SET "Email" = @Email
-            WHERE "Id" = @Id AND "Email" IS DISTINCT FROM @Email;
+            UPDATE users
+            SET email = @Email
+            WHERE id = @Id AND email IS DISTINCT FROM @Email;
             """;
         await connection.ExecuteAsync(new CommandDefinition(
             sql,
@@ -163,9 +163,9 @@ public sealed class UserIdentityRepository : IUserIdentityRepository
         CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT "UserId"
-            FROM "UserIdentity"
-            WHERE "Provider" = @Provider AND "Subject" = @Subject;
+            SELECT userid
+            FROM useridentities
+            WHERE provider = @Provider AND subject = @Subject;
             """;
 
         var command = new CommandDefinition(

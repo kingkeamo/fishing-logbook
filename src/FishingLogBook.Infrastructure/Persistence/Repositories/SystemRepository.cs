@@ -13,18 +13,18 @@ public sealed class SystemRepository : ISystemRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<SystemTestRecord?> GetSystemTestRecordAsync(CancellationToken cancellationToken)
+    public async Task<SystemHealth?> GetSystemHealthAsync(CancellationToken cancellationToken)
     {
         const string sql = """
-            SELECT "Id", "Name", "CreatedOn"
-            FROM "SystemTest"
-            ORDER BY "CreatedOn"
+            SELECT id, name, createdon
+            FROM systemhealth
+            ORDER BY createdon
             LIMIT 1;
             """;
 
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
         var command = new CommandDefinition(sql, cancellationToken: cancellationToken);
 
-        return await connection.QueryFirstOrDefaultAsync<SystemTestRecord>(command);
+        return await connection.QueryFirstOrDefaultAsync<SystemHealth>(command);
     }
 }

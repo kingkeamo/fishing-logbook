@@ -141,7 +141,7 @@ stored in the browser. The database seed name is not translated (it comes from P
 The API exposes:
 
 - `GET /health` — liveness, returns `{ "status": "Healthy" }`
-- `GET /api/system/database` — performs a real query against the `SystemTest` table and
+- `GET /api/system/database` — performs a real query against the `systemhealth` table and
   returns the seeded record. Returns HTTP 503 if the database cannot be reached (no faked
   health).
 

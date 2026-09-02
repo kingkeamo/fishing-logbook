@@ -26,10 +26,10 @@ public sealed class OfflineAccessPreferenceRepository : IOfflineAccessPreference
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                SELECT "OfflineAccessEnabled" AS "Enabled",
-                       "OfflineAccessEnabledAt" AS "EnabledAt"
-                FROM "User"
-                WHERE "Id" = @UserId;
+                SELECT offlineaccessenabled AS enabled,
+                       offlineaccessenabledat AS enabledat
+                FROM users
+                WHERE id = @UserId;
                 """;
             var value = await connection.QuerySingleOrDefaultAsync<OfflineAccessPreferenceDto>(
                 new CommandDefinition(sql, new { UserId = userId }, cancellationToken: cancellationToken));
@@ -53,15 +53,15 @@ public sealed class OfflineAccessPreferenceRepository : IOfflineAccessPreference
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                UPDATE "User"
-                SET "OfflineAccessEnabled" = @Enabled,
-                    "OfflineAccessEnabledAt" = CASE
+                UPDATE users
+                SET offlineaccessenabled = @Enabled,
+                    offlineaccessenabledat = CASE
                         WHEN @Enabled THEN CURRENT_TIMESTAMP
-                        ELSE "OfflineAccessEnabledAt"
+                        ELSE offlineaccessenabledat
                     END
-                WHERE "Id" = @UserId
-                RETURNING "OfflineAccessEnabled" AS "Enabled",
-                          "OfflineAccessEnabledAt" AS "EnabledAt";
+                WHERE id = @UserId
+                RETURNING offlineaccessenabled AS enabled,
+                          offlineaccessenabledat AS enabledat;
                 """;
             var value = await connection.QuerySingleOrDefaultAsync<OfflineAccessPreferenceDto>(
                 new CommandDefinition(

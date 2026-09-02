@@ -2,33 +2,33 @@ using FishingLogBook.Domain.SystemStatus;
 
 namespace FishingLogBook.Tests.Common.Builders;
 
-public sealed class SystemTestRecordBuilder
+public sealed class SystemHealthBuilder
 {
     private Guid _id = Guid.NewGuid();
     private string _name = "FishingLogBook database online";
     private DateTimeOffset _createdOn = DateTimeOffset.UtcNow;
 
-    public SystemTestRecordBuilder WithId(Guid id)
+    public SystemHealthBuilder WithId(Guid id)
     {
         _id = id;
         return this;
     }
 
-    public SystemTestRecordBuilder WithName(string name)
+    public SystemHealthBuilder WithName(string name)
     {
         _name = name;
         return this;
     }
 
-    public SystemTestRecordBuilder WithCreatedOn(DateTimeOffset createdOn)
+    public SystemHealthBuilder WithCreatedOn(DateTimeOffset createdOn)
     {
         _createdOn = createdOn;
         return this;
     }
 
-    public SystemTestRecord Build()
+    public SystemHealth Build()
     {
-        return new SystemTestRecord
+        return new SystemHealth
         {
             Id = _id,
             Name = _name,

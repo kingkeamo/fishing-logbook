@@ -14,14 +14,14 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
 
     private const string SelectSql = """
         SELECT
-            "Id",
-            "TripId",
-            "ContributedByUserId",
-            "ObjectKey",
-            "ContentType",
-            "CapturedOn",
-            "AddedOn"
-        FROM "TripPhotograph"
+            id,
+            tripid,
+            contributedbyuserid,
+            objectkey,
+            contenttype,
+            capturedon,
+            addedon
+        FROM tripphotographs
         """;
 
     private readonly IDbConnectionFactory _connectionFactory;
@@ -45,7 +45,7 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = $"""
                 {SelectSql}
-                WHERE "Id" = @Id;
+                WHERE id = @Id;
                 """;
             var row = await connection.QuerySingleOrDefaultAsync<TripPhotographPersistenceRow>(
                 new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
@@ -67,8 +67,8 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = $"""
                 {SelectSql}
-                WHERE "TripId" = @TripId
-                ORDER BY COALESCE("CapturedOn", "AddedOn"), "Id";
+                WHERE tripid = @TripId
+                ORDER BY COALESCE(capturedon, addedon), id;
                 """;
             var rows = await connection.QueryAsync<TripPhotographPersistenceRow>(
                 new CommandDefinition(sql, new { TripId = tripId }, cancellationToken: cancellationToken));
@@ -90,14 +90,14 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                INSERT INTO "TripPhotograph" (
-                    "Id",
-                    "TripId",
-                    "ContributedByUserId",
-                    "ObjectKey",
-                    "ContentType",
-                    "CapturedOn",
-                    "AddedOn")
+                INSERT INTO tripphotographs (
+                    id,
+                    tripid,
+                    contributedbyuserid,
+                    objectkey,
+                    contenttype,
+                    capturedon,
+                    addedon)
                 VALUES (
                     @Id,
                     @TripId,
@@ -106,13 +106,13 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
                     @ContentType,
                     @CapturedOn,
                     @AddedOn)
-                ON CONFLICT ("Id") DO UPDATE SET
-                    "ObjectKey" = EXCLUDED."ObjectKey",
-                    "ContentType" = EXCLUDED."ContentType",
-                    "CapturedOn" = EXCLUDED."CapturedOn",
-                    "AddedOn" = EXCLUDED."AddedOn",
-                    "UpdatedOn" = now()
-                WHERE "TripPhotograph"."TripId" = EXCLUDED."TripId";
+                ON CONFLICT (id) DO UPDATE SET
+                    objectkey = EXCLUDED.objectkey,
+                    contenttype = EXCLUDED.contenttype,
+                    capturedon = EXCLUDED.capturedon,
+                    addedon = EXCLUDED.addedon,
+                    updatedon = now()
+                WHERE tripphotographs.tripid = EXCLUDED.tripid;
                 """;
             await connection.ExecuteAsync(new CommandDefinition(
                 sql,
@@ -145,7 +145,7 @@ public sealed class TripPhotographRepository : ITripPhotographRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(
-                """DELETE FROM "TripPhotograph" WHERE "Id" = @Id;""",
+                """DELETE FROM tripphotographs WHERE id = @Id;""",
                 new { Id = id },
                 cancellationToken: cancellationToken));
             return Result.Ok();

@@ -42,7 +42,7 @@ public class WhenTestingGrant : BaseUserPlatformCapabilityRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "UserPlatformCapability" ("UserId", "CapabilityCode")
+            INSERT INTO userplatformcapabilities (userid, capabilitycode)
             VALUES (@UserId, @CapabilityCode);
             """,
             new { UserId = userId, CapabilityCode = "Angler" });
@@ -62,7 +62,7 @@ public class WhenTestingGrant : BaseUserPlatformCapabilityRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "UserPlatformCapability" ("UserId", "CapabilityCode")
+            INSERT INTO userplatformcapabilities (userid, capabilitycode)
             VALUES (@UserId, @CapabilityCode);
             """,
             new { UserId = userId, CapabilityCode = "ClubAdmin" });
@@ -83,7 +83,7 @@ public class WhenTestingGrant : BaseUserPlatformCapabilityRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "UserPlatformCapability" ("UserId", "CapabilityCode")
+            INSERT INTO userplatformcapabilities (userid, capabilitycode)
             VALUES (@UserId, @CapabilityCode);
             """,
             new { UserId = userId, CapabilityCode = nameof(PlatformCapabilityEnum.Guide) });
@@ -184,13 +184,13 @@ public class WhenTestingGrant : BaseUserPlatformCapabilityRepositoryTest
         var granted = await Sut.GrantAsync(Association(userId, PlatformCapabilityEnum.Guide), CancellationToken.None);
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         await connection.ExecuteAsync(
-            """DELETE FROM "UserIdentity" WHERE "UserId" = @Id;""",
+            """DELETE FROM useridentities WHERE userid = @Id;""",
             new { Id = userId });
 
         try
         {
             var act = () => connection.ExecuteAsync(
-                """DELETE FROM "User" WHERE "Id" = @Id;""",
+                """DELETE FROM users WHERE id = @Id;""",
                 new { Id = userId });
 
             // Act
@@ -203,10 +203,10 @@ public class WhenTestingGrant : BaseUserPlatformCapabilityRepositoryTest
         finally
         {
             await connection.ExecuteAsync(
-                """DELETE FROM "UserPlatformCapability" WHERE "UserId" = @Id;""",
+                """DELETE FROM userplatformcapabilities WHERE userid = @Id;""",
                 new { Id = userId });
             await connection.ExecuteAsync(
-                """DELETE FROM "User" WHERE "Id" = @Id;""",
+                """DELETE FROM users WHERE id = @Id;""",
                 new { Id = userId });
         }
     }

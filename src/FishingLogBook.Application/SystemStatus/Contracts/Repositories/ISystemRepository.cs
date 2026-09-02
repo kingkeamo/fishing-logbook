@@ -4,5 +4,5 @@ namespace FishingLogBook.Application.SystemStatus.Contracts.Repositories;
 
 public interface ISystemRepository
 {
-    Task<SystemTestRecord?> GetSystemTestRecordAsync(CancellationToken cancellationToken);
+    Task<SystemHealth?> GetSystemHealthAsync(CancellationToken cancellationToken);
 }

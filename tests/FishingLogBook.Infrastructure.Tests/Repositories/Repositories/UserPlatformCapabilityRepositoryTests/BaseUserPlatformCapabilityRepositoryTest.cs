@@ -66,8 +66,8 @@ public abstract class BaseUserPlatformCapabilityRepositoryTest
         return await connection.ExecuteScalarAsync<int>(
             """
             SELECT COUNT(*)
-            FROM "UserPlatformCapability"
-            WHERE "UserId" = @UserId;
+            FROM userplatformcapabilities
+            WHERE userid = @UserId;
             """,
             new { UserId = userId });
     }
@@ -78,8 +78,8 @@ public abstract class BaseUserPlatformCapabilityRepositoryTest
         return await connection.ExecuteScalarAsync<int>(
             """
             SELECT COUNT(*)
-            FROM "UserPlatformCapability"
-            WHERE "UserId" = @UserId AND "CapabilityCode" = @CapabilityCode;
+            FROM userplatformcapabilities
+            WHERE userid = @UserId AND capabilitycode = @CapabilityCode;
             """,
             new { UserId = userId, CapabilityCode = capability.ToString() });
     }
@@ -88,7 +88,7 @@ public abstract class BaseUserPlatformCapabilityRepositoryTest
     {
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var codes = await connection.QueryAsync<string>(
-            """SELECT "Code" FROM "PlatformCapability" ORDER BY "Code";""");
+            """SELECT code FROM platformcapabilities ORDER BY code;""");
         return codes.ToArray();
     }
 }

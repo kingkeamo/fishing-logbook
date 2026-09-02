@@ -115,7 +115,7 @@ public class WhenTestingGetByTripId : BaseTripPhotographRepositoryTest
         storedTrip.Value.Should().NotBeNull();
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var remaining = await connection.ExecuteScalarAsync<int>(
-            """SELECT COUNT(*) FROM "TripPhotograph" WHERE "TripId" = @TripId;""",
+            """SELECT COUNT(*) FROM tripphotographs WHERE tripid = @TripId;""",
             new { TripId = trip.Id });
         remaining.Should().Be(0);
     }

@@ -58,18 +58,18 @@ public abstract class BaseUserIdentityRepositoryTest
     {
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         return await connection.QuerySingleOrDefaultAsync<string>(
-            """SELECT "Email" FROM "User" WHERE "Id" = @Id;""",
+            """SELECT email FROM users WHERE id = @Id;""",
             new { Id = userId });
     }
 
     protected async Task<int> CountUsersAsync()
     {
-        return await ScalarCountAsync("""SELECT COUNT(*) FROM "User";""");
+        return await ScalarCountAsync("""SELECT COUNT(*) FROM users;""");
     }
 
     protected async Task<int> CountIdentitiesAsync()
     {
-        return await ScalarCountAsync("""SELECT COUNT(*) FROM "UserIdentity";""");
+        return await ScalarCountAsync("""SELECT COUNT(*) FROM useridentities;""");
     }
 
     protected async Task<int> CountIdentitiesAsync(string provider, string subject)
@@ -78,8 +78,8 @@ public abstract class BaseUserIdentityRepositoryTest
         return await connection.ExecuteScalarAsync<int>(
             """
             SELECT COUNT(*)
-            FROM "UserIdentity"
-            WHERE "Provider" = @Provider AND "Subject" = @Subject;
+            FROM useridentities
+            WHERE provider = @Provider AND subject = @Subject;
             """,
             new { Provider = provider, Subject = subject });
     }
@@ -89,11 +89,11 @@ public abstract class BaseUserIdentityRepositoryTest
         return await ScalarCountAsync(
             """
             SELECT COUNT(*)
-            FROM "User" u
+            FROM users u
             WHERE NOT EXISTS (
                 SELECT 1
-                FROM "UserIdentity" i
-                WHERE i."UserId" = u."Id");
+                FROM useridentities i
+                WHERE i.userid = u.id);
             """);
     }
 

@@ -1,6 +1,6 @@
 namespace FishingLogBook.Domain.SystemStatus;
 
-public sealed class SystemTestRecord
+public sealed class SystemHealth
 {
     public Guid Id { get; init; }
 

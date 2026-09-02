@@ -31,9 +31,9 @@ public sealed class FishingPreferenceRepository : IFishingPreferenceRepository
         try
         {
             const string sql = """
-                SELECT "UserId", "FishingMethodId", "IsDefault", "CreatedOn"
-                FROM "UserFishingMethodPreference"
-                WHERE "UserId" = @UserId;
+                SELECT userid, fishingmethodid, isdefault, createdon
+                FROM userfishingmethodpreferences
+                WHERE userid = @UserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var rows = await connection.QueryAsync<UserFishingMethodPreference>(new CommandDefinition(
@@ -56,9 +56,9 @@ public sealed class FishingPreferenceRepository : IFishingPreferenceRepository
         try
         {
             const string sql = """
-                SELECT "UserId", "FishingMethodId", "SpeciesId", "IsDefault", "CreatedOn"
-                FROM "UserFishingSpeciesPreference"
-                WHERE "UserId" = @UserId;
+                SELECT userid, fishingmethodid, speciesid, isdefault, createdon
+                FROM userfishingspeciespreferences
+                WHERE userid = @UserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var rows = await connection.QueryAsync<UserFishingSpeciesPreference>(new CommandDefinition(
@@ -112,13 +112,13 @@ public sealed class FishingPreferenceRepository : IFishingPreferenceRepository
         CancellationToken cancellationToken)
     {
         await connection.ExecuteAsync(new CommandDefinition(
-            """DELETE FROM "UserFishingSpeciesPreference" WHERE "UserId" = @UserId;""",
+            """DELETE FROM userfishingspeciespreferences WHERE userid = @UserId;""",
             new { UserId = userId },
             transaction: transaction,
             cancellationToken: cancellationToken));
 
         await connection.ExecuteAsync(new CommandDefinition(
-            """DELETE FROM "UserFishingMethodPreference" WHERE "UserId" = @UserId;""",
+            """DELETE FROM userfishingmethodpreferences WHERE userid = @UserId;""",
             new { UserId = userId },
             transaction: transaction,
             cancellationToken: cancellationToken));
@@ -136,7 +136,7 @@ public sealed class FishingPreferenceRepository : IFishingPreferenceRepository
         }
 
         const string sql = """
-            INSERT INTO "UserFishingMethodPreference" ("UserId", "FishingMethodId", "IsDefault", "CreatedOn")
+            INSERT INTO userfishingmethodpreferences (userid, fishingmethodid, isdefault, createdon)
             VALUES (@UserId, @FishingMethodId, @IsDefault, @CreatedOn);
             """;
         await connection.ExecuteAsync(new CommandDefinition(
@@ -158,7 +158,7 @@ public sealed class FishingPreferenceRepository : IFishingPreferenceRepository
         }
 
         const string sql = """
-            INSERT INTO "UserFishingSpeciesPreference" ("UserId", "FishingMethodId", "SpeciesId", "IsDefault", "CreatedOn")
+            INSERT INTO userfishingspeciespreferences (userid, fishingmethodid, speciesid, isdefault, createdon)
             VALUES (@UserId, @FishingMethodId, @SpeciesId, @IsDefault, @CreatedOn);
             """;
         await connection.ExecuteAsync(new CommandDefinition(

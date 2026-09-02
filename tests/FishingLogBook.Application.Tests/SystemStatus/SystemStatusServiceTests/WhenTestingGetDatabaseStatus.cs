@@ -11,7 +11,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemStatusServiceTest
     public async Task ItShouldReturnDegradedWithNoNameWhenNoRecordExists()
     {
         // Arrange
-        SystemRepository.GetSystemTestRecordAsync(Arg.Any<CancellationToken>()).Returns((SystemTestRecord?)null);
+        SystemRepository.GetSystemHealthAsync(Arg.Any<CancellationToken>()).Returns((SystemHealth?)null);
 
         // Act
         var result = await Sut.GetDatabaseStatusAsync(CancellationToken.None);
@@ -19,17 +19,17 @@ public class WhenTestingGetDatabaseStatus : BaseSystemStatusServiceTest
         // Assert
         result.Status.Should().Be("Degraded");
         result.Name.Should().BeNull();
-        await SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
+        await SystemRepository.Received(1).GetSystemHealthAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task ItShouldReturnHealthyWithRecordNameWhenRecordExists()
     {
         // Arrange
-        var record = new SystemTestRecordBuilder()
+        var record = new SystemHealthBuilder()
             .WithName("FishingLogBook database online")
             .Build();
-        SystemRepository.GetSystemTestRecordAsync(Arg.Any<CancellationToken>()).Returns(record);
+        SystemRepository.GetSystemHealthAsync(Arg.Any<CancellationToken>()).Returns(record);
 
         // Act
         var result = await Sut.GetDatabaseStatusAsync(CancellationToken.None);
@@ -37,6 +37,6 @@ public class WhenTestingGetDatabaseStatus : BaseSystemStatusServiceTest
         // Assert
         result.Status.Should().Be("Healthy");
         result.Name.Should().Be("FishingLogBook database online");
-        await SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
+        await SystemRepository.Received(1).GetSystemHealthAsync(Arg.Any<CancellationToken>());
     }
 }

@@ -154,24 +154,24 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         var row = await connection.QuerySingleAsync(
             """
             SELECT
-                "Latitude",
-                "Longitude",
-                "LocationAccuracyMetres",
-                "LocationCapturedOn",
-                "LocationSource",
-                "LocationVisibility",
-                "LocationConsentVersion"
-            FROM "Catch"
-            WHERE "Id" = @Id;
+                latitude,
+                longitude,
+                locationaccuracymetres,
+                locationcapturedon,
+                locationsource,
+                locationvisibility,
+                locationconsentversion
+            FROM catches
+            WHERE id = @Id;
             """,
             new { catchRecord.Id });
-        ((object?)row.Latitude).Should().BeNull();
-        ((object?)row.Longitude).Should().BeNull();
-        ((object?)row.LocationAccuracyMetres).Should().BeNull();
-        ((object?)row.LocationCapturedOn).Should().BeNull();
-        ((object?)row.LocationSource).Should().BeNull();
-        ((object?)row.LocationVisibility).Should().BeNull();
-        ((object?)row.LocationConsentVersion).Should().BeNull();
+        ((object?)row.latitude).Should().BeNull();
+        ((object?)row.longitude).Should().BeNull();
+        ((object?)row.locationaccuracymetres).Should().BeNull();
+        ((object?)row.locationcapturedon).Should().BeNull();
+        ((object?)row.locationsource).Should().BeNull();
+        ((object?)row.locationvisibility).Should().BeNull();
+        ((object?)row.locationconsentversion).Should().BeNull();
     }
 
     [Fact]
@@ -262,8 +262,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn", "Latitude")
-            VALUES (@Id, @UserId, @CaughtOn, @Latitude);
+            INSERT INTO catches (id, caughtbyuserid, recordedbyuserid, caughton, latitude)
+            VALUES (@Id, @UserId, @UserId, @CaughtOn, @Latitude);
             """,
             new
             {
@@ -287,16 +287,18 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "Catch" (
-                "Id",
-                "UserId",
-                "CaughtOn",
-                "LocationCapturedOn",
-                "LocationSource",
-                "LocationVisibility",
-                "LocationConsentVersion")
+            INSERT INTO catches (
+                id,
+                caughtbyuserid,
+                recordedbyuserid,
+                caughton,
+                locationcapturedon,
+                locationsource,
+                locationvisibility,
+                locationconsentversion)
             VALUES (
                 @Id,
+                @UserId,
                 @UserId,
                 @CaughtOn,
                 @LocationCapturedOn,
@@ -329,8 +331,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn", "Latitude", "Longitude")
-            VALUES (@Id, @UserId, @CaughtOn, @Latitude, @Longitude);
+            INSERT INTO catches (id, caughtbyuserid, recordedbyuserid, caughton, latitude, longitude)
+            VALUES (@Id, @UserId, @UserId, @CaughtOn, @Latitude, @Longitude);
             """,
             new
             {
@@ -402,8 +404,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn")
-            VALUES (@Id, @UserId, @CaughtOn);
+            INSERT INTO catches (id, caughtbyuserid, recordedbyuserid, caughton)
+            VALUES (@Id, @UserId, @UserId, @CaughtOn);
             """,
             new
             {
@@ -571,8 +573,8 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn", "Weight")
-            VALUES (@Id, @UserId, @CaughtOn, @Weight);
+            INSERT INTO catches (id, caughtbyuserid, recordedbyuserid, caughton, weight)
+            VALUES (@Id, @UserId, @UserId, @CaughtOn, @Weight);
             """,
             new
             {
@@ -588,40 +590,4 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
         exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
     }
 
-    [Fact]
-    public async Task ItShouldResolveMissingProvenanceColumnsToTheOwnerUserId()
-    {
-        // Arrange
-        var userId = await CreateUserAsync();
-        var catchId = Guid.NewGuid();
-        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
-        await connection.ExecuteAsync(
-            """
-            INSERT INTO "Catch" ("Id", "UserId", "CaughtOn")
-            VALUES (@Id, @UserId, @CaughtOn);
-            """,
-            new
-            {
-                Id = catchId,
-                UserId = userId,
-                CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z")
-            });
-        await connection.ExecuteAsync(
-            """
-            UPDATE "Catch"
-            SET "AnglerUserId" = NULL,
-                "RecordedByUserId" = NULL
-            WHERE "Id" = @Id;
-            """,
-            new { Id = catchId });
-
-        // Act
-        var result = await Sut.GetByIdAsync(catchId, CancellationToken.None);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeNull();
-        result.Value!.CaughtByUserId.Should().Be(userId);
-        result.Value.RecordedByUserId.Should().Be(userId);
-    }
 }

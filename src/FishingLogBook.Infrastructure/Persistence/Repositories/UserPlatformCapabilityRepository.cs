@@ -34,8 +34,8 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
             const string sql = """
                 SELECT EXISTS (
                     SELECT 1
-                    FROM "UserPlatformCapability"
-                    WHERE "UserId" = @UserId AND "CapabilityCode" = @CapabilityCode);
+                    FROM userplatformcapabilities
+                    WHERE userid = @UserId AND capabilitycode = @CapabilityCode);
                 """;
             var exists = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
                 sql,
@@ -58,9 +58,9 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                SELECT "CapabilityCode"
-                FROM "UserPlatformCapability"
-                WHERE "UserId" = @UserId;
+                SELECT capabilitycode
+                FROM userplatformcapabilities
+                WHERE userid = @UserId;
                 """;
             var codes = await connection.QueryAsync<string>(new CommandDefinition(
                 sql,
@@ -82,9 +82,9 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                INSERT INTO "UserPlatformCapability" ("UserId", "CapabilityCode")
+                INSERT INTO userplatformcapabilities (userid, capabilitycode)
                 VALUES (@UserId, @CapabilityCode)
-                ON CONFLICT ("UserId", "CapabilityCode") DO NOTHING;
+                ON CONFLICT (userid, capabilitycode) DO NOTHING;
                 """;
             await connection.ExecuteAsync(new CommandDefinition(
                 sql,
@@ -112,8 +112,8 @@ public sealed class UserPlatformCapabilityRepository : IUserPlatformCapabilityRe
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                DELETE FROM "UserPlatformCapability"
-                WHERE "UserId" = @UserId AND "CapabilityCode" = @CapabilityCode;
+                DELETE FROM userplatformcapabilities
+                WHERE userid = @UserId AND capabilitycode = @CapabilityCode;
                 """;
             await connection.ExecuteAsync(new CommandDefinition(
                 sql,

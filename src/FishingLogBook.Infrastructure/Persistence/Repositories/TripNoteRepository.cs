@@ -13,12 +13,12 @@ public sealed class TripNoteRepository : ITripNoteRepository
 
     private const string SelectSql = """
         SELECT
-            "Id",
-            "TripId",
-            "CreatedByUserId",
-            "Text",
-            "RecordedOn"
-        FROM "TripNote"
+            id,
+            tripid,
+            createdbyuserid,
+            text,
+            recordedon
+        FROM tripnotes
         """;
 
     private readonly IDbConnectionFactory _connectionFactory;
@@ -39,7 +39,7 @@ public sealed class TripNoteRepository : ITripNoteRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = $"""
                 {SelectSql}
-                WHERE "Id" = @Id;
+                WHERE id = @Id;
                 """;
             var note = await connection.QuerySingleOrDefaultAsync<TripNote>(
                 new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
@@ -61,8 +61,8 @@ public sealed class TripNoteRepository : ITripNoteRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = $"""
                 {SelectSql}
-                WHERE "TripId" = @TripId
-                ORDER BY "RecordedOn", "Id";
+                WHERE tripid = @TripId
+                ORDER BY recordedon, id;
                 """;
             var notes = await connection.QueryAsync<TripNote>(
                 new CommandDefinition(sql, new { TripId = tripId }, cancellationToken: cancellationToken));
@@ -81,13 +81,13 @@ public sealed class TripNoteRepository : ITripNoteRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                INSERT INTO "TripNote" ("Id", "TripId", "CreatedByUserId", "Text", "RecordedOn")
+                INSERT INTO tripnotes (id, tripid, createdbyuserid, text, recordedon)
                 VALUES (@Id, @TripId, @CreatedByUserId, @Text, @RecordedOn)
-                ON CONFLICT ("Id") DO UPDATE SET
-                    "Text" = EXCLUDED."Text",
-                    "RecordedOn" = EXCLUDED."RecordedOn",
-                    "UpdatedOn" = now()
-                WHERE "TripNote"."TripId" = EXCLUDED."TripId";
+                ON CONFLICT (id) DO UPDATE SET
+                    text = EXCLUDED.text,
+                    recordedon = EXCLUDED.recordedon,
+                    updatedon = now()
+                WHERE tripnotes.tripid = EXCLUDED.tripid;
                 """;
             await connection.ExecuteAsync(new CommandDefinition(
                 sql,
@@ -120,7 +120,7 @@ public sealed class TripNoteRepository : ITripNoteRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(
-                """DELETE FROM "TripNote" WHERE "Id" = @Id;""",
+                """DELETE FROM tripnotes WHERE id = @Id;""",
                 new { Id = id },
                 cancellationToken: cancellationToken));
             return Result.Ok();

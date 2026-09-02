@@ -17,8 +17,8 @@ public partial class WhenTestingCompleteness
             "src",
             "FishingLogBook.Db.Migrations",
             "02_SeedData",
-            "202608181902_87_SeedFishingCatalogue.sql"));
-        var speciesStart = seed.IndexOf("INSERT INTO \"Species\"", StringComparison.Ordinal);
+            "202609021201_143_SeedCurrentReferenceData.sql"));
+        var speciesStart = seed.IndexOf("insert into species", StringComparison.Ordinal);
         var methodCodes = ExtractCodes(seed[..speciesStart]);
         var speciesCodes = ExtractCodes(seed[speciesStart..]);
 

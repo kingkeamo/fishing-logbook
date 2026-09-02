@@ -14,7 +14,7 @@ public sealed class SystemStatusService
 
     public async Task<DatabaseTestDto> GetDatabaseStatusAsync(CancellationToken cancellationToken)
     {
-        var record = await _systemRepository.GetSystemTestRecordAsync(cancellationToken);
+        var record = await _systemRepository.GetSystemHealthAsync(cancellationToken);
 
         if (record is null)
         {

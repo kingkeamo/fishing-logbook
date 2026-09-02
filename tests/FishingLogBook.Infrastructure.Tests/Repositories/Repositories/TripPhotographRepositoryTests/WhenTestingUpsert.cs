@@ -137,15 +137,15 @@ public class WhenTestingUpsert : BaseTripPhotographRepositoryTest
         // Assert
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var borrowedPhotographRow = await connection.ExecuteScalarAsync<int>(
-            """SELECT COUNT(*) FROM "CatchPhotograph" WHERE "Id" = @Id;""",
+            """SELECT COUNT(*) FROM catchphotographs WHERE id = @Id;""",
             new { photograph.Id });
         borrowedPhotographRow.Should().Be(0);
         var catchesForThisAngler = await connection.ExecuteScalarAsync<int>(
-            """SELECT COUNT(*) FROM "Catch" WHERE "UserId" = @UserId OR "TripId" = @TripId;""",
+            """SELECT COUNT(*) FROM catches WHERE caughtbyuserid = @UserId OR tripid = @TripId;""",
             new { UserId = userId, TripId = trip.Id });
         catchesForThisAngler.Should().Be(0);
         var storedForTrip = await connection.ExecuteScalarAsync<int>(
-            """SELECT COUNT(*) FROM "TripPhotograph" WHERE "TripId" = @TripId;""",
+            """SELECT COUNT(*) FROM tripphotographs WHERE tripid = @TripId;""",
             new { TripId = trip.Id });
         storedForTrip.Should().Be(1);
     }

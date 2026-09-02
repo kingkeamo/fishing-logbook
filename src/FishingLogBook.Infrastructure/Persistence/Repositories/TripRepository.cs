@@ -17,23 +17,23 @@ public sealed class TripRepository : ITripRepository
 
     private const string SelectSql = """
         SELECT
-            "Id",
-            "OwnerUserId",
-            "Title",
-            "PlaceName",
-            "Status",
-            "StartedOn",
-            "EndedOn",
-            "Latitude",
-            "Longitude",
-            "LocationAccuracyMetres",
-            "LocationCapturedOn",
-            "LocationSource",
-            "LocationVisibility",
-            "LocationConsentVersion",
-            "CreatedOn",
-            "UpdatedOn"
-        FROM "Trip"
+            id,
+            owneruserid,
+            title,
+            placename,
+            status,
+            startedon,
+            endedon,
+            latitude,
+            longitude,
+            locationaccuracymetres,
+            locationcapturedon,
+            locationsource,
+            locationvisibility,
+            locationconsentversion,
+            createdon,
+            updatedon
+        FROM trips
         """;
 
     private readonly IDbConnectionFactory _connectionFactory;
@@ -73,34 +73,34 @@ public sealed class TripRepository : ITripRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
                 SELECT
-                    t."Id",
-                    t."OwnerUserId",
-                    t."Status",
-                    t."StartedOn",
-                    t."EndedOn",
-                    t."Title",
-                    t."PlaceName",
-                    (SELECT COUNT(*) FROM "Catch" c WHERE c."TripId" = t."Id") AS "CatchCount",
-                    (SELECT COUNT(*) FROM "TripPhotograph" p WHERE p."TripId" = t."Id") AS "PhotographCount",
-                    (SELECT COUNT(*) FROM "TripNote" n WHERE n."TripId" = t."Id") AS "NoteCount",
+                    t.id,
+                    t.owneruserid,
+                    t.status,
+                    t.startedon,
+                    t.endedon,
+                    t.title,
+                    t.placename,
+                    (SELECT COUNT(*) FROM catches c WHERE c.tripid = t.id) AS catchcount,
+                    (SELECT COUNT(*) FROM tripphotographs p WHERE p.tripid = t.id) AS photographcount,
+                    (SELECT COUNT(*) FROM tripnotes n WHERE n.tripid = t.id) AS notecount,
                     (
                         SELECT COUNT(*)
-                        FROM "TripParticipant" tp
-                        WHERE tp."TripId" = t."Id"
-                          AND tp."Status" = 'Accepted'
-                          AND tp."RemovedOn" IS NULL
-                    ) AS "ParticipantCount"
-                FROM "Trip" t
-                WHERE t."OwnerUserId" = @UserId
+                        FROM tripparticipants tp
+                        WHERE tp.tripid = t.id
+                          AND tp.status = 'Accepted'
+                          AND tp.removedon IS NULL
+                    ) AS participantcount
+                FROM trips t
+                WHERE t.owneruserid = @UserId
                    OR EXISTS (
                         SELECT 1
-                        FROM "TripParticipant" me
-                        WHERE me."TripId" = t."Id"
-                          AND me."UserId" = @UserId
-                          AND me."Status" = 'Accepted'
-                          AND me."RemovedOn" IS NULL
+                        FROM tripparticipants me
+                        WHERE me.tripid = t.id
+                          AND me.userid = @UserId
+                          AND me.status = 'Accepted'
+                          AND me.removedon IS NULL
                    )
-                ORDER BY t."StartedOn" DESC, t."Id" DESC;
+                ORDER BY t.startedon DESC, t.id DESC;
                 """;
             var rows = await connection.QueryAsync<TripSummaryRow>(new CommandDefinition(
                 sql,
@@ -141,23 +141,23 @@ public sealed class TripRepository : ITripRepository
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
                 SELECT
-                    c."Id",
-                    COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") AS "CaughtByUserId",
-                    COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
-                    c."CaughtOn",
-                    c."SpeciesName",
-                    c."Weight",
-                    c."Length",
+                    c.id,
+                    c.caughtbyuserid,
+                    c.recordedbyuserid,
+                    c.caughton,
+                    c.speciesname,
+                    c.weight,
+                    c.length,
                     (
-                        SELECT p."Id"
-                        FROM "CatchPhotograph" p
-                        WHERE p."CatchId" = c."Id"
-                        ORDER BY p."Id"
+                        SELECT p.id
+                        FROM catchphotographs p
+                        WHERE p.catchid = c.id
+                        ORDER BY p.id
                         LIMIT 1
-                    ) AS "PhotographId"
-                FROM "Catch" c
-                WHERE c."TripId" = @TripId
-                ORDER BY c."CaughtOn", c."Id";
+                    ) AS photographid
+                FROM catches c
+                WHERE c.tripid = @TripId
+                ORDER BY c.caughton, c.id;
                 """;
             var rows = await connection.QueryAsync<TripCatchSummary>(new CommandDefinition(
                 sql,
@@ -227,22 +227,22 @@ public sealed class TripRepository : ITripRepository
         CancellationToken cancellationToken)
     {
         const string sql = """
-            INSERT INTO "Trip" (
-                "Id",
-                "OwnerUserId",
-                "Title",
-                "PlaceName",
-                "Status",
-                "StartedOn",
-                "EndedOn",
-                "Latitude",
-                "Longitude",
-                "LocationAccuracyMetres",
-                "LocationCapturedOn",
-                "LocationSource",
-                "LocationVisibility",
-                "LocationConsentVersion",
-                "UpdatedOn"
+            INSERT INTO trips (
+                id,
+                owneruserid,
+                title,
+                placename,
+                status,
+                startedon,
+                endedon,
+                latitude,
+                longitude,
+                locationaccuracymetres,
+                locationcapturedon,
+                locationsource,
+                locationvisibility,
+                locationconsentversion,
+                updatedon
             )
             VALUES (
                 @Id,
@@ -261,20 +261,20 @@ public sealed class TripRepository : ITripRepository
                 @LocationConsentVersion,
                 now()
             )
-            ON CONFLICT ("Id") DO UPDATE SET
-                "Title" = EXCLUDED."Title",
-                "PlaceName" = EXCLUDED."PlaceName",
-                "Status" = EXCLUDED."Status",
-                "StartedOn" = EXCLUDED."StartedOn",
-                "EndedOn" = EXCLUDED."EndedOn",
-                "Latitude" = EXCLUDED."Latitude",
-                "Longitude" = EXCLUDED."Longitude",
-                "LocationAccuracyMetres" = EXCLUDED."LocationAccuracyMetres",
-                "LocationCapturedOn" = EXCLUDED."LocationCapturedOn",
-                "LocationSource" = EXCLUDED."LocationSource",
-                "LocationVisibility" = EXCLUDED."LocationVisibility",
-                "LocationConsentVersion" = EXCLUDED."LocationConsentVersion",
-                "UpdatedOn" = now();
+            ON CONFLICT (id) DO UPDATE SET
+                title = EXCLUDED.title,
+                placename = EXCLUDED.placename,
+                status = EXCLUDED.status,
+                startedon = EXCLUDED.startedon,
+                endedon = EXCLUDED.endedon,
+                latitude = EXCLUDED.latitude,
+                longitude = EXCLUDED.longitude,
+                locationaccuracymetres = EXCLUDED.locationaccuracymetres,
+                locationcapturedon = EXCLUDED.locationcapturedon,
+                locationsource = EXCLUDED.locationsource,
+                locationvisibility = EXCLUDED.locationvisibility,
+                locationconsentversion = EXCLUDED.locationconsentversion,
+                updatedon = now();
             """;
         await connection.ExecuteAsync(new CommandDefinition(
             sql,
@@ -296,9 +296,9 @@ public sealed class TripRepository : ITripRepository
 
         const string sql = $"""
             {SelectSql}
-            WHERE "OwnerUserId" = @OwnerUserId
-              AND "Status" = 'Active'
-              AND "Id" <> @Id
+            WHERE owneruserid = @OwnerUserId
+              AND status = 'Active'
+              AND id <> @Id
             LIMIT 1;
             """;
         var row = await connection.QuerySingleOrDefaultAsync<TripPersistenceRow>(new CommandDefinition(
@@ -362,7 +362,7 @@ public sealed class TripRepository : ITripRepository
     {
         const string sql = $"""
             {SelectSql}
-            WHERE "Id" = @Id;
+            WHERE id = @Id;
             """;
         var row = await connection.QuerySingleOrDefaultAsync<TripPersistenceRow>(new CommandDefinition(
             sql,
