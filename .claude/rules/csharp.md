@@ -51,7 +51,8 @@ Data access and migration rules live in **`database.md`**. Summary: PostgreSQL v
 **Dapper + Npgsql**; migrations via **DbUp** in the dedicated `FishingLogBook.Db.Migrations`
 project (embedded SQL scripts) applied by the `FishingLogBook.Db.Migrations.App` runner —
 the API does not migrate on startup. Database identifiers are lowercase and unquoted;
-product collection tables are plural, and neither tables nor columns contain underscores.
+application data collection tables are plural, while documented purpose-specific singleton
+tables such as `systemhealth` may be singular. Neither tables nor columns contain underscores.
 Feature migrations are **expand-only** (add column/table, keep the old one). Destructive
 cleanup (`DROP COLUMN`, etc.) is a separate follow-up task after the feature is live —
 see **`database.md`**.

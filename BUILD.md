@@ -483,8 +483,11 @@ Table name:
 systemhealth
 ```
 
-Database tables are lowercase, plural where they represent collections, unquoted, and
-contain no underscores. Columns are lowercase, unquoted, and contain no underscores.
+Application data collection tables are lowercase, plural, unquoted, and contain no
+underscores. Purpose-specific singleton tables may use an explicitly documented singular
+name; `systemhealth` is the current intentional singleton exception. Do not invent new
+singular exceptions without an explicit reason. Columns are lowercase, unquoted, and
+contain no underscores.
 
 Suggested columns:
 

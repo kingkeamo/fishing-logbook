@@ -19,17 +19,19 @@ paths:
 
 ## Identifier naming (mandatory)
 
-- Table names are **lowercase, plural, unquoted, and contain no underscores** (for
-  example `catches`, `catchphotographs`, and `userfishingspeciespreferences`).
-- `systemhealth` is the intentional singleton health/status table name; do not revive
-  the legacy `SystemTest` name or generalise this exception to product collections.
+- Application data collection tables are **lowercase, plural, unquoted, and contain no
+  underscores** (for example `users`, `profiles`, `catches`, `catchphotographs`, `trips`,
+  `tripparticipants`, and `userfishingspeciespreferences`).
+- Purpose-specific singleton tables may use an explicitly documented singular name.
+  `systemhealth` is the current intentional singleton exception. Do not invent another
+  singular exception without an explicit reason, and do not revive the legacy
+  `SystemTest` name.
 - Column names are **lowercase, unquoted, and contain no underscores** (for example
   `id`, `createdon`, and `caughtbyuserid`).
 - Primary keys, foreign keys, unique/check constraints, indexes, and explicitly named
   sequences use consistent lowercase names that do not require quoting.
-- Do not introduce quoted PascalCase or mixed-case database identifiers. Normal manual
-  SQL must work without identifier quoting, for example `select * from catches where
-  caughtbyuserid = @CaughtByUserId`.
+- Do not introduce quoted PascalCase or mixed-case database identifiers. Both application
+  SQL and manual SQL must work without quoting database identifiers.
 - C# types and properties remain PascalCase. Dapper SQL aliases or explicit persistence
   mappings bridge database names to C# names where Dapper cannot bind them directly.
 
@@ -147,8 +149,10 @@ cleanup. After the rebaseline, normal expand/contract rules apply again.
   `await _connectionFactory.CreateOpenConnectionAsync(cancellationToken)` inside an
   `await using`.
 - Use Dapper with `CommandDefinition` carrying the `CancellationToken`.
-- **Parameterised SQL only** — use Dapper `@ParamName` parameters, never string
-  concatenation for values.
+- **Parameterised SQL only** — use PascalCase Dapper parameters that align naturally
+  with C# names, such as `@CaughtByUserId` and `new { CaughtByUserId = userId }`. The
+  lowercase database identifier convention does not apply to parameter names. Never
+  interpolate or concatenate user/runtime values into SQL.
 - Return **FluentResults** `Result`, `Result<T>` — not exceptions for expected failures
   (not found, constraint, connectivity wrapped as `Fail`). Do not leak Npgsql/Dapper
   types across the boundary. When a `catch` converts an exception into `Result.Fail`,
@@ -173,6 +177,62 @@ cleanup. After the rebaseline, normal expand/contract rules apply again.
   a nested Domain value object, normalising timestamps to UTC, casting enums), not object
   adaptation, so build it explicitly rather than through Mapster. A small anonymous object created
   directly at a single inline Dapper call site (not returned from a helper) is still fine.
+
+### Application SQL style and Dapper mapping
+
+- Prefer C# raw string literals (`"""`) for new or modified multiline SQL. Verbatim
+  strings (`@"..."`) remain valid, and existing SQL does not need mechanical conversion
+  solely for style.
+- Dapper's default mapping in this repository is case-insensitive, so a simple lowercase
+  column such as `createdon` can bind directly to `CreatedOn`; there is no project-wide
+  custom type map. Do not add redundant aliases solely for casing in simple direct
+  projections.
+- Use explicit property-oriented aliases when a projection is complex, computed, joined,
+  mapped to a dedicated row type, or when an alias makes the mapping contract materially
+  clearer. Keep aliases unquoted; PostgreSQL folds them to lowercase and Dapper performs
+  the case-insensitive match to the PascalCase C# property. An alias does not rename the
+  underlying PostgreSQL identifier.
+
+```csharp
+const string sql = """
+    select
+        c.id as Id,
+        c.caughtbyuserid as CaughtByUserId,
+        c.recordedbyuserid as RecordedByUserId,
+        c.createdon as CreatedOn
+    from catches c
+    where c.caughtbyuserid = @CaughtByUserId;
+    """;
+
+var catches = await connection.QueryAsync<Catch>(
+    new CommandDefinition(
+        sql,
+        new { CaughtByUserId = userId },
+        cancellationToken: cancellationToken));
+```
+
+Manual SQL uses literal values appropriate to the SQL client, while retaining unquoted
+database identifiers:
+
+```sql
+select *
+from catches
+where caughtbyuserid = '00000000-0000-0000-0000-000000000000';
+```
+
+Never construct application SQL from runtime values:
+
+```csharp
+// Good: the runtime value is a Dapper parameter.
+const string sql = """
+    select *
+    from catches
+    where caughtbyuserid = @CaughtByUserId;
+    """;
+
+// Bad: runtime values must not be concatenated or interpolated into SQL.
+var unsafeSql = "select * from catches where caughtbyuserid = '" + userId + "';";
+```
 
 GOOD:
 
