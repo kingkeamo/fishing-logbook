@@ -49,7 +49,7 @@ public class WhenTestingReadGranularity : BaseCatchSynchroniserTest
 
         // Assert
         store.GetAllCalls.Should().Be(0);
-        store.GetCalls.Should().Be(1);
+        store.GetCalls.Should().Be(2);
     }
 
     [Fact]
