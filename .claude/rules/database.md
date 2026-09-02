@@ -17,12 +17,23 @@ paths:
 | Runtime access | **Dapper** + **Npgsql** (PostgreSQL) |
 | **Not used** | Entity Framework, FluentMigrator, `DbContext` |
 
-## Table naming (mandatory)
+## Identifier naming (mandatory)
 
-- Database table names must **not** contain underscores (e.g. `SystemTest`, not
-  `System_Test`).
-- Identifiers are created and queried **quoted** with PascalCase (e.g. `"SystemTest"`,
-  `"CreatedOn"`) so PostgreSQL preserves the casing. Be consistent between DDL and queries.
+- Application data collection tables are **lowercase, plural, unquoted, and contain no
+  underscores** (for example `users`, `profiles`, `catches`, `catchphotographs`, `trips`,
+  `tripparticipants`, and `userfishingspeciespreferences`).
+- Purpose-specific singleton tables may use an explicitly documented singular name.
+  `systemhealth` is the current intentional singleton exception. Do not invent another
+  singular exception without an explicit reason, and do not revive the legacy
+  `SystemTest` name.
+- Column names are **lowercase, unquoted, and contain no underscores** (for example
+  `id`, `createdon`, and `caughtbyuserid`).
+- Primary keys, foreign keys, unique/check constraints, indexes, and explicitly named
+  sequences use consistent lowercase names that do not require quoting.
+- Do not introduce quoted PascalCase or mixed-case database identifiers. Both application
+  SQL and manual SQL must work without quoting database identifiers.
+- C# types and properties remain PascalCase. Dapper SQL aliases or explicit persistence
+  mappings bridge database names to C# names where Dapper cannot bind them directly.
 
 ## DbUp migrations — two dedicated projects
 
@@ -44,9 +55,8 @@ Scripts live under numbered folders inside `FishingLogBook.Db.Migrations`:
 - Filename convention: **`YYYYMMDDHHMM_{GitHubIssue}_{Description}.sql`** (timestamp
   prefix, then the GitHub **issue number**, then a PascalCase description). No `#` in
   the filename. Example: `202608141200_3_AddCatchTable.sql` for issue `#3`.
-  Scripts already applied (`202608131200_CreateSystemTest.sql`,
-  `202608131201_SeedSystemTest.sql`) stay as they are — **do not rename** a script that
-  DbUp has journaled; it would re-run as a new migration.
+  Outside an explicitly approved pre-release rebaseline, **do not rename, replace, or
+  delete** a script that DbUp has journaled; it would be treated as a different migration.
 - **Ordering is by filename only, not folder** — `FilenameOnlyScriptComparer`
   (`WithScriptNameComparer`) strips the assembly/folder prefix and sorts alphabetically
   on the filename, so the `YYYYMMDDHHMM` prefix determines run order. The issue number
@@ -76,6 +86,13 @@ It auto-runs non-interactively when `--run`/`--yes`/`-y` is passed or stdin is r
 **SQL style:** PostgreSQL syntax; one logical change per script; parameterised at the
 Dapper layer (seed/DDL scripts are static SQL). Prefer idempotent alters:
 `ADD COLUMN IF NOT EXISTS`.
+
+### Manual operational scripts
+
+Scripts that an operator must review and run explicitly belong outside the four embedded
+folders, under `FishingLogBook.Db.Migrations/Manual/{GitHubIssue}/`. This includes
+environment migration, validation, and destructive cleanup scripts. The project file must
+not embed `Manual/**/*.sql`, and the normal DbUp runner must never execute them.
 
 ## Expand / contract — no destructive feature deploys (mandatory)
 
@@ -107,15 +124,22 @@ If a rename is required: add the new column → backfill (same expand phase or a
 
 ```sql
 -- ✅ Expand (ships with the feature)
-ALTER TABLE "Catch" ADD COLUMN IF NOT EXISTS "CaughtOn" timestamptz;
+ALTER TABLE catches ADD COLUMN IF NOT EXISTS releasedon timestamptz;
 
 -- ❌ Same release as the feature
-ALTER TABLE "Catch" DROP COLUMN "CaughtDate";
-ALTER TABLE "Catch" RENAME COLUMN "CaughtDate" TO "CaughtOn";
+ALTER TABLE catches DROP COLUMN retained;
+ALTER TABLE catches RENAME COLUMN retained TO wasretained;
 ```
 
 Backfills belong in `04_Scripts/` and must be idempotent (`WHERE` the new column is still
 null). They still must not drop the source column.
+
+An explicitly approved pre-V1 rebaseline may replace the active migration history so a
+fresh database is created directly in the current shape. That exception does not make an
+in-place destructive deployment safe: existing databases require separately reviewed
+manual scripts, a maintenance window and backup, non-destructive copy and validation while
+old/new objects coexist, application proof against the new schema, and only then manual
+cleanup. After the rebaseline, normal expand/contract rules apply again.
 
 ## Repository pattern (Dapper)
 
@@ -125,8 +149,10 @@ null). They still must not drop the source column.
   `await _connectionFactory.CreateOpenConnectionAsync(cancellationToken)` inside an
   `await using`.
 - Use Dapper with `CommandDefinition` carrying the `CancellationToken`.
-- **Parameterised SQL only** — use Dapper `@ParamName` parameters, never string
-  concatenation for values.
+- **Parameterised SQL only** — use PascalCase Dapper parameters that align naturally
+  with C# names, such as `@CaughtByUserId` and `new { CaughtByUserId = userId }`. The
+  lowercase database identifier convention does not apply to parameter names. Never
+  interpolate or concatenate user/runtime values into SQL.
 - Return **FluentResults** `Result`, `Result<T>` — not exceptions for expected failures
   (not found, constraint, connectivity wrapped as `Fail`). Do not leak Npgsql/Dapper
   types across the boundary. When a `catch` converts an exception into `Result.Fail`,
@@ -151,6 +177,62 @@ null). They still must not drop the source column.
   a nested Domain value object, normalising timestamps to UTC, casting enums), not object
   adaptation, so build it explicitly rather than through Mapster. A small anonymous object created
   directly at a single inline Dapper call site (not returned from a helper) is still fine.
+
+### Application SQL style and Dapper mapping
+
+- Prefer C# raw string literals (`"""`) for new or modified multiline SQL. Verbatim
+  strings (`@"..."`) remain valid, and existing SQL does not need mechanical conversion
+  solely for style.
+- Dapper's default mapping in this repository is case-insensitive, so a simple lowercase
+  column such as `createdon` can bind directly to `CreatedOn`; there is no project-wide
+  custom type map. Do not add redundant aliases solely for casing in simple direct
+  projections.
+- Use explicit property-oriented aliases when a projection is complex, computed, joined,
+  mapped to a dedicated row type, or when an alias makes the mapping contract materially
+  clearer. Keep aliases unquoted; PostgreSQL folds them to lowercase and Dapper performs
+  the case-insensitive match to the PascalCase C# property. An alias does not rename the
+  underlying PostgreSQL identifier.
+
+```csharp
+const string sql = """
+    select
+        c.id as Id,
+        c.caughtbyuserid as CaughtByUserId,
+        c.recordedbyuserid as RecordedByUserId,
+        c.createdon as CreatedOn
+    from catches c
+    where c.caughtbyuserid = @CaughtByUserId;
+    """;
+
+var catches = await connection.QueryAsync<Catch>(
+    new CommandDefinition(
+        sql,
+        new { CaughtByUserId = userId },
+        cancellationToken: cancellationToken));
+```
+
+Manual SQL uses literal values appropriate to the SQL client, while retaining unquoted
+database identifiers:
+
+```sql
+select *
+from catches
+where caughtbyuserid = '00000000-0000-0000-0000-000000000000';
+```
+
+Never construct application SQL from runtime values:
+
+```csharp
+// Good: the runtime value is a Dapper parameter.
+const string sql = """
+    select *
+    from catches
+    where caughtbyuserid = @CaughtByUserId;
+    """;
+
+// Bad: runtime values must not be concatenated or interpolated into SQL.
+var unsafeSql = "select * from catches where caughtbyuserid = '" + userId + "';";
+```
 
 GOOD:
 
@@ -224,4 +306,5 @@ Folder and naming conventions are in **`testing-csharp.md`**.
   for style); the embedding globs pick it up automatically. Additive (expand) only in a
   feature deploy — see **Expand / contract** above. If the change will later drop a column,
   open the cleanup task before merging. Do not rename already-applied scripts.
-- **New repository:** read `SystemRepository` and `ISystemRepository` before implementing.
+- **New repository:** read neighbouring repositories and the relevant repository contract
+  before implementing.

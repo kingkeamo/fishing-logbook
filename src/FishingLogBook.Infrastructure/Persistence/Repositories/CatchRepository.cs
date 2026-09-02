@@ -80,12 +80,12 @@ public sealed class CatchRepository : ICatchRepository
         try
         {
             const string sql = """
-                SELECT p."Id", p."CatchId", p."ContentType"
-                FROM "CatchPhotograph" p
-                INNER JOIN "Catch" c ON c."Id" = p."CatchId"
-                WHERE p."Id" = @PhotographId
-                  AND p."CatchId" = @CatchId
-                  AND COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @CaughtByUserId;
+                SELECT p.id, p.catchid, p.contenttype
+                FROM catchphotographs p
+                INNER JOIN catches c ON c.id = p.catchid
+                WHERE p.id = @PhotographId
+                  AND p.catchid = @CatchId
+                  AND c.caughtbyuserid = @CaughtByUserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var photograph = await connection.QuerySingleOrDefaultAsync<CatchPhotograph>(
@@ -113,12 +113,12 @@ public sealed class CatchRepository : ICatchRepository
         try
         {
             const string sql = """
-                DELETE FROM "CatchPhotograph" p
-                USING "Catch" c
-                WHERE p."Id" = @PhotographId
-                  AND p."CatchId" = @CatchId
-                  AND c."Id" = p."CatchId"
-                  AND COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @CaughtByUserId;
+                DELETE FROM catchphotographs p
+                USING catches c
+                WHERE p.id = @PhotographId
+                  AND p.catchid = @CatchId
+                  AND c.id = p.catchid
+                  AND c.caughtbyuserid = @CaughtByUserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(
@@ -185,11 +185,11 @@ public sealed class CatchRepository : ICatchRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                UPDATE "Catch"
-                SET "TripId" = @TripId
-                WHERE "Id" = @CatchId
-                  AND COALESCE("CaughtByUserId", "AnglerUserId", "UserId") = @CaughtByUserId
-                  AND "TripId" IS NULL;
+                UPDATE catches
+                SET tripid = @TripId
+                WHERE id = @CatchId
+                  AND caughtbyuserid = @CaughtByUserId
+                  AND tripid IS NULL;
                 """;
             var updated = await connection.ExecuteAsync(new CommandDefinition(
                 sql,
@@ -217,11 +217,11 @@ public sealed class CatchRepository : ICatchRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                UPDATE "Catch"
-                SET "LocationVisibility" = @Visibility
-                WHERE "Id" = @CatchId
-                  AND COALESCE("CaughtByUserId", "AnglerUserId", "UserId") = @CaughtByUserId
-                  AND "Latitude" IS NOT NULL;
+                UPDATE catches
+                SET locationvisibility = @Visibility
+                WHERE id = @CatchId
+                  AND caughtbyuserid = @CaughtByUserId
+                  AND latitude IS NOT NULL;
                 """;
             var updated = await connection.ExecuteAsync(new CommandDefinition(
                 sql,
@@ -238,7 +238,7 @@ public sealed class CatchRepository : ICatchRepository
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Failed to update catch location visibility {CatchId}.", args.CatchId);
+            _logger.LogError(exception, "Failed to update catches location visibility {CatchId}.", args.CatchId);
             return Result.Fail("Failed to save the catch.");
         }
     }
@@ -251,12 +251,10 @@ public sealed class CatchRepository : ICatchRepository
         {
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             const string sql = """
-                UPDATE "Catch"
-                SET "CaughtByUserId" = @CaughtByUserId,
-                    "UserId" = @CaughtByUserId,
-                    "AnglerUserId" = @CaughtByUserId
-                WHERE "Id" = @CatchId
-                  AND "TripId" IS NOT NULL;
+                UPDATE catches
+                SET caughtbyuserid = @CaughtByUserId
+                WHERE id = @CatchId
+                  AND tripid IS NOT NULL;
                 """;
             var updated = await connection.ExecuteAsync(new CommandDefinition(
                 sql,
@@ -284,31 +282,27 @@ public sealed class CatchRepository : ICatchRepository
         CancellationToken cancellationToken)
     {
         const string sql = """
-            INSERT INTO "Catch" (
-                "Id",
-                "UserId",
-                "AnglerUserId",
-                "CaughtByUserId",
-                "RecordedByUserId",
-                "TripId",
-                "CaughtOn",
-                "SpeciesName",
-                "Weight",
-                "Length",
-                "Method",
-                "BaitOrLure",
-                "Notes",
-                "Latitude",
-                "Longitude",
-                "LocationAccuracyMetres",
-                "LocationCapturedOn",
-                "LocationSource",
-                "LocationVisibility",
-                "LocationConsentVersion")
+            INSERT INTO catches (
+                id,
+                caughtbyuserid,
+                recordedbyuserid,
+                tripid,
+                caughton,
+                speciesname,
+                weight,
+                length,
+                method,
+                baitorlure,
+                notes,
+                latitude,
+                longitude,
+                locationaccuracymetres,
+                locationcapturedon,
+                locationsource,
+                locationvisibility,
+                locationconsentversion)
             VALUES (
                 @Id,
-                @CaughtByUserId,
-                @CaughtByUserId,
                 @CaughtByUserId,
                 @RecordedByUserId,
                 @TripId,
@@ -326,30 +320,27 @@ public sealed class CatchRepository : ICatchRepository
                 @LocationSource,
                 @LocationVisibility,
                 @LocationConsentVersion)
-            ON CONFLICT ("Id") DO UPDATE SET
-                "UserId" = EXCLUDED."CaughtByUserId",
-                "AnglerUserId" = EXCLUDED."CaughtByUserId",
-                "CaughtByUserId" = EXCLUDED."CaughtByUserId",
-                "TripId" = EXCLUDED."TripId",
-                "CaughtOn" = EXCLUDED."CaughtOn",
-                "SpeciesName" = EXCLUDED."SpeciesName",
-                "Weight" = EXCLUDED."Weight",
-                "Length" = EXCLUDED."Length",
-                "Method" = EXCLUDED."Method",
-                "BaitOrLure" = EXCLUDED."BaitOrLure",
-                "Notes" = EXCLUDED."Notes",
-                "Latitude" = COALESCE(EXCLUDED."Latitude", "Catch"."Latitude"),
-                "Longitude" = COALESCE(EXCLUDED."Longitude", "Catch"."Longitude"),
-                "LocationAccuracyMetres" = CASE
-                    WHEN EXCLUDED."Latitude" IS NOT NULL THEN EXCLUDED."LocationAccuracyMetres"
-                    ELSE "Catch"."LocationAccuracyMetres"
+            ON CONFLICT (id) DO UPDATE SET
+                caughtbyuserid = EXCLUDED.caughtbyuserid,
+                tripid = EXCLUDED.tripid,
+                caughton = EXCLUDED.caughton,
+                speciesname = EXCLUDED.speciesname,
+                weight = EXCLUDED.weight,
+                length = EXCLUDED.length,
+                method = EXCLUDED.method,
+                baitorlure = EXCLUDED.baitorlure,
+                notes = EXCLUDED.notes,
+                latitude = COALESCE(EXCLUDED.latitude, catches.latitude),
+                longitude = COALESCE(EXCLUDED.longitude, catches.longitude),
+                locationaccuracymetres = CASE
+                    WHEN EXCLUDED.latitude IS NOT NULL THEN EXCLUDED.locationaccuracymetres
+                    ELSE catches.locationaccuracymetres
                 END,
-                "LocationCapturedOn" = COALESCE(EXCLUDED."LocationCapturedOn", "Catch"."LocationCapturedOn"),
-                "LocationSource" = COALESCE(EXCLUDED."LocationSource", "Catch"."LocationSource"),
-                "LocationVisibility" = COALESCE(EXCLUDED."LocationVisibility", "Catch"."LocationVisibility"),
-                "LocationConsentVersion" = COALESCE(EXCLUDED."LocationConsentVersion", "Catch"."LocationConsentVersion")
-            WHERE COALESCE("Catch"."CaughtByUserId", "Catch"."AnglerUserId", "Catch"."UserId")
-                = COALESCE(EXCLUDED."CaughtByUserId", EXCLUDED."AnglerUserId", EXCLUDED."UserId");
+                locationcapturedon = COALESCE(EXCLUDED.locationcapturedon, catches.locationcapturedon),
+                locationsource = COALESCE(EXCLUDED.locationsource, catches.locationsource),
+                locationvisibility = COALESCE(EXCLUDED.locationvisibility, catches.locationvisibility),
+                locationconsentversion = COALESCE(EXCLUDED.locationconsentversion, catches.locationconsentversion)
+            WHERE catches.caughtbyuserid = EXCLUDED.caughtbyuserid;
             """;
         await connection.ExecuteAsync(new CommandDefinition(
             sql,
@@ -364,7 +355,7 @@ public sealed class CatchRepository : ICatchRepository
         Catch catchRecord,
         CancellationToken cancellationToken)
     {
-        const string deleteSql = """DELETE FROM "CatchPhotograph" WHERE "CatchId" = @CatchId;""";
+        const string deleteSql = """DELETE FROM catchphotographs WHERE catchid = @CatchId;""";
         await connection.ExecuteAsync(new CommandDefinition(
             deleteSql,
             new { CatchId = catchRecord.Id },
@@ -372,7 +363,7 @@ public sealed class CatchRepository : ICatchRepository
             cancellationToken: cancellationToken));
 
         const string insertSql = """
-            INSERT INTO "CatchPhotograph" ("Id", "CatchId", "ContentType")
+            INSERT INTO catchphotographs (id, catchid, contenttype)
             VALUES (@Id, @CatchId, @ContentType);
             """;
         foreach (var photograph in catchRecord.Photographs)
@@ -393,26 +384,26 @@ public sealed class CatchRepository : ICatchRepository
     {
         const string catchSql = """
             SELECT
-                "Id",
-                COALESCE("CaughtByUserId", "AnglerUserId", "UserId") AS "CaughtByUserId",
-                COALESCE("RecordedByUserId", "UserId") AS "RecordedByUserId",
-                "TripId",
-                "CaughtOn",
-                "SpeciesName",
-                "Weight",
-                "Length",
-                "Method",
-                "BaitOrLure",
-                "Notes",
-                "Latitude",
-                "Longitude",
-                "LocationAccuracyMetres",
-                "LocationCapturedOn",
-                "LocationSource",
-                "LocationVisibility",
-                "LocationConsentVersion"
-            FROM "Catch"
-            WHERE "Id" = @Id;
+                id,
+                caughtbyuserid,
+                recordedbyuserid,
+                tripid,
+                caughton,
+                speciesname,
+                weight,
+                length,
+                method,
+                baitorlure,
+                notes,
+                latitude,
+                longitude,
+                locationaccuracymetres,
+                locationcapturedon,
+                locationsource,
+                locationvisibility,
+                locationconsentversion
+            FROM catches
+            WHERE id = @Id;
             """;
         var catchRow = await connection.QuerySingleOrDefaultAsync<CatchPersistenceRow>(new CommandDefinition(
             catchSql,
@@ -435,10 +426,10 @@ public sealed class CatchRepository : ICatchRepository
         CancellationToken cancellationToken)
     {
         const string photographSql = """
-            SELECT "Id", "CatchId", "ContentType"
-            FROM "CatchPhotograph"
-            WHERE "CatchId" = @CatchId
-            ORDER BY "Id";
+            SELECT id, catchid, contenttype
+            FROM catchphotographs
+            WHERE catchid = @CatchId
+            ORDER BY id;
             """;
         var photographs = await connection.QueryAsync<CatchPhotograph>(new CommandDefinition(
             photographSql,
@@ -456,48 +447,48 @@ public sealed class CatchRepository : ICatchRepository
     {
         const string catchSql = """
             SELECT
-                c."Id",
-                COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") AS "CaughtByUserId",
-                COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
-                c."TripId",
-                c."CaughtOn",
-                c."SpeciesName",
-                c."Weight",
-                c."Length",
-                c."Method",
-                c."BaitOrLure",
-                c."Notes",
-                c."Latitude",
-                c."Longitude",
-                c."LocationAccuracyMetres",
-                c."LocationCapturedOn",
-                c."LocationSource",
-                c."LocationVisibility",
-                c."LocationConsentVersion",
-                angler_profile."DisplayName" AS "AnglerName",
-                recorder_profile."DisplayName" AS "RecordedByName"
-            FROM "Catch" c
-            LEFT JOIN "Profile" angler_profile
-                ON angler_profile."UserId" = COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId")
-            LEFT JOIN "Profile" recorder_profile
-                ON recorder_profile."UserId" = COALESCE(c."RecordedByUserId", c."UserId")
-            WHERE c."Id" = @CatchId
+                c.id,
+                c.caughtbyuserid,
+                c.recordedbyuserid,
+                c.tripid,
+                c.caughton,
+                c.speciesname,
+                c.weight,
+                c.length,
+                c.method,
+                c.baitorlure,
+                c.notes,
+                c.latitude,
+                c.longitude,
+                c.locationaccuracymetres,
+                c.locationcapturedon,
+                c.locationsource,
+                c.locationvisibility,
+                c.locationconsentversion,
+                angler_profile.displayname AS anglername,
+                recorder_profile.displayname AS recordedbyname
+            FROM catches c
+            LEFT JOIN profiles angler_profile
+                ON angler_profile.userid = c.caughtbyuserid
+            LEFT JOIN profiles recorder_profile
+                ON recorder_profile.userid = c.recordedbyuserid
+            WHERE c.id = @CatchId
               AND (
-                COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @UserId
-                OR COALESCE(c."RecordedByUserId", c."UserId") = @UserId
+                c.caughtbyuserid = @UserId
+                OR c.recordedbyuserid = @UserId
                 OR EXISTS (
                     SELECT 1
-                    FROM "Trip" t
-                    WHERE t."Id" = c."TripId"
-                      AND t."OwnerUserId" = @UserId
+                    FROM trips t
+                    WHERE t.id = c.tripid
+                      AND t.owneruserid = @UserId
                 )
                 OR EXISTS (
                     SELECT 1
-                    FROM "TripParticipant" tp
-                    WHERE tp."TripId" = c."TripId"
-                      AND tp."UserId" = @UserId
-                      AND tp."Status" = 'Accepted'
-                      AND tp."RemovedOn" IS NULL
+                    FROM tripparticipants tp
+                    WHERE tp.tripid = c.tripid
+                      AND tp.userid = @UserId
+                      AND tp.status = 'Accepted'
+                      AND tp.removedon IS NULL
                 )
               );
             """;
@@ -531,38 +522,38 @@ public sealed class CatchRepository : ICatchRepository
     {
         const string sql = """
             SELECT
-                c."Id",
-                COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") AS "CaughtByUserId",
-                COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
-                c."TripId",
-                c."CaughtOn",
-                c."SpeciesName",
-                c."Weight",
-                c."Length",
-                c."Method",
-                c."BaitOrLure",
-                c."Notes",
-                c."Latitude",
-                c."Longitude",
-                c."LocationAccuracyMetres",
-                c."LocationCapturedOn",
-                c."LocationSource",
-                c."LocationVisibility",
-                c."LocationConsentVersion",
-                angler_profile."DisplayName" AS "AnglerName",
-                recorder_profile."DisplayName" AS "RecordedByName",
-                p."Id" AS "PhotographId",
-                p."CatchId" AS "PhotographCatchId",
-                p."ContentType" AS "PhotographContentType"
-            FROM "Catch" c
-            LEFT JOIN "CatchPhotograph" p ON p."CatchId" = c."Id"
-            LEFT JOIN "Profile" angler_profile
-                ON angler_profile."UserId" = COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId")
-            LEFT JOIN "Profile" recorder_profile
-                ON recorder_profile."UserId" = COALESCE(c."RecordedByUserId", c."UserId")
-            WHERE COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @UserId
-               OR COALESCE(c."RecordedByUserId", c."UserId") = @UserId
-            ORDER BY c."CaughtOn" DESC, p."Id";
+                c.id,
+                c.caughtbyuserid,
+                c.recordedbyuserid,
+                c.tripid,
+                c.caughton,
+                c.speciesname,
+                c.weight,
+                c.length,
+                c.method,
+                c.baitorlure,
+                c.notes,
+                c.latitude,
+                c.longitude,
+                c.locationaccuracymetres,
+                c.locationcapturedon,
+                c.locationsource,
+                c.locationvisibility,
+                c.locationconsentversion,
+                angler_profile.displayname AS anglername,
+                recorder_profile.displayname AS recordedbyname,
+                p.id AS photographid,
+                p.catchid AS photographcatchid,
+                p.contenttype AS photographcontenttype
+            FROM catches c
+            LEFT JOIN catchphotographs p ON p.catchid = c.id
+            LEFT JOIN profiles angler_profile
+                ON angler_profile.userid = c.caughtbyuserid
+            LEFT JOIN profiles recorder_profile
+                ON recorder_profile.userid = c.recordedbyuserid
+            WHERE c.caughtbyuserid = @UserId
+               OR c.recordedbyuserid = @UserId
+            ORDER BY c.caughton DESC, p.id;
             """;
 
         var rowsById = new Dictionary<Guid, CatchDetailRow>();
@@ -591,7 +582,7 @@ public sealed class CatchRepository : ICatchRepository
 
                 return row;
             },
-            splitOn: "PhotographId");
+            splitOn: "photographid");
 
         foreach (var id in order)
         {
@@ -607,8 +598,6 @@ public sealed class CatchRepository : ICatchRepository
         {
             Id = catchRecord.Id,
             CaughtByUserId = catchRecord.CaughtByUserId,
-            UserId = catchRecord.CaughtByUserId,
-            AnglerUserId = catchRecord.CaughtByUserId,
             RecordedByUserId = catchRecord.RecordedByUserId,
             TripId = catchRecord.TripId,
             CaughtOn = catchRecord.CaughtOn.ToUniversalTime(),
@@ -662,10 +651,6 @@ public sealed class CatchRepository : ICatchRepository
 
         public Guid CaughtByUserId { get; init; }
 
-        public Guid UserId { get; init; }
-
-        public Guid AnglerUserId { get; init; }
-
         public Guid RecordedByUserId { get; init; }
 
         public Guid? TripId { get; init; }
@@ -706,10 +691,6 @@ public sealed class CatchRepository : ICatchRepository
         public Guid Id { get; init; }
 
         public Guid CaughtByUserId { get; init; }
-
-        public Guid UserId { get; init; }
-
-        public Guid AnglerUserId { get; init; }
 
         public Guid RecordedByUserId { get; init; }
 
@@ -764,10 +745,6 @@ public sealed class CatchRepository : ICatchRepository
         public Guid Id { get; init; }
 
         public Guid CaughtByUserId { get; init; }
-
-        public Guid UserId { get; init; }
-
-        public Guid AnglerUserId { get; init; }
 
         public Guid RecordedByUserId { get; init; }
 

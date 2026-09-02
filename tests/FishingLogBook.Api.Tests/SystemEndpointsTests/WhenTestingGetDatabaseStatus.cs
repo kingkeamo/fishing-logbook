@@ -21,8 +21,8 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
         // Arrange
         Factory.SystemRepository.ClearReceivedCalls();
         Factory.SystemRepository
-            .GetSystemTestRecordAsync(Arg.Any<CancellationToken>())
-            .Returns((SystemTestRecord?)null);
+            .GetSystemHealthAsync(Arg.Any<CancellationToken>())
+            .Returns((SystemHealth?)null);
         var client = Factory.CreateClient();
 
         // Act
@@ -32,7 +32,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
         body!.Status.Should().Be("Degraded");
-        await Factory.SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
+        await Factory.SystemRepository.Received(1).GetSystemHealthAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -41,8 +41,8 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
         // Arrange
         Factory.SystemRepository.ClearReceivedCalls();
         Factory.SystemRepository
-            .GetSystemTestRecordAsync(Arg.Any<CancellationToken>())
-            .Returns<SystemTestRecord?>(_ => throw new InvalidOperationException("database unavailable"));
+            .GetSystemHealthAsync(Arg.Any<CancellationToken>())
+            .Returns<SystemHealth?>(_ => throw new InvalidOperationException("database unavailable"));
         var client = Factory.CreateClient();
 
         // Act
@@ -52,7 +52,7 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
         body!.Status.Should().Be("Unhealthy");
-        await Factory.SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
+        await Factory.SystemRepository.Received(1).GetSystemHealthAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
         // Arrange
         Factory.SystemRepository.ClearReceivedCalls();
         Factory.SystemRepository
-            .GetSystemTestRecordAsync(Arg.Any<CancellationToken>())
-            .Returns(new SystemTestRecordBuilder().WithName("FishingLogBook database online").Build());
+            .GetSystemHealthAsync(Arg.Any<CancellationToken>())
+            .Returns(new SystemHealthBuilder().WithName("FishingLogBook database online").Build());
         var client = Factory.CreateClient();
 
         // Act
@@ -73,6 +73,6 @@ public class WhenTestingGetDatabaseStatus : BaseSystemEndpointsTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         body!.Status.Should().Be("Healthy");
         body.Name.Should().Be("FishingLogBook database online");
-        await Factory.SystemRepository.Received(1).GetSystemTestRecordAsync(Arg.Any<CancellationToken>());
+        await Factory.SystemRepository.Received(1).GetSystemHealthAsync(Arg.Any<CancellationToken>());
     }
 }

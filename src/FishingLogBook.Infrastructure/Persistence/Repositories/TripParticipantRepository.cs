@@ -15,15 +15,15 @@ public sealed class TripParticipantRepository : ITripParticipantRepository
 
     private const string SelectSql = """
         SELECT
-            "Id",
-            "TripId",
-            "UserId",
-            "Status",
-            "InvitedByUserId",
-            "InvitedOn",
-            "RespondedOn",
-            "RemovedOn"
-        FROM "TripParticipant"
+            id,
+            tripid,
+            userid,
+            status,
+            invitedbyuserid,
+            invitedon,
+            respondedon,
+            removedon
+        FROM tripparticipants
         """;
 
     private readonly IDbConnectionFactory _connectionFactory;
@@ -48,8 +48,8 @@ public sealed class TripParticipantRepository : ITripParticipantRepository
         {
             const string sql = $"""
                 {SelectSql}
-                WHERE "TripId" = @TripId
-                  AND "UserId" = @UserId;
+                WHERE tripid = @TripId
+                  AND userid = @UserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var row = await connection.QuerySingleOrDefaultAsync<TripParticipantPersistenceRow>(
@@ -77,8 +77,8 @@ public sealed class TripParticipantRepository : ITripParticipantRepository
         {
             const string sql = $"""
                 {SelectSql}
-                WHERE "TripId" = @TripId
-                ORDER BY "InvitedOn", "UserId";
+                WHERE tripid = @TripId
+                ORDER BY invitedon, userid;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var rows = await connection.QueryAsync<TripParticipantPersistenceRow>(new CommandDefinition(
@@ -103,10 +103,10 @@ public sealed class TripParticipantRepository : ITripParticipantRepository
         {
             const string sql = $"""
                 {SelectSql}
-                WHERE "UserId" = @UserId
-                  AND "Status" = 'Pending'
-                  AND "RemovedOn" IS NULL
-                ORDER BY "InvitedOn" DESC, "TripId";
+                WHERE userid = @UserId
+                  AND status = 'Pending'
+                  AND removedon IS NULL
+                ORDER BY invitedon DESC, tripid;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var rows = await connection.QueryAsync<TripParticipantPersistenceRow>(new CommandDefinition(
@@ -130,16 +130,16 @@ public sealed class TripParticipantRepository : ITripParticipantRepository
         try
         {
             const string sql = """
-                INSERT INTO "TripParticipant" (
-                    "Id",
-                    "TripId",
-                    "UserId",
-                    "Status",
-                    "InvitedByUserId",
-                    "InvitedOn",
-                    "RespondedOn",
-                    "RemovedOn",
-                    "UpdatedOn"
+                INSERT INTO tripparticipants (
+                    id,
+                    tripid,
+                    userid,
+                    status,
+                    invitedbyuserid,
+                    invitedon,
+                    respondedon,
+                    removedon,
+                    updatedon
                 )
                 VALUES (
                     @Id,
@@ -152,13 +152,13 @@ public sealed class TripParticipantRepository : ITripParticipantRepository
                     @RemovedOn,
                     now()
                 )
-                ON CONFLICT ("TripId", "UserId") DO UPDATE SET
-                    "Status" = EXCLUDED."Status",
-                    "InvitedByUserId" = EXCLUDED."InvitedByUserId",
-                    "InvitedOn" = EXCLUDED."InvitedOn",
-                    "RespondedOn" = EXCLUDED."RespondedOn",
-                    "RemovedOn" = EXCLUDED."RemovedOn",
-                    "UpdatedOn" = now();
+                ON CONFLICT (tripid, userid) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    invitedbyuserid = EXCLUDED.invitedbyuserid,
+                    invitedon = EXCLUDED.invitedon,
+                    respondedon = EXCLUDED.respondedon,
+                    removedon = EXCLUDED.removedon,
+                    updatedon = now();
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(

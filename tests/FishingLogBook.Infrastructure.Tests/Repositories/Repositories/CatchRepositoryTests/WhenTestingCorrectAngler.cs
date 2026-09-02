@@ -55,7 +55,7 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
     }
 
     [Fact]
-    public async Task ItShouldUpdateUserIdAndAnglerUserIdWithoutChangingRecordedByUserId()
+    public async Task ItShouldUpdateCaughtByUserIdWithoutChangingRecordedByUserId()
     {
         // Arrange
         var ownerUserId = await CreateUserAsync();
@@ -80,7 +80,6 @@ public class WhenTestingCorrectAngler : BaseCatchRepositoryTest
         result.IsSuccess.Should().BeTrue();
         loaded.Value.Should().NotBeNull();
         loaded.Value!.CaughtByUserId.Should().Be(correctedAnglerUserId);
-        loaded.Value.CaughtByUserId.Should().Be(correctedAnglerUserId);
         loaded.Value.RecordedByUserId.Should().Be(recorderUserId);
         loaded.Value.TripId.Should().Be(tripId);
     }

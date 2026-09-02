@@ -146,7 +146,7 @@ public class WhenTestingTripAssociation : BaseCatchRepositoryTest
         // Act
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         await connection.ExecuteAsync(
-            """DELETE FROM "Trip" WHERE "Id" = @Id;""",
+            """DELETE FROM trips WHERE id = @Id;""",
             new { trip.Id });
 
         // Assert

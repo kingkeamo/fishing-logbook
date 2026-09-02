@@ -32,10 +32,10 @@ public sealed class FishingLocationPreferenceRepository : IFishingLocationPrefer
         try
         {
             const string sql = """
-                SELECT "Id", "UserId", "Name", "IsDefault", "CreatedOn"
-                FROM "UserFishingLocationPreference"
-                WHERE "UserId" = @UserId
-                ORDER BY "IsDefault" DESC, lower("Name");
+                SELECT id, userid, name, isdefault, createdon
+                FROM userfishinglocationpreferences
+                WHERE userid = @UserId
+                ORDER BY isdefault DESC, lower(name);
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var rows = await connection.QueryAsync<UserFishingLocationPreference>(new CommandDefinition(
@@ -95,7 +95,7 @@ public sealed class FishingLocationPreferenceRepository : IFishingLocationPrefer
         CancellationToken cancellationToken)
     {
         await connection.ExecuteAsync(new CommandDefinition(
-            """DELETE FROM "UserFishingLocationPreference" WHERE "UserId" = @UserId;""",
+            """DELETE FROM userfishinglocationpreferences WHERE userid = @UserId;""",
             new { UserId = userId },
             transaction: transaction,
             cancellationToken: cancellationToken));
@@ -113,7 +113,7 @@ public sealed class FishingLocationPreferenceRepository : IFishingLocationPrefer
         }
 
         const string sql = """
-            INSERT INTO "UserFishingLocationPreference" ("Id", "UserId", "Name", "IsDefault", "CreatedOn")
+            INSERT INTO userfishinglocationpreferences (id, userid, name, isdefault, createdon)
             VALUES (@Id, @UserId, @Name, @IsDefault, @CreatedOn);
             """;
         await connection.ExecuteAsync(new CommandDefinition(

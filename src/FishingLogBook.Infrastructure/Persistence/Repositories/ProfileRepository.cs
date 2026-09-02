@@ -13,12 +13,12 @@ public sealed class ProfileRepository : IProfileRepository
     private const string FailedMessage = "Failed to load angler profile.";
 
     private const string SelectSql = """
-        SELECT "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
-               "HomeRegion",
-               "PreferredWeightUnit", "PreferredLengthUnit",
-               "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
-               "ShowPreferredFishingMethods", "ShowPreferredSpecies", "OnboardingCompletedOn"
-        FROM "Profile"
+        SELECT userid, displayname, photographid, photographobjectkey, photographcontenttype,
+               homeregion,
+               preferredweightunit, preferredlengthunit,
+               showdisplayname, showphotograph, showhomeregion,
+               showpreferredfishingmethods, showpreferredspecies, onboardingcompletedon
+        FROM profiles
         """;
 
     private readonly IDbConnectionFactory _connectionFactory;
@@ -34,7 +34,7 @@ public sealed class ProfileRepository : IProfileRepository
     {
         try
         {
-            const string sql = """SELECT EXISTS (SELECT 1 FROM "User" WHERE "Id" = @UserId);""";
+            const string sql = """SELECT EXISTS (SELECT 1 FROM users WHERE id = @UserId);""";
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var exists = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
                 sql,
@@ -55,7 +55,7 @@ public sealed class ProfileRepository : IProfileRepository
         {
             const string sql = $"""
                 {SelectSql}
-                WHERE "UserId" = @UserId;
+                WHERE userid = @UserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var profile = await connection.QuerySingleOrDefaultAsync<Profile>(new CommandDefinition(
@@ -84,7 +84,7 @@ public sealed class ProfileRepository : IProfileRepository
         {
             const string sql = $"""
                 {SelectSql}
-                WHERE "UserId" = ANY(@UserIds);
+                WHERE userid = ANY(@UserIds);
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var profiles = await connection.QueryAsync<Profile>(new CommandDefinition(
@@ -108,19 +108,19 @@ public sealed class ProfileRepository : IProfileRepository
         {
             const string sql = """
                 SELECT
-                    u."Id" AS "UserId",
-                    CASE WHEN p."ShowDisplayName" THEN p."DisplayName" END AS "DisplayName",
-                    CASE WHEN p."ShowPhotograph" THEN p."PhotographObjectKey" END AS "PhotographObjectKey",
-                    CASE WHEN p."ShowHomeRegion" THEN p."HomeRegion" END AS "HomeRegion",
-                    u."Email" AS "Email"
-                FROM "User" u
-                LEFT JOIN "Profile" p ON p."UserId" = u."Id"
-                WHERE u."Id" <> @RequestingUserId
+                    u.id AS userid,
+                    CASE WHEN p.showdisplayname THEN p.displayname END AS displayname,
+                    CASE WHEN p.showphotograph THEN p.photographobjectkey END AS photographobjectkey,
+                    CASE WHEN p.showhomeregion THEN p.homeregion END AS homeregion,
+                    u.email AS email
+                FROM users u
+                LEFT JOIN profiles p ON p.userid = u.id
+                WHERE u.id <> @RequestingUserId
                   AND (
-                        (COALESCE(p."ShowDisplayName", false) AND p."DisplayName" ILIKE @SearchPattern)
-                     OR u."Email" ILIKE @SearchPattern
+                        (COALESCE(p.showdisplayname, false) AND p.displayname ILIKE @SearchPattern)
+                     OR u.email ILIKE @SearchPattern
                   )
-                ORDER BY p."DisplayName", u."Id"
+                ORDER BY p.displayname, u.id
                 LIMIT @MaxResults;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -156,13 +156,13 @@ public sealed class ProfileRepository : IProfileRepository
         try
         {
             const string sql = """
-                INSERT INTO "Profile" (
-                    "UserId", "DisplayName", "PhotographId", "PhotographObjectKey", "PhotographContentType",
-                    "HomeRegion",
-                    "PreferredWeightUnit", "PreferredLengthUnit",
-                    "ShowDisplayName", "ShowPhotograph", "ShowHomeRegion",
-                    "ShowPreferredFishingMethods", "ShowPreferredSpecies",
-                    "UpdatedOn")
+                INSERT INTO profiles (
+                    userid, displayname, photographid, photographobjectkey, photographcontenttype,
+                    homeregion,
+                    preferredweightunit, preferredlengthunit,
+                    showdisplayname, showphotograph, showhomeregion,
+                    showpreferredfishingmethods, showpreferredspecies,
+                    updatedon)
                 VALUES (
                     @UserId, @DisplayName, @PhotographId, @PhotographObjectKey, @PhotographContentType,
                     @HomeRegion,
@@ -170,17 +170,17 @@ public sealed class ProfileRepository : IProfileRepository
                     @ShowDisplayName, @ShowPhotograph, @ShowHomeRegion,
                     @ShowPreferredFishingMethods, @ShowPreferredSpecies,
                     now())
-                ON CONFLICT ("UserId") DO UPDATE SET
-                    "DisplayName" = EXCLUDED."DisplayName",
-                    "HomeRegion" = EXCLUDED."HomeRegion",
-                    "PreferredWeightUnit" = EXCLUDED."PreferredWeightUnit",
-                    "PreferredLengthUnit" = EXCLUDED."PreferredLengthUnit",
-                    "ShowDisplayName" = EXCLUDED."ShowDisplayName",
-                    "ShowPhotograph" = EXCLUDED."ShowPhotograph",
-                    "ShowHomeRegion" = EXCLUDED."ShowHomeRegion",
-                    "ShowPreferredFishingMethods" = EXCLUDED."ShowPreferredFishingMethods",
-                    "ShowPreferredSpecies" = EXCLUDED."ShowPreferredSpecies",
-                    "UpdatedOn" = now();
+                ON CONFLICT (userid) DO UPDATE SET
+                    displayname = EXCLUDED.displayname,
+                    homeregion = EXCLUDED.homeregion,
+                    preferredweightunit = EXCLUDED.preferredweightunit,
+                    preferredlengthunit = EXCLUDED.preferredlengthunit,
+                    showdisplayname = EXCLUDED.showdisplayname,
+                    showphotograph = EXCLUDED.showphotograph,
+                    showhomeregion = EXCLUDED.showhomeregion,
+                    showpreferredfishingmethods = EXCLUDED.showpreferredfishingmethods,
+                    showpreferredspecies = EXCLUDED.showpreferredspecies,
+                    updatedon = now();
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(
@@ -203,11 +203,11 @@ public sealed class ProfileRepository : IProfileRepository
         try
         {
             const string sql = """
-                INSERT INTO "Profile" ("UserId", "OnboardingCompletedOn", "UpdatedOn")
+                INSERT INTO profiles (userid, onboardingcompletedon, updatedon)
                 VALUES (@UserId, now(), now())
-                ON CONFLICT ("UserId") DO UPDATE SET
-                    "OnboardingCompletedOn" = COALESCE("Profile"."OnboardingCompletedOn", now()),
-                    "UpdatedOn" = now();
+                ON CONFLICT (userid) DO UPDATE SET
+                    onboardingcompletedon = COALESCE(profiles.onboardingcompletedon, now()),
+                    updatedon = now();
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(
@@ -230,12 +230,12 @@ public sealed class ProfileRepository : IProfileRepository
         try
         {
             const string sql = """
-                UPDATE "Profile"
-                SET "PhotographId" = @PhotographId,
-                    "PhotographObjectKey" = @ObjectKey,
-                    "PhotographContentType" = @ContentType,
-                    "UpdatedOn" = now()
-                WHERE "UserId" = @UserId;
+                UPDATE profiles
+                SET photographid = @PhotographId,
+                    photographobjectkey = @ObjectKey,
+                    photographcontenttype = @ContentType,
+                    updatedon = now()
+                WHERE userid = @UserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var updated = await connection.ExecuteAsync(new CommandDefinition(
@@ -312,7 +312,7 @@ public sealed class ProfileRepository : IProfileRepository
     {
         const string sql = $"""
             {SelectSql}
-            WHERE "UserId" = @UserId;
+            WHERE userid = @UserId;
             """;
         var profile = await connection.QuerySingleOrDefaultAsync<Profile>(new CommandDefinition(
             sql,

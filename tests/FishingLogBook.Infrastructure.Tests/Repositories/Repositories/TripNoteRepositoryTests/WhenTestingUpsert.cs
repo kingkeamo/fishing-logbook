@@ -99,7 +99,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         // Assert
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var row = await connection.QuerySingleAsync<(DateTimeOffset RecordedOn, DateTimeOffset CreatedOn)>(
-            """SELECT "RecordedOn", "CreatedOn" FROM "TripNote" WHERE "Id" = @Id;""",
+            """SELECT recordedon, createdon FROM tripnotes WHERE id = @Id;""",
             new { saved.Value.Id });
         row.RecordedOn.Should().Be(recordedOn);
         row.CreatedOn.Should().NotBe(recordedOn);
@@ -157,7 +157,7 @@ public class WhenTestingUpsert : BaseTripNoteRepositoryTest
         storedTrip.Value!.Status.Should().Be(TripStatusEnum.Active);
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var catchesForThisAngler = await connection.ExecuteScalarAsync<int>(
-            """SELECT COUNT(*) FROM "Catch" WHERE "UserId" = @UserId OR "TripId" = @TripId;""",
+            """SELECT COUNT(*) FROM catches WHERE caughtbyuserid = @UserId OR tripid = @TripId;""",
             new { UserId = userId, TripId = trip.Id });
         catchesForThisAngler.Should().Be(0);
     }

@@ -41,7 +41,7 @@ public class WhenTestingUpsert : BaseProfileRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "Profile" ("UserId", "DisplayName")
+            INSERT INTO profiles (userid, displayname)
             VALUES (@UserId, @DisplayName);
             """,
             new { UserId = Guid.NewGuid(), DisplayName = "Orphan" });

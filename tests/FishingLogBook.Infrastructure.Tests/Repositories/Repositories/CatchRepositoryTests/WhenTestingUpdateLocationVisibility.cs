@@ -96,9 +96,9 @@ public class WhenTestingUpdateLocationVisibility : BaseCatchRepositoryTest
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
             """
-            UPDATE "Catch"
-            SET "LocationVisibility" = @Visibility
-            WHERE "Id" = @Id;
+            UPDATE catches
+            SET locationvisibility = @Visibility
+            WHERE id = @Id;
             """,
             new { catchRecord.Id, Visibility = "FriendsOnly" });
 
@@ -150,21 +150,21 @@ public class WhenTestingUpdateLocationVisibility : BaseCatchRepositoryTest
         var row = await connection.QuerySingleAsync(
             """
             SELECT
-                "Latitude",
-                "Longitude",
-                "LocationAccuracyMetres",
-                "LocationCapturedOn",
-                "LocationSource",
-                "LocationVisibility",
-                "LocationConsentVersion"
-            FROM "Catch"
-            WHERE "Id" = @Id;
+                latitude,
+                longitude,
+                locationaccuracymetres,
+                locationcapturedon,
+                locationsource,
+                locationvisibility,
+                locationconsentversion
+            FROM catches
+            WHERE id = @Id;
             """,
             new { catchRecord.Id });
-        ((double)row.Latitude).Should().Be(location.Latitude);
-        ((double)row.Longitude).Should().Be(location.Longitude);
-        ((string)row.LocationVisibility).Should().Be(visibility);
-        ((string)row.LocationSource).Should().Be(LocationDefaults.DeviceGps);
-        ((string)row.LocationConsentVersion).Should().Be(LocationDefaults.ConsentVersion);
+        ((double)row.latitude).Should().Be(location.Latitude);
+        ((double)row.longitude).Should().Be(location.Longitude);
+        ((string)row.locationvisibility).Should().Be(visibility);
+        ((string)row.locationsource).Should().Be(LocationDefaults.DeviceGps);
+        ((string)row.locationconsentversion).Should().Be(LocationDefaults.ConsentVersion);
     }
 }

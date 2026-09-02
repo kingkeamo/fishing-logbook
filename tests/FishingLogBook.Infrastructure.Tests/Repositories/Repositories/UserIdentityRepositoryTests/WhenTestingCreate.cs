@@ -24,7 +24,7 @@ public class WhenTestingCreate : BaseUserIdentityRepositoryTest
         // Arrange
         await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
         var act = () => connection.ExecuteAsync(
-            """INSERT INTO "User" ("Id") VALUES (@Id);""",
+            """INSERT INTO users (id) VALUES (@Id);""",
             new { Id = Guid.NewGuid() });
 
         // Act
@@ -44,7 +44,7 @@ public class WhenTestingCreate : BaseUserIdentityRepositoryTest
 
         var act = () => connection.ExecuteAsync(
             """
-            INSERT INTO "UserIdentity" ("Id", "UserId", "Provider", "Subject")
+            INSERT INTO useridentities (id, userid, provider, subject)
             VALUES (@Id, @UserId, @Provider, @Subject);
             """,
             new

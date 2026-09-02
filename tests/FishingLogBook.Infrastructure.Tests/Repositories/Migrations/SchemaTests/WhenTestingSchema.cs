@@ -8,6 +8,27 @@ namespace FishingLogBook.Infrastructure.Tests.Repositories.Migrations.SchemaTest
 [Collection(PostgresCollection.Name)]
 public class WhenTestingSchema
 {
+    private static readonly string[] ExpectedTables =
+    [
+        "catches",
+        "catchphotographs",
+        "fishingmethods",
+        "platformcapabilities",
+        "profiles",
+        "species",
+        "systemhealth",
+        "tripparticipants",
+        "tripnotes",
+        "tripphotographs",
+        "trips",
+        "userfishinglocationpreferences",
+        "userfishingmethodpreferences",
+        "userfishingspeciespreferences",
+        "useridentities",
+        "userplatformcapabilities",
+        "users"
+    ];
+
     private readonly PostgresFixture _fixture;
 
     public WhenTestingSchema(PostgresFixture fixture)
@@ -16,158 +37,269 @@ public class WhenTestingSchema
     }
 
     [Fact]
-    public async Task ItShouldNotExposeTheObsoleteTestCatchTables()
+    public async Task ItShouldCreateOnlyTheCurrentApplicationTables()
     {
         // Arrange
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await using var connection = await CreateConnectionAsync();
 
         // Act
         var tables = await connection.QueryAsync<string>(
-            """SELECT "table_name" FROM information_schema.tables WHERE "table_schema" = 'public';""");
+            """
+            select table_name
+            from information_schema.tables
+            where table_schema = 'public'
+              and lower(table_name) <> 'schemaversions';
+            """);
 
         // Assert
-        var tableNames = tables.ToArray();
-        tableNames.Should().NotContain("TestCatch");
-        tableNames.Should().NotContain("TestCatchPhotograph");
+        tables.Should().BeEquivalentTo(ExpectedTables);
     }
 
     [Fact]
-    public async Task ItShouldStillExposeTheRealCatchTables()
+    public async Task ItShouldNotCreateLegacyQuotedOrTestTables()
     {
         // Arrange
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await using var connection = await CreateConnectionAsync();
 
         // Act
-        var tables = await connection.QueryAsync<string>(
-            """SELECT "table_name" FROM information_schema.tables WHERE "table_schema" = 'public';""");
+        var tables = (await connection.QueryAsync<string>(
+            """
+            select table_name
+            from information_schema.tables
+            where table_schema = 'public';
+            """)).ToArray();
 
         // Assert
-        var tableNames = tables.ToArray();
-        tableNames.Should().Contain("Catch");
-        tableNames.Should().Contain("CatchPhotograph");
+        tables.Should().NotContain("SystemTest");
+        tables.Should().NotContain("TestCatch");
+        tables.Should().NotContain("TestCatchPhotograph");
+        tables.Should().NotContain(table => table.Any(char.IsUpper));
     }
 
     [Fact]
-    public async Task ItShouldRemoveTheLegacyProfileFishingArrayColumns()
+    public async Task ItShouldCreateTheFinalCatchColumns()
     {
         // Arrange
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await using var connection = await CreateConnectionAsync();
+        string[] expectedColumns =
+        [
+            "id", "caughtbyuserid", "recordedbyuserid", "caughton", "createdon",
+            "latitude", "longitude", "locationaccuracymetres", "locationcapturedon",
+            "locationsource", "locationvisibility", "locationconsentversion", "speciesname",
+            "weight", "length", "method", "baitorlure", "notes", "tripid"
+        ];
 
         // Act
         var columns = await connection.QueryAsync<string>(
             """
-            SELECT "column_name" FROM information_schema.columns
-            WHERE "table_schema" = 'public' AND "table_name" = 'Profile';
+            select column_name
+            from information_schema.columns
+            where table_schema = 'public' and table_name = 'catches';
             """);
 
         // Assert
-        var columnNames = columns.ToArray();
-        columnNames.Should().NotContain("PreferredFishingTypes");
-        columnNames.Should().NotContain("PreferredSpecies");
-        columnNames.Should().NotContain("ShowPreferredFishingTypes");
-        columnNames.Should().Contain("ShowPreferredFishingMethods");
-        columnNames.Should().Contain("ShowPreferredSpecies");
+        columns.Should().BeEquivalentTo(expectedColumns);
+        columns.Should().NotContain("userid");
+        columns.Should().NotContain("angleruserid");
     }
 
     [Fact]
-    public async Task ItShouldStillExposeTheCanonicalFishingPreferenceTables()
+    public async Task ItShouldPreserveAuditedNullabilityAndDefaults()
     {
         // Arrange
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await using var connection = await CreateConnectionAsync();
 
         // Act
-        var tables = await connection.QueryAsync<string>(
-            """SELECT "table_name" FROM information_schema.tables WHERE "table_schema" = 'public';""");
+        var columns = await connection.QueryAsync<ColumnShape>(
+            """
+            select table_name as TableName,
+                   column_name as ColumnName,
+                   is_nullable as IsNullable,
+                   column_default as ColumnDefault
+            from information_schema.columns
+            where table_schema = 'public'
+              and (table_name, column_name) in
+              (
+                  ('catches', 'caughtbyuserid'),
+                  ('catches', 'recordedbyuserid'),
+                  ('catches', 'tripid'),
+                  ('profiles', 'displayname'),
+                  ('profiles', 'preferredweightunit'),
+                  ('tripphotographs', 'contributedbyuserid'),
+                  ('users', 'offlineaccessenabled'),
+                  ('users', 'offlineaccessenabledat')
+              );
+            """);
 
         // Assert
-        var tableNames = tables.ToArray();
-        tableNames.Should().Contain("FishingMethod");
-        tableNames.Should().Contain("Species");
-        tableNames.Should().Contain("UserFishingMethodPreference");
-        tableNames.Should().Contain("UserFishingSpeciesPreference");
-        tableNames.Should().Contain("UserFishingLocationPreference");
+        columns.Should().Contain(column => column.TableName == "catches" && column.ColumnName == "caughtbyuserid" && column.IsNullable == "NO");
+        columns.Should().Contain(column => column.TableName == "catches" && column.ColumnName == "recordedbyuserid" && column.IsNullable == "NO");
+        columns.Should().Contain(column => column.TableName == "catches" && column.ColumnName == "tripid" && column.IsNullable == "YES");
+        columns.Should().Contain(column => column.TableName == "profiles" && column.ColumnName == "displayname" && column.IsNullable == "YES");
+        columns.Should().Contain(column => column.TableName == "profiles" && column.ColumnName == "preferredweightunit" && column.ColumnDefault == "0");
+        columns.Should().Contain(column => column.TableName == "tripphotographs" && column.ColumnName == "contributedbyuserid" && column.IsNullable == "NO");
+        columns.Should().Contain(column => column.TableName == "users" && column.ColumnName == "offlineaccessenabled" && column.ColumnDefault == "false");
+        columns.Should().Contain(column => column.TableName == "users" && column.ColumnName == "offlineaccessenabledat" && column.IsNullable == "YES");
     }
 
     [Fact]
-    public async Task ItShouldExposeNullableOnboardingCompletion()
+    public async Task ItShouldCreateTheAuditedForeignKeysAndDeleteAction()
     {
         // Arrange
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await using var connection = await CreateConnectionAsync();
+        string[] expectedForeignKeys =
+        [
+            "fkcatchescaughtbyuser",
+            "fkcatchesrecordedbyuser",
+            "fkcatchestrip",
+            "fkcatchphotographscatch",
+            "fkprofilesuser",
+            "fktripparticipantsinvitedbyuser",
+            "fktripparticipantstrip",
+            "fktripparticipantsuser",
+            "fktripnotescreatedbyuser",
+            "fktripnotestrip",
+            "fktripphotographscontributedbyuser",
+            "fktripphotographstrip",
+            "fktripsowneruser",
+            "fkuserfishinglocationpreferencesuser",
+            "fkuserfishingmethodpreferencesfishingmethod",
+            "fkuserfishingmethodpreferencesuser",
+            "fkuserfishingspeciespreferencesspecies",
+            "fkuserfishingspeciespreferencesusermethod",
+            "fkuseridentitiesuser",
+            "fkuserplatformcapabilitiescode",
+            "fkuserplatformcapabilitiesuser"
+        ];
 
         // Act
-        var nullable = await connection.QuerySingleAsync<string>(
+        var foreignKeys = await connection.QueryAsync<ForeignKeyShape>(
             """
-            SELECT "is_nullable" FROM information_schema.columns
-            WHERE "table_schema" = 'public'
-              AND "table_name" = 'Profile'
-              AND "column_name" = 'OnboardingCompletedOn';
+            select constraint_name as Name,
+                   delete_rule as DeleteRule,
+                   update_rule as UpdateRule
+            from information_schema.referential_constraints
+            where constraint_schema = 'public';
             """);
 
         // Assert
-        nullable.Should().Be("YES");
+        foreignKeys.Select(key => key.Name).Should().BeEquivalentTo(expectedForeignKeys);
+        foreignKeys.Should().Contain(key => key.Name == "fkcatchescaughtbyuser" && key.DeleteRule == "NO ACTION" && key.UpdateRule == "NO ACTION");
+        foreignKeys.Should().Contain(key => key.Name == "fkcatchesrecordedbyuser" && key.DeleteRule == "NO ACTION" && key.UpdateRule == "NO ACTION");
+        foreignKeys.Should().Contain(key => key.Name == "fkcatchestrip" && key.DeleteRule == "SET NULL" && key.UpdateRule == "NO ACTION");
     }
 
     [Fact]
-    public async Task ItShouldExposeOfflineAccessPreferenceAndServerTimestamp()
-    {
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
-
-        var columns = await connection.QueryAsync<(string Name, string Nullable)>(
-            """
-            SELECT "column_name" AS "Name", "is_nullable" AS "Nullable"
-            FROM information_schema.columns
-            WHERE "table_schema" = 'public' AND "table_name" = 'User'
-              AND "column_name" IN ('OfflineAccessEnabled', 'OfflineAccessEnabledAt');
-            """);
-
-        columns.Should().Contain(column =>
-            column.Name == "OfflineAccessEnabled" && column.Nullable == "NO");
-        columns.Should().Contain(column =>
-            column.Name == "OfflineAccessEnabledAt" && column.Nullable == "YES");
-    }
-
-    [Fact]
-    public async Task ItShouldExposeTheFishingLocationPreferenceTableAndItsInvariants()
-    {
-        // Arrange
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
-
-        // Act
-        var indexes = await connection.QueryAsync<string>(
-            """
-            SELECT "indexname" FROM pg_indexes
-            WHERE "schemaname" = 'public' AND "tablename" = 'UserFishingLocationPreference';
-            """);
-
-        // Assert
-        var indexNames = indexes.ToArray();
-        indexNames.Should().Contain("PkUserFishingLocationPreference");
-        indexNames.Should().Contain("UxUserFishingLocationPreferenceName");
-        indexNames.Should().Contain("UxUserFishingLocationPreferenceDefault");
-    }
-
-    [Fact]
-    public async Task ItShouldNotStoreASingleDefaultFishingPlaceOnTheProfile()
+    public async Task ItShouldCreateAPrimaryKeyForEveryApplicationTable()
     {
         // Arrange
-        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
-        await using var connection = await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await using var connection = await CreateConnectionAsync();
+        var expectedPrimaryKeys = ExpectedTables.Select(table => $"pk{table}");
 
         // Act
-        var columns = await connection.QueryAsync<string>(
+        var primaryKeys = await connection.QueryAsync<string>(
             """
-            SELECT "column_name" FROM information_schema.columns
-            WHERE "table_schema" = 'public' AND "table_name" = 'Profile';
+            select constraint_record.conname
+            from pg_constraint constraint_record
+            join pg_class table_record on table_record.oid = constraint_record.conrelid
+            where constraint_record.contype = 'p'
+              and constraint_record.connamespace = 'public'::regnamespace
+              and lower(table_record.relname) <> 'schemaversions';
             """);
 
         // Assert
-        columns.Should().NotContain("DefaultFishingPlace");
+        primaryKeys.Should().BeEquivalentTo(expectedPrimaryKeys);
     }
+
+    [Fact]
+    public async Task ItShouldCreateTheAuditedChecks()
+    {
+        // Arrange
+        await using var connection = await CreateConnectionAsync();
+        string[] expectedChecks =
+        [
+            "ckcatcheslengthrange",
+            "ckcatcheslocationcoherent",
+            "ckcatcheslocationvisibilityallowed",
+            "ckcatchesweightrange",
+            "ckprofilespreferredlengthunit",
+            "ckprofilespreferredweightunit",
+            "cktripparticipantspendinghasnoresponse",
+            "cktripparticipantsnotselfinvited",
+            "cktripparticipantsremovedwasaccepted",
+            "cktripparticipantsrespondedafterinvited",
+            "cktripparticipantsstatusallowed",
+            "cktripsactivehasnoend",
+            "cktripsendedafterstarted",
+            "cktripslocationcoherent",
+            "cktripslocationvisibilityallowed",
+            "cktripsstatusallowed",
+            "ckuserfishinglocationpreferencesname"
+        ];
+
+        // Act
+        var checks = await connection.QueryAsync<string>(
+            """
+            select conname
+            from pg_constraint
+            where contype = 'c' and connamespace = 'public'::regnamespace;
+            """);
+
+        // Assert
+        checks.Should().BeEquivalentTo(expectedChecks);
+    }
+
+    [Fact]
+    public async Task ItShouldCreateTheImportantPartialAndExpressionIndexes()
+    {
+        // Arrange
+        await using var connection = await CreateConnectionAsync();
+
+        // Act
+        var indexes = await connection.QueryAsync<IndexShape>(
+            """
+            select indexname as Name, indexdef as Definition
+            from pg_indexes
+            where schemaname = 'public';
+            """);
+
+        // Assert
+        indexes.Should().Contain(index => index.Name == "uxtripsowneractive" && index.Definition.Contains("WHERE (status = 'Active'::text)", StringComparison.Ordinal));
+        indexes.Should().Contain(index => index.Name == "uxuserfishingmethodpreferencesdefault" && index.Definition.Contains("WHERE (isdefault = true)", StringComparison.Ordinal));
+        indexes.Should().Contain(index => index.Name == "uxuserfishingspeciespreferencesdefault" && index.Definition.Contains("WHERE (isdefault = true)", StringComparison.Ordinal));
+        indexes.Should().Contain(index => index.Name == "uxuserfishinglocationpreferencesdefault" && index.Definition.Contains("WHERE (isdefault = true)", StringComparison.Ordinal));
+        indexes.Should().Contain(index => index.Name == "uxuserfishinglocationpreferencesname" && index.Definition.Contains("lower(btrim(name))", StringComparison.Ordinal));
+        indexes.Should().Contain(index => index.Name == "uxtripphotographsobjectkey");
+    }
+
+    [Fact]
+    public async Task ItShouldSeedOnlyCurrentReferenceAndHealthData()
+    {
+        // Arrange
+        await using var connection = await CreateConnectionAsync();
+
+        // Act
+        var healthCount = await connection.QuerySingleAsync<int>("select count(*) from systemhealth;");
+        var capabilities = await connection.QueryAsync<string>("select code from platformcapabilities;");
+        var methodCount = await connection.QuerySingleAsync<int>("select count(*) from fishingmethods;");
+        var speciesCount = await connection.QuerySingleAsync<int>("select count(*) from species;");
+
+        // Assert
+        healthCount.Should().Be(1);
+        capabilities.Should().BeEquivalentTo("Guide", "FishingVenueManager", "CompetitionOrganiser", "Administrator");
+        methodCount.Should().Be(5);
+        speciesCount.Should().Be(12);
+    }
+
+    private async Task<Npgsql.NpgsqlConnection> CreateConnectionAsync()
+    {
+        var connectionFactory = new NpgsqlConnectionFactory(_fixture.ConnectionString);
+        return await connectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+    }
+
+    private sealed record ColumnShape(string TableName, string ColumnName, string IsNullable, string? ColumnDefault);
+
+    private sealed record ForeignKeyShape(string Name, string DeleteRule, string UpdateRule);
+
+    private sealed record IndexShape(string Name, string Definition);
 }

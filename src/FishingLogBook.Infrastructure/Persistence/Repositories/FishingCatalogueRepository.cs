@@ -27,9 +27,9 @@ public sealed class FishingCatalogueRepository : IFishingCatalogueRepository
         try
         {
             const string sql = """
-                SELECT "Id", "Code", "Name", "CreatedOn"
-                FROM "FishingMethod"
-                ORDER BY "Name";
+                SELECT id, code, name, createdon
+                FROM fishingmethods
+                ORDER BY name;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var rows = await connection.QueryAsync<FishingMethod>(new CommandDefinition(
@@ -54,9 +54,9 @@ public sealed class FishingCatalogueRepository : IFishingCatalogueRepository
         try
         {
             const string sql = """
-                SELECT "Id", "Code", "Name", "CreatedOn"
-                FROM "Species"
-                ORDER BY "Name";
+                SELECT id, code, name, createdon
+                FROM species
+                ORDER BY name;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var rows = await connection.QueryAsync<Species>(new CommandDefinition(

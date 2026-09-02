@@ -473,24 +473,28 @@ This endpoint must perform a real database query rather than merely returning a 
 
 ---
 
-# 14. Test Database Table
+# 14. System Health Database Table
 
 Create an initial database table using DbUp.
 
 Table name:
 
 ```text
-SystemTest
+systemhealth
 ```
 
-Do not use underscores in database table names.
+Application data collection tables are lowercase, plural, unquoted, and contain no
+underscores. Purpose-specific singleton tables may use an explicitly documented singular
+name; `systemhealth` is the current intentional singleton exception. Do not invent new
+singular exceptions without an explicit reason. Columns are lowercase, unquoted, and
+contain no underscores.
 
 Suggested columns:
 
 ```text
-Id
-Name
-CreatedOn
+id
+name
+createdon
 ```
 
 Insert one seed/test record through a migration.
@@ -521,13 +525,9 @@ Scripts live under numbered folders inside `FishingLogBook.Db.Migrations`:
 ```
 
 Filename convention: `YYYYMMDDHHMM_{GitHubIssue}_{Description}.sql` (no `#`).
-Example: `202608141200_3_AddCatchTable.sql` for issue `#3`. Initial scripts (already
-applied — do not rename):
-
-```text
-01_Tables/202608131200_CreateSystemTest.sql
-02_SeedData/202608131201_SeedSystemTest.sql
-```
+Example: `202608141200_3_AddCatchTable.sql` for issue `#3`. Do not rename, replace, or
+delete journaled scripts except as part of an explicitly approved pre-release baseline
+rewrite with a separately proven existing-database migration process.
 
 Scripts are **ordered by filename only** (via `FilenameOnlyScriptComparer` /
 `WithScriptNameComparer`), so the timestamp prefix determines run order across all folders —
@@ -557,7 +557,7 @@ local `appsettings.Development.json`).
 `GET /api/system/database` must:
 
 1. Connect to PostgreSQL.
-2. Query `SystemTest`.
+2. Query `systemhealth` using unquoted SQL.
 3. Return the test record.
 
 Example:
@@ -1204,7 +1204,7 @@ GET Fly Dev /api/system/database
     ->
 Neon query
     ->
-SystemTest record
+systemhealth record
 ```
 
 The UI must display the actual API/database result.
