@@ -85,7 +85,7 @@ public sealed class CatchRepository : ICatchRepository
                 INNER JOIN "Catch" c ON c."Id" = p."CatchId"
                 WHERE p."Id" = @PhotographId
                   AND p."CatchId" = @CatchId
-                  AND COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId") = @CaughtByUserId;
+                  AND COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @CaughtByUserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             var photograph = await connection.QuerySingleOrDefaultAsync<CatchPhotograph>(
@@ -118,7 +118,7 @@ public sealed class CatchRepository : ICatchRepository
                 WHERE p."Id" = @PhotographId
                   AND p."CatchId" = @CatchId
                   AND c."Id" = p."CatchId"
-                  AND COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId") = @CaughtByUserId;
+                  AND COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @CaughtByUserId;
                 """;
             await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
             await connection.ExecuteAsync(new CommandDefinition(
@@ -188,7 +188,7 @@ public sealed class CatchRepository : ICatchRepository
                 UPDATE "Catch"
                 SET "TripId" = @TripId
                 WHERE "Id" = @CatchId
-                  AND COALESCE("AnglerUserId", "UserId", "CaughtByUserId") = @CaughtByUserId
+                  AND COALESCE("CaughtByUserId", "AnglerUserId", "UserId") = @CaughtByUserId
                   AND "TripId" IS NULL;
                 """;
             var updated = await connection.ExecuteAsync(new CommandDefinition(
@@ -220,7 +220,7 @@ public sealed class CatchRepository : ICatchRepository
                 UPDATE "Catch"
                 SET "LocationVisibility" = @Visibility
                 WHERE "Id" = @CatchId
-                  AND COALESCE("AnglerUserId", "UserId", "CaughtByUserId") = @CaughtByUserId
+                  AND COALESCE("CaughtByUserId", "AnglerUserId", "UserId") = @CaughtByUserId
                   AND "Latitude" IS NOT NULL;
                 """;
             var updated = await connection.ExecuteAsync(new CommandDefinition(
@@ -348,8 +348,8 @@ public sealed class CatchRepository : ICatchRepository
                 "LocationSource" = COALESCE(EXCLUDED."LocationSource", "Catch"."LocationSource"),
                 "LocationVisibility" = COALESCE(EXCLUDED."LocationVisibility", "Catch"."LocationVisibility"),
                 "LocationConsentVersion" = COALESCE(EXCLUDED."LocationConsentVersion", "Catch"."LocationConsentVersion")
-            WHERE COALESCE("Catch"."AnglerUserId", "Catch"."UserId", "Catch"."CaughtByUserId")
-                = COALESCE(EXCLUDED."AnglerUserId", EXCLUDED."UserId", EXCLUDED."CaughtByUserId");
+            WHERE COALESCE("Catch"."CaughtByUserId", "Catch"."AnglerUserId", "Catch"."UserId")
+                = COALESCE(EXCLUDED."CaughtByUserId", EXCLUDED."AnglerUserId", EXCLUDED."UserId");
             """;
         await connection.ExecuteAsync(new CommandDefinition(
             sql,
@@ -394,7 +394,7 @@ public sealed class CatchRepository : ICatchRepository
         const string catchSql = """
             SELECT
                 "Id",
-                COALESCE("AnglerUserId", "UserId", "CaughtByUserId") AS "CaughtByUserId",
+                COALESCE("CaughtByUserId", "AnglerUserId", "UserId") AS "CaughtByUserId",
                 COALESCE("RecordedByUserId", "UserId") AS "RecordedByUserId",
                 "TripId",
                 "CaughtOn",
@@ -457,7 +457,7 @@ public sealed class CatchRepository : ICatchRepository
         const string catchSql = """
             SELECT
                 c."Id",
-                COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId") AS "CaughtByUserId",
+                COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") AS "CaughtByUserId",
                 COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
                 c."TripId",
                 c."CaughtOn",
@@ -478,12 +478,12 @@ public sealed class CatchRepository : ICatchRepository
                 recorder_profile."DisplayName" AS "RecordedByName"
             FROM "Catch" c
             LEFT JOIN "Profile" angler_profile
-                ON angler_profile."UserId" = COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId")
+                ON angler_profile."UserId" = COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId")
             LEFT JOIN "Profile" recorder_profile
                 ON recorder_profile."UserId" = COALESCE(c."RecordedByUserId", c."UserId")
             WHERE c."Id" = @CatchId
               AND (
-                COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId") = @UserId
+                COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @UserId
                 OR COALESCE(c."RecordedByUserId", c."UserId") = @UserId
                 OR EXISTS (
                     SELECT 1
@@ -532,7 +532,7 @@ public sealed class CatchRepository : ICatchRepository
         const string sql = """
             SELECT
                 c."Id",
-                COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId") AS "CaughtByUserId",
+                COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") AS "CaughtByUserId",
                 COALESCE(c."RecordedByUserId", c."UserId") AS "RecordedByUserId",
                 c."TripId",
                 c."CaughtOn",
@@ -557,10 +557,10 @@ public sealed class CatchRepository : ICatchRepository
             FROM "Catch" c
             LEFT JOIN "CatchPhotograph" p ON p."CatchId" = c."Id"
             LEFT JOIN "Profile" angler_profile
-                ON angler_profile."UserId" = COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId")
+                ON angler_profile."UserId" = COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId")
             LEFT JOIN "Profile" recorder_profile
                 ON recorder_profile."UserId" = COALESCE(c."RecordedByUserId", c."UserId")
-            WHERE COALESCE(c."AnglerUserId", c."UserId", c."CaughtByUserId") = @UserId
+            WHERE COALESCE(c."CaughtByUserId", c."AnglerUserId", c."UserId") = @UserId
                OR COALESCE(c."RecordedByUserId", c."UserId") = @UserId
             ORDER BY c."CaughtOn" DESC, p."Id";
             """;
