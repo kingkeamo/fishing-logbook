@@ -288,7 +288,7 @@ If a photo upload fails after Catch creation, keep the Catch and photograph sync
 5. **Review Trip suggestions:** show each independent cluster as a compact date/count/location summary. For each, offer Create Trip, Add to existing Trip, or Keep as separate catches. Allow removing Catches from a cluster, choosing another compatible Trip and declining all Trip creation.
 6. **Confirm import:** show Trip/Catch/photo counts and relationships, save new Trips before dependent Catches, and report queued/synchronised/failure state.
 
-Keep controls touch-sized and review cards compact. Reuse validation, date/location display and photo presentation conventions where they fit, but do not couple the new wizard to `RecordCatchEditor` state. Trips and image recognition remain outside this milestone.
+Keep controls touch-sized and review cards compact. Reuse validation, date/location display and photo presentation conventions where they fit, but do not couple the new wizard to `RecordCatchEditor` state. Image recognition remains outside this milestone.
 
 ## 13. Test strategy
 
