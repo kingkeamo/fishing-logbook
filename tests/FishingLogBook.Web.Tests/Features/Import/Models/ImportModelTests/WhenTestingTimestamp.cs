@@ -1,0 +1,91 @@
+using AwesomeAssertions;
+using FishingLogBook.Web.Features.Import.Enums;
+using FishingLogBook.Web.Features.Import.Models;
+
+namespace FishingLogBook.Web.Tests.Features.Import.Models.ImportModelTests;
+
+public class WhenTestingTimestamp : BaseImportModelTest
+{
+    [Fact]
+    public void ItShouldRepresentAnExplicitExifInstantAsResolved()
+    {
+        // Arrange
+        var timestamp = ImportTimestampModel.FromExplicitInstant(
+            CapturedOn,
+            ImportTimestampSourceEnum.ExifOriginal);
+
+        // Act
+        var resolved = timestamp.IsResolved;
+
+        // Assert
+        resolved.Should().BeTrue();
+        timestamp.Instant.Should().Be(CapturedOn);
+        timestamp.LocalWallClock.Should().BeNull();
+        timestamp.HasTimezoneAmbiguity.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ItShouldKeepALocalExifTimeAmbiguousAndUnresolved()
+    {
+        // Arrange
+        var local = new DateTime(2025, 6, 14, 9, 30, 0, DateTimeKind.Local);
+
+        // Act
+        var timestamp = ImportTimestampModel.FromLocalWallClock(
+            local,
+            ImportTimestampSourceEnum.ExifDigitized);
+
+        // Assert
+        timestamp.State.Should().Be(ImportTimestampStateEnum.LocalWallClock);
+        timestamp.LocalWallClock.Should().Be(DateTime.SpecifyKind(local, DateTimeKind.Unspecified));
+        timestamp.HasTimezoneAmbiguity.Should().BeTrue();
+        timestamp.IsResolved.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ItShouldKeepFileLastModifiedAsAWeakUnresolvedFallback()
+    {
+        // Arrange
+        var timestamp = ImportTimestampModel.FromWeakFallback(CapturedOn);
+
+        // Act
+        var resolved = timestamp.IsResolved;
+
+        // Assert
+        resolved.Should().BeFalse();
+        timestamp.State.Should().Be(ImportTimestampStateEnum.WeakFallback);
+        timestamp.Source.Should().Be(ImportTimestampSourceEnum.FileLastModified);
+    }
+
+    [Theory]
+    [InlineData(ImportTimestampStateEnum.Missing)]
+    [InlineData(ImportTimestampStateEnum.Unusable)]
+    public void ItShouldRepresentMissingAndUnusableTimestamps(ImportTimestampStateEnum state)
+    {
+        // Arrange
+        var timestamp = state == ImportTimestampStateEnum.Missing
+            ? ImportTimestampModel.Missing()
+            : ImportTimestampModel.Unusable(ImportTimestampSourceEnum.ExifOriginal);
+
+        // Act
+        var resolved = timestamp.IsResolved;
+
+        // Assert
+        timestamp.State.Should().Be(state);
+        resolved.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ItShouldMakeAUserConfirmedTimestampResolved()
+    {
+        // Arrange
+        var timestamp = ImportTimestampModel.UserConfirmed(CapturedOn);
+
+        // Act
+        var resolved = timestamp.IsResolved;
+
+        // Assert
+        resolved.Should().BeTrue();
+        timestamp.Source.Should().Be(ImportTimestampSourceEnum.User);
+    }
+}
