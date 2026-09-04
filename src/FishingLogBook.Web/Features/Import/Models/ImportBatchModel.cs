@@ -210,7 +210,6 @@ public sealed class ImportBatchModel
             proposal.RemovePhoto(photoId);
         }
 
-
         _tripProposals.Clear();
     }
 
