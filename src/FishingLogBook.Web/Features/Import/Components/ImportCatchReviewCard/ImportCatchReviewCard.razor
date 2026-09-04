@@ -1,25 +1,148 @@
 @using FishingLogBook.Web.Features.Import.Models
+@using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor
 
 <MudPaper Class="import-catch-card pa-3" Elevation="2" id="@($"import-catch-{Number}")">
     <MudStack Spacing="2">
-        <MudText Typo="Typo.h6">@Loc["Import_CatchNumber", Number]</MudText>
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h6">@Loc["Import_CatchNumber", Number]</MudText>
+            <MudChip T="string" Color="@StatusColor" Variant="Variant.Outlined"
+                     id="@($"import-catch-{Number}-status")">@StatusLabel</MudChip>
+        </MudStack>
         <div class="import-catch-photos" id="@($"import-catch-{Number}-photos")">
             @foreach (var photo in ProposalPhotos)
             {
-                <img src="@photo.ThumbnailUrl"
-                     alt="@Loc["Import_PhotoAlt", photo.SelectionIndex + 1]"
-                     class="import-catch-thumbnail" />
+                <label class="import-catch-photo-choice">
+                    @if (_editing)
+                    {
+                        <MudCheckBox T="bool" Value="@_selectedPhotoIds.Contains(photo.Id)"
+                                     ValueChanged="@(selected => SelectPhoto(photo.Id, selected))"
+                                     aria-label="@Loc["Import_SelectPhoto", photo.SelectionIndex + 1]"
+                                     id="@($"import-catch-{Number}-select-{photo.SelectionIndex}")" />
+                    }
+                    <img src="@photo.ThumbnailUrl" alt="@Loc["Import_PhotoAlt", photo.SelectionIndex + 1]"
+                         class="import-catch-thumbnail" />
+                </label>
             }
         </div>
         <MudText id="@($"import-catch-{Number}-timestamp")">@TimestampLabel</MudText>
-        <MudText>@Proposal.Method.Name</MudText>
-        <MudText>@Proposal.Species.Name</MudText>
+        <MudText id="@($"import-catch-{Number}-method")">@Proposal.Method.Name</MudText>
+        <MudText id="@($"import-catch-{Number}-species")">@Proposal.Species.Name</MudText>
         <MudText id="@($"import-catch-{Number}-location")">@LocationLabel</MudText>
-        <MudChip T="string"
-                 Color="@(RequiresCorrection ? Color.Warning : Color.Success)"
-                 Variant="Variant.Outlined"
-                 id="@($"import-catch-{Number}-status")">
-            @(RequiresCorrection ? Loc["Import_NeedsReview"] : Loc["Import_Ready"])
-        </MudChip>
+
+        @if (_editing)
+        {
+            <MudStack Spacing="2" id="@($"import-catch-{Number}-editor")">
+                <MudTextField T="string" Value="@_caughtOnLocal" ValueChanged="SetCaughtOnLocal"
+                              Label="@Loc["Import_CaughtOn"]" InputType="InputType.DateTimeLocal"
+                              Immediate="true"
+                              Error="@_caughtOnInvalid" ErrorText="@Loc["Import_CaughtOnRequired"]"
+                              id="@($"import-catch-{Number}-caught-on")" />
+                <MudButton Variant="Variant.Outlined" OnClick="ConfirmCaughtOn"
+                           id="@($"import-catch-{Number}-confirm-caught-on")">@Loc["Import_ConfirmCaughtOn"]</MudButton>
+                @if (Proposal.RequiresCanonicalReview)
+                {
+                    <MudAlert Severity="Severity.Warning">@Loc["Import_MergeValuesNeedReview"]</MudAlert>
+                    <MudButton Variant="Variant.Outlined" OnClick="AcceptShownValues"
+                               id="@($"import-catch-{Number}-accept-merged-values")">@Loc["Import_UseShownValues"]</MudButton>
+                }
+
+                <MudText Typo="Typo.caption">@Loc["Import_FishingMethod"]</MudText>
+                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                    @foreach (var method in MethodOptions)
+                    {
+                        <MudChip T="string" Color="@(method.Id == Proposal.Method.Id ? Color.Primary : Color.Default)"
+                                 Variant="@(method.Id == Proposal.Method.Id ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => SelectMethod(method))"
+                                 id="@($"import-catch-{Number}-method-{method.Code}")">@method.Name</MudChip>
+                    }
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ChooseMethodAsync"
+                               id="@($"import-catch-{Number}-method-more")">@Loc["Common_More"]</MudButton>
+                </MudStack>
+
+                <MudText Typo="Typo.caption">@Loc["Import_Species"]</MudText>
+                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                    @foreach (var species in SpeciesOptions)
+                    {
+                        <MudChip T="string" Color="@(species.Id == Proposal.Species.Id ? Color.Primary : Color.Default)"
+                                 Variant="@(species.Id == Proposal.Species.Id ? Variant.Filled : Variant.Outlined)"
+                                 OnClick="@(() => SelectSpecies(species))"
+                                 id="@($"import-catch-{Number}-species-{species.Code}")">@species.Name</MudChip>
+                    }
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ChooseSpeciesAsync"
+                               id="@($"import-catch-{Number}-species-more")">@Loc["Common_More"]</MudButton>
+                </MudStack>
+
+                <div class="import-catch-measurements">
+                    <MeasurementField IsWeight="true" Value="Proposal.Weight" ValueChanged="SetWeight"
+                                      WeightUnit="Preferences.WeightUnit" LengthUnit="Preferences.LengthUnit"
+                                      Id="@($"import-catch-{Number}-weight")" />
+                    <MeasurementField Value="Proposal.Length" ValueChanged="SetLength"
+                                      WeightUnit="Preferences.WeightUnit" LengthUnit="Preferences.LengthUnit"
+                                      Id="@($"import-catch-{Number}-length")" />
+                </div>
+
+                @if (ShowLocationDecision)
+                {
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                        @foreach (var option in LocationOptions)
+                        {
+                            <MudButton Variant="Variant.Outlined" OnClick="@(() => AcceptLocation(option.Location))"
+                                       id="@($"import-catch-{Number}-location-{option.Photo.SelectionIndex}")">
+                                @Loc["Import_UsePhotoLocation", option.Photo.SelectionIndex + 1]
+                            </MudButton>
+                        }
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="RemoveLocation"
+                                   id="@($"import-catch-{Number}-remove-location")">@Loc["Import_RemoveLocation"]</MudButton>
+                    </MudStack>
+                }
+
+                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                    <MudButton Variant="Variant.Outlined" Disabled="@(!CanSplit)" OnClick="SplitSelectedAsync"
+                               id="@($"import-catch-{Number}-split")">@Loc["Import_MoveToNewCatch"]</MudButton>
+                    <MudButton Variant="Variant.Text" Color="Color.Error" Disabled="@(_selectedPhotoIds.Count == 0)"
+                               OnClick="RemoveSelectedAsync" id="@($"import-catch-{Number}-remove-photos")">
+                        @Loc["Import_RemoveSelectedPhotos"]
+                    </MudButton>
+                </MudStack>
+
+                @if (MergeTargets.Count > 0)
+                {
+                    <MudText Typo="Typo.caption">@Loc["Import_MergeWith"]</MudText>
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                        @foreach (var target in MergeTargets)
+                        {
+                            <MudButton Variant="Variant.Outlined" OnClick="@(() => MergeAsync(target.Proposal))"
+                                       id="@($"import-catch-{Number}-merge-{target.Number}")">
+                                @Loc["Import_CatchNumber", target.Number]
+                            </MudButton>
+                        }
+                    </MudStack>
+                }
+
+                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="RemoveCatchAsync"
+                           id="@($"import-catch-{Number}-remove")">@Loc["Import_RemoveCatch"]</MudButton>
+                <MudStack Row="true" Spacing="1" Justify="Justify.SpaceBetween">
+                    <MudButton Variant="Variant.Outlined" OnClick="CloseEditor"
+                               id="@($"import-catch-{Number}-close-editor")">@Loc["Common_Back"]</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ContinueAsync"
+                               id="@($"import-catch-{Number}-continue")">@Loc["Common_Continue"]</MudButton>
+                </MudStack>
+            </MudStack>
+        }
+        else
+        {
+            <MudStack Row="true" Spacing="1" Justify="Justify.FlexEnd">
+                @if (Editable)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenEditor"
+                               id="@($"import-catch-{Number}-edit")">@Loc["Import_ReviewEdit"]</MudButton>
+                }
+                @if (Proposal.CanConfirmDisplayedValues)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmAsync"
+                               id="@($"import-catch-{Number}-confirm")">@Loc["Import_ConfirmCatch"]</MudButton>
+                }
+            </MudStack>
+        }
     </MudStack>
 </MudPaper>

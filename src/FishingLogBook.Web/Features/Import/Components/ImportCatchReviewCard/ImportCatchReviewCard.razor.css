@@ -16,3 +16,20 @@
     object-fit: cover;
     border-radius: 0.5rem;
 }
+
+.import-catch-photo-choice {
+    position: relative;
+}
+
+.import-catch-photo-choice .mud-checkbox {
+    position: absolute;
+    z-index: 1;
+    background: var(--mud-palette-surface);
+    border-radius: 50%;
+}
+
+.import-catch-measurements {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}

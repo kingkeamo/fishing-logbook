@@ -1378,4 +1378,28 @@
   <data name="Import_LocationNeedsReview" xml:space="preserve"><value>Photo locations differ · review required</value></data>
   <data name="Import_LocationAvailable" xml:space="preserve"><value>Photo location available</value></data>
   <data name="Import_LocationUnavailable" xml:space="preserve"><value>No photo location</value></data>
+  <data name="Import_Reviewed" xml:space="preserve"><value>Reviewed</value></data>
+  <data name="Import_NeedsCorrection" xml:space="preserve"><value>Needs review</value></data>
+  <data name="Import_ReviewEdit" xml:space="preserve"><value>Review</value></data>
+  <data name="Import_ConfirmCatch" xml:space="preserve"><value>Confirm catch</value></data>
+  <data name="Import_CorrectCatches" xml:space="preserve"><value>Correct catches</value></data>
+  <data name="Import_CaughtOn" xml:space="preserve"><value>Caught on</value></data>
+  <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Enter a valid historical date and time.</value></data>
+  <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirm date and time</value></data>
+  <data name="Import_SelectPhoto" xml:space="preserve"><value>Select photograph {0}</value></data>
+  <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Use photo {0} location</value></data>
+  <data name="Import_RemoveLocation" xml:space="preserve"><value>Remove location</value></data>
+  <data name="Import_LocationAccepted" xml:space="preserve"><value>Photo location accepted</value></data>
+  <data name="Import_LocationRemoved" xml:space="preserve"><value>Location removed</value></data>
+  <data name="Import_MoveToNewCatch" xml:space="preserve"><value>Move selected to new catch</value></data>
+  <data name="Import_RemoveSelectedPhotos" xml:space="preserve"><value>Remove selected photos</value></data>
+  <data name="Import_MergeWith" xml:space="preserve"><value>Merge withâ€¦</value></data>
+  <data name="Import_RemoveCatch" xml:space="preserve"><value>Remove catch from import</value></data>
+  <data name="Import_CorrectionsComplete" xml:space="preserve"><value>All catches are reviewed and ready for Trip suggestions.</value></data>
+  <data name="Import_MergeValuesNeedReview" xml:space="preserve"><value>The merged catches had different details. Review the shown values before confirming.</value></data>
+  <data name="Import_UseShownValues" xml:space="preserve"><value>Use shown values</value></data>
+  <data name="Import_RemoveCatchTitle" xml:space="preserve"><value>Remove this catch?</value></data>
+  <data name="Import_RemoveCatchMessage" xml:space="preserve"><value>All photographs in this catch will be excluded from the import.</value></data>
+  <data name="Import_RemoveCatchConfirm" xml:space="preserve"><value>Remove catch</value></data>
+  <data name="Import_ContinueToTrips" xml:space="preserve"><value>Continue to Trip suggestions</value></data>
 </root>

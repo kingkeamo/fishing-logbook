@@ -55,6 +55,15 @@ public sealed class ImportBatchModel
         }
     }
 
+    public bool CanAdvanceToTrips
+    {
+        get
+        {
+            var active = _catchProposals.Where(proposal => !proposal.IsRemoved).ToArray();
+            return active.Length > 0 && active.All(proposal => proposal.IsReadyForConfirmation);
+        }
+    }
+
     public void SetDefaults(
         ImportCatalogueSelectionModel fishingMethod,
         ImportCatalogueSelectionModel species)
@@ -184,6 +193,7 @@ public sealed class ImportBatchModel
         }
 
         RemoveInactiveCatchMemberships();
+        _tripProposals.Clear();
     }
 
     public void RemoveCatchProposal(Guid catchProposalId)
@@ -194,11 +204,136 @@ public sealed class ImportBatchModel
             return;
         }
 
-        proposal.Remove();
-        foreach (var tripProposal in _tripProposals)
+        foreach (var photoId in proposal.PhotoIds.ToArray())
         {
-            tripProposal.RemoveCatch(catchProposalId);
+            _photos.Single(photo => photo.Id == photoId).Remove();
+            proposal.RemovePhoto(photoId);
         }
+
+
+        _tripProposals.Clear();
+    }
+
+    public void SetCatchCaughtOn(Guid catchProposalId, ImportTimestampModel caughtOn)
+    {
+        ActiveCatch(catchProposalId).SetCaughtOn(caughtOn);
+        _tripProposals.Clear();
+    }
+
+    public void SetCatchMethod(Guid catchProposalId, ImportCatalogueSelectionModel method)
+    {
+        ActiveCatch(catchProposalId).OverrideMethod(method);
+        _tripProposals.Clear();
+    }
+
+    public void SetCatchSpecies(Guid catchProposalId, ImportCatalogueSelectionModel species)
+    {
+        ActiveCatch(catchProposalId).OverrideSpecies(species);
+        _tripProposals.Clear();
+    }
+
+    public void SetCatchLocation(Guid catchProposalId, ImportLocationModel? location)
+    {
+        ActiveCatch(catchProposalId).SetLocation(location);
+        _tripProposals.Clear();
+    }
+
+    public void SetCatchWeight(Guid catchProposalId, decimal? weight)
+    {
+        ActiveCatch(catchProposalId).SetWeight(weight);
+        _tripProposals.Clear();
+    }
+
+    public void SetCatchLength(Guid catchProposalId, decimal? length)
+    {
+        ActiveCatch(catchProposalId).SetLength(length);
+        _tripProposals.Clear();
+    }
+
+    public void MarkCatchReviewed(Guid catchProposalId)
+    {
+        ActiveCatch(catchProposalId).MarkReviewed();
+    }
+
+    public void ConfirmDisplayedCatch(Guid catchProposalId)
+    {
+        ActiveCatch(catchProposalId).ConfirmDisplayedValues();
+        _tripProposals.Clear();
+    }
+
+    public ImportCatchProposalModel SplitCatch(
+        Guid catchProposalId,
+        IEnumerable<Guid> selectedPhotoIds,
+        Guid newCatchProposalId)
+    {
+        if (newCatchProposalId == Guid.Empty
+            || _catchProposals.Any(proposal => proposal.Id == newCatchProposalId))
+        {
+            throw new InvalidOperationException("A split requires a new unique Catch proposal identity.");
+        }
+
+        var source = ActiveCatch(catchProposalId);
+        var selected = selectedPhotoIds.Distinct().ToArray();
+        if (selected.Length == 0
+            || selected.Length >= source.PhotoIds.Count
+            || selected.Any(photoId => !source.PhotoIds.Contains(photoId)))
+        {
+            throw new InvalidOperationException("A split must move some, but not all, photos from its source Catch.");
+        }
+
+        var ordered = OrderedPhotoIds(selected);
+        foreach (var photoId in ordered)
+        {
+            source.RemovePhoto(photoId);
+        }
+
+        var firstPhoto = _photos.Single(photo => photo.Id == ordered[0]);
+        var reasons = ReasonsFor(firstPhoto.Timestamp).ToList();
+        var locations = ordered
+            .Select(photoId => _photos.Single(photo => photo.Id == photoId).Location)
+            .Where(location => location.HasCanonicalCoordinates)
+            .DistinctBy(location => (location.Latitude, location.Longitude))
+            .ToArray();
+        if (locations.Length > 1)
+        {
+            reasons.Add(ImportCatchProposalReasonEnum.ConflictingGps);
+        }
+
+        var created = new ImportCatchProposalModel(
+            newCatchProposalId,
+            ordered,
+            firstPhoto.Timestamp,
+            source.Method,
+            source.Species,
+            locations.Length == 1 ? locations[0] : null,
+            reasons);
+        AddCatchProposal(created);
+        SortCatchProposals();
+        _tripProposals.Clear();
+        return created;
+    }
+
+    public void MergeCatches(Guid primaryCatchProposalId, Guid absorbedCatchProposalId)
+    {
+        if (primaryCatchProposalId == absorbedCatchProposalId)
+        {
+            throw new InvalidOperationException("A Catch proposal cannot be merged with itself.");
+        }
+
+        var primary = ActiveCatch(primaryCatchProposalId);
+        var absorbed = ActiveCatch(absorbedCatchProposalId);
+        var conflicts = primary.CaughtOn != absorbed.CaughtOn
+            || primary.Method != absorbed.Method
+            || primary.Species != absorbed.Species
+            || primary.Location != absorbed.Location;
+        primary.SetPhotos(OrderedPhotoIds(primary.PhotoIds.Concat(absorbed.PhotoIds)));
+        if (conflicts)
+        {
+            primary.RequireCanonicalReview();
+        }
+
+        absorbed.Remove();
+        _tripProposals.Clear();
     }
 
     public void Cancel()
@@ -220,5 +355,37 @@ public sealed class ImportBatchModel
                 tripProposal.RemoveCatch(catchId);
             }
         }
+    }
+
+    private ImportCatchProposalModel ActiveCatch(Guid catchProposalId)
+    {
+        return _catchProposals.SingleOrDefault(proposal => proposal.Id == catchProposalId && !proposal.IsRemoved)
+            ?? throw new InvalidOperationException("The active Catch proposal was not found.");
+    }
+
+    private Guid[] OrderedPhotoIds(IEnumerable<Guid> photoIds)
+    {
+        var selectionOrder = _photos.ToDictionary(photo => photo.Id, photo => photo.SelectionIndex);
+        return photoIds.Distinct().OrderBy(photoId => selectionOrder[photoId]).ToArray();
+    }
+
+    private void SortCatchProposals()
+    {
+        var selectionOrder = _photos.ToDictionary(photo => photo.Id, photo => photo.SelectionIndex);
+        _catchProposals.Sort((left, right) =>
+            left.PhotoIds.Min(photoId => selectionOrder[photoId])
+                .CompareTo(right.PhotoIds.Min(photoId => selectionOrder[photoId])));
+    }
+
+    private static IEnumerable<ImportCatchProposalReasonEnum> ReasonsFor(ImportTimestampModel timestamp)
+    {
+        yield return timestamp.State switch
+        {
+            ImportTimestampStateEnum.ExplicitInstant => ImportCatchProposalReasonEnum.TrustworthyCaptureTime,
+            ImportTimestampStateEnum.LocalWallClock => ImportCatchProposalReasonEnum.AmbiguousTimestamp,
+            ImportTimestampStateEnum.WeakFallback => ImportCatchProposalReasonEnum.WeakTimestamp,
+            ImportTimestampStateEnum.Unusable => ImportCatchProposalReasonEnum.UnusableTimestamp,
+            _ => ImportCatchProposalReasonEnum.MissingTimestamp
+        };
     }
 }

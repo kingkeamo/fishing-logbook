@@ -20,6 +20,7 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private Guid _methodId;
     private Guid _speciesId;
     private bool _isLoading = true;
+    private bool _correctionsComplete;
     private bool _selectionLimitExceeded;
 
     [Inject] private IAnglerPreferencesProvider Preferences { get; set; } = default!;
@@ -36,6 +37,9 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
                 && _batch.Photos.Any(photo => !photo.IsRemoved && photo.IsReady);
         }
     }
+
+    private IReadOnlyList<ImportCatchProposalModel> ActiveCatchProposals =>
+        [.. _batch?.CatchProposals.Where(proposal => !proposal.IsRemoved) ?? []];
 
     private IReadOnlyList<CatalogueOptionModel> MethodOptions
     {
@@ -226,6 +230,52 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private void BackToPhotos()
     {
         _batch?.SetStage(ImportStageEnum.ChoosePhotos);
+    }
+
+    private void OnCorrectionsChanged()
+    {
+        _correctionsComplete = false;
+        StateHasChanged();
+    }
+
+    private void CompleteCorrections()
+    {
+        if (_batch?.CanAdvanceToTrips == true)
+        {
+            _correctionsComplete = true;
+        }
+    }
+
+    private async Task RemoveCorrectionPhotosAsync(IReadOnlyList<Guid> photoIds)
+    {
+        if (_batch is null)
+        {
+            return;
+        }
+
+        foreach (var photoId in photoIds)
+        {
+            var photo = _batch.Photos.Single(photo => photo.Id == photoId);
+            await Preparation.RemoveAsync(photo, _cancellationTokenSource.Token);
+            _batch.RemovePhoto(photoId);
+        }
+    }
+
+    private async Task RemoveCorrectionCatchAsync(Guid catchProposalId)
+    {
+        if (_batch is null)
+        {
+            return;
+        }
+
+        var proposal = _batch.CatchProposals.Single(proposal => proposal.Id == catchProposalId);
+        foreach (var photoId in proposal.PhotoIds.ToArray())
+        {
+            var photo = _batch.Photos.Single(photo => photo.Id == photoId);
+            await Preparation.RemoveAsync(photo, _cancellationTokenSource.Token);
+        }
+
+        _batch.RemoveCatchProposal(catchProposalId);
     }
 
     private void OnSelectionStarted()

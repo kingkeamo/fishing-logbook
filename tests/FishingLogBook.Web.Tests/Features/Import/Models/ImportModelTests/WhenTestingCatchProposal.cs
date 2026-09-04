@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
 
 namespace FishingLogBook.Web.Tests.Features.Import.Models.ImportModelTests;
@@ -44,11 +45,13 @@ public class WhenTestingCatchProposal : BaseImportModelTest
         var proposal = Catch(caughtOn: ImportTimestampModel.Missing());
 
         // Act
-        proposal.MarkReviewed();
+        Action review = proposal.MarkReviewed;
 
         // Assert
+        review.Should().Throw<InvalidOperationException>();
         proposal.IsReadyForConfirmation.Should().BeFalse();
         proposal.SetCaughtOn(ImportTimestampModel.UserConfirmed(CapturedOn));
+        proposal.MarkReviewed();
         proposal.IsReadyForConfirmation.Should().BeTrue();
     }
 
@@ -65,5 +68,63 @@ public class WhenTestingCatchProposal : BaseImportModelTest
         proposal.PhotoIds.Should().BeEmpty();
         proposal.IsRemoved.Should().BeTrue();
         proposal.IsReadyForConfirmation.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ItShouldAllowMissingGpsButRequireADecisionForAvailableGps()
+    {
+        // Arrange
+        var withoutGps = Catch();
+        var withGps = new ImportCatchProposalModel(
+            Guid.NewGuid(), [PhotoId], ImportTimestampModel.UserConfirmed(CapturedOn), Method(), Species(),
+            new ImportLocationModel(53.3498, -6.2603, true));
+
+        // Act
+        withoutGps.MarkReviewed();
+        Action reviewWithUndecidedGps = withGps.MarkReviewed;
+
+        // Assert
+        withoutGps.IsReadyForConfirmation.Should().BeTrue();
+        reviewWithUndecidedGps.Should().Throw<InvalidOperationException>();
+
+        // Act
+        withGps.SetLocation(withGps.Location!.Accept());
+        withGps.MarkReviewed();
+
+        // Assert
+        withGps.IsReadyForConfirmation.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ItShouldRequireExplicitResolutionOfConflictingGps()
+    {
+        // Arrange
+        var proposal = new ImportCatchProposalModel(
+            Guid.NewGuid(), [PhotoId], ImportTimestampModel.UserConfirmed(CapturedOn), Method(), Species(),
+            reasons: [ImportCatchProposalReasonEnum.ConflictingGps]);
+        Action review = proposal.MarkReviewed;
+
+        // Act
+        var assertion = review.Should();
+
+        // Assert
+        assertion.Throw<InvalidOperationException>();
+        proposal.HasUnresolvedGpsConflict.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ItShouldTreatConfirmingTheDisplayedFallbackAsExplicitTimestampApproval()
+    {
+        // Arrange
+        var proposal = Catch(caughtOn: ImportTimestampModel.FromWeakFallback(CapturedOn));
+
+        // Act
+        proposal.ConfirmDisplayedValues();
+
+        // Assert
+        proposal.CaughtOn.State.Should().Be(ImportTimestampStateEnum.UserConfirmed);
+        proposal.CaughtOn.Instant.Should().Be(CapturedOn);
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
+        proposal.IsReadyForConfirmation.Should().BeTrue();
     }
 }

@@ -88,4 +88,39 @@ public class WhenTestingTimestamp : BaseImportModelTest
         resolved.Should().BeTrue();
         timestamp.Source.Should().Be(ImportTimestampSourceEnum.User);
     }
+
+    [Fact]
+    public void ItShouldConfirmAnOffsetLessWallClockWithoutApplyingTheCurrentTimezone()
+    {
+        // Arrange
+        var wallClock = new DateTime(2024, 6, 14, 9, 20, 0, DateTimeKind.Local);
+        var proposed = ImportTimestampModel.FromLocalWallClock(
+            wallClock,
+            ImportTimestampSourceEnum.ExifOriginal);
+
+        // Act
+        var confirmed = proposed.Confirm(wallClock);
+
+        // Assert
+        confirmed.IsResolved.Should().BeTrue();
+        confirmed.Instant.Should().BeNull();
+        confirmed.LocalWallClock.Should().Be(DateTime.SpecifyKind(wallClock, DateTimeKind.Unspecified));
+        confirmed.LocalWallClock!.Value.Kind.Should().Be(DateTimeKind.Unspecified);
+    }
+
+    [Fact]
+    public void ItShouldPreserveTheHistoricalOffsetWhenCorrectingAnExplicitInstant()
+    {
+        // Arrange
+        var proposed = ImportTimestampModel.FromExplicitInstant(
+            CapturedOn,
+            ImportTimestampSourceEnum.ExifOriginal);
+        var correction = new DateTime(2025, 6, 14, 10, 15, 0);
+
+        // Act
+        var confirmed = proposed.Confirm(correction);
+
+        // Assert
+        confirmed.Instant.Should().Be(new DateTimeOffset(correction, CapturedOn.Offset));
+    }
 }

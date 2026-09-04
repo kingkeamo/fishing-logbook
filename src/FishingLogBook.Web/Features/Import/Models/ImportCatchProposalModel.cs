@@ -6,6 +6,8 @@ public sealed class ImportCatchProposalModel
 {
     private readonly List<Guid> _photoIds;
     private readonly IReadOnlyList<ImportCatchProposalReasonEnum> _reasons;
+    private bool _canonicalReviewRequired;
+    private bool _gpsConflictResolved;
 
     public ImportCatchProposalModel(
         Guid id,
@@ -14,7 +16,9 @@ public sealed class ImportCatchProposalModel
         ImportCatalogueSelectionModel inheritedMethod,
         ImportCatalogueSelectionModel inheritedSpecies,
         ImportLocationModel? location = null,
-        IEnumerable<ImportCatchProposalReasonEnum>? reasons = null)
+        IEnumerable<ImportCatchProposalReasonEnum>? reasons = null,
+        decimal? weight = null,
+        decimal? length = null)
     {
         if (id == Guid.Empty)
         {
@@ -37,7 +41,10 @@ public sealed class ImportCatchProposalModel
         InheritedMethod = inheritedMethod;
         InheritedSpecies = inheritedSpecies;
         Location = location;
+        Weight = weight;
+        Length = length;
         _reasons = reasons?.Distinct().ToArray() ?? [];
+        _gpsConflictResolved = !_reasons.Contains(ImportCatchProposalReasonEnum.ConflictingGps);
     }
 
     public Guid Id { get; }
@@ -47,6 +54,10 @@ public sealed class ImportCatchProposalModel
     public ImportTimestampModel CaughtOn { get; private set; }
 
     public ImportLocationModel? Location { get; private set; }
+
+    public decimal? Weight { get; private set; }
+
+    public decimal? Length { get; private set; }
 
     public IReadOnlyList<ImportCatchProposalReasonEnum> Reasons => _reasons;
 
@@ -72,36 +83,109 @@ public sealed class ImportCatchProposalModel
         {
             return !IsRemoved
                 && ReviewStatus == ImportCatchReviewStatusEnum.Reviewed
-                && CaughtOn.IsResolved
-                && Method.IsValid
-                && Species.IsValid
-                && _photoIds.Count > 0;
+                && CanBeReviewed;
         }
     }
+
+    public bool CanBeReviewed => !IsRemoved
+        && CaughtOn.IsResolved
+        && Method.IsValid
+        && Species.IsValid
+        && IsLocationDecisionResolved
+        && _gpsConflictResolved
+        && !_canonicalReviewRequired
+        && _photoIds.Count > 0;
+
+    public bool CanConfirmDisplayedValues => !IsRemoved
+        && (CaughtOn.Instant.HasValue || CaughtOn.LocalWallClock.HasValue)
+        && Method.IsValid
+        && Species.IsValid
+        && _gpsConflictResolved
+        && _photoIds.Count > 0;
+
+    public bool IsLocationDecisionResolved => Location is null
+        || !Location.HistoricalGpsPresent
+        || Location.Decision != ImportLocationDecisionEnum.Undecided;
+
+    public bool HasUnresolvedGpsConflict => !_gpsConflictResolved;
+
+    public bool RequiresCanonicalReview => _canonicalReviewRequired;
 
     public void SetCaughtOn(ImportTimestampModel caughtOn)
     {
         CaughtOn = caughtOn;
+        CanonicalValueChanged();
     }
 
     public void SetLocation(ImportLocationModel? location)
     {
         Location = location;
+        _gpsConflictResolved = location is null
+            || !location.HistoricalGpsPresent
+            || location.Decision != ImportLocationDecisionEnum.Undecided;
+        CanonicalValueChanged();
     }
 
     public void OverrideMethod(ImportCatalogueSelectionModel? method)
     {
         MethodOverride = method;
+        CanonicalValueChanged();
     }
 
     public void OverrideSpecies(ImportCatalogueSelectionModel? species)
     {
         SpeciesOverride = species;
+        CanonicalValueChanged();
+    }
+
+    public void SetWeight(decimal? weight)
+    {
+        Weight = weight;
+        CanonicalValueChanged();
+    }
+
+    public void SetLength(decimal? length)
+    {
+        Length = length;
+        CanonicalValueChanged();
     }
 
     public void MarkReviewed()
     {
+        if (!CanBeReviewed)
+        {
+            throw new InvalidOperationException("The Catch proposal still requires correction.");
+        }
+
         ReviewStatus = ImportCatchReviewStatusEnum.Reviewed;
+    }
+
+    public void ConfirmDisplayedValues()
+    {
+        if (!CanConfirmDisplayedValues)
+        {
+            throw new InvalidOperationException("The Catch proposal has no complete displayed values to confirm.");
+        }
+
+        if (!CaughtOn.IsResolved)
+        {
+            var displayedCaughtOn = CaughtOn.Instant?.DateTime ?? CaughtOn.LocalWallClock!.Value;
+            CaughtOn = CaughtOn.Confirm(displayedCaughtOn);
+        }
+
+        if (Location is { HasCanonicalCoordinates: true, Decision: ImportLocationDecisionEnum.Undecided })
+        {
+            Location = Location.Accept();
+        }
+
+        ConfirmCanonicalValues();
+        MarkReviewed();
+    }
+
+    public void ConfirmCanonicalValues()
+    {
+        _canonicalReviewRequired = false;
+        ReviewStatus = ImportCatchReviewStatusEnum.Draft;
     }
 
     public void AddPhoto(Guid photoId)
@@ -112,11 +196,28 @@ public sealed class ImportCatchProposalModel
         }
 
         _photoIds.Add(photoId);
+        ReviewStatus = ImportCatchReviewStatusEnum.Draft;
+    }
+
+    public void SetPhotos(IEnumerable<Guid> photoIds)
+    {
+        var replacements = photoIds.ToArray();
+        if (replacements.Length == 0
+            || replacements.Any(photoId => photoId == Guid.Empty)
+            || replacements.Distinct().Count() != replacements.Length)
+        {
+            throw new InvalidOperationException("A Catch proposal requires unique valid photos.");
+        }
+
+        _photoIds.Clear();
+        _photoIds.AddRange(replacements);
+        ReviewStatus = ImportCatchReviewStatusEnum.Draft;
     }
 
     public void RemovePhoto(Guid photoId)
     {
         _photoIds.Remove(photoId);
+        ReviewStatus = ImportCatchReviewStatusEnum.Draft;
         if (_photoIds.Count == 0)
         {
             IsRemoved = true;
@@ -126,5 +227,17 @@ public sealed class ImportCatchProposalModel
     public void Remove()
     {
         IsRemoved = true;
+    }
+
+    public void RequireCanonicalReview()
+    {
+        _canonicalReviewRequired = true;
+        ReviewStatus = ImportCatchReviewStatusEnum.Draft;
+    }
+
+    private void CanonicalValueChanged()
+    {
+        _canonicalReviewRequired = false;
+        ReviewStatus = ImportCatchReviewStatusEnum.Draft;
     }
 }

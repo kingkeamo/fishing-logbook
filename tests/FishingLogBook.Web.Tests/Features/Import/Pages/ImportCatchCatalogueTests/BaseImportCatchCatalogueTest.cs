@@ -2,6 +2,7 @@ using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Import.Services;
@@ -30,6 +31,7 @@ public class BaseImportCatchCatalogueTest
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
+        context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton(proposal);
         context.Services.AddSingleton(preparation);
         context.Services.AddSingleton(preferences ?? Preferences());
