@@ -56,6 +56,29 @@ public class WhenTestingCatchProposal : BaseImportModelTest
     }
 
     [Fact]
+    public void ItShouldLeaveReviewedStateWhenTheCaughtOnValueBecomesInvalid()
+    {
+        // Arrange
+        var proposal = Catch();
+        proposal.MarkReviewed();
+
+        // Act
+        proposal.SetCaughtOn(ImportTimestampModel.Missing());
+
+        // Assert
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        proposal.IsReadyForConfirmation.Should().BeFalse();
+
+        // Act
+        proposal.SetCaughtOn(ImportTimestampModel.UserConfirmed(CapturedOn));
+        proposal.MarkReviewed();
+
+        // Assert
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
+        proposal.IsReadyForConfirmation.Should().BeTrue();
+    }
+
+    [Fact]
     public void ItShouldBecomeRemovedWhenItsLastPhotoIsRemoved()
     {
         // Arrange
@@ -128,3 +151,4 @@ public class WhenTestingCatchProposal : BaseImportModelTest
         proposal.IsReadyForConfirmation.Should().BeTrue();
     }
 }
+

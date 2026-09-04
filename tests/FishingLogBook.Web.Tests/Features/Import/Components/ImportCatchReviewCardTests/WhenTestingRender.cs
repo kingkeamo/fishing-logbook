@@ -206,6 +206,49 @@ public class WhenTestingRender
     }
 
     [Fact]
+    public async Task ItShouldImmediatelyRequireReviewWhenAReviewedCaughtOnValueBecomesInvalid()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var timestamp = ImportTimestampModel.FromExplicitInstant(CapturedOn, ImportTimestampSourceEnum.ExifOriginal);
+        var photo = Photo(timestamp);
+        var proposal = Proposal(photo, timestamp, ImportCatchProposalReasonEnum.TrustworthyCaptureTime);
+        var batch = Batch(photo, proposal);
+        proposal.MarkReviewed();
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, batch)
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1)
+            .Add(component => component.Editable, true));
+        cut.Find("#import-catch-1-edit").Click();
+
+        // Act
+        cut.Find("#import-catch-1-caught-on").Input(string.Empty);
+
+        // Assert
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        cut.Find("#import-catch-1-status").TextContent.Should().Contain("Needs review");
+        batch.CanAdvanceToTrips.Should().BeFalse();
+
+        // Act
+        cut.Find("#import-catch-1-continue").Click();
+
+        // Assert
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        cut.Find("#import-catch-1-status").TextContent.Should().Contain("Needs review");
+        batch.CanAdvanceToTrips.Should().BeFalse();
+
+        // Act
+        cut.Find("#import-catch-1-caught-on").Input("2024-06-14T09:20");
+        cut.Find("#import-catch-1-continue").Click();
+
+        // Assert
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
+        batch.CanAdvanceToTrips.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task ItShouldResolveConflictingGpsOnlyAfterAnExplicitLocationChoice()
     {
         // Arrange
@@ -342,3 +385,4 @@ public class WhenTestingRender
             LengthUnitEnum.Cm);
     }
 }
+
