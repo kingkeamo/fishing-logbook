@@ -8,6 +8,7 @@ using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Import.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using NSubstitute;
@@ -25,7 +26,8 @@ public class BaseImportCatchCatalogueTest
         IImportCatchProposalService proposal,
         IImportPhotoPreparationService preparation,
         IAnglerPreferencesProvider? preferences = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        IImportTripProposalService? tripProposalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -34,6 +36,14 @@ public class BaseImportCatchCatalogueTest
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton(proposal);
         context.Services.AddSingleton(preparation);
+        context.Services.AddSingleton(tripProposalService ?? new ImportTripProposalService());
+        var owner = Substitute.For<ILocalCatchOwnerService>();
+        owner.GetUserIdAsync(Arg.Any<CancellationToken>()).Returns(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        context.Services.AddSingleton(owner);
+        var tripStore = Substitute.For<ITripStore>();
+        tripStore.GetAllAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<FishingLogBook.Web.Features.Trips.Models.TripModel>>([]));
+        context.Services.AddSingleton(tripStore);
         context.Services.AddSingleton(preferences ?? Preferences());
         context.Services.AddSingleton(modalService ?? SelectingModal(MethodId, SpeciesId));
         return context;

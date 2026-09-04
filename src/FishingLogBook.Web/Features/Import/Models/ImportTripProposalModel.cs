@@ -1,3 +1,4 @@
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Features.Import.Enums;
 
 namespace FishingLogBook.Web.Features.Import.Models;
@@ -11,8 +12,8 @@ public sealed class ImportTripProposalModel
         IEnumerable<Guid> catchProposalIds,
         ImportTripSuggestionConfidenceEnum confidence,
         IReadOnlyList<ImportTripSuggestionReasonEnum> reasons,
-        DateTimeOffset proposedStartedOn,
-        DateTimeOffset proposedEndedOn,
+        DateTime proposedStartedOn,
+        DateTime proposedEndedOn,
         ImportLocationModel? representativeLocation = null)
     {
         if (id == Guid.Empty)
@@ -52,11 +53,17 @@ public sealed class ImportTripProposalModel
 
     public IReadOnlyList<ImportTripSuggestionReasonEnum> Reasons { get; }
 
-    public DateTimeOffset ProposedStartedOn { get; }
+    public DateTime ProposedStartedOn { get; }
 
-    public DateTimeOffset ProposedEndedOn { get; }
+    public DateTime ProposedEndedOn { get; }
 
     public ImportLocationModel? RepresentativeLocation { get; }
+
+    public string ProposedStatus => TripConstants.Completed;
+
+    public string? ProposedTitle => null;
+
+    public string? ProposedPlaceName => null;
 
     public ImportTripDecisionEnum Decision { get; private set; }
 
@@ -91,7 +98,7 @@ public sealed class ImportTripProposalModel
     public void RemoveCatch(Guid catchProposalId)
     {
         _catchProposalIds.Remove(catchProposalId);
-        if (_catchProposalIds.Count == 0)
+        if (_catchProposalIds.Count < 2)
         {
             IsRemoved = true;
         }

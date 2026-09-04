@@ -57,8 +57,8 @@ public class BaseImportModelTest
             catchIds ?? [CatchId],
             ImportTripSuggestionConfidenceEnum.Strong,
             [ImportTripSuggestionReasonEnum.SameDate, ImportTripSuggestionReasonEnum.NearbyCoordinates],
-            CapturedOn,
-            CapturedOn.AddHours(2));
+            CapturedOn.DateTime,
+            CapturedOn.AddHours(2).DateTime);
     }
 
     protected static ImportBatchModel Batch(

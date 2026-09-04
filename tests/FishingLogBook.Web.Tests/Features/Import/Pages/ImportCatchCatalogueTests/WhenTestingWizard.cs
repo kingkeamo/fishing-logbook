@@ -305,7 +305,15 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         cut.Find("#import-review-continue").Click();
 
         // Assert
-        cut.Find("#import-corrections-complete").Should().NotBeNull();
+        cut.Find("#import-trip-review").Should().NotBeNull();
+        cut.Find("#import-trip-none").Should().NotBeNull();
+        cut.Find("#import-trip-continue").HasAttribute("disabled").Should().BeFalse();
+
+        // Act
+        cut.Find("#import-trip-continue").Click();
+
+        // Assert
+        cut.Find("#import-confirmation-boundary").Should().NotBeNull();
     }
 
     [Fact]

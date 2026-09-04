@@ -140,10 +140,6 @@
                                                RemoveCatch="RemoveCorrectionCatchAsync"
                                                Changed="OnCorrectionsChanged" />
                     }
-                    @if (_correctionsComplete)
-                    {
-                        <MudAlert Severity="Severity.Success" id="import-corrections-complete">@Loc["Import_CorrectionsComplete"]</MudAlert>
-                    }
                     <MudStack Row="true" Justify="Justify.SpaceBetween">
                         <MudButton Variant="Variant.Text" OnClick="BackToPhotos" id="import-review-back">@Loc["Common_Back"]</MudButton>
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_batch.CanAdvanceToTrips)"
@@ -152,6 +148,74 @@
                         </MudButton>
                     </MudStack>
                 </MudStack>
+            }
+            else if (_batch.Stage == ImportStageEnum.ReviewTrips)
+            {
+                <MudStack Spacing="2" id="import-trip-review">
+                    <MudText Typo="Typo.h6">@Loc["Import_TripSuggestionsTitle"]</MudText>
+                    @if (ActiveTripProposals.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Info" id="import-trip-none">@Loc["Import_NoTripSuggestions"]</MudAlert>
+                    }
+                    @for (var proposalIndex = 0; proposalIndex < ActiveTripProposals.Count; proposalIndex++)
+                    {
+                        var proposal = ActiveTripProposals[proposalIndex];
+                        <MudPaper Class="pa-3" Elevation="2" id="@($"import-trip-{proposalIndex + 1}")">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.h6">@Loc["Import_TripCatchCount", proposal.CatchProposalIds.Count]</MudText>
+                                <MudText>@proposal.ProposedStartedOn.ToString("d", System.Globalization.CultureInfo.CurrentCulture)</MudText>
+                                <MudText>@Loc["Import_TripTimeRange", proposal.ProposedStartedOn.ToString("t"), proposal.ProposedEndedOn.ToString("t")]</MudText>
+                                @if (proposal.Confidence == ImportTripSuggestionConfidenceEnum.Weak)
+                                {
+                                    <MudAlert Severity="Severity.Warning">@Loc["Import_TripMissingGps"]</MudAlert>
+                                }
+                                <MudStack Row="true" Class="flex-wrap" Spacing="1">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => DecideTrip(proposal.Id, ImportTripDecisionEnum.CreateNew))" id="@($"import-trip-create-{proposalIndex + 1}")">@Loc["Import_CreateTrip"]</MudButton>
+                                    <MudButton Variant="Variant.Outlined" OnClick="@(() => DecideTrip(proposal.Id, ImportTripDecisionEnum.NoTrip))" id="@($"import-trip-separate-{proposalIndex + 1}")">@Loc["Import_KeepSeparate"]</MudButton>
+                                </MudStack>
+                                @if (ExistingTripsFor(proposal).Count > 0)
+                                {
+                                    <MudSelect T="Guid?" Label="@Loc["Import_AddToExistingTrip"]" Value="proposal.ExistingTripId"
+                                               ValueChanged="@(tripId => { if (tripId.HasValue) ChooseExistingTrip(proposal.Id, tripId.Value); })"
+                                               id="@($"import-trip-existing-{proposalIndex + 1}")">
+                                        @foreach (var trip in ExistingTripsFor(proposal))
+                                        {
+                                            <MudSelectItem T="Guid?" Value="trip.Id">@(trip.Title ?? trip.StartedOn.ToString("g"))</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                }
+                                @for (var catchIndex = 0; catchIndex < proposal.CatchProposalIds.Count; catchIndex++)
+                                {
+                                    var catchId = proposal.CatchProposalIds[catchIndex];
+                                    var catchProposal = CatchProposal(catchId);
+                                    var thumbnail = CatchThumbnail(catchProposal);
+                                    <div class="import-trip-catch-row" id="@($"import-trip-catch-{proposalIndex + 1}-{catchIndex + 1}")">
+                                        <img src="@thumbnail.ThumbnailUrl"
+                                             alt="@Loc["Import_TripCatchPhotoAlt", catchIndex + 1]"
+                                             class="import-trip-catch-thumbnail" />
+                                        <MudText>@Loc["Import_TripCatchNumber", catchIndex + 1]</MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline"
+                                                       Color="Color.Error"
+                                                       aria-label="@Loc["Import_RemoveCatchFromTrip"]"
+                                                       OnClick="@(() => RemoveCatchFromTrip(proposal.Id, catchId))"
+                                                       id="@($"import-trip-remove-{proposalIndex + 1}-{catchIndex + 1}")" />
+                                    </div>
+                                }
+                            </MudStack>
+                        </MudPaper>
+                    }
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudButton Variant="Variant.Text" OnClick="BackToCatchReview" id="import-trip-back">@Loc["Common_Back"]</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!_batch.IsReadyForConfirmation)"
+                                   OnClick="ContinueToConfirmation" id="import-trip-continue">@Loc["Common_Continue"]</MudButton>
+                    </MudStack>
+                </MudStack>
+            }
+            else if (_batch.Stage == ImportStageEnum.Confirm)
+            {
+                <MudAlert Severity="Severity.Info" id="import-confirmation-boundary">
+                    @Loc["Import_ConfirmationBoundary"]
+                </MudAlert>
             }
         }
     </MudStack>

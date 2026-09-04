@@ -1402,4 +1402,16 @@
   <data name="Import_RemoveCatchMessage" xml:space="preserve"><value>Toutes les photographies de cette prise seront exclues de lâ€™importation.</value></data>
   <data name="Import_RemoveCatchConfirm" xml:space="preserve"><value>Retirer la prise</value></data>
   <data name="Import_ContinueToTrips" xml:space="preserve"><value>Continuer vers les suggestions de sorties</value></data>
+  <data name="Import_TripSuggestionsTitle" xml:space="preserve"><value>Suggestions de sorties</value></data>
+  <data name="Import_NoTripSuggestions" xml:space="preserve"><value>Aucune sortie probable n’a été trouvée. Ces prises resteront séparées.</value></data>
+  <data name="Import_TripCatchCount" xml:space="preserve"><value>{0} prises</value></data>
+  <data name="Import_TripTimeRange" xml:space="preserve"><value>{0} – {1}</value></data>
+  <data name="Import_TripMissingGps" xml:space="preserve"><value>Les informations de localisation sont incomplètes pour cette suggestion.</value></data>
+  <data name="Import_CreateTrip" xml:space="preserve"><value>Créer une sortie</value></data>
+  <data name="Import_KeepSeparate" xml:space="preserve"><value>Conserver les prises séparément</value></data>
+  <data name="Import_AddToExistingTrip" xml:space="preserve"><value>Ajouter à une sortie existante</value></data>
+  <data name="Import_RemoveCatchFromTrip" xml:space="preserve"><value>Retirer la prise de la sortie suggérée</value></data>
+  <data name="Import_ConfirmationBoundary" xml:space="preserve"><value>Vos prises vérifiées et vos choix de sorties sont prêts pour la confirmation finale de l’importation.</value></data>
+  <data name="Import_TripCatchNumber" xml:space="preserve"><value>Prise {0}</value></data>
+  <data name="Import_TripCatchPhotoAlt" xml:space="preserve"><value>Miniature de la prise {0}</value></data>
 </root>
