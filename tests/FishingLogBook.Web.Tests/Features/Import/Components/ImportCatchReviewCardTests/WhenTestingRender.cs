@@ -9,6 +9,7 @@ using FishingLogBook.Web.Features.Import.Components.ImportCatchReviewCard;
 using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Profile.Models;
+using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using NSubstitute;
@@ -154,6 +155,7 @@ public class WhenTestingRender
     public async Task ItShouldAcceptTheLocalisedValueReturnedByTheDateTimePicker()
     {
         // Arrange
+        using var culture = TestCulture.Use("en-GB");
         await using var context = CreateContext();
         var timestamp = ImportTimestampModel.FromLocalWallClock(
             new DateTime(2009, 2, 2, 15, 6, 0),
