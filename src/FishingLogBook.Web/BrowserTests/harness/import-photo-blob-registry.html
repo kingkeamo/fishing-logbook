@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Import photo blob registry harness</title>
+</head>
+<body>
+    <p id="status">loading</p>
+    <script type="module">
+        import { clear, getBytes, register, remove } from '../../wwwroot/js/import/photo-blob-registry.js';
+
+        window.importPhotoHarness = {
+            async registerTestImage(red) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 4;
+                canvas.height = 2;
+                const context = canvas.getContext('2d');
+                context.fillStyle = red ? '#ff0000' : '#0000ff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                return register(new Uint8Array(await blob.arrayBuffer()), 'image/png');
+            },
+            async readLength(token) {
+                return (await getBytes(token)).length;
+            },
+            remove,
+            clear
+        };
+
+        document.getElementById('status').textContent = 'ready';
+    </script>
+</body>
+</html>

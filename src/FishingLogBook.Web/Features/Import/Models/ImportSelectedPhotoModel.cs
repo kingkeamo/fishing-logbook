@@ -9,7 +9,7 @@ public sealed class ImportSelectedPhotoModel
         int selectionIndex,
         string contentType,
         long byteSize,
-        string blobToken,
+        string? blobToken,
         string? fileName = null,
         string? thumbnailUrl = null)
     {
@@ -42,7 +42,7 @@ public sealed class ImportSelectedPhotoModel
 
     public long ByteSize { get; }
 
-    public string BlobToken { get; }
+    public string? BlobToken { get; private set; }
 
     public string? ThumbnailUrl { get; private set; }
 
@@ -59,6 +59,28 @@ public sealed class ImportSelectedPhotoModel
     public string? Fingerprint { get; private set; }
 
     public bool IsRemoved { get; private set; }
+
+    public ImportPhotoPreparationStatusEnum PreparationStatus { get; private set; }
+
+    public bool IsReady
+    {
+        get
+        {
+            return PreparationStatus == ImportPhotoPreparationStatusEnum.Ready
+                && !string.IsNullOrWhiteSpace(BlobToken)
+                && !string.IsNullOrWhiteSpace(ThumbnailUrl);
+        }
+    }
+
+    public void SetPreparation(
+        ImportPhotoPreparationStatusEnum status,
+        string? blobToken = null,
+        string? thumbnailUrl = null)
+    {
+        PreparationStatus = status;
+        BlobToken = blobToken;
+        ThumbnailUrl = thumbnailUrl;
+    }
 
     public void SetMetadata(
         ImportMetadataStatusEnum status,

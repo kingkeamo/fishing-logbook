@@ -20,6 +20,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Diagnostics.Storage;
 using FishingLogBook.Web.Features.Diagnostics.Storage.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
+using FishingLogBook.Web.Features.Import.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Clients;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
@@ -110,6 +111,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatchDateGroupingService, CatchDateGroupingService>();
         services.AddScoped<IPhotographMetadataService, PhotographMetadataService>();
         services.AddScoped<IPhotographPreparationService, PhotographPreparationService>();
+        services.AddScoped<IImportPhotoBlobRegistryService, ImportPhotoBlobRegistryService>();
+        services.AddScoped<IImportPhotoPreparationService, ImportPhotoPreparationService>();
         services.AddScoped<ICatchPhotographProposalService, CatchPhotographProposalService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();

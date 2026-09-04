@@ -93,6 +93,105 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
                 : PhotographCapturedOnSourceEnum.FileLastModified);
     }
 
+    public PhotographHistoricalMetadataModel ReadHistorical(
+        byte[] bytes,
+        string contentType,
+        DateTimeOffset? fileLastModified,
+        DateTimeOffset now)
+    {
+        var tiffOffset = FindTiffOffset(bytes, contentType);
+        var values = tiffOffset < 0 ? null : ReadExifValues(bytes, tiffOffset);
+        var original = ParseHistoricalCapture(values?.Original, now);
+        if (original is not null)
+        {
+            return ToHistoricalMetadata(original.Value, PhotographCapturedOnSourceEnum.ExifOriginal, values);
+        }
+
+        var digitized = ParseHistoricalCapture(values?.Digitized, now);
+        if (digitized is not null)
+        {
+            return ToHistoricalMetadata(digitized.Value, PhotographCapturedOnSourceEnum.ExifDigitized, values);
+        }
+
+        var exifWasPresent = values?.Original is not null || values?.Digitized is not null;
+        if (exifWasPresent)
+        {
+            var malformedSource = values?.Original is not null
+                ? PhotographCapturedOnSourceEnum.ExifOriginal
+                : PhotographCapturedOnSourceEnum.ExifDigitized;
+            return new PhotographHistoricalMetadataModel(
+                null,
+                null,
+                malformedSource,
+                true,
+                true,
+                values?.Latitude,
+                values?.Longitude);
+        }
+
+        var fallback = PlausibleFileTimestamp(fileLastModified, now);
+        return new PhotographHistoricalMetadataModel(
+            fallback,
+            null,
+            fallback is null
+                ? PhotographCapturedOnSourceEnum.None
+                : PhotographCapturedOnSourceEnum.FileLastModified,
+            false,
+            false,
+            values?.Latitude,
+            values?.Longitude);
+    }
+
+    private static HistoricalCapture? ParseHistoricalCapture(ExifCapture? capture, DateTimeOffset now)
+    {
+        if (capture is not { } candidate)
+        {
+            return null;
+        }
+
+        if (candidate.OffsetText is not null)
+        {
+            return DateTimeOffset.TryParseExact(
+                    candidate.WallClockText + candidate.OffsetText,
+                    ExifWallClockWithOffsetFormat,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var withOffset)
+                && IsPlausibleCapture(withOffset, now)
+                    ? new HistoricalCapture(withOffset, null)
+                    : null;
+        }
+
+        if (!DateTime.TryParseExact(
+                candidate.WallClockText,
+                ExifWallClockFormat,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var wallClock)
+            || wallClock.Year < EarliestPlausibleCaptureYear
+            || wallClock > now.DateTime + MaxCaptureFutureSkew)
+        {
+            return null;
+        }
+
+        return new HistoricalCapture(null, DateTime.SpecifyKind(wallClock, DateTimeKind.Unspecified));
+    }
+
+    private static PhotographHistoricalMetadataModel ToHistoricalMetadata(
+        HistoricalCapture capture,
+        PhotographCapturedOnSourceEnum source,
+        ExifValues? values)
+    {
+        return new PhotographHistoricalMetadataModel(
+            capture.ExplicitInstant,
+            capture.LocalWallClock,
+            source,
+            true,
+            false,
+            values?.Latitude,
+            values?.Longitude);
+    }
+
     private static DateTimeOffset? PlausibleFileTimestamp(
         DateTimeOffset? fileLastModified,
         DateTimeOffset now)
@@ -1021,4 +1120,6 @@ public sealed class PhotographMetadataService : IPhotographMetadataService
     private readonly record struct ExifCapture(string WallClockText, string? OffsetText);
 
     private readonly record struct CaptureResult(DateTimeOffset? CapturedOn, bool UsedDigitized);
+
+    private readonly record struct HistoricalCapture(DateTimeOffset? ExplicitInstant, DateTime? LocalWallClock);
 }
