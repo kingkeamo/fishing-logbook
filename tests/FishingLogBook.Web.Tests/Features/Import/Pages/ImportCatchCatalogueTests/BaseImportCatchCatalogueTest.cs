@@ -25,7 +25,8 @@ public class BaseImportCatchCatalogueTest
         IImportCatchProposalService proposal,
         IImportPhotoPreparationService preparation,
         IAnglerPreferencesProvider? preferences = null,
-        IModalService? modalService = null)
+        IModalService? modalService = null,
+        IImportTripProposalService? tripProposalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -34,6 +35,13 @@ public class BaseImportCatchCatalogueTest
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton(proposal);
         context.Services.AddSingleton(preparation);
+        context.Services.AddSingleton(tripProposalService ?? new ImportTripProposalService());
+        var existingTrips = Substitute.For<IImportExistingTripService>();
+        existingTrips.GetCandidatesAsync(
+                Arg.Any<IReadOnlyList<ImportTripProposalModel>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new Dictionary<Guid, IReadOnlyList<TripSummaryDto>>());
+        context.Services.AddSingleton(existingTrips);
         context.Services.AddSingleton(preferences ?? Preferences());
         context.Services.AddSingleton(modalService ?? SelectingModal(MethodId, SpeciesId));
         return context;

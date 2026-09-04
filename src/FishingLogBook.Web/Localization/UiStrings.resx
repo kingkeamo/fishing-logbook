@@ -1402,4 +1402,18 @@
   <data name="Import_RemoveCatchMessage" xml:space="preserve"><value>All photographs in this catch will be excluded from the import.</value></data>
   <data name="Import_RemoveCatchConfirm" xml:space="preserve"><value>Remove catch</value></data>
   <data name="Import_ContinueToTrips" xml:space="preserve"><value>Continue to Trip suggestions</value></data>
+  <data name="Import_TripSuggestionsTitle" xml:space="preserve"><value>Trip suggestions</value></data>
+  <data name="Import_NoTripSuggestions" xml:space="preserve"><value>No likely Trips were found. These catches will remain separate.</value></data>
+  <data name="Import_TripCatchCount" xml:space="preserve"><value>{0} catches</value></data>
+  <data name="Import_TripTimeRange" xml:space="preserve"><value>{0} – {1}</value></data>
+  <data name="Import_TripMissingGps" xml:space="preserve"><value>Location evidence is incomplete for this suggestion.</value></data>
+  <data name="Import_CreateTrip" xml:space="preserve"><value>Create Trip</value></data>
+  <data name="Import_KeepSeparate" xml:space="preserve"><value>Keep as separate catches</value></data>
+  <data name="Import_AddToExistingTrip" xml:space="preserve"><value>Add to existing Trip</value></data>
+  <data name="Import_RemoveCatchFromTrip" xml:space="preserve"><value>Remove catch from suggested Trip</value></data>
+  <data name="Import_ConfirmationBoundary" xml:space="preserve"><value>Your reviewed catches and Trip choices are ready for final import confirmation.</value></data>
+  <data name="Import_TripCatchNumber" xml:space="preserve"><value>Catch {0}</value></data>
+  <data name="Import_TripCatchPhotoAlt" xml:space="preserve"><value>Thumbnail for Catch {0}</value></data>
+  <data name="Import_TripParticipants" xml:space="preserve"><value>Anglers on this Trip</value></data>
+  <data name="Import_AddTripParticipant" xml:space="preserve"><value>Add angler</value></data>
 </root>

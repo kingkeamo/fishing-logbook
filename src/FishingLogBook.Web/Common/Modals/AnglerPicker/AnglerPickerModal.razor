@@ -1,0 +1,37 @@
+@namespace FishingLogBook.Web.Common.Modals.AnglerPicker
+
+<MudDialog id="angler-picker-modal">
+    <TitleContent><MudText Typo="Typo.h6">@Loc["Trip_InviteAngler"]</MudText></TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField T="string" Value="_query" ValueChanged="OnQueryChangedAsync"
+                          Label="@Loc["Trip_InviteSearchLabel"]" HelperText="@Loc["Trip_InviteSearchHelp"]"
+                          Immediate="true" DebounceInterval="400" Variant="Variant.Outlined" id="angler-picker-search" />
+            @if (_isSearching)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" id="angler-picker-searching" />
+            }
+            else if (_hasSearched && _results.Count == 0)
+            {
+                <MudText id="angler-picker-empty">@Loc["Trip_InviteNoResults"]</MudText>
+            }
+            @foreach (var angler in _results)
+            {
+                <MudPaper Class="pa-2" Elevation="0" id="@($"angler-picker-result-{angler.UserId:D}")">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText>@DisplayName(angler)</MudText>
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small"
+                                   OnClick="@(() => Select(angler))" id="@($"angler-picker-select-{angler.UserId:D}")">
+                            @Loc["Trip_Invite"]
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            }
+            @if (_failedMessage is not null)
+            {
+                <MudAlert Severity="Severity.Error" id="angler-picker-failed">@_failedMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions><MudButton Variant="Variant.Text" OnClick="Cancel">@Loc["Modal_Cancel"]</MudButton></DialogActions>
+</MudDialog>

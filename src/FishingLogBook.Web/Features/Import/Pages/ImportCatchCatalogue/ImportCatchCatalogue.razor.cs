@@ -1,5 +1,6 @@
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Modals.AnglerPicker;
 using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Import.Services;
@@ -20,13 +21,16 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private Guid _methodId;
     private Guid _speciesId;
     private bool _isLoading = true;
-    private bool _correctionsComplete;
     private bool _selectionLimitExceeded;
+    private IReadOnlyDictionary<Guid, IReadOnlyList<TripSummaryDto>> _existingTrips =
+        new Dictionary<Guid, IReadOnlyList<TripSummaryDto>>();
 
     [Inject] private IAnglerPreferencesProvider Preferences { get; set; } = default!;
     [Inject] private IModalService ModalService { get; set; } = default!;
     [Inject] private IImportCatchProposalService ProposalService { get; set; } = default!;
     [Inject] private IImportPhotoPreparationService Preparation { get; set; } = default!;
+    [Inject] private IImportTripProposalService TripProposalService { get; set; } = default!;
+    [Inject] private IImportExistingTripService ExistingTripService { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private bool CanReview
@@ -40,6 +44,9 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
 
     private IReadOnlyList<ImportCatchProposalModel> ActiveCatchProposals =>
         [.. _batch?.CatchProposals.Where(proposal => !proposal.IsRemoved) ?? []];
+
+    private IReadOnlyList<ImportTripProposalModel> ActiveTripProposals =>
+        [.. _batch?.TripProposals.Where(proposal => !proposal.IsRemoved) ?? []];
 
     private IReadOnlyList<CatalogueOptionModel> MethodOptions
     {
@@ -234,16 +241,86 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
 
     private void OnCorrectionsChanged()
     {
-        _correctionsComplete = false;
         StateHasChanged();
     }
 
-    private void CompleteCorrections()
+    private async Task CompleteCorrections()
     {
         if (_batch?.CanAdvanceToTrips == true)
         {
-            _correctionsComplete = true;
+            _batch.ReplaceTripProposals(TripProposalService.Propose(_batch));
+            _existingTrips = await ExistingTripService.GetCandidatesAsync(
+                ActiveTripProposals,
+                _cancellationTokenSource.Token);
+            _batch.SetStage(ImportStageEnum.ReviewTrips);
         }
+    }
+
+    private void BackToCatchReview()
+    {
+        _batch?.SetStage(ImportStageEnum.ReviewCatches);
+    }
+
+    private void DecideTrip(Guid proposalId, ImportTripDecisionEnum decision)
+    {
+        _batch?.DecideTrip(proposalId, decision);
+    }
+
+    private void ChooseExistingTrip(Guid proposalId, Guid tripId)
+    {
+        _batch?.DecideTrip(proposalId, ImportTripDecisionEnum.UseExisting, tripId);
+    }
+
+    private void RemoveCatchFromTrip(Guid proposalId, Guid catchId)
+    {
+        _batch?.RemoveCatchFromTrip(proposalId, catchId);
+    }
+
+    private ImportCatchProposalModel CatchProposal(Guid catchId)
+    {
+        return _batch!.CatchProposals.Single(proposal => proposal.Id == catchId && !proposal.IsRemoved);
+    }
+
+    private ImportSelectedPhotoModel CatchThumbnail(ImportCatchProposalModel proposal)
+    {
+        return proposal.PhotoIds
+            .Select(photoId => _batch!.Photos.Single(photo => photo.Id == photoId))
+            .OrderBy(photo => photo.SelectionIndex)
+            .First();
+    }
+
+    private void ContinueToConfirmation()
+    {
+        if (_batch?.IsReadyForConfirmation == true)
+        {
+            _batch.SetStage(ImportStageEnum.Confirm);
+        }
+    }
+
+    private async Task AddTripParticipantAsync(ImportTripProposalModel proposal)
+    {
+        var selected = await ModalService.ShowAsync<AnglerPickerModal, AnglerPickerModalModel, AnglerPickerModalResult>(
+            new AnglerPickerModalModel(proposal.Participants.Select(participant => participant.UserId).ToArray()),
+            _cancellationTokenSource.Token);
+        if (selected is not null)
+        {
+            _batch?.AddTripParticipant(proposal.Id, selected.Angler);
+        }
+    }
+
+    private void RemoveTripParticipant(Guid proposalId, Guid userId)
+    {
+        _batch?.RemoveTripParticipant(proposalId, userId);
+    }
+
+    private string ParticipantName(AnglerSummaryDto participant)
+    {
+        return participant.DisplayName ?? participant.Email ?? Loc["Trip_ContributorUnknown"].Value;
+    }
+
+    private IReadOnlyList<TripSummaryDto> ExistingTripsFor(ImportTripProposalModel proposal)
+    {
+        return _existingTrips.GetValueOrDefault(proposal.Id) ?? [];
     }
 
     private async Task RemoveCorrectionPhotosAsync(IReadOnlyList<Guid> photoIds)

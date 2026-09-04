@@ -1,3 +1,4 @@
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Import.Enums;
 
 namespace FishingLogBook.Web.Features.Import.Models;
@@ -176,6 +177,35 @@ public sealed class ImportBatchModel
         }
 
         _tripProposals.Add(proposal);
+    }
+
+    public void ReplaceTripProposals(IEnumerable<ImportTripProposalModel> proposals)
+    {
+        _tripProposals.Clear();
+        foreach (var proposal in proposals)
+        {
+            AddTripProposal(proposal);
+        }
+    }
+
+    public void DecideTrip(Guid tripProposalId, ImportTripDecisionEnum decision, Guid? existingTripId = null)
+    {
+        ActiveTrip(tripProposalId).Decide(decision, existingTripId);
+    }
+
+    public void RemoveCatchFromTrip(Guid tripProposalId, Guid catchProposalId)
+    {
+        ActiveTrip(tripProposalId).RemoveCatch(catchProposalId);
+    }
+
+    public void AddTripParticipant(Guid tripProposalId, AnglerSummaryDto angler)
+    {
+        ActiveTrip(tripProposalId).AddParticipant(angler);
+    }
+
+    public void RemoveTripParticipant(Guid tripProposalId, Guid userId)
+    {
+        ActiveTrip(tripProposalId).RemoveParticipant(userId);
     }
 
     public void RemovePhoto(Guid photoId)
@@ -360,6 +390,12 @@ public sealed class ImportBatchModel
     {
         return _catchProposals.SingleOrDefault(proposal => proposal.Id == catchProposalId && !proposal.IsRemoved)
             ?? throw new InvalidOperationException("The active Catch proposal was not found.");
+    }
+
+    private ImportTripProposalModel ActiveTrip(Guid tripProposalId)
+    {
+        return _tripProposals.SingleOrDefault(proposal => proposal.Id == tripProposalId && !proposal.IsRemoved)
+            ?? throw new InvalidOperationException("The active Trip proposal was not found.");
     }
 
     private Guid[] OrderedPhotoIds(IEnumerable<Guid> photoIds)

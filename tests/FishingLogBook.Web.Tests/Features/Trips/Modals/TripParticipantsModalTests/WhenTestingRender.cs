@@ -3,8 +3,8 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Modals.AnglerPicker;
 using FishingLogBook.Web.Features.Trips.Clients;
-using FishingLogBook.Web.Features.Trips.Modals.InviteAngler;
 using FishingLogBook.Web.Features.Trips.Modals.TripParticipants;
 using FishingLogBook.Web.Localization;
 using FishingLogBook.Web.Tests.TestSupport;
@@ -148,11 +148,16 @@ public class WhenTestingRender : BaseTripParticipantsModalTest
             .Returns(Participants(TripParticipantConstants.Owner, Owner()));
         var modalService = Substitute.For<IModalService>();
         modalService
-            .ShowAsync<InviteAnglerModal, InviteAnglerModalModel, InviteAnglerModalResult>(
-                Arg.Any<InviteAnglerModalModel>(),
+            .ShowAsync<AnglerPickerModal, AnglerPickerModalModel, AnglerPickerModalResult>(
+                Arg.Any<AnglerPickerModalModel>(),
                 Arg.Any<CancellationToken>())
-            .Returns(new InviteAnglerModalResult(
-                Participants(TripParticipantConstants.Owner, Owner(), Participant("Pending"))));
+            .Returns(new AnglerPickerModalResult(
+                new AnglerSummaryDto(ParticipantUserId, "Mark", null, null, null)));
+        client.InviteAsync(
+                TripId,
+                Arg.Any<InviteTripParticipantDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Participants(TripParticipantConstants.Owner, Owner(), Participant("Pending")));
         await using var context = CreateContext(client, modalService);
         var cut = await ShowModalAsync(context);
         cut.WaitForAssertion(() => cut.Find("#trip-participants-invite").Should().NotBeNull());
@@ -164,9 +169,13 @@ public class WhenTestingRender : BaseTripParticipantsModalTest
         cut.WaitForAssertion(() =>
             cut.Find($"#trip-participant-{ParticipantUserId:D}").Should().NotBeNull());
         await modalService.Received(1)
-            .ShowAsync<InviteAnglerModal, InviteAnglerModalModel, InviteAnglerModalResult>(
-                Arg.Is<InviteAnglerModalModel>(model => model.TripId == TripId),
+            .ShowAsync<AnglerPickerModal, AnglerPickerModalModel, AnglerPickerModalResult>(
+                Arg.Is<AnglerPickerModalModel>(model => model.ExcludedUserIds.Contains(OwnerUserId)),
                 Arg.Any<CancellationToken>());
+        await client.Received(1).InviteAsync(
+            TripId,
+            Arg.Is<InviteTripParticipantDto>(request => request.UserId == ParticipantUserId),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

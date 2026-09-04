@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Import.Enums;
 
 namespace FishingLogBook.Web.Tests.Features.Import.Models.ImportModelTests;
@@ -83,5 +84,57 @@ public class WhenTestingTripProposal : BaseImportModelTest
         // Assert
         proposal.Decision.Should().Be(ImportTripDecisionEnum.NoTrip);
         proposal.ExistingTripId.Should().BeNull();
+    }
+
+    [Fact]
+    public void ItShouldKeepDistinctTransientParticipantsForANewTrip()
+    {
+        // Arrange
+        var proposal = Trip();
+        var first = new AnglerSummaryDto(Guid.NewGuid(), "Patrick", null, null, null);
+        var second = new AnglerSummaryDto(Guid.NewGuid(), "Mark", null, null, null);
+        proposal.Decide(ImportTripDecisionEnum.CreateNew);
+
+        // Act
+        proposal.AddParticipant(first);
+        proposal.AddParticipant(second);
+        proposal.AddParticipant(first);
+
+        // Assert
+        proposal.Participants.Should().Equal(first, second);
+    }
+
+    [Fact]
+    public void ItShouldRemoveATransientParticipant()
+    {
+        // Arrange
+        var proposal = Trip();
+        var angler = new AnglerSummaryDto(Guid.NewGuid(), "Patrick", null, null, null);
+        proposal.Decide(ImportTripDecisionEnum.CreateNew);
+        proposal.AddParticipant(angler);
+
+        // Act
+        proposal.RemoveParticipant(angler.UserId);
+
+        // Assert
+        proposal.Participants.Should().BeEmpty();
+        proposal.IsDecisionComplete.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(ImportTripDecisionEnum.NoTrip)]
+    [InlineData(ImportTripDecisionEnum.UseExisting)]
+    public void ItShouldClearNewTripParticipantsWhenChangingDecision(ImportTripDecisionEnum decision)
+    {
+        // Arrange
+        var proposal = Trip();
+        proposal.Decide(ImportTripDecisionEnum.CreateNew);
+        proposal.AddParticipant(new AnglerSummaryDto(Guid.NewGuid(), "Patrick", null, null, null));
+
+        // Act
+        proposal.Decide(decision, decision == ImportTripDecisionEnum.UseExisting ? Guid.NewGuid() : null);
+
+        // Assert
+        proposal.Participants.Should().BeEmpty();
     }
 }

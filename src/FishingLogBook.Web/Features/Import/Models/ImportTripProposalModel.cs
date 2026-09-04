@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Import.Enums;
 
 namespace FishingLogBook.Web.Features.Import.Models;
@@ -5,14 +7,15 @@ namespace FishingLogBook.Web.Features.Import.Models;
 public sealed class ImportTripProposalModel
 {
     private readonly List<Guid> _catchProposalIds;
+    private readonly List<AnglerSummaryDto> _participants = [];
 
     public ImportTripProposalModel(
         Guid id,
         IEnumerable<Guid> catchProposalIds,
         ImportTripSuggestionConfidenceEnum confidence,
         IReadOnlyList<ImportTripSuggestionReasonEnum> reasons,
-        DateTimeOffset proposedStartedOn,
-        DateTimeOffset proposedEndedOn,
+        DateTime proposedStartedOn,
+        DateTime proposedEndedOn,
         ImportLocationModel? representativeLocation = null)
     {
         if (id == Guid.Empty)
@@ -52,15 +55,23 @@ public sealed class ImportTripProposalModel
 
     public IReadOnlyList<ImportTripSuggestionReasonEnum> Reasons { get; }
 
-    public DateTimeOffset ProposedStartedOn { get; }
+    public DateTime ProposedStartedOn { get; }
 
-    public DateTimeOffset ProposedEndedOn { get; }
+    public DateTime ProposedEndedOn { get; }
 
     public ImportLocationModel? RepresentativeLocation { get; }
+
+    public string ProposedStatus => TripConstants.Completed;
+
+    public string? ProposedTitle => null;
+
+    public string? ProposedPlaceName => null;
 
     public ImportTripDecisionEnum Decision { get; private set; }
 
     public Guid? ExistingTripId { get; private set; }
+
+    public IReadOnlyList<AnglerSummaryDto> Participants => _participants;
 
     public bool IsRemoved { get; private set; }
 
@@ -86,12 +97,34 @@ public sealed class ImportTripProposalModel
 
         Decision = decision;
         ExistingTripId = existingTripId;
+        if (decision != ImportTripDecisionEnum.CreateNew)
+        {
+            _participants.Clear();
+        }
+    }
+
+    public void AddParticipant(AnglerSummaryDto angler)
+    {
+        if (Decision != ImportTripDecisionEnum.CreateNew)
+        {
+            throw new InvalidOperationException("Participants belong only to a new Trip decision.");
+        }
+
+        if (_participants.All(participant => participant.UserId != angler.UserId))
+        {
+            _participants.Add(angler);
+        }
+    }
+
+    public void RemoveParticipant(Guid userId)
+    {
+        _participants.RemoveAll(participant => participant.UserId == userId);
     }
 
     public void RemoveCatch(Guid catchProposalId)
     {
         _catchProposalIds.Remove(catchProposalId);
-        if (_catchProposalIds.Count == 0)
+        if (_catchProposalIds.Count < 2)
         {
             IsRemoved = true;
         }

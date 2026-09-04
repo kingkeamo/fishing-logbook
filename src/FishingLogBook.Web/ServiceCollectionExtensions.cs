@@ -114,6 +114,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IImportPhotoBlobRegistryService, ImportPhotoBlobRegistryService>();
         services.AddScoped<IImportPhotoPreparationService, ImportPhotoPreparationService>();
         services.AddScoped<IImportCatchProposalService, ImportCatchProposalService>();
+        services.AddScoped<IImportTripProposalService, ImportTripProposalService>();
+        services.AddScoped<IImportExistingTripService, ImportExistingTripService>();
         services.AddScoped<ICatchPhotographProposalService, CatchPhotographProposalService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();
