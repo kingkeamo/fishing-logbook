@@ -5,6 +5,7 @@ namespace FishingLogBook.Web.Features.Import.Models;
 public sealed class ImportCatchProposalModel
 {
     private readonly List<Guid> _photoIds;
+    private readonly IReadOnlyList<ImportCatchProposalReasonEnum> _reasons;
 
     public ImportCatchProposalModel(
         Guid id,
@@ -12,7 +13,8 @@ public sealed class ImportCatchProposalModel
         ImportTimestampModel caughtOn,
         ImportCatalogueSelectionModel inheritedMethod,
         ImportCatalogueSelectionModel inheritedSpecies,
-        ImportLocationModel? location = null)
+        ImportLocationModel? location = null,
+        IEnumerable<ImportCatchProposalReasonEnum>? reasons = null)
     {
         if (id == Guid.Empty)
         {
@@ -35,6 +37,7 @@ public sealed class ImportCatchProposalModel
         InheritedMethod = inheritedMethod;
         InheritedSpecies = inheritedSpecies;
         Location = location;
+        _reasons = reasons?.Distinct().ToArray() ?? [];
     }
 
     public Guid Id { get; }
@@ -44,6 +47,8 @@ public sealed class ImportCatchProposalModel
     public ImportTimestampModel CaughtOn { get; private set; }
 
     public ImportLocationModel? Location { get; private set; }
+
+    public IReadOnlyList<ImportCatchProposalReasonEnum> Reasons => _reasons;
 
     public ImportCatalogueSelectionModel InheritedMethod { get; }
 

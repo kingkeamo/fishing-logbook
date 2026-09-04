@@ -114,7 +114,9 @@ name must match the type name**.
 | `Args/` | `Args` | `FishingLogBook.Application/Args/` | `FilterCatchesArgs` |
 | `Mappings/` | `MappingRegistration` | `FishingLogBook.Application/Common/Mappings/` | `UserMappingRegistration` |
 
-**Enums:** do not use `Type` or other suffixes in `Enums/` — use `Enum` only.
+**Enums:** do not use `Type` or other suffixes in `Enums/` — use `Enum` only. Every enum
+member must declare an explicit numeric value so inserting or reordering members cannot
+silently change its representation.
 
 **DTO properties** may drop the `Enum` suffix when the meaning is clear (e.g. property
 `Method` of type `CatchMethodEnum`).

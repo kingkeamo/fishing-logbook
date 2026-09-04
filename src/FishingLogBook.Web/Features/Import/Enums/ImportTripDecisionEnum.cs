@@ -2,8 +2,8 @@ namespace FishingLogBook.Web.Features.Import.Enums;
 
 public enum ImportTripDecisionEnum
 {
-    Undecided,
-    CreateNew,
-    UseExisting,
-    NoTrip
+    Undecided = 0,
+    CreateNew = 1,
+    UseExisting = 2,
+    NoTrip = 3
 }
