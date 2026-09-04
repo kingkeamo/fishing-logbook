@@ -11,5 +11,11 @@ public interface IPhotographMetadataService
         DateTimeOffset now,
         CancellationToken cancellationToken);
 
+    PhotographHistoricalMetadataModel ReadHistorical(
+        byte[] bytes,
+        string contentType,
+        DateTimeOffset? fileLastModified,
+        DateTimeOffset now);
+
     byte[]? Sanitise(byte[] bytes, string contentType);
 }
