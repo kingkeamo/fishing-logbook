@@ -165,8 +165,8 @@ public class WhenTestingBatch : BaseImportModelTest
 
         // Assert
         catchProposal.IsRemoved.Should().BeTrue();
-        tripProposal.CatchProposalIds.Should().BeEmpty();
-        tripProposal.IsRemoved.Should().BeTrue();
+        batch.Photos.Single().IsRemoved.Should().BeTrue();
+        batch.TripProposals.Should().BeEmpty();
     }
 
     [Fact]
@@ -179,11 +179,13 @@ public class WhenTestingBatch : BaseImportModelTest
         batch.AddCatchProposal(catchProposal);
 
         // Act
-        catchProposal.MarkReviewed();
+        Action review = catchProposal.MarkReviewed;
 
         // Assert
+        review.Should().Throw<InvalidOperationException>();
         batch.IsReadyForConfirmation.Should().BeFalse();
         catchProposal.SetCaughtOn(ImportTimestampModel.UserConfirmed(CapturedOn));
+        catchProposal.MarkReviewed();
         batch.IsReadyForConfirmation.Should().BeTrue();
     }
 
@@ -209,6 +211,150 @@ public class WhenTestingBatch : BaseImportModelTest
         batch.TripProposals.Should().HaveCount(2);
         batch.TripProposals.SelectMany(proposal => proposal.CatchProposalIds)
             .Should().BeEquivalentTo([CatchId, SecondCatchId]);
+    }
+
+    [Fact]
+    public void ItShouldSplitSelectedPhotosIntoAnOrderedNewCatchAndInvalidateTrips()
+    {
+        // Arrange
+        var batch = Batch();
+        batch.AddPhoto(Photo(PhotoId, 0));
+        batch.AddPhoto(Photo(SecondPhotoId, 1));
+        var source = Catch(photoIds: [PhotoId, SecondPhotoId]);
+        source.MarkReviewed();
+        batch.AddCatchProposal(source);
+        batch.AddTripProposal(Trip());
+
+        // Act
+        var created = batch.SplitCatch(CatchId, [SecondPhotoId], SecondCatchId);
+
+        // Assert
+        source.PhotoIds.Should().Equal(PhotoId);
+        source.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        created.PhotoIds.Should().Equal(SecondPhotoId);
+        created.Method.Should().Be(source.Method);
+        created.Species.Should().Be(source.Species);
+        batch.CatchProposals.Should().Equal(source, created);
+        batch.CatchProposals.SelectMany(proposal => proposal.PhotoIds).Should().OnlyHaveUniqueItems();
+        batch.TripProposals.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ItShouldRejectASplitThatWouldEmptyTheSourceCatch()
+    {
+        // Arrange
+        var batch = Batch();
+        batch.AddPhoto(Photo());
+        var source = Catch();
+        batch.AddCatchProposal(source);
+        Action split = () => batch.SplitCatch(CatchId, [PhotoId], SecondCatchId);
+
+        // Act
+        var assertion = split.Should();
+
+        // Assert
+        assertion.Throw<InvalidOperationException>();
+        source.PhotoIds.Should().Equal(PhotoId);
+        batch.CatchProposals.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void ItShouldRejectADuplicateSplitIdentityBeforeChangingMembership()
+    {
+        // Arrange
+        var batch = Batch();
+        batch.AddPhoto(Photo());
+        batch.AddPhoto(Photo(SecondPhotoId, 1));
+        var source = Catch(photoIds: [PhotoId, SecondPhotoId]);
+        batch.AddCatchProposal(source);
+        Action split = () => batch.SplitCatch(CatchId, [SecondPhotoId], CatchId);
+
+        // Act
+        var assertion = split.Should();
+
+        // Assert
+        assertion.Throw<InvalidOperationException>();
+        source.PhotoIds.Should().Equal(PhotoId, SecondPhotoId);
+    }
+
+    [Fact]
+    public void ItShouldMergeCatchesWithoutDuplicatingPhotosAndInvalidateTrips()
+    {
+        // Arrange
+        var batch = Batch();
+        batch.AddPhoto(Photo(PhotoId, 1));
+        batch.AddPhoto(Photo(SecondPhotoId, 0));
+        var primary = Catch(photoIds: [PhotoId]);
+        var absorbed = Catch(SecondCatchId, [SecondPhotoId]);
+        primary.MarkReviewed();
+        absorbed.MarkReviewed();
+        batch.AddCatchProposal(primary);
+        batch.AddCatchProposal(absorbed);
+        batch.AddTripProposal(Trip(catchIds: [CatchId, SecondCatchId]));
+
+        // Act
+        batch.MergeCatches(CatchId, SecondCatchId);
+
+        // Assert
+        primary.PhotoIds.Should().Equal(SecondPhotoId, PhotoId);
+        primary.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        absorbed.IsRemoved.Should().BeTrue();
+        batch.CatchProposals.Where(proposal => !proposal.IsRemoved).Should().ContainSingle();
+        batch.TripProposals.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ItShouldRequireCanonicalReviewWhenMergedValuesConflict()
+    {
+        // Arrange
+        var batch = Batch();
+        batch.AddPhoto(Photo());
+        batch.AddPhoto(Photo(SecondPhotoId, 1));
+        var primary = Catch();
+        var absorbed = new ImportCatchProposalModel(
+            SecondCatchId,
+            [SecondPhotoId],
+            ImportTimestampModel.UserConfirmed(CapturedOn.AddHours(1)),
+            new ImportCatalogueSelectionModel(Guid.NewGuid(), "Bait", "Bait"),
+            Species());
+        batch.AddCatchProposal(primary);
+        batch.AddCatchProposal(absorbed);
+
+        // Act
+        batch.MergeCatches(CatchId, SecondCatchId);
+        Action reviewBeforeConfirmation = () => batch.MarkCatchReviewed(CatchId);
+
+        // Assert
+        reviewBeforeConfirmation.Should().Throw<InvalidOperationException>();
+
+        // Act
+        primary.ConfirmCanonicalValues();
+        batch.MarkCatchReviewed(CatchId);
+
+        // Assert
+        primary.IsReadyForConfirmation.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ItShouldKeepCatchOverridesSeparateFromBatchDefaultsAndOtherCatches()
+    {
+        // Arrange
+        var batch = Batch();
+        batch.AddPhoto(Photo());
+        batch.AddPhoto(Photo(SecondPhotoId, 1));
+        var first = Catch();
+        var second = Catch(SecondCatchId, [SecondPhotoId]);
+        batch.AddCatchProposal(first);
+        batch.AddCatchProposal(second);
+        var method = new ImportCatalogueSelectionModel(Guid.NewGuid(), "Bait", "Bait");
+
+        // Act
+        batch.SetCatchMethod(CatchId, method);
+
+        // Assert
+        first.Method.Should().Be(method);
+        second.Method.Should().Be(Method());
+        batch.FishingMethod.Should().Be(Method());
     }
 
     [Fact]

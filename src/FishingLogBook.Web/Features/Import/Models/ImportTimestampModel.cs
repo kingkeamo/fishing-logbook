@@ -93,6 +93,23 @@ public sealed record ImportTimestampModel
             null);
     }
 
+    public static ImportTimestampModel UserConfirmed(DateTime localWallClock)
+    {
+        return new ImportTimestampModel(
+            ImportTimestampStateEnum.UserConfirmed,
+            ImportTimestampSourceEnum.User,
+            null,
+            DateTime.SpecifyKind(localWallClock, DateTimeKind.Unspecified));
+    }
+
+    public ImportTimestampModel Confirm(DateTime localValue)
+    {
+        var unspecified = DateTime.SpecifyKind(localValue, DateTimeKind.Unspecified);
+        return Instant is { } instant
+            ? UserConfirmed(new DateTimeOffset(unspecified, instant.Offset))
+            : UserConfirmed(unspecified);
+    }
+
     private static void RequireExifSource(ImportTimestampSourceEnum source)
     {
         if (source is not ImportTimestampSourceEnum.ExifOriginal

@@ -1378,4 +1378,28 @@
   <data name="Import_LocationNeedsReview" xml:space="preserve"><value>Les lieux des photos diffèrent · vérification requise</value></data>
   <data name="Import_LocationAvailable" xml:space="preserve"><value>Lieu de la photo disponible</value></data>
   <data name="Import_LocationUnavailable" xml:space="preserve"><value>Aucun lieu dans la photo</value></data>
+  <data name="Import_Reviewed" xml:space="preserve"><value>VÃ©rifiÃ©e</value></data>
+  <data name="Import_NeedsCorrection" xml:space="preserve"><value>À vérifier</value></data>
+  <data name="Import_ReviewEdit" xml:space="preserve"><value>Vérifier</value></data>
+  <data name="Import_ConfirmCatch" xml:space="preserve"><value>Confirmer la prise</value></data>
+  <data name="Import_CorrectCatches" xml:space="preserve"><value>Corriger les prises</value></data>
+  <data name="Import_CaughtOn" xml:space="preserve"><value>Date et heure de la prise</value></data>
+  <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Saisissez une date et une heure historiques valides.</value></data>
+  <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirmer la date et lâ€™heure</value></data>
+  <data name="Import_SelectPhoto" xml:space="preserve"><value>SÃ©lectionner la photographie {0}</value></data>
+  <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Utiliser le lieu de la photo {0}</value></data>
+  <data name="Import_RemoveLocation" xml:space="preserve"><value>Supprimer le lieu</value></data>
+  <data name="Import_LocationAccepted" xml:space="preserve"><value>Lieu de la photo acceptÃ©</value></data>
+  <data name="Import_LocationRemoved" xml:space="preserve"><value>Lieu supprimÃ©</value></data>
+  <data name="Import_MoveToNewCatch" xml:space="preserve"><value>DÃ©placer la sÃ©lection vers une nouvelle prise</value></data>
+  <data name="Import_RemoveSelectedPhotos" xml:space="preserve"><value>Supprimer les photos sÃ©lectionnÃ©es</value></data>
+  <data name="Import_MergeWith" xml:space="preserve"><value>Fusionner avecâ€¦</value></data>
+  <data name="Import_RemoveCatch" xml:space="preserve"><value>Retirer la prise de lâ€™importation</value></data>
+  <data name="Import_CorrectionsComplete" xml:space="preserve"><value>Toutes les prises sont vÃ©rifiÃ©es et prÃªtes pour les suggestions de sorties.</value></data>
+  <data name="Import_MergeValuesNeedReview" xml:space="preserve"><value>Les prises fusionnÃ©es avaient des informations diffÃ©rentes. VÃ©rifiez les valeurs affichÃ©es avant de confirmer.</value></data>
+  <data name="Import_UseShownValues" xml:space="preserve"><value>Utiliser les valeurs affichÃ©es</value></data>
+  <data name="Import_RemoveCatchTitle" xml:space="preserve"><value>Retirer cette priseÂ ?</value></data>
+  <data name="Import_RemoveCatchMessage" xml:space="preserve"><value>Toutes les photographies de cette prise seront exclues de lâ€™importation.</value></data>
+  <data name="Import_RemoveCatchConfirm" xml:space="preserve"><value>Retirer la prise</value></data>
+  <data name="Import_ContinueToTrips" xml:space="preserve"><value>Continuer vers les suggestions de sorties</value></data>
 </root>

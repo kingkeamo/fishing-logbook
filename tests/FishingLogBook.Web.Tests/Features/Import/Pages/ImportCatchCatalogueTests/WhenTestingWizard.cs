@@ -194,6 +194,9 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
 
         // Assert
         cut.FindComponents<ImportCatchReviewCard>().Should().HaveCount(2);
+        var reviewButton = cut.Find("#import-catch-1-edit");
+        reviewButton.TextContent.Should().Contain("Review");
+        reviewButton.ClassList.Should().Contain("mud-button-filled-primary");
         proposal.Received(1).Propose(Arg.Is<ImportBatchModel>(batch =>
             batch.FishingMethod.Id == MethodId
             && batch.Species.Id == SpeciesId
@@ -276,6 +279,129 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         // Assert
         cut.Find("#import-photo-0 img").GetAttribute("src").Should().Be(photo.ThumbnailUrl);
         await preparation.DidNotReceive().ClearAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldFastConfirmReadyCatchesAndReachTheTripReviewBoundary()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        await using var context = CreateContext(proposal, Substitute.For<IImportPhotoPreparationService>());
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([ReadyPhoto(0)]));
+        cut.Find("#import-photos-continue").Click();
+
+        // Act
+        cut.Find("#import-catch-1-confirm").Click();
+
+        // Assert
+        cut.Find("#import-catch-1-status").TextContent.Should().Contain("Reviewed");
+        cut.Find("#import-review-continue").HasAttribute("disabled").Should().BeFalse();
+
+        // Act
+        cut.Find("#import-review-continue").Click();
+
+        // Assert
+        cut.Find("#import-corrections-complete").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldOverrideOneCatchThroughTheExistingCataloguePickerWithoutChangingBatchDefaults()
+    {
+        // Arrange
+        ImportCatchProposalModel? created = null;
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call =>
+        {
+            var batch = call.Arg<ImportBatchModel>();
+            created = ProposalsFor(batch).Single();
+            return [created];
+        });
+        var modal = SelectingModal(SecondMethodId);
+        await using var context = CreateContext(
+            proposal, Substitute.For<IImportPhotoPreparationService>(), modalService: modal);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([ReadyPhoto(0)]));
+        cut.Find("#import-photos-continue").Click();
+        cut.Find("#import-catch-1-edit").Click();
+
+        // Act
+        cut.Find("#import-catch-1-method-more").Click();
+
+        // Assert
+        created!.Method.Id.Should().Be(SecondMethodId);
+        created.InheritedMethod.Id.Should().Be(MethodId);
+        cut.Find("#import-catch-1-method").TextContent.Should().Contain("Lure");
+        await modal.Received(1).ShowAsync<CataloguePickerModal, CataloguePickerModalModel, CataloguePickerModalResult>(
+            Arg.Is<CataloguePickerModalModel>(model => model.Options.Any(option => option.Id == SecondMethodId)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSplitAndMergePhotosWithoutRerunningAutomaticGrouping()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call =>
+        {
+            var batch = call.Arg<ImportBatchModel>();
+            return [new ImportCatchProposalModel(
+                Guid.NewGuid(), batch.Photos.Select(photo => photo.Id), batch.Photos[0].Timestamp,
+                batch.FishingMethod, batch.Species,
+                reasons: [ImportCatchProposalReasonEnum.TrustworthyCaptureTime])];
+        });
+        await using var context = CreateContext(proposal, Substitute.For<IImportPhotoPreparationService>());
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([ReadyPhoto(0), ReadyPhoto(1)]));
+        cut.Find("#import-photos-continue").Click();
+        cut.Find("#import-catch-1-edit").Click();
+        cut.Find("#import-catch-1-select-1").Change(true);
+
+        // Act
+        cut.Find("#import-catch-1-split").Click();
+
+        // Assert
+        cut.FindComponents<ImportCatchReviewCard>().Should().HaveCount(2);
+        proposal.Received(1).Propose(Arg.Any<ImportBatchModel>());
+
+        // Act
+        cut.Find("#import-catch-1-merge-2").Click();
+
+        // Assert
+        cut.FindComponents<ImportCatchReviewCard>().Should().ContainSingle();
+        cut.FindAll("#import-catch-1-photos img").Should().HaveCount(2);
+        proposal.Received(1).Propose(Arg.Any<ImportBatchModel>());
+    }
+
+    [Fact]
+    public async Task ItShouldReleaseSelectedPhotoResourcesDuringCorrection()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        await using var context = CreateContext(proposal, preparation);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        var photo = ReadyPhoto(0);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared.InvokeAsync([photo]));
+        cut.Find("#import-photos-continue").Click();
+        cut.Find("#import-catch-1-edit").Click();
+        cut.Find("#import-catch-1-select-0").Change(true);
+
+        // Act
+        cut.Find("#import-catch-1-remove-photos").Click();
+
+        // Assert
+        await preparation.Received(1).RemoveAsync(photo, Arg.Any<CancellationToken>());
+        cut.FindComponents<ImportCatchReviewCard>().Should().BeEmpty();
     }
 
     [Fact]
