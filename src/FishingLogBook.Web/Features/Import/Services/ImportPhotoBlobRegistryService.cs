@@ -20,6 +20,7 @@ public sealed class ImportPhotoBlobRegistryService : IImportPhotoBlobRegistrySer
         CancellationToken cancellationToken)
     {
         var module = await GetModuleAsync(cancellationToken);
+        // Complete one registration atomically so cancellation cleanup cannot race a late JavaScript registry entry.
         return await module.InvokeAsync<ImportPhotoBlobRegistrationModel>(
             "register",
             CancellationToken.None,

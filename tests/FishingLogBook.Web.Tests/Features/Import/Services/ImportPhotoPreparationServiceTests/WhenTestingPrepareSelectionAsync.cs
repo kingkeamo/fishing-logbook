@@ -172,20 +172,21 @@ public class WhenTestingPrepareSelectionAsync : BaseImportPhotoPreparationServic
         // Arrange
         var context = CreateContext();
         using var cancellation = new CancellationTokenSource();
-        context.Registry.RegisterAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(_ =>
-            {
-                cancellation.Cancel();
-                return new ImportPhotoBlobRegistrationModel("token", "blob:thumbnail");
-            });
+        var registry = new CancellingBlobRegistry(cancellation);
+        var sut = new ImportPhotoPreparationService(context.Metadata, registry, context.Logging);
         var files = new[] { File([1]), File([2]) };
 
         // Act
-        var act = () => context.Sut.PrepareSelectionAsync(files, cancellation.Token);
+        var act = () => sut.PrepareSelectionAsync(files, cancellation.Token);
 
         // Assert
         await act.Should().ThrowAsync<OperationCanceledException>();
-        await context.Registry.Received(2).ClearAsync(Arg.Any<CancellationToken>());
+        registry.RegistrationCount.Should().Be(1);
+        registry.ClearCount.Should().Be(2);
+        registry.ActiveEntries.Should().BeEmpty();
+        registry.ActiveThumbnailUrls.Should().BeEmpty();
+        context.Metadata.Received(1).ReadHistorical(
+            Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<DateTimeOffset>());
     }
 
     [Fact]
@@ -205,5 +206,49 @@ public class WhenTestingPrepareSelectionAsync : BaseImportPhotoPreparationServic
         await context.Registry.Received(1).RemoveAsync(
             Arg.Is<string>(token => token == photo.BlobToken),
             Arg.Any<CancellationToken>());
+    }
+
+    private sealed class CancellingBlobRegistry(CancellationTokenSource cancellation)
+        : IImportPhotoBlobRegistryService
+    {
+        private readonly Dictionary<string, string> _entries = [];
+
+        public int RegistrationCount { get; private set; }
+
+        public int ClearCount { get; private set; }
+
+        public IReadOnlyDictionary<string, string> ActiveEntries => _entries;
+
+        public IReadOnlyCollection<string> ActiveThumbnailUrls => _entries.Values;
+
+        public Task<ImportPhotoBlobRegistrationModel> RegisterAsync(
+            byte[] bytes,
+            string contentType,
+            CancellationToken cancellationToken)
+        {
+            RegistrationCount++;
+            var registration = new ImportPhotoBlobRegistrationModel(
+                $"token-{RegistrationCount}",
+                $"blob:thumbnail-{RegistrationCount}");
+            _entries.Add(registration.Token, registration.ThumbnailUrl);
+            cancellation.Cancel();
+            return Task.FromResult(registration);
+        }
+
+        public Task<byte[]> GetBytesAsync(string token, CancellationToken cancellationToken) =>
+            Task.FromResult(Array.Empty<byte>());
+
+        public Task RemoveAsync(string token, CancellationToken cancellationToken)
+        {
+            _entries.Remove(token);
+            return Task.CompletedTask;
+        }
+
+        public Task ClearAsync(CancellationToken cancellationToken)
+        {
+            ClearCount++;
+            _entries.Clear();
+            return Task.CompletedTask;
+        }
     }
 }
