@@ -118,6 +118,31 @@ public sealed class ImportBatchModel
         _catchProposals.Add(proposal);
     }
 
+    public void ReplaceCatchProposals(IEnumerable<ImportCatchProposalModel> proposals)
+    {
+        var replacements = proposals.ToArray();
+        var activePhotoIds = _photos.Where(photo => !photo.IsRemoved).Select(photo => photo.Id).ToHashSet();
+        if (replacements.Select(proposal => proposal.Id).Distinct().Count() != replacements.Length)
+        {
+            throw new InvalidOperationException("Catch proposal identities must be unique.");
+        }
+
+        var membership = replacements.SelectMany(proposal => proposal.PhotoIds).ToArray();
+        if (membership.Any(photoId => !activePhotoIds.Contains(photoId)))
+        {
+            throw new InvalidOperationException("Catch proposals may reference only active selected photos.");
+        }
+
+        if (membership.Distinct().Count() != membership.Length)
+        {
+            throw new InvalidOperationException("A photo cannot belong to more than one active Catch proposal.");
+        }
+
+        _catchProposals.Clear();
+        _catchProposals.AddRange(replacements);
+        _tripProposals.Clear();
+    }
+
     public void AddTripProposal(ImportTripProposalModel proposal)
     {
         if (_tripProposals.Any(existing => existing.Id == proposal.Id))

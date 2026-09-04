@@ -1343,4 +1343,39 @@
   <data name="Trip_ParticipantOnlyAction" xml:space="preserve">
     <value>Only the angler who started this trip can do that.</value>
   </data>
+  <data name="Common_Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="Common_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Import_Nav" xml:space="preserve"><value>Import Catches</value></data>
+  <data name="Import_PageTitle" xml:space="preserve"><value>Catalogue historical catches</value></data>
+  <data name="Import_Title" xml:space="preserve"><value>Catalogue historical catches</value></data>
+  <data name="Import_NotSaved" xml:space="preserve"><value>This import is not saved yet.</value></data>
+  <data name="Import_BatchDetailsTitle" xml:space="preserve"><value>Choose catch details</value></data>
+  <data name="Import_FishingMethod" xml:space="preserve"><value>Fishing method</value></data>
+  <data name="Import_Species" xml:space="preserve"><value>Species</value></data>
+  <data name="Import_ChooseFishingMethod" xml:space="preserve"><value>Choose fishing method</value></data>
+  <data name="Import_ChooseSpecies" xml:space="preserve"><value>Choose species</value></data>
+  <data name="Import_ChoosePhotosTitle" xml:space="preserve"><value>Choose historical photos</value></data>
+  <data name="Import_ProcessingPhotos" xml:space="preserve"><value>Preparing your photos…</value></data>
+  <data name="Import_SelectionLimit" xml:space="preserve"><value>Select no more than {0} photos at once.</value></data>
+  <data name="Import_PhotoAlt" xml:space="preserve"><value>Selected historical photograph {0}</value></data>
+  <data name="Import_RemovePhoto" xml:space="preserve"><value>Remove photograph</value></data>
+  <data name="Import_PhotoUnsupported" xml:space="preserve"><value>This photograph type is not supported.</value></data>
+  <data name="Import_PhotoTooLarge" xml:space="preserve"><value>This photograph is larger than 10 MB.</value></data>
+  <data name="Import_PhotoCancelled" xml:space="preserve"><value>Photograph preparation was cancelled.</value></data>
+  <data name="Import_PhotoFailed" xml:space="preserve"><value>This photograph could not be prepared.</value></data>
+  <data name="Import_MetadataUnavailable" xml:space="preserve"><value>Photo ready · historical details need review</value></data>
+  <data name="Import_PhotoReady" xml:space="preserve"><value>Photo ready</value></data>
+  <data name="Import_ReviewCatches" xml:space="preserve"><value>Review catches</value></data>
+  <data name="Import_ReviewTitle" xml:space="preserve"><value>Proposed catches</value></data>
+  <data name="Import_CorrectionLater" xml:space="preserve"><value>Review and correction controls are added in the next step of this feature.</value></data>
+  <data name="Import_CatchNumber" xml:space="preserve"><value>Catch {0}</value></data>
+  <data name="Import_NeedsReview" xml:space="preserve"><value>Needs review</value></data>
+  <data name="Import_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Import_TimestampAmbiguous" xml:space="preserve"><value>{0} · timezone confirmation required</value></data>
+  <data name="Import_TimestampWeak" xml:space="preserve"><value>{0} · suggested date requires confirmation</value></data>
+  <data name="Import_TimestampUnusable" xml:space="preserve"><value>Photo date could not be used</value></data>
+  <data name="Import_TimestampMissing" xml:space="preserve"><value>Date and time required</value></data>
+  <data name="Import_LocationNeedsReview" xml:space="preserve"><value>Photo locations differ · review required</value></data>
+  <data name="Import_LocationAvailable" xml:space="preserve"><value>Photo location available</value></data>
+  <data name="Import_LocationUnavailable" xml:space="preserve"><value>No photo location</value></data>
 </root>

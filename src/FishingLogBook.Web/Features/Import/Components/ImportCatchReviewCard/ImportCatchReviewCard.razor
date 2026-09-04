@@ -1,0 +1,25 @@
+@using FishingLogBook.Web.Features.Import.Models
+
+<MudPaper Class="import-catch-card pa-3" Elevation="2" id="@($"import-catch-{Number}")">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h6">@Loc["Import_CatchNumber", Number]</MudText>
+        <div class="import-catch-photos" id="@($"import-catch-{Number}-photos")">
+            @foreach (var photo in ProposalPhotos)
+            {
+                <img src="@photo.ThumbnailUrl"
+                     alt="@Loc["Import_PhotoAlt", photo.SelectionIndex + 1]"
+                     class="import-catch-thumbnail" />
+            }
+        </div>
+        <MudText id="@($"import-catch-{Number}-timestamp")">@TimestampLabel</MudText>
+        <MudText>@Proposal.Method.Name</MudText>
+        <MudText>@Proposal.Species.Name</MudText>
+        <MudText id="@($"import-catch-{Number}-location")">@LocationLabel</MudText>
+        <MudChip T="string"
+                 Color="@(RequiresCorrection ? Color.Warning : Color.Success)"
+                 Variant="Variant.Outlined"
+                 id="@($"import-catch-{Number}-status")">
+            @(RequiresCorrection ? Loc["Import_NeedsReview"] : Loc["Import_Ready"])
+        </MudChip>
+    </MudStack>
+</MudPaper>

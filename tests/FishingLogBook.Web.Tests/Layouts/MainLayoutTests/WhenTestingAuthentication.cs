@@ -23,6 +23,7 @@ public class WhenTestingAuthentication : BaseMainLayoutTest
         cut.FindAll("#app-drawer").Should().BeEmpty();
         cut.FindAll("#app-menu-button").Should().BeEmpty();
         cut.FindAll("#record-catch-nav-link").Should().BeEmpty();
+        cut.FindAll("#import-catches-nav-link").Should().BeEmpty();
     }
 
     [Fact]

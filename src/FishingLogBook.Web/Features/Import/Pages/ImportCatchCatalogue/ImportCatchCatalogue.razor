@@ -1,0 +1,151 @@
+@page "/import"
+@attribute [Authorize]
+@using FishingLogBook.Web.Features.Import.Components.ImportCatchReviewCard
+@using FishingLogBook.Web.Features.Import.Components.ImportPhotographPicker
+@using FishingLogBook.Web.Features.Import.Enums
+@using FishingLogBook.Web.Features.Import.Services
+
+<PageTitle>@Loc["Import_PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="import-wizard-container">
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h5" Align="Align.Center" id="import-title">@Loc["Import_Title"]</MudText>
+        <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-text-secondary">
+            @Loc["Import_NotSaved"]
+        </MudText>
+
+        @if (_isLoading)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center"
+                                 id="import-loading" />
+        }
+        else if (_batch is not null)
+        {
+            @if (_batch.Stage == ImportStageEnum.BatchDetails)
+            {
+                <MudPaper Class="pa-3" Elevation="2" id="import-batch-details">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">@Loc["Import_BatchDetailsTitle"]</MudText>
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.caption">@Loc["Import_FishingMethod"]</MudText>
+                            <MudStack Row="true" Spacing="1" Class="flex-wrap" id="import-method-chips">
+                                @foreach (var method in MethodOptions)
+                                {
+                                    var selected = method.Id == _methodId;
+                                    <MudChip T="string"
+                                             Color="@(selected ? Color.Primary : Color.Default)"
+                                             Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                             OnClick="@(() => SelectMethod(method.Id))"
+                                             id="@($"import-method-{method.Code}")">
+                                        @method.Name
+                                    </MudChip>
+                                }
+                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ChooseMethodAsync"
+                                           id="import-method-more">
+                                    @Loc["Common_More"]
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.caption">@Loc["Import_Species"]</MudText>
+                            <MudStack Row="true" Spacing="1" Class="flex-wrap" id="import-species-chips">
+                                @foreach (var species in SpeciesOptions)
+                                {
+                                    var selected = species.Id == _speciesId;
+                                    <MudChip T="string"
+                                             Color="@(selected ? Color.Primary : Color.Default)"
+                                             Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                                             OnClick="@(() => SelectSpecies(species.Id))"
+                                             id="@($"import-species-{species.Code}")">
+                                        @species.Name
+                                    </MudChip>
+                                }
+                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ChooseSpeciesAsync"
+                                           id="import-species-more">
+                                    @Loc["Common_More"]
+                                </MudButton>
+                            </MudStack>
+                        </MudStack>
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" FullWidth="true"
+                                   Disabled="@(!_batch.CanProcessPhotos)" OnClick="ContinueToPhotos"
+                                   id="import-batch-continue">
+                            @Loc["Common_Continue"]
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            }
+            else if (_batch.Stage == ImportStageEnum.ChoosePhotos)
+            {
+                <MudPaper Class="pa-3" Elevation="2" id="import-choose-photos">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">@Loc["Import_ChoosePhotosTitle"]</MudText>
+                        <ImportPhotographPicker Id="import-photo-picker"
+                                                SelectionStarted="OnSelectionStarted"
+                                                PhotosPrepared="OnPhotosPrepared"
+                                                SelectionLimitExceeded="OnSelectionLimitExceeded" />
+                        @if (_batch.IsProcessingPhotos)
+                        {
+                            <MudProgressLinear Indeterminate="true" Color="Color.Primary" id="import-processing" />
+                            <MudText role="status">@Loc["Import_ProcessingPhotos"]</MudText>
+                        }
+                        @if (_selectionLimitExceeded)
+                        {
+                            <MudAlert Severity="Severity.Error" id="import-selection-limit">
+                                @Loc["Import_SelectionLimit", ImportPhotoPreparationService.MaxPhotographs]
+                            </MudAlert>
+                        }
+                        @foreach (var photo in _batch.Photos.Where(photo => !photo.IsRemoved))
+                        {
+                            <div class="import-photo-row" id="@($"import-photo-{photo.SelectionIndex}")">
+                                @if (photo.IsReady)
+                                {
+                                    <img src="@photo.ThumbnailUrl"
+                                         alt="@Loc["Import_PhotoAlt", photo.SelectionIndex + 1]"
+                                         class="import-photo-thumbnail" />
+                                    <MudText>@PhotoMetadataLabel(photo)</MudText>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.BrokenImage" Color="Color.Error" />
+                                    <MudText Color="Color.Error">@PhotoPreparationLabel(photo)</MudText>
+                                }
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               aria-label="@Loc["Import_RemovePhoto"]"
+                                               OnClick="@(() => RemovePhotoAsync(photo))"
+                                               id="@($"import-remove-photo-{photo.SelectionIndex}")" />
+                            </div>
+                        }
+                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                            <MudButton Variant="Variant.Text" OnClick="BackToBatch" id="import-photos-back">
+                                @Loc["Common_Back"]
+                            </MudButton>
+                            <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                                       Disabled="@(!CanReview)" OnClick="ContinueToReview"
+                                       id="import-photos-continue">
+                                @Loc["Import_ReviewCatches"]
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            }
+            else if (_batch.Stage == ImportStageEnum.ReviewCatches)
+            {
+                <MudStack Spacing="2" id="import-catch-review">
+                    <MudText Typo="Typo.h6">@Loc["Import_ReviewTitle"]</MudText>
+                    @for (var index = 0; index < _batch.CatchProposals.Count; index++)
+                    {
+                        <ImportCatchReviewCard Proposal="_batch.CatchProposals[index]"
+                                               Photos="_batch.Photos"
+                                               Number="@(index + 1)" />
+                    }
+                    <MudAlert Severity="Severity.Info" id="import-correction-boundary">
+                        @Loc["Import_CorrectionLater"]
+                    </MudAlert>
+                    <MudButton Variant="Variant.Text" OnClick="BackToPhotos" id="import-review-back">
+                        @Loc["Common_Back"]
+                    </MudButton>
+                </MudStack>
+            }
+        }
+    </MudStack>
+</MudContainer>

@@ -122,6 +122,15 @@ html, body {
     border-color: var(--mud-palette-primary-darken);
 }
 
+.mud-button-text {
+    border: 1px solid var(--mud-palette-lines-default);
+}
+
+.mud-button-text:hover,
+.mud-button-text:focus-visible {
+    border-color: currentColor;
+}
+
 .profile-default-label {
     font-size: 0.75em;
     text-transform: lowercase;
