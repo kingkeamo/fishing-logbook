@@ -1414,4 +1414,6 @@
   <data name="Import_ConfirmationBoundary" xml:space="preserve"><value>Your reviewed catches and Trip choices are ready for final import confirmation.</value></data>
   <data name="Import_TripCatchNumber" xml:space="preserve"><value>Catch {0}</value></data>
   <data name="Import_TripCatchPhotoAlt" xml:space="preserve"><value>Thumbnail for Catch {0}</value></data>
+  <data name="Import_TripParticipants" xml:space="preserve"><value>Anglers on this Trip</value></data>
+  <data name="Import_AddTripParticipant" xml:space="preserve"><value>Add angler</value></data>
 </root>

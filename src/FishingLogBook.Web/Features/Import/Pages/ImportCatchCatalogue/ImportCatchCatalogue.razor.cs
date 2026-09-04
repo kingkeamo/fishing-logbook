@@ -1,14 +1,11 @@
-using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common.Modals;
-using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Common.Modals.AnglerPicker;
 using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Import.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
-using FishingLogBook.Web.Features.Trips.Models;
-using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -25,16 +22,15 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private Guid _speciesId;
     private bool _isLoading = true;
     private bool _selectionLimitExceeded;
-    private IReadOnlyList<TripModel> _existingTrips = [];
-    private Guid _ownerUserId;
+    private IReadOnlyDictionary<Guid, IReadOnlyList<TripSummaryDto>> _existingTrips =
+        new Dictionary<Guid, IReadOnlyList<TripSummaryDto>>();
 
     [Inject] private IAnglerPreferencesProvider Preferences { get; set; } = default!;
     [Inject] private IModalService ModalService { get; set; } = default!;
     [Inject] private IImportCatchProposalService ProposalService { get; set; } = default!;
     [Inject] private IImportPhotoPreparationService Preparation { get; set; } = default!;
     [Inject] private IImportTripProposalService TripProposalService { get; set; } = default!;
-    [Inject] private ITripStore TripStore { get; set; } = default!;
-    [Inject] private ILocalCatchOwnerService LocalOwner { get; set; } = default!;
+    [Inject] private IImportExistingTripService ExistingTripService { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private bool CanReview
@@ -253,8 +249,9 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         if (_batch?.CanAdvanceToTrips == true)
         {
             _batch.ReplaceTripProposals(TripProposalService.Propose(_batch));
-            _ownerUserId = await LocalOwner.GetUserIdAsync(_cancellationTokenSource.Token);
-            _existingTrips = await TripStore.GetAllAsync(_ownerUserId, _cancellationTokenSource.Token);
+            _existingTrips = await ExistingTripService.GetCandidatesAsync(
+                ActiveTripProposals,
+                _cancellationTokenSource.Token);
             _batch.SetStage(ImportStageEnum.ReviewTrips);
         }
     }
@@ -300,31 +297,30 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         }
     }
 
-    private IReadOnlyList<TripModel> ExistingTripsFor(ImportTripProposalModel proposal)
+    private async Task AddTripParticipantAsync(ImportTripProposalModel proposal)
     {
-        return _existingTrips.Where(trip => trip.Status == TripConstants.Completed
-                && trip.CanContribute(_ownerUserId)
-                && trip.EndedOn.HasValue
-                && trip.StartedOn.DateTime <= proposal.ProposedEndedOn
-                && trip.EndedOn.Value.DateTime >= proposal.ProposedStartedOn
-                && IsSpatiallyCompatible(proposal, trip))
-            .OrderBy(trip => trip.StartedOn)
-            .ToArray();
+        var selected = await ModalService.ShowAsync<AnglerPickerModal, AnglerPickerModalModel, AnglerPickerModalResult>(
+            new AnglerPickerModalModel(proposal.Participants.Select(participant => participant.UserId).ToArray()),
+            _cancellationTokenSource.Token);
+        if (selected is not null)
+        {
+            _batch?.AddTripParticipant(proposal.Id, selected.Angler);
+        }
     }
 
-    private static bool IsSpatiallyCompatible(ImportTripProposalModel proposal, TripModel trip)
+    private void RemoveTripParticipant(Guid proposalId, Guid userId)
     {
-        if (proposal.RepresentativeLocation is not { Latitude: not null, Longitude: not null }
-            || trip.Location is null)
-        {
-            return true;
-        }
+        _batch?.RemoveTripParticipant(proposalId, userId);
+    }
 
-        return ImportTripProposalService.DistanceKilometres(
-            proposal.RepresentativeLocation.Latitude.Value,
-            proposal.RepresentativeLocation.Longitude.Value,
-            trip.Location.Latitude,
-            trip.Location.Longitude) <= ImportTripSuggestionPolicyModel.Default.NearbyDistanceKilometres;
+    private string ParticipantName(AnglerSummaryDto participant)
+    {
+        return participant.DisplayName ?? participant.Email ?? Loc["Trip_ContributorUnknown"].Value;
+    }
+
+    private IReadOnlyList<TripSummaryDto> ExistingTripsFor(ImportTripProposalModel proposal)
+    {
+        return _existingTrips.GetValueOrDefault(proposal.Id) ?? [];
     }
 
     private async Task RemoveCorrectionPhotosAsync(IReadOnlyList<Guid> photoIds)

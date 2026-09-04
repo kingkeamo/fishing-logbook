@@ -1,9 +1,9 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Modals.AnglerPicker;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Trips.Clients;
-using FishingLogBook.Web.Features.Trips.Modals.InviteAngler;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -115,17 +115,38 @@ public partial class TripParticipantsModal : ComponentBase, IDisposable
     private async Task InviteAsync()
     {
         _actionFailed = false;
-        var invited = await ModalService
-            .ShowAsync<InviteAnglerModal, InviteAnglerModalModel, InviteAnglerModalResult>(
-                new InviteAnglerModalModel(Model.TripId),
+        var selected = await ModalService
+            .ShowAsync<AnglerPickerModal, AnglerPickerModalModel, AnglerPickerModalResult>(
+                new AnglerPickerModalModel(_participants.Select(participant => participant.UserId).ToArray()),
                 _cancellationTokenSource.Token);
-        if (invited is null)
+        if (selected is null)
         {
             return;
         }
 
-        Apply(invited.Participants);
-        _changed = true;
+        try
+        {
+            var participants = await ParticipantClient.InviteAsync(
+                Model.TripId,
+                new InviteTripParticipantDto(selected.Angler.UserId),
+                _cancellationTokenSource.Token);
+            if (participants is null)
+            {
+                _actionFailed = true;
+                return;
+            }
+
+            Apply(participants);
+            _changed = true;
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _actionFailed = true;
+            await Logging.LogErrorAsync("inviting an angler to a trip", exception, CancellationToken.None);
+        }
     }
 
     private async Task RemoveAsync(Guid participantUserId)

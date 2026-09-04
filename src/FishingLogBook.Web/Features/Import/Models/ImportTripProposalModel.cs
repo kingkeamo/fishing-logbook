@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Import.Enums;
 
 namespace FishingLogBook.Web.Features.Import.Models;
@@ -6,6 +7,7 @@ namespace FishingLogBook.Web.Features.Import.Models;
 public sealed class ImportTripProposalModel
 {
     private readonly List<Guid> _catchProposalIds;
+    private readonly List<AnglerSummaryDto> _participants = [];
 
     public ImportTripProposalModel(
         Guid id,
@@ -69,6 +71,8 @@ public sealed class ImportTripProposalModel
 
     public Guid? ExistingTripId { get; private set; }
 
+    public IReadOnlyList<AnglerSummaryDto> Participants => _participants;
+
     public bool IsRemoved { get; private set; }
 
     public bool IsDecisionComplete => IsRemoved || Decision != ImportTripDecisionEnum.Undecided;
@@ -93,6 +97,28 @@ public sealed class ImportTripProposalModel
 
         Decision = decision;
         ExistingTripId = existingTripId;
+        if (decision != ImportTripDecisionEnum.CreateNew)
+        {
+            _participants.Clear();
+        }
+    }
+
+    public void AddParticipant(AnglerSummaryDto angler)
+    {
+        if (Decision != ImportTripDecisionEnum.CreateNew)
+        {
+            throw new InvalidOperationException("Participants belong only to a new Trip decision.");
+        }
+
+        if (_participants.All(participant => participant.UserId != angler.UserId))
+        {
+            _participants.Add(angler);
+        }
+    }
+
+    public void RemoveParticipant(Guid userId)
+    {
+        _participants.RemoveAll(participant => participant.UserId == userId);
     }
 
     public void RemoveCatch(Guid catchProposalId)

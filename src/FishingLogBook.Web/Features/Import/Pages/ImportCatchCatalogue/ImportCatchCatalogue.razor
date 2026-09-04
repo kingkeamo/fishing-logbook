@@ -173,6 +173,23 @@
                                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => DecideTrip(proposal.Id, ImportTripDecisionEnum.CreateNew))" id="@($"import-trip-create-{proposalIndex + 1}")">@Loc["Import_CreateTrip"]</MudButton>
                                     <MudButton Variant="Variant.Outlined" OnClick="@(() => DecideTrip(proposal.Id, ImportTripDecisionEnum.NoTrip))" id="@($"import-trip-separate-{proposalIndex + 1}")">@Loc["Import_KeepSeparate"]</MudButton>
                                 </MudStack>
+                                @if (proposal.Decision == ImportTripDecisionEnum.CreateNew)
+                                {
+                                    <MudText Typo="Typo.subtitle2">@Loc["Import_TripParticipants"]</MudText>
+                                    <MudStack Row="true" Class="flex-wrap" Spacing="1" id="@($"import-trip-participants-{proposalIndex + 1}")">
+                                        @foreach (var participant in proposal.Participants)
+                                        {
+                                            <MudChip T="Guid" Value="participant.UserId" OnClose="@(() => RemoveTripParticipant(proposal.Id, participant.UserId))"
+                                                     id="@($"import-trip-participant-{participant.UserId:D}")">
+                                                @ParticipantName(participant)
+                                            </MudChip>
+                                        }
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => AddTripParticipantAsync(proposal))"
+                                                   id="@($"import-trip-add-participant-{proposalIndex + 1}")">
+                                            @Loc["Import_AddTripParticipant"]
+                                        </MudButton>
+                                    </MudStack>
+                                }
                                 @if (ExistingTripsFor(proposal).Count > 0)
                                 {
                                     <MudSelect T="Guid?" Label="@Loc["Import_AddToExistingTrip"]" Value="proposal.ExistingTripId"

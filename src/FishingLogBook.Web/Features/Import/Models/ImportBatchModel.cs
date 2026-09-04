@@ -1,3 +1,4 @@
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Import.Enums;
 
 namespace FishingLogBook.Web.Features.Import.Models;
@@ -195,6 +196,16 @@ public sealed class ImportBatchModel
     public void RemoveCatchFromTrip(Guid tripProposalId, Guid catchProposalId)
     {
         ActiveTrip(tripProposalId).RemoveCatch(catchProposalId);
+    }
+
+    public void AddTripParticipant(Guid tripProposalId, AnglerSummaryDto angler)
+    {
+        ActiveTrip(tripProposalId).AddParticipant(angler);
+    }
+
+    public void RemoveTripParticipant(Guid tripProposalId, Guid userId)
+    {
+        ActiveTrip(tripProposalId).RemoveParticipant(userId);
     }
 
     public void RemovePhoto(Guid photoId)

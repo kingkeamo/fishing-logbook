@@ -1414,4 +1414,6 @@
   <data name="Import_ConfirmationBoundary" xml:space="preserve"><value>Vos prises vérifiées et vos choix de sorties sont prêts pour la confirmation finale de l’importation.</value></data>
   <data name="Import_TripCatchNumber" xml:space="preserve"><value>Prise {0}</value></data>
   <data name="Import_TripCatchPhotoAlt" xml:space="preserve"><value>Miniature de la prise {0}</value></data>
+  <data name="Import_TripParticipants" xml:space="preserve"><value>Pêcheurs de cette sortie</value></data>
+  <data name="Import_AddTripParticipant" xml:space="preserve"><value>Ajouter un pêcheur</value></data>
 </root>
