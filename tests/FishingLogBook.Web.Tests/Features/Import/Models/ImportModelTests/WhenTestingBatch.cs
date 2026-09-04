@@ -54,6 +54,42 @@ public class WhenTestingBatch : BaseImportModelTest
     }
 
     [Fact]
+    public void ItShouldReplaceCatchProposalsWithoutRetainingOldMemberships()
+    {
+        // Arrange
+        var batch = Batch();
+        batch.AddPhoto(Photo());
+        batch.AddPhoto(Photo(SecondPhotoId, 1));
+        batch.AddCatchProposal(Catch());
+        var replacement = Catch(SecondCatchId, [PhotoId, SecondPhotoId]);
+
+        // Act
+        batch.ReplaceCatchProposals([replacement]);
+
+        // Assert
+        batch.CatchProposals.Should().Equal(replacement);
+    }
+
+    [Fact]
+    public void ItShouldRejectInvalidReplacementWithoutDiscardingCurrentProposals()
+    {
+        // Arrange
+        var batch = Batch();
+        var current = Catch();
+        batch.AddPhoto(Photo());
+        batch.AddCatchProposal(current);
+        var invalid = Catch(SecondCatchId, [Guid.NewGuid()]);
+        Action replace = () => batch.ReplaceCatchProposals([invalid]);
+
+        // Act
+        var assertion = replace.Should();
+
+        // Assert
+        assertion.Throw<InvalidOperationException>();
+        batch.CatchProposals.Should().Equal(current);
+    }
+
+    [Fact]
     public void ItShouldAllowTripProposalsToReferenceReviewedCatchesOnly()
     {
         // Arrange

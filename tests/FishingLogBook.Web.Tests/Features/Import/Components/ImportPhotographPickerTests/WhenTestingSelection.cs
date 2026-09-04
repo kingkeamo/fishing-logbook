@@ -69,7 +69,33 @@ public class WhenTestingSelection : BaseImportPhotographPickerTest
     }
 
     [Fact]
-    public async Task ItShouldClearTransientResourcesWhenDisposed()
+    public async Task ItShouldReportThatSelectionProcessingStarted()
+    {
+        // Arrange
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        preparation.PrepareSelectionAsync(
+                Arg.Any<IReadOnlyList<IBrowserFile>>(),
+                Arg.Any<CancellationToken>())
+            .Returns([]);
+        await using var context = CreateContext(preparation);
+        var started = false;
+        var cut = context.Render<ImportPhotographPicker>(parameters => parameters
+            .Add(component => component.Id, "import-picker")
+            .Add(component => component.SelectionStarted, () => started = true));
+
+        // Act
+        cut.FindComponent<InputFile>().UploadFiles(
+            InputFileContent.CreateFromBinary([1], "photo.jpg", contentType: "image/jpeg"));
+
+        // Assert
+        started.Should().BeTrue();
+        await preparation.Received(1).PrepareSelectionAsync(
+            Arg.Is<IReadOnlyList<IBrowserFile>>(files => files.Count == 1),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotClearWizardOwnedResourcesWhenDisposed()
     {
         // Arrange
         var preparation = Substitute.For<IImportPhotoPreparationService>();
@@ -82,6 +108,6 @@ public class WhenTestingSelection : BaseImportPhotographPickerTest
         await cut.Instance.DisposeAsync();
 
         // Assert
-        await preparation.Received(1).ClearAsync(CancellationToken.None);
+        await preparation.DidNotReceive().ClearAsync(Arg.Any<CancellationToken>());
     }
 }

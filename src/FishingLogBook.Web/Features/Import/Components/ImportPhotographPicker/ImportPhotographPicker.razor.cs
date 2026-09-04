@@ -19,6 +19,9 @@ public partial class ImportPhotographPicker : ComponentBase, IAsyncDisposable
     [Parameter]
     public EventCallback SelectionLimitExceeded { get; set; }
 
+    [Parameter]
+    public EventCallback SelectionStarted { get; set; }
+
     [Inject]
     private IImportPhotoPreparationService Preparation { get; set; } = default!;
 
@@ -32,6 +35,7 @@ public partial class ImportPhotographPicker : ComponentBase, IAsyncDisposable
             return;
         }
 
+        await SelectionStarted.InvokeAsync();
         _selectionCancellation = new CancellationTokenSource();
         _selectionTask = PrepareAsync(files, _selectionCancellation.Token);
         await _selectionTask;
@@ -67,6 +71,5 @@ public partial class ImportPhotographPicker : ComponentBase, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await CancelSelectionAsync();
-        await Preparation.ClearAsync(CancellationToken.None);
     }
 }
