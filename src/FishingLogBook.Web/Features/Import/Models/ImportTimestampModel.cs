@@ -41,6 +41,8 @@ public sealed record ImportTimestampModel
         }
     }
 
+    public bool RequiresUtcOffset => LocalWallClock.HasValue && !Instant.HasValue;
+
     public static ImportTimestampModel Missing()
     {
         return new ImportTimestampModel(
@@ -93,21 +95,35 @@ public sealed record ImportTimestampModel
             null);
     }
 
-    public static ImportTimestampModel UserConfirmed(DateTime localWallClock)
+    public ImportTimestampModel Confirm(DateTime localValue)
     {
+        if (!Instant.HasValue)
+        {
+            throw new InvalidOperationException("An explicit UTC offset is required for a historical local date and time.");
+        }
+
+        var unspecified = DateTime.SpecifyKind(localValue, DateTimeKind.Unspecified);
+        return UserConfirmed(new DateTimeOffset(unspecified, Instant.Value.Offset));
+    }
+
+    public ImportTimestampModel ConfirmLocalWallClock(DateTime localWallClock, TimeSpan utcOffset)
+    {
+        var unspecified = DateTime.SpecifyKind(localWallClock, DateTimeKind.Unspecified);
+        var instant = new DateTimeOffset(unspecified, utcOffset);
         return new ImportTimestampModel(
             ImportTimestampStateEnum.UserConfirmed,
             ImportTimestampSourceEnum.User,
-            null,
-            DateTime.SpecifyKind(localWallClock, DateTimeKind.Unspecified));
+            instant,
+            unspecified);
     }
 
-    public ImportTimestampModel Confirm(DateTime localValue)
+    public ImportTimestampModel EditLocalWallClock(DateTime localWallClock)
     {
-        var unspecified = DateTime.SpecifyKind(localValue, DateTimeKind.Unspecified);
-        return Instant is { } instant
-            ? UserConfirmed(new DateTimeOffset(unspecified, instant.Offset))
-            : UserConfirmed(unspecified);
+        return new ImportTimestampModel(
+            ImportTimestampStateEnum.LocalWallClock,
+            Source,
+            null,
+            DateTime.SpecifyKind(localWallClock, DateTimeKind.Unspecified));
     }
 
     private static void RequireExifSource(ImportTimestampSourceEnum source)

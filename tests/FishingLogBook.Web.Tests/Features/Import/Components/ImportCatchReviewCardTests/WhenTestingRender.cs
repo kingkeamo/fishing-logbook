@@ -12,6 +12,7 @@ using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
+using MudBlazor.Extensions;
 using MudBlazor.Services;
 using NSubstitute;
 
@@ -66,6 +67,7 @@ public class WhenTestingRender
         // Assert
         cut.Find("#import-catch-1-timestamp").TextContent.Should().Contain("+01:00");
         cut.Find("#import-catch-1-status").TextContent.Should().Contain("Ready");
+        cut.FindAll("#import-catch-1-utc-offset").Should().BeEmpty();
     }
 
     [Fact]
@@ -241,12 +243,37 @@ public class WhenTestingRender
 
         // Act
         cut.Find("#import-catch-1-confirm-caught-on").Click();
+        cut.Find("#import-catch-1-continue").Click();
+
+        // Assert
+        proposal.IsReadyForConfirmation.Should().BeFalse();
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        cut.Find("#import-catch-1-editor").Should().NotBeNull();
+        cut.Find("#import-catch-1-utc-offset").Should().NotBeNull();
+        var offsets = cut.FindComponents<MudSelectItem<TimeSpan?>>()
+            .Select(item => item.Instance.GetState(component => component.Value))
+            .ToArray();
+        offsets.Should().HaveCount(53);
+        offsets.Should().Contain(TimeSpan.FromHours(-12));
+        offsets.Should().Contain(TimeSpan.FromHours(5.5));
+        offsets.Should().Contain(TimeSpan.FromHours(14));
+
+        // Act
+        await SelectUtcOffsetAsync(cut, TimeSpan.FromHours(5.5));
+        cut.Find("#import-catch-1-confirm-caught-on").Click();
         cut.Find("#import-catch-1-close-editor").Click();
 
         // Assert
-        proposal.CaughtOn.Instant.Should().BeNull();
+        proposal.CaughtOn.Instant.Should().Be(
+            new DateTimeOffset(2024, 6, 14, 9, 20, 0, TimeSpan.FromHours(5.5)));
         proposal.CaughtOn.LocalWallClock.Should().Be(new DateTime(2024, 6, 14, 9, 20, 0, DateTimeKind.Unspecified));
         cut.Find("#import-catch-1-status").TextContent.Should().Contain("Ready");
+
+        // Act
+        cut.Find("#import-catch-1-edit").Click();
+
+        // Assert
+        cut.FindComponent<MudSelect<TimeSpan?>>().Instance.GetState(x => x.Value).Should().Be(TimeSpan.FromHours(5.5));
     }
 
     [Fact]
@@ -270,10 +297,13 @@ public class WhenTestingRender
 
         // Act
         cut.Find("#import-catch-1-caught-on").Input("09/04/2026 03:06 PM");
+        await SelectUtcOffsetAsync(cut, TimeSpan.FromHours(-5));
         cut.Find("#import-catch-1-confirm-caught-on").Click();
 
         // Assert
         proposal.CaughtOn.LocalWallClock.Should().Be(new DateTime(2026, 4, 9, 15, 6, 0));
+        proposal.CaughtOn.Instant.Should().Be(
+            new DateTimeOffset(2026, 4, 9, 15, 6, 0, TimeSpan.FromHours(-5)));
         cut.FindAll(".mud-input-error").Should().BeEmpty();
     }
 
@@ -297,6 +327,7 @@ public class WhenTestingRender
 
         // Act
         cut.Find("#import-catch-1-caught-on").Input("09/04/2026 03:06 PM");
+        await SelectUtcOffsetAsync(cut, TimeSpan.FromHours(1));
         cut.Find("#import-catch-1-continue").Click();
 
         // Assert
@@ -483,5 +514,12 @@ public class WhenTestingRender
             new FishingPreferencesDto([]),
             WeightUnitEnum.Kg,
             LengthUnitEnum.Cm);
+    }
+
+    private static Task SelectUtcOffsetAsync(
+        IRenderedComponent<ImportCatchReviewCard> cut,
+        TimeSpan offset)
+    {
+        return cut.InvokeAsync(() => cut.FindComponent<MudSelect<TimeSpan?>>().Instance.ValueChanged.InvokeAsync(offset));
     }
 }

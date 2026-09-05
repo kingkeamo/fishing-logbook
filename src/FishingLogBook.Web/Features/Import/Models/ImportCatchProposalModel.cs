@@ -97,7 +97,7 @@ public sealed class ImportCatchProposalModel
         && _photoIds.Count > 0;
 
     public bool CanConfirmDisplayedValues => !IsRemoved
-        && (CaughtOn.Instant.HasValue || CaughtOn.LocalWallClock.HasValue)
+        && CaughtOn.Instant.HasValue
         && Method.IsValid
         && Species.IsValid
         && _gpsConflictResolved
@@ -169,7 +169,7 @@ public sealed class ImportCatchProposalModel
 
         if (!CaughtOn.IsResolved)
         {
-            var displayedCaughtOn = CaughtOn.Instant?.DateTime ?? CaughtOn.LocalWallClock!.Value;
+            var displayedCaughtOn = CaughtOn.Instant!.Value.DateTime;
             CaughtOn = CaughtOn.Confirm(displayedCaughtOn);
         }
 

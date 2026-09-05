@@ -19,11 +19,15 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     private const int MaxChipOptions = 6;
     private readonly HashSet<Guid> _selectedPhotoIds = [];
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private static readonly IReadOnlyList<TimeSpan> UtcOffsetOptions =
+        [.. Enumerable.Range(0, 53).Select(index => TimeSpan.FromMinutes(-720 + (index * 30)))];
     private string _caughtOnLocal = string.Empty;
     private ImportTimestampModel? _caughtOnBasis;
     private Guid? _activePhotoId;
     private bool _caughtOnInvalid;
     private bool _editing;
+    private TimeSpan? _utcOffset;
+    private bool _utcOffsetInvalid;
 
     [Parameter, EditorRequired] public ImportCatchProposalModel Proposal { get; set; } = default!;
     [Parameter, EditorRequired] public ImportBatchModel Batch { get; set; } = default!;
@@ -88,6 +92,8 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
             .Where(item => !item.Proposal.IsRemoved && item.Proposal.Id != Proposal.Id)];
 
     private bool CanSplit => _selectedPhotoIds.Count > 0 && _selectedPhotoIds.Count < Proposal.PhotoIds.Count;
+    private bool RequiresUtcOffsetControl => _caughtOnBasis is not null
+        && (_caughtOnBasis.LocalWallClock.HasValue || !_caughtOnBasis.Instant.HasValue);
     private bool ShowLocationDecision => Proposal.HasUnresolvedGpsConflict || Proposal.Location?.HasCanonicalCoordinates == true;
     private Color StatusColor => Proposal.ReviewStatus == ImportCatchReviewStatusEnum.Reviewed
         ? Color.Success : Proposal.CanBeReviewed ? Color.Info : Color.Warning;
@@ -145,6 +151,8 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
         _editing = true;
         _caughtOnBasis = DisplayedTimestamp;
         _caughtOnLocal = EditorValue(DisplayedTimestamp);
+        _utcOffset = DisplayedTimestamp.LocalWallClock.HasValue ? DisplayedTimestamp.Instant?.Offset : null;
+        _utcOffsetInvalid = false;
     }
     private void CloseEditor()
     {
@@ -155,9 +163,16 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     {
         _caughtOnLocal = value;
         _caughtOnInvalid = false;
-        var caughtOn = TryParseCaughtOn(value, out var parsed)
-            ? ConfirmedCaughtOn(parsed)
-            : ImportTimestampModel.Missing();
+        _utcOffsetInvalid = false;
+        var caughtOn = !TryParseCaughtOn(value, out var parsed)
+            ? ImportTimestampModel.Missing()
+            : RequiresUtcOffsetControl
+                ? (_caughtOnBasis ?? Proposal.CaughtOn).EditLocalWallClock(parsed)
+                : ConfirmedCaughtOn(parsed);
+        if (RequiresUtcOffsetControl)
+        {
+            _utcOffset = null;
+        }
         Batch.SetCatchCaughtOn(Proposal.Id, caughtOn);
     }
     private void SelectPhotos(IReadOnlySet<Guid> selectedPhotoIds)
@@ -178,19 +193,23 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
         _caughtOnBasis = DisplayedTimestamp;
         _caughtOnLocal = EditorValue(DisplayedTimestamp);
         _caughtOnInvalid = false;
+        _utcOffset = DisplayedTimestamp.LocalWallClock.HasValue ? DisplayedTimestamp.Instant?.Offset : null;
+        _utcOffsetInvalid = false;
         return Task.CompletedTask;
     }
 
     private void ConfirmCaughtOn()
     {
-        if (!TryParseCaughtOn(_caughtOnLocal, out var caughtOn))
+        if (!TryConfirmCaughtOn())
         {
-            _caughtOnInvalid = true;
             return;
         }
+    }
 
-        Batch.SetCatchCaughtOn(Proposal.Id, ConfirmedCaughtOn(caughtOn));
-        _caughtOnInvalid = false;
+    private void SetUtcOffset(TimeSpan? utcOffset)
+    {
+        _utcOffset = utcOffset;
+        _utcOffsetInvalid = false;
     }
 
     private static bool TryParseCaughtOn(string value, out DateTime caughtOn)
@@ -270,13 +289,10 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
 
     private async Task ContinueAsync()
     {
-        if (!TryParseCaughtOn(_caughtOnLocal, out var caughtOn))
+        if (!TryConfirmCaughtOn())
         {
-            _caughtOnInvalid = true;
             return;
         }
-
-        Batch.SetCatchCaughtOn(Proposal.Id, ConfirmedCaughtOn(caughtOn));
         if (!Proposal.CanConfirmDisplayedValues)
         {
             return;
@@ -298,6 +314,36 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     private ImportTimestampModel ConfirmedCaughtOn(DateTime caughtOn)
     {
         return (_caughtOnBasis ?? Proposal.CaughtOn).Confirm(caughtOn);
+    }
+
+    private bool TryConfirmCaughtOn()
+    {
+        if (!TryParseCaughtOn(_caughtOnLocal, out var caughtOn))
+        {
+            _caughtOnInvalid = true;
+            return false;
+        }
+
+        if (RequiresUtcOffsetControl && !_utcOffset.HasValue)
+        {
+            _utcOffsetInvalid = true;
+            return false;
+        }
+
+        var confirmed = RequiresUtcOffsetControl
+            ? (_caughtOnBasis ?? Proposal.CaughtOn).ConfirmLocalWallClock(caughtOn, _utcOffset!.Value)
+            : ConfirmedCaughtOn(caughtOn);
+        Batch.SetCatchCaughtOn(Proposal.Id, confirmed);
+        _caughtOnInvalid = false;
+        _utcOffsetInvalid = false;
+        return true;
+    }
+
+    private static string UtcOffsetLabel(TimeSpan offset)
+    {
+        var sign = offset < TimeSpan.Zero ? '-' : '+';
+        var absolute = offset.Duration();
+        return $"UTC{sign}{absolute.Hours:D2}:{absolute.Minutes:D2}";
     }
 
     private FishingMethodDto? FindMethod(Guid id) => Preferences.Catalogue.Methods.SingleOrDefault(method => method.Id == id);

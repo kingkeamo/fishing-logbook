@@ -1,12 +1,54 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Features.Import.Enums;
+using FishingLogBook.Web.Features.Import.Models;
 using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Features.Import.Services.ImportPersistenceServiceTests;
 
 public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
 {
+    [Fact]
+    public async Task ItShouldPersistTheExactExplicitlyConfirmedHistoricalOffset()
+    {
+        // Arrange
+        var wallClock = new DateTime(2009, 2, 2, 15, 6, 0, DateTimeKind.Local);
+        var confirmed = ImportTimestampModel.FromLocalWallClock(
+                wallClock,
+                ImportTimestampSourceEnum.ExifOriginal)
+            .ConfirmLocalWallClock(wallClock, TimeSpan.FromHours(5.5));
+        var batch = Batch(ImportTripDecisionEnum.NoTrip, timestamp: confirmed);
+        var sut = CreateSut();
+
+        // Act
+        await sut.PersistAsync(batch, CancellationToken.None);
+
+        // Assert
+        var expected = new DateTimeOffset(2009, 2, 2, 15, 6, 0, TimeSpan.FromHours(5.5));
+        await CatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(record => record.CaughtOn == expected),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistAnExplicitExifOffsetUnchanged()
+    {
+        // Arrange
+        var explicitTimestamp = ImportTimestampModel.FromExplicitInstant(
+            CaughtOn,
+            ImportTimestampSourceEnum.ExifOriginal);
+        var batch = Batch(ImportTripDecisionEnum.NoTrip, timestamp: explicitTimestamp);
+        var sut = CreateSut();
+
+        // Act
+        await sut.PersistAsync(batch, CancellationToken.None);
+
+        // Assert
+        await CatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(record => record.CaughtOn == CaughtOn),
+            Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task ItShouldPersistANewTripParticipantsCatchAndPhotographThroughAuthoritativeClients()
     {

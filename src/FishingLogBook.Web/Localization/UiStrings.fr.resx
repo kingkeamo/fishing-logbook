@@ -1390,6 +1390,8 @@
   <data name="Import_CaughtOn" xml:space="preserve"><value>Date et heure de la prise</value></data>
   <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Saisissez une date et une heure historiques valides.</value></data>
   <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirmer la date et lâ€™heure</value></data>
+  <data name="Import_UtcOffset" xml:space="preserve"><value>Décalage UTC</value></data>
+  <data name="Import_UtcOffsetRequired" xml:space="preserve"><value>Choisissez le décalage UTC historique.</value></data>
   <data name="Import_SelectPhoto" xml:space="preserve"><value>SÃ©lectionner la photographie {0}</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Utiliser le lieu de la photo {0}</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Supprimer le lieu</value></data>

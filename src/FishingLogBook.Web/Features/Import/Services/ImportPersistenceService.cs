@@ -336,12 +336,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             throw new InvalidOperationException("Every imported Catch requires a reviewed historical date and time.");
         }
 
-        return timestamp.Instant ?? ToInstant(timestamp.LocalWallClock!.Value);
-    }
-
-    private static DateTimeOffset ToInstant(DateTime value)
-    {
-        return new DateTimeOffset(DateTime.SpecifyKind(value, DateTimeKind.Local));
+        return timestamp.Instant
+            ?? throw new InvalidOperationException("Every imported Catch requires a deterministic historical instant with an explicitly confirmed UTC offset.");
     }
 
     private static void Validate(ImportBatchModel batch)

@@ -49,6 +49,18 @@
                         </MudButton>
                     </MudTooltip>
                 </div>
+                @if (RequiresUtcOffsetControl)
+                {
+                    <MudSelect T="TimeSpan?" Value="_utcOffset" ValueChanged="SetUtcOffset"
+                               Label="@Loc["Import_UtcOffset"]" Required="true"
+                               Error="_utcOffsetInvalid" ErrorText="@Loc["Import_UtcOffsetRequired"]"
+                               id="@($"import-catch-{Number}-utc-offset")">
+                        @foreach (var offset in UtcOffsetOptions)
+                        {
+                            <MudSelectItem T="TimeSpan?" Value="@((TimeSpan?)offset)">@UtcOffsetLabel(offset)</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
                 @if (Proposal.RequiresCanonicalReview)
                 {
                     <MudAlert Severity="Severity.Warning">@Loc["Import_MergeValuesNeedReview"]</MudAlert>

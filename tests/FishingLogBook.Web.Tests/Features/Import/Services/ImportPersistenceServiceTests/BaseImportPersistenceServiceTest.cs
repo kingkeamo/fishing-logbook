@@ -70,11 +70,11 @@ public class BaseImportPersistenceServiceTest
         CatchClient.GetAsync(CatchId, Arg.Any<CancellationToken>()).Returns(_ =>
         {
             reads++;
-            return new CatchViewDto(CatchId, UserId, CaughtOn, new CatchLocationExposureDto
+            return new CatchViewDto(CatchId, UserId, persistedCatch!.CaughtOn, new CatchLocationExposureDto
             {
                 Latitude = 53.1,
                 Longitude = -6.2,
-                CapturedOn = CaughtOn,
+                CapturedOn = persistedCatch.CaughtOn,
                 Source = LocationDefaults.PhotoMetadata,
                 Visibility = LocationDefaults.Private
             })
@@ -91,7 +91,10 @@ public class BaseImportPersistenceServiceTest
         return new ImportPersistenceService(TripClient, ParticipantClient, CatchClient, CurrentUserClient, BlobRegistry);
     }
 
-    protected static ImportBatchModel Batch(ImportTripDecisionEnum decision, bool participant = false)
+    protected static ImportBatchModel Batch(
+        ImportTripDecisionEnum decision,
+        bool participant = false,
+        ImportTimestampModel? timestamp = null)
     {
         var method = new ImportCatalogueSelectionModel(Guid.NewGuid(), "Fly", "Fly");
         var species = new ImportCatalogueSelectionModel(Guid.NewGuid(), "BrownTrout", "Brown Trout");
@@ -103,7 +106,7 @@ public class BaseImportPersistenceServiceTest
         var proposal = new ImportCatchProposalModel(
             CatchId,
             [PhotoId],
-            ImportTimestampModel.UserConfirmed(CaughtOn),
+            timestamp ?? ImportTimestampModel.UserConfirmed(CaughtOn),
             method,
             species,
             location,
@@ -116,8 +119,8 @@ public class BaseImportPersistenceServiceTest
             [CatchId],
             ImportTripSuggestionConfidenceEnum.Strong,
             [],
-            CaughtOn.DateTime,
-            CaughtOn.DateTime);
+            proposal.CaughtOn.Instant!.Value.DateTime,
+            proposal.CaughtOn.Instant.Value.DateTime);
         trip.Decide(decision, decision == ImportTripDecisionEnum.UseExisting ? TripId : null);
         if (participant)
         {

@@ -1390,6 +1390,8 @@
   <data name="Import_CaughtOn" xml:space="preserve"><value>Caught on</value></data>
   <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Enter a valid historical date and time.</value></data>
   <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirm date and time</value></data>
+  <data name="Import_UtcOffset" xml:space="preserve"><value>UTC offset</value></data>
+  <data name="Import_UtcOffsetRequired" xml:space="preserve"><value>Choose the historical UTC offset.</value></data>
   <data name="Import_SelectPhoto" xml:space="preserve"><value>Select photograph {0}</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Use photo {0} location</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Remove location</value></data>
