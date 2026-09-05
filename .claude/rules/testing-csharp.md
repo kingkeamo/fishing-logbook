@@ -87,6 +87,25 @@ Assert more than "no exception":
 After writing a test, mentally invert one line of production behaviour it covers — the test
 must fail. If it would not, add assertions.
 
+### Complete invariants for grouping and cumulative logic
+
+For grouping, batching, ranges, windows, thresholds, and other cumulative algorithms,
+tests must prove the complete business invariant rather than only pairwise or adjacent
+comparisons. Include a bridging/transitive counterexample where every neighbouring pair
+is valid but the complete result would be invalid.
+
+For example, for an inclusive five-minute maximum group span, prove at least:
+
+- `0, 4, 5 minutes` produces one group;
+- `0, 4, 8 minutes` produces two groups even though both adjacent gaps are within five
+  minutes;
+- exactly five minutes is included;
+- five minutes plus the smallest meaningful increment is excluded.
+
+Test names must describe the complete business invariant. Do not name or assert an
+implementation strategy such as adjacent chaining when that strategy is not itself the
+requirement.
+
 ## Dependency verification (mandatory)
 
 Whenever the System Under Test calls a mocked/substituted dependency, the test must

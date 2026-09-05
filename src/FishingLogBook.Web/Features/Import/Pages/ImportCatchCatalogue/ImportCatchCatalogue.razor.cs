@@ -1,4 +1,5 @@
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Common.Modals.AnglerPicker;
 using FishingLogBook.Web.Features.Import.Enums;
@@ -22,6 +23,10 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private Guid _speciesId;
     private bool _isLoading = true;
     private bool _selectionLimitExceeded;
+    private bool _isPersisting;
+    private bool _isPersisted;
+    private string? _persistenceError;
+    private ImportPersistenceResultModel? _persistenceResult;
     private IReadOnlyDictionary<Guid, IReadOnlyList<TripSummaryDto>> _existingTrips =
         new Dictionary<Guid, IReadOnlyList<TripSummaryDto>>();
 
@@ -31,6 +36,9 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     [Inject] private IImportPhotoPreparationService Preparation { get; set; } = default!;
     [Inject] private IImportTripProposalService TripProposalService { get; set; } = default!;
     [Inject] private IImportExistingTripService ExistingTripService { get; set; } = default!;
+    [Inject] private IImportPersistenceService PersistenceService { get; set; } = default!;
+    [Inject] private INetworkService NetworkService { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private bool CanReview
@@ -297,10 +305,78 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         }
     }
 
+    private int ActivePhotoCount => ActiveCatchProposals.Sum(proposal => proposal.PhotoIds.Count);
+
+    private int NewTripCount => ActiveTripProposals.Count(
+        proposal => proposal.Decision == ImportTripDecisionEnum.CreateNew);
+
+    private int ExistingTripAssignmentCount => ActiveTripProposals.Count(
+        proposal => proposal.Decision == ImportTripDecisionEnum.UseExisting);
+
+    private int StandaloneCatchCount
+    {
+        get
+        {
+            var assigned = ActiveTripProposals.SelectMany(proposal => proposal.CatchProposalIds).ToHashSet();
+            return ActiveCatchProposals.Count(proposal => !assigned.Contains(proposal.Id));
+        }
+    }
+
+    private async Task PersistAsync()
+    {
+        if (_batch is null || _isPersisting || _isPersisted)
+        {
+            return;
+        }
+
+        _isPersisting = true;
+        try
+        {
+            _persistenceError = null;
+            if (!await NetworkService.IsOnlineAsync(_cancellationTokenSource.Token))
+            {
+                _persistenceError = Loc["Import_OnlineRequired"];
+                return;
+            }
+
+            _persistenceResult = await PersistenceService.PersistAsync(
+                _batch,
+                _cancellationTokenSource.Token);
+            _isPersisted = true;
+            await Preparation.ClearAsync(CancellationToken.None);
+        }
+        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            _persistenceError = Loc["Import_PersistenceFailed"];
+        }
+        finally
+        {
+            _isPersisting = false;
+        }
+    }
+
+    private void NavigateToCatches()
+    {
+        Navigation.NavigateTo("/catches");
+    }
+
+    private void NavigateToTrips()
+    {
+        Navigation.NavigateTo("/trips");
+    }
+
     private async Task AddTripParticipantAsync(ImportTripProposalModel proposal)
     {
         var selected = await ModalService.ShowAsync<AnglerPickerModal, AnglerPickerModalModel, AnglerPickerModalResult>(
-            new AnglerPickerModalModel(proposal.Participants.Select(participant => participant.UserId).ToArray()),
+            new AnglerPickerModalModel(proposal.Participants.Select(participant => participant.UserId).ToArray())
+            {
+                Title = Loc["Import_AddTripParticipant"],
+                ActionLabel = Loc["Import_Add"]
+            },
             _cancellationTokenSource.Token);
         if (selected is not null)
         {

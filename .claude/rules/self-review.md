@@ -143,6 +143,14 @@ For every changed production method/use case, identify happy path, guard/validat
 dependency failure, not-found/existing-state, negative/no-op, security/ownership, and
 important boundary values — then compare with the tests that exist.
 
+For grouping, batching, ranges, windows, thresholds, and cumulative logic, verify that
+tests prove the complete business invariant rather than only adjacent or pairwise cases.
+Require a bridging/transitive counterexample where neighbouring inputs are individually
+valid but their combined result would violate the invariant (for example, `0, 4, 8`
+minutes for a five-minute maximum group span). Verify the exact boundary and the smallest
+meaningful value beyond it, and ensure test names state the business invariant rather
+than the implementation strategy.
+
 ### Mock interactions
 
 For NSubstitute: assert the observable result **and** meaningful dependency behaviour

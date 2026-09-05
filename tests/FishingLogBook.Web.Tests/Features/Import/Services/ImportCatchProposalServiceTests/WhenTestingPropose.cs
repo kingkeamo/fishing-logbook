@@ -8,10 +8,10 @@ namespace FishingLogBook.Web.Tests.Features.Import.Services.ImportCatchProposalS
 public class WhenTestingPropose : BaseImportCatchProposalServiceTest
 {
     [Theory]
-    [InlineData(119, 1)]
-    [InlineData(120, 1)]
-    [InlineData(121, 2)]
-    public void ItShouldApplyTheInclusiveTwoMinuteThreshold(int gapSeconds, int expectedGroups)
+    [InlineData(299, 1)]
+    [InlineData(300, 1)]
+    [InlineData(301, 2)]
+    public void ItShouldApplyTheInclusiveFiveMinuteThreshold(int gapSeconds, int expectedGroups)
     {
         // Arrange
         var first = Photo(0, ExplicitAt(TimeSpan.Zero));
@@ -21,7 +21,7 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
         var proposals = Sut.Propose(Batch(first, second));
 
         // Assert
-        ImportCatchProposalService.SameCatchTimeThreshold.Should().Be(TimeSpan.FromMinutes(2));
+        ImportCatchProposalService.SameCatchTimeThreshold.Should().Be(TimeSpan.FromMinutes(5));
         proposals.Should().HaveCount(expectedGroups);
     }
 
@@ -41,7 +41,7 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
     }
 
     [Fact]
-    public void ItShouldChainAdjacentPhotographsWithinTheThreshold()
+    public void ItShouldGroupPhotographsWhenTheCompleteSpanIsWithinTheThreshold()
     {
         // Arrange
         var photos = new[]
@@ -60,6 +60,26 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
     }
 
     [Fact]
+    public void ItShouldNotChainWeakFallbackPhotographsBeyondTheFiveMinuteGroupSpan()
+    {
+        // Arrange
+        var photos = new[]
+        {
+            Photo(0, ImportTimestampModel.FromWeakFallback(CapturedOn)),
+            Photo(1, ImportTimestampModel.FromWeakFallback(CapturedOn.AddMinutes(4))),
+            Photo(2, ImportTimestampModel.FromWeakFallback(CapturedOn.AddMinutes(8)))
+        };
+
+        // Act
+        var proposals = Sut.Propose(Batch(photos));
+
+        // Assert
+        proposals.Select(proposal => proposal.PhotoIds.Count).Should().Equal(2, 1);
+        proposals[0].PhotoIds.Should().Equal(photos[0].Id, photos[1].Id);
+        proposals[1].PhotoIds.Should().Equal(photos[2].Id);
+    }
+
+    [Fact]
     public void ItShouldSplitWhenTheAdjacentGapExceedsTheThreshold()
     {
         // Arrange
@@ -67,7 +87,7 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
         {
             Photo(0, ExplicitAt(TimeSpan.Zero)),
             Photo(1, ExplicitAt(TimeSpan.FromMinutes(1))),
-            Photo(2, ExplicitAt(TimeSpan.FromMinutes(4)))
+            Photo(2, ExplicitAt(TimeSpan.FromMinutes(7)))
         };
 
         // Act
@@ -81,7 +101,7 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
     public void ItShouldSortChronologicallyAndUseSelectionIndexForTies()
     {
         // Arrange
-        var later = Photo(0, ExplicitAt(TimeSpan.FromMinutes(5)));
+        var later = Photo(0, ExplicitAt(TimeSpan.FromMinutes(6)));
         var tiedSecond = Photo(2, ExplicitAt(TimeSpan.Zero));
         var tiedFirst = Photo(1, ExplicitAt(TimeSpan.Zero));
 
@@ -130,6 +150,50 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
         // Assert
         proposals.Should().ContainSingle();
         proposals[0].PhotoIds.Should().Equal(first.Id, second.Id);
+    }
+
+    [Fact]
+    public void ItShouldGroupLocalExifTimesWithinFiveMinutesAndKeepThemReviewable()
+    {
+        // Arrange
+        var capturedOn = new DateTime(2025, 6, 14, 9, 0, 0);
+        var first = Photo(0, ImportTimestampModel.FromLocalWallClock(
+            capturedOn,
+            ImportTimestampSourceEnum.ExifOriginal));
+        var second = Photo(1, ImportTimestampModel.FromLocalWallClock(
+            capturedOn.AddMinutes(5),
+            ImportTimestampSourceEnum.ExifDigitized));
+
+        // Act
+        var proposal = Sut.Propose(Batch(second, first)).Single();
+
+        // Assert
+        proposal.PhotoIds.Should().Equal(first.Id, second.Id);
+        proposal.CaughtOn.Should().Be(first.Timestamp);
+        proposal.Reasons.Should().Contain(ImportCatchProposalReasonEnum.AmbiguousTimestamp);
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+    }
+
+    [Theory]
+    [InlineData(300, 1)]
+    [InlineData(301, 2)]
+    public void ItShouldApplyTheFiveMinuteThresholdToWeakFallbackTimes(
+        int gapSeconds,
+        int expectedGroups)
+    {
+        // Arrange
+        var first = Photo(0, ImportTimestampModel.FromWeakFallback(CapturedOn));
+        var second = Photo(1, ImportTimestampModel.FromWeakFallback(CapturedOn.AddSeconds(gapSeconds)));
+
+        // Act
+        var proposals = Sut.Propose(Batch(second, first));
+
+        // Assert
+        proposals.Should().HaveCount(expectedGroups);
+        proposals.SelectMany(proposal => proposal.PhotoIds).Should().Equal(first.Id, second.Id);
+        proposals.Should().OnlyContain(proposal =>
+            proposal.Reasons.Contains(ImportCatchProposalReasonEnum.WeakTimestamp)
+            && proposal.ReviewStatus == ImportCatchReviewStatusEnum.Draft);
     }
 
     [Fact]
@@ -241,13 +305,6 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
     public static TheoryData<ImportTimestampModel, ImportCatchProposalReasonEnum> UnresolvedTimestamps => new()
     {
         { ImportTimestampModel.Missing(), ImportCatchProposalReasonEnum.MissingTimestamp },
-        { ImportTimestampModel.Unusable(ImportTimestampSourceEnum.ExifOriginal), ImportCatchProposalReasonEnum.UnusableTimestamp },
-        { ImportTimestampModel.FromWeakFallback(CapturedOn), ImportCatchProposalReasonEnum.WeakTimestamp },
-        {
-            ImportTimestampModel.FromLocalWallClock(
-                new DateTime(2025, 6, 14, 9, 0, 0),
-                ImportTimestampSourceEnum.ExifOriginal),
-            ImportCatchProposalReasonEnum.AmbiguousTimestamp
-        }
+        { ImportTimestampModel.Unusable(ImportTimestampSourceEnum.ExifOriginal), ImportCatchProposalReasonEnum.UnusableTimestamp }
     };
 }

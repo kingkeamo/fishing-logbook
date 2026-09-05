@@ -10,6 +10,30 @@ namespace FishingLogBook.Web.Tests.Common.Modals.AnglerPickerModalTests;
 public class WhenTestingSelect : BaseAnglerPickerModalTest
 {
     [Fact]
+    public async Task ItShouldRenderContextSpecificSelectionLabels()
+    {
+        // Arrange
+        var angler = new AnglerSummaryDto(Guid.NewGuid(), "Patrick", null, "Galway", null);
+        var profileClient = Substitute.For<IProfileClient>();
+        profileClient.FindAnglersAsync("Patrick", Arg.Any<CancellationToken>()).Returns([angler]);
+        await using var context = CreateContext(profileClient);
+        var model = new AnglerPickerModalModel
+        {
+            Title = "Add angler",
+            ActionLabel = "Add"
+        };
+        var (cut, _) = await ShowAsync(context, model);
+
+        // Act
+        await cut.Find("#angler-picker-search").InputAsync(new() { Value = "Patrick" });
+
+        // Assert
+        cut.Find("#angler-picker-title").TextContent.Should().Be("Add angler");
+        cut.WaitForElement($"#angler-picker-select-{angler.UserId:D}").TextContent.Should().Be("Add");
+        await profileClient.Received(1).FindAnglersAsync("Patrick", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldReturnTheSelectedAnglerWithoutPersistingAnything()
     {
         // Arrange

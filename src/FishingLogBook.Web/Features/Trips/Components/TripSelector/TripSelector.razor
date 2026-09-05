@@ -1,0 +1,22 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.TripSelector
+
+<MudStack Spacing="1" id="trip-selector">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <MudText Typo="Typo.caption">@Label</MudText>
+    }
+    <MudStack Row="true" Spacing="1" Class="flex-wrap" id="trip-selector-options">
+        @foreach (var trip in Trips)
+        {
+            var selected = trip.Id == SelectedTripId;
+            <MudChip T="Guid"
+                     Value="trip.Id"
+                     Color="@(selected ? Color.Primary : Color.Default)"
+                     Variant="@(selected ? Variant.Filled : Variant.Outlined)"
+                     OnClick="@(() => SelectAsync(trip.Id))"
+                     id="@($"trip-selector-{trip.Id:D}")">
+                @DisplayLabel(trip)
+            </MudChip>
+        }
+    </MudStack>
+</MudStack>

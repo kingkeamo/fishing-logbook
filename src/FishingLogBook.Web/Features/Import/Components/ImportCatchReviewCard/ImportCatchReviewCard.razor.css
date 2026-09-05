@@ -3,33 +3,56 @@
     overflow: hidden;
 }
 
-.import-catch-photos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
-    gap: 0.5rem;
-}
-
-.import-catch-thumbnail {
-    width: 100%;
-    max-height: 8rem;
-    aspect-ratio: 1;
-    object-fit: cover;
-    border-radius: 0.5rem;
-}
-
-.import-catch-photo-choice {
-    position: relative;
-}
-
-.import-catch-photo-choice .mud-checkbox {
-    position: absolute;
-    z-index: 1;
-    background: var(--mud-palette-surface);
-    border-radius: 50%;
-}
-
 .import-catch-measurements {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
+}
+
+.import-catch-caught-on-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: end;
+    container-name: caught-on-row;
+    container-type: inline-size;
+}
+
+.import-catch-confirm-caught-on {
+    margin-bottom: 0.25rem;
+}
+
+@container caught-on-row (max-width: 30rem) {
+    .import-catch-confirm-caught-on-label {
+        display: none;
+    }
+}
+
+.import-catch-summary {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+}
+
+.import-catch-summary-photo {
+    width: 6rem;
+}
+
+.import-catch-summary-details {
+    min-width: 0;
+}
+
+@media (max-width: 360px) {
+    .import-catch-caught-on-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .import-catch-summary {
+        grid-template-columns: 5rem minmax(0, 1fr);
+    }
+
+    .import-catch-summary-photo {
+        width: 5rem;
+    }
 }

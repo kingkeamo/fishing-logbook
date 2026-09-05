@@ -43,8 +43,8 @@ public sealed class ImportExistingTripService : IImportExistingTripService
         return trip.Status == TripConstants.Completed
             && trip.Role is TripParticipantConstants.Owner or TripParticipantConstants.Participant
             && trip.EndedOn.HasValue
-            && trip.StartedOn.DateTime <= proposal.ProposedEndedOn
-            && trip.EndedOn.Value.DateTime >= proposal.ProposedStartedOn;
+            && trip.StartedOn.Date <= proposal.ProposedEndedOn.Date
+            && trip.EndedOn.Value.Date >= proposal.ProposedStartedOn.Date;
     }
 
     private static bool IsSpatiallyCompatible(

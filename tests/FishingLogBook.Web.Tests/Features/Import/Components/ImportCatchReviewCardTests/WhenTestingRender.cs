@@ -11,6 +11,7 @@ using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
 using MudBlazor.Services;
 using NSubstitute;
 
@@ -83,14 +84,97 @@ public class WhenTestingRender
             .Add(component => component.Editable, true));
 
         // Act
-        var review = cut.Find("#import-catch-1-edit");
+        var reviewLabel = cut.Find("#import-catch-1-edit").TextContent;
         cut.Find("#import-catch-1-confirm").Click();
 
         // Assert
-        review.TextContent.Should().Contain("Review");
+        reviewLabel.Should().Contain("Review");
         proposal.CaughtOn.State.Should().Be(ImportTimestampStateEnum.UserConfirmed);
         proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
         cut.Find("#import-catch-1-status").TextContent.Should().Contain("Reviewed");
+        cut.Find("#import-catch-1-edit").TextContent.Should().Contain("Edit");
+        cut.FindAll("#import-catch-1-confirm").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldUseTheActiveCarouselPhotographTimestampForConfirmation()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var firstTimestamp = ImportTimestampModel.FromWeakFallback(CapturedOn);
+        var secondTimestamp = ImportTimestampModel.FromWeakFallback(CapturedOn.AddMinutes(4));
+        var firstPhoto = Photo(firstTimestamp);
+        var secondPhoto = Photo(secondTimestamp, 1);
+        var proposal = new ImportCatchProposalModel(
+            Guid.NewGuid(),
+            [firstPhoto.Id, secondPhoto.Id],
+            firstTimestamp,
+            new ImportCatalogueSelectionModel(Guid.NewGuid(), "Fly", "Fly"),
+            new ImportCatalogueSelectionModel(Guid.NewGuid(), "BrownTrout", "Brown Trout"),
+            reasons: [ImportCatchProposalReasonEnum.WeakTimestamp]);
+        var batch = new ImportBatchModel(Guid.NewGuid(), proposal.Method, proposal.Species);
+        batch.AddPhoto(firstPhoto);
+        batch.AddPhoto(secondPhoto);
+        batch.AddCatchProposal(proposal);
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, batch)
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1)
+            .Add(component => component.Editable, true));
+
+        // Act
+        cut.Find("#import-catch-1-carousel-photo-next").Click();
+
+        // Assert
+        proposal.CaughtOn.Should().Be(secondTimestamp);
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        cut.Find("#import-catch-1-timestamp").TextContent.Should().Contain("09:34");
+
+        // Act
+        cut.Find("#import-catch-1-confirm").Click();
+
+        // Assert
+        proposal.CaughtOn.State.Should().Be(ImportTimestampStateEnum.UserConfirmed);
+        proposal.CaughtOn.Instant.Should().Be(CapturedOn.AddMinutes(4));
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
+    }
+
+    [Fact]
+    public async Task ItShouldUseTheOpenedGridPhotographTimestampInTheEditor()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var firstTimestamp = ImportTimestampModel.FromWeakFallback(CapturedOn);
+        var secondTimestamp = ImportTimestampModel.FromWeakFallback(CapturedOn.AddMinutes(4));
+        var firstPhoto = Photo(firstTimestamp);
+        var secondPhoto = Photo(secondTimestamp, 1);
+        var proposal = new ImportCatchProposalModel(
+            Guid.NewGuid(),
+            [firstPhoto.Id, secondPhoto.Id],
+            firstTimestamp,
+            new ImportCatalogueSelectionModel(Guid.NewGuid(), "Fly", "Fly"),
+            new ImportCatalogueSelectionModel(Guid.NewGuid(), "BrownTrout", "Brown Trout"),
+            reasons: [ImportCatchProposalReasonEnum.WeakTimestamp]);
+        var batch = new ImportBatchModel(Guid.NewGuid(), proposal.Method, proposal.Species);
+        batch.AddPhoto(firstPhoto);
+        batch.AddPhoto(secondPhoto);
+        batch.AddCatchProposal(proposal);
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, batch)
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1)
+            .Add(component => component.Editable, true));
+        cut.Find("#import-catch-1-edit").Click();
+
+        // Act
+        cut.Find("#import-catch-1-open-1").Click();
+
+        // Assert
+        proposal.CaughtOn.Should().Be(secondTimestamp);
+        cut.Find("#import-catch-1-caught-on").GetAttribute("value").Should().Contain("09:34");
+        cut.Find("#import-catch-1-select-1").HasAttribute("checked").Should().BeFalse();
     }
 
     [Fact]
@@ -142,6 +226,20 @@ public class WhenTestingRender
 
         // Act
         cut.Find("#import-catch-1-caught-on").Input("2024-06-14T09:20");
+
+        // Assert
+        cut.Find("#import-catch-1-confirm-caught-on").GetAttribute("aria-label").Should()
+            .Be("Confirm date and time");
+        cut.Find(".import-catch-confirm-caught-on-label").TextContent.Should()
+            .Be("Confirm date and time");
+        cut.FindComponents<MudTooltip>().Should().ContainSingle(tooltip =>
+            tooltip.Instance.Text == "Confirm date and time"
+            && tooltip.Instance.ShowOnHover
+            && tooltip.Instance.ShowOnFocus
+            && tooltip.Instance.ShowOnClick);
+        cut.Find("#import-catch-1-confirm-caught-on").Closest(".import-catch-caught-on-row").Should().NotBeNull();
+
+        // Act
         cut.Find("#import-catch-1-confirm-caught-on").Click();
         cut.Find("#import-catch-1-close-editor").Click();
 
@@ -337,16 +435,16 @@ public class WhenTestingRender
         return context;
     }
 
-    private static ImportSelectedPhotoModel Photo(ImportTimestampModel timestamp)
+    private static ImportSelectedPhotoModel Photo(ImportTimestampModel timestamp, int index = 0)
     {
         var photo = new ImportSelectedPhotoModel(
-            Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            0,
+            Guid.Parse($"11111111-1111-1111-1111-{index + 1:D12}"),
+            index,
             "image/jpeg",
             1024,
             "token",
-            "catch.jpg",
-            "blob:thumbnail");
+            $"catch-{index}.jpg",
+            $"blob:thumbnail-{index}");
         photo.SetPreparation(ImportPhotoPreparationStatusEnum.Ready, "token", "blob:thumbnail");
         photo.SetMetadata(
             ImportMetadataStatusEnum.Available,

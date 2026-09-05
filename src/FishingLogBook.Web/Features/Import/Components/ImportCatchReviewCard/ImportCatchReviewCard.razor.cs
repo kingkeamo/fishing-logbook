@@ -1,8 +1,11 @@
 using System.Globalization;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
+using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
@@ -18,6 +21,7 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private string _caughtOnLocal = string.Empty;
     private ImportTimestampModel? _caughtOnBasis;
+    private Guid? _activePhotoId;
     private bool _caughtOnInvalid;
     private bool _editing;
 
@@ -31,10 +35,48 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     [Parameter] public EventCallback Changed { get; set; }
 
     [Inject] private IModalService ModalService { get; set; } = default!;
+    [Inject] private IMeasurementService Measurement { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     private IReadOnlyList<ImportSelectedPhotoModel> ProposalPhotos =>
         [.. Proposal.PhotoIds.Select(photoId => Batch.Photos.Single(photo => photo.Id == photoId))];
+
+    private IReadOnlyList<PhotographCarouselItemModel> CarouselPhotographs =>
+        [.. ProposalPhotos.Select(photo => new PhotographCarouselItemModel(
+            photo.Id,
+            photo.ContentType,
+            RemoteUrl: photo.ThumbnailUrl))];
+
+    private ImportSelectedPhotoModel ActivePhoto => ProposalPhotos.First(photo => photo.Id == _activePhotoId);
+
+    private ImportTimestampModel DisplayedTimestamp => Proposal.CaughtOn;
+
+    private string? MeasurementLabel
+    {
+        get
+        {
+            var values = new List<string>();
+            var weight = Measurement.ToDisplayWeight(Proposal.Weight, Preferences.WeightUnit);
+            if (weight.HasValue)
+            {
+                var unit = Preferences.WeightUnit == WeightUnitEnum.Lb
+                    ? Loc["Catch_WeightUnitShort_Lb"]
+                    : Loc["Catch_WeightUnitShort_Kg"];
+                values.Add($"{weight.Value.ToString("0.##", CultureInfo.CurrentCulture)} {unit}");
+            }
+
+            var length = Measurement.ToDisplayLength(Proposal.Length, Preferences.LengthUnit);
+            if (length.HasValue)
+            {
+                var unit = Preferences.LengthUnit == LengthUnitEnum.In
+                    ? Loc["Catch_LengthUnitShort_In"]
+                    : Loc["Catch_LengthUnitShort_Cm"];
+                values.Add($"{length.Value.ToString("0.##", CultureInfo.CurrentCulture)} {unit}");
+            }
+
+            return values.Count == 0 ? null : string.Join(" · ", values);
+        }
+    }
 
     private IReadOnlyList<(ImportSelectedPhotoModel Photo, ImportLocationModel Location)> LocationOptions =>
         [.. ProposalPhotos.Where(photo => photo.Location.HasCanonicalCoordinates)
@@ -69,13 +111,13 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
         }
     }
 
-    private string TimestampLabel => Proposal.CaughtOn.State switch
+    private string TimestampLabel => DisplayedTimestamp.State switch
     {
-        ImportTimestampStateEnum.ExplicitInstant => Proposal.CaughtOn.Instant!.Value.ToString("dd MMM yyyy · HH:mm zzz"),
-        ImportTimestampStateEnum.UserConfirmed when Proposal.CaughtOn.Instant is { } instant => instant.ToString("dd MMM yyyy · HH:mm zzz"),
-        ImportTimestampStateEnum.UserConfirmed => Proposal.CaughtOn.LocalWallClock!.Value.ToString("dd MMM yyyy · HH:mm"),
-        ImportTimestampStateEnum.LocalWallClock => Loc["Import_TimestampAmbiguous", Proposal.CaughtOn.LocalWallClock!.Value.ToString("dd MMM yyyy · HH:mm")],
-        ImportTimestampStateEnum.WeakFallback => Loc["Import_TimestampWeak", Proposal.CaughtOn.Instant!.Value.ToString("dd MMM yyyy · HH:mm zzz")],
+        ImportTimestampStateEnum.ExplicitInstant => DisplayedTimestamp.Instant!.Value.ToString("dd MMM yyyy · HH:mm zzz"),
+        ImportTimestampStateEnum.UserConfirmed when DisplayedTimestamp.Instant is { } instant => instant.ToString("dd MMM yyyy · HH:mm zzz"),
+        ImportTimestampStateEnum.UserConfirmed => DisplayedTimestamp.LocalWallClock!.Value.ToString("dd MMM yyyy · HH:mm"),
+        ImportTimestampStateEnum.LocalWallClock => Loc["Import_TimestampAmbiguous", DisplayedTimestamp.LocalWallClock!.Value.ToString("dd MMM yyyy · HH:mm")],
+        ImportTimestampStateEnum.WeakFallback => Loc["Import_TimestampWeak", DisplayedTimestamp.Instant!.Value.ToString("dd MMM yyyy · HH:mm zzz")],
         ImportTimestampStateEnum.Unusable => Loc["Import_TimestampUnusable"],
         _ => Loc["Import_TimestampMissing"]
     };
@@ -86,14 +128,29 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
         : Proposal.Location?.HasCanonicalCoordinates == true ? Loc["Import_LocationAvailable"]
         : Loc["Import_LocationUnavailable"];
 
-    protected override void OnParametersSet() { if (!_editing) _caughtOnLocal = EditorValue(); }
+    protected override void OnParametersSet()
+    {
+        if (_activePhotoId is null || ProposalPhotos.All(photo => photo.Id != _activePhotoId))
+        {
+            _activePhotoId = ProposalPhotos[0].Id;
+        }
+
+        if (!_editing)
+        {
+            _caughtOnLocal = EditorValue(DisplayedTimestamp);
+        }
+    }
     private void OpenEditor()
     {
         _editing = true;
-        _caughtOnBasis = Proposal.CaughtOn;
-        _caughtOnLocal = EditorValue();
+        _caughtOnBasis = DisplayedTimestamp;
+        _caughtOnLocal = EditorValue(DisplayedTimestamp);
     }
-    private void CloseEditor() => _editing = false;
+    private void CloseEditor()
+    {
+        _selectedPhotoIds.Clear();
+        _editing = false;
+    }
     private void SetCaughtOnLocal(string value)
     {
         _caughtOnLocal = value;
@@ -103,7 +160,26 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
             : ImportTimestampModel.Missing();
         Batch.SetCatchCaughtOn(Proposal.Id, caughtOn);
     }
-    private void SelectPhoto(Guid photoId, bool selected) { if (selected) _selectedPhotoIds.Add(photoId); else _selectedPhotoIds.Remove(photoId); }
+    private void SelectPhotos(IReadOnlySet<Guid> selectedPhotoIds)
+    {
+        _selectedPhotoIds.Clear();
+        _selectedPhotoIds.UnionWith(selectedPhotoIds);
+    }
+
+    private Task SelectActivePhotoAsync(Guid? photoId)
+    {
+        if (photoId is null || ProposalPhotos.All(photo => photo.Id != photoId))
+        {
+            return Task.CompletedTask;
+        }
+
+        _activePhotoId = photoId;
+        Batch.SetCatchCaughtOn(Proposal.Id, ActivePhoto.Timestamp);
+        _caughtOnBasis = DisplayedTimestamp;
+        _caughtOnLocal = EditorValue(DisplayedTimestamp);
+        _caughtOnInvalid = false;
+        return Task.CompletedTask;
+    }
 
     private void ConfirmCaughtOn()
     {
@@ -207,14 +283,15 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
         }
 
         Batch.ConfirmDisplayedCatch(Proposal.Id);
+        _selectedPhotoIds.Clear();
         _editing = false;
         _caughtOnInvalid = false;
         await Changed.InvokeAsync();
     }
 
-    private string EditorValue()
+    private static string EditorValue(ImportTimestampModel timestamp)
     {
-        var value = Proposal.CaughtOn.Instant?.DateTime ?? Proposal.CaughtOn.LocalWallClock;
+        var value = timestamp.Instant?.DateTime ?? timestamp.LocalWallClock;
         return value?.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture) ?? string.Empty;
     }
 

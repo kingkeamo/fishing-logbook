@@ -195,6 +195,9 @@
   <data name="Photograph_AltNumbered" xml:space="preserve">
     <value>Photographie de la prise {0} sur {1}</value>
   </data>
+  <data name="Photograph_SelectNumbered" xml:space="preserve">
+    <value>Sélectionner la photographie {0}</value>
+  </data>
   <data name="Photograph_Unsupported" xml:space="preserve">
     <value>Ce format de photo n'est pas pris en charge. Utilisez JPEG, PNG ou WebP.</value>
   </data>
@@ -1381,6 +1384,7 @@
   <data name="Import_Reviewed" xml:space="preserve"><value>VÃ©rifiÃ©e</value></data>
   <data name="Import_NeedsCorrection" xml:space="preserve"><value>À vérifier</value></data>
   <data name="Import_ReviewEdit" xml:space="preserve"><value>Vérifier</value></data>
+  <data name="Import_Edit" xml:space="preserve"><value>Modifier</value></data>
   <data name="Import_ConfirmCatch" xml:space="preserve"><value>Confirmer la prise</value></data>
   <data name="Import_CorrectCatches" xml:space="preserve"><value>Corriger les prises</value></data>
   <data name="Import_CaughtOn" xml:space="preserve"><value>Date et heure de la prise</value></data>
@@ -1393,7 +1397,7 @@
   <data name="Import_LocationRemoved" xml:space="preserve"><value>Lieu supprimÃ©</value></data>
   <data name="Import_MoveToNewCatch" xml:space="preserve"><value>DÃ©placer la sÃ©lection vers une nouvelle prise</value></data>
   <data name="Import_RemoveSelectedPhotos" xml:space="preserve"><value>Supprimer les photos sÃ©lectionnÃ©es</value></data>
-  <data name="Import_MergeWith" xml:space="preserve"><value>Fusionner avecâ€¦</value></data>
+  <data name="Import_MergeWith" xml:space="preserve"><value>Fusionner avec...</value></data>
   <data name="Import_RemoveCatch" xml:space="preserve"><value>Retirer la prise de lâ€™importation</value></data>
   <data name="Import_CorrectionsComplete" xml:space="preserve"><value>Toutes les prises sont vÃ©rifiÃ©es et prÃªtes pour les suggestions de sorties.</value></data>
   <data name="Import_MergeValuesNeedReview" xml:space="preserve"><value>Les prises fusionnÃ©es avaient des informations diffÃ©rentes. VÃ©rifiez les valeurs affichÃ©es avant de confirmer.</value></data>
@@ -1408,6 +1412,8 @@
   <data name="Import_TripTimeRange" xml:space="preserve"><value>{0} – {1}</value></data>
   <data name="Import_TripMissingGps" xml:space="preserve"><value>Les informations de localisation sont incomplètes pour cette suggestion.</value></data>
   <data name="Import_CreateTrip" xml:space="preserve"><value>Créer une sortie</value></data>
+  <data name="Import_CreateAnotherTrip" xml:space="preserve"><value>Créer une autre sortie</value></data>
+  <data name="Import_ExistingTripFound" xml:space="preserve"><value>Une sortie existe déjà à cette date. Ajoutez-y ces prises ou créez délibérément une autre sortie.</value></data>
   <data name="Import_KeepSeparate" xml:space="preserve"><value>Conserver les prises séparément</value></data>
   <data name="Import_AddToExistingTrip" xml:space="preserve"><value>Ajouter à une sortie existante</value></data>
   <data name="Import_RemoveCatchFromTrip" xml:space="preserve"><value>Retirer la prise de la sortie suggérée</value></data>
@@ -1416,4 +1422,18 @@
   <data name="Import_TripCatchPhotoAlt" xml:space="preserve"><value>Miniature de la prise {0}</value></data>
   <data name="Import_TripParticipants" xml:space="preserve"><value>Pêcheurs de cette sortie</value></data>
   <data name="Import_AddTripParticipant" xml:space="preserve"><value>Ajouter un pêcheur</value></data>
+  <data name="Import_Add" xml:space="preserve"><value>Ajouter</value></data>
+  <data name="Import_ConfirmTitle" xml:space="preserve"><value>Confirmer l’importation historique</value></data>
+  <data name="Import_SummaryCatches" xml:space="preserve"><value>Prises : {0}</value></data>
+  <data name="Import_SummaryPhotos" xml:space="preserve"><value>Photographies : {0}</value></data>
+  <data name="Import_SummaryNewTrips" xml:space="preserve"><value>Nouvelles sorties : {0}</value></data>
+  <data name="Import_SummaryExistingTrips" xml:space="preserve"><value>Affectations à des sorties existantes : {0}</value></data>
+  <data name="Import_SummaryStandalone" xml:space="preserve"><value>Prises indépendantes : {0}</value></data>
+  <data name="Import_ConfirmImport" xml:space="preserve"><value>Importer les prises</value></data>
+  <data name="Import_Importing" xml:space="preserve"><value>Importation…</value></data>
+  <data name="Import_OnlineRequired" xml:space="preserve"><value>L’importation historique nécessite une connexion Internet.</value></data>
+  <data name="Import_PersistenceFailed" xml:space="preserve"><value>L’importation n’a pas pu être terminée. Vos choix vérifiés restent disponibles pendant cette session.</value></data>
+  <data name="Import_Success" xml:space="preserve"><value>{0} prises, {1} photographies et {2} sorties ont été importées.</value></data>
+  <data name="Import_ViewCatches" xml:space="preserve"><value>Voir les prises</value></data>
+  <data name="Import_ViewTrips" xml:space="preserve"><value>Voir les sorties</value></data>
 </root>
