@@ -93,7 +93,7 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             CatchId,
             Arg.Is<RecordPhotographDto>(photo => photo.PhotographId == PhotoId && photo.ObjectKey == "object"),
             Arg.Any<CancellationToken>());
-        await CatchClient.Received(2).GetAsync(CatchId, Arg.Any<CancellationToken>());
+        await CatchClient.Received(3).GetAsync(CatchId, Arg.Any<CancellationToken>());
     }
 
     [Fact]

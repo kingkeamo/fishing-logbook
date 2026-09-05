@@ -1433,6 +1433,10 @@
   <data name="Import_SummaryStandalone" xml:space="preserve"><value>Prises indépendantes : {0}</value></data>
   <data name="Import_ConfirmImport" xml:space="preserve"><value>Importer les prises</value></data>
   <data name="Import_Importing" xml:space="preserve"><value>Importation…</value></data>
+  <data name="Import_ProgressSavingTrip" xml:space="preserve"><value>Enregistrement de la sortie {0} sur {1}</value></data>
+  <data name="Import_ProgressSavingCatch" xml:space="preserve"><value>Enregistrement de la prise {0} sur {1}</value></data>
+  <data name="Import_ProgressUploadingPhotograph" xml:space="preserve"><value>Téléversement de la photo {0} sur {1}</value></data>
+  <data name="Import_ProgressVerifying" xml:space="preserve"><value>Vérification des données importées</value></data>
   <data name="Import_OnlineRequired" xml:space="preserve"><value>L’importation historique nécessite une connexion Internet.</value></data>
   <data name="Import_PersistenceFailed" xml:space="preserve"><value>L’importation n’a pas pu être terminée. Vos choix vérifiés restent disponibles pendant cette session.</value></data>
   <data name="Import_Success" xml:space="preserve"><value>{0} prises, {1} photographies et {2} sorties ont été importées.</value></data>
