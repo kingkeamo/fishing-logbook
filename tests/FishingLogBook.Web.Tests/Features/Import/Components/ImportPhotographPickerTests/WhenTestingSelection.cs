@@ -69,6 +69,37 @@ public class WhenTestingSelection : BaseImportPhotographPickerTest
     }
 
     [Fact]
+    public async Task ItShouldAcceptExactlyTwentyFiles()
+    {
+        // Arrange
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        preparation.PrepareSelectionAsync(
+                Arg.Any<IReadOnlyList<IBrowserFile>>(),
+                Arg.Any<CancellationToken>())
+            .Returns([]);
+        await using var context = CreateContext(preparation);
+        var exceeded = false;
+        var cut = context.Render<ImportPhotographPicker>(parameters => parameters
+            .Add(component => component.Id, "import-picker")
+            .Add(component => component.SelectionLimitExceeded, () => exceeded = true));
+        var files = Enumerable.Range(0, ImportPhotoPreparationService.MaxPhotographs)
+            .Select(index => InputFileContent.CreateFromBinary(
+                [(byte)index],
+                $"{index}.jpg",
+                contentType: "image/jpeg"))
+            .ToArray();
+
+        // Act
+        cut.FindComponent<InputFile>().UploadFiles(files);
+
+        // Assert
+        exceeded.Should().BeFalse();
+        await preparation.Received(1).PrepareSelectionAsync(
+            Arg.Is<IReadOnlyList<IBrowserFile>>(selected => selected.Count == 20),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldReportThatSelectionProcessingStarted()
     {
         // Arrange

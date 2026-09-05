@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Import.Components.ImportCatchReviewCard;
 using FishingLogBook.Web.Features.Import.Components.ImportPhotographPicker;
 using FishingLogBook.Web.Features.Import.Enums;
@@ -204,6 +205,43 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
     }
 
     [Fact]
+    public async Task ItShouldKeepAllTwentyPhotosThroughProposalAndReviewTransitions()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        await using var context = CreateContext(
+            proposal,
+            Substitute.For<IImportPhotoPreparationService>());
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        var photos = System.Linq.Enumerable.Select(
+            Enumerable.Range(0, 20),
+            index => ReadyPhoto(index)).ToArray();
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync(photos));
+
+        // Act
+        cut.Find("#import-photos-continue").Click();
+
+        // Assert
+        cut.FindComponents<ImportCatchReviewCard>().Should().HaveCount(20);
+        proposal.Received(1).Propose(Arg.Is<ImportBatchModel>(batch =>
+            batch.Photos.Count == 20
+            && batch.Photos.All(photo => photo.IsReady)
+            && batch.Photos.Select(photo => photo.Id).Distinct().Count() == 20));
+
+        // Act
+        for (var catchNumber = 1; catchNumber <= 20; catchNumber++)
+        {
+            cut.Find($"#import-catch-{catchNumber}-confirm").Click();
+        }
+
+        // Assert
+        cut.Find("#import-review-continue").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ItShouldShowGroupedPhotosTogetherAndExcludeFailedPhotosFromMembership()
     {
         // Arrange
@@ -295,7 +333,12 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
                 Arg.Any<ImportBatchModel>(),
                 Arg.Any<CancellationToken>(),
                 Arg.Any<IProgress<ImportPersistenceProgressModel>>())
-            .Returns(persistenceCompletion.Task);
+            .Returns(call =>
+            {
+                call.ArgAt<IProgress<ImportPersistenceProgressModel>>(2).Report(
+                    new ImportPersistenceProgressModel(ImportPersistenceStageEnum.SavingCatch, 1, 1));
+                return persistenceCompletion.Task;
+            });
         await using var context = CreateContext(
             proposal,
             preparation,
@@ -335,6 +378,7 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         {
             cut.Find("#import-confirm").HasAttribute("disabled").Should().BeTrue();
             cut.Find("#import-confirm-spinner").Should().NotBeNull();
+            cut.Find("#import-persistence-progress").TextContent.Should().Contain("Saving Catch 1 of 1");
         });
 
         // Act
@@ -348,6 +392,93 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
             Arg.Any<CancellationToken>(),
             Arg.Any<IProgress<ImportPersistenceProgressModel>>());
         await preparation.Received(1).ClearAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ItShouldRetainBlobsAndAllowRetryAfterPersistenceFailure()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        var persistence = Substitute.For<IImportPersistenceService>();
+        var logging = Substitute.For<ILoggingService>();
+        persistence.PersistAsync(
+                Arg.Any<ImportBatchModel>(),
+                Arg.Any<CancellationToken>(),
+                Arg.Any<IProgress<ImportPersistenceProgressModel>>())
+            .Returns(
+                _ => throw new ImportPersistenceException(
+                    ImportPersistenceFailureEnum.Photograph,
+                    "upload failed",
+                    new HttpRequestException("private endpoint detail")),
+                _ => new ImportPersistenceResultModel([], [Guid.NewGuid()], 1, 0));
+        await using var context = CreateContext(
+            proposal,
+            preparation,
+            persistenceService: persistence,
+            loggingService: logging);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await ReachConfirmationAsync(cut);
+
+        // Act
+        cut.Find("#import-confirm").Click();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#import-persistence-error").TextContent
+            .Should().Contain("photograph upload failed"));
+        cut.Find("#import-confirm").HasAttribute("disabled").Should().BeFalse();
+        await preparation.DidNotReceive().ClearAsync(Arg.Any<CancellationToken>());
+        await logging.Received(1).LogErrorAsync(
+            "persisting a historical Import",
+            Arg.Is<string>(message =>
+                message.Contains(nameof(ImportPersistenceException), StringComparison.Ordinal)
+                && !message.Contains("private endpoint detail", StringComparison.Ordinal)),
+            CancellationToken.None);
+
+        // Act
+        cut.Find("#import-confirm").Click();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#import-success").Should().NotBeNull());
+        await persistence.Received(2).PersistAsync(
+            Arg.Any<ImportBatchModel>(),
+            Arg.Any<CancellationToken>(),
+            Arg.Any<IProgress<ImportPersistenceProgressModel>>());
+        await preparation.Received(1).ClearAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ItShouldCancelPersistenceWithoutShowingFailureOrRemainingBusy()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        var persistence = Substitute.For<IImportPersistenceService>();
+        persistence.PersistAsync(
+                Arg.Any<ImportBatchModel>(),
+                Arg.Any<CancellationToken>(),
+                Arg.Any<IProgress<ImportPersistenceProgressModel>>())
+            .Returns(async call =>
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, call.ArgAt<CancellationToken>(1));
+                return new ImportPersistenceResultModel([], [], 0, 0);
+            });
+        await using var context = CreateContext(proposal, preparation, persistenceService: persistence);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await ReachConfirmationAsync(cut);
+        cut.Find("#import-confirm").Click();
+        cut.WaitForElement("#import-cancel-persistence");
+
+        // Act
+        cut.Find("#import-cancel-persistence").Click();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#import-confirm").HasAttribute("disabled").Should().BeFalse());
+        cut.FindAll("#import-persistence-error").Should().BeEmpty();
+        cut.FindAll("#import-cancel-persistence").Should().BeEmpty();
+        await preparation.DidNotReceive().ClearAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -577,5 +708,17 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         cut.Find("#import-species-BrownTrout").Click();
         cut.Find("#import-batch-continue").Click();
         return Task.CompletedTask;
+    }
+
+    private static async Task ReachConfirmationAsync(IRenderedComponent<ImportCatchCatalogue> cut)
+    {
+        await SelectDefaultsAndContinueAsync(cut);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([ReadyPhoto(0)]));
+        cut.Find("#import-photos-continue").Click();
+        cut.Find("#import-catch-1-confirm").Click();
+        cut.Find("#import-review-continue").Click();
+        cut.Find("#import-trip-none").Click();
+        cut.Find("#import-trip-continue").Click();
     }
 }

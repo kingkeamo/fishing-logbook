@@ -1437,6 +1437,10 @@
   <data name="Import_ProgressSavingCatch" xml:space="preserve"><value>Enregistrement de la prise {0} sur {1}</value></data>
   <data name="Import_ProgressUploadingPhotograph" xml:space="preserve"><value>Téléversement de la photo {0} sur {1}</value></data>
   <data name="Import_ProgressVerifying" xml:space="preserve"><value>Vérification des données importées</value></data>
+  <data name="Import_TripPersistenceFailed" xml:space="preserve"><value>Une sortie n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="Import_CatchPersistenceFailed" xml:space="preserve"><value>Une prise n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="Import_PhotographPersistenceFailed" xml:space="preserve"><value>Le téléversement d’une photo a échoué. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="Import_VerificationFailed" xml:space="preserve"><value>Les données importées n’ont pas pu être vérifiées. Réessayez pour les rapprocher du serveur.</value></data>
   <data name="Import_OnlineRequired" xml:space="preserve"><value>L’importation historique nécessite une connexion Internet.</value></data>
   <data name="Import_PersistenceFailed" xml:space="preserve"><value>L’importation n’a pas pu être terminée. Vos choix vérifiés restent disponibles pendant cette session.</value></data>
   <data name="Import_Success" xml:space="preserve"><value>{0} prises, {1} photographies et {2} sorties ont été importées.</value></data>

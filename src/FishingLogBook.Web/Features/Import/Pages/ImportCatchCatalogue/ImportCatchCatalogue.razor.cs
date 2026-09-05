@@ -2,6 +2,7 @@ using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Common.Modals.AnglerPicker;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Import.Services;
@@ -17,6 +18,7 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
 {
     private const int MaxChipOptions = 6;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private CancellationTokenSource? _persistenceCancellationTokenSource;
     private AnglerPreferencesModel _preferences = AnglerPreferencesModel.Empty;
     private ImportBatchModel? _batch;
     private Guid _methodId;
@@ -41,6 +43,7 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     [Inject] private INetworkService NetworkService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
+    [Inject] private ILoggingService Logging { get; set; } = default!;
 
     private bool CanReview
     {
@@ -331,11 +334,14 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         }
 
         _isPersisting = true;
+        using var persistenceCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+            _cancellationTokenSource.Token);
+        _persistenceCancellationTokenSource = persistenceCancellationTokenSource;
         try
         {
             _persistenceError = null;
             _persistenceProgress = null;
-            if (!await NetworkService.IsOnlineAsync(_cancellationTokenSource.Token))
+            if (!await NetworkService.IsOnlineAsync(persistenceCancellationTokenSource.Token))
             {
                 _persistenceError = Loc["Import_OnlineRequired"];
                 return;
@@ -343,23 +349,55 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
 
             _persistenceResult = await PersistenceService.PersistAsync(
                 _batch,
-                _cancellationTokenSource.Token,
+                persistenceCancellationTokenSource.Token,
                 new Progress<ImportPersistenceProgressModel>(OnPersistenceProgress));
             _isPersisted = true;
             await Preparation.ClearAsync(CancellationToken.None);
         }
-        catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)
+        catch (OperationCanceledException) when (persistenceCancellationTokenSource.IsCancellationRequested)
         {
-            throw;
+            _persistenceError = null;
         }
-        catch
+        catch (ImportPersistenceException exception)
+        {
+            _persistenceError = PersistenceFailureLabel(exception.Failure);
+            await LogPersistenceFailureAsync(exception);
+        }
+        catch (Exception exception)
         {
             _persistenceError = Loc["Import_PersistenceFailed"];
+            await LogPersistenceFailureAsync(exception);
         }
         finally
         {
             _isPersisting = false;
+            _persistenceCancellationTokenSource = null;
         }
+    }
+
+    private string PersistenceFailureLabel(ImportPersistenceFailureEnum failure)
+    {
+        var resource = failure switch
+        {
+            ImportPersistenceFailureEnum.Trip => "Import_TripPersistenceFailed",
+            ImportPersistenceFailureEnum.Catch => "Import_CatchPersistenceFailed",
+            ImportPersistenceFailureEnum.Photograph => "Import_PhotographPersistenceFailed",
+            _ => "Import_VerificationFailed"
+        };
+        return Loc[resource];
+    }
+
+    private Task LogPersistenceFailureAsync(Exception exception)
+    {
+        return Logging.LogErrorAsync(
+            "persisting a historical Import",
+            $"Historical Import persistence stopped ({exception.GetType().Name}).",
+            CancellationToken.None);
+    }
+
+    private void CancelPersistence()
+    {
+        _persistenceCancellationTokenSource?.Cancel();
     }
 
     private void OnPersistenceProgress(ImportPersistenceProgressModel progress)
@@ -525,6 +563,11 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_persistenceCancellationTokenSource is not null)
+        {
+            await _persistenceCancellationTokenSource.CancelAsync();
+        }
+
         await _cancellationTokenSource.CancelAsync();
         await Preparation.ClearAsync(CancellationToken.None);
         _cancellationTokenSource.Dispose();

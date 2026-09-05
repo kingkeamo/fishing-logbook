@@ -4,6 +4,7 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Import.Enums;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Import.Services;
@@ -29,7 +30,8 @@ public class BaseImportCatchCatalogueTest
         IModalService? modalService = null,
         IImportTripProposalService? tripProposalService = null,
         IImportPersistenceService? persistenceService = null,
-        INetworkService? networkService = null)
+        INetworkService? networkService = null,
+        ILoggingService? loggingService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -57,6 +59,7 @@ public class BaseImportCatchCatalogueTest
         }
 
         context.Services.AddSingleton(network);
+        context.Services.AddSingleton(loggingService ?? Substitute.For<ILoggingService>());
         var existingTrips = Substitute.For<IImportExistingTripService>();
         existingTrips.GetCandidatesAsync(
                 Arg.Any<IReadOnlyList<ImportTripProposalModel>>(),
