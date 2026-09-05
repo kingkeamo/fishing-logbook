@@ -1433,6 +1433,10 @@
   <data name="Import_SummaryStandalone" xml:space="preserve"><value>Standalone catches: {0}</value></data>
   <data name="Import_ConfirmImport" xml:space="preserve"><value>Import catches</value></data>
   <data name="Import_Importing" xml:space="preserve"><value>Importing…</value></data>
+  <data name="Import_ProgressSavingTrip" xml:space="preserve"><value>Saving Trip {0} of {1}</value></data>
+  <data name="Import_ProgressSavingCatch" xml:space="preserve"><value>Saving Catch {0} of {1}</value></data>
+  <data name="Import_ProgressUploadingPhotograph" xml:space="preserve"><value>Uploading photograph {0} of {1}</value></data>
+  <data name="Import_ProgressVerifying" xml:space="preserve"><value>Verifying imported records</value></data>
   <data name="Import_OnlineRequired" xml:space="preserve"><value>Historical Import requires an internet connection.</value></data>
   <data name="Import_PersistenceFailed" xml:space="preserve"><value>The import could not be completed. Your reviewed choices remain available in this session.</value></data>
   <data name="Import_Success" xml:space="preserve"><value>Imported {0} catches, {1} photographs and {2} Trips successfully.</value></data>

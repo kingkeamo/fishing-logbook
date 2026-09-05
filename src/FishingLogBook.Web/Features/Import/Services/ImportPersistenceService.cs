@@ -31,7 +31,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
 
     public async Task<ImportPersistenceResultModel> PersistAsync(
         ImportBatchModel batch,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProgress<ImportPersistenceProgressModel>? progress = null)
     {
         Validate(batch);
         var currentUser = await _currentUserClient.GetCurrentAsync(cancellationToken);
@@ -40,10 +41,20 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         var participantCount = 0;
         var photographCount = 0;
         var tripByCatch = new Dictionary<Guid, Guid>();
+        var tripProposals = batch.TripProposals.Where(proposal => !proposal.IsRemoved).ToArray();
+        var catchProposals = batch.CatchProposals.Where(proposal => !proposal.IsRemoved).ToArray();
+        var photographTotal = catchProposals.Sum(proposal => proposal.PhotoIds.Count);
+        var tripNumber = 0;
+        var catchNumber = 0;
+        var photographNumber = 0;
 
-        foreach (var proposal in batch.TripProposals.Where(proposal => !proposal.IsRemoved))
+        foreach (var proposal in tripProposals)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            progress?.Report(new ImportPersistenceProgressModel(
+                ImportPersistenceStageEnum.SavingTrip,
+                ++tripNumber,
+                tripProposals.Length));
             var tripId = proposal.Decision == ImportTripDecisionEnum.CreateNew
                 ? await CreateTripAsync(batch, proposal, currentUser.UserId, cancellationToken)
                 : proposal.ExistingTripId;
@@ -70,19 +81,31 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             }
         }
 
-        foreach (var proposal in batch.CatchProposals.Where(proposal => !proposal.IsRemoved))
+        foreach (var proposal in catchProposals)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            progress?.Report(new ImportPersistenceProgressModel(
+                ImportPersistenceStageEnum.SavingCatch,
+                ++catchNumber,
+                catchProposals.Length));
             tripByCatch.TryGetValue(proposal.Id, out var tripId);
             var persisted = await PersistCatchAsync(
                 batch,
                 proposal,
                 currentUser.UserId,
                 tripId == Guid.Empty ? null : tripId,
-                cancellationToken);
+                cancellationToken,
+                progress,
+                photographTotal,
+                () => ++photographNumber);
             catchIds.Add(persisted.Id);
             photographCount += persisted.Photographs.Count;
         }
+
+        progress?.Report(new ImportPersistenceProgressModel(
+            ImportPersistenceStageEnum.Verifying,
+            1,
+            1));
 
         return new ImportPersistenceResultModel(
             tripIds.Distinct().ToArray(),
@@ -108,6 +131,13 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             Title = proposal.ProposedTitle,
             PlaceName = proposal.ProposedPlaceName
         };
+        var existing = await _tripClient.GetDetailAsync(proposal.Id, cancellationToken);
+        if (existing?.Trip is not null)
+        {
+            EnsureExpectedTrip(existing.Trip, trip);
+            return existing.Trip.Id;
+        }
+
         var persisted = await _tripClient.UpsertAsync(trip, cancellationToken)
             ?? throw new InvalidOperationException("The authoritative Trip create response was missing.");
         if (persisted.Id != proposal.Id)
@@ -165,7 +195,10 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         ImportCatchProposalModel proposal,
         Guid userId,
         Guid? tripId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProgress<ImportPersistenceProgressModel>? progress,
+        int photographTotal,
+        Func<int> nextPhotographNumber)
     {
         var caughtOn = ToInstant(proposal.CaughtOn);
         var location = ToLocation(proposal.Location, caughtOn);
@@ -183,16 +216,34 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             Weight = proposal.Weight,
             Length = proposal.Length
         };
-        var persisted = await _catchClient.UpsertAsync(request, cancellationToken)
-            ?? throw new InvalidOperationException("The authoritative Catch create response was missing.");
-        if (persisted.Id != proposal.Id || persisted.TripId != tripId)
+        var current = await _catchClient.GetAsync(proposal.Id, cancellationToken);
+        if (current is null)
         {
-            throw new InvalidOperationException("The authoritative Catch identity or Trip relationship is incorrect.");
+            var persisted = await _catchClient.UpsertAsync(request, cancellationToken)
+                ?? throw new InvalidOperationException("The authoritative Catch create response was missing.");
+            if (persisted.Id != proposal.Id || persisted.TripId != tripId)
+            {
+                throw new InvalidOperationException("The authoritative Catch identity or Trip relationship is incorrect.");
+            }
+
+            current = await RequireCatchAsync(proposal.Id, cancellationToken);
+        }
+        else if (!HasExpectedCatch(current, request))
+        {
+            throw new InvalidOperationException("An authoritative Catch conflicts with the Import proposal.");
         }
 
-        var current = await RequireCatchAsync(proposal.Id, cancellationToken);
         foreach (var photoId in proposal.PhotoIds)
         {
+            progress?.Report(new ImportPersistenceProgressModel(
+                ImportPersistenceStageEnum.UploadingPhotograph,
+                nextPhotographNumber(),
+                photographTotal));
+            if (current.Photographs.Any(photo => photo.Id == photoId))
+            {
+                continue;
+            }
+
             var photo = batch.Photos.Single(candidate => candidate.Id == photoId && !candidate.IsRemoved);
             if (string.IsNullOrWhiteSpace(photo.BlobToken))
             {
@@ -219,6 +270,20 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         }
 
         return current;
+    }
+
+    private static void EnsureExpectedTrip(TripViewDto current, TripDto expected)
+    {
+        if (current.Id != expected.Id
+            || current.OwnerUserId != expected.OwnerUserId
+            || current.Status != expected.Status
+            || current.StartedOn != expected.StartedOn
+            || current.EndedOn != expected.EndedOn
+            || !string.Equals(current.Title, expected.Title, StringComparison.Ordinal)
+            || !string.Equals(current.PlaceName, expected.PlaceName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("An authoritative Trip conflicts with the Import proposal.");
+        }
     }
 
     private static bool HasExpectedCatch(CatchViewDto current, CatchDto expected)
@@ -342,9 +407,6 @@ public sealed class ImportPersistenceService : IImportPersistenceService
 
     private static void Validate(ImportBatchModel batch)
     {
-        if (!batch.IsReadyForConfirmation)
-        {
-            throw new InvalidOperationException("The Import batch is not ready for persistence.");
-        }
+        batch.ValidateForPersistence(DateTimeOffset.UtcNow);
     }
 }

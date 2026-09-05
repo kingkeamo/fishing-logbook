@@ -27,6 +27,7 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private bool _isPersisted;
     private string? _persistenceError;
     private ImportPersistenceResultModel? _persistenceResult;
+    private ImportPersistenceProgressModel? _persistenceProgress;
     private IReadOnlyDictionary<Guid, IReadOnlyList<TripSummaryDto>> _existingTrips =
         new Dictionary<Guid, IReadOnlyList<TripSummaryDto>>();
 
@@ -333,6 +334,7 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         try
         {
             _persistenceError = null;
+            _persistenceProgress = null;
             if (!await NetworkService.IsOnlineAsync(_cancellationTokenSource.Token))
             {
                 _persistenceError = Loc["Import_OnlineRequired"];
@@ -341,7 +343,8 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
 
             _persistenceResult = await PersistenceService.PersistAsync(
                 _batch,
-                _cancellationTokenSource.Token);
+                _cancellationTokenSource.Token,
+                new Progress<ImportPersistenceProgressModel>(OnPersistenceProgress));
             _isPersisted = true;
             await Preparation.ClearAsync(CancellationToken.None);
         }
@@ -357,6 +360,29 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         {
             _isPersisting = false;
         }
+    }
+
+    private void OnPersistenceProgress(ImportPersistenceProgressModel progress)
+    {
+        _persistenceProgress = progress;
+        StateHasChanged();
+    }
+
+    private string PersistenceProgressLabel()
+    {
+        if (_persistenceProgress is null)
+        {
+            return Loc["Import_Importing"];
+        }
+
+        var resource = _persistenceProgress.Stage switch
+        {
+            ImportPersistenceStageEnum.SavingTrip => "Import_ProgressSavingTrip",
+            ImportPersistenceStageEnum.SavingCatch => "Import_ProgressSavingCatch",
+            ImportPersistenceStageEnum.UploadingPhotograph => "Import_ProgressUploadingPhotograph",
+            _ => "Import_ProgressVerifying"
+        };
+        return Loc[resource, _persistenceProgress.Current, _persistenceProgress.Total];
     }
 
     private void NavigateToCatches()

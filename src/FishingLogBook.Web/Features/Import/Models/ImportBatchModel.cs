@@ -56,6 +56,65 @@ public sealed class ImportBatchModel
         }
     }
 
+    public void ValidateForPersistence(DateTimeOffset now)
+    {
+        if (!CanProcessPhotos)
+        {
+            throw new InvalidOperationException("The Import batch requires valid catalogue selections.");
+        }
+
+        var activePhotos = _photos.Where(photo => !photo.IsRemoved).ToArray();
+        var activeCatches = _catchProposals.Where(proposal => !proposal.IsRemoved).ToArray();
+        if (activePhotos.Length == 0 || activeCatches.Length == 0 || activePhotos.Any(photo => !photo.IsReady))
+        {
+            throw new InvalidOperationException("The Import batch requires active photographs and Catches.");
+        }
+
+        if (activePhotos.Select(photo => photo.Id).Distinct().Count() != activePhotos.Length
+            || activeCatches.Select(proposal => proposal.Id).Distinct().Count() != activeCatches.Length)
+        {
+            throw new InvalidOperationException("Active Import identities must be unique.");
+        }
+
+        var memberships = activeCatches.SelectMany(proposal => proposal.PhotoIds).ToArray();
+        var activePhotoIds = activePhotos.Select(photo => photo.Id).ToHashSet();
+        if (memberships.Length != activePhotos.Length
+            || memberships.Distinct().Count() != memberships.Length
+            || memberships.Any(photoId => !activePhotoIds.Contains(photoId)))
+        {
+            throw new InvalidOperationException("Every active photograph must belong to exactly one active Catch.");
+        }
+
+        if (activeCatches.Any(proposal => !proposal.IsReadyForConfirmation
+                || !proposal.CaughtOn.Instant.HasValue
+                || proposal.CaughtOn.Instant.Value > now))
+        {
+            throw new InvalidOperationException("Every active Catch must be reviewed with a valid historical timestamp.");
+        }
+
+        ValidateTripProposals(activeCatches.Select(proposal => proposal.Id).ToHashSet());
+    }
+
+    private void ValidateTripProposals(HashSet<Guid> activeCatchIds)
+    {
+        var activeTrips = _tripProposals.Where(proposal => !proposal.IsRemoved).ToArray();
+        if (activeTrips.Any(proposal => !proposal.IsDecisionComplete
+                || proposal.CatchProposalIds.Any(catchId => !activeCatchIds.Contains(catchId))
+                || proposal.Participants.Select(participant => participant.UserId).Distinct().Count()
+                    != proposal.Participants.Count
+                || (proposal.Decision == ImportTripDecisionEnum.UseExisting
+                    && (!proposal.ExistingTripId.HasValue || proposal.ExistingTripId == Guid.Empty))))
+        {
+            throw new InvalidOperationException("Every active Trip proposal requires a valid final decision.");
+        }
+
+        var tripMemberships = activeTrips.SelectMany(proposal => proposal.CatchProposalIds).ToArray();
+        if (tripMemberships.Distinct().Count() != tripMemberships.Length)
+        {
+            throw new InvalidOperationException("An active Catch may belong to at most one Trip decision.");
+        }
+    }
+
     public bool CanAdvanceToTrips
     {
         get

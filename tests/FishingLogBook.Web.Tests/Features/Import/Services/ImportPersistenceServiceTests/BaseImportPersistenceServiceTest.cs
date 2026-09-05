@@ -36,12 +36,18 @@ public class BaseImportPersistenceServiceTest
             return persistedTrip;
         });
         TripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>()).Returns(_ =>
-            new TripDetailDto(new TripViewDto(
-                TripId,
-                UserId,
-                persistedTrip!.Status,
-                persistedTrip.StartedOn,
-                persistedTrip.EndedOn)));
+            persistedTrip is null
+                ? null
+                : new TripDetailDto(new TripViewDto(
+                    TripId,
+                    UserId,
+                    persistedTrip.Status,
+                    persistedTrip.StartedOn,
+                    persistedTrip.EndedOn)
+                {
+                    Title = persistedTrip.Title,
+                    PlaceName = persistedTrip.PlaceName
+                }));
         var participantReads = 0;
         ParticipantClient.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(_ =>
         {
@@ -69,8 +75,13 @@ public class BaseImportPersistenceServiceTest
         var reads = 0;
         CatchClient.GetAsync(CatchId, Arg.Any<CancellationToken>()).Returns(_ =>
         {
+            if (persistedCatch is null)
+            {
+                return null;
+            }
+
             reads++;
-            return new CatchViewDto(CatchId, UserId, persistedCatch!.CaughtOn, new CatchLocationExposureDto
+            return new CatchViewDto(CatchId, UserId, persistedCatch.CaughtOn, new CatchLocationExposureDto
             {
                 Latitude = 53.1,
                 Longitude = -6.2,

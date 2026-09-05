@@ -42,7 +42,10 @@ public class BaseImportCatchCatalogueTest
         var persistence = persistenceService ?? Substitute.For<IImportPersistenceService>();
         if (persistenceService is null)
         {
-            persistence.PersistAsync(Arg.Any<ImportBatchModel>(), Arg.Any<CancellationToken>())
+            persistence.PersistAsync(
+                    Arg.Any<ImportBatchModel>(),
+                    Arg.Any<CancellationToken>(),
+                    Arg.Any<IProgress<ImportPersistenceProgressModel>>())
                 .Returns(new ImportPersistenceResultModel([], [], 0, 0));
         }
 

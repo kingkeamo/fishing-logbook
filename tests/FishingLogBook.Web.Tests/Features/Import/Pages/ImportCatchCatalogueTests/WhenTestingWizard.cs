@@ -291,7 +291,10 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         var preparation = Substitute.For<IImportPhotoPreparationService>();
         var persistence = Substitute.For<IImportPersistenceService>();
         var persistenceCompletion = new TaskCompletionSource<ImportPersistenceResultModel>();
-        persistence.PersistAsync(Arg.Any<ImportBatchModel>(), Arg.Any<CancellationToken>())
+        persistence.PersistAsync(
+                Arg.Any<ImportBatchModel>(),
+                Arg.Any<CancellationToken>(),
+                Arg.Any<IProgress<ImportPersistenceProgressModel>>())
             .Returns(persistenceCompletion.Task);
         await using var context = CreateContext(
             proposal,
@@ -342,7 +345,8 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         cut.WaitForAssertion(() => cut.Find("#import-success").Should().NotBeNull());
         await persistence.Received(1).PersistAsync(
             Arg.Is<ImportBatchModel>(batch => batch.IsReadyForConfirmation),
-            Arg.Any<CancellationToken>());
+            Arg.Any<CancellationToken>(),
+            Arg.Any<IProgress<ImportPersistenceProgressModel>>());
         await preparation.Received(1).ClearAsync(CancellationToken.None);
     }
 

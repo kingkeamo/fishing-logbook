@@ -277,6 +277,12 @@
                             @Loc[_isPersisting ? "Import_Importing" : "Import_ConfirmImport"]
                         </MudButton>
                     </MudStack>
+                    @if (_isPersisting)
+                    {
+                        <MudText id="import-persistence-progress" Typo="Typo.body2">
+                            @PersistenceProgressLabel()
+                        </MudText>
+                    }
                 }
             }
         }
