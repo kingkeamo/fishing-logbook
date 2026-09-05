@@ -1,6 +1,7 @@
 using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Import.Enums;
@@ -26,7 +27,9 @@ public class BaseImportCatchCatalogueTest
         IImportPhotoPreparationService preparation,
         IAnglerPreferencesProvider? preferences = null,
         IModalService? modalService = null,
-        IImportTripProposalService? tripProposalService = null)
+        IImportTripProposalService? tripProposalService = null,
+        IImportPersistenceService? persistenceService = null,
+        INetworkService? networkService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -36,6 +39,21 @@ public class BaseImportCatchCatalogueTest
         context.Services.AddSingleton(proposal);
         context.Services.AddSingleton(preparation);
         context.Services.AddSingleton(tripProposalService ?? new ImportTripProposalService());
+        var persistence = persistenceService ?? Substitute.For<IImportPersistenceService>();
+        if (persistenceService is null)
+        {
+            persistence.PersistAsync(Arg.Any<ImportBatchModel>(), Arg.Any<CancellationToken>())
+                .Returns(new ImportPersistenceResultModel([], [], 0, 0));
+        }
+
+        context.Services.AddSingleton(persistence);
+        var network = networkService ?? Substitute.For<INetworkService>();
+        if (networkService is null)
+        {
+            network.IsOnlineAsync(Arg.Any<CancellationToken>()).Returns(true);
+        }
+
+        context.Services.AddSingleton(network);
         var existingTrips = Substitute.For<IImportExistingTripService>();
         existingTrips.GetCandidatesAsync(
                 Arg.Any<IReadOnlyList<ImportTripProposalModel>>(),

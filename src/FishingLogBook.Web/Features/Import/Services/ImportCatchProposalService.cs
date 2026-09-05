@@ -5,7 +5,7 @@ namespace FishingLogBook.Web.Features.Import.Services;
 
 public sealed class ImportCatchProposalService : IImportCatchProposalService
 {
-    public static readonly TimeSpan SameCatchTimeThreshold = TimeSpan.FromMinutes(2);
+    public static readonly TimeSpan SameCatchTimeThreshold = TimeSpan.FromMinutes(5);
 
     private const double CompatibleLocationDistanceMetres = 250;
     private const double EarthRadiusMetres = 6371000;
@@ -13,30 +13,54 @@ public sealed class ImportCatchProposalService : IImportCatchProposalService
     public IReadOnlyList<ImportCatchProposalModel> Propose(ImportBatchModel batch)
     {
         var photos = batch.Photos.Where(photo => !photo.IsRemoved && photo.IsReady).ToArray();
-        var eligible = photos
+        var explicitInstants = photos
             .Where(HasTrustworthyTimestamp)
             .OrderBy(photo => photo.Timestamp.Instant)
             .ThenBy(photo => photo.SelectionIndex)
             .ToArray();
+        var localWallClocks = photos
+            .Where(HasCompatibleLocalTimestamp)
+            .OrderBy(photo => photo.Timestamp.LocalWallClock)
+            .ThenBy(photo => photo.SelectionIndex)
+            .ToArray();
+        var weakFallbacks = photos
+            .Where(HasCompatibleWeakTimestamp)
+            .OrderBy(photo => photo.Timestamp.Instant)
+            .ThenBy(photo => photo.SelectionIndex)
+            .ToArray();
         var unresolved = photos
-            .Where(photo => !HasTrustworthyTimestamp(photo))
+            .Where(photo => !HasTrustworthyTimestamp(photo)
+                && !HasCompatibleLocalTimestamp(photo)
+                && !HasCompatibleWeakTimestamp(photo))
             .OrderBy(photo => photo.SelectionIndex)
             .ToArray();
 
-        var proposals = GroupEligiblePhotos(eligible, batch);
+        var proposals = GroupEligiblePhotos(
+            explicitInstants,
+            photo => photo.Timestamp.Instant!.Value.UtcDateTime,
+            batch);
+        proposals.AddRange(GroupEligiblePhotos(
+            localWallClocks,
+            photo => photo.Timestamp.LocalWallClock!.Value,
+            batch));
+        proposals.AddRange(GroupEligiblePhotos(
+            weakFallbacks,
+            photo => photo.Timestamp.Instant!.Value.UtcDateTime,
+            batch));
         proposals.AddRange(unresolved.Select(photo => CreateProposal([photo], batch)));
         return proposals;
     }
 
     private static List<ImportCatchProposalModel> GroupEligiblePhotos(
         IReadOnlyList<ImportSelectedPhotoModel> photos,
+        Func<ImportSelectedPhotoModel, DateTime> timestamp,
         ImportBatchModel batch)
     {
         var proposals = new List<ImportCatchProposalModel>();
         var group = new List<ImportSelectedPhotoModel>();
         foreach (var photo in photos)
         {
-            if (group.Count > 0 && photo.Timestamp.Instant - group[^1].Timestamp.Instant > SameCatchTimeThreshold)
+            if (group.Count > 0 && timestamp(photo) - timestamp(group[0]) > SameCatchTimeThreshold)
             {
                 proposals.Add(CreateProposal(group, batch));
                 group = [];
@@ -77,6 +101,18 @@ public sealed class ImportCatchProposalService : IImportCatchProposalService
     private static bool HasTrustworthyTimestamp(ImportSelectedPhotoModel photo)
     {
         return photo.Timestamp.IsResolved && photo.Timestamp.Instant.HasValue;
+    }
+
+    private static bool HasCompatibleLocalTimestamp(ImportSelectedPhotoModel photo)
+    {
+        return photo.Timestamp.State == ImportTimestampStateEnum.LocalWallClock
+            && photo.Timestamp.LocalWallClock.HasValue;
+    }
+
+    private static bool HasCompatibleWeakTimestamp(ImportSelectedPhotoModel photo)
+    {
+        return photo.Timestamp.State == ImportTimestampStateEnum.WeakFallback
+            && photo.Timestamp.Instant.HasValue;
     }
 
     private static ImportCatchProposalReasonEnum TimestampReason(ImportTimestampModel timestamp)

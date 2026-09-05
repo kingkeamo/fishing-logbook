@@ -213,8 +213,12 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
     public void ItShouldUseAConfirmedOffsetlessWallClockWithoutInventingAnOffset()
     {
         // Arrange
-        var first = ImportTimestampModel.UserConfirmed(new DateTime(2024, 6, 14, 9, 0, 0));
-        var second = ImportTimestampModel.UserConfirmed(new DateTime(2024, 6, 14, 10, 0, 0));
+        var firstLocal = new DateTime(2024, 6, 14, 9, 0, 0);
+        var secondLocal = new DateTime(2024, 6, 14, 10, 0, 0);
+        var first = ImportTimestampModel.FromLocalWallClock(firstLocal, ImportTimestampSourceEnum.ExifOriginal)
+            .ConfirmLocalWallClock(firstLocal, TimeSpan.FromHours(1));
+        var second = ImportTimestampModel.FromLocalWallClock(secondLocal, ImportTimestampSourceEnum.ExifOriginal)
+            .ConfirmLocalWallClock(secondLocal, TimeSpan.FromHours(1));
         var batch = Batch(
             new CatchSpec(TimeSpan.Zero, Timestamp: first),
             new CatchSpec(TimeSpan.Zero, Timestamp: second));

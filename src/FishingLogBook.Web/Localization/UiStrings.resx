@@ -195,6 +195,9 @@
   <data name="Photograph_AltNumbered" xml:space="preserve">
     <value>Catch photograph {0} of {1}</value>
   </data>
+  <data name="Photograph_SelectNumbered" xml:space="preserve">
+    <value>Select photograph {0}</value>
+  </data>
   <data name="Photograph_Unsupported" xml:space="preserve">
     <value>This photo format isn't supported. Please use JPEG, PNG or WebP.</value>
   </data>
@@ -1381,11 +1384,14 @@
   <data name="Import_Reviewed" xml:space="preserve"><value>Reviewed</value></data>
   <data name="Import_NeedsCorrection" xml:space="preserve"><value>Needs review</value></data>
   <data name="Import_ReviewEdit" xml:space="preserve"><value>Review</value></data>
+  <data name="Import_Edit" xml:space="preserve"><value>Edit</value></data>
   <data name="Import_ConfirmCatch" xml:space="preserve"><value>Confirm catch</value></data>
   <data name="Import_CorrectCatches" xml:space="preserve"><value>Correct catches</value></data>
   <data name="Import_CaughtOn" xml:space="preserve"><value>Caught on</value></data>
   <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Enter a valid historical date and time.</value></data>
   <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirm date and time</value></data>
+  <data name="Import_UtcOffset" xml:space="preserve"><value>UTC offset</value></data>
+  <data name="Import_UtcOffsetRequired" xml:space="preserve"><value>Choose the historical UTC offset.</value></data>
   <data name="Import_SelectPhoto" xml:space="preserve"><value>Select photograph {0}</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Use photo {0} location</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Remove location</value></data>
@@ -1393,7 +1399,7 @@
   <data name="Import_LocationRemoved" xml:space="preserve"><value>Location removed</value></data>
   <data name="Import_MoveToNewCatch" xml:space="preserve"><value>Move selected to new catch</value></data>
   <data name="Import_RemoveSelectedPhotos" xml:space="preserve"><value>Remove selected photos</value></data>
-  <data name="Import_MergeWith" xml:space="preserve"><value>Merge withâ€¦</value></data>
+  <data name="Import_MergeWith" xml:space="preserve"><value>Merge with...</value></data>
   <data name="Import_RemoveCatch" xml:space="preserve"><value>Remove catch from import</value></data>
   <data name="Import_CorrectionsComplete" xml:space="preserve"><value>All catches are reviewed and ready for Trip suggestions.</value></data>
   <data name="Import_MergeValuesNeedReview" xml:space="preserve"><value>The merged catches had different details. Review the shown values before confirming.</value></data>
@@ -1408,6 +1414,8 @@
   <data name="Import_TripTimeRange" xml:space="preserve"><value>{0} – {1}</value></data>
   <data name="Import_TripMissingGps" xml:space="preserve"><value>Location evidence is incomplete for this suggestion.</value></data>
   <data name="Import_CreateTrip" xml:space="preserve"><value>Create Trip</value></data>
+  <data name="Import_CreateAnotherTrip" xml:space="preserve"><value>Create another Trip</value></data>
+  <data name="Import_ExistingTripFound" xml:space="preserve"><value>An existing Trip was found on this date. Add these catches to it, or deliberately create another Trip.</value></data>
   <data name="Import_KeepSeparate" xml:space="preserve"><value>Keep as separate catches</value></data>
   <data name="Import_AddToExistingTrip" xml:space="preserve"><value>Add to existing Trip</value></data>
   <data name="Import_RemoveCatchFromTrip" xml:space="preserve"><value>Remove catch from suggested Trip</value></data>
@@ -1416,4 +1424,18 @@
   <data name="Import_TripCatchPhotoAlt" xml:space="preserve"><value>Thumbnail for Catch {0}</value></data>
   <data name="Import_TripParticipants" xml:space="preserve"><value>Anglers on this Trip</value></data>
   <data name="Import_AddTripParticipant" xml:space="preserve"><value>Add angler</value></data>
+  <data name="Import_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Import_ConfirmTitle" xml:space="preserve"><value>Confirm historical import</value></data>
+  <data name="Import_SummaryCatches" xml:space="preserve"><value>Catches: {0}</value></data>
+  <data name="Import_SummaryPhotos" xml:space="preserve"><value>Photographs: {0}</value></data>
+  <data name="Import_SummaryNewTrips" xml:space="preserve"><value>New Trips: {0}</value></data>
+  <data name="Import_SummaryExistingTrips" xml:space="preserve"><value>Existing Trip assignments: {0}</value></data>
+  <data name="Import_SummaryStandalone" xml:space="preserve"><value>Standalone catches: {0}</value></data>
+  <data name="Import_ConfirmImport" xml:space="preserve"><value>Import catches</value></data>
+  <data name="Import_Importing" xml:space="preserve"><value>Importing…</value></data>
+  <data name="Import_OnlineRequired" xml:space="preserve"><value>Historical Import requires an internet connection.</value></data>
+  <data name="Import_PersistenceFailed" xml:space="preserve"><value>The import could not be completed. Your reviewed choices remain available in this session.</value></data>
+  <data name="Import_Success" xml:space="preserve"><value>Imported {0} catches, {1} photographs and {2} Trips successfully.</value></data>
+  <data name="Import_ViewCatches" xml:space="preserve"><value>View catches</value></data>
+  <data name="Import_ViewTrips" xml:space="preserve"><value>View Trips</value></data>
 </root>

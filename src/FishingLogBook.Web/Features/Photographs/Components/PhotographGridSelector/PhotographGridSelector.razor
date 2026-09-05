@@ -1,0 +1,36 @@
+@namespace FishingLogBook.Web.Features.Photographs.Components.PhotographGridSelector
+@using FishingLogBook.Web.Features.Photographs.Models
+
+<div class="photograph-grid-selector" id="@($"{IdPrefix}-photos")">
+    <div class="photograph-grid-selector-grid">
+        @for (var index = 0; index < Photographs.Count; index++)
+        {
+            var photograph = Photographs[index];
+            var photographNumber = index + 1;
+            <div class="photograph-grid-selector-choice">
+                <MudCheckBox T="bool"
+                             Value="@_selectedIds.Contains(photograph.Id)"
+                             ValueChanged="@(selected => SelectAsync(photograph.Id, selected))"
+                             aria-label="@Loc["Photograph_SelectNumbered", photographNumber]"
+                             id="@($"{IdPrefix}-select-{index}")" />
+                <button type="button" class="photograph-grid-selector-open"
+                        @onclick="@(() => OpenAsync(photograph.Id))"
+                        aria-label="@Loc["Photograph_AltNumbered", photographNumber, Photographs.Count]"
+                        id="@($"{IdPrefix}-open-{index}")">
+                    <MudImage Src="@ToPhotoUrl(photograph)"
+                              Alt="@Loc["Photograph_AltNumbered", photographNumber, Photographs.Count]"
+                              ObjectFit="ObjectFit.Cover"
+                              Class="photograph-grid-selector-thumbnail"
+                              id="@($"{IdPrefix}-photo-{index}")" />
+                </button>
+            </div>
+        }
+    </div>
+
+    @if (_selectedIds.Count > 0 && SelectedActions is not null)
+    {
+        <div class="photograph-grid-selector-actions" id="@($"{IdPrefix}-selected-actions")">
+            @SelectedActions(_selectedIds.Count)
+        </div>
+    }
+</div>

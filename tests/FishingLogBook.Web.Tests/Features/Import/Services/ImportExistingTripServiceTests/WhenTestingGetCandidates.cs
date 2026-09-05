@@ -33,6 +33,25 @@ public class WhenTestingGetCandidates
     }
 
     [Fact]
+    public async Task ItShouldOfferAnExistingTripOnTheSameDateWhenItsTimesDoNotOverlap()
+    {
+        // Arrange
+        var trip = Summary(StartedOn.AddHours(-6), StartedOn.AddHours(-4));
+        var client = Substitute.For<ITripClient>();
+        client.GetMyAsync(Arg.Any<CancellationToken>()).Returns([trip]);
+        var proposal = Proposal();
+        var sut = new ImportExistingTripService(client);
+
+        // Act
+        var candidates = await sut.GetCandidatesAsync([proposal], CancellationToken.None);
+
+        // Assert
+        candidates[proposal.Id].Should().ContainSingle().Which.Should().Be(trip);
+        await client.Received(1).GetMyAsync(Arg.Any<CancellationToken>());
+        await client.DidNotReceive().GetDetailAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldFetchOnlyTemporallyCompatibleDetailsAndExcludeAnIncompatibleLocation()
     {
         // Arrange
