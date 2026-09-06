@@ -149,11 +149,11 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             .Returns(Task.FromException<TripDto?>(new HttpRequestException("failed")));
 
         // Act
-        var action = () => sut.PersistAsync(batch, CancellationToken.None);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert
-        await action.Should().ThrowAsync<ImportPersistenceException>()
-            .Where(exception => exception.Failure == ImportPersistenceFailureEnum.Trip);
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(ImportPersistenceFailureEnum.Trip);
         await CatchClient.DidNotReceive().UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>());
         await CatchClient.DidNotReceive().CreatePhotographUploadAsync(
             Arg.Any<Guid>(),
@@ -174,10 +174,10 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             .Returns((TripParticipantsDto?)null);
 
         // Act
-        var action = () => sut.PersistAsync(batch, CancellationToken.None);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        result.IsSuccess.Should().BeFalse();
         await CatchClient.DidNotReceive().UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>());
     }
 
@@ -195,11 +195,11 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             .Returns(Task.FromException(new HttpRequestException("upload failed")));
 
         // Act
-        var action = () => sut.PersistAsync(batch, CancellationToken.None);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert
-        await action.Should().ThrowAsync<ImportPersistenceException>()
-            .Where(exception => exception.Failure == ImportPersistenceFailureEnum.Photograph);
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(ImportPersistenceFailureEnum.Photograph);
         await CatchClient.DidNotReceive().RecordPhotographAsync(
             Arg.Any<Guid>(),
             Arg.Any<RecordPhotographDto>(),
@@ -234,11 +234,11 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             new TripDetailDto(new TripViewDto(TripId, UserId, "Completed", CaughtOn.AddHours(1))));
 
         // Act
-        var action = () => sut.PersistAsync(batch, CancellationToken.None);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*conflicts*");
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(ImportPersistenceFailureEnum.Verification);
         await TripClient.DidNotReceive().UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>());
         await CatchClient.DidNotReceive().UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>());
     }
@@ -275,11 +275,11 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             MatchingCatch(includePhotograph: false) with { SpeciesName = "Pike" });
 
         // Act
-        var action = () => sut.PersistAsync(batch, CancellationToken.None);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*conflicts*");
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(ImportPersistenceFailureEnum.Verification);
         await CatchClient.DidNotReceive().UpsertAsync(Arg.Any<CatchDto>(), Arg.Any<CancellationToken>());
         await CatchClient.DidNotReceive().CreatePhotographUploadAsync(
             Arg.Any<Guid>(), Arg.Any<PhotographUploadRequestDto>(), Arg.Any<CancellationToken>());
@@ -298,11 +298,11 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             });
 
         // Act
-        var action = () => sut.PersistAsync(batch, CancellationToken.None);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert
-        await action.Should().ThrowAsync<ImportPersistenceException>()
-            .Where(exception => exception.Failure == ImportPersistenceFailureEnum.Verification);
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(ImportPersistenceFailureEnum.Verification);
         await CatchClient.DidNotReceive().CreatePhotographUploadAsync(
             Arg.Any<Guid>(), Arg.Any<PhotographUploadRequestDto>(), Arg.Any<CancellationToken>());
     }
@@ -336,11 +336,11 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
         CatchClient.GetAsync(CatchId, Arg.Any<CancellationToken>()).Returns((CatchViewDto?)null);
 
         // Act
-        var action = () => sut.PersistAsync(batch, CancellationToken.None);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*could not be verified*");
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(ImportPersistenceFailureEnum.Verification);
         await CatchClient.DidNotReceive().CreatePhotographUploadAsync(
             Arg.Any<Guid>(), Arg.Any<PhotographUploadRequestDto>(), Arg.Any<CancellationToken>());
     }
@@ -379,9 +379,9 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             });
 
         // Act
-        var firstAttempt = () => sut.PersistAsync(batch, CancellationToken.None);
-        await firstAttempt.Should().ThrowAsync<ImportPersistenceException>()
-            .Where(exception => exception.Failure == ImportPersistenceFailureEnum.Photograph);
+        var firstAttempt = await sut.PersistAsync(batch, CancellationToken.None);
+        firstAttempt.IsSuccess.Should().BeFalse();
+        firstAttempt.Failure.Should().Be(ImportPersistenceFailureEnum.Photograph);
         var result = await sut.PersistAsync(batch, CancellationToken.None);
 
         // Assert

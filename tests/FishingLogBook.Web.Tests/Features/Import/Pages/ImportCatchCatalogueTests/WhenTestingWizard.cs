@@ -408,9 +408,8 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
                 Arg.Any<CancellationToken>(),
                 Arg.Any<IProgress<ImportPersistenceProgressModel>>())
             .Returns(
-                _ => throw new ImportPersistenceException(
+                _ => ImportPersistenceResultModel.Failed(
                     ImportPersistenceFailureEnum.Photograph,
-                    "upload failed",
                     new HttpRequestException("private endpoint detail")),
                 _ => new ImportPersistenceResultModel([], [Guid.NewGuid()], 1, 0));
         await using var context = CreateContext(
@@ -432,7 +431,7 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         await logging.Received(1).LogErrorAsync(
             "persisting a historical Import",
             Arg.Is<string>(message =>
-                message.Contains(nameof(ImportPersistenceException), StringComparison.Ordinal)
+                message.Contains(nameof(HttpRequestException), StringComparison.Ordinal)
                 && !message.Contains("private endpoint detail", StringComparison.Ordinal)),
             CancellationToken.None);
 

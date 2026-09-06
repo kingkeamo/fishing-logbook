@@ -34,6 +34,27 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         CancellationToken cancellationToken,
         IProgress<ImportPersistenceProgressModel>? progress = null)
     {
+        var context = new PersistenceContext();
+        try
+        {
+            return await PersistCoreAsync(batch, cancellationToken, progress, context);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            return ImportPersistenceResultModel.Failed(context.Failure, exception);
+        }
+    }
+
+    private async Task<ImportPersistenceResultModel> PersistCoreAsync(
+        ImportBatchModel batch,
+        CancellationToken cancellationToken,
+        IProgress<ImportPersistenceProgressModel>? progress,
+        PersistenceContext context)
+    {
         Validate(batch);
         var currentUser = await _currentUserClient.GetCurrentAsync(cancellationToken);
         var tripIds = new List<Guid>();
@@ -56,7 +77,7 @@ public sealed class ImportPersistenceService : IImportPersistenceService
                 ++tripNumber,
                 tripProposals.Length));
             var tripId = proposal.Decision == ImportTripDecisionEnum.CreateNew
-                ? await CreateTripAsync(batch, proposal, currentUser.UserId, cancellationToken)
+                ? await CreateTripAsync(batch, proposal, currentUser.UserId, cancellationToken, context)
                 : proposal.ExistingTripId;
             if (tripId.HasValue)
             {
@@ -76,8 +97,9 @@ public sealed class ImportPersistenceService : IImportPersistenceService
                 participantCount += await PersistParticipantsAsync(
                     proposal,
                     currentUser.UserId,
-                    cancellationToken);
-                await RequireTripAsync(batch, proposal, currentUser.UserId, cancellationToken);
+                    cancellationToken,
+                    context);
+                await RequireTripAsync(batch, proposal, currentUser.UserId, cancellationToken, context);
             }
         }
 
@@ -97,7 +119,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
                 cancellationToken,
                 progress,
                 photographTotal,
-                () => ++photographNumber);
+                () => ++photographNumber,
+                context);
             catchIds.Add(persisted.Id);
             photographCount += persisted.Photographs.Count;
         }
@@ -118,7 +141,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         ImportBatchModel batch,
         ImportTripProposalModel proposal,
         Guid ownerUserId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        PersistenceContext context)
     {
         var trip = new TripDto(
             proposal.Id,
@@ -134,7 +158,7 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         var existing = await ExecuteAsync(
             () => _tripClient.GetDetailAsync(proposal.Id, cancellationToken),
             ImportPersistenceFailureEnum.Verification,
-            "The authoritative Trip could not be reconciled.");
+            "The authoritative Trip could not be reconciled.", context);
         if (existing?.Trip is not null)
         {
             EnsureExpectedTrip(existing.Trip, trip);
@@ -144,15 +168,12 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         var persisted = await ExecuteAsync(
                 () => _tripClient.UpsertAsync(trip, cancellationToken),
                 ImportPersistenceFailureEnum.Trip,
-                "The Trip could not be saved.")
-            ?? throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Trip,
-                "The authoritative Trip create response was missing.");
+                "The Trip could not be saved.", context)
+            ?? throw new InvalidOperationException("The authoritative Trip create response was missing.");
         if (persisted.Id != proposal.Id)
         {
-            throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Verification,
-                "The authoritative Trip identity did not match the Import proposal.");
+            context.Failure = ImportPersistenceFailureEnum.Verification;
+            throw new InvalidOperationException("The authoritative Trip identity did not match the Import proposal.");
         }
 
         return persisted.Id;
@@ -161,15 +182,14 @@ public sealed class ImportPersistenceService : IImportPersistenceService
     private async Task<int> PersistParticipantsAsync(
         ImportTripProposalModel proposal,
         Guid ownerUserId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        PersistenceContext context)
     {
         var current = await ExecuteAsync(
                 () => _participantClient.GetAsync(proposal.Id, cancellationToken),
                 ImportPersistenceFailureEnum.Verification,
-                "The new Trip participants could not be read.")
-            ?? throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Verification,
-                "The new Trip participants could not be read.");
+                "The new Trip participants could not be read.", context)
+            ?? throw new InvalidOperationException("The new Trip participants could not be read.");
         var existing = current.Participants.Select(participant => participant.UserId).ToHashSet();
         existing.Add(ownerUserId);
         var added = 0;
@@ -186,7 +206,7 @@ public sealed class ImportPersistenceService : IImportPersistenceService
                     new InviteTripParticipantDto(participant.UserId),
                     cancellationToken),
                 ImportPersistenceFailureEnum.Trip,
-                "A Trip participant could not be added.");
+                "A Trip participant could not be added.", context);
             if (response is null)
             {
                 throw new InvalidOperationException("A selected Trip participant could not be invited.");
@@ -199,10 +219,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         var verified = await ExecuteAsync(
                 () => _participantClient.GetAsync(proposal.Id, cancellationToken),
                 ImportPersistenceFailureEnum.Verification,
-                "The new Trip participants could not be verified.")
-            ?? throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Verification,
-                "The new Trip participants could not be verified.");
+                "The new Trip participants could not be verified.", context)
+            ?? throw new InvalidOperationException("The new Trip participants could not be verified.");
         if (proposal.Participants.Any(participant =>
                 participant.UserId != ownerUserId
                 && verified.Participants.All(actual => actual.UserId != participant.UserId)))
@@ -221,7 +239,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         CancellationToken cancellationToken,
         IProgress<ImportPersistenceProgressModel>? progress,
         int photographTotal,
-        Func<int> nextPhotographNumber)
+        Func<int> nextPhotographNumber,
+        PersistenceContext context)
     {
         var caughtOn = ToInstant(proposal.CaughtOn);
         var location = ToLocation(proposal.Location, caughtOn);
@@ -242,28 +261,25 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         var current = await ExecuteAsync(
             () => _catchClient.GetAsync(proposal.Id, cancellationToken),
             ImportPersistenceFailureEnum.Verification,
-            "The authoritative Catch could not be reconciled.");
+            "The authoritative Catch could not be reconciled.", context);
         if (current is null)
         {
             var persisted = await ExecuteAsync(
                     () => _catchClient.UpsertAsync(request, cancellationToken),
                     ImportPersistenceFailureEnum.Catch,
-                    "The Catch could not be saved.")
-                ?? throw new ImportPersistenceException(
-                    ImportPersistenceFailureEnum.Catch,
-                    "The authoritative Catch create response was missing.");
+                    "The Catch could not be saved.", context)
+                ?? throw new InvalidOperationException("The authoritative Catch create response was missing.");
             if (persisted.Id != proposal.Id || persisted.TripId != tripId)
             {
                 throw new InvalidOperationException("The authoritative Catch identity or Trip relationship is incorrect.");
             }
 
-            current = await RequireCatchAsync(proposal.Id, cancellationToken);
+            current = await RequireCatchAsync(proposal.Id, cancellationToken, context);
         }
         else if (!HasExpectedCatch(current, request))
         {
-            throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Verification,
-                "An authoritative Catch conflicts with the Import proposal.");
+            context.Failure = ImportPersistenceFailureEnum.Verification;
+            throw new InvalidOperationException("An authoritative Catch conflicts with the Import proposal.");
         }
 
         foreach (var photoId in proposal.PhotoIds)
@@ -281,9 +297,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
                         expectedContentType,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new ImportPersistenceException(
-                        ImportPersistenceFailureEnum.Verification,
-                        "An authoritative photograph conflicts with the Import proposal.");
+                    context.Failure = ImportPersistenceFailureEnum.Verification;
+                    throw new InvalidOperationException("An authoritative photograph conflicts with the Import proposal.");
                 }
 
                 continue;
@@ -298,27 +313,27 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             var bytes = await ExecuteAsync(
                 () => _blobRegistry.GetBytesAsync(photo.BlobToken, cancellationToken),
                 ImportPersistenceFailureEnum.Photograph,
-                "The prepared photograph could not be read.");
+                "The prepared photograph could not be read.", context);
             var upload = await ExecuteAsync(
                 () => _catchClient.CreatePhotographUploadAsync(
                     proposal.Id,
                     new PhotographUploadRequestDto(photo.Id, photo.ContentType),
                     cancellationToken),
                 ImportPersistenceFailureEnum.Photograph,
-                "The photograph upload could not be prepared.");
+                "The photograph upload could not be prepared.", context);
             await ExecuteAsync(
                 () => _catchClient.UploadPhotographAsync(
                     upload.UploadUrl, bytes, photo.ContentType, cancellationToken),
                 ImportPersistenceFailureEnum.Photograph,
-                "The photograph could not be uploaded.");
+                "The photograph could not be uploaded.", context);
             await ExecuteAsync(
                 () => _catchClient.RecordPhotographAsync(
                     proposal.Id,
                     new RecordPhotographDto(photo.Id, upload.ObjectKey, photo.ContentType),
                     cancellationToken),
                 ImportPersistenceFailureEnum.Photograph,
-                "The uploaded photograph could not be registered.");
-            current = await RequireCatchAsync(proposal.Id, cancellationToken);
+                "The uploaded photograph could not be registered.", context);
+            current = await RequireCatchAsync(proposal.Id, cancellationToken, context);
         }
 
         if (!HasExpectedCatch(current, request)
@@ -341,9 +356,7 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             || !string.Equals(current.PlaceName, expected.PlaceName, StringComparison.Ordinal)
             || current.Location != expected.Location)
         {
-            throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Verification,
-                "An authoritative Trip conflicts with the Import proposal.");
+            throw new InvalidOperationException("An authoritative Trip conflicts with the Import proposal.");
         }
     }
 
@@ -379,12 +392,13 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         ImportBatchModel batch,
         ImportTripProposalModel expected,
         Guid ownerUserId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        PersistenceContext context)
     {
         var detail = await ExecuteAsync(
             () => _tripClient.GetDetailAsync(expected.Id, cancellationToken),
             ImportPersistenceFailureEnum.Verification,
-            "The authoritative Trip could not be verified.");
+            "The authoritative Trip could not be verified.", context);
         var trip = detail?.Trip;
         if (trip is null
             || trip.Id != expected.Id
@@ -393,9 +407,7 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             || trip.StartedOn != TripStartedOn(batch, expected)
             || trip.EndedOn != TripEndedOn(batch, expected))
         {
-            throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Verification,
-                "The authoritative Trip could not be verified.");
+            throw new InvalidOperationException("The authoritative Trip could not be verified.");
         }
     }
 
@@ -437,15 +449,16 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             .Max(candidate => ToInstant(candidate.CaughtOn));
     }
 
-    private async Task<CatchViewDto> RequireCatchAsync(Guid catchId, CancellationToken cancellationToken)
+    private async Task<CatchViewDto> RequireCatchAsync(
+        Guid catchId,
+        CancellationToken cancellationToken,
+        PersistenceContext context)
     {
         return await ExecuteAsync(
                 () => _catchClient.GetAsync(catchId, cancellationToken),
                 ImportPersistenceFailureEnum.Verification,
-                "The authoritative Catch could not be verified.")
-            ?? throw new ImportPersistenceException(
-                ImportPersistenceFailureEnum.Verification,
-                "The authoritative Catch could not be verified.");
+                "The authoritative Catch could not be verified.", context)
+            ?? throw new InvalidOperationException("The authoritative Catch could not be verified.");
     }
 
     private static CatchLocationDto? ToLocation(ImportLocationModel? location, DateTimeOffset caughtOn)
@@ -484,30 +497,18 @@ public sealed class ImportPersistenceService : IImportPersistenceService
     private static async Task<T> ExecuteAsync<T>(
         Func<Task<T>> action,
         ImportPersistenceFailureEnum failure,
-        string message)
+        string message,
+        PersistenceContext context)
     {
-        try
-        {
-            return await action();
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (ImportPersistenceException)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            throw new ImportPersistenceException(failure, message, exception);
-        }
+        context.Failure = failure;
+        return await action();
     }
 
     private static async Task ExecuteAsync(
         Func<Task> action,
         ImportPersistenceFailureEnum failure,
-        string message)
+        string message,
+        PersistenceContext context)
     {
         await ExecuteAsync(
             async () =>
@@ -516,6 +517,12 @@ public sealed class ImportPersistenceService : IImportPersistenceService
                 return true;
             },
             failure,
-            message);
+            message,
+            context);
+    }
+
+    private sealed class PersistenceContext
+    {
+        public ImportPersistenceFailureEnum Failure { get; set; } = ImportPersistenceFailureEnum.Verification;
     }
 }

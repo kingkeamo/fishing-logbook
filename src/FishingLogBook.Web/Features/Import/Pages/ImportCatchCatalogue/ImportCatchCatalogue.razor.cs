@@ -351,17 +351,23 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
                 _batch,
                 persistenceCancellationTokenSource.Token,
                 new Progress<ImportPersistenceProgressModel>(OnPersistenceProgress));
+            if (!_persistenceResult.IsSuccess)
+            {
+                _persistenceError = PersistenceFailureLabel(_persistenceResult.Failure!.Value);
+                if (_persistenceResult.FailureException is not null)
+                {
+                    await LogPersistenceFailureAsync(_persistenceResult.FailureException);
+                }
+
+                return;
+            }
+
             _isPersisted = true;
             await Preparation.ClearAsync(CancellationToken.None);
         }
         catch (OperationCanceledException) when (persistenceCancellationTokenSource.IsCancellationRequested)
         {
             _persistenceError = null;
-        }
-        catch (ImportPersistenceException exception)
-        {
-            _persistenceError = PersistenceFailureLabel(exception.Failure);
-            await LogPersistenceFailureAsync(exception);
         }
         catch (Exception exception)
         {
