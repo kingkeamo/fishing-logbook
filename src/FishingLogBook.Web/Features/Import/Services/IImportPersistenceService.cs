@@ -6,5 +6,6 @@ public interface IImportPersistenceService
 {
     Task<ImportPersistenceResultModel> PersistAsync(
         ImportBatchModel batch,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        IProgress<ImportPersistenceProgressModel>? progress = null);
 }

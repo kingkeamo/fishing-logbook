@@ -58,8 +58,8 @@ public class WhenTestingBatch : BaseImportModelTest
     {
         // Arrange
         var batch = Batch();
-        batch.AddPhoto(Photo());
-        batch.AddPhoto(Photo(SecondPhotoId, 1));
+        batch.AddPhoto(ReadyPersistencePhoto());
+        batch.AddPhoto(ReadyPersistencePhoto(SecondPhotoId, 1));
         batch.AddCatchProposal(Catch());
         var replacement = Catch(SecondCatchId, [PhotoId, SecondPhotoId]);
 
@@ -76,7 +76,7 @@ public class WhenTestingBatch : BaseImportModelTest
         // Arrange
         var batch = Batch();
         var current = Catch();
-        batch.AddPhoto(Photo());
+        batch.AddPhoto(ReadyPersistencePhoto());
         batch.AddCatchProposal(current);
         var invalid = Catch(SecondCatchId, [Guid.NewGuid()]);
         Action replace = () => batch.ReplaceCatchProposals([invalid]);
@@ -94,7 +94,7 @@ public class WhenTestingBatch : BaseImportModelTest
     {
         // Arrange
         var batch = Batch();
-        batch.AddPhoto(Photo());
+        batch.AddPhoto(ReadyPersistencePhoto());
         batch.AddCatchProposal(Catch());
         Action addTrip = () => batch.AddTripProposal(Trip());
 
@@ -175,7 +175,7 @@ public class WhenTestingBatch : BaseImportModelTest
         // Arrange
         var batch = Batch();
         var catchProposal = Catch(caughtOn: ImportTimestampModel.Missing());
-        batch.AddPhoto(Photo());
+        batch.AddPhoto(ReadyPersistencePhoto());
         batch.AddCatchProposal(catchProposal);
 
         // Act
@@ -187,6 +187,63 @@ public class WhenTestingBatch : BaseImportModelTest
         catchProposal.SetCaughtOn(ImportTimestampModel.UserConfirmed(CapturedOn));
         catchProposal.MarkReviewed();
         batch.IsReadyForConfirmation.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ItShouldRejectAnUnassignedActivePhotoAtThePersistenceBoundary()
+    {
+        // Arrange
+        var batch = Batch();
+        var catchProposal = Catch();
+        catchProposal.MarkReviewed();
+        batch.AddPhoto(ReadyPersistencePhoto());
+        batch.AddPhoto(ReadyPersistencePhoto(SecondPhotoId, 1));
+        batch.AddCatchProposal(catchProposal);
+        Action validate = () => batch.ValidateForPersistence(CapturedOn.AddDays(1));
+
+        // Act
+        var assertion = validate.Should();
+
+        // Assert
+        assertion.Throw<InvalidOperationException>()
+            .WithMessage("*exactly one active Catch*");
+    }
+
+    [Fact]
+    public void ItShouldRejectAFutureCatchAtThePersistenceBoundary()
+    {
+        // Arrange
+        var now = CapturedOn;
+        var batch = Batch();
+        var catchProposal = Catch(caughtOn: ImportTimestampModel.UserConfirmed(now.AddTicks(1)));
+        catchProposal.MarkReviewed();
+        batch.AddPhoto(ReadyPersistencePhoto());
+        batch.AddCatchProposal(catchProposal);
+        Action validate = () => batch.ValidateForPersistence(now);
+
+        // Act
+        var assertion = validate.Should();
+
+        // Assert
+        assertion.Throw<InvalidOperationException>()
+            .WithMessage("*valid historical timestamp*");
+    }
+
+    [Fact]
+    public void ItShouldAcceptACompleteBatchAtThePersistenceBoundary()
+    {
+        // Arrange
+        var batch = Batch();
+        var catchProposal = Catch();
+        catchProposal.MarkReviewed();
+        batch.AddPhoto(ReadyPersistencePhoto());
+        batch.AddCatchProposal(catchProposal);
+
+        // Act
+        var action = () => batch.ValidateForPersistence(CapturedOn.AddTicks(1));
+
+        // Assert
+        action.Should().NotThrow();
     }
 
     [Fact]
@@ -395,5 +452,15 @@ public class WhenTestingBatch : BaseImportModelTest
         batch.IsCancelled.Should().BeTrue();
         batch.IsProcessingPhotos.Should().BeFalse();
         batch.CanProcessPhotos.Should().BeFalse();
+    }
+
+    private static ImportSelectedPhotoModel ReadyPersistencePhoto(Guid? id = null, int index = 0)
+    {
+        var photo = Photo(id ?? PhotoId, index);
+        photo.SetPreparation(
+            ImportPhotoPreparationStatusEnum.Ready,
+            $"token-{index}",
+            $"blob:thumbnail-{index}");
+        return photo;
     }
 }

@@ -267,16 +267,29 @@
                     }
                     <MudStack Row="true" Justify="Justify.SpaceBetween">
                         <MudButton Variant="Variant.Text" Disabled="_isPersisting" OnClick="BackToCatchReview" id="import-confirm-back">@Loc["Common_Back"]</MudButton>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isPersisting"
-                                   OnClick="PersistAsync" id="import-confirm">
+                        <MudStack Row="true" Spacing="1">
                             @if (_isPersisting)
                             {
-                                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2"
-                                                     id="import-confirm-spinner" />
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="CancelPersistence"
+                                           id="import-cancel-persistence">@Loc["Common_Cancel"]</MudButton>
                             }
-                            @Loc[_isPersisting ? "Import_Importing" : "Import_ConfirmImport"]
-                        </MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isPersisting"
+                                       OnClick="PersistAsync" id="import-confirm">
+                                @if (_isPersisting)
+                                {
+                                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2"
+                                                         id="import-confirm-spinner" />
+                                }
+                                @Loc[_isPersisting ? "Import_Importing" : "Import_ConfirmImport"]
+                            </MudButton>
+                        </MudStack>
                     </MudStack>
+                    @if (_isPersisting)
+                    {
+                        <MudText id="import-persistence-progress" Typo="Typo.body2">
+                            @PersistenceProgressLabel()
+                        </MudText>
+                    }
                 }
             }
         }

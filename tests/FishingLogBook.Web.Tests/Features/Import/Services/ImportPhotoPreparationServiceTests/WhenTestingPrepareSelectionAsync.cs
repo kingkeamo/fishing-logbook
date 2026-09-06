@@ -13,6 +13,33 @@ namespace FishingLogBook.Web.Tests.Features.Import.Services.ImportPhotoPreparati
 public class WhenTestingPrepareSelectionAsync : BaseImportPhotoPreparationServiceTest
 {
     [Fact]
+    public async Task ItShouldPrepareTheFullTwentyPhotoBatchSequentially()
+    {
+        // Arrange
+        var context = CreateContext();
+        var registry = new ConcurrencyTrackingBlobRegistry();
+        var sut = new ImportPhotoPreparationService(context.Metadata, registry, context.Logging);
+        var files = Enumerable.Range(0, ImportPhotoPreparationService.MaxPhotographs)
+            .Select(index => File([(byte)index], name: $"photo-{index}.jpg"))
+            .ToArray();
+
+        // Act
+        var result = await sut.PrepareSelectionAsync(files, CancellationToken.None);
+
+        // Assert
+        result.Should().HaveCount(20);
+        result.Should().OnlyContain(photo => photo.IsReady && photo.BlobToken != null);
+        result.Select(photo => photo.SelectionIndex).Should().Equal(Enumerable.Range(0, 20));
+        registry.RegistrationCount.Should().Be(20);
+        registry.MaximumConcurrency.Should().Be(1);
+        context.Metadata.Received(20).ReadHistorical(
+            Arg.Any<byte[]>(),
+            PhotographContentTypeConstants.Jpeg,
+            Arg.Any<DateTimeOffset?>(),
+            Arg.Any<DateTimeOffset>());
+    }
+
+    [Fact]
     public async Task ItShouldRejectMoreThanTheConfiguredMaximum()
     {
         // Arrange
@@ -248,6 +275,45 @@ public class WhenTestingPrepareSelectionAsync : BaseImportPhotoPreparationServic
         {
             ClearCount++;
             _entries.Clear();
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class ConcurrencyTrackingBlobRegistry : IImportPhotoBlobRegistryService
+    {
+        private int _activeRegistrations;
+
+        public int RegistrationCount { get; private set; }
+
+        public int MaximumConcurrency { get; private set; }
+
+        public async Task<ImportPhotoBlobRegistrationModel> RegisterAsync(
+            byte[] bytes,
+            string contentType,
+            CancellationToken cancellationToken)
+        {
+            var active = Interlocked.Increment(ref _activeRegistrations);
+            MaximumConcurrency = Math.Max(MaximumConcurrency, active);
+            await Task.Yield();
+            RegistrationCount++;
+            Interlocked.Decrement(ref _activeRegistrations);
+            return new ImportPhotoBlobRegistrationModel(
+                $"token-{RegistrationCount}",
+                $"blob:thumbnail-{RegistrationCount}");
+        }
+
+        public Task<byte[]> GetBytesAsync(string token, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Array.Empty<byte>());
+        }
+
+        public Task RemoveAsync(string token, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ClearAsync(CancellationToken cancellationToken)
+        {
             return Task.CompletedTask;
         }
     }

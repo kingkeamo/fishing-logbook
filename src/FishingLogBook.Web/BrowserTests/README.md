@@ -12,6 +12,7 @@ excluded from publish.
 - Catch IndexedDB write/read
 - Close/reload/read of Catch records
 - Photograph persistence
+- Import Blob registration and cleanup for the full 20-photo V1 batch
 - Diagnostic database isolation from the Catch database
 - A simplified service-worker application shell (Chromium also checks offline navigation)
 
@@ -30,6 +31,9 @@ Home Screen PWA, or iOS IndexedDB.
   A deterministic authenticated Playwright host needs architecture beyond a product
   feature ticket and must not contaminate production Web auth. Profile confidence
   comes from bUnit, API, Testcontainers, and ProfileClient tests.
+- The authenticated Import wizard from photo selection through authoritative Catch/Trip
+  reread. The current harness serves JavaScript/PWA fixtures and cannot authenticate or
+  host the production Blazor workflow without test-only authentication architecture.
 
 ## Commands
 

@@ -48,12 +48,80 @@ public sealed class ImportBatchModel
     {
         get
         {
-            var activeCatches = _catchProposals.Where(proposal => !proposal.IsRemoved).ToArray();
-            return CanProcessPhotos
-                && activeCatches.Length > 0
-                && activeCatches.All(proposal => proposal.IsReadyForConfirmation)
-                && _tripProposals.All(proposal => proposal.IsDecisionComplete);
+            return PersistenceValidationError(DateTimeOffset.UtcNow) is null;
         }
+    }
+
+    public void ValidateForPersistence(DateTimeOffset now)
+    {
+        var error = PersistenceValidationError(now);
+        if (error is not null)
+        {
+            throw new InvalidOperationException(error);
+        }
+    }
+
+    private string? PersistenceValidationError(DateTimeOffset now)
+    {
+        if (!CanProcessPhotos)
+        {
+            return "The Import batch requires valid catalogue selections.";
+        }
+
+        var activePhotos = _photos.Where(photo => !photo.IsRemoved).ToArray();
+        var activeCatches = _catchProposals.Where(proposal => !proposal.IsRemoved).ToArray();
+        return ActiveRecordsValidationError(activePhotos, activeCatches)
+            ?? TripValidationError(activeCatches, now);
+    }
+
+    private static string? ActiveRecordsValidationError(
+        ImportSelectedPhotoModel[] activePhotos,
+        ImportCatchProposalModel[] activeCatches)
+    {
+        if (activePhotos.Length == 0 || activeCatches.Length == 0 || activePhotos.Any(photo => !photo.IsReady))
+        {
+            return "The Import batch requires active photographs and Catches.";
+        }
+
+        if (activePhotos.Select(photo => photo.Id).Distinct().Count() != activePhotos.Length
+            || activeCatches.Select(proposal => proposal.Id).Distinct().Count() != activeCatches.Length)
+        {
+            return "Active Import identities must be unique.";
+        }
+
+        var memberships = activeCatches.SelectMany(proposal => proposal.PhotoIds).ToArray();
+        var activePhotoIds = activePhotos.Select(photo => photo.Id).ToHashSet();
+        return memberships.Length != activePhotos.Length
+            || memberships.Distinct().Count() != memberships.Length
+            || memberships.Any(photoId => !activePhotoIds.Contains(photoId))
+                ? "Every active photograph must belong to exactly one active Catch."
+                : null;
+    }
+
+    private string? TripValidationError(ImportCatchProposalModel[] activeCatches, DateTimeOffset now)
+    {
+        if (activeCatches.Any(proposal => !proposal.IsReadyForConfirmation
+                || !proposal.CaughtOn.Instant.HasValue
+                || proposal.CaughtOn.Instant.Value > now))
+        {
+            return "Every active Catch must be reviewed with a valid historical timestamp.";
+        }
+
+        var activeTrips = _tripProposals.Where(proposal => !proposal.IsRemoved).ToArray();
+        if (activeTrips.Any(proposal => !proposal.IsDecisionComplete
+                || proposal.CatchProposalIds.Any(catchId => activeCatches.All(candidate => candidate.Id != catchId))
+                || proposal.Participants.Select(participant => participant.UserId).Distinct().Count()
+                    != proposal.Participants.Count
+                || (proposal.Decision == ImportTripDecisionEnum.UseExisting
+                    && (!proposal.ExistingTripId.HasValue || proposal.ExistingTripId == Guid.Empty))))
+        {
+            return "Every active Trip proposal requires a valid final decision.";
+        }
+
+        var tripMemberships = activeTrips.SelectMany(proposal => proposal.CatchProposalIds).ToArray();
+        return tripMemberships.Distinct().Count() != tripMemberships.Length
+            ? "An active Catch may belong to at most one Trip decision."
+            : null;
     }
 
     public bool CanAdvanceToTrips

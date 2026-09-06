@@ -31,16 +31,19 @@ test.describe('Import photo blob registry', () => {
         expect(result.missingAfterRemoval).toBe(true);
     });
 
-    test('keeps sequential registrations distinct and clears all entries', async ({ page }) => {
+    test('keeps a full twenty-photo batch distinct and clears every entry', async ({ page }) => {
         await page.goto(harness);
         await expect(page.locator('#status')).toHaveText('ready');
 
         const result = await page.evaluate(async () => {
-            const first = await window.importPhotoHarness.registerTestImage(true);
-            const second = await window.importPhotoHarness.registerTestImage(false);
+            const registrations = [];
+            for (let index = 0; index < 20; index += 1) {
+                registrations.push(await window.importPhotoHarness.registerTestImage(index % 2 === 0));
+            }
+
             window.importPhotoHarness.clear();
             const missing = [];
-            for (const registration of [first, second]) {
+            for (const registration of registrations) {
                 try {
                     await window.importPhotoHarness.readLength(registration.token);
                     missing.push(false);
@@ -49,11 +52,11 @@ test.describe('Import photo blob registry', () => {
                 }
             }
 
-            return { first, second, missing };
+            return { registrations, missing };
         });
 
-        expect(result.first.token).not.toBe(result.second.token);
-        expect(result.first.thumbnailUrl).not.toBe(result.second.thumbnailUrl);
-        expect(result.missing).toEqual([true, true]);
+        expect(new Set(result.registrations.map(registration => registration.token)).size).toBe(20);
+        expect(new Set(result.registrations.map(registration => registration.thumbnailUrl)).size).toBe(20);
+        expect(result.missing).toEqual(Array(20).fill(true));
     });
 });
