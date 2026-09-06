@@ -44,6 +44,17 @@ public sealed class ImportBatchModel
 
     public bool CanProcessPhotos => FishingMethod.IsValid && Species.IsValid && !IsCancelled;
 
+    public bool HasUnresolvedExactDuplicates
+    {
+        get
+        {
+            var activePhotoIds = _photos.Where(photo => !photo.IsRemoved).Select(photo => photo.Id).ToHashSet();
+            return _photos.Any(photo => !photo.IsRemoved
+                && photo.RequiresDuplicateDecision
+                && photo.DuplicatePhotoIds.Any(activePhotoIds.Contains));
+        }
+    }
+
     public bool IsReadyForConfirmation
     {
         get
@@ -74,13 +85,18 @@ public sealed class ImportBatchModel
             ?? TripValidationError(activeCatches, now);
     }
 
-    private static string? ActiveRecordsValidationError(
+    private string? ActiveRecordsValidationError(
         ImportSelectedPhotoModel[] activePhotos,
         ImportCatchProposalModel[] activeCatches)
     {
         if (activePhotos.Length == 0 || activeCatches.Length == 0 || activePhotos.Any(photo => !photo.IsReady))
         {
             return "The Import batch requires active photographs and Catches.";
+        }
+
+        if (HasUnresolvedExactDuplicates)
+        {
+            return "Every exact duplicate photograph requires an explicit Import decision.";
         }
 
         if (activePhotos.Select(photo => photo.Id).Distinct().Count() != activePhotos.Length
@@ -292,6 +308,11 @@ public sealed class ImportBatchModel
 
         RemoveInactiveCatchMemberships();
         _tripProposals.Clear();
+    }
+
+    public void KeepDuplicatePhoto(Guid photoId)
+    {
+        _photos.Single(photo => photo.Id == photoId && !photo.IsRemoved).KeepDuplicate();
     }
 
     public void RemoveCatchProposal(Guid catchProposalId)

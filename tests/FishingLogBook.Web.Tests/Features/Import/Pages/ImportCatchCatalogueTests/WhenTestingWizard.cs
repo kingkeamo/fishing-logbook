@@ -683,6 +683,101 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
     }
 
     [Fact]
+    public async Task ItShouldRequireAnExplicitDecisionForAnExactDuplicateAndKeepBothInSession()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        await using var context = CreateContext(proposal, preparation);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        var first = ReadyPhoto(0);
+        var duplicate = ReadyPhoto(1);
+        duplicate.SetDuplicateState(
+            ImportDuplicateStatusEnum.Duplicate,
+            ImportDuplicateReasonEnum.IdenticalPreparedBytes,
+            [first.Id]);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([first, duplicate]));
+
+        // Act
+        cut.Find("#import-photos-continue").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("#import-keep-duplicate-1").Click();
+        cut.Find("#import-photos-continue").Click();
+        cut.Find("#import-review-back").Click();
+
+        // Assert
+        cut.FindAll("#import-exact-duplicate-1").Should().BeEmpty();
+        cut.Find("#import-photos-continue").HasAttribute("disabled").Should().BeFalse();
+        duplicate.DuplicateDecision.Should().Be(ImportDuplicateDecisionEnum.KeepBoth);
+        await preparation.DidNotReceive().RemoveAsync(Arg.Any<ImportSelectedPhotoModel>(), Arg.Any<CancellationToken>());
+        proposal.Received(1).Propose(Arg.Is<ImportBatchModel>(batch =>
+            batch.Photos.Count(photo => !photo.IsRemoved) == 2));
+    }
+
+    [Fact]
+    public async Task ItShouldRemoveAnExactDuplicateThroughTheNormalPhotoLifecycle()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        await using var context = CreateContext(proposal, preparation);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        var first = ReadyPhoto(0);
+        var duplicate = ReadyPhoto(1);
+        duplicate.SetDuplicateState(
+            ImportDuplicateStatusEnum.Duplicate,
+            ImportDuplicateReasonEnum.IdenticalPreparedBytes,
+            [first.Id]);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([first, duplicate]));
+
+        // Act
+        cut.Find("#import-remove-duplicate-1").Click();
+
+        // Assert
+        await preparation.Received(1).RemoveAsync(
+            Arg.Is<ImportSelectedPhotoModel>(photo => photo.Id == duplicate.Id),
+            Arg.Any<CancellationToken>());
+        cut.FindAll("#import-photo-1").Should().BeEmpty();
+        cut.Find("#import-photos-continue").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldShowMetadataDuplicateEvidenceWithoutBlockingReview()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        var preparation = Substitute.For<IImportPhotoPreparationService>();
+        await using var context = CreateContext(proposal, preparation);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        var first = ReadyPhoto(0);
+        var possibleDuplicate = ReadyPhoto(1);
+        possibleDuplicate.SetDuplicateState(
+            ImportDuplicateStatusEnum.Warning,
+            ImportDuplicateReasonEnum.SameCaptureTimeAndSize,
+            [first.Id]);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([first, possibleDuplicate]));
+
+        // Act
+        var warning = cut.Find("#import-possible-duplicate-1").TextContent;
+        cut.Find("#import-photos-continue").Click();
+
+        // Assert
+        warning.Should().Contain("Possible duplicate photo");
+        cut.Find("#import-catch-review").Should().NotBeNull();
+        possibleDuplicate.IsRemoved.Should().BeFalse();
+        await preparation.DidNotReceive().RemoveAsync(Arg.Any<ImportSelectedPhotoModel>(), Arg.Any<CancellationToken>());
+        proposal.Received(1).Propose(Arg.Is<ImportBatchModel>(batch =>
+            batch.Photos.Count(photo => !photo.IsRemoved) == 2));
+    }
+
+    [Fact]
     public async Task ItShouldClearTransientPhotoResourcesWhenDisposed()
     {
         // Arrange

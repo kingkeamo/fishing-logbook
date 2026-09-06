@@ -58,6 +58,15 @@ public sealed class ImportSelectedPhotoModel
 
     public string? Fingerprint { get; private set; }
 
+    public IReadOnlyList<Guid> DuplicatePhotoIds { get; private set; } = [];
+
+    public ImportDuplicateReasonEnum DuplicateReason { get; private set; }
+
+    public ImportDuplicateDecisionEnum DuplicateDecision { get; private set; }
+
+    public bool RequiresDuplicateDecision => DuplicateStatus == ImportDuplicateStatusEnum.Duplicate
+        && DuplicateDecision == ImportDuplicateDecisionEnum.Unresolved;
+
     public bool IsRemoved { get; private set; }
 
     public ImportPhotoPreparationStatusEnum PreparationStatus { get; private set; }
@@ -94,10 +103,28 @@ public sealed class ImportSelectedPhotoModel
         MetadataError = error;
     }
 
-    public void SetDuplicateState(ImportDuplicateStatusEnum status, string? fingerprint)
+    public void SetFingerprint(string fingerprint)
+    {
+        Fingerprint = fingerprint;
+    }
+
+    public void SetDuplicateState(
+        ImportDuplicateStatusEnum status,
+        ImportDuplicateReasonEnum reason,
+        IReadOnlyList<Guid> counterpartIds)
     {
         DuplicateStatus = status;
-        Fingerprint = fingerprint;
+        DuplicateReason = reason;
+        DuplicatePhotoIds = counterpartIds;
+        DuplicateDecision = ImportDuplicateDecisionEnum.Unresolved;
+    }
+
+    public void KeepDuplicate()
+    {
+        if (DuplicateStatus == ImportDuplicateStatusEnum.Duplicate)
+        {
+            DuplicateDecision = ImportDuplicateDecisionEnum.KeepBoth;
+        }
     }
 
     public void SetThumbnail(string? thumbnailUrl)

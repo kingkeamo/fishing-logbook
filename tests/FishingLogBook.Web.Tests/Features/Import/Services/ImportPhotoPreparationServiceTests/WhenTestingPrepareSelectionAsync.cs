@@ -13,6 +13,94 @@ namespace FishingLogBook.Web.Tests.Features.Import.Services.ImportPhotoPreparati
 public class WhenTestingPrepareSelectionAsync : BaseImportPhotoPreparationServiceTest
 {
     [Fact]
+    public async Task ItShouldRequireResolutionForIdenticalPreparedBytesRegardlessOfFileName()
+    {
+        // Arrange
+        var context = CreateContext();
+        var files = new[] { File([1, 2, 3], name: "first.jpg"), File([9, 8, 7], name: "copy.jpg") };
+
+        // Act
+        var result = await context.Sut.PrepareSelectionAsync(files, CancellationToken.None);
+
+        // Assert
+        result[0].Fingerprint.Should().Be(result[1].Fingerprint);
+        result[0].Fingerprint.Should().Be(Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(SanitisedBytes)));
+        result[0].RequiresDuplicateDecision.Should().BeFalse();
+        result[1].DuplicateStatus.Should().Be(ImportDuplicateStatusEnum.Duplicate);
+        result[1].DuplicateReason.Should().Be(ImportDuplicateReasonEnum.IdenticalPreparedBytes);
+        result[1].DuplicatePhotoIds.Should().ContainSingle().Which.Should().Be(result[0].Id);
+        result[1].RequiresDuplicateDecision.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ItShouldNotTreatMatchingMetadataOrThumbnailAsAnExactDuplicateWhenPreparedBytesDiffer()
+    {
+        // Arrange
+        var capturedOn = DateTimeOffset.Parse("2025-06-14T09:30:00+01:00");
+        var historical = new PhotographHistoricalMetadataModel(
+            capturedOn, null, PhotographCapturedOnSourceEnum.ExifOriginal, true, false, null, null);
+        var context = CreateContext(historical);
+        context.Metadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
+            .Returns(call => call.ArgAt<byte[]>(0));
+        context.Registry.RegisterAsync(Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => new ImportPhotoBlobRegistrationModel(
+                $"token-{call.ArgAt<byte[]>(0)[0]}",
+                "blob:same-thumbnail"));
+        var files = new[] { File([1, 2, 3], name: "photo.jpg"), File([4, 5, 6], name: "photo.jpg") };
+
+        // Act
+        var result = await context.Sut.PrepareSelectionAsync(files, CancellationToken.None);
+
+        // Assert
+        result.Select(photo => photo.Fingerprint).Distinct().Should().HaveCount(2);
+        result.Select(photo => photo.ThumbnailUrl).Distinct().Should().ContainSingle();
+        result.Should().NotContain(photo => photo.DuplicateStatus == ImportDuplicateStatusEnum.Duplicate);
+        result[1].DuplicateStatus.Should().Be(ImportDuplicateStatusEnum.Warning);
+        result[1].DuplicateReason.Should().Be(ImportDuplicateReasonEnum.SameCaptureTimeAndSize);
+    }
+
+    [Fact]
+    public async Task ItShouldNotWarnForFileNameAlone()
+    {
+        // Arrange
+        var context = CreateContext();
+        context.Metadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
+            .Returns(call => call.ArgAt<byte[]>(0));
+        var files = new[] { File([1], name: "photo.jpg"), File([2, 3], name: "photo.jpg") };
+
+        // Act
+        var result = await context.Sut.PrepareSelectionAsync(files, CancellationToken.None);
+
+        // Assert
+        result.Should().OnlyContain(photo => photo.DuplicateStatus == ImportDuplicateStatusEnum.None);
+        result.Should().OnlyContain(photo => !photo.RequiresDuplicateDecision);
+    }
+
+    [Fact]
+    public async Task ItShouldNeverTreatGpsAloneAsDuplicateEvidence()
+    {
+        // Arrange
+        var context = CreateContext();
+        var metadataIndex = 0;
+        context.Metadata.ReadHistorical(
+                Arg.Any<byte[]>(), Arg.Any<string>(), Arg.Any<DateTimeOffset?>(), Arg.Any<DateTimeOffset>())
+            .Returns(_ => new PhotographHistoricalMetadataModel(
+                FileModifiedOn.AddMinutes(metadataIndex++), null,
+                PhotographCapturedOnSourceEnum.ExifOriginal, true, false, 53.3498, -6.2603));
+        context.Metadata.Sanitise(Arg.Any<byte[]>(), Arg.Any<string>())
+            .Returns(call => call.ArgAt<byte[]>(0));
+
+        // Act
+        var result = await context.Sut.PrepareSelectionAsync(
+            [File([1]), File([2, 3])], CancellationToken.None);
+
+        // Assert
+        result.Should().OnlyContain(photo => photo.DuplicateStatus == ImportDuplicateStatusEnum.None);
+        result.Should().OnlyContain(photo => !photo.RequiresDuplicateDecision);
+    }
+
+    [Fact]
     public async Task ItShouldPrepareTheFullTwentyPhotoBatchSequentially()
     {
         // Arrange
@@ -30,6 +118,7 @@ public class WhenTestingPrepareSelectionAsync : BaseImportPhotoPreparationServic
         result.Should().HaveCount(20);
         result.Should().OnlyContain(photo => photo.IsReady && photo.BlobToken != null);
         result.Select(photo => photo.SelectionIndex).Should().Equal(Enumerable.Range(0, 20));
+        result.Count(photo => photo.RequiresDuplicateDecision).Should().Be(19);
         registry.RegistrationCount.Should().Be(20);
         registry.MaximumConcurrency.Should().Be(1);
         context.Metadata.Received(20).ReadHistorical(

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Import.Enums;
@@ -46,6 +47,8 @@ public sealed class ImportPhotoPreparationService : IImportPhotoPreparationServi
                 cancellationToken.ThrowIfCancellationRequested();
                 prepared.Add(await PrepareAsync(files[index], index, cancellationToken));
             }
+
+            DetectDuplicates(prepared);
 
             return prepared;
         }
@@ -123,6 +126,8 @@ public sealed class ImportPhotoPreparationService : IImportPhotoPreparationServi
                 return photo;
             }
 
+            photo.SetFingerprint(Convert.ToHexString(SHA256.HashData(sanitised)));
+
             var registration = await _registry.RegisterAsync(sanitised, file.ContentType, cancellationToken);
             photo.SetPreparation(
                 ImportPhotoPreparationStatusEnum.Ready,
@@ -141,6 +146,57 @@ public sealed class ImportPhotoPreparationService : IImportPhotoPreparationServi
             photo.SetPreparation(ImportPhotoPreparationStatusEnum.PreparationFailed);
             return photo;
         }
+    }
+
+    private static void DetectDuplicates(IReadOnlyList<ImportSelectedPhotoModel> photos)
+    {
+        var ready = photos.Where(photo => photo.IsReady).OrderBy(photo => photo.SelectionIndex).ToArray();
+        foreach (var group in ready
+                     .Where(photo => !string.IsNullOrWhiteSpace(photo.Fingerprint))
+                     .GroupBy(photo => photo.Fingerprint, StringComparer.Ordinal)
+                     .Where(group => group.Count() > 1))
+        {
+            var members = group.ToArray();
+            foreach (var duplicate in members.Skip(1))
+            {
+                duplicate.SetDuplicateState(
+                    ImportDuplicateStatusEnum.Duplicate,
+                    ImportDuplicateReasonEnum.IdenticalPreparedBytes,
+                    members.Where(photo => photo.Id != duplicate.Id).Select(photo => photo.Id).ToArray());
+            }
+        }
+
+        foreach (var photo in ready.Where(photo => photo.DuplicateStatus != ImportDuplicateStatusEnum.Duplicate))
+        {
+            var counterpart = ready.FirstOrDefault(candidate =>
+                candidate.SelectionIndex < photo.SelectionIndex
+                && candidate.Fingerprint != photo.Fingerprint
+                && HasSameCaptureTime(photo, candidate)
+                && candidate.ByteSize == photo.ByteSize);
+            if (counterpart is not null)
+            {
+                photo.SetDuplicateState(
+                    ImportDuplicateStatusEnum.Warning,
+                    ImportDuplicateReasonEnum.SameCaptureTimeAndSize,
+                    [counterpart.Id]);
+            }
+            else
+            {
+                photo.SetDuplicateState(ImportDuplicateStatusEnum.None, ImportDuplicateReasonEnum.None, []);
+            }
+        }
+    }
+
+    private static bool HasSameCaptureTime(ImportSelectedPhotoModel first, ImportSelectedPhotoModel second)
+    {
+        if (first.Timestamp.State == ImportTimestampStateEnum.ExplicitInstant
+            && second.Timestamp.State == ImportTimestampStateEnum.ExplicitInstant)
+        {
+            return first.Timestamp.Instant == second.Timestamp.Instant;
+        }
+
+        return first.Timestamp.LocalWallClock.HasValue
+            && first.Timestamp.LocalWallClock == second.Timestamp.LocalWallClock;
     }
 
     private static ImportSelectedPhotoModel NewPhoto(IBrowserFile file, int selectionIndex)
