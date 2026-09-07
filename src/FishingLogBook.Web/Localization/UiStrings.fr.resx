@@ -1415,6 +1415,7 @@
   <data name="Import_ContinueToTrips" xml:space="preserve"><value>Continuer vers les suggestions de sorties</value></data>
   <data name="Import_TripSuggestionsTitle" xml:space="preserve"><value>Suggestions de sorties</value></data>
   <data name="Import_NoTripSuggestions" xml:space="preserve"><value>Aucune sortie probable n’a été trouvée. Ces prises resteront séparées.</value></data>
+  <data name="Import_TripSingleCatch" xml:space="preserve"><value>1 prise</value></data>
   <data name="Import_TripCatchCount" xml:space="preserve"><value>{0} prises</value></data>
   <data name="Import_TripTimeRange" xml:space="preserve"><value>{0} – {1}</value></data>
   <data name="Import_TripMissingGps" xml:space="preserve"><value>Les informations de localisation sont incomplètes pour cette suggestion.</value></data>

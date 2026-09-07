@@ -100,6 +100,39 @@ public class WhenTestingRender
     }
 
     [Fact]
+    public async Task ItShouldQuickConfirmAnOffsetlessHistoricalWallClockUsingTheBrowserTimezone()
+    {
+        // Arrange
+        var resolved = new DateTimeOffset(2009, 2, 2, 15, 6, 0, TimeSpan.FromHours(4));
+        var time = BrowserTime(resolved);
+        await using var context = CreateContext(time);
+        var timestamp = ImportTimestampModel.FromLocalWallClock(
+            new DateTime(2009, 2, 2, 15, 6, 0),
+            ImportTimestampSourceEnum.ExifOriginal);
+        var photo = Photo(timestamp);
+        var proposal = Proposal(photo, timestamp, ImportCatchProposalReasonEnum.AmbiguousTimestamp);
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, Batch(photo, proposal))
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1)
+            .Add(component => component.Editable, true));
+
+        // Act
+        cut.Find("#import-catch-1-confirm").Click();
+
+        // Assert
+        proposal.CaughtOn.State.Should().Be(ImportTimestampStateEnum.UserConfirmed);
+        proposal.CaughtOn.Instant.Should().Be(resolved);
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
+        cut.Find("#import-catch-1-status").TextContent.Should().Contain("Reviewed");
+        cut.FindAll("#import-catch-1-confirm").Should().BeEmpty();
+        await time.Received(1).FromDateTimeLocalValueAsync(
+            "2009-02-02T15:06",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldUseTheActiveCarouselPhotographTimestampForConfirmation()
     {
         // Arrange

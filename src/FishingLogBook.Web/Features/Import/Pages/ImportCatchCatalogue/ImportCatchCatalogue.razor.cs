@@ -61,6 +61,11 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private IReadOnlyList<ImportTripProposalModel> ActiveTripProposals =>
         [.. _batch?.TripProposals.Where(proposal => !proposal.IsRemoved) ?? []];
 
+    private int CatchNumber(ImportCatchProposalModel proposal)
+    {
+        return ActiveCatchProposals.ToList().IndexOf(proposal) + 1;
+    }
+
     private IReadOnlyList<CatalogueOptionModel> MethodOptions
     {
         get

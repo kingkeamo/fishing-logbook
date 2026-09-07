@@ -76,7 +76,7 @@ public sealed class ImportTripProposalService : IImportTripProposalService
 
     private static void AddCluster(IReadOnlyList<Candidate> cluster, ICollection<ImportTripProposalModel> proposals)
     {
-        if (cluster.Count < 2)
+        if (cluster.Count == 0)
         {
             return;
         }

@@ -124,7 +124,7 @@ public sealed class ImportTripProposalModel
     public void RemoveCatch(Guid catchProposalId)
     {
         _catchProposalIds.Remove(catchProposalId);
-        if (_catchProposalIds.Count < 2)
+        if (_catchProposalIds.Count == 0)
         {
             IsRemoved = true;
         }
