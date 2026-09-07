@@ -161,7 +161,7 @@
                         @Loc[Proposal.ReviewStatus == ImportCatchReviewStatusEnum.Reviewed ? "Import_Edit" : "Import_ReviewEdit"]
                     </MudButton>
                 }
-                @if (Proposal.ReviewStatus != ImportCatchReviewStatusEnum.Reviewed && Proposal.CanConfirmDisplayedValues)
+                @if (Proposal.ReviewStatus != ImportCatchReviewStatusEnum.Reviewed && Proposal.CanOfferDisplayedValueConfirmation)
                 {
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmAsync"
                                id="@($"import-catch-{Number}-confirm")">@Loc["Import_ConfirmCatch"]</MudButton>

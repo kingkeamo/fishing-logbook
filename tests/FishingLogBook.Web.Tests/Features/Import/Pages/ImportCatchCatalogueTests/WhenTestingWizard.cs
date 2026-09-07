@@ -361,7 +361,13 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
 
         // Assert
         cut.Find("#import-trip-review").Should().NotBeNull();
-        cut.Find("#import-trip-none").Should().NotBeNull();
+        cut.Find("#import-trip-1").TextContent.Should().Contain("1 catch");
+        cut.Find("#import-trip-catch-1-1").TextContent.Should().Contain("Catch 1");
+
+        // Act
+        cut.Find("#import-trip-separate-1").Click();
+
+        // Assert
         cut.Find("#import-trip-continue").HasAttribute("disabled").Should().BeFalse();
 
         // Act
@@ -470,6 +476,9 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         cut.Find("#import-confirm").Click();
         cut.WaitForElement("#import-cancel-persistence");
 
+        // Assert
+        cut.Find("#import-cancel-persistence").TextContent.Should().Be("Cancel");
+
         // Act
         cut.Find("#import-cancel-persistence").Click();
 
@@ -521,6 +530,42 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         {
             cut.Find($"#import-trip-catch-1-{catchNumber}").TextContent.Should().Contain($"Catch {catchNumber}");
         }
+    }
+
+    [Fact]
+    public async Task ItShouldKeepASingleCatchDayVisibleAsItsOwnTripSuggestion()
+    {
+        // Arrange
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call => ProposalsFor(call.Arg<ImportBatchModel>()));
+        await using var context = CreateContext(
+            proposal,
+            Substitute.For<IImportPhotoPreparationService>());
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([
+                ReadyPhoto(0, ImportTimestampModel.UserConfirmed(
+                    new DateTimeOffset(2009, 2, 2, 15, 6, 0, TimeSpan.FromHours(4)))),
+                ReadyPhoto(1, ImportTimestampModel.UserConfirmed(CapturedOn)),
+                ReadyPhoto(2, ImportTimestampModel.UserConfirmed(CapturedOn.AddMinutes(3)))
+            ]));
+        cut.Find("#import-photos-continue").Click();
+        for (var catchNumber = 1; catchNumber <= 3; catchNumber++)
+        {
+            cut.Find($"#import-catch-{catchNumber}-confirm").Click();
+        }
+
+        // Act
+        cut.Find("#import-review-continue").Click();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.FindAll("[id^='import-trip-']").Should().NotBeEmpty());
+        cut.Find("#import-trip-1").TextContent.Should().Contain("1 catch");
+        cut.Find("#import-trip-catch-1-1").TextContent.Should().Contain("Catch 1");
+        cut.Find("#import-trip-2").TextContent.Should().Contain("2 catches");
+        cut.Find("#import-trip-catch-2-1").TextContent.Should().Contain("Catch 2");
+        cut.Find("#import-trip-catch-2-2").TextContent.Should().Contain("Catch 3");
     }
 
     [Fact]
@@ -812,7 +857,7 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         cut.Find("#import-photos-continue").Click();
         cut.Find("#import-catch-1-confirm").Click();
         cut.Find("#import-review-continue").Click();
-        cut.Find("#import-trip-none").Click();
+        cut.Find("#import-trip-separate-1").Click();
         cut.Find("#import-trip-continue").Click();
     }
 }

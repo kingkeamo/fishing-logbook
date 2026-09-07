@@ -1415,6 +1415,7 @@
   <data name="Import_ContinueToTrips" xml:space="preserve"><value>Continue to Trip suggestions</value></data>
   <data name="Import_TripSuggestionsTitle" xml:space="preserve"><value>Trip suggestions</value></data>
   <data name="Import_NoTripSuggestions" xml:space="preserve"><value>No likely Trips were found. These catches will remain separate.</value></data>
+  <data name="Import_TripSingleCatch" xml:space="preserve"><value>1 catch</value></data>
   <data name="Import_TripCatchCount" xml:space="preserve"><value>{0} catches</value></data>
   <data name="Import_TripTimeRange" xml:space="preserve"><value>{0} – {1}</value></data>
   <data name="Import_TripMissingGps" xml:space="preserve"><value>Location evidence is incomplete for this suggestion.</value></data>

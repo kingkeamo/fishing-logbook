@@ -9,7 +9,7 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
     private const double FiveKilometresLongitude = 0.0449660181862269d;
 
     [Fact]
-    public void ItShouldNotSuggestASingleton()
+    public void ItShouldSuggestASingleCatchTrip()
     {
         // Arrange
         var batch = Batch(new CatchSpec(TimeSpan.Zero));
@@ -18,7 +18,8 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
         var proposals = Sut.Propose(batch);
 
         // Assert
-        proposals.Should().BeEmpty();
+        proposals.Should().ContainSingle().Which.CatchProposalIds.Should()
+            .Equal(batch.CatchProposals[0].Id);
     }
 
     [Fact]
@@ -66,7 +67,8 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
         var proposals = Sut.Propose(batch);
 
         // Assert
-        proposals.Should().BeEmpty();
+        proposals.Should().HaveCount(2);
+        proposals.Should().OnlyContain(proposal => proposal.CatchProposalIds.Count == 1);
     }
 
     [Fact]
@@ -88,7 +90,7 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
 
     [Theory]
     [InlineData(4d, 1)]
-    [InlineData(4.01d, 0)]
+    [InlineData(4.01d, 2)]
     public void ItShouldApplyTheAdjacentGapBoundary(double hours, int expected)
     {
         // Arrange
@@ -118,7 +120,9 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
 
         // Assert
         boundaryProposals.Should().ContainSingle().Which.CatchProposalIds.Should().HaveCount(6);
-        beyondProposals.Should().ContainSingle().Which.CatchProposalIds.Should().HaveCount(5);
+        beyondProposals.Should().HaveCount(2);
+        beyondProposals[0].CatchProposalIds.Should().HaveCount(5);
+        beyondProposals[1].CatchProposalIds.Should().ContainSingle();
     }
 
     [Fact]
@@ -133,7 +137,8 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
         var proposals = Sut.Propose(batch);
 
         // Assert
-        proposals.Should().BeEmpty();
+        proposals.Should().HaveCount(2);
+        proposals.Should().OnlyContain(proposal => proposal.CatchProposalIds.Count == 1);
     }
 
     [Fact]
@@ -172,7 +177,8 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
         batch.ReplaceTripProposals(Sut.Propose(batch));
 
         // Assert
-        batch.TripProposals.Should().BeEmpty();
+        batch.TripProposals.Should().ContainSingle().Which.CatchProposalIds.Should()
+            .Equal(batch.CatchProposals[0].Id);
     }
 
     [Fact]

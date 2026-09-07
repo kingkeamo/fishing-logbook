@@ -262,6 +262,19 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
 
     private async Task ConfirmAsync()
     {
+        var displayedCaughtOn = Proposal.CaughtOn.Instant?.DateTime ?? Proposal.CaughtOn.LocalWallClock;
+        if (!displayedCaughtOn.HasValue)
+        {
+            return;
+        }
+
+        var confirmed = await ResolveCaughtOnAsync(displayedCaughtOn.Value, Proposal.CaughtOn);
+        if (confirmed is null)
+        {
+            return;
+        }
+
+        Batch.SetCatchCaughtOn(Proposal.Id, confirmed);
         Batch.ConfirmDisplayedCatch(Proposal.Id);
         await Changed.InvokeAsync();
     }
@@ -304,27 +317,30 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
         }
 
         var basis = _caughtOnBasis ?? Proposal.CaughtOn;
-        ImportTimestampModel confirmed;
-        if (basis.Instant.HasValue)
+        var confirmed = await ResolveCaughtOnAsync(caughtOn, basis);
+        if (confirmed is null)
         {
-            confirmed = basis.Confirm(caughtOn);
-        }
-        else
-        {
-            var resolved = await Time.FromDateTimeLocalValueAsync(
-                caughtOn.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture),
-                _cancellationTokenSource.Token);
-            if (!resolved.HasValue)
-            {
-                _caughtOnInvalid = true;
-                return false;
-            }
-
-            confirmed = ImportTimestampModel.UserConfirmed(resolved.Value);
+            _caughtOnInvalid = true;
+            return false;
         }
         Batch.SetCatchCaughtOn(Proposal.Id, confirmed);
         _caughtOnInvalid = false;
         return true;
+    }
+
+    private async Task<ImportTimestampModel?> ResolveCaughtOnAsync(
+        DateTime caughtOn,
+        ImportTimestampModel basis)
+    {
+        if (basis.Instant.HasValue)
+        {
+            return basis.Confirm(caughtOn);
+        }
+
+        var resolved = await Time.FromDateTimeLocalValueAsync(
+            caughtOn.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture),
+            _cancellationTokenSource.Token);
+        return resolved.HasValue ? ImportTimestampModel.UserConfirmed(resolved.Value) : null;
     }
 
     private FishingMethodDto? FindMethod(Guid id) => Preferences.Catalogue.Methods.SingleOrDefault(method => method.Id == id);

@@ -7,6 +7,22 @@ namespace FishingLogBook.Web.Tests.Features.Import.Models.ImportModelTests;
 public class WhenTestingTripProposal : BaseImportModelTest
 {
     [Fact]
+    public void ItShouldRemainActiveWhenOneCatchRemains()
+    {
+        // Arrange
+        var remainingCatchId = Guid.NewGuid();
+        var removedCatchId = Guid.NewGuid();
+        var proposal = Trip(catchIds: [remainingCatchId, removedCatchId]);
+
+        // Act
+        proposal.RemoveCatch(removedCatchId);
+
+        // Assert
+        proposal.CatchProposalIds.Should().Equal(remainingCatchId);
+        proposal.IsRemoved.Should().BeFalse();
+    }
+
+    [Fact]
     public void ItShouldRequireAnIdentityWhenUsingAnExistingTrip()
     {
         // Arrange

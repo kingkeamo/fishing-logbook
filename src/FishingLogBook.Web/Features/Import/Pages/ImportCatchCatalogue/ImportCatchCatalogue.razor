@@ -193,7 +193,9 @@
                         <MudPaper Class="pa-3" Elevation="2" id="@($"import-trip-{proposalNumber}")">
                             <MudStack Spacing="1">
                                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap" Spacing="1">
-                                    <MudText Typo="Typo.h6">@Loc["Import_TripCatchCount", proposal.CatchProposalIds.Count]</MudText>
+                                    <MudText Typo="Typo.h6">
+                                        @Loc[proposal.CatchProposalIds.Count == 1 ? "Import_TripSingleCatch" : "Import_TripCatchCount", proposal.CatchProposalIds.Count]
+                                    </MudText>
                                     <MudText Align="Align.Right" id="@($"import-trip-date-time-{proposalNumber}")">
                                         @proposal.ProposedStartedOn.ToString("d", System.Globalization.CultureInfo.CurrentCulture)
                                         · @Loc["Import_TripTimeRange", proposal.ProposedStartedOn.ToString("t"), proposal.ProposedEndedOn.ToString("t")]
@@ -238,11 +240,11 @@
                                 }
                                 @for (var catchIndex = 0; catchIndex < proposal.CatchProposalIds.Count; catchIndex++)
                                 {
-                                    var catchNumber = catchIndex + 1;
                                     var catchId = proposal.CatchProposalIds[catchIndex];
                                     var catchProposal = CatchProposal(catchId);
+                                    var catchNumber = CatchNumber(catchProposal);
                                     var thumbnail = CatchThumbnail(catchProposal);
-                                    <div class="import-trip-catch-row" id="@($"import-trip-catch-{proposalNumber}-{catchNumber}")">
+                                    <div class="import-trip-catch-row" id="@($"import-trip-catch-{proposalNumber}-{catchIndex + 1}")">
                                         <img src="@thumbnail.ThumbnailUrl"
                                              alt="@Loc["Import_TripCatchPhotoAlt", catchNumber]"
                                              class="import-trip-catch-thumbnail" />
@@ -299,7 +301,7 @@
                             @if (_isPersisting)
                             {
                                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="CancelPersistence"
-                                           id="import-cancel-persistence">@Loc["Common_Cancel"]</MudButton>
+                                           id="import-cancel-persistence">@Loc["Modal_Cancel"]</MudButton>
                             }
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_isPersisting"
                                        OnClick="PersistAsync" id="import-confirm">

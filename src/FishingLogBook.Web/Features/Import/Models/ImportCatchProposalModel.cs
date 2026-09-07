@@ -103,6 +103,13 @@ public sealed class ImportCatchProposalModel
         && _gpsConflictResolved
         && _photoIds.Count > 0;
 
+    public bool CanOfferDisplayedValueConfirmation => !IsRemoved
+        && (CaughtOn.Instant.HasValue || CaughtOn.LocalWallClock.HasValue)
+        && Method.IsValid
+        && Species.IsValid
+        && _gpsConflictResolved
+        && _photoIds.Count > 0;
+
     public bool IsLocationDecisionResolved => Location is null
         || !Location.HistoricalGpsPresent
         || Location.Decision != ImportLocationDecisionEnum.Undecided;
