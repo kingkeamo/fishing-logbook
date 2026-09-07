@@ -210,15 +210,13 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
     }
 
     [Fact]
-    public void ItShouldUseAConfirmedOffsetlessWallClockWithoutInventingAnOffset()
+    public void ItShouldUseBrowserResolvedHistoricalInstantsWithoutChangingTripGrouping()
     {
         // Arrange
         var firstLocal = new DateTime(2024, 6, 14, 9, 0, 0);
         var secondLocal = new DateTime(2024, 6, 14, 10, 0, 0);
-        var first = ImportTimestampModel.FromLocalWallClock(firstLocal, ImportTimestampSourceEnum.ExifOriginal)
-            .ConfirmLocalWallClock(firstLocal, TimeSpan.FromHours(1));
-        var second = ImportTimestampModel.FromLocalWallClock(secondLocal, ImportTimestampSourceEnum.ExifOriginal)
-            .ConfirmLocalWallClock(secondLocal, TimeSpan.FromHours(1));
+        var first = ImportTimestampModel.UserConfirmed(new DateTimeOffset(firstLocal, TimeSpan.FromHours(1)));
+        var second = ImportTimestampModel.UserConfirmed(new DateTimeOffset(secondLocal, TimeSpan.FromHours(1)));
         var batch = Batch(
             new CatchSpec(TimeSpan.Zero, Timestamp: first),
             new CatchSpec(TimeSpan.Zero, Timestamp: second));
@@ -227,7 +225,7 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
         var proposal = Sut.Propose(batch).Single();
 
         // Assert
-        proposal.ProposedStartedOn.Should().Be(first.LocalWallClock!.Value);
+        proposal.ProposedStartedOn.Should().Be(first.Instant!.Value.DateTime);
         proposal.ProposedStartedOn.Kind.Should().Be(DateTimeKind.Unspecified);
     }
 

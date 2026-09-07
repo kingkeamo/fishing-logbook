@@ -32,9 +32,20 @@ test-host complexity.
 Do **not** add test-only authentication, compile symbols, or dual-host hacks to
 `src/FishingLogBook.Web` to force authenticated Blazor Playwright onto a product ticket.
 
-If browser coverage is omitted, the **`self-review.md`** report must state remaining
-browser risk, compensating lower-level tests, why Playwright is not appropriate now,
-and whether a testing-infrastructure follow-up is warranted. Follow
+If browser/E2E coverage cannot be implemented, do not automatically accept mocked
+component or unit coverage as sufficient. First identify the exact risk the missing E2E
+scenario would have covered. If that risk exists below the browser, add the smallest
+integration, API, repository, or contract test that contains the real relevant boundary,
+following **`testing-csharp.md`**. For example, when a UI flow reaches an API, application
+service, repository, and object store, a persistence or reconciliation risk can be covered
+below the browser with those real stateful layers; only genuinely browser-specific
+behaviour may remain deferred.
+
+When browser coverage is omitted, the **`self-review.md`** report must state the missing
+E2E scenario, the exact risk it would have covered, the compensating test and its level,
+the real components/boundaries exercised, the residual untested browser behaviour, why
+Playwright is not appropriate now, and whether a testing-infrastructure follow-up is
+warranted. Follow
 **`self-review.md` → Browser / Playwright**.
 
 ## Tests mirror production (mandatory)

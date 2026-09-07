@@ -301,7 +301,10 @@ public sealed class ImportPersistenceService : IImportPersistenceService
                     throw new InvalidOperationException("An authoritative photograph conflicts with the Import proposal.");
                 }
 
-                continue;
+                if (!string.IsNullOrWhiteSpace(existingPhotograph.Url))
+                {
+                    continue;
+                }
             }
 
             var photo = batch.Photos.Single(candidate => candidate.Id == photoId && !candidate.IsRemoved);
@@ -337,7 +340,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
         }
 
         if (!HasExpectedCatch(current, request)
-            || proposal.PhotoIds.Any(photoId => current.Photographs.All(photo => photo.Id != photoId)))
+            || proposal.PhotoIds.Any(photoId => current.Photographs.All(photo =>
+                photo.Id != photoId || string.IsNullOrWhiteSpace(photo.Url))))
         {
             throw new InvalidOperationException("The authoritative Catch state is incomplete.");
         }

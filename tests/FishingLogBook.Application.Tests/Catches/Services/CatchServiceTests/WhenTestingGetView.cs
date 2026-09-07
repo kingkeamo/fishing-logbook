@@ -155,6 +155,10 @@ public class WhenTestingGetView : BaseCatchServiceTest
             .GetDetailForUserAsync(catchRecord.Id, CurrentUserId, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
         MockObjectStorage.IsConfigured.Returns(true);
+        MockObjectStorage.ExistsAsync(
+                $"catch-photographs/{catchRecord.Id:D}/{photographId:D}",
+                Arg.Any<CancellationToken>())
+            .Returns(true);
         MockObjectStorage
             .CreateDownloadUrlAsync(
                 $"catch-photographs/{catchRecord.Id:D}/{photographId:D}",
@@ -173,6 +177,35 @@ public class WhenTestingGetView : BaseCatchServiceTest
             photograph.Id == photographId
             && photograph.ContentType == "image/jpeg"
             && photograph.Url == "https://r2.test/signed-download");
+    }
+
+    [Fact]
+    public async Task ItShouldExposePlaceholderMetadataWithoutAUsableUrlWhenTheObjectIsMissing()
+    {
+        // Arrange
+        var photographId = Guid.NewGuid();
+        var catchRecord = new Catch
+        {
+            Id = Guid.NewGuid(),
+            CaughtByUserId = CurrentUserId,
+            RecordedByUserId = CurrentUserId,
+            CaughtOn = DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+            Photographs = [new CatchPhotograph { Id = photographId, ContentType = "image/jpeg" }]
+        };
+        MockCatchRepository
+            .GetDetailForUserAsync(catchRecord.Id, CurrentUserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<CatchDetail?>(new CatchDetail { Catch = catchRecord }));
+        MockObjectStorage.IsConfigured.Returns(true);
+        MockObjectStorage.ExistsAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+
+        // Act
+        var result = await Sut.GetViewAsync(new GetCatchArgs { CatchId = catchRecord.Id }, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Photographs.Should().ContainSingle(photograph => photograph.Id == photographId && photograph.Url == null);
+        await MockObjectStorage.DidNotReceive().CreateDownloadUrlAsync(
+            Arg.Any<string>(), Arg.Any<TimeSpan>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

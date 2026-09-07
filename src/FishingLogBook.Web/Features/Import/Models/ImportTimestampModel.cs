@@ -41,8 +41,6 @@ public sealed record ImportTimestampModel
         }
     }
 
-    public bool RequiresUtcOffset => LocalWallClock.HasValue && !Instant.HasValue;
-
     public static ImportTimestampModel Missing()
     {
         return new ImportTimestampModel(
@@ -97,24 +95,10 @@ public sealed record ImportTimestampModel
 
     public ImportTimestampModel Confirm(DateTime localValue)
     {
-        if (!Instant.HasValue)
-        {
-            throw new InvalidOperationException("An explicit UTC offset is required for a historical local date and time.");
-        }
-
         var unspecified = DateTime.SpecifyKind(localValue, DateTimeKind.Unspecified);
-        return UserConfirmed(new DateTimeOffset(unspecified, Instant.Value.Offset));
-    }
-
-    public ImportTimestampModel ConfirmLocalWallClock(DateTime localWallClock, TimeSpan utcOffset)
-    {
-        var unspecified = DateTime.SpecifyKind(localWallClock, DateTimeKind.Unspecified);
-        var instant = new DateTimeOffset(unspecified, utcOffset);
-        return new ImportTimestampModel(
-            ImportTimestampStateEnum.UserConfirmed,
-            ImportTimestampSourceEnum.User,
-            instant,
-            unspecified);
+        return Instant.HasValue
+            ? UserConfirmed(new DateTimeOffset(unspecified, Instant.Value.Offset))
+            : EditLocalWallClock(unspecified);
     }
 
     public ImportTimestampModel EditLocalWallClock(DateTime localWallClock)

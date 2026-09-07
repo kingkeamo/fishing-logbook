@@ -1,3 +1,4 @@
+using System.Net;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -72,6 +73,21 @@ public sealed class S3CompatibleObjectStorage : IObjectStorage, IDisposable
         };
 
         return Task.FromResult(new Uri(Client.GetPreSignedURL(request)));
+    }
+
+    public async Task<bool> ExistsAsync(string objectKey, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Client.GetObjectMetadataAsync(
+                new GetObjectMetadataRequest { BucketName = _config.BucketName, Key = objectKey },
+                cancellationToken);
+            return true;
+        }
+        catch (AmazonS3Exception exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+        {
+            return false;
+        }
     }
 
     public Task DeleteObjectAsync(string objectKey, CancellationToken cancellationToken)

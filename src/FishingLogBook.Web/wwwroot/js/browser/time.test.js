@@ -44,4 +44,19 @@ describe('time', () => {
         expect(fromDateTimeLocalValue('2026-08-18T02:00', utcPlusFourOffsetMinutes))
             .toBe('2026-08-17T22:00:00.000Z');
     });
+
+    it('resolves an unknown historical offset using Asia/Dubai timezone rules', () => {
+        expect(fromDateTimeLocalValue('2009-02-02T15:06', 'Asia/Dubai'))
+            .toBe('2009-02-02T11:06:00.000Z');
+    });
+
+    it('uses the historical summer offset for Europe/Dublin', () => {
+        expect(fromDateTimeLocalValue('2026-08-27T14:38', 'Europe/Dublin'))
+            .toBe('2026-08-27T13:38:00.000Z');
+    });
+
+    it('uses the historical winter offset for Europe/Dublin', () => {
+        expect(fromDateTimeLocalValue('2026-02-02T15:06', 'Europe/Dublin'))
+            .toBe('2026-02-02T15:06:00.000Z');
+    });
 });

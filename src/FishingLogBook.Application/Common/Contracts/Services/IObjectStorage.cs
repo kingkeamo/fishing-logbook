@@ -12,5 +12,7 @@ public interface IObjectStorage
 
     Task<Uri> CreateDownloadUrlAsync(string objectKey, TimeSpan lifetime, CancellationToken cancellationToken);
 
+    Task<bool> ExistsAsync(string objectKey, CancellationToken cancellationToken);
+
     Task DeleteObjectAsync(string objectKey, CancellationToken cancellationToken);
 }

@@ -192,8 +192,9 @@ or RCL extraction to a product feature ticket in order to force Playwright cover
 
 If browser coverage is deliberately omitted, the self-review report must state:
 
-- what browser-specific risk remains
-- which lower-level tests cover the behaviour
+- the missing E2E scenario and exact risk it would have covered
+- the compensating test, its test level, and the real components/boundaries exercised
+- what browser-specific behaviour remains untested
 - why Playwright is not appropriate in the current architecture
 - whether a follow-up testing-infrastructure ticket is warranted
 
@@ -229,6 +230,25 @@ Ask what can pass all unit tests and still fail when layers combine (SQL mapping
 mismatch, DTO serialisation, presigned upload sequence, auth claims, service worker /
 offline, concurrency, constraints). Add the smallest integration test the risk warrants.
 Do not add broad end-to-end tests for behaviour already strongly covered below.
+
+### State transition review (mandatory where applicable)
+
+For changes involving persistence, retries, reconciliation, synchronisation, uploads,
+idempotency, partial failure, or authoritative rereads, follow the stateful and multi-stage
+rules in **`testing-csharp.md`** and explicitly:
+
+1. Trace the operation through the real implementations on both sides of changed
+   interfaces.
+2. Identify every meaningful intermediate state.
+3. Identify the authoritative completion predicate.
+4. Inspect the real persistence and read-back semantics.
+5. Compare those semantics with the test mocks.
+6. Confirm at least one appropriate test contains the real stateful boundary where
+   technically practical.
+7. Identify any remaining mocked boundary that could hide production behaviour.
+
+A green unit/component test suite is not sufficient evidence for a cross-layer state
+transition.
 
 ## Localisation / UI
 
