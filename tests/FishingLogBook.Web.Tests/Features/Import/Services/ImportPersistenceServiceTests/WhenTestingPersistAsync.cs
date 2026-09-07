@@ -14,10 +14,8 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
     {
         // Arrange
         var wallClock = new DateTime(2009, 2, 2, 15, 6, 0, DateTimeKind.Local);
-        var confirmed = ImportTimestampModel.FromLocalWallClock(
-                wallClock,
-                ImportTimestampSourceEnum.ExifOriginal)
-            .ConfirmLocalWallClock(wallClock, TimeSpan.FromHours(5.5));
+        var confirmed = ImportTimestampModel.UserConfirmed(
+            new DateTimeOffset(DateTime.SpecifyKind(wallClock, DateTimeKind.Unspecified), TimeSpan.FromHours(5.5)));
         var batch = Batch(ImportTripDecisionEnum.NoTrip, timestamp: confirmed);
         var sut = CreateSut();
 
@@ -266,6 +264,102 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
     }
 
     [Fact]
+    public async Task ItShouldCompleteAPlaceholderPhotographOnRetry()
+    {
+        // Arrange
+        var batch = Batch(ImportTripDecisionEnum.NoTrip);
+        var sut = CreateSut();
+        var completed = false;
+        CatchClient.GetAsync(CatchId, Arg.Any<CancellationToken>()).Returns(_ =>
+            MatchingCatch(includePhotograph: true, photographCompleted: completed));
+        CatchClient.RecordPhotographAsync(CatchId, Arg.Any<RecordPhotographDto>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                completed = true;
+                return Task.CompletedTask;
+            });
+
+        // Act
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await BlobRegistry.Received(1).GetBytesAsync("token", Arg.Any<CancellationToken>());
+        await CatchClient.Received(1).CreatePhotographUploadAsync(
+            CatchId,
+            Arg.Is<PhotographUploadRequestDto>(request => request.PhotographId == PhotoId),
+            Arg.Any<CancellationToken>());
+        await CatchClient.Received(1).UploadPhotographAsync(
+            "https://upload.test", Arg.Any<byte[]>(), "image/jpeg", Arg.Any<CancellationToken>());
+        await CatchClient.Received(1).RecordPhotographAsync(
+            CatchId, Arg.Is<RecordPhotographDto>(photo => photo.PhotographId == PhotoId), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotTreatPlaceholderMetadataAsFinalSuccess()
+    {
+        // Arrange
+        var batch = Batch(ImportTripDecisionEnum.NoTrip);
+        var sut = CreateSut();
+        CatchClient.GetAsync(CatchId, Arg.Any<CancellationToken>()).Returns(
+            MatchingCatch(includePhotograph: true, photographCompleted: false));
+
+        // Act
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(ImportPersistenceFailureEnum.Verification);
+        await CatchClient.Received(1).UploadPhotographAsync(
+            "https://upload.test", Arg.Any<byte[]>(), "image/jpeg", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSkipOnlyCompletedPhotographsDuringAPartialMultiPhotoRetry()
+    {
+        // Arrange
+        var batch = Batch(ImportTripDecisionEnum.NoTrip, includeSecondPhoto: true);
+        var sut = CreateSut();
+        var secondCompleted = false;
+        CatchClient.GetAsync(CatchId, Arg.Any<CancellationToken>()).Returns(_ =>
+            MatchingCatch(includePhotograph: false) with
+            {
+                Photographs =
+                [
+                    new CatchPhotographViewDto(PhotoId, "image/jpeg", "https://photo.test/one"),
+                    new CatchPhotographViewDto(
+                        SecondPhotoId,
+                        "image/png",
+                        secondCompleted ? "https://photo.test/two" : null)
+                ]
+            });
+        CatchClient.RecordPhotographAsync(CatchId, Arg.Any<RecordPhotographDto>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                secondCompleted = call.Arg<RecordPhotographDto>().PhotographId == SecondPhotoId;
+                return Task.CompletedTask;
+            });
+
+        // Act
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await CatchClient.Received(1).CreatePhotographUploadAsync(
+            CatchId,
+            Arg.Is<PhotographUploadRequestDto>(request => request.PhotographId == SecondPhotoId),
+            Arg.Any<CancellationToken>());
+        await CatchClient.DidNotReceive().CreatePhotographUploadAsync(
+            CatchId,
+            Arg.Is<PhotographUploadRequestDto>(request => request.PhotographId == PhotoId),
+            Arg.Any<CancellationToken>());
+        await CatchClient.Received(1).RecordPhotographAsync(
+            CatchId,
+            Arg.Is<RecordPhotographDto>(photo => photo.PhotographId == SecondPhotoId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldStopWithoutOverwritingAConflictingAuthoritativeCatch()
     {
         // Arrange
@@ -425,7 +519,7 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
         return new TripDetailDto(new TripViewDto(TripId, UserId, "Completed", CaughtOn, CaughtOn));
     }
 
-    private static CatchViewDto MatchingCatch(bool includePhotograph)
+    private static CatchViewDto MatchingCatch(bool includePhotograph, bool photographCompleted = true)
     {
         return new CatchViewDto(CatchId, UserId, CaughtOn, new CatchLocationExposureDto
         {
@@ -442,7 +536,10 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             Weight = 2.5m,
             Length = 42m,
             Photographs = includePhotograph
-                ? [new CatchPhotographViewDto(PhotoId, "image/jpeg", "https://photo.test")]
+                ? [new CatchPhotographViewDto(
+                    PhotoId,
+                    "image/jpeg",
+                    photographCompleted ? "https://photo.test" : null)]
                 : []
         };
     }

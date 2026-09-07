@@ -1381,7 +1381,7 @@
   <data name="Import_CatchNumber" xml:space="preserve"><value>Catch {0}</value></data>
   <data name="Import_NeedsReview" xml:space="preserve"><value>Needs review</value></data>
   <data name="Import_Ready" xml:space="preserve"><value>Ready</value></data>
-  <data name="Import_TimestampAmbiguous" xml:space="preserve"><value>{0} · timezone confirmation required</value></data>
+  <data name="Import_TimestampAmbiguous" xml:space="preserve"><value>{0} · date and time require confirmation</value></data>
   <data name="Import_TimestampWeak" xml:space="preserve"><value>{0} · suggested date requires confirmation</value></data>
   <data name="Import_TimestampUnusable" xml:space="preserve"><value>Photo date could not be used</value></data>
   <data name="Import_TimestampMissing" xml:space="preserve"><value>Date and time required</value></data>
@@ -1397,8 +1397,6 @@
   <data name="Import_CaughtOn" xml:space="preserve"><value>Caught on</value></data>
   <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Enter a valid historical date and time.</value></data>
   <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirm date and time</value></data>
-  <data name="Import_UtcOffset" xml:space="preserve"><value>UTC offset</value></data>
-  <data name="Import_UtcOffsetRequired" xml:space="preserve"><value>Choose the historical UTC offset.</value></data>
   <data name="Import_SelectPhoto" xml:space="preserve"><value>Select photograph {0}</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Use photo {0} location</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Remove location</value></data>

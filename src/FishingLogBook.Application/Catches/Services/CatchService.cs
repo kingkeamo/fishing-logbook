@@ -319,6 +319,11 @@ public sealed class CatchService : ICatchService
         }
 
         var objectKey = _objectKeyBuilder.Build(catchId, photographId);
+        if (!await _objectStorage.ExistsAsync(objectKey, cancellationToken))
+        {
+            return null;
+        }
+
         var url = await _objectStorage.CreateDownloadUrlAsync(objectKey, DownloadLifetime, cancellationToken);
         return url.ToString();
     }

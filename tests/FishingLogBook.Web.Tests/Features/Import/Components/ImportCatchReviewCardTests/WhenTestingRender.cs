@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -65,7 +66,7 @@ public class WhenTestingRender
             .Add(component => component.Number, 1));
 
         // Assert
-        cut.Find("#import-catch-1-timestamp").TextContent.Should().Contain("+01:00");
+        cut.Find("#import-catch-1-timestamp").TextContent.Should().NotContain("+01:00");
         cut.Find("#import-catch-1-status").TextContent.Should().Contain("Ready");
         cut.FindAll("#import-catch-1-utc-offset").Should().BeEmpty();
     }
@@ -207,10 +208,11 @@ public class WhenTestingRender
     }
 
     [Fact]
-    public async Task ItShouldConfirmAMissingHistoricalWallClockWithoutAddingAnOffset()
+    public async Task ItShouldConfirmAMissingHistoricalWallClockUsingTheBrowserTimezone()
     {
         // Arrange
-        await using var context = CreateContext();
+        var time = BrowserTime(new DateTimeOffset(2024, 6, 14, 9, 20, 0, TimeSpan.FromHours(4)));
+        await using var context = CreateContext(time);
         var timestamp = ImportTimestampModel.Missing();
         var photo = Photo(timestamp);
         var proposal = new ImportCatchProposalModel(
@@ -246,34 +248,12 @@ public class WhenTestingRender
         cut.Find("#import-catch-1-continue").Click();
 
         // Assert
-        proposal.IsReadyForConfirmation.Should().BeFalse();
-        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
-        cut.Find("#import-catch-1-editor").Should().NotBeNull();
-        cut.Find("#import-catch-1-utc-offset").Should().NotBeNull();
-        var offsets = cut.FindComponents<MudSelectItem<TimeSpan?>>()
-            .Select(item => item.Instance.GetState(component => component.Value))
-            .ToArray();
-        offsets.Should().HaveCount(53);
-        offsets.Should().Contain(TimeSpan.FromHours(-12));
-        offsets.Should().Contain(TimeSpan.FromHours(5.5));
-        offsets.Should().Contain(TimeSpan.FromHours(14));
-
-        // Act
-        await SelectUtcOffsetAsync(cut, TimeSpan.FromHours(5.5));
-        cut.Find("#import-catch-1-confirm-caught-on").Click();
-        cut.Find("#import-catch-1-close-editor").Click();
-
-        // Assert
         proposal.CaughtOn.Instant.Should().Be(
-            new DateTimeOffset(2024, 6, 14, 9, 20, 0, TimeSpan.FromHours(5.5)));
-        proposal.CaughtOn.LocalWallClock.Should().Be(new DateTime(2024, 6, 14, 9, 20, 0, DateTimeKind.Unspecified));
-        cut.Find("#import-catch-1-status").TextContent.Should().Contain("Ready");
-
-        // Act
-        cut.Find("#import-catch-1-edit").Click();
-
-        // Assert
-        cut.FindComponent<MudSelect<TimeSpan?>>().Instance.GetState(x => x.Value).Should().Be(TimeSpan.FromHours(5.5));
+            new DateTimeOffset(2024, 6, 14, 9, 20, 0, TimeSpan.FromHours(4)));
+        proposal.CaughtOn.LocalWallClock.Should().BeNull();
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
+        cut.FindAll("#import-catch-1-utc-offset").Should().BeEmpty();
+        await time.Received().FromDateTimeLocalValueAsync("2024-06-14T09:20", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -281,7 +261,8 @@ public class WhenTestingRender
     {
         // Arrange
         using var culture = TestCulture.Use("en-GB");
-        await using var context = CreateContext();
+        var time = BrowserTime(new DateTimeOffset(2026, 4, 9, 15, 6, 0, TimeSpan.FromHours(-5)));
+        await using var context = CreateContext(time);
         var timestamp = ImportTimestampModel.FromLocalWallClock(
             new DateTime(2009, 2, 2, 15, 6, 0),
             ImportTimestampSourceEnum.ExifOriginal);
@@ -297,11 +278,10 @@ public class WhenTestingRender
 
         // Act
         cut.Find("#import-catch-1-caught-on").Input("09/04/2026 03:06 PM");
-        await SelectUtcOffsetAsync(cut, TimeSpan.FromHours(-5));
         cut.Find("#import-catch-1-confirm-caught-on").Click();
 
         // Assert
-        proposal.CaughtOn.LocalWallClock.Should().Be(new DateTime(2026, 4, 9, 15, 6, 0));
+        proposal.CaughtOn.LocalWallClock.Should().BeNull();
         proposal.CaughtOn.Instant.Should().Be(
             new DateTimeOffset(2026, 4, 9, 15, 6, 0, TimeSpan.FromHours(-5)));
         cut.FindAll(".mud-input-error").Should().BeEmpty();
@@ -311,7 +291,8 @@ public class WhenTestingRender
     public async Task ItShouldContinueFromTheEditorWithoutRequiringBack()
     {
         // Arrange
-        await using var context = CreateContext();
+        var time = BrowserTime(new DateTimeOffset(2026, 4, 9, 15, 6, 0, TimeSpan.FromHours(1)));
+        await using var context = CreateContext(time);
         var timestamp = ImportTimestampModel.FromLocalWallClock(
             new DateTime(2009, 2, 2, 15, 6, 0),
             ImportTimestampSourceEnum.ExifOriginal);
@@ -327,7 +308,6 @@ public class WhenTestingRender
 
         // Act
         cut.Find("#import-catch-1-caught-on").Input("09/04/2026 03:06 PM");
-        await SelectUtcOffsetAsync(cut, TimeSpan.FromHours(1));
         cut.Find("#import-catch-1-continue").Click();
 
         // Assert
@@ -451,11 +431,11 @@ public class WhenTestingRender
                 new DateTime(2025, 6, 14, 9, 30, 0),
                 ImportTimestampSourceEnum.ExifOriginal),
             ImportCatchProposalReasonEnum.AmbiguousTimestamp,
-            "timezone confirmation required"
+            "date and time require confirmation"
         }
     };
 
-    private static BunitContext CreateContext()
+    private static BunitContext CreateContext(ITimeService? time = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -463,7 +443,16 @@ public class WhenTestingRender
         context.Services.AddLocalization();
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton(Substitute.For<IModalService>());
+        context.Services.AddSingleton(time ?? BrowserTime(CapturedOn));
         return context;
+    }
+
+    private static ITimeService BrowserTime(DateTimeOffset resolved)
+    {
+        var time = Substitute.For<ITimeService>();
+        time.FromDateTimeLocalValueAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(resolved);
+        return time;
     }
 
     private static ImportSelectedPhotoModel Photo(ImportTimestampModel timestamp, int index = 0)
@@ -516,10 +505,4 @@ public class WhenTestingRender
             LengthUnitEnum.Cm);
     }
 
-    private static Task SelectUtcOffsetAsync(
-        IRenderedComponent<ImportCatchReviewCard> cut,
-        TimeSpan offset)
-    {
-        return cut.InvokeAsync(() => cut.FindComponent<MudSelect<TimeSpan?>>().Instance.ValueChanged.InvokeAsync(offset));
-    }
 }

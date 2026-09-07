@@ -42,25 +42,13 @@
                     <MudTooltip Text="@Loc["Import_ConfirmCaughtOn"]" ShowOnClick="true">
                         <MudButton StartIcon="@Icons.Material.Filled.Check" Size="Size.Small"
                                    Variant="Variant.Filled" Color="Color.Primary"
-                                   OnClick="ConfirmCaughtOn" Class="import-catch-confirm-caught-on"
+                                   OnClick="ConfirmCaughtOnAsync" Class="import-catch-confirm-caught-on"
                                    aria-label="@Loc["Import_ConfirmCaughtOn"]"
                                    id="@($"import-catch-{Number}-confirm-caught-on")">
                             <span class="import-catch-confirm-caught-on-label">@Loc["Import_ConfirmCaughtOn"]</span>
                         </MudButton>
                     </MudTooltip>
                 </div>
-                @if (RequiresUtcOffsetControl)
-                {
-                    <MudSelect T="TimeSpan?" Value="_utcOffset" ValueChanged="SetUtcOffset"
-                               Label="@Loc["Import_UtcOffset"]" Required="true"
-                               Error="_utcOffsetInvalid" ErrorText="@Loc["Import_UtcOffsetRequired"]"
-                               id="@($"import-catch-{Number}-utc-offset")">
-                        @foreach (var offset in UtcOffsetOptions)
-                        {
-                            <MudSelectItem T="TimeSpan?" Value="@((TimeSpan?)offset)">@UtcOffsetLabel(offset)</MudSelectItem>
-                        }
-                    </MudSelect>
-                }
                 @if (Proposal.RequiresCanonicalReview)
                 {
                     <MudAlert Severity="Severity.Warning">@Loc["Import_MergeValuesNeedReview"]</MudAlert>

@@ -14,6 +14,7 @@ public class BaseImportPersistenceServiceTest
     protected static readonly Guid UserId = Guid.Parse("10000000-0000-0000-0000-000000000001");
     protected static readonly Guid CatchId = Guid.Parse("20000000-0000-0000-0000-000000000001");
     protected static readonly Guid PhotoId = Guid.Parse("30000000-0000-0000-0000-000000000001");
+    protected static readonly Guid SecondPhotoId = Guid.Parse("30000000-0000-0000-0000-000000000002");
     protected static readonly Guid TripId = Guid.Parse("40000000-0000-0000-0000-000000000001");
     protected static readonly Guid ParticipantId = Guid.Parse("50000000-0000-0000-0000-000000000001");
     protected static readonly DateTimeOffset CaughtOn = DateTimeOffset.Parse("2009-02-02T15:06:00+01:00");
@@ -72,7 +73,13 @@ public class BaseImportPersistenceServiceTest
         });
         CatchClient.CreatePhotographUploadAsync(CatchId, Arg.Any<PhotographUploadRequestDto>(), Arg.Any<CancellationToken>())
             .Returns(new PhotographUploadDto("object", "https://upload.test"));
-        var reads = 0;
+        var photographRecorded = false;
+        CatchClient.RecordPhotographAsync(CatchId, Arg.Any<RecordPhotographDto>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                photographRecorded = true;
+                return Task.CompletedTask;
+            });
         CatchClient.GetAsync(CatchId, Arg.Any<CancellationToken>()).Returns(_ =>
         {
             if (persistedCatch is null)
@@ -80,7 +87,6 @@ public class BaseImportPersistenceServiceTest
                 return null;
             }
 
-            reads++;
             return new CatchViewDto(CatchId, UserId, persistedCatch.CaughtOn, new CatchLocationExposureDto
             {
                 Latitude = 53.1,
@@ -96,7 +102,13 @@ public class BaseImportPersistenceServiceTest
                 Method = persistedCatch?.Method,
                 Weight = persistedCatch?.Weight,
                 Length = persistedCatch?.Length,
-                Photographs = reads > 1 ? [new CatchPhotographViewDto(PhotoId, "image/jpeg", "https://photo.test")] : []
+                Photographs =
+                [
+                    new CatchPhotographViewDto(
+                        PhotoId,
+                        "image/jpeg",
+                        photographRecorded ? "https://photo.test" : null)
+                ]
             };
         });
         return new ImportPersistenceService(TripClient, ParticipantClient, CatchClient, CurrentUserClient, BlobRegistry);
@@ -105,7 +117,8 @@ public class BaseImportPersistenceServiceTest
     protected static ImportBatchModel Batch(
         ImportTripDecisionEnum decision,
         bool participant = false,
-        ImportTimestampModel? timestamp = null)
+        ImportTimestampModel? timestamp = null,
+        bool includeSecondPhoto = false)
     {
         var method = new ImportCatalogueSelectionModel(Guid.NewGuid(), "Fly", "Fly");
         var species = new ImportCatalogueSelectionModel(Guid.NewGuid(), "BrownTrout", "Brown Trout");
@@ -113,10 +126,17 @@ public class BaseImportPersistenceServiceTest
         var photo = new ImportSelectedPhotoModel(PhotoId, 0, "image/jpeg", 3, "token", "fish.jpg", "blob:thumb");
         photo.SetPreparation(ImportPhotoPreparationStatusEnum.Ready, "token", "blob:thumb");
         batch.AddPhoto(photo);
+        if (includeSecondPhoto)
+        {
+            var second = new ImportSelectedPhotoModel(
+                SecondPhotoId, 1, "image/png", 3, "token", "fish-2.png", "blob:thumb-2");
+            second.SetPreparation(ImportPhotoPreparationStatusEnum.Ready, "token", "blob:thumb-2");
+            batch.AddPhoto(second);
+        }
         var location = new ImportLocationModel(53.1, -6.2, true).Accept();
         var proposal = new ImportCatchProposalModel(
             CatchId,
-            [PhotoId],
+            includeSecondPhoto ? [PhotoId, SecondPhotoId] : [PhotoId],
             timestamp ?? ImportTimestampModel.UserConfirmed(CaughtOn),
             method,
             species,

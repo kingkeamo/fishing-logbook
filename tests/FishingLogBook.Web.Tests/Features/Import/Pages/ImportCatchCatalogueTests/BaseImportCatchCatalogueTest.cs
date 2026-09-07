@@ -2,6 +2,7 @@ using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
@@ -38,6 +39,9 @@ public class BaseImportCatchCatalogueTest
         context.Services.AddMudServices();
         context.Services.AddLocalization();
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
+        var time = Substitute.For<ITimeService>();
+        time.FromDateTimeLocalValueAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(CapturedOn);
+        context.Services.AddSingleton(time);
         context.Services.AddSingleton(proposal);
         context.Services.AddSingleton(preparation);
         context.Services.AddSingleton(tripProposalService ?? new ImportTripProposalService());
