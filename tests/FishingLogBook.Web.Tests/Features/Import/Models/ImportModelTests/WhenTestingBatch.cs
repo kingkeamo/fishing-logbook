@@ -247,6 +247,86 @@ public class WhenTestingBatch : BaseImportModelTest
     }
 
     [Fact]
+    public void ItShouldBlockPersistenceUntilAnExactDuplicateIsExplicitlyKept()
+    {
+        // Arrange
+        var batch = Batch();
+        var first = ReadyPersistencePhoto();
+        var duplicate = ReadyPersistencePhoto(SecondPhotoId, 1);
+        duplicate.SetDuplicateState(
+            ImportDuplicateStatusEnum.Duplicate,
+            ImportDuplicateReasonEnum.IdenticalPreparedBytes,
+            [first.Id]);
+        var catchProposal = Catch(photoIds: [first.Id, duplicate.Id]);
+        catchProposal.MarkReviewed();
+        batch.AddPhoto(first);
+        batch.AddPhoto(duplicate);
+        batch.AddCatchProposal(catchProposal);
+
+        // Act
+        var beforeDecision = batch.IsReadyForConfirmation;
+        batch.KeepDuplicatePhoto(duplicate.Id);
+
+        // Assert
+        beforeDecision.Should().BeFalse();
+        duplicate.DuplicateDecision.Should().Be(ImportDuplicateDecisionEnum.KeepBoth);
+        batch.IsReadyForConfirmation.Should().BeTrue();
+        batch.Photos.Should().OnlyContain(photo => !photo.IsRemoved);
+    }
+
+    [Fact]
+    public void ItShouldResolveAnExactDuplicateThroughTheNormalRemovalFlow()
+    {
+        // Arrange
+        var batch = Batch();
+        var first = ReadyPersistencePhoto();
+        var duplicate = ReadyPersistencePhoto(SecondPhotoId, 1);
+        duplicate.SetDuplicateState(
+            ImportDuplicateStatusEnum.Duplicate,
+            ImportDuplicateReasonEnum.IdenticalPreparedBytes,
+            [first.Id]);
+        var catchProposal = Catch(photoIds: [first.Id, duplicate.Id]);
+        catchProposal.MarkReviewed();
+        batch.AddPhoto(first);
+        batch.AddPhoto(duplicate);
+        batch.AddCatchProposal(catchProposal);
+        var trip = Trip();
+        batch.AddTripProposal(trip);
+
+        // Act
+        batch.RemovePhoto(duplicate.Id);
+
+        // Assert
+        duplicate.IsRemoved.Should().BeTrue();
+        catchProposal.PhotoIds.Should().Equal(first.Id);
+        catchProposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        batch.TripProposals.Should().BeEmpty();
+        batch.IsReadyForConfirmation.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ItShouldNotRequireAResolutionWhenTheDuplicateCounterpartWasRemoved()
+    {
+        // Arrange
+        var batch = Batch();
+        var first = ReadyPersistencePhoto();
+        var duplicate = ReadyPersistencePhoto(SecondPhotoId, 1);
+        duplicate.SetDuplicateState(
+            ImportDuplicateStatusEnum.Duplicate,
+            ImportDuplicateReasonEnum.IdenticalPreparedBytes,
+            [first.Id]);
+        batch.AddPhoto(first);
+        batch.AddPhoto(duplicate);
+
+        // Act
+        batch.RemovePhoto(first.Id);
+
+        // Assert
+        duplicate.RequiresDuplicateDecision.Should().BeTrue();
+        batch.HasUnresolvedExactDuplicates.Should().BeFalse();
+    }
+
+    [Fact]
     public void ItShouldRepresentMultipleIndependentTripProposals()
     {
         // Arrange

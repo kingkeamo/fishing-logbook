@@ -1368,6 +1368,13 @@
   <data name="Import_PhotoFailed" xml:space="preserve"><value>This photograph could not be prepared.</value></data>
   <data name="Import_MetadataUnavailable" xml:space="preserve"><value>Photo ready · historical details need review</value></data>
   <data name="Import_PhotoReady" xml:space="preserve"><value>Photo ready</value></data>
+  <data name="Import_DuplicateExact" xml:space="preserve"><value>Likely exact duplicate photo</value></data>
+  <data name="Import_DuplicateExactReason" xml:space="preserve"><value>This photograph has the same prepared image content as an earlier selection.</value></data>
+  <data name="Import_DuplicateMetadataReason" xml:space="preserve"><value>Same capture time and file size.</value></data>
+  <data name="Import_DuplicatePossibleReason" xml:space="preserve"><value>Similar historical photograph metadata.</value></data>
+  <data name="Import_DuplicatePossible" xml:space="preserve"><value>Possible duplicate photo</value></data>
+  <data name="Import_DuplicateRemove" xml:space="preserve"><value>Remove duplicate</value></data>
+  <data name="Import_DuplicateKeepBoth" xml:space="preserve"><value>Keep both</value></data>
   <data name="Import_ReviewCatches" xml:space="preserve"><value>Review catches</value></data>
   <data name="Import_ReviewTitle" xml:space="preserve"><value>Proposed catches</value></data>
   <data name="Import_CorrectionLater" xml:space="preserve"><value>Review and correction controls are added in the next step of this feature.</value></data>

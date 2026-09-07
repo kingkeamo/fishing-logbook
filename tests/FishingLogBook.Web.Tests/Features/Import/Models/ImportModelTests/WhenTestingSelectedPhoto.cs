@@ -19,7 +19,11 @@ public class WhenTestingSelectedPhoto : BaseImportModelTest
 
         // Act
         photo.SetMetadata(ImportMetadataStatusEnum.Available, timestamp, location);
-        photo.SetDuplicateState(ImportDuplicateStatusEnum.Warning, "fingerprint-placeholder");
+        photo.SetFingerprint("fingerprint-placeholder");
+        photo.SetDuplicateState(
+            ImportDuplicateStatusEnum.Warning,
+            ImportDuplicateReasonEnum.SameCaptureTimeAndSize,
+            [SecondPhotoId]);
 
         // Assert
         photo.MetadataStatus.Should().Be(ImportMetadataStatusEnum.Available);
@@ -27,6 +31,7 @@ public class WhenTestingSelectedPhoto : BaseImportModelTest
         photo.Location.Should().Be(location);
         photo.DuplicateStatus.Should().Be(ImportDuplicateStatusEnum.Warning);
         photo.Fingerprint.Should().Be("fingerprint-placeholder");
+        photo.DuplicatePhotoIds.Should().Equal(SecondPhotoId);
         photo.GetType().GetProperties().Select(property => property.PropertyType)
             .Should().NotContain(typeof(byte[]));
     }

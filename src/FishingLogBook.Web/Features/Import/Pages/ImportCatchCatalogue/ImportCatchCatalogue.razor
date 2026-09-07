@@ -115,6 +115,34 @@
                                                OnClick="@(() => RemovePhotoAsync(photo))"
                                                id="@($"import-remove-photo-{photo.SelectionIndex}")" />
                             </div>
+                            @if (RequiresDuplicateDecision(photo))
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true"
+                                          id="@($"import-exact-duplicate-{photo.SelectionIndex}")">
+                                    <MudText Typo="Typo.body2">@Loc["Import_DuplicateExact"]</MudText>
+                                    <MudText Typo="Typo.caption">@DuplicateReasonLabel(photo)</MudText>
+                                    <MudStack Row="true" Spacing="1" Class="mt-2">
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                                                   OnClick="@(() => RemovePhotoAsync(photo))"
+                                                   id="@($"import-remove-duplicate-{photo.SelectionIndex}")">
+                                            @Loc["Import_DuplicateRemove"]
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                                   OnClick="@(() => KeepDuplicatePhoto(photo))"
+                                                   id="@($"import-keep-duplicate-{photo.SelectionIndex}")">
+                                            @Loc["Import_DuplicateKeepBoth"]
+                                        </MudButton>
+                                    </MudStack>
+                                </MudAlert>
+                            }
+                            else if (photo.DuplicateStatus == ImportDuplicateStatusEnum.Warning)
+                            {
+                                <MudAlert Severity="Severity.Warning" Dense="true"
+                                          id="@($"import-possible-duplicate-{photo.SelectionIndex}")">
+                                    <MudText Typo="Typo.body2">@Loc["Import_DuplicatePossible"]</MudText>
+                                    <MudText Typo="Typo.caption">@DuplicateReasonLabel(photo)</MudText>
+                                </MudAlert>
+                            }
                         }
                         <MudStack Row="true" Justify="Justify.SpaceBetween">
                             <MudButton Variant="Variant.Text" OnClick="BackToBatch" id="import-photos-back">

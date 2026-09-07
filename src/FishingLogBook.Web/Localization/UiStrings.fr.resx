@@ -1368,6 +1368,13 @@
   <data name="Import_PhotoFailed" xml:space="preserve"><value>Cette photographie n’a pas pu être préparée.</value></data>
   <data name="Import_MetadataUnavailable" xml:space="preserve"><value>Photo prête · détails historiques à vérifier</value></data>
   <data name="Import_PhotoReady" xml:space="preserve"><value>Photo prête</value></data>
+  <data name="Import_DuplicateExact" xml:space="preserve"><value>Photographie probablement dupliquée à l’identique</value></data>
+  <data name="Import_DuplicateExactReason" xml:space="preserve"><value>Cette photographie a le même contenu préparé qu’une sélection précédente.</value></data>
+  <data name="Import_DuplicateMetadataReason" xml:space="preserve"><value>Même heure de capture et même taille de fichier.</value></data>
+  <data name="Import_DuplicatePossibleReason" xml:space="preserve"><value>Métadonnées de photographie historique similaires.</value></data>
+  <data name="Import_DuplicatePossible" xml:space="preserve"><value>Photographie potentiellement dupliquée</value></data>
+  <data name="Import_DuplicateRemove" xml:space="preserve"><value>Supprimer le doublon</value></data>
+  <data name="Import_DuplicateKeepBoth" xml:space="preserve"><value>Conserver les deux</value></data>
   <data name="Import_ReviewCatches" xml:space="preserve"><value>Vérifier les prises</value></data>
   <data name="Import_ReviewTitle" xml:space="preserve"><value>Prises proposées</value></data>
   <data name="Import_CorrectionLater" xml:space="preserve"><value>Les outils de vérification et de correction seront ajoutés à la prochaine étape de cette fonctionnalité.</value></data>

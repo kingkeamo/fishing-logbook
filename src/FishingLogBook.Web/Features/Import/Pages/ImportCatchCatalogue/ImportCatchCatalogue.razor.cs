@@ -50,7 +50,8 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         get
         {
             return _batch?.IsProcessingPhotos == false
-                && _batch.Photos.Any(photo => !photo.IsRemoved && photo.IsReady);
+                && _batch.Photos.Any(photo => !photo.IsRemoved && photo.IsReady)
+                && !_batch.HasUnresolvedExactDuplicates;
         }
     }
 
@@ -536,6 +537,28 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     {
         await Preparation.RemoveAsync(photo, _cancellationTokenSource.Token);
         _batch?.RemovePhoto(photo.Id);
+    }
+
+    private void KeepDuplicatePhoto(ImportSelectedPhotoModel photo)
+    {
+        _batch?.KeepDuplicatePhoto(photo.Id);
+    }
+
+    private bool RequiresDuplicateDecision(ImportSelectedPhotoModel photo)
+    {
+        return photo.RequiresDuplicateDecision
+            && _batch?.Photos.Any(candidate => !candidate.IsRemoved
+                && photo.DuplicatePhotoIds.Contains(candidate.Id)) == true;
+    }
+
+    private string DuplicateReasonLabel(ImportSelectedPhotoModel photo)
+    {
+        return photo.DuplicateReason switch
+        {
+            ImportDuplicateReasonEnum.IdenticalPreparedBytes => Loc["Import_DuplicateExactReason"],
+            ImportDuplicateReasonEnum.SameCaptureTimeAndSize => Loc["Import_DuplicateMetadataReason"],
+            _ => Loc["Import_DuplicatePossibleReason"]
+        };
     }
 
     private void ContinueToReview()
