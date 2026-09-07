@@ -32,6 +32,14 @@ For every GitHub issue:
 12. Existing tests must remain green.
 13. Run the appropriate test projects before considering implementation complete.
 
+For substantial cross-layer Acceptance Criteria, derive concrete acceptance scenarios
+before implementation. Wording such as "retries safely", "reconciles authoritative
+state", "does not duplicate", "completes interrupted upload", or "persists correctly"
+must be expanded into the authoritative starting state, operation, intermediate partial
+states, and expected authoritative result. Do not let the implementation silently define
+these terms. If the expected authoritative state cannot be determined from the issue or
+existing architecture, stop and report the ambiguity before implementing.
+
 ## Test projects (one per production project)
 
 Each production project has its **own** `FishingLogBook.<Project>.Tests` project; shared
@@ -105,6 +113,105 @@ For example, for an inclusive five-minute maximum group span, prove at least:
 Test names must describe the complete business invariant. Do not name or assert an
 implementation strategy such as adjacent chaining when that strategy is not itself the
 requirement.
+
+### Stateful and multi-stage behaviour (mandatory)
+
+Derive tests for stateful or multi-stage behaviour from the externally observable state
+transition:
+
+```text
+GIVEN authoritative starting state
+WHEN the operation occurs
+THEN authoritative resulting state
+```
+
+Prove the resulting persisted or external state is correct. A successful method return or
+an expected mocked call sequence is not sufficient when the Acceptance Criterion depends
+on database persistence, object upload, registration after upload, synchronisation,
+reconciliation, retry, idempotency, or partial-failure recovery.
+
+#### Choose the test level that contains the risk
+
+Use the smallest test level that contains the boundary capable of causing the failure:
+
+| Risk | Required test level |
+|------|---------------------|
+| Pure algorithm or invariant | Unit test |
+| Component rendering or interaction | bUnit/component test |
+| DTO or serialisation contract | Contract test |
+| Repository SQL or persistence lifecycle | Real repository/Testcontainers integration test |
+| API/application/repository lifecycle | API/integration test containing the real relevant layers |
+| Browser-specific JS or PWA behaviour | Playwright/browser test |
+| Persistence plus retry, reconciliation, synchronisation, or upload lifecycle | Integration or end-to-end test containing the real stateful boundary |
+
+Mocks remain valuable supporting evidence, but a mocked unit or component test must not be
+the sole acceptance/regression proof when correctness depends on the real semantics of the
+substituted dependency. If behaviour depends on both sides of an interface, include the
+real implementations on both sides in the smallest practical integration, API, repository,
+or contract test. This does not mean every feature needs browser E2E or every unit test
+needs a database.
+
+The repository's existing test-project boundaries still apply: `Api.Tests` substitutes
+repositories and does not start PostgreSQL. When database semantics determine correctness,
+put the real persistence proof in the Testcontainers-backed Infrastructure repository
+suite and use API tests for the real HTTP/application chain above the substituted
+repository. Together they must cover the risk without moving a live database into
+`Api.Tests`.
+
+#### Partial-state matrix
+
+Before declaring coverage complete for persistence, retries, reconciliation, idempotency,
+synchronisation, upload/registration, partial-failure recovery, authoritative rereads, or
+online/offline handoff, enumerate the meaningful intermediate states. Test the states that
+genuinely exist, including where applicable:
+
+1. Nothing persisted or completed.
+2. The primary record exists but the dependent operation has not started.
+3. Dependent metadata exists but the secondary/external operation is incomplete.
+4. The secondary operation completed but registration/finalisation is incomplete.
+5. A multi-item operation is partially complete.
+6. The operation is fully complete.
+7. Retry from every recoverable partial state.
+
+Tests must prove that an incomplete state is not mistaken for completion.
+
+#### Authoritative completion predicate
+
+For early-return or skip logic such as `existing != null`, `alreadyProcessed`, or an
+existing identifier, explicitly answer in the implementation and test design:
+
+> What authoritative fact proves this operation is complete?
+
+An identifier, metadata row, file, or primary record is not automatically proof that a
+multi-stage operation completed. Where possible, add a regression scenario in which the
+early/existence signal is present but the later operation remains incomplete, such as
+metadata without its object, a file without registration, or a server record without its
+dependent synchronised state.
+
+#### Mock lifecycle realism
+
+Mocks that represent a real lifecycle must match the documented or actual production
+dependency behaviour. Before modelling a sequence such as `Upsert -> Get -> retry`, inspect
+the real implementations or contracts for `Upsert` and `Get`; do not invent a convenient
+read-back state that differs materially from production. A mock may deliberately represent
+a synthetic or error state when the test makes that intent explicit. If correctness
+materially depends on the lifecycle, retain mocked unit coverage but add coverage across
+the real lifecycle boundary.
+
+#### Production bug regressions
+
+For a production bug fix:
+
+1. Reproduce the important production failure state in an automated test.
+2. Verify that test would fail against the broken behaviour.
+3. Implement or finalise the fix.
+4. Retain the regression test permanently.
+
+Do not simplify the lifecycle in a way that bypasses the cause. For example, if a primary
+upsert also creates dependent metadata while the secondary upload remains missing, the
+regression must begin from that real partial state and prove retry/reconciliation completes
+the secondary operation. A mock where the reread conveniently returns no dependent
+metadata does not reproduce the failure.
 
 ## Dependency verification (mandatory)
 
