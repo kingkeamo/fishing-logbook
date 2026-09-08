@@ -132,6 +132,11 @@ public sealed class ImportSelectedPhotoModel
         ThumbnailUrl = thumbnailUrl;
     }
 
+    public void SetLocation(ImportLocationModel location)
+    {
+        Location = location;
+    }
+
     public void Remove()
     {
         IsRemoved = true;

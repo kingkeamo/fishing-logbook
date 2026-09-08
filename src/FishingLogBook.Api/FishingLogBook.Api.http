@@ -343,3 +343,17 @@ Accept: application/json
 Authorization: Bearer <access-token>
 
 ###
+
+### Location lookup (requires a Cognito access token)
+
+POST {{FishingLogBook.Api_HostAddress}}/api/locations/label
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer <access-token>
+
+{
+  "latitude": 53.3498,
+  "longitude": -6.2603
+}
+
+###

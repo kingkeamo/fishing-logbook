@@ -17,6 +17,9 @@ using FishingLogBook.Application.FishingLocations.Services;
 using FishingLogBook.Application.FishingPreferences.Contracts.Repositories;
 using FishingLogBook.Application.FishingPreferences.Contracts.Services;
 using FishingLogBook.Application.FishingPreferences.Services;
+using FishingLogBook.Application.LocationLookup.Contracts.HttpClients;
+using FishingLogBook.Application.LocationLookup.Contracts.Services;
+using FishingLogBook.Application.LocationLookup.Services;
 using FishingLogBook.Application.OfflineAccess.Contracts.Repositories;
 using FishingLogBook.Application.OfflineAccess.Contracts.Services;
 using FishingLogBook.Application.OfflineAccess.Services;
@@ -38,6 +41,7 @@ using FishingLogBook.Application.Users.Contracts.Repositories;
 using FishingLogBook.Application.Users.Contracts.Services;
 using FishingLogBook.Application.Users.Services;
 using FishingLogBook.Domain.Config;
+using FishingLogBook.Infrastructure.HttpClients.Geoapify;
 using FishingLogBook.Infrastructure.Logging;
 using FishingLogBook.Infrastructure.Persistence;
 using FishingLogBook.Infrastructure.Persistence.Repositories;
@@ -90,6 +94,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFishingLocationPreferenceService, FishingLocationPreferenceService>();
         services.AddScoped<IFishingPreferenceService, FishingPreferenceService>();
         services.AddScoped<IOfflineAccessPreferenceService, OfflineAccessPreferenceService>();
+        services.AddScoped<ILocationLookupService, LocationLookupService>();
+        services.AddSingleton<LocationLookupCacheService>();
         services.AddSingleton<ICatchPhotographObjectKeyBuilder, CatchPhotographObjectKeyBuilder>();
         services.AddSingleton<ITripPhotographObjectKeyBuilder, TripPhotographObjectKeyBuilder>();
         services.AddSingleton<IProfilePhotographObjectKeyBuilder, ProfilePhotographObjectKeyBuilder>();
@@ -128,6 +134,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOfflineAccessPreferenceRepository, OfflineAccessPreferenceRepository>();
         services.Configure<ObjectStorageConfig>(configuration.GetSection(ObjectStorageConfig.SectionName));
         services.Configure<DiagnosticsConfig>(configuration.GetSection(DiagnosticsConfig.SectionName));
+        services.Configure<GeoapifyConfig>(configuration.GetSection(GeoapifyConfig.SectionName));
+        services.AddHttpClient<ILocationLookupClient, GeoapifyLocationLookupClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<GeoapifyConfig>>()
+                .Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        }).AddGeoapifyResilience();
         services.AddSingleton<IObjectStorage, S3CompatibleObjectStorage>();
         services.AddSingleton<IDiagnosticEventDeduplicator, InMemoryDiagnosticEventDeduplicator>();
 

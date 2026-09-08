@@ -125,8 +125,9 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     };
 
     private string LocationLabel => Proposal.HasUnresolvedGpsConflict ? Loc["Import_LocationNeedsReview"]
-        : Proposal.Location?.Decision == ImportLocationDecisionEnum.Accepted ? Loc["Import_LocationAccepted"]
         : Proposal.Location?.Decision == ImportLocationDecisionEnum.Removed ? Loc["Import_LocationRemoved"]
+        : Proposal.Location?.LookupResult is { } lookup ? lookup.DisplayName
+        : Proposal.Location?.Decision == ImportLocationDecisionEnum.Accepted ? Loc["Import_LocationAccepted"]
         : Proposal.Location?.HasCanonicalCoordinates == true ? Loc["Import_LocationAvailable"]
         : Loc["Import_LocationUnavailable"];
 

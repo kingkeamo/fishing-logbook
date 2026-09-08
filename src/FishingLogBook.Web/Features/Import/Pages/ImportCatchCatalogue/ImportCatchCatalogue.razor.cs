@@ -25,6 +25,7 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     private Guid _speciesId;
     private bool _isLoading = true;
     private bool _selectionLimitExceeded;
+    private bool _isResolvingLocations;
     private bool _isPersisting;
     private bool _isPersisted;
     private string? _persistenceError;
@@ -39,6 +40,7 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
     [Inject] private IImportPhotoPreparationService Preparation { get; set; } = default!;
     [Inject] private IImportTripProposalService TripProposalService { get; set; } = default!;
     [Inject] private IImportExistingTripService ExistingTripService { get; set; } = default!;
+    [Inject] private IImportLocationLookupService LocationLookupService { get; set; } = default!;
     [Inject] private IImportPersistenceService PersistenceService { get; set; } = default!;
     [Inject] private INetworkService NetworkService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
@@ -566,15 +568,24 @@ public partial class ImportCatchCatalogue : ComponentBase, IAsyncDisposable
         };
     }
 
-    private void ContinueToReview()
+    private async Task ContinueToReview()
     {
-        if (_batch is null || !CanReview)
+        if (_batch is null || !CanReview || _isResolvingLocations)
         {
             return;
         }
 
-        _batch.ReplaceCatchProposals(ProposalService.Propose(_batch));
-        _batch.SetStage(ImportStageEnum.ReviewCatches);
+        _isResolvingLocations = true;
+        try
+        {
+            await LocationLookupService.ResolveAsync(_batch.Photos, _cancellationTokenSource.Token);
+            _batch.ReplaceCatchProposals(ProposalService.Propose(_batch));
+            _batch.SetStage(ImportStageEnum.ReviewCatches);
+        }
+        finally
+        {
+            _isResolvingLocations = false;
+        }
     }
 
     private string PhotoPreparationLabel(ImportSelectedPhotoModel photo)

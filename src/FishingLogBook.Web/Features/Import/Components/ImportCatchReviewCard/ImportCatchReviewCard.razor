@@ -99,6 +99,10 @@
                             <MudButton Variant="Variant.Outlined" OnClick="@(() => AcceptLocation(option.Location))"
                                        id="@($"import-catch-{Number}-location-{option.Photo.SelectionIndex}")">
                                 @Loc["Import_UsePhotoLocation", option.Photo.SelectionIndex + 1]
+                                @if (option.Location.LookupResult is { } lookup)
+                                {
+                                    <span>&nbsp;- @lookup.DisplayName</span>
+                                }
                             </MudButton>
                         }
                         <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="RemoveLocation"

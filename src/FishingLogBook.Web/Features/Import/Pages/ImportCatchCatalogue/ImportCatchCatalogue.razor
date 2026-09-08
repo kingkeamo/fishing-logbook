@@ -149,7 +149,7 @@
                                 @Loc["Common_Back"]
                             </MudButton>
                             <MudButton Color="Color.Primary" Variant="Variant.Filled"
-                                       Disabled="@(!CanReview)" OnClick="ContinueToReview"
+                                       Disabled="@(!CanReview || _isResolvingLocations)" OnClick="ContinueToReview"
                                        id="import-photos-continue">
                                 @Loc["Import_ReviewCatches"]
                             </MudButton>

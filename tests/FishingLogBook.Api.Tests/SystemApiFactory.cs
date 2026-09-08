@@ -8,6 +8,7 @@ using FishingLogBook.Application.Catches.Contracts.Repositories;
 using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.FishingLocations.Contracts.Repositories;
 using FishingLogBook.Application.FishingPreferences.Contracts.Repositories;
+using FishingLogBook.Application.LocationLookup.Contracts.Services;
 using FishingLogBook.Application.OfflineAccess.Contracts.Repositories;
 using FishingLogBook.Application.Profiles.Contracts.Repositories;
 using FishingLogBook.Application.SystemStatus.Contracts.Repositories;
@@ -70,6 +71,8 @@ public class SystemApiFactory : WebApplicationFactory<Program>
 
     public IFishingLocationPreferenceRepository FishingLocationPreferenceRepository { get; } =
         Substitute.For<IFishingLocationPreferenceRepository>();
+
+    public ILocationLookupService LocationLookupService { get; } = Substitute.For<ILocationLookupService>();
 
     public static readonly Guid FlyMethodId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
 
@@ -300,6 +303,8 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(FishingLocationPreferenceRepository);
             services.RemoveAll<IUserPlatformCapabilityRepository>();
             services.AddSingleton(UserPlatformCapabilityRepository);
+            services.RemoveAll<ILocationLookupService>();
+            services.AddSingleton(LocationLookupService);
             ConfigureAdditionalTestServices(services);
         });
     }

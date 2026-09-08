@@ -399,6 +399,9 @@ public class WhenTestingRender
         await using var context = CreateContext();
         var timestamp = ImportTimestampModel.FromExplicitInstant(CapturedOn, ImportTimestampSourceEnum.ExifOriginal);
         var photo = Photo(timestamp);
+        photo.SetLocation(photo.Location.WithLookup(
+            ImportLocationLookupStatusEnum.Resolved,
+            new ImportLocationLookupResultModel("Dublin, Ireland", "Dublin", null, "Ireland")));
         var proposal = Proposal(photo, timestamp,
             ImportCatchProposalReasonEnum.TrustworthyCaptureTime,
             ImportCatchProposalReasonEnum.ConflictingGps);
@@ -410,6 +413,7 @@ public class WhenTestingRender
             .Add(component => component.Number, 1)
             .Add(component => component.Editable, true));
         cut.Find("#import-catch-1-edit").Click();
+        cut.Find("#import-catch-1-location-0").TextContent.Should().Contain("Dublin, Ireland");
 
         // Act
         cut.Find("#import-catch-1-location-0").Click();
@@ -417,7 +421,7 @@ public class WhenTestingRender
         // Assert
         proposal.HasUnresolvedGpsConflict.Should().BeFalse();
         proposal.Location!.Decision.Should().Be(ImportLocationDecisionEnum.Accepted);
-        cut.Find("#import-catch-1-location").TextContent.Should().Contain("accepted");
+        cut.Find("#import-catch-1-location").TextContent.Should().Contain("Dublin, Ireland");
     }
 
     [Fact]
@@ -467,6 +471,34 @@ public class WhenTestingRender
             "date and time require confirmation"
         }
     };
+
+    [Fact]
+    public async Task ItShouldShowTheResolvedHistoricalPlaceLabel()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var timestamp = ImportTimestampModel.FromExplicitInstant(
+            CapturedOn,
+            ImportTimestampSourceEnum.ExifOriginal);
+        var photo = Photo(timestamp);
+        photo.SetLocation(photo.Location.WithLookup(
+            ImportLocationLookupStatusEnum.Resolved,
+            new ImportLocationLookupResultModel("Dublin, Ireland", "Dublin", null, "Ireland")));
+        var proposal = Proposal(photo, timestamp, ImportCatchProposalReasonEnum.TrustworthyCaptureTime);
+        var batch = Batch(photo, proposal);
+
+        // Act
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, batch)
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1));
+
+        // Assert
+        cut.Find("#import-catch-1-location").TextContent.Should().Be("Dublin, Ireland");
+        proposal.Location!.Latitude.Should().Be(53.3498);
+        proposal.Location.Longitude.Should().Be(-6.2603);
+    }
 
     private static BunitContext CreateContext(ITimeService? time = null)
     {

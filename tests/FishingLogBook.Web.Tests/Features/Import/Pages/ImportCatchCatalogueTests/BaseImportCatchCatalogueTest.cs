@@ -32,7 +32,8 @@ public class BaseImportCatchCatalogueTest
         IImportTripProposalService? tripProposalService = null,
         IImportPersistenceService? persistenceService = null,
         INetworkService? networkService = null,
-        ILoggingService? loggingService = null)
+        ILoggingService? loggingService = null,
+        IImportLocationLookupService? locationLookupService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -64,6 +65,7 @@ public class BaseImportCatchCatalogueTest
 
         context.Services.AddSingleton(network);
         context.Services.AddSingleton(loggingService ?? Substitute.For<ILoggingService>());
+        context.Services.AddSingleton(locationLookupService ?? Substitute.For<IImportLocationLookupService>());
         var existingTrips = Substitute.For<IImportExistingTripService>();
         existingTrips.GetCandidatesAsync(
                 Arg.Any<IReadOnlyList<ImportTripProposalModel>>(),
