@@ -64,7 +64,11 @@ public class WhenTestingResolve : BaseImportLocationLookupServiceTest
         var first = Photo(0, 53.34981, -6.26031);
         var second = Photo(1, 53.34982, -6.26032);
         client.GetAsync(53.34981, -6.26031, Arg.Any<CancellationToken>())
-            .Returns(new LocationLookupDto("Dublin, Ireland", "Dublin", null, "Ireland"));
+            .Returns(new LocationLookupDto(["Dublin", "Ireland"])
+            {
+                Locality = "Dublin",
+                Country = "Ireland"
+            });
 
         // Act
         await service.ResolveAsync([first, second], CancellationToken.None);

@@ -117,6 +117,7 @@ public sealed class CatchService : ICatchService
             BaitOrLure = TrimToNull(args.Catch.BaitOrLure),
             Notes = TrimToNull(args.Catch.Notes),
             Location = location,
+            PlaceName = location is null ? null : TrimToNull(args.Catch.PlaceName),
             Photographs = photographs
                 .Select(photograph => new CatchPhotograph
                 {
@@ -304,6 +305,7 @@ public sealed class CatchService : ICatchService
             Method = catchRecord.Method,
             BaitOrLure = catchRecord.BaitOrLure,
             Notes = catchRecord.Notes,
+            PlaceName = exposure is null ? null : catchRecord.PlaceName,
             Photographs = photographs
         };
     }
@@ -365,7 +367,11 @@ public sealed class CatchService : ICatchService
                 CatchDetailConstants.MaxBaitOrLureLength)
             || !CatchDetailConstants.IsOptionalTextValid(
                 catchDto.Notes,
-                CatchDetailConstants.MaxNotesLength))
+                CatchDetailConstants.MaxNotesLength)
+            || !CatchDetailConstants.IsOptionalTextValid(
+                catchDto.PlaceName,
+                CatchDetailConstants.MaxPlaceNameLength)
+            || (!string.IsNullOrWhiteSpace(catchDto.PlaceName) && catchDto.Location is null))
         {
             return Result.Fail(new CatchDetailsInvalidError());
         }

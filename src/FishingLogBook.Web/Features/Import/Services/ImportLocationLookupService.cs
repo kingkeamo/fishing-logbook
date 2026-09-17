@@ -61,11 +61,15 @@ public sealed class ImportLocationLookupService : IImportLocationLookupService
                     status,
                     result is null
                         ? null
-                        : new ImportLocationLookupResultModel(
-                            result.DisplayName,
-                            result.Locality,
-                            result.Region,
-                            result.Country)));
+                        : new ImportLocationLookupResultModel(result.Components)
+                        {
+                            Street = result.Street,
+                            VenueOrFacility = result.VenueOrFacility,
+                            Locality = result.Locality,
+                            DistrictOrNeighbourhood = result.DistrictOrNeighbourhood,
+                            Region = result.Region,
+                            Country = result.Country
+                        }));
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

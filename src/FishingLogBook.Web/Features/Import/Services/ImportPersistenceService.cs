@@ -256,7 +256,8 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             SpeciesName = proposal.Species.Name,
             Method = proposal.Method.Name,
             Weight = proposal.Weight,
-            Length = proposal.Length
+            Length = proposal.Length,
+            PlaceName = location is null ? null : proposal.Location?.PlaceName
         };
         var current = await ExecuteAsync(
             () => _catchClient.GetAsync(proposal.Id, cancellationToken),
@@ -375,6 +376,7 @@ public sealed class ImportPersistenceService : IImportPersistenceService
             && string.Equals(current.Method, expected.Method, StringComparison.Ordinal)
             && current.Weight == expected.Weight
             && current.Length == expected.Length
+            && string.Equals(current.PlaceName, expected.PlaceName, StringComparison.Ordinal)
             && HasExpectedLocation(current.Location, expected.Location);
     }
 

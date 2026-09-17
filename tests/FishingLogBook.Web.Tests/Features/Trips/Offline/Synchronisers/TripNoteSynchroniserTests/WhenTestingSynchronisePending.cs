@@ -318,7 +318,7 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
                 Arg.Any<Guid>(),
                 Arg.Any<RecordTripNoteDto>(),
                 Arg.Any<CancellationToken>())
-            .Returns(async call =>
+            .Returns<Task<TripNoteDto?>>(async call =>
             {
                 await store.DeleteAsync(OwnerUserId, TripId, NoteId, CancellationToken.None);
                 var request = call.ArgAt<RecordTripNoteDto>(1);
@@ -348,7 +348,7 @@ public class WhenTestingSynchronisePending : BaseTripNoteSynchroniserTest
                 Arg.Any<Guid>(),
                 Arg.Any<RecordTripNoteDto>(),
                 Arg.Any<CancellationToken>())
-            .Returns(async call =>
+            .Returns<Task<TripNoteDto?>>(async call =>
             {
                 await release.Task;
                 var request = call.ArgAt<RecordTripNoteDto>(1);

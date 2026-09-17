@@ -86,7 +86,7 @@ public class WhenTestingSchema
             "id", "caughtbyuserid", "recordedbyuserid", "caughton", "createdon",
             "latitude", "longitude", "locationaccuracymetres", "locationcapturedon",
             "locationsource", "locationvisibility", "locationconsentversion", "speciesname",
-            "weight", "length", "method", "baitorlure", "notes", "tripid"
+            "weight", "length", "method", "baitorlure", "notes", "tripid", "placename"
         ];
 
         // Act
@@ -221,6 +221,8 @@ public class WhenTestingSchema
             "ckcatcheslengthrange",
             "ckcatcheslocationcoherent",
             "ckcatcheslocationvisibilityallowed",
+            "ckcatchesplacenamelength",
+            "ckcatchesplacenamehaslocation",
             "ckcatchesweightrange",
             "ckprofilespreferredlengthunit",
             "ckprofilespreferredweightunit",

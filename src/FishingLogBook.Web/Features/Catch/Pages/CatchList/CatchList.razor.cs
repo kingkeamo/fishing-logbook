@@ -420,7 +420,8 @@ public partial class CatchList : ComponentBase, IDisposable
             Length: dto.Length,
             Method: dto.Method,
             BaitOrLure: dto.BaitOrLure,
-            Notes: dto.Notes);
+            Notes: dto.Notes,
+            PlaceName: dto.PlaceName);
     }
 
     private async Task ComputeLocalTimesAsync(CancellationToken cancellationToken)

@@ -94,25 +94,29 @@ export async function inviteAngler(page, tripId, displayName) {
     await expect(invite).toBeVisible();
     await expect(invite).toBeEnabled();
     await invite.click();
-    await expect(page.locator('#invite-angler-modal')).toBeVisible();
-    await page.locator('#invite-angler-search').fill(displayName);
+    await expect(page.locator('#angler-picker-modal')).toBeVisible();
+    await page.locator('#angler-picker-search').fill(displayName);
     const search = page.waitForResponse(response =>
         new URL(response.url()).pathname === '/api/profiles/lookup'
         && response.request().method() === 'GET'
         && response.ok());
     await search;
-    await expect(page.locator('#invite-angler-searching')).toBeHidden();
-    await expect(page.locator('#invite-angler-results')).toBeVisible();
-    const result = page.locator('#invite-angler-results .invite-angler-result').first();
-    const userId = await result.getAttribute('id').then(id => id.replace('invite-angler-result-', ''));
+    await expect(page.locator('#angler-picker-searching')).toBeHidden();
+    const result = page.locator('[id^="angler-picker-result-"]').first();
+    await expect(result).toBeVisible();
+    const resultId = await result.getAttribute('id');
+    if (!resultId) {
+        throw new Error('Angler picker result has no id.');
+    }
+    const userId = resultId.replace('angler-picker-result-', '');
     await Promise.all([
         page.waitForResponse(response =>
             /\/api\/trips\/[0-9a-f-]+\/participants$/i.test(new URL(response.url()).pathname)
             && response.request().method() === 'POST'
             && response.ok()),
-        page.locator(`#invite-angler-invite-${userId}`).click()
+        page.locator(`#angler-picker-select-${userId}`).click()
     ]);
-    await expect(page.locator('#invite-angler-modal')).toBeHidden();
+    await expect(page.locator('#angler-picker-modal')).toBeHidden();
     return userId;
 }
 

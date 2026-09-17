@@ -39,6 +39,15 @@ public class WhenTestingAdd : BaseTripNotesTest
             .ShowAsync<AddTripNoteModal, AddTripNoteModalModel, AddTripNoteModalResult>(
                 Arg.Any<AddTripNoteModalModel>(),
                 Arg.Any<CancellationToken>());
+
+        // Act
+        var floating = context.Render<TripNotesComponent>(parameters =>
+            parameters.Add(component => component.Trip, Trip())
+                .Add(component => component.ViewerUserId, OwnerUserId)
+                .Add(component => component.UseFloatingTrigger, true));
+
+        // Assert
+        floating.Find("#trip-note-start").GetAttribute("title").Should().Be("Add note");
     }
 
     [Fact]

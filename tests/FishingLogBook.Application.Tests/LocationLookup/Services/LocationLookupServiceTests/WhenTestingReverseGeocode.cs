@@ -27,7 +27,7 @@ public class WhenTestingReverseGeocode : BaseLocationLookupServiceTest
     }
 
     [Fact]
-    public async Task ItShouldReturnNoResultAndAvoidLoggingCoordinatesWhenTheProviderFails()
+    public async Task ItShouldReturnFailureAndAvoidLoggingCoordinatesWhenTheProviderFails()
     {
         // Arrange
         var (service, client, logger) = CreateService();
@@ -38,8 +38,7 @@ public class WhenTestingReverseGeocode : BaseLocationLookupServiceTest
         var result = await service.ReverseGeocodeAsync(53.3498, -6.2603, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().BeNull();
+        result.IsFailed.Should().BeTrue();
         logger.Messages.Should().ContainSingle();
         logger.Messages.Single().Should().NotContain("53.3498").And.NotContain("-6.2603");
         await client.Received(1).ReverseGeocodeAsync(
@@ -53,7 +52,11 @@ public class WhenTestingReverseGeocode : BaseLocationLookupServiceTest
     {
         // Arrange
         var (service, client, _) = CreateService();
-        var expected = new LocationLookupDto("Dublin, Ireland", "Dublin", null, "Ireland");
+        var expected = new LocationLookupDto(["Dublin", "Ireland"])
+        {
+            Locality = "Dublin",
+            Country = "Ireland"
+        };
         client.ReverseGeocodeAsync(53.3498, -6.2603, Arg.Any<CancellationToken>()).Returns(expected);
 
         // Act
@@ -72,7 +75,11 @@ public class WhenTestingReverseGeocode : BaseLocationLookupServiceTest
     {
         // Arrange
         var (service, client, _) = CreateService();
-        var expected = new LocationLookupDto("Dublin, Ireland", "Dublin", null, "Ireland");
+        var expected = new LocationLookupDto(["Dublin", "Ireland"])
+        {
+            Locality = "Dublin",
+            Country = "Ireland"
+        };
         client.ReverseGeocodeAsync(53.3498, -6.2603, Arg.Any<CancellationToken>()).Returns(expected);
 
         // Act

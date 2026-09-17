@@ -1,0 +1,35 @@
+@namespace FishingLogBook.Web.Features.Import.Components.ImportLocationRow
+
+<div class="import-location-row">
+    <MudText Typo="Typo.body2" Class="mud-text-secondary import-location-row-label" id="@($"{IdPrefix}-location")">@Label</MudText>
+    @if (CanEdit || CanRemove || CanSelect)
+    {
+        <MudStack Row="true" Spacing="0" Class="import-location-row-actions">
+            @if (CanEdit)
+            {
+                <MudTooltip Text="@Loc["Import_EditPlaceName"]">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                   OnClick="Edit" aria-label="@Loc["Import_EditPlaceName"]"
+                                   id="@($"{IdPrefix}-edit-place-name")" />
+                </MudTooltip>
+            }
+            @if (CanRemove)
+            {
+                <MudTooltip Text="@Loc["Import_RemoveLocation"]">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                   OnClick="Remove" aria-label="@Loc["Import_RemoveLocation"]"
+                                   id="@($"{IdPrefix}-remove-location")" />
+                </MudTooltip>
+            }
+            @if (CanSelect)
+            {
+                <MudTooltip Text="@Loc[IsSelected ? "Import_LocationSelected" : "Import_SelectLocation"]">
+                    <MudIconButton Icon="@(IsSelected ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
+                                   Size="Size.Small" Color="@(IsSelected ? Color.Primary : Color.Default)"
+                                   OnClick="Select" aria-label="@Loc[IsSelected ? "Import_LocationSelected" : "Import_SelectLocation"]"
+                                   id="@($"{IdPrefix}-select-location")" />
+                </MudTooltip>
+            }
+        </MudStack>
+    }
+</div>

@@ -10,7 +10,8 @@ public sealed record ImportLocationModel
         bool historicalGpsPresent,
         ImportLocationDecisionEnum decision = ImportLocationDecisionEnum.Undecided,
         ImportLocationLookupStatusEnum lookupStatus = ImportLocationLookupStatusEnum.NotRequested,
-        ImportLocationLookupResultModel? lookupResult = null)
+        ImportLocationLookupResultModel? lookupResult = null,
+        string? placeName = null)
     {
         if (latitude.HasValue != longitude.HasValue)
         {
@@ -38,6 +39,7 @@ public sealed record ImportLocationModel
         Decision = decision;
         LookupStatus = lookupStatus;
         LookupResult = lookupResult;
+        PlaceName = HasCanonicalCoordinates ? NormalizePlaceName(placeName) : null;
     }
 
     public double? Latitude { get; }
@@ -51,6 +53,8 @@ public sealed record ImportLocationModel
     public ImportLocationLookupStatusEnum LookupStatus { get; }
 
     public ImportLocationLookupResultModel? LookupResult { get; }
+
+    public string? PlaceName { get; }
 
     public bool HasCanonicalCoordinates
     {
@@ -73,7 +77,8 @@ public sealed record ImportLocationModel
             HistoricalGpsPresent,
             ImportLocationDecisionEnum.Accepted,
             LookupStatus,
-            LookupResult);
+            LookupResult,
+            PlaceName);
     }
 
     public ImportLocationModel Remove()
@@ -84,13 +89,39 @@ public sealed record ImportLocationModel
             HistoricalGpsPresent,
             ImportLocationDecisionEnum.Removed,
             LookupStatus,
-            LookupResult);
+            LookupResult,
+            placeName: null);
     }
 
     public ImportLocationModel WithLookup(
         ImportLocationLookupStatusEnum status,
         ImportLocationLookupResultModel? result = null)
     {
-        return new ImportLocationModel(Latitude, Longitude, HistoricalGpsPresent, Decision, status, result);
+        return new ImportLocationModel(
+            Latitude,
+            Longitude,
+            HistoricalGpsPresent,
+            Decision,
+            status,
+            result,
+            status == ImportLocationLookupStatusEnum.Resolved ? result?.DisplayName : null);
+    }
+
+    public ImportLocationModel WithPlaceName(string? placeName)
+    {
+        return new ImportLocationModel(
+            Latitude,
+            Longitude,
+            HistoricalGpsPresent,
+            Decision,
+            LookupStatus,
+            LookupResult,
+            placeName);
+    }
+
+    private static string? NormalizePlaceName(string? placeName)
+    {
+        var normalized = placeName?.Trim();
+        return string.IsNullOrEmpty(normalized) ? null : normalized;
     }
 }

@@ -102,6 +102,7 @@ public class BaseImportPersistenceServiceTest
                 Method = persistedCatch?.Method,
                 Weight = persistedCatch?.Weight,
                 Length = persistedCatch?.Length,
+                PlaceName = persistedCatch?.PlaceName,
                 Photographs =
                 [
                     new CatchPhotographViewDto(
@@ -133,7 +134,15 @@ public class BaseImportPersistenceServiceTest
             second.SetPreparation(ImportPhotoPreparationStatusEnum.Ready, "token", "blob:thumb-2");
             batch.AddPhoto(second);
         }
-        var location = new ImportLocationModel(53.1, -6.2, true).Accept();
+        var lookup = new ImportLocationLookupResultModel(["River Corrib", "Galway", "Ireland"])
+        {
+            Street = "River Corrib",
+            Locality = "Galway",
+            Country = "Ireland"
+        };
+        var location = new ImportLocationModel(53.1, -6.2, true)
+            .WithLookup(ImportLocationLookupStatusEnum.Resolved, lookup)
+            .Accept();
         var proposal = new ImportCatchProposalModel(
             CatchId,
             includeSecondPhoto ? [PhotoId, SecondPhotoId] : [PhotoId],

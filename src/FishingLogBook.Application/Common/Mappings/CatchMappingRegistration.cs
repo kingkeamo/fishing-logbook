@@ -45,7 +45,8 @@ public sealed class CatchMappingRegistration : IRegister
                 Length = source.Length,
                 Method = source.Method,
                 BaitOrLure = source.BaitOrLure,
-                Notes = source.Notes
+                Notes = source.Notes,
+                PlaceName = source.PlaceName
             });
     }
 }

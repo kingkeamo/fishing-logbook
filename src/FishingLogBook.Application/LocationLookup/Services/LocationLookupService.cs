@@ -49,7 +49,7 @@ public sealed class LocationLookupService : ILocationLookupService
         {
             _logger.LogWarning(exception, "Historical location lookup failed without blocking Import.");
             _cache.Remove(roundedLatitude, roundedLongitude);
-            return Result.Ok<LocationLookupDto?>(null);
+            return Result.Fail<LocationLookupDto?>("Historical location lookup failed.");
         }
     }
 

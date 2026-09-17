@@ -81,7 +81,11 @@ public class WhenTestingGetLabel : IClassFixture<SystemApiFactory>
     public async Task ItShouldReturnTheResolvedLocationLabel()
     {
         // Arrange
-        var expected = new LocationLookupDto("Dublin, Ireland", "Dublin", null, "Ireland");
+        var expected = new LocationLookupDto(["Dublin", "Ireland"])
+        {
+            Locality = "Dublin",
+            Country = "Ireland"
+        };
         _factory.LocationLookupService
             .ReverseGeocodeAsync(53.3498, -6.2603, Arg.Any<CancellationToken>())
             .Returns(Result.Ok<LocationLookupDto?>(expected));
@@ -94,10 +98,31 @@ public class WhenTestingGetLabel : IClassFixture<SystemApiFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var location = await response.Content.ReadFromJsonAsync<LocationLookupDto>();
-        location.Should().Be(expected);
+        location.Should().BeEquivalentTo(expected);
         await _factory.LocationLookupService.Received(1).ReverseGeocodeAsync(
             Arg.Is<double>(value => value == 53.3498),
             Arg.Is<double>(value => value == -6.2603),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturnServiceUnavailableWhenLookupFails()
+    {
+        // Arrange
+        _factory.LocationLookupService
+            .ReverseGeocodeAsync(53.3498, -6.2603, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<LocationLookupDto?>("Provider failed."));
+        _factory.LocationLookupService.ClearReceivedCalls();
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        using var response = await client.PostAsJsonAsync(ResourcePath, Request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.LocationLookupService.Received(1).ReverseGeocodeAsync(
+            Arg.Any<double>(),
+            Arg.Any<double>(),
             Arg.Any<CancellationToken>());
     }
 }

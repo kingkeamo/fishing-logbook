@@ -137,6 +137,7 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         // Assert
         cut.Find("#import-photo-0").TextContent.Should().Contain("historical details need review");
         cut.Find("#import-photos-continue").HasAttribute("disabled").Should().BeFalse();
+        cut.Find("#import-photos-continue").TextContent.Should().Contain("Continue");
     }
 
     [Fact]

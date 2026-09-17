@@ -26,5 +26,7 @@ public sealed class Catch
 
     public CatchLocation? Location { get; init; }
 
+    public string? PlaceName { get; init; }
+
     public IReadOnlyList<CatchPhotograph> Photographs { get; init; } = [];
 }

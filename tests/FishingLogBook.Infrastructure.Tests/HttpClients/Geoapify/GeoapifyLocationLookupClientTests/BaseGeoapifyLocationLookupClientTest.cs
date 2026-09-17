@@ -20,7 +20,8 @@ public class BaseGeoapifyLocationLookupClientTest
             {
                 ApiKey = "test-key",
                 BaseUrl = "https://geoapify.test/"
-            }));
+            }),
+            TestMapper.Create());
     }
 
     protected static HttpResponseMessage JsonResponse(

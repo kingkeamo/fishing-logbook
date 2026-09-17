@@ -41,7 +41,7 @@ public class WhenTestingGet : BaseLocationLookupClientTest
     {
         // Arrange
         var handler = new RecordingHandler(
-            """{"displayName":"Dublin, Ireland","locality":"Dublin","region":null,"country":"Ireland"}""");
+            """{"components":["Dublin","Ireland"],"locality":"Dublin","region":null,"country":"Ireland"}""");
         var client = CreateClient(handler);
 
         // Act
@@ -49,6 +49,7 @@ public class WhenTestingGet : BaseLocationLookupClientTest
 
         // Assert
         result!.DisplayName.Should().Be("Dublin, Ireland");
+        result.Components.Should().Equal("Dublin", "Ireland");
         result.Locality.Should().Be("Dublin");
         result.Country.Should().Be("Ireland");
         handler.LastRequest!.RequestUri!.AbsoluteUri.Should().Be(

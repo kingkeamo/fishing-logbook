@@ -113,7 +113,15 @@ public class WhenTestingWebSerialization : BaseSerializationTest
         var original = new CatchDto(
             catchId,
             DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
-            [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")])
+            [new CatchPhotographDto(Guid.NewGuid(), catchId, "image/jpeg")],
+            new CatchLocationDto(
+                53.2707,
+                -9.0568,
+                null,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.PhotoMetadata,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion))
         {
             CaughtByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             RecordedByUserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
@@ -122,7 +130,8 @@ public class WhenTestingWebSerialization : BaseSerializationTest
             Length = 64m,
             Method = "Lure",
             BaitOrLure = "Spinner",
-            Notes = "Weedline"
+            Notes = "Weedline",
+            PlaceName = "Galway, Ireland"
         };
 
         // Act
@@ -132,6 +141,7 @@ public class WhenTestingWebSerialization : BaseSerializationTest
         // Assert
         json.Should().Contain("\"speciesName\":\"Pike\"");
         json.Should().Contain("\"weight\":2.5");
+        json.Should().Contain("\"placeName\":\"Galway, Ireland\"");
         deserialized.Should().BeEquivalentTo(original);
     }
 
