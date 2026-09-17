@@ -220,7 +220,7 @@ public class WhenTestingSynchronisation : BaseMainLayoutTest
             Arg.Is<Exception>(exception => exception.Message == "sync failed"),
             CancellationToken.None);
         snackbar.ShownSnackbars.Should().ContainSingle(
-            message => message.Message.Contains("still saved on this device")
+            message => message.Message != null && message.Message.Contains("still saved on this device")
                 && message.Severity == Severity.Warning);
         await diagnosticSynchroniser.Received(1).SynchronisePendingAsync(Arg.Any<CancellationToken>());
     }

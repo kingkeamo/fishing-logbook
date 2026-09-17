@@ -1375,7 +1375,7 @@
   <data name="Import_DuplicatePossible" xml:space="preserve"><value>Photographie potentiellement dupliquée</value></data>
   <data name="Import_DuplicateRemove" xml:space="preserve"><value>Supprimer le doublon</value></data>
   <data name="Import_DuplicateKeepBoth" xml:space="preserve"><value>Conserver les deux</value></data>
-  <data name="Import_ReviewCatches" xml:space="preserve"><value>Vérifier les prises</value></data>
+  <data name="Import_ReviewCatches" xml:space="preserve"><value>Continuer</value></data>
   <data name="Import_ReviewTitle" xml:space="preserve"><value>Prises proposées</value></data>
   <data name="Import_CorrectionLater" xml:space="preserve"><value>Les outils de vérification et de correction seront ajoutés à la prochaine étape de cette fonctionnalité.</value></data>
   <data name="Import_CatchNumber" xml:space="preserve"><value>Prise {0}</value></data>
@@ -1400,6 +1400,8 @@
   <data name="Import_SelectPhoto" xml:space="preserve"><value>SÃ©lectionner la photographie {0}</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Utiliser le lieu de la photo {0}</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Supprimer le lieu</value></data>
+  <data name="Import_SelectLocation" xml:space="preserve"><value>Utiliser ce lieu</value></data>
+  <data name="Import_LocationSelected" xml:space="preserve"><value>Lieu sélectionné</value></data>
   <data name="Import_LocationAccepted" xml:space="preserve"><value>Lieu de la photo acceptÃ©</value></data>
   <data name="Import_LocationRemoved" xml:space="preserve"><value>Lieu supprimÃ©</value></data>
   <data name="Import_MoveToNewCatch" xml:space="preserve"><value>DÃ©placer la sÃ©lection vers une nouvelle prise</value></data>
@@ -1452,4 +1454,10 @@
   <data name="Import_Success" xml:space="preserve"><value>{0} prises, {1} photographies et {2} sorties ont été importées.</value></data>
   <data name="Import_ViewCatches" xml:space="preserve"><value>Voir les prises</value></data>
   <data name="Import_ViewTrips" xml:space="preserve"><value>Voir les sorties</value></data>
+  <data name="Import_EditPlaceName" xml:space="preserve"><value>Modifier le nom du lieu</value></data>
+  <data name="Import_LocationDetails" xml:space="preserve"><value>D&#233;tails du lieu</value></data>
+  <data name="Import_LocationDetailsHelp" xml:space="preserve"><value>Choisissez les &#233;l&#233;ments utiles &#224; inclure dans le nom du lieu enregistr&#233;.</value></data>
+  <data name="Import_LocationPreview" xml:space="preserve"><value>Aper&#231;u du nom du lieu</value></data>
+  <data name="Import_NoPlaceName" xml:space="preserve"><value>Aucun nom de lieu</value></data>
+  <data name="Import_PlaceNameTooLong" xml:space="preserve"><value>Supprimez certains d&#233;tails pour raccourcir le nom du lieu.</value></data>
 </root>

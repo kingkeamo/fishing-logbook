@@ -336,6 +336,34 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
     }
 
     [Fact]
+    public void ItShouldRejectAPlaceNameWithoutCoordinates()
+    {
+        // Arrange
+        var command = Command(placeName: "Galway, Ireland");
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.Location);
+    }
+
+    [Fact]
+    public void ItShouldRejectAPlaceNameOverTheLimit()
+    {
+        // Arrange
+        var command = Command(
+            location: ValidLocation(),
+            placeName: new string('a', CatchDetailConstants.MaxPlaceNameLength + 1));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Catch.PlaceName);
+    }
+
+    [Fact]
     public void ItShouldAcceptBoundaryMeasurementsAndOptionalDetails()
     {
         // Arrange
@@ -378,7 +406,8 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
         decimal? length = null,
         string? method = null,
         string? baitOrLure = null,
-        string? notes = null)
+        string? notes = null,
+        string? placeName = null)
     {
         var resolvedCatchId = catchId ?? Guid.NewGuid();
         return new UpsertCatchCommand
@@ -400,7 +429,8 @@ public class WhenTestingValidate : BaseUpsertCatchCommandValidatorTest
                 Length = length,
                 Method = method,
                 BaitOrLure = baitOrLure,
-                Notes = notes
+                Notes = notes,
+                PlaceName = placeName
             }
         };
     }

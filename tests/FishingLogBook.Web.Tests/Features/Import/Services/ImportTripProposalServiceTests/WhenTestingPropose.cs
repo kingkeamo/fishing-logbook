@@ -185,8 +185,16 @@ public class WhenTestingPropose : BaseImportTripProposalServiceTest
     public void ItShouldIgnorePlaceLabelsWhenGrouping()
     {
         // Arrange
-        var firstLabel = new ImportLocationLookupResultModel("Galway, Ireland", "Galway", null, "Ireland");
-        var secondLabel = new ImportLocationLookupResultModel("Different label", "Spiddal", null, "Ireland");
+        var firstLabel = new ImportLocationLookupResultModel(["Galway", "Ireland"])
+        {
+            Locality = "Galway",
+            Country = "Ireland"
+        };
+        var secondLabel = new ImportLocationLookupResultModel(["Spiddal", "Ireland"])
+        {
+            Locality = "Spiddal",
+            Country = "Ireland"
+        };
         var batch = Batch(
             new CatchSpec(TimeSpan.Zero, 53d, -9d, LookupResult: firstLabel),
             new CatchSpec(TimeSpan.FromHours(1), 53d, -9d, LookupResult: secondLabel));

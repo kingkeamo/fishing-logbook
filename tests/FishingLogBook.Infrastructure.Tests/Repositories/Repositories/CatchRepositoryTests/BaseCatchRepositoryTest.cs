@@ -184,7 +184,7 @@ public abstract class BaseCatchRepositoryTest
             LocationDefaults.ConsentVersion)!;
     }
 
-    protected static Catch WithLocation(Catch catchRecord, CatchLocation location)
+    protected static Catch WithLocation(Catch catchRecord, CatchLocation location, string? placeName = null)
     {
         return new Catch
         {
@@ -198,6 +198,7 @@ public abstract class BaseCatchRepositoryTest
             Method = catchRecord.Method,
             BaitOrLure = catchRecord.BaitOrLure,
             Notes = catchRecord.Notes,
+            PlaceName = placeName ?? catchRecord.PlaceName,
             Location = location,
             Photographs = catchRecord.Photographs
         };

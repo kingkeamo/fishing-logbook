@@ -200,6 +200,52 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
     }
 
     [Fact]
+    public async Task ItShouldRoundTripAPlaceNameOnlyWithItsCoordinates()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var catchRecord = WithLocation(
+            NewCatch(userId),
+            SampleLocation(),
+            "Zayed International Airport, Abu Dhabi");
+
+        // Act
+        var result = await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+        var loaded = await Sut.GetByIdAsync(catchRecord.Id, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.PlaceName.Should().Be("Zayed International Airport, Abu Dhabi");
+        loaded.Value!.PlaceName.Should().Be("Zayed International Airport, Abu Dhabi");
+        loaded.Value.Location.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAPlaceNameWithoutCoordinatesAtTheDatabaseBoundary()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var action = () => connection.ExecuteAsync(
+            """
+            INSERT INTO catches (id, caughtbyuserid, recordedbyuserid, caughton, placename)
+            VALUES (@Id, @UserId, @UserId, @CaughtOn, @PlaceName);
+            """,
+            new
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                CaughtOn = DateTimeOffset.UtcNow,
+                PlaceName = "Galway, Ireland"
+            });
+
+        // Act
+        // Assert
+        var exception = await action.Should().ThrowAsync<PostgresException>();
+        exception.Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
+    }
+
+    [Fact]
     public async Task ItShouldRoundTripLocationWhenAccuracyIsMissing()
     {
         // Arrange

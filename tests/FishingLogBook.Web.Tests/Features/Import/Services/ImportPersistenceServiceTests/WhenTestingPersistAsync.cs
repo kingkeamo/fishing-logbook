@@ -85,6 +85,7 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
                 && record.SpeciesName == "Brown Trout"
                 && record.Weight == 2.5m
                 && record.Length == 42m
+                && record.PlaceName == "River Corrib, Galway, Ireland"
                 && record.Location != null),
             Arg.Any<CancellationToken>());
         await BlobRegistry.Received(1).GetBytesAsync("token", Arg.Any<CancellationToken>());
@@ -93,6 +94,28 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             Arg.Is<RecordPhotographDto>(photo => photo.PhotographId == PhotoId && photo.ObjectKey == "object"),
             Arg.Any<CancellationToken>());
         await CatchClient.Received(3).GetAsync(CatchId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistTheReviewedPlaceNameRatherThanProviderMetadata()
+    {
+        // Arrange
+        var batch = Batch(ImportTripDecisionEnum.NoTrip);
+        var proposal = batch.CatchProposals.Single();
+        proposal.SetLocation(proposal.Location!.WithPlaceName("Galway, Ireland"));
+        proposal.MarkReviewed();
+        var sut = CreateSut();
+
+        // Act
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await CatchClient.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(record =>
+                record.PlaceName == "Galway, Ireland"
+                && record.Location != null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -535,6 +558,7 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
             Method = "Fly",
             Weight = 2.5m,
             Length = 42m,
+            PlaceName = "River Corrib, Galway, Ireland",
             Photographs = includePhotograph
                 ? [new CatchPhotographViewDto(
                     PhotoId,

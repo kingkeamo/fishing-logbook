@@ -21,6 +21,7 @@ using FishingLogBook.Web.Features.Diagnostics.Storage;
 using FishingLogBook.Web.Features.Diagnostics.Storage.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Synchronisers;
 using FishingLogBook.Web.Features.Import.Services;
+using FishingLogBook.Web.Features.Locations.Clients;
 using FishingLogBook.Web.Features.OfflineAccess.Clients;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
@@ -117,6 +118,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IImportTripProposalService, ImportTripProposalService>();
         services.AddScoped<IImportPersistenceService, ImportPersistenceService>();
         services.AddScoped<IImportExistingTripService, ImportExistingTripService>();
+        services.AddScoped<ILocationLookupClient, LocationLookupClient>();
+        services.AddScoped<IImportLocationLookupService, ImportLocationLookupService>();
         services.AddScoped<ICatchPhotographProposalService, CatchPhotographProposalService>();
         services.AddSingleton<DiagnosticStatusModel>();
         services.AddScoped<ILoggingService, LoggingService>();

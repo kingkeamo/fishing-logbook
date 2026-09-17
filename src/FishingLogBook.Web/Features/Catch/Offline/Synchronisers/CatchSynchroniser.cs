@@ -943,7 +943,8 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
             Method = catchRecord.Method,
             BaitOrLure = catchRecord.BaitOrLure,
             Notes = catchRecord.Notes,
-            TripId = catchRecord.TripId
+            TripId = catchRecord.TripId,
+            PlaceName = catchRecord.PlaceName
         };
     }
 
@@ -961,6 +962,7 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
             Method = persisted.Method,
             BaitOrLure = persisted.BaitOrLure,
             Notes = persisted.Notes,
+            PlaceName = persisted.PlaceName,
             Location = persisted.Location is null
                 ? null
                 : new CatchLocationModel(
@@ -992,7 +994,8 @@ public sealed class CatchSynchroniser : ICatchSynchroniser
             && catchRecord.Length == sent.Length
             && string.Equals(catchRecord.Method, sent.Method, StringComparison.Ordinal)
             && string.Equals(catchRecord.BaitOrLure, sent.BaitOrLure, StringComparison.Ordinal)
-            && string.Equals(catchRecord.Notes, sent.Notes, StringComparison.Ordinal);
+            && string.Equals(catchRecord.Notes, sent.Notes, StringComparison.Ordinal)
+            && string.Equals(catchRecord.PlaceName, sent.PlaceName, StringComparison.Ordinal);
     }
 
     private static bool HaveSamePhotographs(CatchModel catchRecord, CatchDto sent)

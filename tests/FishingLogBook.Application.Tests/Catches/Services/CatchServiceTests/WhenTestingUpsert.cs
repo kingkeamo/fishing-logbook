@@ -257,6 +257,35 @@ public class WhenTestingUpsert : BaseCatchServiceTest
     }
 
     [Fact]
+    public async Task ItShouldPersistATrimmedPlaceNameWithItsLocation()
+    {
+        // Arrange
+        var args = Args(
+            location: new CatchLocationDto(
+                53.2707,
+                -9.0568,
+                null,
+                DateTimeOffset.Parse("2026-08-17T08:00:00Z"),
+                LocationDefaults.PhotoMetadata,
+                LocationDefaults.Private,
+                LocationDefaults.ConsentVersion),
+            placeName: "  Galway, Ireland  ");
+        MockCatchRepository
+            .UpsertAsync(Arg.Any<Catch>(), Arg.Any<CancellationToken>())
+            .Returns(call => Result.Ok(call.ArgAt<Catch>(0)));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.PlaceName.Should().Be("Galway, Ireland");
+        await MockCatchRepository.Received(1).UpsertAsync(
+            Arg.Is<Catch>(item => item.PlaceName == "Galway, Ireland" && item.Location != null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldFailWhenWeightIsNotPositive()
     {
         // Arrange
@@ -373,7 +402,8 @@ public class WhenTestingUpsert : BaseCatchServiceTest
         decimal? length = null,
         string? method = null,
         string? baitOrLure = null,
-        string? notes = null)
+        string? notes = null,
+        string? placeName = null)
     {
         var resolvedCatchId = catchId ?? Guid.NewGuid();
         return new UpsertCatchArgs
@@ -393,7 +423,8 @@ public class WhenTestingUpsert : BaseCatchServiceTest
                 Length = length,
                 Method = method,
                 BaitOrLure = baitOrLure,
-                Notes = notes
+                Notes = notes,
+                PlaceName = placeName
             }
         };
     }

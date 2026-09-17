@@ -122,6 +122,7 @@ public sealed class TripCatchService : ITripCatchService
             Weight: dto.Weight,
             Length: dto.Length,
             Method: dto.Method,
-            TripId: dto.TripId);
+            TripId: dto.TripId,
+            PlaceName: dto.PlaceName);
     }
 }

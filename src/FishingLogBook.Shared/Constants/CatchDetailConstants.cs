@@ -14,6 +14,8 @@ public static class CatchDetailConstants
 
     public const int MaxNotesLength = 2000;
 
+    public const int MaxPlaceNameLength = 160;
+
     public static readonly TimeSpan MaxCaughtOnFutureSkew = TimeSpan.FromMinutes(15);
 
     public static bool IsCaughtOnValid(DateTimeOffset caughtOn, DateTimeOffset now)

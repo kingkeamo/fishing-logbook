@@ -97,6 +97,7 @@ public class WhenTestingCorrectAngler : IClassFixture<SystemApiFactory>
         ResetRepositories();
         var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: "angler-no-trip"));
         var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        Assert.NotNull(current);
         var catchRecord = new Catch
         {
             Id = Guid.NewGuid(),

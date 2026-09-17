@@ -8,6 +8,7 @@ using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Import.Components.ImportCatchReviewCard;
 using FishingLogBook.Web.Features.Import.Enums;
+using FishingLogBook.Web.Features.Import.Modals.PlaceName;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Tests.TestSupport;
@@ -399,10 +400,29 @@ public class WhenTestingRender
         await using var context = CreateContext();
         var timestamp = ImportTimestampModel.FromExplicitInstant(CapturedOn, ImportTimestampSourceEnum.ExifOriginal);
         var photo = Photo(timestamp);
-        var proposal = Proposal(photo, timestamp,
-            ImportCatchProposalReasonEnum.TrustworthyCaptureTime,
-            ImportCatchProposalReasonEnum.ConflictingGps);
-        var batch = Batch(photo, proposal);
+        photo.SetLocation(photo.Location.WithLookup(
+            ImportLocationLookupStatusEnum.Resolved,
+            new ImportLocationLookupResultModel(["Dublin", "Ireland"])
+            {
+                Locality = "Dublin",
+                Country = "Ireland"
+            }));
+        var secondPhoto = Photo(timestamp, 1);
+        secondPhoto.SetLocation(new ImportLocationModel(53.2707, -9.0568, true).WithLookup(
+            ImportLocationLookupStatusEnum.Resolved,
+            new ImportLocationLookupResultModel(["Galway", "Ireland"])));
+        var proposal = new ImportCatchProposalModel(
+            Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            [photo.Id, secondPhoto.Id],
+            timestamp,
+            new ImportCatalogueSelectionModel(Guid.NewGuid(), "Fly", "Fly"),
+            new ImportCatalogueSelectionModel(Guid.NewGuid(), "BrownTrout", "Brown Trout"),
+            photo.Location,
+            [ImportCatchProposalReasonEnum.TrustworthyCaptureTime, ImportCatchProposalReasonEnum.ConflictingGps]);
+        var batch = new ImportBatchModel(Guid.NewGuid(), proposal.Method, proposal.Species);
+        batch.AddPhoto(photo);
+        batch.AddPhoto(secondPhoto);
+        batch.AddCatchProposal(proposal);
         var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
             .Add(component => component.Proposal, proposal)
             .Add(component => component.Batch, batch)
@@ -410,14 +430,20 @@ public class WhenTestingRender
             .Add(component => component.Number, 1)
             .Add(component => component.Editable, true));
         cut.Find("#import-catch-1-edit").Click();
+        cut.Find("#import-catch-1-location-0-location").TextContent.Should().Contain("Dublin, Ireland");
+        cut.Find("#import-catch-1-location-1-location").TextContent.Should().Contain("Galway, Ireland");
+        cut.FindComponents<MudTooltip>().Should().Contain(tooltip => tooltip.Instance.Text == "Use this location");
 
         // Act
-        cut.Find("#import-catch-1-location-0").Click();
+        cut.Find("#import-catch-1-location-0-select-location").Click();
 
         // Assert
         proposal.HasUnresolvedGpsConflict.Should().BeFalse();
         proposal.Location!.Decision.Should().Be(ImportLocationDecisionEnum.Accepted);
-        cut.Find("#import-catch-1-location").TextContent.Should().Contain("accepted");
+        cut.Find("#import-catch-1-location").TextContent.Should().Contain("Dublin, Ireland");
+        cut.Find("#import-catch-1-location-0-select-location").GetAttribute("aria-label")
+            .Should().Be("Selected location");
+        cut.FindComponents<MudTooltip>().Should().Contain(tooltip => tooltip.Instance.Text == "Selected location");
     }
 
     [Fact]
@@ -467,6 +493,105 @@ public class WhenTestingRender
             "date and time require confirmation"
         }
     };
+
+    [Fact]
+    public async Task ItShouldShowTheResolvedHistoricalPlaceLabel()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var timestamp = ImportTimestampModel.FromExplicitInstant(
+            CapturedOn,
+            ImportTimestampSourceEnum.ExifOriginal);
+        var photo = Photo(timestamp);
+        photo.SetLocation(photo.Location.WithLookup(
+            ImportLocationLookupStatusEnum.Resolved,
+            new ImportLocationLookupResultModel(["Dublin", "Ireland"])
+            {
+                Locality = "Dublin",
+                Country = "Ireland"
+            }));
+        var proposal = Proposal(photo, timestamp, ImportCatchProposalReasonEnum.TrustworthyCaptureTime);
+        var batch = Batch(photo, proposal);
+
+        // Act
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, batch)
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1));
+
+        // Assert
+        cut.Find("#import-catch-1-location").TextContent.Should().Be("Dublin, Ireland");
+        cut.FindAll("[id^='import-catch-1-location-']").Should().BeEmpty();
+        proposal.Location!.Latitude.Should().Be(53.3498);
+        proposal.Location.Longitude.Should().Be(-6.2603);
+    }
+
+    [Fact]
+    public async Task ItShouldApplyThePlaceNameReturnedByTheLocationDetailsModal()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var modal = context.Services.GetRequiredService<IModalService>();
+        modal.ShowAsync<PlaceNameModal, PlaceNameModalModel, PlaceNameModalResult>(
+                Arg.Is<PlaceNameModalModel>(model =>
+                    model.Components.SequenceEqual(new[] { "Dublin", "Leinster", "Ireland" })
+                    && model.CurrentPlaceName == "Dublin, Leinster, Ireland"),
+                Arg.Any<CancellationToken>())
+            .Returns(new PlaceNameModalResult("Dublin, Ireland"));
+        var timestamp = ImportTimestampModel.FromExplicitInstant(CapturedOn, ImportTimestampSourceEnum.ExifOriginal);
+        var photo = Photo(timestamp);
+        photo.SetLocation(photo.Location.WithLookup(
+            ImportLocationLookupStatusEnum.Resolved,
+            new ImportLocationLookupResultModel(["Dublin", "Leinster", "Ireland"])));
+        var proposal = Proposal(photo, timestamp, ImportCatchProposalReasonEnum.TrustworthyCaptureTime);
+        var batch = Batch(photo, proposal);
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, batch)
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1)
+            .Add(component => component.Editable, true));
+        cut.FindComponents<MudTooltip>().Should().Contain(tooltip => tooltip.Instance.Text == "Edit place name");
+        cut.FindComponents<MudTooltip>().Should().Contain(tooltip => tooltip.Instance.Text == "Remove location");
+
+        // Act
+        await cut.Find("#import-catch-1-edit-place-name").ClickAsync();
+
+        // Assert
+        proposal.Location!.PlaceName.Should().Be("Dublin, Ireland");
+        proposal.Location.Decision.Should().Be(ImportLocationDecisionEnum.Accepted);
+        proposal.HasUnresolvedGpsConflict.Should().BeFalse();
+        cut.Find("#import-catch-1-location").TextContent.Should().Contain("Dublin, Ireland");
+        await modal.Received(1).ShowAsync<PlaceNameModal, PlaceNameModalModel, PlaceNameModalResult>(
+            Arg.Any<PlaceNameModalModel>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRemoveTheLocationFromTheSummaryAction()
+    {
+        // Arrange
+        await using var context = CreateContext();
+        var timestamp = ImportTimestampModel.FromExplicitInstant(CapturedOn, ImportTimestampSourceEnum.ExifOriginal);
+        var photo = Photo(timestamp);
+        var proposal = Proposal(photo, timestamp, ImportCatchProposalReasonEnum.TrustworthyCaptureTime);
+        var batch = Batch(photo, proposal);
+        var cut = context.Render<ImportCatchReviewCard>(parameters => parameters
+            .Add(component => component.Proposal, proposal)
+            .Add(component => component.Batch, batch)
+            .Add(component => component.Preferences, Preferences())
+            .Add(component => component.Number, 1)
+            .Add(component => component.Editable, true));
+
+        // Act
+        cut.Find("#import-catch-1-remove-location").Click();
+
+        // Assert
+        proposal.Location!.Decision.Should().Be(ImportLocationDecisionEnum.Removed);
+        cut.Find("#import-catch-1-location").TextContent.Should().Contain("Location removed");
+        cut.FindAll("#import-catch-1-remove-location").Should().BeEmpty();
+    }
 
     private static BunitContext CreateContext(ITimeService? time = null)
     {

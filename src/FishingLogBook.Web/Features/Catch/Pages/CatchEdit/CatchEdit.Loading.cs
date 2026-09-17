@@ -121,7 +121,8 @@ public partial class CatchEdit
             remote.Method,
             remote.BaitOrLure,
             remote.Notes,
-            TripId: remote.TripId);
+            TripId: remote.TripId,
+            PlaceName: remote.PlaceName);
 
         try
         {

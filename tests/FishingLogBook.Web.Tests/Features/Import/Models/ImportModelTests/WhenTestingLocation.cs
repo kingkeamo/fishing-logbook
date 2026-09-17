@@ -13,7 +13,11 @@ public class WhenTestingLocation : BaseImportModelTest
         var location = new ImportLocationModel(null, null, false)
             .WithLookup(
                 ImportLocationLookupStatusEnum.Resolved,
-                new ImportLocationLookupResultModel("Galway, Ireland", "Galway", null, "Ireland"));
+                new ImportLocationLookupResultModel(["Galway", "Ireland"])
+                {
+                    Locality = "Galway",
+                    Country = "Ireland"
+                });
 
         // Act
         var hasCoordinates = location.HasCanonicalCoordinates;
@@ -39,6 +43,22 @@ public class WhenTestingLocation : BaseImportModelTest
         removed.Decision.Should().Be(ImportLocationDecisionEnum.Removed);
         removed.Latitude.Should().Be(53.3498);
         removed.Longitude.Should().Be(-6.2603);
+    }
+
+    [Fact]
+    public void ItShouldDefaultToTheCompleteResolvedPlaceNameAndClearItWhenRemoved()
+    {
+        // Arrange
+        var lookup = new ImportLocationLookupResultModel(["Street 7", "Abu Dhabi", "United Arab Emirates"]);
+        var location = new ImportLocationModel(24.4576, 54.6702, true)
+            .WithLookup(ImportLocationLookupStatusEnum.Resolved, lookup);
+
+        // Act
+        var removed = location.Remove();
+
+        // Assert
+        location.PlaceName.Should().Be("Street 7, Abu Dhabi, United Arab Emirates");
+        removed.PlaceName.Should().BeNull();
     }
 
     [Fact]

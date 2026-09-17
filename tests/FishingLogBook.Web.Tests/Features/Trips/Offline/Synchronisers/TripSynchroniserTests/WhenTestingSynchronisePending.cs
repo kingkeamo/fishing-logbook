@@ -223,7 +223,7 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
         var sut = CreateSut(store);
         var release = new TaskCompletionSource();
         MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>())
-            .Returns(async call =>
+            .Returns<Task<TripDto?>>(async call =>
             {
                 await release.Task;
                 return call.ArgAt<TripDto>(0);
@@ -248,7 +248,7 @@ public class WhenTestingSynchronisePending : BaseTripSynchroniserTest
         var store = await CreateStoreAsync(CreateTrip());
         var sut = CreateSut(store);
         MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>())
-            .Returns(async call =>
+            .Returns<Task<TripDto?>>(async call =>
             {
                 await store.SaveAsync(
                     CreateTrip(status: TripConstants.Completed, endedOn: StartedOn.AddHours(3)),

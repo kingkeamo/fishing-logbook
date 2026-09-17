@@ -110,6 +110,8 @@ public class WhenTestingRender : BaseTripEditorTest
         // Assert
         var row = cut.Find($"#trip-editor-catch-{associated.Id:D}");
         row.TextContent.Should().Contain("Brown Trout");
+        cut.Find($"#trip-editor-catch-remove-{associated.Id:D}").GetAttribute("title")
+            .Should().Be("Remove Brown Trout from this trip");
         cut.Find($"#trip-editor-catch-measurements-{associated.Id:D}").TextContent
             .Should().Contain("48 cm");
     }

@@ -294,6 +294,7 @@ public sealed class CatchRepository : ICatchRepository
                 method,
                 baitorlure,
                 notes,
+                placename,
                 latitude,
                 longitude,
                 locationaccuracymetres,
@@ -313,6 +314,7 @@ public sealed class CatchRepository : ICatchRepository
                 @Method,
                 @BaitOrLure,
                 @Notes,
+                @PlaceName,
                 @Latitude,
                 @Longitude,
                 @LocationAccuracyMetres,
@@ -330,6 +332,10 @@ public sealed class CatchRepository : ICatchRepository
                 method = EXCLUDED.method,
                 baitorlure = EXCLUDED.baitorlure,
                 notes = EXCLUDED.notes,
+                placename = CASE
+                    WHEN EXCLUDED.latitude IS NOT NULL THEN EXCLUDED.placename
+                    ELSE catches.placename
+                END,
                 latitude = COALESCE(EXCLUDED.latitude, catches.latitude),
                 longitude = COALESCE(EXCLUDED.longitude, catches.longitude),
                 locationaccuracymetres = CASE
@@ -395,6 +401,7 @@ public sealed class CatchRepository : ICatchRepository
                 method,
                 baitorlure,
                 notes,
+                placename,
                 latitude,
                 longitude,
                 locationaccuracymetres,
@@ -458,6 +465,7 @@ public sealed class CatchRepository : ICatchRepository
                 c.method,
                 c.baitorlure,
                 c.notes,
+                c.placename,
                 c.latitude,
                 c.longitude,
                 c.locationaccuracymetres,
@@ -533,6 +541,7 @@ public sealed class CatchRepository : ICatchRepository
                 c.method,
                 c.baitorlure,
                 c.notes,
+                c.placename,
                 c.latitude,
                 c.longitude,
                 c.locationaccuracymetres,
@@ -607,6 +616,7 @@ public sealed class CatchRepository : ICatchRepository
             Method = catchRecord.Method,
             BaitOrLure = catchRecord.BaitOrLure,
             Notes = catchRecord.Notes,
+            PlaceName = catchRecord.PlaceName,
             Latitude = catchRecord.Location?.Latitude,
             Longitude = catchRecord.Location?.Longitude,
             LocationAccuracyMetres = catchRecord.Location?.AccuracyMetres,
@@ -669,6 +679,8 @@ public sealed class CatchRepository : ICatchRepository
 
         public string? Notes { get; init; }
 
+        public string? PlaceName { get; init; }
+
         public double? Latitude { get; init; }
 
         public double? Longitude { get; init; }
@@ -709,6 +721,8 @@ public sealed class CatchRepository : ICatchRepository
         public string? BaitOrLure { get; init; }
 
         public string? Notes { get; init; }
+
+        public string? PlaceName { get; init; }
 
         public double? Latitude { get; init; }
 
@@ -763,6 +777,8 @@ public sealed class CatchRepository : ICatchRepository
         public string? BaitOrLure { get; init; }
 
         public string? Notes { get; init; }
+
+        public string? PlaceName { get; init; }
 
         public double? Latitude { get; init; }
 

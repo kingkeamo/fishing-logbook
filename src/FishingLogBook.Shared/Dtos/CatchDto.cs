@@ -23,4 +23,6 @@ public sealed record CatchDto(
     public string? BaitOrLure { get; init; }
 
     public string? Notes { get; init; }
+
+    public string? PlaceName { get; init; }
 }

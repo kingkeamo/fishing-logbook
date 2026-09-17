@@ -1,6 +1,7 @@
 @using FishingLogBook.Web.Features.Import.Models
 @using FishingLogBook.Web.Features.Import.Enums
 @using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor
+@using FishingLogBook.Web.Features.Import.Components.ImportLocationRow
 @using FishingLogBook.Web.Features.Photographs.Components.PhotographCarousel
 @using FishingLogBook.Web.Features.Photographs.Components.PhotographGridSelector
 
@@ -31,7 +32,12 @@
             <MudText id="@($"import-catch-{Number}-timestamp")">@TimestampLabel</MudText>
             <MudText id="@($"import-catch-{Number}-method")">@Proposal.Method.Name</MudText>
             <MudText id="@($"import-catch-{Number}-species")">@Proposal.Species.Name</MudText>
-            <MudText id="@($"import-catch-{Number}-location")">@LocationLabel</MudText>
+            <ImportLocationRow IdPrefix="@($"import-catch-{Number}")"
+                               Label="@LocationLabel"
+                               CanEdit="@(Proposal.Location?.LookupResult is not null)"
+                               CanRemove="@CanRemoveLocation"
+                               Edit="EditPlaceNameAsync"
+                               Remove="RemoveLocation" />
             <MudStack Spacing="2" id="@($"import-catch-{Number}-editor")">
                 <div class="import-catch-caught-on-row">
                     <MudTextField T="string" Value="@_caughtOnLocal" ValueChanged="SetCaughtOnLocal"
@@ -93,16 +99,15 @@
 
                 @if (ShowLocationDecision)
                 {
-                    <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                    <MudStack Spacing="1">
                         @foreach (var option in LocationOptions)
                         {
-                            <MudButton Variant="Variant.Outlined" OnClick="@(() => AcceptLocation(option.Location))"
-                                       id="@($"import-catch-{Number}-location-{option.Photo.SelectionIndex}")">
-                                @Loc["Import_UsePhotoLocation", option.Photo.SelectionIndex + 1]
-                            </MudButton>
+                            <ImportLocationRow IdPrefix="@($"import-catch-{Number}-location-{option.Photo.SelectionIndex}")"
+                                               Label="@LocationOptionLabel(option.Location)"
+                                               CanSelect="true"
+                                               IsSelected="@IsSelectedLocation(option.Location)"
+                                               Select="@(() => AcceptLocation(option.Location))" />
                         }
-                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="RemoveLocation"
-                                   id="@($"import-catch-{Number}-remove-location")">@Loc["Import_RemoveLocation"]</MudButton>
                     </MudStack>
                 }
 
@@ -146,7 +151,12 @@
                         <span id="@($"import-catch-{Number}-species")">@Proposal.Species.Name</span>
                         · <span id="@($"import-catch-{Number}-method")">@Proposal.Method.Name</span>
                     </MudText>
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary" id="@($"import-catch-{Number}-location")">@LocationLabel</MudText>
+                    <ImportLocationRow IdPrefix="@($"import-catch-{Number}")"
+                                       Label="@LocationLabel"
+                                       CanEdit="@(Editable && Proposal.Location?.LookupResult is not null)"
+                                       CanRemove="@(Editable && CanRemoveLocation)"
+                                       Edit="EditPlaceNameAsync"
+                                       Remove="RemoveLocation" />
                     @if (MeasurementLabel is not null)
                     {
                         <MudText Typo="Typo.body2" Class="mud-text-secondary" id="@($"import-catch-{Number}-measurements")">@MeasurementLabel</MudText>

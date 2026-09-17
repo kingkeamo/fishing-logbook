@@ -137,6 +137,7 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
         // Assert
         cut.Find("#import-photo-0").TextContent.Should().Contain("historical details need review");
         cut.Find("#import-photos-continue").HasAttribute("disabled").Should().BeFalse();
+        cut.Find("#import-photos-continue").TextContent.Should().Contain("Continue");
     }
 
     [Fact]
@@ -202,6 +203,50 @@ public class WhenTestingWizard : BaseImportCatchCatalogueTest
             batch.FishingMethod.Id == MethodId
             && batch.Species.Id == SpeciesId
             && batch.Photos.Count == 2));
+    }
+
+    [Fact]
+    public async Task ItShouldResolveHistoricalLocationsBeforeGeneratingCatchProposals()
+    {
+        // Arrange
+        var lookup = Substitute.For<IImportLocationLookupService>();
+        var locationResolved = false;
+        lookup.ResolveAsync(
+                Arg.Any<IReadOnlyList<ImportSelectedPhotoModel>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                locationResolved = true;
+                return Task.CompletedTask;
+            });
+        var proposal = Substitute.For<IImportCatchProposalService>();
+        proposal.Propose(Arg.Any<ImportBatchModel>()).Returns(call =>
+        {
+            locationResolved.Should().BeTrue();
+            return ProposalsFor(call.Arg<ImportBatchModel>());
+        });
+        await using var context = CreateContext(
+            proposal,
+            Substitute.For<IImportPhotoPreparationService>(),
+            locationLookupService: lookup);
+        var cut = context.Render<ImportCatchCatalogue>();
+        await SelectDefaultsAndContinueAsync(cut);
+        var photo = ReadyPhoto(0);
+        photo.SetLocation(new ImportLocationModel(53.3498, -6.2603, true));
+        await cut.InvokeAsync(() => cut.FindComponent<ImportPhotographPicker>().Instance.PhotosPrepared
+            .InvokeAsync([photo]));
+
+        // Act
+        cut.Find("#import-photos-continue").Click();
+
+        // Assert
+        await lookup.Received(1).ResolveAsync(
+            Arg.Is<IReadOnlyList<ImportSelectedPhotoModel>>(photos =>
+                photos.Count == 1
+                && photos[0].Location.Latitude == 53.3498
+                && photos[0].Location.Longitude == -6.2603),
+            Arg.Any<CancellationToken>());
+        proposal.Received(1).Propose(Arg.Is<ImportBatchModel>(batch => batch.Photos.Count == 1));
     }
 
     [Fact]

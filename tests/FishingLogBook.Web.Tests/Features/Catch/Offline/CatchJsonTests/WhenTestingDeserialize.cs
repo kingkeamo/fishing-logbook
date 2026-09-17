@@ -337,7 +337,8 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
             Length: 64m,
             Method: "Lure",
             BaitOrLure: "Spinner",
-            Notes: "Weedline");
+            Notes: "Weedline",
+            PlaceName: "Galway, Ireland");
 
         // Act
         var json = CatchJson.SerializeMetadata(catchRecord);
@@ -347,6 +348,7 @@ public class WhenTestingDeserialize : BaseCatchJsonTest
         json.Should().Contain("\"weight\":2.5");
         json.Should().Contain("\"length\":64");
         json.Should().Contain("\"method\":\"Lure\"");
+        json.Should().Contain("\"placeName\":\"Galway, Ireland\"");
         restored.Should().BeEquivalentTo(catchRecord);
     }
 }

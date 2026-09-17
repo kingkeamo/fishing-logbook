@@ -1375,7 +1375,7 @@
   <data name="Import_DuplicatePossible" xml:space="preserve"><value>Possible duplicate photo</value></data>
   <data name="Import_DuplicateRemove" xml:space="preserve"><value>Remove duplicate</value></data>
   <data name="Import_DuplicateKeepBoth" xml:space="preserve"><value>Keep both</value></data>
-  <data name="Import_ReviewCatches" xml:space="preserve"><value>Review catches</value></data>
+  <data name="Import_ReviewCatches" xml:space="preserve"><value>Continue</value></data>
   <data name="Import_ReviewTitle" xml:space="preserve"><value>Proposed catches</value></data>
   <data name="Import_CorrectionLater" xml:space="preserve"><value>Review and correction controls are added in the next step of this feature.</value></data>
   <data name="Import_CatchNumber" xml:space="preserve"><value>Catch {0}</value></data>
@@ -1400,6 +1400,8 @@
   <data name="Import_SelectPhoto" xml:space="preserve"><value>Select photograph {0}</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Use photo {0} location</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Remove location</value></data>
+  <data name="Import_SelectLocation" xml:space="preserve"><value>Use this location</value></data>
+  <data name="Import_LocationSelected" xml:space="preserve"><value>Selected location</value></data>
   <data name="Import_LocationAccepted" xml:space="preserve"><value>Photo location accepted</value></data>
   <data name="Import_LocationRemoved" xml:space="preserve"><value>Location removed</value></data>
   <data name="Import_MoveToNewCatch" xml:space="preserve"><value>Move selected to new catch</value></data>
@@ -1452,4 +1454,10 @@
   <data name="Import_Success" xml:space="preserve"><value>Imported {0} catches, {1} photographs and {2} Trips successfully.</value></data>
   <data name="Import_ViewCatches" xml:space="preserve"><value>View catches</value></data>
   <data name="Import_ViewTrips" xml:space="preserve"><value>View Trips</value></data>
+  <data name="Import_EditPlaceName" xml:space="preserve"><value>Edit place name</value></data>
+  <data name="Import_LocationDetails" xml:space="preserve"><value>Location details</value></data>
+  <data name="Import_LocationDetailsHelp" xml:space="preserve"><value>Choose the useful parts to include in the saved place name.</value></data>
+  <data name="Import_LocationPreview" xml:space="preserve"><value>Place name preview</value></data>
+  <data name="Import_NoPlaceName" xml:space="preserve"><value>No place name</value></data>
+  <data name="Import_PlaceNameTooLong" xml:space="preserve"><value>Remove some location details to shorten the place name.</value></data>
 </root>

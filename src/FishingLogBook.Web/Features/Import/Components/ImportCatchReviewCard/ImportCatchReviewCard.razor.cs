@@ -5,6 +5,7 @@ using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Import.Enums;
+using FishingLogBook.Web.Features.Import.Modals.PlaceName;
 using FishingLogBook.Web.Features.Import.Models;
 using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -90,7 +91,9 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
             .Where(item => !item.Proposal.IsRemoved && item.Proposal.Id != Proposal.Id)];
 
     private bool CanSplit => _selectedPhotoIds.Count > 0 && _selectedPhotoIds.Count < Proposal.PhotoIds.Count;
-    private bool ShowLocationDecision => Proposal.HasUnresolvedGpsConflict || Proposal.Location?.HasCanonicalCoordinates == true;
+    private bool CanRemoveLocation => Proposal.Location is { HasCanonicalCoordinates: true }
+        && Proposal.Location.Decision != ImportLocationDecisionEnum.Removed;
+    private bool ShowLocationDecision => LocationOptions.Count > 1;
     private Color StatusColor => Proposal.ReviewStatus == ImportCatchReviewStatusEnum.Reviewed
         ? Color.Success : Proposal.CanBeReviewed ? Color.Info : Color.Warning;
     private string StatusLabel => Proposal.ReviewStatus == ImportCatchReviewStatusEnum.Reviewed
@@ -125,8 +128,9 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     };
 
     private string LocationLabel => Proposal.HasUnresolvedGpsConflict ? Loc["Import_LocationNeedsReview"]
-        : Proposal.Location?.Decision == ImportLocationDecisionEnum.Accepted ? Loc["Import_LocationAccepted"]
         : Proposal.Location?.Decision == ImportLocationDecisionEnum.Removed ? Loc["Import_LocationRemoved"]
+        : !string.IsNullOrWhiteSpace(Proposal.Location?.PlaceName) ? Proposal.Location.PlaceName
+        : Proposal.Location?.Decision == ImportLocationDecisionEnum.Accepted ? Loc["Import_LocationAccepted"]
         : Proposal.Location?.HasCanonicalCoordinates == true ? Loc["Import_LocationAvailable"]
         : Loc["Import_LocationUnavailable"];
 
@@ -230,10 +234,36 @@ public partial class ImportCatchReviewCard : ComponentBase, IDisposable
     }
 
     private void AcceptLocation(ImportLocationModel location) => Batch.SetCatchLocation(Proposal.Id, location.Accept());
+    private string LocationOptionLabel(ImportLocationModel location) =>
+        location.PlaceName ?? location.LookupResult?.DisplayName ?? Loc["Import_LocationAvailable"];
+    private bool IsSelectedLocation(ImportLocationModel location) =>
+        Proposal.Location?.Decision == ImportLocationDecisionEnum.Accepted
+        && Proposal.Location.Latitude == location.Latitude
+        && Proposal.Location.Longitude == location.Longitude;
     private void RemoveLocation() => Batch.SetCatchLocation(
         Proposal.Id,
         Proposal.Location?.Remove()
             ?? new ImportLocationModel(null, null, false, ImportLocationDecisionEnum.Removed));
+
+    private async Task EditPlaceNameAsync()
+    {
+        if (Proposal.Location?.LookupResult is not { } lookup)
+        {
+            return;
+        }
+
+        var result = await ModalService.ShowAsync<PlaceNameModal, PlaceNameModalModel, PlaceNameModalResult>(
+            new PlaceNameModalModel(lookup.Components, Proposal.Location.PlaceName),
+            _cancellationTokenSource.Token);
+        if (result is null)
+        {
+            return;
+        }
+
+        Batch.SetCatchLocation(
+            Proposal.Id,
+            Proposal.Location.WithPlaceName(result.PlaceName).Accept());
+    }
 
     private async Task SplitSelectedAsync()
     {

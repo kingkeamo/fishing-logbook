@@ -71,6 +71,14 @@ public sealed class UpsertCatchCommandValidator : AbstractValidator<UpsertCatchC
             .MaximumLength(CatchDetailConstants.MaxBaitOrLureLength);
         RuleFor(command => command.Catch.Notes)
             .MaximumLength(CatchDetailConstants.MaxNotesLength);
+        RuleFor(command => command.Catch.PlaceName)
+            .MaximumLength(CatchDetailConstants.MaxPlaceNameLength);
+        When(command => !string.IsNullOrWhiteSpace(command.Catch.PlaceName), () =>
+        {
+            RuleFor(command => command.Catch.Location)
+                .NotNull()
+                .WithMessage("A Catch place name requires a location.");
+        });
         When(command => command.Catch.Weight.HasValue, () =>
         {
             RuleFor(command => command.Catch.Weight!.Value)
