@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Catches" xml:space="preserve"><value>Catches</value></data>
+  <data name="Detail" xml:space="preserve"><value>Catch details</value></data>
+  <data name="PhotoPreview" xml:space="preserve"><value>Photo preview</value></data>
+  <data name="DemoNotice" xml:space="preserve"><value>DEMO · Sample catches only. Nothing is saved or synced.</value></data>
+  <data name="Brand" xml:space="preserve"><value>Catch, but don’t forget — Fishing Logbook</value></data>
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="LanguageEnglish" xml:space="preserve"><value>English</value></data>
+  <data name="LanguageFrench" xml:space="preserve"><value>Français</value></data>
+  <data name="Theme" xml:space="preserve"><value>Appearance</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>Follow device</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="OpenCatch" xml:space="preserve"><value>View catch</value></data>
+  <data name="OpenCatchDescription" xml:space="preserve"><value>View {0}, {1}</value></data>
+  <data name="NotRecorded" xml:space="preserve"><value>Not recorded</value></data>
+  <data name="Weight" xml:space="preserve"><value>Weight</value></data>
+  <data name="Length" xml:space="preserve"><value>Length</value></data>
+  <data name="Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="CaughtOn" xml:space="preserve"><value>Caught on · recorded time (UTC)</value></data>
+  <data name="NoPhoto" xml:space="preserve"><value>No photo recorded</value></data>
+  <data name="Preview" xml:space="preserve"><value>Open photo preview</value></data>
+  <data name="DemoImage" xml:space="preserve"><value>Demo illustration — brand artwork, not a catch photograph.</value></data>
+  <data name="EmptyTitle" xml:space="preserve"><value>No catches to display</value></data>
+  <data name="EmptyBody" xml:space="preserve"><value>This is the empty demo state. Restore the samples to explore a catch.</value></data>
+  <data name="ShowEmpty" xml:space="preserve"><value>Preview empty list</value></data>
+  <data name="RestoreSamples" xml:space="preserve"><value>Restore sample catches</value></data>
+  <data name="SampleSpecies" xml:space="preserve"><value>European perch</value></data>
+  <data name="SamplePlace" xml:space="preserve"><value>Sample lakeside venue</value></data>
+  <data name="SampleNotes" xml:space="preserve"><value>A sample morning catch, released. The preview uses our existing brand illustration.</value></data>
+</root>

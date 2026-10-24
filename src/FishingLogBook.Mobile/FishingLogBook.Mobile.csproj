@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net10.0-android;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>FishingLogBook.Mobile</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+    <OutputType>Exe</OutputType>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ApplicationTitle>Fishing Logbook Demo</ApplicationTitle>
+    <ApplicationId>com.fishinglogbook.mobile.demo</ApplicationId>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FishingLogBook.Shared/FishingLogBook.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+    <PackageReference Include="Microsoft.Maui.Controls" />
+    <MauiIcon Include="../FishingLogBook.Web/wwwroot/icon-512.png" Link="Resources/AppIcon/appicon.png" />
+    <MauiSplashScreen Include="../FishingLogBook.Web/wwwroot/images/brand/brand-mark-transparent.png" Link="Resources/Splash/splash.png" Color="#E0F2FE" BaseSize="128,128" />
+    <MauiImage Include="../FishingLogBook.Web/wwwroot/images/brand/brand-mark-transparent.png" Link="Resources/Images/brand_mark.png" Resize="True" BaseSize="256,256" />
+    <MauiImage Include="../FishingLogBook.Web/wwwroot/images/brand/brand-horizontal-transparent.png" Link="Resources/Images/brand_horizontal.png" Resize="True" BaseSize="320,100" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <Compile Remove="App.xaml.cs;AppShell.xaml.cs;MauiProgram.cs;Platforms/**/*.cs;Features/Catch/Pages/**/*.cs" />
+  </ItemGroup>
+</Project>

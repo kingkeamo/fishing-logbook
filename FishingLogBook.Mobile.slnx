@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj" />
+    <Project Path="src/FishingLogBook.Shared/FishingLogBook.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj" />
+  </Folder>
+</Solution>
