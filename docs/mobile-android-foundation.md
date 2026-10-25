@@ -4,10 +4,18 @@ Implements the native XAML/C# decision from #239; does not change ADR 0001.
 This is a demo application, not a connected mobile client. It references only
 `FishingLogBook.Shared` (`CatchDto`) and leaves the PWA, APIs and schema unchanged.
 
+**Current status (25 October 2026):** the user has validated the app in Rider on an
+Android 36 emulator, and photo preview/system and toolbar back navigation have now
+been checked through ADB. See [PR completion evidence](mobile-pr248-completion.md)
+for current solution entry points, results and the remaining manual checks. The
+24 October tooling and validation record below is retained as historical evidence.
+
 ## Project and behaviour
 
-- `FishingLogBook.Mobile.slnx` builds the Android host and presentation tests separately
-  from `FishingLogBook.sln`. Android minimum API 26, target API 36, .NET 10.
+- `FishingLogBook.sln` contains all projects for Rider. `FishingLogBook.Mobile.slnx`
+  retains the isolated Android host/tests build; `FishingLogBook.Web.slnf` filters
+  the main solution to web/backend projects without MAUI requirements. Android
+  minimum API 26, target API 36, .NET 10.
 - `src/FishingLogBook.Mobile/Features/Catch/` owns native summary, detail and image
   preview pages, their presentation model and the sample-list view model.
 - Shell provides the navigation stack and native toolbar/system back handling.
@@ -79,7 +87,8 @@ Validated host: Windows 10.0.26300 x64; .NET SDK 10.0.300; workload manifests
 `maui-android 10.0.0/10.0.100`, `android 36.1.2/10.0.100`.
 The Controls package is independently pinned at 10.0.120 in `Directory.Packages.props`.
 Android SDK platform 36, build tools 36.0.0, platform tools 36.0.0-13206524;
-Microsoft OpenJDK **17.0.14+7**. No emulator/AVD or connected device was available.
+Microsoft OpenJDK **17.0.14+7**. No emulator/AVD or connected device was available
+on 24 October; the 25 October emulator results supersede that limitation.
 
 From the repository root, with .NET SDK 10.0.300 selected, run in PowerShell:
 
@@ -125,7 +134,7 @@ after 30 seconds idle. Measure touch-to-feedback with a trace/frame recording;
 distinguish immediate response from completion of Shell's animated transition.
 Emulator results are indicative and must not be represented as physical-device results.
 
-Manual matrix still required on an emulator/device:
+Manual matrix (see the completion evidence for the subset now verified):
 
 1. Launch in EN and FR; verify launcher/splash/header assets, sample species,
    UTC date, size, notes and missing fields. Switch languages and verify Shell title,
@@ -138,9 +147,10 @@ Manual matrix still required on an emulator/device:
    announcement, and no unlabelled actionable images. Check outdoor readability.
 5. Force-stop/relaunch: only bundled demo state returns; no save/sync or network claim.
 
-No Android runtime session, screenshot, TalkBack result or performance measurement
-is claimed. Native navigation/bindings/trimming remain integration risks despite builds
-and host tests. Playwright cannot exercise MAUI's Android view hierarchy; the existing
+The initial 24 October work did not include Android runtime evidence. The completion
+record adds Debug emulator navigation and visual checks; TalkBack, performance and
+trimmed Release runtime are still unverified. Playwright cannot exercise MAUI's
+Android view hierarchy; the existing
 browser suite remains the PWA regression check, not native UI coverage.
 
 ## Security and deliberate boundaries
@@ -209,7 +219,7 @@ This passed. A preceding probe using `require('yaml')` failed with MODULE_NOT_FO
 no dependency was added. Parsing does not validate GitHub runner execution. Remote CI
 results are separate from these local results and must be checked on the PR.
 
-## Self review
+## Initial self review — 24 October 2026
 
 - Issue/AC: source/build/test foundation implemented. Android runtime acceptance
   remains unverified because no device/emulator was available; keep the PR draft.

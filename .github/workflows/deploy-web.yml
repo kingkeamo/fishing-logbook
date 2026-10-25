@@ -27,13 +27,13 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore FishingLogBook.sln
+        run: dotnet restore FishingLogBook.Web.slnf
 
       - name: Build
-        run: dotnet build FishingLogBook.sln --configuration Release --no-restore
+        run: dotnet build FishingLogBook.Web.slnf --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test FishingLogBook.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test FishingLogBook.Web.slnf --configuration Release --no-build --verbosity normal
 
   deploy:
     name: Deploy PWA to Cloudflare Pages (dev)
