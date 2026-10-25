@@ -1,5 +1,26 @@
 # FishingLogBook
 
+## Current solution entry points
+
+Open `FishingLogBook.sln` in Rider to work with the web, backend, native mobile app
+and all their tests in one window. Building the entire solution requires the MAUI
+Android workload and compatible Android SDK/JDK. Select the mobile project's
+`net10.0-android` target to run it on an emulator.
+
+For web/backend development or CI without Android tooling, use the solution filter:
+
+```text
+dotnet restore FishingLogBook.Web.slnf
+dotnet build FishingLogBook.Web.slnf --configuration Release --no-restore
+dotnet test FishingLogBook.Web.slnf --configuration Release --no-build --no-restore
+```
+
+The filter includes the original web/backend projects and tests, excluding both
+mobile projects. Add new non-mobile projects to the filter when adding them to the
+main solution. Direct Web project build/publish commands remain unchanged.
+`FishingLogBook.Mobile.slnx` remains the isolated Android CI entry point. See
+[Android foundation](docs/mobile-android-foundation.md) for SDK paths and validation.
+
 ## Initial Build Instructions
 
 **Document:** BUILD.md  

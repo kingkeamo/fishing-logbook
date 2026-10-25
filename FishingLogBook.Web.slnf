@@ -1,0 +1,23 @@
+{
+  "solution": {
+    "path": "FishingLogBook.sln",
+    "projects": [
+      "src\\FishingLogBook.Domain\\FishingLogBook.Domain.csproj",
+      "src\\FishingLogBook.Shared\\FishingLogBook.Shared.csproj",
+      "src\\FishingLogBook.Application\\FishingLogBook.Application.csproj",
+      "src\\FishingLogBook.Infrastructure\\FishingLogBook.Infrastructure.csproj",
+      "src\\FishingLogBook.Api\\FishingLogBook.Api.csproj",
+      "src\\FishingLogBook.Web\\FishingLogBook.Web.csproj",
+      "src\\FishingLogBook.DependencyInjection\\FishingLogBook.DependencyInjection.csproj",
+      "src\\FishingLogBook.Db.Migrations\\FishingLogBook.Db.Migrations.csproj",
+      "src\\FishingLogBook.Db.Migrations.App\\FishingLogBook.Db.Migrations.App.csproj",
+      "tests\\FishingLogBook.Tests.Common\\FishingLogBook.Tests.Common.csproj",
+      "tests\\FishingLogBook.Shared.Tests\\FishingLogBook.Shared.Tests.csproj",
+      "tests\\FishingLogBook.Application.Tests\\FishingLogBook.Application.Tests.csproj",
+      "tests\\FishingLogBook.Infrastructure.Tests\\FishingLogBook.Infrastructure.Tests.csproj",
+      "tests\\FishingLogBook.Db.Migrations.Tests\\FishingLogBook.Db.Migrations.Tests.csproj",
+      "tests\\FishingLogBook.Api.Tests\\FishingLogBook.Api.Tests.csproj",
+      "tests\\FishingLogBook.Web.Tests\\FishingLogBook.Web.Tests.csproj"
+    ]
+  }
+}

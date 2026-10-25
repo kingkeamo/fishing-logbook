@@ -1,0 +1,48 @@
+name: mobile-build-test
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Build Android demo and test presentation
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.300'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: microsoft
+          java-version: '17'
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android --skip-manifest-update
+      - name: Ensure Android SDK dependencies
+        run: >-
+          dotnet build src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj
+          -t:InstallAndroidDependencies -f net10.0-android
+          "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME"
+          -p:AcceptAndroidSDKLicenses=True
+      - name: Build separate mobile solution
+        run: >-
+          dotnet build FishingLogBook.Mobile.slnx
+          "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME"
+      - name: Test mobile presentation
+        run: dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj --no-build --no-restore
+      - name: Build trimmed ARM64 release APK
+        run: >-
+          dotnet build src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj
+          -f net10.0-android -c Release -p:RuntimeIdentifier=android-arm64 -p:AndroidPackageFormats=apk
+          "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME"

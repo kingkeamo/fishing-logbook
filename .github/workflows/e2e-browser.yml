@@ -39,7 +39,7 @@ jobs:
           cache-dependency-path: tests/FishingLogBook.E2E/package-lock.json
 
       - name: Restore .NET dependencies
-        run: dotnet restore FishingLogBook.sln
+        run: dotnet restore FishingLogBook.Web.slnf
 
       - name: Install E2E dependencies
         run: npm ci
