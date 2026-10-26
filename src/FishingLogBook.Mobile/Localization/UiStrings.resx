@@ -144,4 +144,48 @@
   <data name="ClearLocalDataBody" xml:space="preserve"><value>This will permanently remove data stored on this device. This action cannot be undone.</value></data>
   <data name="RecordFirstCatch" xml:space="preserve"><value>Record your first catch</value></data>
   <data name="CatchSaved" xml:space="preserve"><value>Catch saved</value></data>
+  <data name="MeasureWeight" xml:space="preserve"><value>Weight</value></data>
+  <data name="MeasureLength" xml:space="preserve"><value>Length</value></data>
+  <data name="MeasureNotRecorded" xml:space="preserve"><value>Not recorded</value></data>
+  <data name="MeasureUnitKg" xml:space="preserve"><value>kg</value></data>
+  <data name="MeasureUnitLb" xml:space="preserve"><value>lb</value></data>
+  <data name="MeasureUnitOz" xml:space="preserve"><value>oz</value></data>
+  <data name="MeasureUnitIn" xml:space="preserve"><value>in</value></data>
+  <data name="MeasureUnitCm" xml:space="preserve"><value>cm</value></data>
+  <data name="MeasurePounds" xml:space="preserve"><value>Pounds</value></data>
+  <data name="MeasureOunces" xml:space="preserve"><value>Ounces</value></data>
+  <data name="MeasureExact" xml:space="preserve"><value>Exact value ({0})</value></data>
+  <data name="MeasureSlide" xml:space="preserve"><value>Slide to adjust</value></data>
+  <data name="MeasureRangeGroup" xml:space="preserve"><value>Scale range</value></data>
+  <data name="MeasureRangeSelected" xml:space="preserve"><value>{0}, selected</value></data>
+  <data name="MeasureRangeUnavailable" xml:space="preserve"><value>{0}, unavailable for this value</value></data>
+  <data name="MeasureRangeHint" xml:space="preserve"><value>Double tap to use this scale range</value></data>
+  <data name="MeasureRangeSmall" xml:space="preserve"><value>Small</value></data>
+  <data name="MeasureRangeMedium" xml:space="preserve"><value>Medium</value></data>
+  <data name="MeasureRangeLarge" xml:space="preserve"><value>Large</value></data>
+  <data name="MeasureRangeMonster" xml:space="preserve"><value>Monster</value></data>
+  <data name="MeasureSliderLabel" xml:space="preserve"><value>Adjust {0}</value></data>
+  <data name="MeasureOneOunce" xml:space="preserve"><value>1 oz at a time</value></data>
+  <data name="MeasureStep" xml:space="preserve"><value>{0} {1} at a time</value></data>
+  <data name="MeasureDecrease" xml:space="preserve"><value>Decrease by {0}</value></data>
+  <data name="MeasureIncrease" xml:space="preserve"><value>Increase by {0}</value></data>
+  <data name="MeasureInvalid" xml:space="preserve"><value>Enter a measurement greater than zero and within the supported range.</value></data>
+  <data name="MeasureClear" xml:space="preserve"><value>Clear</value></data>
+  <data name="MeasureApply" xml:space="preserve"><value>Apply</value></data>
+  <data name="MeasureCurrent" xml:space="preserve"><value>{0}. Current value: {1}</value></data>
+  <data name="ControlsShowcase" xml:space="preserve"><value>Measurement controls · developer</value></data>
+  <data name="ControlsShowcaseBody" xml:space="preserve"><value>Developer preview of the ruler, scale and loaders. Nothing is saved.</value></data>
+  <data name="OpenControlsShowcase" xml:space="preserve"><value>Open measurement controls</value></data>
+  <data name="Units" xml:space="preserve"><value>Measurement units</value></data>
+  <data name="MeasureResult" xml:space="preserve"><value>Applied: {0}</value></data>
+  <data name="Loaders" xml:space="preserve"><value>Fishing loaders</value></data>
+  <data name="LoaderLeapingFish" xml:space="preserve"><value>Leaping fish</value></data>
+  <data name="LoaderLeapingFishBody" xml:space="preserve"><value>The green fish jumps and the water moves. Good for a page wait.</value></data>
+  <data name="LoaderBoat" xml:space="preserve"><value>Boat on the drift</value></data>
+  <data name="LoaderBoatBody" xml:space="preserve"><value>Bow up, outboard on, skipper on the tiller. For a longer wait, not a quick list load.</value></data>
+  <data name="LoaderBobber" xml:space="preserve"><value>Bobber</value></data>
+  <data name="LoaderBobberBody" xml:space="preserve"><value>Pencil float, then a take. The fish pulls it under and the float pops back up.</value></data>
+  <data name="LoaderLoading" xml:space="preserve"><value>Loading</value></data>
+  <data name="ReducedMotionOn" xml:space="preserve"><value>Reduced motion is on. Loaders show a still frame.</value></data>
+  <data name="ReducedMotionOff" xml:space="preserve"><value>Reduced motion is off. Loaders animate.</value></data>
 </root>

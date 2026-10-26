@@ -1,4 +1,4 @@
-namespace FishingLogBook.Web.Features.Catch.Enums;
+namespace FishingLogBook.Shared.Measurements;
 
 public enum MeasurementScaleRangeEnum
 {

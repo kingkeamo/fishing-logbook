@@ -1,6 +1,4 @@
-using FishingLogBook.Web.Features.Catch.Enums;
-
-namespace FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
+namespace FishingLogBook.Shared.Measurements;
 
 public sealed record MeasurementScaleRangeModel(
     MeasurementScaleRangeEnum Range,

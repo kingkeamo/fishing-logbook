@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:text="clr-namespace:FishingLogBook.Mobile.Localization"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:presentation="clr-namespace:FishingLogBook.Mobile.Presentation"
+ x:Class="FishingLogBook.Mobile.Features.Measurements.Pages.MeasurementShowcasePage"
+ x:DataType="text:UiTextService" Title="{Binding [ControlsShowcase]}">
+ <ScrollView><VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="{StaticResource SpaceMedium}" MaximumWidthRequest="720">
+  <Label Text="{Binding [ControlsShowcaseBody]}" Style="{StaticResource SecondaryText}" />
+  <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+   <Border Grid.Column="0" Style="{StaticResource Card}" Padding="16,12" AutomationId="KindWeight" SemanticProperties.Description="{Binding [MeasureWeight]}">
+    <VerticalStackLayout Spacing="2">
+     <Label Text="{Binding [MeasureWeight]}" Style="{StaticResource TileCaption}" />
+     <Label x:Name="WeightValue" Style="{StaticResource BodyText}" />
+    </VerticalStackLayout>
+    <Border.GestureRecognizers><TapGestureRecognizer CommandParameter="Weight" Tapped="OnKindTapped" /></Border.GestureRecognizers>
+   </Border>
+   <Border Grid.Column="1" Style="{StaticResource Card}" Padding="16,12" AutomationId="KindLength" SemanticProperties.Description="{Binding [MeasureLength]}">
+    <VerticalStackLayout Spacing="2">
+     <Label Text="{Binding [MeasureLength]}" Style="{StaticResource TileCaption}" />
+     <Label x:Name="LengthValue" Style="{StaticResource BodyText}" />
+    </VerticalStackLayout>
+    <Border.GestureRecognizers><TapGestureRecognizer CommandParameter="Length" Tapped="OnKindTapped" /></Border.GestureRecognizers>
+   </Border>
+  </Grid>
+  <Border Style="{StaticResource Card}" Padding="16">
+   <controls:MeasurementEditorView x:Name="Editor" />
+  </Border>
+  <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+   <Button Grid.Column="0" Text="{Binding [MeasureClear]}" Style="{StaticResource DestructiveButton}" Clicked="OnClear" AutomationId="MeasurementClear" />
+   <Button Grid.Column="1" Text="{Binding [MeasureApply]}" Clicked="OnApply" AutomationId="MeasurementApply" />
+  </Grid>
+  <Label x:Name="ResultLabel" Style="{StaticResource BodyText}" AutomationId="MeasurementResult" />
+  <Label Text="{Binding [Loaders]}" Style="{StaticResource Subheading}" />
+  <Label x:Name="MotionLabel" Style="{StaticResource SecondaryText}" AutomationId="MotionStatus" />
+  <Border Style="{StaticResource Card}" Padding="16">
+   <VerticalStackLayout Spacing="8">
+    <Label Text="{Binding [LoaderLeapingFish]}" Style="{StaticResource Subheading}" />
+    <Label Text="{Binding [LoaderLeapingFishBody]}" Style="{StaticResource SecondaryText}" />
+    <Border Padding="12" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#E0F2FE, Dark=#0B1F3A}">
+     <HorizontalStackLayout Spacing="24" HorizontalOptions="Center">
+      <controls:FishingLoaderView x:Name="LeapLoader" Kind="LeapingFish" SemanticProperties.Description="{Binding [LoaderLoading]}" />
+      <controls:FishingLoaderView x:Name="LeapSmallLoader" Kind="LeapingFish" WidthRequest="28" HeightRequest="28" VerticalOptions="Center" SemanticProperties.Description="{Binding [LoaderLoading]}" />
+     </HorizontalStackLayout>
+    </Border>
+   </VerticalStackLayout>
+  </Border>
+  <Border Style="{StaticResource Card}" Padding="16">
+   <VerticalStackLayout Spacing="8">
+    <Label Text="{Binding [LoaderBoat]}" Style="{StaticResource Subheading}" />
+    <Label Text="{Binding [LoaderBoatBody]}" Style="{StaticResource SecondaryText}" />
+    <Border Padding="12" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#E0F2FE, Dark=#0B1F3A}">
+     <HorizontalStackLayout Spacing="24" HorizontalOptions="Center">
+      <controls:FishingLoaderView x:Name="BoatLoader" Kind="Boat" WidthRequest="128" SemanticProperties.Description="{Binding [LoaderLoading]}" />
+      <controls:FishingLoaderView x:Name="BoatSmallLoader" Kind="Boat" WidthRequest="40" HeightRequest="28" VerticalOptions="Center" SemanticProperties.Description="{Binding [LoaderLoading]}" />
+     </HorizontalStackLayout>
+    </Border>
+   </VerticalStackLayout>
+  </Border>
+  <Border Style="{StaticResource Card}" Padding="16">
+   <VerticalStackLayout Spacing="8">
+    <Label Text="{Binding [LoaderBobber]}" Style="{StaticResource Subheading}" />
+    <Label Text="{Binding [LoaderBobberBody]}" Style="{StaticResource SecondaryText}" />
+    <Border Padding="12" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light=#E0F2FE, Dark=#0B1F3A}">
+     <HorizontalStackLayout Spacing="24" HorizontalOptions="Center">
+      <controls:FishingLoaderView x:Name="BobberLoader" Kind="Bobber" SemanticProperties.Description="{Binding [LoaderLoading]}" />
+      <controls:FishingLoaderView x:Name="BobberSmallLoader" Kind="Bobber" WidthRequest="28" HeightRequest="28" VerticalOptions="Center" SemanticProperties.Description="{Binding [LoaderLoading]}" />
+     </HorizontalStackLayout>
+    </Border>
+   </VerticalStackLayout>
+  </Border>
+  <BoxView HeightRequest="{StaticResource SpaceLarge}" Color="Transparent" AutomationProperties.IsInAccessibleTree="False" />
+ </VerticalStackLayout></ScrollView>
+</ContentPage>

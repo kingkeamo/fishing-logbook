@@ -19,6 +19,7 @@ public static class RouteConstants
             MobileRouteEnum.CatchDetail => "catch-detail",
             MobileRouteEnum.PhotoPreview => "photo-preview",
             MobileRouteEnum.Showcase => "showcase",
+            MobileRouteEnum.MeasurementShowcase => "measurement-showcase",
             _ => throw new ArgumentOutOfRangeException(nameof(route))
         };
     }

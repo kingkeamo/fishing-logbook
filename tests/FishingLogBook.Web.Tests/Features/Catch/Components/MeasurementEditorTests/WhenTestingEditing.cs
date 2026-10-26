@@ -201,7 +201,7 @@ public class WhenTestingEditing : BaseMeasurementEditorTest
     {
         // Arrange
         await using var context = CreateContext();
-        var service = new FishingLogBook.Web.Features.Catch.Services.MeasurementService();
+        var service = new MeasurementService();
         var starting = service.FromPoundsAndOunces(3, 15);
         var (cut, dialog) = await ShowAsync(context, Weight(starting, FishingLogBook.Shared.Enums.WeightUnitEnum.Lb));
 
@@ -221,7 +221,7 @@ public class WhenTestingEditing : BaseMeasurementEditorTest
     {
         // Arrange
         await using var context = CreateContext();
-        var service = new FishingLogBook.Web.Features.Catch.Services.MeasurementService();
+        var service = new MeasurementService();
         var (cut, dialog) = await ShowAsync(context, Weight(null, FishingLogBook.Shared.Enums.WeightUnitEnum.Lb));
 
         // Act

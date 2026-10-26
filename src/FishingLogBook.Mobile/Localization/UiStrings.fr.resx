@@ -144,4 +144,48 @@
   <data name="ClearLocalDataBody" xml:space="preserve"><value>Les données stockées sur cet appareil seront définitivement supprimées. Cette action est irréversible.</value></data>
   <data name="RecordFirstCatch" xml:space="preserve"><value>Enregistrer votre première prise</value></data>
   <data name="CatchSaved" xml:space="preserve"><value>Prise enregistrée</value></data>
+  <data name="MeasureWeight" xml:space="preserve"><value>Poids</value></data>
+  <data name="MeasureLength" xml:space="preserve"><value>Longueur</value></data>
+  <data name="MeasureNotRecorded" xml:space="preserve"><value>Non renseigné</value></data>
+  <data name="MeasureUnitKg" xml:space="preserve"><value>kg</value></data>
+  <data name="MeasureUnitLb" xml:space="preserve"><value>lb</value></data>
+  <data name="MeasureUnitOz" xml:space="preserve"><value>oz</value></data>
+  <data name="MeasureUnitIn" xml:space="preserve"><value>po</value></data>
+  <data name="MeasureUnitCm" xml:space="preserve"><value>cm</value></data>
+  <data name="MeasurePounds" xml:space="preserve"><value>Livres</value></data>
+  <data name="MeasureOunces" xml:space="preserve"><value>Onces</value></data>
+  <data name="MeasureExact" xml:space="preserve"><value>Valeur exacte ({0})</value></data>
+  <data name="MeasureSlide" xml:space="preserve"><value>Faites glisser pour ajuster</value></data>
+  <data name="MeasureRangeGroup" xml:space="preserve"><value>Plage de l’échelle</value></data>
+  <data name="MeasureRangeSelected" xml:space="preserve"><value>{0}, sélectionné</value></data>
+  <data name="MeasureRangeUnavailable" xml:space="preserve"><value>{0}, indisponible pour cette valeur</value></data>
+  <data name="MeasureRangeHint" xml:space="preserve"><value>Touchez deux fois pour utiliser cette plage</value></data>
+  <data name="MeasureRangeSmall" xml:space="preserve"><value>Petit</value></data>
+  <data name="MeasureRangeMedium" xml:space="preserve"><value>Moyen</value></data>
+  <data name="MeasureRangeLarge" xml:space="preserve"><value>Grand</value></data>
+  <data name="MeasureRangeMonster" xml:space="preserve"><value>Monstre</value></data>
+  <data name="MeasureSliderLabel" xml:space="preserve"><value>Régler {0}</value></data>
+  <data name="MeasureOneOunce" xml:space="preserve"><value>1 oz à la fois</value></data>
+  <data name="MeasureStep" xml:space="preserve"><value>{0} {1} à la fois</value></data>
+  <data name="MeasureDecrease" xml:space="preserve"><value>Diminuer de {0}</value></data>
+  <data name="MeasureIncrease" xml:space="preserve"><value>Augmenter de {0}</value></data>
+  <data name="MeasureInvalid" xml:space="preserve"><value>Saisissez une mesure supérieure à zéro et dans la plage prise en charge.</value></data>
+  <data name="MeasureClear" xml:space="preserve"><value>Effacer</value></data>
+  <data name="MeasureApply" xml:space="preserve"><value>Appliquer</value></data>
+  <data name="MeasureCurrent" xml:space="preserve"><value>{0}. Valeur actuelle : {1}</value></data>
+  <data name="ControlsShowcase" xml:space="preserve"><value>Commandes de mesure · développeur</value></data>
+  <data name="ControlsShowcaseBody" xml:space="preserve"><value>Aperçu développeur de la règle, de la balance et des indicateurs de chargement. Rien n’est enregistré.</value></data>
+  <data name="OpenControlsShowcase" xml:space="preserve"><value>Ouvrir les commandes de mesure</value></data>
+  <data name="Units" xml:space="preserve"><value>Unités de mesure</value></data>
+  <data name="MeasureResult" xml:space="preserve"><value>Appliqué : {0}</value></data>
+  <data name="Loaders" xml:space="preserve"><value>Indicateurs de pêche</value></data>
+  <data name="LoaderLeapingFish" xml:space="preserve"><value>Poisson qui saute</value></data>
+  <data name="LoaderLeapingFishBody" xml:space="preserve"><value>Le poisson vert bondit et l’eau bouge. Idéal pour l’attente d’une page.</value></data>
+  <data name="LoaderBoat" xml:space="preserve"><value>Bateau à la dérive</value></data>
+  <data name="LoaderBoatBody" xml:space="preserve"><value>Proue relevée, moteur hors-bord en marche, pêcheur à la barre. Pour une attente plus longue, pas un simple chargement de liste.</value></data>
+  <data name="LoaderBobber" xml:space="preserve"><value>Flotteur</value></data>
+  <data name="LoaderBobberBody" xml:space="preserve"><value>Un flotteur crayon, puis une touche. Le poisson l’entraîne sous l’eau et le flotteur remonte.</value></data>
+  <data name="LoaderLoading" xml:space="preserve"><value>Chargement</value></data>
+  <data name="ReducedMotionOn" xml:space="preserve"><value>Mouvement réduit activé. Les indicateurs sont immobiles.</value></data>
+  <data name="ReducedMotionOff" xml:space="preserve"><value>Mouvement réduit désactivé. Les indicateurs s’animent.</value></data>
 </root>

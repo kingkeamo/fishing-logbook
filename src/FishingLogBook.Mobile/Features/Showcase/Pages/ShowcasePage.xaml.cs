@@ -1,6 +1,7 @@
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Navigation;
 using FishingLogBook.Mobile.Presentation;
 
 namespace FishingLogBook.Mobile.Features.Showcase.Pages;
@@ -10,14 +11,21 @@ public partial class ShowcasePage : ContentPage
     private readonly UiTextService _text;
     private readonly InteractionService _interactions;
     private readonly CatchListViewModel _catches;
+    private readonly NavigationService _navigation;
 
-    public ShowcasePage(UiTextService text, InteractionService interactions, CatchListViewModel catches)
+    public ShowcasePage(UiTextService text, InteractionService interactions, CatchListViewModel catches, NavigationService navigation)
     {
         _text = text;
         _interactions = interactions;
         _catches = catches;
+        _navigation = navigation;
         InitializeComponent();
         BindingContext = text;
+    }
+
+    private async void OnOpenControls(object? sender, EventArgs args)
+    {
+        await _navigation.NavigateAsync(MobileRouteEnum.MeasurementShowcase);
     }
 
     private async void OnNotify(object? sender, EventArgs args)

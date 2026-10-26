@@ -2,7 +2,6 @@ using AwesomeAssertions;
 using Bunit;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Features.Catch.Components.MeasurementEditor;
-using FishingLogBook.Web.Features.Catch.Enums;
 using FishingLogBook.Web.Localization;
 using MudBlazor;
 
