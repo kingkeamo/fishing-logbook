@@ -2,7 +2,7 @@ using System.Globalization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Enums;
 
-namespace FishingLogBook.Web.Features.Catch.Services;
+namespace FishingLogBook.Shared.Measurements;
 
 public sealed class MeasurementService : IMeasurementService
 {

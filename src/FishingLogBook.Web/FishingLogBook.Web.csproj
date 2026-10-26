@@ -38,6 +38,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="FishingLogBook.Shared.Measurements" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="FishingLogBook.Web.Tests" />
   </ItemGroup>
 

@@ -4,6 +4,7 @@
  x:DataType="text:UiTextService" Title="{Binding [Showcase]}">
  <ScrollView><VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="{StaticResource SpaceMedium}" MaximumWidthRequest="720">
   <Label Text="{Binding [ShowcaseBody]}" Style="{StaticResource SecondaryText}" />
+  <Button Text="{Binding [OpenControlsShowcase]}" Clicked="OnOpenControls" AutomationId="OpenControlsShowcase" />
   <Label Text="{Binding [Interactions]}" Style="{StaticResource Subheading}" />
   <Button Text="{Binding [Success]}" CommandParameter="Success" Clicked="OnNotify" AutomationId="NotifySuccess" />
   <Button Text="{Binding [Info]}" CommandParameter="Info" Clicked="OnNotify" Style="{StaticResource SecondaryButton}" AutomationId="NotifyInfo" />

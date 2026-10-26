@@ -17,6 +17,19 @@
    <RadioButton x:Name="LanguageFrench" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageFrench" Content="{Binding Text[LanguageFrench]}" />
   </VerticalStackLayout></Border>
   <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
+   <Label Text="{Binding Text[Units]}" Style="{StaticResource SectionTitle}" />
+   <Label Text="{Binding Text[MeasureWeight]}" Style="{StaticResource SecondaryText}" />
+   <HorizontalStackLayout Spacing="16">
+    <RadioButton x:Name="WeightKg" GroupName="WeightUnit" CheckedChanged="OnWeightUnitChanged" AutomationId="WeightUnitKg" Content="{Binding Text[MeasureUnitKg]}" />
+    <RadioButton x:Name="WeightLb" GroupName="WeightUnit" CheckedChanged="OnWeightUnitChanged" AutomationId="WeightUnitLb" Content="{Binding Text[MeasureUnitLb]}" />
+   </HorizontalStackLayout>
+   <Label Text="{Binding Text[MeasureLength]}" Style="{StaticResource SecondaryText}" />
+   <HorizontalStackLayout Spacing="16">
+    <RadioButton x:Name="LengthCm" GroupName="LengthUnit" CheckedChanged="OnLengthUnitChanged" AutomationId="LengthUnitCm" Content="{Binding Text[MeasureUnitCm]}" />
+    <RadioButton x:Name="LengthIn" GroupName="LengthUnit" CheckedChanged="OnLengthUnitChanged" AutomationId="LengthUnitIn" Content="{Binding Text[MeasureUnitIn]}" />
+   </HorizontalStackLayout>
+  </VerticalStackLayout></Border>
+  <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
    <Label Text="{Binding Text[DataSection]}" Style="{StaticResource SectionTitle}" />
    <Grid ColumnDefinitions="*,24" HeightRequest="48" SemanticProperties.Description="{Binding Text[ClearLocalData]}" AutomationId="ClearLocalData">
     <Label Text="{Binding Text[ClearLocalData]}" Style="{StaticResource ActionText}" TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" VerticalOptions="Center" />

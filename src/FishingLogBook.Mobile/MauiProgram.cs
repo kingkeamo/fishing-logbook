@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.Settings.Pages;
 using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Mobile.Features.Showcase.Pages;
@@ -9,6 +10,8 @@ using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Services;
 using FishingLogBook.Mobile.Navigation;
+using FishingLogBook.Mobile.Presentation;
+using FishingLogBook.Shared.Measurements;
 
 namespace FishingLogBook.Mobile;
 
@@ -29,6 +32,8 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<InteractionService>();
         builder.Services.AddSingleton<LocalDataService>();
         builder.Services.AddSingleton<SampleCatchProvider>();
+        builder.Services.AddSingleton<IMeasurementService, MeasurementService>();
+        builder.Services.AddSingleton<IMotionPreference, DeviceMotionPreference>();
         builder.Services.AddSingleton<CatchListViewModel>();
         builder.Services.AddSingleton<CatchSummaryPage>();
         builder.Services.AddSingleton<SettingsPage>();
@@ -36,6 +41,7 @@ public static partial class MauiProgram
         builder.Services.AddTransient<PhotoPreviewPage>();
 #if DEBUG
         builder.Services.AddTransient<ShowcasePage>();
+        builder.Services.AddTransient<MeasurementShowcasePage>();
 #endif
         builder.Services.AddSingleton<AppShell>();
         return builder.Build();

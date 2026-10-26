@@ -1,7 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Enums;
 
-namespace FishingLogBook.Web.Tests.Features.Catch.Services.MeasurementServiceTests;
+namespace FishingLogBook.Shared.Tests.Measurements.MeasurementServiceTests;
 
 public class WhenTestingToCanonicalWeight : BaseMeasurementServiceTest
 {

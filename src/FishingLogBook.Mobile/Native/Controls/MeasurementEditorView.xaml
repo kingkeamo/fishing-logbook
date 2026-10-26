@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Measurements.ViewModels"
+             xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+             x:Class="FishingLogBook.Mobile.Native.Controls.MeasurementEditorView"
+             x:DataType="vm:MeasurementEditorViewModel">
+  <VerticalStackLayout Spacing="{StaticResource SpaceMedium}">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <VerticalStackLayout x:Name="Ranges" Grid.Column="1" Spacing="2" VerticalOptions="Center" SemanticProperties.Description="{Binding RangeGroupLabel}" />
+      <Border Grid.Column="0" StrokeThickness="0" Padding="8" BackgroundColor="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}">
+        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+        <controls:MeasurementVisualView x:Name="MeasureVisual" Kind="{Binding Kind}" Fraction="{Binding FractionValue}" HeightRequest="150"
+                                        AccentColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                                        SurfaceColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}"
+                                        SemanticProperties.Description="{Binding CurrentDescription}"
+                                        SemanticProperties.Hint="{Binding SliderHint}"
+                                        AutomationId="MeasurementVisual" />
+      </Border>
+    </Grid>
+    <Grid x:Name="ImperialEntries" ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding IsImperialWeight}">
+      <VerticalStackLayout Grid.Column="0">
+        <Label Text="{Binding PoundsLabel}" Style="{StaticResource TileCaption}" />
+        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="PoundsEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnPoundsCommitted" Completed="OnPoundsCommitted" SemanticProperties.Description="{Binding PoundsLabel}" AutomationId="MeasurementPounds" /></Border>
+      </VerticalStackLayout>
+      <VerticalStackLayout Grid.Column="1">
+        <Label Text="{Binding OuncesLabel}" Style="{StaticResource TileCaption}" />
+        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="OuncesEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnOuncesCommitted" Completed="OnOuncesCommitted" SemanticProperties.Description="{Binding OuncesLabel}" AutomationId="MeasurementOunces" /></Border>
+      </VerticalStackLayout>
+    </Grid>
+    <VerticalStackLayout IsVisible="{Binding IsSingleValue}">
+      <Label Text="{Binding ExactLabel}" Style="{StaticResource TileCaption}" />
+      <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="ExactEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnExactCommitted" Completed="OnExactCommitted" SemanticProperties.Description="{Binding ExactLabel}" AutomationId="MeasurementExact" /></Border>
+    </VerticalStackLayout>
+    <VerticalStackLayout Spacing="0">
+      <Label Text="{Binding SliderHint}" Style="{StaticResource TileCaption}" />
+      <Slider x:Name="ValueSlider" Minimum="0" Maximum="1" ValueChanged="OnSliderChanged" MinimumTrackColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+              ThumbColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" HeightRequest="48"
+              SemanticProperties.Description="{Binding SliderDescription}" AutomationId="MeasurementSlider" />
+      <Grid ColumnDefinitions="*,*">
+        <Label Grid.Column="0" Text="{Binding SliderMinimumLabel}" Style="{StaticResource SecondaryText}" />
+        <Label Grid.Column="1" Text="{Binding SliderMaximumLabel}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="End" />
+      </Grid>
+    </VerticalStackLayout>
+    <Grid ColumnDefinitions="56,*,56" ColumnSpacing="12">
+      <Button Grid.Column="0" Text="&#x2212;" FontSize="24" WidthRequest="56" HeightRequest="56" Padding="0" Style="{StaticResource SecondaryButton}" Clicked="OnDecrease" SemanticProperties.Description="{Binding DecreaseLabel}" AutomationId="MeasurementDecrease" />
+      <Label Grid.Column="1" Text="{Binding FineStepText}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="Center" VerticalOptions="Center" />
+      <Button Grid.Column="2" Text="+" FontSize="24" WidthRequest="56" HeightRequest="56" Padding="0" Style="{StaticResource SecondaryButton}" Clicked="OnIncrease" SemanticProperties.Description="{Binding IncreaseLabel}" AutomationId="MeasurementIncrease" />
+    </Grid>
+    <Label Text="{Binding ValidationMessage}" IsVisible="{Binding HasValidationMessage}" TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" SemanticProperties.HeadingLevel="None" AutomationId="MeasurementValidation" />
+  </VerticalStackLayout>
+</ContentView>

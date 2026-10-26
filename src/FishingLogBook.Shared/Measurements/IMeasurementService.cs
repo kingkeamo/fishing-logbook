@@ -1,6 +1,6 @@
 using FishingLogBook.Shared.Enums;
 
-namespace FishingLogBook.Web.Features.Catch.Services;
+namespace FishingLogBook.Shared.Measurements;
 
 public interface IMeasurementService
 {
