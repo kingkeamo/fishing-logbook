@@ -9,7 +9,6 @@ public class WhenTestingEnsureRequired
 {
     [Theory]
     [InlineData("Authority", "Auth:Authority")]
-    [InlineData("ClientId", "Auth:ClientId")]
     [InlineData("ApiResource", "Auth:ApiResource")]
     [InlineData("ApiScope", "Auth:ApiScope")]
     public void ItShouldThrowWhenRequiredValueIsMissing(string propertyName, string configurationKey)
@@ -24,6 +23,51 @@ public class WhenTestingEnsureRequired
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .Which.Message.Should().Contain(configurationKey);
+    }
+
+    [Fact]
+    public void ItShouldThrowWhenNoApprovedClientIdsAreConfigured()
+    {
+        // Arrange
+        var authConfig = CreateCompleteAuthConfig();
+        authConfig.ApprovedClientIds = [];
+
+        // Act
+        var act = authConfig.EnsureRequired;
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .Which.Message.Should().Contain("Auth:ApprovedClientIds");
+    }
+
+    [Fact]
+    public void ItShouldThrowWhenAnApprovedClientIdIsEmpty()
+    {
+        // Arrange
+        var authConfig = CreateCompleteAuthConfig();
+        authConfig.ApprovedClientIds = [TestJwt.ClientId, " "];
+
+        // Act
+        var act = authConfig.EnsureRequired;
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .Which.Message.Should().ContainAll("Auth:ApprovedClientIds", "empty");
+    }
+
+    [Fact]
+    public void ItShouldThrowWhenApprovedClientIdsContainDuplicates()
+    {
+        // Arrange
+        var authConfig = CreateCompleteAuthConfig();
+        authConfig.ApprovedClientIds = [TestJwt.ClientId, TestJwt.ClientId];
+
+        // Act
+        var act = authConfig.EnsureRequired;
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .Which.Message.Should().ContainAll("Auth:ApprovedClientIds", "duplicate");
     }
 
     [Theory]
@@ -63,7 +107,7 @@ public class WhenTestingEnsureRequired
         return new AuthConfig
         {
             Authority = TestJwt.Issuer,
-            ClientId = TestJwt.ClientId,
+            ApprovedClientIds = [TestJwt.ClientId, TestJwt.NativeClientId],
             ApiResource = TestAuthConstants.ApiResource,
             ApiScope = TestAuthConstants.ApiScope
         };

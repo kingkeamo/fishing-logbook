@@ -59,9 +59,15 @@ into `Provider`, `Subject`, and authenticated `Email` and sends
 `ResolveCurrentUserCommand`. Email is account data, not the identity lookup key.
 The FishingLogBook API requires that trusted `email` claim on the access token together
 with `sub`. Cognito access tokens include Email via a Pre Token Generation Lambda
-(event version V2_0) that copies the verified email user attribute. JWT validation
-is unchanged. Tokens include Email only after that Lambda is applied in the
-environment.
+(event version V2_0) that copies the verified email user attribute. Tokens include
+Email only after that Lambda is applied in the environment.
+
+Cognito has separate public PWA and native app clients. Both use Authorization Code,
+have no client secret, and request the same resource-bound API scope; native code must
+use S256 PKCE. The API keeps an environment-specific, exact client-ID allow-list
+containing only those approved clients. Tokens from arbitrary app clients in the same
+pool are rejected while issuer, signature, expiry, audience, access-token use, scope,
+subject, and verified-email checks remain mandatory.
 
 Handlers call application services; services call repositories. Repositories own SQL
 transactions.

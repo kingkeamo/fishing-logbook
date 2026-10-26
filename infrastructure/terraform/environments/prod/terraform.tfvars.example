@@ -21,6 +21,17 @@ cognito_logout_urls = [
   "https://app.catchbutdontforget.com/",
 ]
 
+# Do not apply these until Android Digital Asset Links and the iOS
+# apple-app-site-association file are deployed for app.catchbutdontforget.com with
+# the final package/bundle IDs and signing identities from #238.
+cognito_native_client_enabled = true
+cognito_native_callback_urls = [
+  "https://app.catchbutdontforget.com/mobile/authentication/login-callback",
+]
+cognito_native_logout_urls = [
+  "https://app.catchbutdontforget.com/mobile/authentication/logout-callback",
+]
+
 # neon_org_id     = "<neon-organisation-id>"
 # neon_region     = "aws-us-east-1"
 # neon_pg_version = 17

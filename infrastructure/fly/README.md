@@ -71,7 +71,36 @@ $prodDbPassword = Read-Host -MaskInput "Production Neon role password"
 $prodDatabase = "Host=$prodDbHost;Port=5432;Database=$prodDbName;Username=$prodDbUser;Password=$prodDbPassword;SSL Mode=Require"
 $prodLokiToken = terraform output -raw grafana_loki_write_token
 $prodAuthority = terraform output -raw cognito_authority
-$prodClientId = terraform output -raw cognito_client_id
+$prodApprovedClientIdsJson = terraform output -json cognito_approved_client_ids
+if ($LASTEXITCODE -ne 0) { throw "Could not read cognito_approved_client_ids." }
+[object[]]$prodApprovedClientIds = $prodApprovedClientIdsJson | ConvertFrom-Json
+if ($prodApprovedClientIds.Count -notin 1, 2) {
+  throw "Expected one PWA client ID and, optionally, one native client ID."
+}
+$invalidClientIds = @($prodApprovedClientIds | Where-Object {
+  $_ -isnot [string] -or
+  [string]::IsNullOrWhiteSpace($_) -or
+  $_ -notmatch '^[A-Za-z0-9_+]{1,128}$'
+})
+if ($invalidClientIds.Count -ne 0) {
+  throw "Cognito approved client IDs must be non-empty valid identifiers."
+}
+if (@($prodApprovedClientIds | Select-Object -Unique).Count -ne $prodApprovedClientIds.Count) {
+  throw "Cognito approved client IDs must be unique."
+}
+$prodPwaClientId = $prodApprovedClientIds[0]
+$prodNativeClientId = if ($prodApprovedClientIds.Count -eq 2) {
+  $prodApprovedClientIds[1]
+} else {
+  $null
+}
+$prodExistingSecretsJson = flyctl secrets list --json --app fishing-logbook-prod-api
+if ($LASTEXITCODE -ne 0) { throw "Could not read existing Fly secret names." }
+$prodExistingSecretNames = @(
+  $prodExistingSecretsJson |
+    ConvertFrom-Json |
+    ForEach-Object { $_.Name }
+)
 $prodLokiUrl = terraform output -raw grafana_loki_push_url
 $prodLokiUser = terraform output -raw grafana_loki_user
 $prodR2AccessKey = Read-Host -MaskInput "Production photo R2 Access Key ID"
@@ -88,7 +117,12 @@ flyctl secrets set --stage --app fishing-logbook-prod-api 'ObjectStorage__Bucket
 flyctl secrets set --stage --app fishing-logbook-prod-api "ObjectStorage__AccessKeyId=$prodR2AccessKey"
 flyctl secrets set --stage --app fishing-logbook-prod-api "ObjectStorage__SecretAccessKey=$prodR2SecretKey"
 flyctl secrets set --stage --app fishing-logbook-prod-api "Auth__Authority=$prodAuthority"
-flyctl secrets set --stage --app fishing-logbook-prod-api "Auth__ClientId=$prodClientId"
+flyctl secrets set --stage --app fishing-logbook-prod-api "Auth__ApprovedClientIds__0=$prodPwaClientId"
+if ($null -ne $prodNativeClientId) {
+  flyctl secrets set --stage --app fishing-logbook-prod-api "Auth__ApprovedClientIds__1=$prodNativeClientId"
+} elseif ($prodExistingSecretNames -contains "Auth__ApprovedClientIds__1") {
+  flyctl secrets unset --stage --app fishing-logbook-prod-api Auth__ApprovedClientIds__1
+}
 flyctl secrets set --stage --app fishing-logbook-prod-api 'ExternalLogging__Provider=GrafanaCloud'
 flyctl secrets set --stage --app fishing-logbook-prod-api "ExternalLogging__Url=$prodLokiUrl"
 flyctl secrets set --stage --app fishing-logbook-prod-api "ExternalLogging__User=$prodLokiUser"
@@ -98,11 +132,16 @@ flyctl secrets set --stage --app fishing-logbook-prod-api "ExternalLogging__ApiT
 Clear the local values and verify names/status without revealing values:
 
 ```powershell
-Remove-Variable prodDatabase, prodDbHost, prodDbName, prodDbUser, prodDbPassword, prodLokiToken, prodAuthority, prodClientId, prodLokiUrl, prodLokiUser, prodR2AccessKey, prodR2SecretKey
+Remove-Variable prodDatabase, prodDbHost, prodDbName, prodDbUser, prodDbPassword, prodLokiToken, prodAuthority, prodApprovedClientIdsJson, prodApprovedClientIds, invalidClientIds, prodPwaClientId, prodNativeClientId, prodExistingSecretsJson, prodExistingSecretNames, prodLokiUrl, prodLokiUser, prodR2AccessKey, prodR2SecretKey
 flyctl secrets list --app fishing-logbook-prod-api
 ```
 
-All eleven entries should be `Staged`. Do not run `flyctl secrets deploy`; the first
+PWA-only configuration stages index `0` and leaves index `1` absent. PWA + native
+configuration stages both indexes. The guard above rejects missing, blank, malformed,
+duplicate, or additional client IDs before any authentication secret is changed, and
+removes a stale index `1` when returning to PWA-only configuration.
+
+All changed entries should be `Staged`. Do not run `flyctl secrets deploy`; the first
 application deployment activates them. On Windows PowerShell, piping multiple secret
 lines to `flyctl secrets import` can add a UTF-8 BOM to the first name. Individual
 `flyctl secrets set` commands avoid that problem.

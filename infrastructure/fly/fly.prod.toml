@@ -17,8 +17,9 @@ primary_region = "iad"
   Cors__AllowedOrigins__0 = "https://app.catchbutdontforget.com"
   Auth__ApiScope = "https://api.catchbutdontforget.com/access"
   Auth__ApiResource = "https://api.catchbutdontforget.com"
-  # Auth__Authority and Auth__ClientId are public identifiers but are supplied as
-  # production Fly configuration after Cognito is created; never copy Dev values here.
+  # Auth__Authority and Auth__ApprovedClientIds__0 are supplied after Cognito is created.
+  # Add Auth__ApprovedClientIds__1 only when the Prod native client exists; never set an
+  # empty value or copy Dev identifiers here.
 
 [http_service]
   internal_port = 8080

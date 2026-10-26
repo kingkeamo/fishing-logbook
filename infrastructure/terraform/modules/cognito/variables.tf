@@ -58,3 +58,56 @@ variable "logout_urls" {
     error_message = "Logout URLs must be exact (no wildcards). HTTPS is required except for localhost HTTP."
   }
 }
+
+variable "enable_native_client" {
+  type        = bool
+  description = "Whether to create the native public app client for this environment."
+}
+
+variable "native_callback_urls" {
+  type        = list(string)
+  description = "Exact OAuth callback URLs for the native public app client. HTTPS app/universal links or reverse-domain private-use schemes only; no wildcards, query strings, or fragments."
+
+  validation {
+    condition     = !var.enable_native_client || length(var.native_callback_urls) > 0
+    error_message = "At least one native callback URL is required when the native client is enabled."
+  }
+
+  validation {
+    condition = alltrue([
+      for url in var.native_callback_urls :
+      !strcontains(url, "*") &&
+      !strcontains(url, "?") &&
+      !strcontains(url, "#") &&
+      (
+        startswith(url, "https://") ||
+        can(regex("^[a-z][a-z0-9-]*(\\.[a-z0-9-]+){2,}://[a-z0-9][a-z0-9.-]*$", lower(url)))
+      )
+    ])
+    error_message = "Native callback URLs must be exact HTTPS URLs or reverse-domain private-use scheme URLs without wildcards, query strings, or fragments."
+  }
+}
+
+variable "native_logout_urls" {
+  type        = list(string)
+  description = "Exact sign-out redirect URLs for the native public app client. HTTPS app/universal links or reverse-domain private-use schemes only; no wildcards, query strings, or fragments."
+
+  validation {
+    condition     = !var.enable_native_client || length(var.native_logout_urls) > 0
+    error_message = "At least one native logout URL is required when the native client is enabled."
+  }
+
+  validation {
+    condition = alltrue([
+      for url in var.native_logout_urls :
+      !strcontains(url, "*") &&
+      !strcontains(url, "?") &&
+      !strcontains(url, "#") &&
+      (
+        startswith(url, "https://") ||
+        can(regex("^[a-z][a-z0-9-]*(\\.[a-z0-9-]+){2,}://[a-z0-9][a-z0-9.-]*$", lower(url)))
+      )
+    ])
+    error_message = "Native logout URLs must be exact HTTPS URLs or reverse-domain private-use scheme URLs without wildcards, query strings, or fragments."
+  }
+}

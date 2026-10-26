@@ -270,7 +270,7 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(new AuthConfig
             {
                 Authority = TestJwt.Issuer,
-                ClientId = TestJwt.ClientId,
+                ApprovedClientIds = [TestJwt.ClientId, TestJwt.NativeClientId],
                 ApiScope = TestAuthConstants.ApiScope,
                 ApiResource = TestAuthConstants.ApiResource
             });

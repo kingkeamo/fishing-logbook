@@ -5,6 +5,9 @@ module "cognito" {
   api_resource_identifier = var.cognito_api_resource_identifier
   callback_urls           = var.cognito_callback_urls
   logout_urls             = var.cognito_logout_urls
+  enable_native_client    = var.cognito_native_client_enabled
+  native_callback_urls    = var.cognito_native_callback_urls
+  native_logout_urls      = var.cognito_native_logout_urls
 }
 
 module "neon" {

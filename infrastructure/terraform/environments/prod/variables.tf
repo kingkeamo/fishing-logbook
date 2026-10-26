@@ -48,6 +48,24 @@ variable "cognito_logout_urls" {
   default     = []
 }
 
+variable "cognito_native_client_enabled" {
+  type        = bool
+  description = "Create the Prod native public app client only after verified redirects are ready."
+  default     = false
+}
+
+variable "cognito_native_callback_urls" {
+  type        = list(string)
+  description = "Exact verified app/universal-link callback URLs for the Prod native public app client. Set only after Android and iOS domain association is deployed."
+  default     = []
+}
+
+variable "cognito_native_logout_urls" {
+  type        = list(string)
+  description = "Exact verified app/universal-link sign-out URLs for the Prod native public app client. Set only after Android and iOS domain association is deployed."
+  default     = []
+}
+
 variable "neon_region" {
   type        = string
   description = "Neon region identifier (for example: aws-us-east-1). Must match an existing project before import."

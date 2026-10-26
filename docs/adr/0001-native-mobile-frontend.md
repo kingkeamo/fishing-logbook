@@ -1,6 +1,6 @@
 # ADR 0001: Native mobile frontend strategy
 
-- **Status:** Proposed — awaiting owner review; not approved for implementation.
+- **Status:** Accepted in #239; option 3 is the approved native-mobile architecture.
 - **Date:** 2026-10-24
 - **Context:** #237, parent #236; additional direction to compare reuse with a fresh
   frontend and stop before restructuring or mobile implementation.
@@ -14,11 +14,9 @@ backend APIs, and selective reuse of proven portable code.** Build only the core
 offline Catch journey first. Do not extract the existing Razor UI merely to achieve
 reuse, and do not rewrite the backend or discard its established domain behaviour.
 
-This is an architectural recommendation, not a measured performance result. No mobile
-host has been implemented, compiled or run. The owner must select the approach before
-any extraction, host creation or further proof of concept. The original #237 requirement
-to render existing MudBlazor on Android is superseded for this investigation by the
-user's review gate; it is not marked satisfied. Reconcile the issue's AC after selection.
+This decision was an architectural recommendation, not a measured performance result.
+It was approved in #239 before the native host was implemented. The original #237
+requirement to render existing MudBlazor on Android was superseded by that decision.
 
 Option 2 is the strongest alternative if a new Razor-based mobile UI proves good
 enough on devices and the team prefers Razor over native UI maintenance. Option 1
@@ -148,6 +146,5 @@ Android device and iPhone, in release as well as debug builds. Compare against a
 budgets, not invented benchmark numbers. Include offline kill/reopen, permission
 denial, keyboard/back navigation, accessible labels and partial-upload recovery.
 
-**Stop point:** deliver this ADR and evidence for discussion. No extraction, mobile
-implementation, workload installation, issue creation, merge or deployment follows
-automatically from this recommendation.
+The investigation stopped at this ADR for owner review. Approval in #239 allowed the
+separately scoped mobile backlog to proceed; it did not authorize automatic deployment.

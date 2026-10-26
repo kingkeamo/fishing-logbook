@@ -61,6 +61,28 @@ variable "cognito_logout_urls" {
   ]
 }
 
+variable "cognito_native_client_enabled" {
+  type        = bool
+  description = "Create the Dev native public app client."
+  default     = true
+}
+
+variable "cognito_native_callback_urls" {
+  type        = list(string)
+  description = "Exact OAuth callback URLs for the Dev native public app client."
+  default = [
+    "com.fishinglogbook.mobile.demo://oauth2redirect",
+  ]
+}
+
+variable "cognito_native_logout_urls" {
+  type        = list(string)
+  description = "Exact sign-out redirect URLs for the Dev native public app client."
+  default = [
+    "com.fishinglogbook.mobile.demo://signedout",
+  ]
+}
+
 variable "neon_region" {
   type        = string
   description = "Neon region identifier (for example: aws-us-east-1). Must match an existing project before import."

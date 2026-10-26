@@ -33,6 +33,15 @@ cognito_api_resource_identifier = "https://fishing-logbook-dev-api.fly.dev"
 #   "https://fishing-logbook-dev.pages.dev/",
 # ]
 
+# The Dev MAUI application ID is com.fishinglogbook.mobile.demo. Cognito requires
+# exact redirects; #242 must register the same private-use scheme on Android and iOS.
+# cognito_native_callback_urls = [
+#   "com.fishinglogbook.mobile.demo://oauth2redirect",
+# ]
+# cognito_native_logout_urls = [
+#   "com.fishinglogbook.mobile.demo://signedout",
+# ]
+
 # neon_org_id     = "<neon-organisation-id>"
 # neon_region     = "aws-us-east-1"
 # neon_pg_version = 17

@@ -13,6 +13,16 @@ output "cognito_client_id" {
   value       = module.cognito.client_id
 }
 
+output "cognito_native_client_id" {
+  description = "Public native app client ID when enabled. Not a secret."
+  value       = module.cognito.native_client_id
+}
+
+output "cognito_approved_client_ids" {
+  description = "Public PWA and enabled native client IDs approved to call the API."
+  value       = module.cognito.approved_client_ids
+}
+
 output "cognito_authority" {
   description = "OIDC issuer/authority for Blazor OIDC and API JWT validation."
   value       = module.cognito.authority

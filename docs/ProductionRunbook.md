@@ -69,7 +69,8 @@ ObjectStorage__BucketName=fishing-logbook-prod
 ObjectStorage__AccessKeyId
 ObjectStorage__SecretAccessKey
 Auth__Authority
-Auth__ClientId
+Auth__ApprovedClientIds__0=<PWA client ID>
+Auth__ApprovedClientIds__1=<native client ID; only when the Prod native client is enabled>
 ExternalLogging__Provider=GrafanaCloud
 ExternalLogging__Url
 ExternalLogging__User
@@ -83,11 +84,16 @@ origin, API audience/scope and `ExternalLogging__Environment=prod`.
 
 1. Confirm Cloudflare zone ownership, provider plans, regions and all account identifiers.
 2. Copy prod `terraform.tfvars.example` to gitignored `terraform.tfvars` and complete it.
+   Keep `cognito_native_client_enabled = false` for PWA-only plans. Before enabling it
+   and including native callbacks, verify Android Digital Asset Links and the iOS
+   `apple-app-site-association` file with the final #238 signing identities.
 3. Initialise the prod backend and run `terraform fmt`, `validate`, then `plan -out
    prod.tfplan`. Review every action; abort on unexpected replacement or destruction.
 4. Manually apply only the reviewed plan.
 5. Create `fishing-logbook-prod-api` manually in the existing Fly organisation.
 6. Configure production-only Fly secrets, including the separate R2 and Grafana tokens.
+   Follow `infrastructure/fly/README.md` so PWA-only Prod has only approved-client index
+   `0`, while PWA + native Prod has indexes `0` and `1`; never stage an empty index `1`.
 7. Run `fly certs add api.catchbutdontforget.com`; add its exact DNS-only CNAME and
    ownership/validation records in Cloudflare, then use `fly certs check`.
 8. Run the existing DbUp runner against the production connection string first without

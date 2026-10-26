@@ -145,7 +145,7 @@ public static class AuthenticationExtensions
             return Task.CompletedTask;
         }
 
-        if (!HasClaim(principal, "client_id", authConfig.ClientId))
+        if (!authConfig.IsApprovedClientId(principal.FindFirst("client_id")?.Value))
         {
             context.Fail("Invalid client.");
             return Task.CompletedTask;

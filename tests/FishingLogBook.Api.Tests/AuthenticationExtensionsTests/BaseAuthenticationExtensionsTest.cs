@@ -16,7 +16,8 @@ public class BaseAuthenticationExtensionsTest
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Auth:Authority"] = TestJwt.Issuer,
-                ["Auth:ClientId"] = TestJwt.ClientId,
+                ["Auth:ApprovedClientIds:0"] = TestJwt.ClientId,
+                ["Auth:ApprovedClientIds:1"] = TestJwt.NativeClientId,
                 ["Auth:ApiScope"] = TestAuthConstants.ApiScope,
                 ["Auth:ApiResource"] = TestAuthConstants.ApiResource
             })

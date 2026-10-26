@@ -1,5 +1,6 @@
-# Amazon Cognito user pool, resource server, public PWA app client, hosted-UI domain,
-# managed-login branding, and Pre Token Generation Lambda (V2_0) for one environment.
+# Amazon Cognito user pool, resource server, public PWA and native app clients,
+# hosted-UI domain, managed-login branding, and Pre Token Generation Lambda (V2_0)
+# for one environment.
 #
 # The PWA is a public browser client: generate_secret is false. OAuth is Authorization
 # Code only (no implicit, no client_credentials). PKCE S256 is enforced by the Blazor
@@ -139,6 +140,51 @@ resource "aws_cognito_user_pool_client" "pwa" {
   depends_on = [aws_cognito_resource_server.api]
 }
 
+# Cognito's native PKCE code exchange supports S256. The app supplies the verifier and
+# S256 challenge in #242; the app client exposes code flow only and has no secret.
+resource "aws_cognito_user_pool_client" "native" {
+  count = var.enable_native_client ? 1 : 0
+
+  name         = "${local.resource_prefix}-native"
+  user_pool_id = aws_cognito_user_pool.this.id
+
+  generate_secret                      = false
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_flows                  = ["code"]
+  allowed_oauth_scopes = [
+    "openid",
+    "email",
+    "profile",
+    "${local.api_identifier}/${local.api_scope_name}",
+  ]
+  supported_identity_providers = ["COGNITO"]
+  callback_urls                = var.native_callback_urls
+  logout_urls                  = var.native_logout_urls
+
+  prevent_user_existence_errors = "ENABLED"
+  enable_token_revocation       = true
+  auth_session_validity         = 3
+
+  access_token_validity  = 1
+  id_token_validity      = 1
+  refresh_token_validity = 30
+
+  token_validity_units {
+    access_token  = "hours"
+    id_token      = "hours"
+    refresh_token = "days"
+  }
+
+  refresh_token_rotation {
+    feature                    = "ENABLED"
+    retry_grace_period_seconds = 5
+  }
+
+  explicit_auth_flows = []
+
+  depends_on = [aws_cognito_resource_server.api]
+}
+
 resource "aws_cognito_user_pool_domain" "this" {
   domain                = local.resource_prefix
   user_pool_id          = aws_cognito_user_pool.this.id
@@ -148,5 +194,13 @@ resource "aws_cognito_user_pool_domain" "this" {
 resource "aws_cognito_managed_login_branding" "pwa" {
   user_pool_id                = aws_cognito_user_pool.this.id
   client_id                   = aws_cognito_user_pool_client.pwa.id
+  use_cognito_provided_values = true
+}
+
+resource "aws_cognito_managed_login_branding" "native" {
+  count = var.enable_native_client ? 1 : 0
+
+  user_pool_id                = aws_cognito_user_pool.this.id
+  client_id                   = aws_cognito_user_pool_client.native[0].id
   use_cognito_provided_values = true
 }

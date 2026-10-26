@@ -21,7 +21,8 @@ public sealed class DependencyInjectionApiFactory : WebApplicationFactory<Progra
                 ["ConnectionStrings:Postgres"] =
                     "Host=127.0.0.1;Database=fishing-logbook-di-test;Username=test;Password=test",
                 ["Auth:Authority"] = TestJwt.Issuer,
-                ["Auth:ClientId"] = TestJwt.ClientId,
+                ["Auth:ApprovedClientIds:0"] = TestJwt.ClientId,
+                ["Auth:ApprovedClientIds:1"] = TestJwt.NativeClientId,
                 ["Auth:ApiScope"] = TestAuthConstants.ApiScope,
                 ["Auth:ApiResource"] = TestAuthConstants.ApiResource
             });
