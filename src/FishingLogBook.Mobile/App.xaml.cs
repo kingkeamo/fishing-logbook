@@ -12,6 +12,7 @@ public partial class App : Application
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
+        _services.GetRequiredService<Features.Settings.Services.PreferenceService>();
         return new Window(_services.GetRequiredService<AppShell>());
     }
 }

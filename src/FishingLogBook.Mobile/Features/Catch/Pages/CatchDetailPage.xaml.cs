@@ -1,39 +1,39 @@
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Mobile.Navigation;
 
 namespace FishingLogBook.Mobile.Features.Catch.Pages;
 
 public partial class CatchDetailPage : ContentPage, IQueryAttributable
 {
-    private bool _navigating;
+    private readonly NavigationService _navigation;
 
-    public CatchDetailPage()
+    public CatchDetailPage(NavigationService navigation)
     {
+        _navigation = navigation;
         InitializeComponent();
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        if (query.TryGetValue("catch", out var value) && value is CatchPresentationModel item)
+        if (query.TryGetValue(RouteConstants.CatchParameter, out var value) && value is CatchPresentationModel item)
         {
             BindingContext = item;
         }
     }
 
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        var item = BindingContext;
+        BindingContext = null;
+        BindingContext = item;
+    }
+
     private async void OnPreview(object? sender, EventArgs args)
     {
-        if (_navigating || BindingContext is not CatchPresentationModel { HasPhoto: true } item)
+        if (BindingContext is CatchPresentationModel item)
         {
-            return;
-        }
-
-        _navigating = true;
-        try
-        {
-            await Shell.Current.GoToAsync(nameof(PhotoPreviewPage), new ShellNavigationQueryParameters { ["catch"] = item });
-        }
-        finally
-        {
-            _navigating = false;
+            await _navigation.NavigateAsync(MobileRouteEnum.PhotoPreview, item);
         }
     }
 }

@@ -6,10 +6,10 @@
              x:DataType="models:CatchPresentationModel" Title="{Binding Text[PhotoPreview]}">
   <ScrollView>
     <VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="{StaticResource SpaceLarge}">
-      <Label Text="{Binding Text[DemoNotice]}" Style="{StaticResource SecondaryText}" />
+      <Label Text="{Binding Text[SampleBadge]}" Style="{StaticResource Eyebrow}" />
       <Label Text="{Binding Species}" Style="{StaticResource Heading}" />
-      <Border BackgroundColor="White" StrokeThickness="0" Padding="16" IsVisible="{Binding HasPhoto}">
-        <Image Source="{Binding PreviewAsset}" HeightRequest="320" Aspect="AspectFit" SemanticProperties.Description="{Binding Text[DemoImage]}" AutomationId="PhotoPreview" />
+      <Border Style="{StaticResource Card}" Padding="0" IsVisible="{Binding HasPhoto}">
+        <Image Source="{Binding PreviewAsset}" HeightRequest="280" Aspect="AspectFit" SemanticProperties.Description="{Binding Text[DemoImage]}" AutomationId="PhotoPreview" />
       </Border>
       <Label Text="{Binding Text[DemoImage]}" IsVisible="{Binding HasPhoto}" />
       <Label Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" />

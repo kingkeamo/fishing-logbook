@@ -24,12 +24,64 @@
   <data name="CaughtOn" xml:space="preserve"><value>Date de prise · heure enregistrée (UTC)</value></data>
   <data name="NoPhoto" xml:space="preserve"><value>Aucune photo enregistrée</value></data>
   <data name="Preview" xml:space="preserve"><value>Ouvrir l’aperçu de la photo</value></data>
-  <data name="DemoImage" xml:space="preserve"><value>Illustration de démonstration — visuel de marque, pas une photo de prise.</value></data>
+  <data name="DemoImage" xml:space="preserve"><value>Illustration fictive · pas une photographie de prise</value></data>
   <data name="EmptyTitle" xml:space="preserve"><value>Aucune prise à afficher</value></data>
   <data name="EmptyBody" xml:space="preserve"><value>Voici l’état vide de la démo. Rétablissez les exemples pour découvrir une prise.</value></data>
   <data name="ShowEmpty" xml:space="preserve"><value>Afficher la liste vide</value></data>
   <data name="RestoreSamples" xml:space="preserve"><value>Rétablir les prises fictives</value></data>
   <data name="SampleSpecies" xml:space="preserve"><value>Perche commune</value></data>
   <data name="SamplePlace" xml:space="preserve"><value>Lieu fictif au bord du lac</value></data>
-  <data name="SampleNotes" xml:space="preserve"><value>Une prise matinale fictive, remise à l’eau. L’aperçu utilise notre illustration de marque.</value></data>
+  <data name="SampleNotes" xml:space="preserve"><value>Une prise matinale fictive, remise à l’eau. L’image est une illustration créée pour cette démo.</value></data>
+  <data name="Trips" xml:space="preserve"><value>Sorties</value></data>
+  <data name="Explore" xml:space="preserve"><value>Explorer</value></data>
+  <data name="Settings" xml:space="preserve"><value>Réglages</value></data>
+  <data name="About" xml:space="preserve"><value>À propos de Fishing Logbook</value></data>
+  <data name="AboutBody" xml:space="preserve"><value>Catch, but don’t forget. Un aperçu natif avec des prises fictives. La saisie, les comptes et la synchronisation ne sont pas encore disponibles.</value></data>
+  <data name="Showcase" xml:space="preserve"><value>Galerie UX · développement</value></data>
+  <data name="ShowcaseBody" xml:space="preserve"><value>Aperçu de développement. Ces actions simulent des retours sans modifier vos prises.</value></data>
+  <data name="Journal" xml:space="preserve"><value>Vos moments au bord de l’eau</value></data>
+  <data name="RecentCatches" xml:space="preserve"><value>Prises récentes</value></data>
+  <data name="SampleBadge" xml:space="preserve"><value>CARNET FICTIF</value></data>
+  <data name="DemoShort" xml:space="preserve"><value>Prises fictives · illustration, pas une photo</value></data>
+  <data name="CatchFacts" xml:space="preserve"><value>La prise en bref</value></data>
+  <data name="SettingsIntro" xml:space="preserve"><value>À votre façon</value></data>
+  <data name="SettingsBody" xml:space="preserve"><value>Vos choix restent sur cet appareil.</value></data>
+  <data name="PlannedTitle" xml:space="preserve"><value>Bientôt au fil de l’eau</value></data>
+  <data name="PlannedBody" xml:space="preserve"><value>Cette destination n’est pas encore disponible. Retrouvez les prises fictives dans l’onglet Prises.</value></data>
+  <data name="LoadingTitle" xml:space="preserve"><value>Préparation en cours</value></data>
+  <data name="LoadingBody" xml:space="preserve"><value>Veuillez patienter un instant.</value></data>
+  <data name="ErrorTitle" xml:space="preserve"><value>Un problème est survenu</value></data>
+  <data name="ErrorBody" xml:space="preserve"><value>Impossible d’afficher ce contenu. Vous pouvez réessayer.</value></data>
+  <data name="OfflineTitle" xml:space="preserve"><value>Vous êtes hors connexion</value></data>
+  <data name="OfflineBody" xml:space="preserve"><value>Aucune connexion disponible. Cet aperçu ne stocke ni ne synchronise les prises.</value></data>
+  <data name="ReadyTitle" xml:space="preserve"><value>Prêt</value></data>
+  <data name="ReadyBody" xml:space="preserve"><value>Le contenu est disponible.</value></data>
+  <data name="Retry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="Success" xml:space="preserve"><value>Succès</value></data>
+  <data name="Info" xml:space="preserve"><value>Information</value></data>
+  <data name="Warning" xml:space="preserve"><value>Attention</value></data>
+  <data name="Error" xml:space="preserve"><value>Erreur</value></data>
+  <data name="Dismiss" xml:space="preserve"><value>Fermer</value></data>
+  <data name="Done" xml:space="preserve"><value>Terminé</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="ConfirmTitle" xml:space="preserve"><value>Réinitialiser cette démo ?</value></data>
+  <data name="ConfirmBody" xml:space="preserve"><value>Ceci illustre une confirmation destructive. Aucune prise ni préférence ne sera supprimée.</value></data>
+  <data name="ConfirmAction" xml:space="preserve"><value>Réinitialiser la démo</value></data>
+  <data name="ConfirmDemo" xml:space="preserve"><value>Tester la confirmation</value></data>
+  <data name="ModalDemo" xml:space="preserve"><value>Ouvrir la fenêtre</value></data>
+  <data name="ModalTitle" xml:space="preserve"><value>Un instant au bord de l’eau</value></data>
+  <data name="ModalBody" xml:space="preserve"><value>Les fenêtres partagées conservent le contexte. Fermez cet aperçu avec Terminé, Annuler ou le bouton Retour Android.</value></data>
+  <data name="Accepted" xml:space="preserve"><value>Accepté · démonstration uniquement</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>Annulé · aucune modification</value></data>
+  <data name="NotificationDemo" xml:space="preserve"><value>Ceci est une notification de démonstration.</value></data>
+  <data name="States" xml:space="preserve"><value>États du contenu</value></data>
+  <data name="Interactions" xml:space="preserve"><value>Interactions partagées</value></data>
+  <data name="SimulateLoading" xml:space="preserve"><value>Chargement</value></data>
+  <data name="SimulateEmpty" xml:space="preserve"><value>Vide</value></data>
+  <data name="SimulateError" xml:space="preserve"><value>Erreur</value></data>
+  <data name="SimulateOffline" xml:space="preserve"><value>Hors connexion</value></data>
+  <data name="ResetStates" xml:space="preserve"><value>Rétablir le carnet fictif</value></data>
+  <data name="StateDemoNotice" xml:space="preserve"><value>État appliqué aux Prises. Ouvrez l’onglet Prises pour le consulter.</value></data>
+  <data name="CancelModalDemo" xml:space="preserve"><value>Annuler la fenêtre après 3 secondes</value></data>
+  <data name="CancelModalBody" xml:space="preserve"><value>Cette démo se ferme automatiquement après trois secondes avec un jeton d’annulation.</value></data>
 </root>

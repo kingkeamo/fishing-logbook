@@ -1,17 +1,51 @@
 using FishingLogBook.Mobile.Features.Catch.Pages;
+using FishingLogBook.Mobile.Features.Settings.Pages;
+using FishingLogBook.Mobile.Features.Showcase.Pages;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Native.Pages;
+using FishingLogBook.Mobile.Navigation;
 
 namespace FishingLogBook.Mobile;
 
 public partial class AppShell : Shell
 {
-    public AppShell(CatchSummaryPage summary, UiTextService text)
+    public AppShell(CatchSummaryPage summary, SettingsPage settings, UiTextService text, InteractionService interactions, NavigationService navigation)
     {
         InitializeComponent();
-        var content = new ShellContent { Route = "catches", Content = summary };
-        content.SetBinding(TitleProperty, new Binding("[Catches]", source: text));
-        Items.Add(content);
-        Routing.RegisterRoute(nameof(CatchDetailPage), typeof(CatchDetailPage));
-        Routing.RegisterRoute(nameof(PhotoPreviewPage), typeof(PhotoPreviewPage));
+        BindingContext = text;
+        var primary = new FlyoutItem { Route = "main", FlyoutItemIsVisible = false };
+        foreach (var route in RouteConstants.Primary)
+        {
+            var key = route.ToString();
+            var tab = new Tab { Route = key.ToLowerInvariant(), Icon = "tab_" + key.ToLowerInvariant() + ".png" };
+            tab.SetBinding(BaseShellItem.TitleProperty, new Binding("[" + key + "]", source: text));
+            Page page = route switch
+            {
+                MobileRouteEnum.Catches => summary,
+                MobileRouteEnum.Settings => settings,
+                _ => new PlannedPage(text, key)
+            };
+            tab.Items.Add(new ShellContent { Route = key.ToLowerInvariant() + "-root", Content = page });
+            primary.Items.Add(tab);
+        }
+        Items.Add(primary);
+        var about = new MenuItem();
+        about.SetBinding(MenuItem.TextProperty, new Binding("[About]", source: text));
+        about.Clicked += async (_, _) =>
+        {
+            FlyoutIsPresented = false;
+            await interactions.ShowModalAsync(text["About"], text["AboutBody"]);
+        };
+        Items.Add(about);
+#if DEBUG
+        var showcase = new MenuItem();
+        showcase.SetBinding(MenuItem.TextProperty, new Binding("[Showcase]", source: text));
+        showcase.Clicked += async (_, _) => await navigation.NavigateAsync(MobileRouteEnum.Showcase);
+        Items.Add(showcase);
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Showcase), typeof(ShowcasePage));
+#endif
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
     }
 }

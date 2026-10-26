@@ -1,47 +1,33 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
-             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Catch.ViewModels"
-             x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchSummaryPage"
-             x:DataType="vm:CatchListViewModel" Title="{Binding Text[Catches]}">
-  <CollectionView ItemsSource="{Binding Catches}" SelectionMode="None" Margin="{StaticResource PagePadding}" AutomationId="CatchList">
-    <CollectionView.Header>
-      <VerticalStackLayout Spacing="{StaticResource SpaceMedium}" Padding="0,0,0,16">
-        <Border BackgroundColor="White" StrokeThickness="0" Padding="16">
-          <Image Source="brand_horizontal.png" HeightRequest="80" Aspect="AspectFit" SemanticProperties.Description="{Binding Text[Brand]}" />
-        </Border>
-        <Label Text="{Binding Text[Catches]}" Style="{StaticResource Heading}" />
-        <Label Text="{Binding Text[DemoNotice]}" Style="{StaticResource SecondaryText}" />
-        <VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
-          <Label Text="{Binding Text[Language]}" Style="{StaticResource SecondaryText}" />
-          <Picker x:Name="LanguagePicker" Title="{Binding Text[Language]}" ItemsSource="{Binding Languages}" SelectedIndexChanged="OnLanguageChanged" AutomationId="LanguagePicker" />
-          <Label Text="{Binding Text[Theme]}" Style="{StaticResource SecondaryText}" />
-          <Picker x:Name="ThemePicker" Title="{Binding Text[Theme]}" ItemsSource="{Binding Themes}" SelectedIndexChanged="OnThemeChanged" AutomationId="ThemePicker" />
-        </VerticalStackLayout>
-        <Button Text="{Binding EmptyToggleText}" Clicked="OnToggleEmpty" AutomationId="EmptyStateToggle" />
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Catch.ViewModels"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchSummaryPage"
+ x:DataType="vm:CatchListViewModel" Title="{Binding Text[Catches]}">
+ <Grid Padding="{StaticResource PagePadding}">
+  <CollectionView ItemsSource="{Binding Catches}" SelectionMode="None" AutomationId="CatchList" MaximumWidthRequest="720" HorizontalOptions="Fill">
+   <CollectionView.Header>
+    <VerticalStackLayout Spacing="{StaticResource SpaceSmall}" Padding="0,8,0,24">
+     <Label Text="{Binding Text[SampleBadge]}" Style="{StaticResource Eyebrow}" />
+     <Label Text="{Binding Text[Journal]}" Style="{StaticResource Heading}" />
+     <Label Text="{Binding Text[DemoShort]}" Style="{StaticResource SecondaryText}" />
+    </VerticalStackLayout>
+   </CollectionView.Header>
+   <CollectionView.EmptyView><controls:ContentStateView BindingContext="{Binding State}" RetryRequested="OnRetry" /></CollectionView.EmptyView>
+   <CollectionView.ItemTemplate><DataTemplate x:DataType="models:CatchPresentationModel">
+    <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,20" Shadow="{StaticResource CardShadow}">
+     <VerticalStackLayout Spacing="0">
+      <Image Source="{Binding PreviewAsset}" IsVisible="{Binding HasPhoto}" HeightRequest="170" Aspect="AspectFill" SemanticProperties.Description="{Binding Text[DemoImage]}" />
+      <VerticalStackLayout Padding="16" Spacing="{StaticResource SpaceSmall}">
+       <Label Text="{Binding ShortDate}" Style="{StaticResource Eyebrow}" />
+       <Label Text="{Binding Species}" Style="{StaticResource Subheading}" />
+       <Label Text="{Binding Place}" Style="{StaticResource SecondaryText}" />
+       <Label Text="{Binding Weight}" IsVisible="{Binding HasPhoto}" />
+       <Label Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" Style="{StaticResource SecondaryText}" />
+       <Button Text="{Binding Text[OpenCatch]}" SemanticProperties.Description="{Binding OpenDescription}" Clicked="OnOpenCatch" CommandParameter="{Binding .}" AutomationId="OpenCatch" />
       </VerticalStackLayout>
-    </CollectionView.Header>
-    <CollectionView.EmptyView>
-      <VerticalStackLayout Spacing="{StaticResource SpaceMedium}" Padding="0,24">
-        <Label Text="{Binding Text[EmptyTitle]}" Style="{StaticResource Subheading}" />
-        <Label Text="{Binding Text[EmptyBody]}" />
-      </VerticalStackLayout>
-    </CollectionView.EmptyView>
-    <CollectionView.ItemTemplate>
-      <DataTemplate x:DataType="models:CatchPresentationModel">
-        <Border Style="{StaticResource Card}" Margin="0,0,0,16">
-          <VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
-            <Label Text="{Binding Species}" Style="{StaticResource Subheading}" />
-            <Label Text="{Binding Text[CaughtOn]}" Style="{StaticResource SecondaryText}" />
-            <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" />
-            <Label Text="{Binding Place}" />
-            <Label Text="{Binding Text[Weight]}" Style="{StaticResource SecondaryText}" />
-            <Label Text="{Binding Weight}" />
-            <Button Text="{Binding Text[OpenCatch]}" SemanticProperties.Description="{Binding OpenDescription}" Clicked="OnOpenCatch" CommandParameter="{Binding .}" />
-          </VerticalStackLayout>
-        </Border>
-      </DataTemplate>
-    </CollectionView.ItemTemplate>
+     </VerticalStackLayout>
+    </Border>
+   </DataTemplate></CollectionView.ItemTemplate>
   </CollectionView>
+ </Grid>
 </ContentPage>

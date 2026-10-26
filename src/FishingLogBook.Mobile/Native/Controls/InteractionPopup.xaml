@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Interactions"
+               x:Class="FishingLogBook.Mobile.Native.Controls.InteractionPopup"
+               x:TypeArguments="x:Boolean" x:DataType="models:DialogRequest"
+               Padding="24" Margin="24" MaximumWidthRequest="480" VerticalOptions="Center"
+               BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}">
+  <ScrollView VerticalOptions="Start">
+    <VerticalStackLayout Spacing="{StaticResource SpaceLarge}">
+      <Label Text="{Binding Title}" Style="{StaticResource Subheading}" AutomationId="DialogTitle" />
+      <Label Text="{Binding Message}" />
+      <Button x:Name="AcceptButton" Text="{Binding Accept}" Clicked="OnAccept" AutomationId="DialogAccept" />
+      <Button Text="{Binding Cancel}" Clicked="OnCancel" Style="{StaticResource SecondaryButton}" AutomationId="DialogCancel" />
+    </VerticalStackLayout>
+  </ScrollView>
+</toolkit:Popup>

@@ -1,13 +1,14 @@
 using System.ComponentModel;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Presentation;
 using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Mobile.Features.Catch.ViewModels;
 
 public sealed class CatchListViewModel : INotifyPropertyChanged
 {
-    private bool _showEmpty;
+    private ContentStateEnum _state;
 
     public CatchListViewModel(UiTextService text)
     {
@@ -18,15 +19,18 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
     public UiTextService Text { get; }
     public IReadOnlyList<CatchPresentationModel> Catches { get; private set; } = [];
-    public IReadOnlyList<string> Languages => [Text["LanguageEnglish"], Text["LanguageFrench"]];
-    public IReadOnlyList<string> Themes => [Text["ThemeSystem"], Text["ThemeLight"], Text["ThemeDark"]];
-    public string EmptyToggleText => Text[_showEmpty ? "RestoreSamples" : "ShowEmpty"];
+    public ContentStateModel State { get; private set; } = null!;
+    public bool HasContent => _state == ContentStateEnum.Ready;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void ToggleEmpty()
+    public void SetState(ContentStateEnum state)
     {
-        _showEmpty = !_showEmpty;
+        if (!Enum.IsDefined(state) || state == ContentStateEnum.Planned)
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+        _state = state;
         Refresh();
     }
 
@@ -35,14 +39,14 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
         if (args.PropertyName == nameof(UiTextService.Culture))
         {
             Refresh();
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Themes)));
         }
     }
 
     private void Refresh()
     {
         var caughtOn = new DateTimeOffset(2026, 6, 14, 7, 30, 0, TimeSpan.Zero);
-        Catches = _showEmpty ? [] :
+        State = new ContentStateModel(_state, Text);
+        Catches = !HasContent ? [] :
         [
             new CatchPresentationModel(new CatchDto(Guid.Parse("00000000-0000-0000-0000-000000000001"), caughtOn, [])
             {
@@ -51,10 +55,11 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
                 Length = 48m,
                 PlaceName = Text["SamplePlace"],
                 Notes = Text["SampleNotes"]
-            }, Text, "brand_mark.png"),
+            }, Text, "sample_catch.png", isSample: true),
             new CatchPresentationModel(new CatchDto(Guid.Parse("00000000-0000-0000-0000-000000000002"), caughtOn.AddDays(-1), []), Text)
         ];
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Catches)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EmptyToggleText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(State)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasContent)));
     }
 }

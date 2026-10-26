@@ -6,6 +6,23 @@ namespace FishingLogBook.Mobile.Tests.Features.Catch.Models.CatchPresentationMod
 public class WhenTestingConstructor : BaseCatchPresentationModelTest
 {
     [Fact]
+    public void ItShouldRefreshARetainedSampleWithoutTranslatingUserContent()
+    {
+        // Arrange
+        var text = CreateText("en-GB");
+        var sample = new CatchPresentationModel(Catch, text, "sample_catch.png", isSample: true);
+        var recorded = new CatchPresentationModel(Catch with { SpeciesName = "Perch", Notes = "Released" }, text);
+        // Act
+        text.SetCulture("fr-FR");
+        // Assert
+        sample.Species.Should().Be("Perche commune");
+        sample.Notes.Should().Be(text["SampleNotes"]);
+        sample.ShortDate.Should().Be("14 juin 2026");
+        recorded.Species.Should().Be("Perch");
+        recorded.Notes.Should().Be("Released");
+    }
+
+    [Fact]
     public void ItShouldDisplayTheSameInstantInUtcRegardlessOfRecordedOffset()
     {
         // Arrange
