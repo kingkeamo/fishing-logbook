@@ -15,7 +15,7 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
         // Act
         text.SetCulture("fr-FR");
         // Assert
-        sample.Species.Should().Be("Perche commune");
+        sample.Species.Should().Be("Truite fario");
         sample.Notes.Should().Be(text["SampleNotes"]);
         sample.ShortDate.Should().Be("14 juin 2026");
         recorded.Species.Should().Be("Perch");

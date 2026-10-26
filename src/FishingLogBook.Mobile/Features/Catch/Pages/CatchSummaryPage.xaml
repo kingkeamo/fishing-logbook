@@ -2,30 +2,76 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
  xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Catch.ViewModels"
  xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchSummaryPage"
- x:DataType="vm:CatchListViewModel" Title="{Binding Text[Catches]}">
- <Grid Padding="{StaticResource PagePadding}">
-  <CollectionView ItemsSource="{Binding Catches}" SelectionMode="None" AutomationId="CatchList" MaximumWidthRequest="720" HorizontalOptions="Fill">
-   <CollectionView.Header>
-    <VerticalStackLayout Spacing="{StaticResource SpaceSmall}" Padding="0,8,0,24">
-     <Label Text="{Binding Text[SampleBadge]}" Style="{StaticResource Eyebrow}" />
-     <Label Text="{Binding Text[Journal]}" Style="{StaticResource Heading}" />
-     <Label Text="{Binding Text[DemoShort]}" Style="{StaticResource SecondaryText}" />
+ x:DataType="vm:CatchListViewModel" Title="{Binding Text[AppTitle]}">
+ <Grid Padding="{StaticResource PagePadding}" RowDefinitions="Auto,*" RowSpacing="12" MaximumWidthRequest="720">
+  <VerticalStackLayout Spacing="8">
+   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2,0,0">
+    <VerticalStackLayout VerticalOptions="Center" Spacing="0">
+     <Label Text="{Binding Text[RecentCatches]}" Style="{StaticResource Heading}" />
+     <Label Text="{Binding Text[SampleBadge]}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
     </VerticalStackLayout>
+    <Button Grid.Column="1" Text="{Binding Text[RecordCatch]}" Clicked="OnRecordCatch" AutomationId="RecordCatch" Style="{StaticResource CompactPrimaryButton}" />
+   </Grid>
+   <Border Style="{StaticResource Card}" Padding="12,0" Shadow="{x:Null}" StrokeShape="RoundRectangle 8">
+    <Grid ColumnDefinitions="24,*" ColumnSpacing="10">
+     <Image Source="{AppThemeBinding Light=action_search.png, Dark=action_search_dark.png}" WidthRequest="22" HeightRequest="22" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" />
+     <Entry Grid.Column="1" Placeholder="{Binding Text[SearchCatches]}" Text="{Binding SearchTerm, Mode=OneWay}" TextChanged="OnSearchChanged"
+      Style="{StaticResource SearchEntry}" SemanticProperties.Description="{Binding Text[SearchCatches]}" AutomationId="CatchSearch" />
+    </Grid>
+   </Border>
+   <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+    <HorizontalStackLayout Spacing="8">
+     <Button Text="{Binding Text[AllCatches]}" CommandParameter="" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterAll">
+      <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding AllSelected}" Value="True"><Setter Property="BackgroundColor" Value="{StaticResource Primary}" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
+     </Button>
+     <Button Text="{Binding Text[MethodSpinning]}" CommandParameter="Spinning" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterSpinning">
+      <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding SpinningSelected}" Value="True"><Setter Property="BackgroundColor" Value="{StaticResource Primary}" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
+     </Button>
+     <Button Text="{Binding Text[MethodFly]}" CommandParameter="Fly" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterFly">
+      <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding FlySelected}" Value="True"><Setter Property="BackgroundColor" Value="{StaticResource Primary}" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
+     </Button>
+    </HorizontalStackLayout>
+   </ScrollView>
+  </VerticalStackLayout>
+  <CollectionView Grid.Row="1" ItemsSource="{Binding Groups}" IsGrouped="True" SelectionMode="None" AutomationId="CatchList">
+   <CollectionView.Header>
+    <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,4">
+     <Label Text="{Binding ResultCount}" Style="{StaticResource Eyebrow}" VerticalOptions="Center" />
+     <Button Grid.Column="1" Text="{Binding Text[ClearFilters]}" IsVisible="{Binding HasFilters}" Clicked="OnClearFilters" Style="{StaticResource SecondaryButton}" AutomationId="ClearFilters" FontSize="14" />
+    </Grid>
    </CollectionView.Header>
-   <CollectionView.EmptyView><controls:ContentStateView BindingContext="{Binding State}" RetryRequested="OnRetry" /></CollectionView.EmptyView>
+   <CollectionView.GroupHeaderTemplate><DataTemplate x:DataType="models:CatchGroupModel">
+    <Label Text="{Binding Header}" Style="{StaticResource Eyebrow}" Padding="0,12,0,8" TextTransform="Uppercase" />
+   </DataTemplate></CollectionView.GroupHeaderTemplate>
+   <CollectionView.EmptyView><VerticalStackLayout Spacing="12">
+    <controls:ContentStateView BindingContext="{Binding State}" RetryRequested="OnRetry" />
+    <VerticalStackLayout IsVisible="{Binding HasNoMatches}" Padding="16" Spacing="12">
+     <Label Text="{Binding Text[NoMatches]}" Style="{StaticResource Subheading}" />
+     <Label Text="{Binding Text[NoMatchesBody]}" Style="{StaticResource SecondaryText}" />
+     <Button Text="{Binding Text[ClearFilters]}" Clicked="OnClearFilters" Style="{StaticResource SecondaryButton}" />
+    </VerticalStackLayout>
+   </VerticalStackLayout></CollectionView.EmptyView>
    <CollectionView.ItemTemplate><DataTemplate x:DataType="models:CatchPresentationModel">
-    <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,20" Shadow="{StaticResource CardShadow}">
-     <VerticalStackLayout Spacing="0">
-      <Image Source="{Binding PreviewAsset}" IsVisible="{Binding HasPhoto}" HeightRequest="170" Aspect="AspectFill" SemanticProperties.Description="{Binding Text[DemoImage]}" />
-      <VerticalStackLayout Padding="16" Spacing="{StaticResource SpaceSmall}">
-       <Label Text="{Binding ShortDate}" Style="{StaticResource Eyebrow}" />
-       <Label Text="{Binding Species}" Style="{StaticResource Subheading}" />
-       <Label Text="{Binding Place}" Style="{StaticResource SecondaryText}" />
-       <Label Text="{Binding Weight}" IsVisible="{Binding HasPhoto}" />
-       <Label Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" Style="{StaticResource SecondaryText}" />
-       <Button Text="{Binding Text[OpenCatch]}" SemanticProperties.Description="{Binding OpenDescription}" Clicked="OnOpenCatch" CommandParameter="{Binding .}" AutomationId="OpenCatch" />
-      </VerticalStackLayout>
-     </VerticalStackLayout>
+    <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,10">
+     <Grid>
+      <Grid ColumnDefinitions="92,*,24" ColumnSpacing="12" Padding="12" InputTransparent="True" AutomationProperties.IsInAccessibleTree="False">
+       <Border Padding="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Canvas}, Dark={StaticResource Navy}}" StrokeShape="RoundRectangle 10" HeightRequest="92" VerticalOptions="Start">
+        <Grid>
+         <Image Source="{Binding PreviewAsset}" Aspect="AspectFill" IsVisible="{Binding HasPhoto}" />
+         <Image Source="photo_missing.png" WidthRequest="28" HeightRequest="28" IsVisible="{Binding HasNoPhoto}" />
+        </Grid>
+       </Border>
+       <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+        <Label Text="{Binding Species}" Style="{StaticResource Subheading}" />
+        <Label Text="{Binding Time}" Style="{StaticResource SecondaryText}" />
+        <Label Text="{Binding Method}" IsVisible="{Binding HasMethod}" Style="{StaticResource SecondaryText}" />
+        <Label Text="{Binding Measurements}" IsVisible="{Binding HasMeasurements}" FontAttributes="Bold" FontSize="14" />
+        <Label Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" Style="{StaticResource SecondaryText}" />
+       </VerticalStackLayout>
+       <Image Grid.Column="2" Source="{AppThemeBinding Light=action_chevron.png, Dark=action_chevron_dark.png}" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+      </Grid>
+      <Button Style="{StaticResource CardAction}" CommandParameter="{Binding .}" Clicked="OnOpenCatch" SemanticProperties.Description="{Binding CardDescription}" AutomationId="OpenCatch" />
+     </Grid>
     </Border>
    </DataTemplate></CollectionView.ItemTemplate>
   </CollectionView>

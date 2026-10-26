@@ -5,7 +5,7 @@
              x:Class="FishingLogBook.Mobile.Native.Controls.ContentStateView"
              x:DataType="models:ContentStateModel" IsVisible="{Binding IsVisible}">
   <Border Style="{StaticResource Card}">
-    <VerticalStackLayout Spacing="{StaticResource SpaceMedium}" Padding="8,16">
+    <VerticalStackLayout Spacing="{StaticResource SpaceMedium}" Padding="0,8">
       <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" Color="{AppThemeBinding Light={StaticResource Teal}, Dark={StaticResource Mint}}" />
       <Label Text="{Binding Title}" Style="{StaticResource Subheading}" />
       <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />

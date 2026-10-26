@@ -7,9 +7,18 @@ public sealed class CatchPresentationModel(CatchDto catchDto, UiTextService text
 {
     public UiTextService Text { get; } = text;
     public Guid Id => catchDto.Id;
-    public string Species => isSample ? Text["SampleSpecies"] : DisplayOrMissing(catchDto.SpeciesName);
+    public string Species => isSample ? Text[catchDto.SpeciesName == "Atlantic salmon" ? "SampleSalmon" : "SampleSpecies"] : DisplayOrMissing(catchDto.SpeciesName);
     public string CaughtOn => catchDto.CaughtOn.ToUniversalTime().ToString("f", Text.Culture);
     public string ShortDate => catchDto.CaughtOn.ToUniversalTime().ToString("dd MMM yyyy", Text.Culture);
+    public DateTimeOffset RecordedAt => catchDto.CaughtOn.ToUniversalTime();
+    public DateOnly Day => DateOnly.FromDateTime(RecordedAt.UtcDateTime);
+    public string Time => RecordedAt.ToString("t", Text.Culture) + " UTC";
+    public string MethodCode => catchDto.Method ?? string.Empty;
+    public string Method => isSample && MethodCode is "Spinning" or "Fly" ? Text["Method" + MethodCode] : DisplayOrMissing(catchDto.Method);
+    public bool HasMethod => !string.IsNullOrWhiteSpace(catchDto.Method);
+    public bool HasMeasurements => catchDto.Weight.HasValue || catchDto.Length.HasValue;
+    public string Measurements => string.Join(" · ", new[] { catchDto.Weight.HasValue ? Weight : null, catchDto.Length.HasValue ? Length : null }.Where(value => value is not null));
+    public string CardDescription => string.Join(", ", new[] { OpenDescription, HasMethod ? Method : null, HasMeasurements ? Measurements : null }.Where(value => value is not null));
     public string Weight => FormatMeasurement(catchDto.Weight, "kg");
     public string Length => FormatMeasurement(catchDto.Length, "cm");
     public string Place => isSample ? Text["SamplePlace"] : DisplayOrMissing(catchDto.PlaceName);

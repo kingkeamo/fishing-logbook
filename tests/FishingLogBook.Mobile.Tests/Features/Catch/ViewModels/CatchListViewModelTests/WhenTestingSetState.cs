@@ -16,7 +16,7 @@ public class WhenTestingSetState : BaseCatchListViewModelTest
         action.Should().Throw<ArgumentOutOfRangeException>();
         // Assert
         Sut.HasContent.Should().BeTrue();
-        Sut.Catches.Should().HaveCount(2);
+        Sut.Catches.Should().HaveCount(4);
     }
 
     [Theory]

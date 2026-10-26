@@ -5,14 +5,17 @@
                xmlns:models="clr-namespace:FishingLogBook.Mobile.Interactions"
                x:Class="FishingLogBook.Mobile.Native.Controls.InteractionPopup"
                x:TypeArguments="x:Boolean" x:DataType="models:DialogRequest"
-               Padding="24" Margin="24" MaximumWidthRequest="480" VerticalOptions="Center"
-               BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}">
-  <ScrollView VerticalOptions="Start">
-    <VerticalStackLayout Spacing="{StaticResource SpaceLarge}">
-      <Label Text="{Binding Title}" Style="{StaticResource Subheading}" AutomationId="DialogTitle" />
-      <Label Text="{Binding Message}" />
-      <Button x:Name="AcceptButton" Text="{Binding Accept}" Clicked="OnAccept" AutomationId="DialogAccept" />
-      <Button Text="{Binding Cancel}" Clicked="OnCancel" Style="{StaticResource SecondaryButton}" AutomationId="DialogCancel" />
-    </VerticalStackLayout>
-  </ScrollView>
+               Padding="0" Margin="20" MaximumWidthRequest="480" VerticalOptions="Center"
+               BackgroundColor="Transparent">
+  <Border Padding="20" StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}" StrokeShape="RoundRectangle 16">
+    <ScrollView VerticalOptions="Start">
+      <VerticalStackLayout Spacing="16">
+        <Label Text="{Binding Title}" Style="{StaticResource Subheading}" AutomationId="DialogTitle" />
+        <Label Text="{Binding Message}" />
+        <Button x:Name="AcceptButton" Text="{Binding Accept}" Clicked="OnAccept" AutomationId="DialogAccept" />
+        <Button Text="{Binding Cancel}" Clicked="OnCancel" Style="{StaticResource SecondaryButton}" AutomationId="DialogCancel" />
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
 </toolkit:Popup>

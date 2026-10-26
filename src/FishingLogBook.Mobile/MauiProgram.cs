@@ -15,6 +15,10 @@ public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
+        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("BorderlessEntry", static (handler, _) =>
+        {
+            handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
+        });
         var builder = MauiApp.CreateBuilder().UseMauiApp<App>().UseMauiCommunityToolkit();
         builder.Services.AddSingleton<UiTextService>();
         builder.Services.AddSingleton<IPreferenceStore, DevicePreferenceStore>();
