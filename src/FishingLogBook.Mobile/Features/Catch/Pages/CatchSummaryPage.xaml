@@ -21,13 +21,13 @@
    </Border>
    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
     <HorizontalStackLayout Spacing="8">
-     <Button Text="{Binding Text[AllCatches]}" CommandParameter="" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterAll">
+     <Button Text="{Binding Text[AllCatches]}" CommandParameter="{x:Static models:CatchMethodEnum.All}" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterAll">
       <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding AllSelected}" Value="True"><Setter Property="BackgroundColor" Value="{StaticResource Primary}" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
      </Button>
-     <Button Text="{Binding Text[MethodSpinning]}" CommandParameter="Spinning" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterSpinning">
+     <Button Text="{Binding Text[MethodSpinning]}" CommandParameter="{x:Static models:CatchMethodEnum.Spinning}" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterSpinning">
       <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding SpinningSelected}" Value="True"><Setter Property="BackgroundColor" Value="{StaticResource Primary}" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
      </Button>
-     <Button Text="{Binding Text[MethodFly]}" CommandParameter="Fly" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterFly">
+     <Button Text="{Binding Text[MethodFly]}" CommandParameter="{x:Static models:CatchMethodEnum.Fly}" Clicked="OnMethod" Style="{StaticResource FilterChip}" AutomationId="FilterFly">
       <Button.Triggers><DataTrigger TargetType="Button" Binding="{Binding FlySelected}" Value="True"><Setter Property="BackgroundColor" Value="{StaticResource Primary}" /><Setter Property="TextColor" Value="White" /></DataTrigger></Button.Triggers>
      </Button>
     </HorizontalStackLayout>

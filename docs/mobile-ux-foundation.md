@@ -208,3 +208,65 @@ Remaining deliberate gaps:
   native method-filter path is exercised automatically.
 - Physical-device screen reader, performance, memory and ergonomics checks remain.
 - iOS is outside #249; this Android foundation does not claim iOS validation.
+
+## Pre-merge maintainability review — PR #251
+
+The review kept the accepted visual design and feature scope unchanged. Fictitious
+Catch construction now lives in a singleton `SampleCatchProvider`; its DTO and
+presentation instances are retained across filtering, state and culture refreshes.
+Sample text uses explicit resource keys, while real recorded species names—including
+names equal to an English sample value—remain untouched. Method filters and sample
+method identities use an explicit enum instead of UI strings.
+
+Catch presentation models now issue focused property-change notifications when the
+culture changes. Detail and photo pages therefore no longer reset their complete
+BindingContext during `OnAppearing`. Preferences have an explicit, idempotent startup
+`Initialize` call before Shell is resolved instead of relying on an otherwise-unused
+service resolution.
+
+The native interaction presenter serialises dialogs and snackbar setup, replaces an
+active snackbar before showing another, dismisses it before opening a dialog, and only
+clears the snackbar instance that actually completed. All snackbar state mutation and
+popup work remains on the MAUI main thread. Cancellation still propagates, closes an
+open popup, and releases the dialog gate in `finally`.
+
+Focused tests cover retained sample instances, typed method filtering, explicit sample
+localisation versus real species text, property-change notifications, and one-time
+preference initialization. Final validation after the review changes:
+
+- `dotnet format FishingLogBook.sln --no-restore --verbosity quiet` — passed.
+- Full solution build with the installed Android SDK/JDK — passed with zero warnings
+  and zero errors.
+- Full solution tests — 3,158 passed, including 75 mobile tests.
+- Android ARM64 trimmed Release APK build — passed with zero warnings and zero errors.
+- `npm test -- --reporter=dot` — 405 passed.
+- `npm run test:browser` — 159 passed; 7 expected WebKit service-worker tests skipped.
+- Updated Debug APK on Android 36: interaction and preference ADB phases passed. The
+  interaction phase deliberately replaces six-second notifications at one-second
+  intervals before opening confirmation/modal UI, exercising the overlap boundary.
+
+Pre-merge self review:
+
+- Issue/AC: PASS — all requested cleanup findings are addressed without visual or
+  product-scope changes.
+- Architecture/CQRS: PASS — one concrete feature-owned provider was added; no interface,
+  repository or server dependency was introduced.
+- Rules: PASS — naming, explicit enum values, DI registration, formatting and test
+  structure follow repository conventions.
+- Security/privacy: PASS — only fictitious local demo data changed; no identity,
+  location, storage or network surface changed.
+- Database/migrations: N/A.
+- Tests/coverage: PASS — portable logic has focused unit coverage; MAUI-specific
+  snackbar/popup concurrency is exercised through the installed Android UI.
+- Browser: PASS — full PWA browser regression passed; native controls are not a
+  Playwright boundary.
+- Web/UI/localisation: PASS — appearance is unchanged; EN/FR switching and retained
+  detail/preview bindings passed on Android.
+- Code smells: PASS — repeated DTO construction, magic species comparisons, string
+  filter state, BindingContext resets and implicit startup side effects were removed.
+- CI/deployment: PASS — Android-only MAUI dependencies remain isolated; no migration,
+  configuration or deployment action is required.
+
+Remaining deliberate gap: CommunityToolkit snackbar/popup objects cannot be constructed
+by the portable `net10.0` test target. Their UI-thread and overlap behaviour is therefore
+covered by the Android emulator phase rather than a mock-only unit test.

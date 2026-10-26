@@ -1,4 +1,5 @@
 using System.Globalization;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Localization;
 
@@ -11,6 +12,6 @@ public abstract class BaseCatchListViewModelTest
 
     protected BaseCatchListViewModelTest()
     {
-        Sut = new CatchListViewModel(Text);
+        Sut = new CatchListViewModel(Text, new SampleCatchProvider(Text));
     }
 }

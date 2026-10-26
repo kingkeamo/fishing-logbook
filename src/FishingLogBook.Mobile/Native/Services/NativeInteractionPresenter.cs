@@ -9,66 +9,105 @@ namespace FishingLogBook.Mobile.Native.Services;
 
 public sealed class NativeInteractionPresenter : IInteractionPresenter
 {
+    private readonly SemaphoreSlim _dialogGate = new(1, 1);
     private ISnackbar? _snackbar;
 
     public async Task NotifyAsync(NotificationRequest request, CancellationToken cancellationToken)
     {
-        await MainThread.InvokeOnMainThreadAsync(async () =>
+        await _dialogGate.WaitAsync(cancellationToken);
+        ISnackbar snackbar = null!;
+        Task display = Task.CompletedTask;
+        try
         {
-            var background = (Color)Application.Current!.Resources["Notification" + request.Kind];
-            _snackbar = Snackbar.Make(request.Message, actionButtonText: request.Dismiss,
-                duration: TimeSpan.FromSeconds(6), visualOptions: new SnackbarOptions
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await DismissSnackbarAsync();
+                var background = (Color)Application.Current!.Resources["Notification" + request.Kind];
+                snackbar = Snackbar.Make(request.Message, actionButtonText: request.Dismiss,
+                    duration: TimeSpan.FromSeconds(6), visualOptions: new SnackbarOptions
+                    {
+                        BackgroundColor = background,
+                        TextColor = Colors.White,
+                        ActionButtonTextColor = Colors.White,
+                        CornerRadius = 12,
+                        Font = Microsoft.Maui.Font.SystemFontOfSize(16)
+                    });
+                _snackbar = snackbar;
+                SemanticScreenReader.Default.Announce(request.Message);
+                display = snackbar.Show(cancellationToken);
+            });
+        }
+        finally
+        {
+            _dialogGate.Release();
+        }
+
+        try
+        {
+            await display;
+        }
+        finally
+        {
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                if (ReferenceEquals(_snackbar, snackbar))
                 {
-                    BackgroundColor = background,
-                    TextColor = Colors.White,
-                    ActionButtonTextColor = Colors.White,
-                    CornerRadius = 12,
-                    Font = Microsoft.Maui.Font.SystemFontOfSize(16)
-                });
-            SemanticScreenReader.Default.Announce(request.Message);
-            await _snackbar.Show(cancellationToken);
-        });
+                    _snackbar = null;
+                }
+            });
+        }
     }
 
     public async Task<bool> ShowDialogAsync(DialogRequest request, CancellationToken cancellationToken)
     {
-        return await MainThread.InvokeOnMainThreadAsync(async () =>
+        await _dialogGate.WaitAsync(cancellationToken);
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (_snackbar is not null)
+            return await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                await _snackbar.Dismiss(CancellationToken.None);
-            }
+                cancellationToken.ThrowIfCancellationRequested();
+                await DismissSnackbarAsync();
 
-            var popup = new InteractionPopup(request);
-            var opened = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            popup.Opened += (_, _) => opened.TrySetResult();
-            var completion = Shell.Current.ShowPopupAsync<bool>(popup, new PopupOptions
-            {
-                CanBeDismissedByTappingOutsideOfPopup = !request.IsDestructive,
-                Shape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
+                var popup = new InteractionPopup(request);
+                var opened = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                popup.Opened += (_, _) => opened.TrySetResult();
+                var completion = Shell.Current.ShowPopupAsync<bool>(popup, new PopupOptions
                 {
-                    CornerRadius = 16,
-                    StrokeThickness = 0
-                },
-                PageOverlayColor = Color.FromArgb("#990B1F3A")
-            }, CancellationToken.None);
-            try
-            {
-                var result = await completion.WaitAsync(cancellationToken);
-                return !result.WasDismissedByTappingOutsideOfPopup && result.Result;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                await Task.WhenAny(opened.Task, completion);
-                if (!completion.IsCompleted)
+                    CanBeDismissedByTappingOutsideOfPopup = !request.IsDestructive,
+                    PageOverlayColor = Color.FromArgb("#990B1F3A")
+                }, CancellationToken.None);
+                try
                 {
-                    await popup.CloseAsync(false, CancellationToken.None);
+                    var result = await completion.WaitAsync(cancellationToken);
+                    return !result.WasDismissedByTappingOutsideOfPopup && result.Result;
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    await Task.WhenAny(opened.Task, completion);
+                    if (!completion.IsCompleted)
+                    {
+                        await popup.CloseAsync(false, CancellationToken.None);
+                    }
 
-                await completion;
-                throw;
-            }
-        });
+                    await completion;
+                    throw;
+                }
+            });
+        }
+        finally
+        {
+            _dialogGate.Release();
+        }
+    }
+
+    private async Task DismissSnackbarAsync()
+    {
+        var snackbar = _snackbar;
+        _snackbar = null;
+        if (snackbar is not null)
+        {
+            await snackbar.Dismiss(CancellationToken.None);
+        }
     }
 }

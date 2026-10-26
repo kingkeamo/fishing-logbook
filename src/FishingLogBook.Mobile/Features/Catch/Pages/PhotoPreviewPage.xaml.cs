@@ -18,11 +18,4 @@ public partial class PhotoPreviewPage : ContentPage, IQueryAttributable
         }
     }
 
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        var item = BindingContext;
-        BindingContext = null;
-        BindingContext = item;
-    }
 }

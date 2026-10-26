@@ -9,25 +9,13 @@ public sealed class PreferenceService : INotifyPropertyChanged
     public const string AppearanceKey = "mobile.appearance";
     private readonly IPreferenceStore _store;
     private readonly IAppearanceService _appearance;
+    private bool _isInitialized;
 
     public PreferenceService(IPreferenceStore store, IAppearanceService appearance, UiTextService text)
     {
         _store = store;
         _appearance = appearance;
         Text = text;
-        var language = store.Get(LanguageKey, text.Culture.Name);
-        if (language is "en-GB" or "fr-FR")
-        {
-            text.SetCulture(language);
-        }
-
-        Appearance = store.Get(AppearanceKey, "System") switch
-        {
-            "Light" => AppearanceEnum.Light,
-            "Dark" => AppearanceEnum.Dark,
-            _ => AppearanceEnum.System
-        };
-        appearance.Apply(Appearance);
     }
 
     public UiTextService Text { get; }
@@ -36,6 +24,29 @@ public sealed class PreferenceService : INotifyPropertyChanged
     public IReadOnlyList<string> Languages => [Text["LanguageEnglish"], Text["LanguageFrench"]];
     public IReadOnlyList<string> Themes => [Text["ThemeSystem"], Text["ThemeLight"], Text["ThemeDark"]];
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void Initialize()
+    {
+        if (_isInitialized)
+        {
+            return;
+        }
+
+        var language = _store.Get(LanguageKey, Text.Culture.Name);
+        if (language is "en-GB" or "fr-FR")
+        {
+            Text.SetCulture(language);
+        }
+
+        Appearance = _store.Get(AppearanceKey, "System") switch
+        {
+            "Light" => AppearanceEnum.Light,
+            "Dark" => AppearanceEnum.Dark,
+            _ => AppearanceEnum.System
+        };
+        _appearance.Apply(Appearance);
+        _isInitialized = true;
+    }
 
     public void SetLanguage(int index)
     {

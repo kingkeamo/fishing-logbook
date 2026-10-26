@@ -12,6 +12,13 @@ public abstract class BasePreferenceServiceTest
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
     protected PreferenceService CreateSut()
     {
+        var sut = CreateUninitializedSut();
+        sut.Initialize();
+        return sut;
+    }
+
+    protected PreferenceService CreateUninitializedSut()
+    {
         return new PreferenceService(MockStore, MockAppearance, Text);
     }
 }

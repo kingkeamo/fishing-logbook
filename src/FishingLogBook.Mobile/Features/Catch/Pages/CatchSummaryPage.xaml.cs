@@ -31,7 +31,7 @@ public partial class CatchSummaryPage : ContentPage
 
     private void OnMethod(object? sender, EventArgs args)
     {
-        if (sender is Button { CommandParameter: string method })
+        if (sender is Button { CommandParameter: CatchMethodEnum method })
         {
             _viewModel.SetMethod(method);
         }

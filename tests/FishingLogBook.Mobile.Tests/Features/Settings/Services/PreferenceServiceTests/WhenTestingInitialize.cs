@@ -4,7 +4,7 @@ using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Settings.Services.PreferenceServiceTests;
 
-public class WhenTestingConstructor : BasePreferenceServiceTest
+public class WhenTestingInitialize : BasePreferenceServiceTest
 {
     [Theory]
     [InlineData("invalid", "99", "en-GB", AppearanceEnum.System)]
@@ -15,8 +15,9 @@ public class WhenTestingConstructor : BasePreferenceServiceTest
         // Arrange
         MockStore.Get(PreferenceService.LanguageKey, "en-GB").Returns(language);
         MockStore.Get(PreferenceService.AppearanceKey, "System").Returns(appearance);
+        var sut = CreateUninitializedSut();
         // Act
-        var sut = CreateSut();
+        sut.Initialize();
         // Assert
         sut.Text.Culture.Name.Should().Be(expectedLanguage);
         sut.Appearance.Should().Be(expectedAppearance);
@@ -24,5 +25,19 @@ public class WhenTestingConstructor : BasePreferenceServiceTest
         MockStore.Received(1).Get(PreferenceService.AppearanceKey, "System");
         MockAppearance.Received(1).Apply(expectedAppearance);
         MockStore.DidNotReceive().Set(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public void ItShouldInitializeOnlyOnce()
+    {
+        // Arrange
+        var sut = CreateUninitializedSut();
+        // Act
+        sut.Initialize();
+        sut.Initialize();
+        // Assert
+        MockStore.Received(1).Get(PreferenceService.LanguageKey, "en-GB");
+        MockStore.Received(1).Get(PreferenceService.AppearanceKey, "System");
+        MockAppearance.Received(1).Apply(AppearanceEnum.System);
     }
 }

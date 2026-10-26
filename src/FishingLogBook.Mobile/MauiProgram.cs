@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui;
 using FishingLogBook.Mobile.Features.Catch.Pages;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Settings.Pages;
 using FishingLogBook.Mobile.Features.Settings.Services;
@@ -28,6 +29,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<NavigationService>();
         builder.Services.AddSingleton<IInteractionPresenter, NativeInteractionPresenter>();
         builder.Services.AddSingleton<InteractionService>();
+        builder.Services.AddSingleton<SampleCatchProvider>();
         builder.Services.AddSingleton<CatchListViewModel>();
         builder.Services.AddSingleton<CatchSummaryPage>();
         builder.Services.AddSingleton<SettingsPage>();

@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Mobile.Features.Catch.Models;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchListViewModelTests;
 
@@ -26,7 +27,7 @@ public class WhenTestingSetSearch : BaseCatchListViewModelTest
     public void ItShouldCombineSearchWithMethodAndRetainBothAcrossLanguageChanges()
     {
         // Arrange
-        Sut.SetMethod("Spinning");
+        Sut.SetMethod(CatchMethodEnum.Spinning);
         Sut.SetSearch("truite");
         // Act
         Text.SetCulture("fr-FR");
@@ -35,6 +36,6 @@ public class WhenTestingSetSearch : BaseCatchListViewModelTest
         Sut.Catches[0].Method.Should().Be(Text["MethodSpinning"]);
         Sut.Catches[0].Measurements.Should().Be("0,8 kg · 29 cm");
         Sut.SearchTerm.Should().Be("truite");
-        Sut.SelectedMethod.Should().Be("Spinning");
+        Sut.SelectedMethod.Should().Be(CatchMethodEnum.Spinning);
     }
 }

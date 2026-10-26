@@ -21,14 +21,6 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
         }
     }
 
-    protected override void OnAppearing()
-    {
-        base.OnAppearing();
-        var item = BindingContext;
-        BindingContext = null;
-        BindingContext = item;
-    }
-
     private async void OnPreview(object? sender, EventArgs args)
     {
         if (BindingContext is CatchPresentationModel item)
