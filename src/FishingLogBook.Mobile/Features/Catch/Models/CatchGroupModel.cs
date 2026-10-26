@@ -6,4 +6,5 @@ public sealed class CatchGroupModel(DateOnly day, IEnumerable<CatchPresentationM
 {
     public DateOnly Day { get; } = day;
     public string Header => Day.ToString("dddd d MMMM yyyy", text.Culture);
+    public string CountText => string.Format(text.Culture, text[Count == 1 ? "CatchCountSingle" : "CatchCount"], Count);
 }

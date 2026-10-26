@@ -1,6 +1,11 @@
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Core;
+using CommunityToolkit.Maui.Extensions;
+using CommunityToolkit.Maui.Views;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.Native.Controls;
 using FishingLogBook.Mobile.Navigation;
 using FishingLogBook.Mobile.Presentation;
 
@@ -31,9 +36,27 @@ public partial class CatchSummaryPage : ContentPage
 
     private void OnMethod(object? sender, EventArgs args)
     {
-        if (sender is Button { CommandParameter: CatchMethodEnum method })
+        if (sender is ChipView { CommandParameter: CatchMethodEnum method })
         {
             _viewModel.SetMethod(method);
+        }
+    }
+
+    private void OnOpenMenu(object? sender, EventArgs args)
+    {
+        Shell.Current.FlyoutIsPresented = true;
+    }
+
+    private async void OnOpenFilters(object? sender, EventArgs args)
+    {
+        var result = await Shell.Current.ShowPopupAsync<CatchFilterModel>(new FilterPopup(_viewModel.CreateFilterDraft()), new PopupOptions
+        {
+            PageOverlayColor = Color.FromArgb("#99102A43"),
+            Shape = null
+        });
+        if (!result.WasDismissedByTappingOutsideOfPopup && result.Result is not null)
+        {
+            _viewModel.ApplyFilters(result.Result);
         }
     }
 

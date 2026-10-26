@@ -1,17 +1,52 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
- xmlns:text="clr-namespace:FishingLogBook.Mobile.Localization" x:Class="FishingLogBook.Mobile.AppShell" x:DataType="text:UiTextService" FlyoutBehavior="Flyout"
- Shell.BackgroundColor="{StaticResource Primary}"
- Shell.ForegroundColor="{StaticResource Paper}"
- Shell.TitleColor="{StaticResource Paper}"
+ xmlns:text="clr-namespace:FishingLogBook.Mobile.Localization" xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ x:Class="FishingLogBook.Mobile.AppShell" x:DataType="text:UiTextService" FlyoutBehavior="Flyout"
+ Shell.BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}"
+ Shell.ForegroundColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}"
+ Shell.TitleColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}"
  FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}"
  Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}"
  Shell.TabBarForegroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
  Shell.TabBarTitleColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
  Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}">
  <Shell.FlyoutHeader>
-  <Border BackgroundColor="White" StrokeThickness="0" Padding="24,16">
-   <Image Source="brand_horizontal.png" HeightRequest="56" Aspect="AspectFit" SemanticProperties.Description="{Binding [Brand]}" />
-  </Border>
+  <VerticalStackLayout Padding="20,24,20,16" Spacing="16">
+   <Image Source="brand_horizontal.png" HeightRequest="48" Aspect="AspectFit" HorizontalOptions="Start" SemanticProperties.Description="{Binding [Brand]}" />
+   <Grid ColumnDefinitions="48,*" ColumnSpacing="12" SemanticProperties.Description="{Binding [ViewProfile]}">
+    <Border WidthRequest="48" HeightRequest="48" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}">
+     <Border.StrokeShape><Ellipse /></Border.StrokeShape>
+     <Label Text="E" TextColor="White" FontAttributes="Bold" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center" FontAutoScalingEnabled="False" />
+    </Border>
+    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+     <Label Text="{Binding [ProfileName]}" Style="{StaticResource Subheading}" />
+     <Label Text="{Binding [ViewProfile]}" Style="{StaticResource LinkText}" />
+    </VerticalStackLayout>
+   </Grid>
+  </VerticalStackLayout>
  </Shell.FlyoutHeader>
+ <Shell.ItemTemplate>
+  <DataTemplate>
+   <Grid x:Name="Row" HeightRequest="52" Margin="12,2" ColumnDefinitions="48,*" Padding="4,0" BackgroundColor="Transparent">
+    <VisualStateManager.VisualStateGroups>
+     <VisualStateGroupList>
+      <VisualStateGroup x:Name="CommonStates">
+       <VisualState x:Name="Normal" />
+       <VisualState x:Name="Selected"><VisualState.Setters><Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}" /></VisualState.Setters></VisualState>
+      </VisualStateGroup>
+     </VisualStateGroupList>
+    </VisualStateManager.VisualStateGroups>
+    <controls:IconView Source="{Binding Icon}" Tone="Accent" WidthRequest="22" HeightRequest="22" />
+    <Label Grid.Column="1" Text="{Binding Title}" Style="{StaticResource ActionText}" TextColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" VerticalOptions="Center" />
+   </Grid>
+  </DataTemplate>
+ </Shell.ItemTemplate>
+ <Shell.MenuItemTemplate>
+  <DataTemplate>
+   <Grid HeightRequest="52" Margin="12,2" ColumnDefinitions="48,*" Padding="4,0">
+    <controls:IconView Source="{Binding Icon}" Tone="Muted" WidthRequest="22" HeightRequest="22" />
+    <Label Grid.Column="1" Text="{Binding Text}" Style="{StaticResource ActionText}" TextColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" VerticalOptions="Center" />
+   </Grid>
+  </DataTemplate>
+ </Shell.MenuItemTemplate>
 </Shell>

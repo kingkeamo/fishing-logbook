@@ -5,4 +5,5 @@ public sealed record SampleCatchTextModel(
     string? PlaceKey,
     string? NotesKey,
     string? MethodKey,
-    CatchMethodEnum Method);
+    CatchMethodEnum Method,
+    CatchSpeciesEnum Species = CatchSpeciesEnum.Other);

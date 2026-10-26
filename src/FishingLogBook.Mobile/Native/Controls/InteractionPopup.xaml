@@ -3,6 +3,7 @@
                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
                xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
                xmlns:models="clr-namespace:FishingLogBook.Mobile.Interactions"
+               xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
                x:Class="FishingLogBook.Mobile.Native.Controls.InteractionPopup"
                x:TypeArguments="x:Boolean" x:DataType="models:DialogRequest"
                Padding="0" Margin="20" MaximumWidthRequest="480" VerticalOptions="Center"
@@ -11,8 +12,13 @@
           BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}" StrokeShape="RoundRectangle 16">
     <ScrollView VerticalOptions="Start">
       <VerticalStackLayout Spacing="16">
-        <Label Text="{Binding Title}" Style="{StaticResource Subheading}" AutomationId="DialogTitle" />
-        <Label Text="{Binding Message}" />
+        <Border x:Name="IconCircle" WidthRequest="56" HeightRequest="56" StrokeThickness="0" HorizontalOptions="Center"
+                BackgroundColor="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}">
+          <Border.StrokeShape><Ellipse /></Border.StrokeShape>
+          <controls:IconView x:Name="DialogIcon" Source="icon_info.png" Tone="Accent" WidthRequest="26" HeightRequest="26" />
+        </Border>
+        <Label Text="{Binding Title}" Style="{StaticResource Subheading}" HorizontalTextAlignment="Center" AutomationId="DialogTitle" />
+        <Label Text="{Binding Message}" HorizontalTextAlignment="Center" />
         <Button x:Name="AcceptButton" Text="{Binding Accept}" Clicked="OnAccept" AutomationId="DialogAccept" />
         <Button Text="{Binding Cancel}" Clicked="OnCancel" Style="{StaticResource SecondaryButton}" AutomationId="DialogCancel" />
       </VerticalStackLayout>

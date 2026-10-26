@@ -7,7 +7,7 @@ namespace FishingLogBook.Mobile.Features.Catch.Models;
 public sealed class CatchPresentationModel(
     CatchDto catchDto,
     UiTextService text,
-    string? previewAsset = null,
+    IReadOnlyList<string>? photos = null,
     SampleCatchTextModel? sampleText = null) : INotifyPropertyChanged
 {
     public UiTextService Text { get; } = text;
@@ -28,8 +28,14 @@ public sealed class CatchPresentationModel(
     public string Length => FormatMeasurement(catchDto.Length, "cm");
     public string Place => LocalizedOrRecorded(sampleText?.PlaceKey, catchDto.PlaceName);
     public string Notes => LocalizedOrRecorded(sampleText?.NotesKey, catchDto.Notes);
-    public string? PreviewAsset { get; } = previewAsset;
-    public bool HasPhoto => PreviewAsset is not null;
+    public IReadOnlyList<string> Photos { get; } = photos ?? [];
+    public string? PreviewAsset => Photos.Count > 0 ? Photos[0] : null;
+    public int PhotoCount => Photos.Count;
+    public bool HasPhoto => Photos.Count > 0;
+    public bool HasMultiplePhotos => Photos.Count > 1;
+    public string PhotoCounter => $"1/{Photos.Count}";
+    public bool HasNotes => sampleText?.NotesKey is not null || !string.IsNullOrWhiteSpace(catchDto.Notes);
+    public CatchSpeciesEnum SpeciesIdentifier => sampleText?.Species ?? CatchSpeciesEnum.Other;
     public bool HasNoPhoto => !HasPhoto;
     public string OpenDescription => string.Format(Text.Culture, Text["OpenCatchDescription"], Species, CaughtOn);
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -64,3 +70,4 @@ public sealed class CatchPresentationModel(
         return value.HasValue ? $"{value.Value.ToString("0.##", Text.Culture)} {unit}" : Text["NotRecorded"];
     }
 }
+

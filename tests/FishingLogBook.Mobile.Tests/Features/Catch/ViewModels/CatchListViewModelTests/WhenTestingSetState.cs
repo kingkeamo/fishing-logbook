@@ -16,7 +16,7 @@ public class WhenTestingSetState : BaseCatchListViewModelTest
         action.Should().Throw<ArgumentOutOfRangeException>();
         // Assert
         Sut.HasContent.Should().BeTrue();
-        Sut.Catches.Should().HaveCount(4);
+        Sut.Catches.Should().HaveCount(7);
     }
 
     [Theory]
@@ -46,6 +46,6 @@ public class WhenTestingSetState : BaseCatchListViewModelTest
         Sut.HasContent.Should().BeTrue();
         Sut.State.IsVisible.Should().BeFalse();
         Sut.Catches[0].HasPhoto.Should().BeTrue();
-        Sut.Catches[1].HasPhoto.Should().BeFalse();
+        Sut.Catches[2].HasPhoto.Should().BeFalse();
     }
 }

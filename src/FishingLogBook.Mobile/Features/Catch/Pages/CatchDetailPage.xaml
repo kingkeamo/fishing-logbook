@@ -1,30 +1,57 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
- xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchDetailPage"
- x:DataType="models:CatchPresentationModel" Title="{Binding Text[Detail]}">
- <ScrollView><VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="16" MaximumWidthRequest="720">
-  <VerticalStackLayout Spacing="4">
-   <Label Text="{Binding Species}" Style="{StaticResource Heading}" AutomationId="CatchSpecies" />
-   <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" />
-   <Label Text="{Binding Text[CaughtOn]}" Style="{StaticResource Eyebrow}" />
-  </VerticalStackLayout>
-  <VerticalStackLayout Spacing="4" IsVisible="{Binding HasPhoto}">
-   <Border Style="{StaticResource Card}" Padding="0"><Grid HeightRequest="180">
-    <Image Source="{Binding PreviewAsset}" Aspect="AspectFill" SemanticProperties.Description="{Binding Text[DemoImage]}" />
-    <Button Style="{StaticResource CardAction}" SemanticProperties.Description="{Binding Text[Preview]}" Clicked="OnPreview" AutomationId="OpenPhoto" />
-   </Grid></Border>
-   <Label Text="{Binding Text[DemoImage]}" Style="{StaticResource SecondaryText}" />
-  </VerticalStackLayout>
-  <Border Style="{StaticResource Card}" IsVisible="{Binding HasNoPhoto}"><Label Text="{Binding Text[NoPhoto]}" Style="{StaticResource SecondaryText}" /></Border>
-  <Border Style="{StaticResource Card}" Padding="12"><VerticalStackLayout Spacing="12">
-   <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-    <VerticalStackLayout Spacing="4"><Label Text="{Binding Text[Weight]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Weight}" Style="{StaticResource Subheading}" /></VerticalStackLayout>
-    <VerticalStackLayout Grid.Column="1" Spacing="4"><Label Text="{Binding Text[Length]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Length}" Style="{StaticResource Subheading}" /></VerticalStackLayout>
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchDetailPage" x:DataType="models:CatchPresentationModel"
+ Title="{Binding Text[Detail]}" Shell.NavBarIsVisible="False" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+ <Grid RowDefinitions="56,*">
+  <Grid ColumnDefinitions="48,*,48" Padding="4,0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+   <Grid SemanticProperties.Description="{Binding Text[Back]}" AutomationId="DetailBack">
+    <controls:IconView Source="icon_chevron.png" Tone="Default" Rotation="180" WidthRequest="22" HeightRequest="22" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnBack" /></Grid.GestureRecognizers>
    </Grid>
-   <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
-   <VerticalStackLayout Spacing="4"><Label Text="{Binding Text[FishingMethod]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Method}" /></VerticalStackLayout>
-   <VerticalStackLayout Spacing="4"><Label Text="{Binding Text[Location]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Place}" /></VerticalStackLayout>
-  </VerticalStackLayout></Border>
-  <VerticalStackLayout Spacing="6"><Label Text="{Binding Text[Notes]}" Style="{StaticResource Subheading}" /><Label Text="{Binding Notes}" /></VerticalStackLayout>
- </VerticalStackLayout></ScrollView>
+   <Label Grid.Column="1" Text="{Binding Text[Detail]}" Style="{StaticResource Heading}" FontSize="18" HorizontalOptions="Center" VerticalOptions="Center" SemanticProperties.HeadingLevel="Level1" />
+   <Grid Grid.Column="2" SemanticProperties.Description="{Binding Text[MoreActions]}" AutomationId="MoreActions">
+    <controls:IconView Source="icon_more.png" Tone="Default" WidthRequest="22" HeightRequest="22" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnMore" /></Grid.GestureRecognizers>
+   </Grid>
+  </Grid>
+  <ScrollView Grid.Row="1"><VerticalStackLayout Padding="16,4,16,24" Spacing="16" MaximumWidthRequest="720">
+   <Border Style="{StaticResource Card}" Padding="0" IsVisible="{Binding HasPhoto}"><Grid HeightRequest="240">
+    <Image Source="{Binding PreviewAsset}" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
+    <Button Style="{StaticResource CardAction}" SemanticProperties.Description="{Binding Text[Preview]}" Clicked="OnPreview" AutomationId="OpenPhoto" />
+    <Border IsVisible="{Binding HasMultiplePhotos}" InputTransparent="True" StrokeThickness="0" BackgroundColor="#99102A43" Padding="10,4" HorizontalOptions="End" VerticalOptions="End" Margin="12">
+     <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+     <Label Text="{Binding PhotoCounter}" TextColor="White" FontSize="13" FontAttributes="Bold" FontAutoScalingEnabled="False" />
+    </Border>
+   </Grid></Border>
+   <Border Style="{StaticResource Card}" IsVisible="{Binding HasNoPhoto}" Padding="16"><Label Text="{Binding Text[NoPhoto]}" Style="{StaticResource SecondaryText}" /></Border>
+   <VerticalStackLayout Spacing="2">
+    <Label Text="{Binding Species}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level2" AutomationId="CatchSpecies" />
+    <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" />
+   </VerticalStackLayout>
+   <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+    <controls:InfoTile Icon="icon_pin.png" Caption="{Binding Text[Location]}" Value="{Binding Place}" />
+    <controls:InfoTile Grid.Column="1" Icon="icon_hook.png" Caption="{Binding Text[FishingMethod]}" Value="{Binding Method}" />
+    <controls:InfoTile Grid.Row="1" Icon="icon_scale.png" Caption="{Binding Text[Weight]}" Value="{Binding Weight}" />
+    <controls:InfoTile Grid.Row="1" Grid.Column="1" Icon="icon_ruler.png" Caption="{Binding Text[Length]}" Value="{Binding Length}" />
+   </Grid>
+   <Label Text="{Binding Text[NoBait]}" Style="{StaticResource SecondaryText}" />
+   <BoxView Style="{StaticResource Divider}" />
+   <VerticalStackLayout Spacing="6" IsVisible="{Binding HasNotes}">
+    <Label Text="{Binding Text[Notes]}" Style="{StaticResource SectionTitle}" />
+    <Label Text="{Binding Notes}" />
+   </VerticalStackLayout>
+   <VerticalStackLayout Spacing="8" IsVisible="{Binding HasPhoto}">
+    <Label Text="{Binding Text[Photos]}" Style="{StaticResource SectionTitle}" />
+    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never"><HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Photos}">
+     <BindableLayout.ItemTemplate><DataTemplate x:DataType="x:String">
+      <Border StrokeThickness="0" Padding="0" WidthRequest="72" HeightRequest="72">
+       <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+       <Image Source="{Binding .}" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
+      </Border>
+     </DataTemplate></BindableLayout.ItemTemplate>
+    </HorizontalStackLayout></ScrollView>
+   </VerticalStackLayout>
+  </VerticalStackLayout></ScrollView>
+ </Grid>
 </ContentPage>

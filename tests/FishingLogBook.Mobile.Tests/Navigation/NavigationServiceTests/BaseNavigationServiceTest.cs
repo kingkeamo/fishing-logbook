@@ -10,7 +10,7 @@ namespace FishingLogBook.Mobile.Tests.Navigation.NavigationServiceTests;
 public abstract class BaseNavigationServiceTest
 {
     protected readonly IRouteNavigator MockNavigator = Substitute.For<IRouteNavigator>();
-    protected readonly CatchPresentationModel Catch = new(new CatchDto(Guid.NewGuid(), DateTimeOffset.UtcNow, []), new UiTextService(CultureInfo.GetCultureInfo("en-GB")), "sample_catch.png");
+    protected readonly CatchPresentationModel Catch = new(new CatchDto(Guid.NewGuid(), DateTimeOffset.UtcNow, []), new UiTextService(CultureInfo.GetCultureInfo("en-GB")), ["sample_catch.png"]);
     protected readonly NavigationService Sut;
 
     protected BaseNavigationServiceTest()
