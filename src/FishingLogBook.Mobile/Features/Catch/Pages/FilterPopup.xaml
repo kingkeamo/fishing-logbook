@@ -7,7 +7,7 @@
                x:Class="FishingLogBook.Mobile.Features.Catch.Pages.FilterPopup"
                x:TypeArguments="models:CatchFilterModel" x:DataType="models:CatchFilterDraftModel"
                Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
-  <Border x:Name="Sheet" StrokeThickness="0" Padding="0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+  <Border x:Name="Sheet" StrokeThickness="0" Padding="0" HorizontalOptions="Fill" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
     <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
     <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="Container">
       <Grid Padding="20,8,8,0" ColumnDefinitions="*,48" RowDefinitions="Auto,48">

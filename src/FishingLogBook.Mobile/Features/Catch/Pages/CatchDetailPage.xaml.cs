@@ -28,6 +28,18 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
             return;
         }
 
+        var action = await DisplayActionSheetAsync(item.Text["MoreActions"], item.Text["Cancel"], item.Text["Remove"], item.Text["Share"]);
+        if (action == item.Text["Share"])
+        {
+            await _interactions.NotifyAsync(NotificationKindEnum.Info, item.Text["ActionUnavailable"]);
+            return;
+        }
+
+        if (action != item.Text["Remove"])
+        {
+            return;
+        }
+
         var confirmed = await _interactions.ConfirmAsync(new DialogRequest(item.Text["RemoveCatchTitle"], item.Text["RemoveCatchBody"], item.Text["Remove"], item.Text["Cancel"], true));
         if (confirmed)
         {
