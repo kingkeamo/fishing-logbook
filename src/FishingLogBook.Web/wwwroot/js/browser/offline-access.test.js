@@ -159,7 +159,8 @@ describe('production offline access entitlement', () => {
         }});
         await setupDevice(identity);
         const [record] = await readPersistedRecords();
-        record.ciphertext = `${record.ciphertext.slice(0, -1)}A`;
+        const replacement = record.ciphertext[0] === 'A' ? 'B' : 'A';
+        record.ciphertext = `${replacement}${record.ciphertext.slice(1)}`;
         await writePersistedRecord(record);
 
         const result = await unlockDevice();
