@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
-             x:Class="FishingLogBook.Mobile.Features.Catch.Pages.PhotoPreviewPage"
-             x:DataType="models:CatchPresentationModel" Title="{Binding Text[PhotoPreview]}">
-  <ScrollView>
-    <VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="{StaticResource SpaceLarge}">
-      <Label Text="{Binding Text[DemoNotice]}" Style="{StaticResource SecondaryText}" />
-      <Label Text="{Binding Species}" Style="{StaticResource Heading}" />
-      <Border BackgroundColor="White" StrokeThickness="0" Padding="16" IsVisible="{Binding HasPhoto}">
-        <Image Source="{Binding PreviewAsset}" HeightRequest="320" Aspect="AspectFit" SemanticProperties.Description="{Binding Text[DemoImage]}" AutomationId="PhotoPreview" />
-      </Border>
-      <Label Text="{Binding Text[DemoImage]}" IsVisible="{Binding HasPhoto}" />
-      <Label Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" />
-    </VerticalStackLayout>
-  </ScrollView>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" x:Class="FishingLogBook.Mobile.Features.Catch.Pages.PhotoPreviewPage"
+ x:DataType="models:CatchPresentationModel" Title="{Binding Text[PhotoPreview]}" Shell.TabBarIsVisible="False" BackgroundColor="#05080D">
+ <Grid Padding="16,12" RowDefinitions="Auto,*,Auto" RowSpacing="12">
+  <VerticalStackLayout Spacing="4">
+   <Label Text="{Binding Species}" Style="{StaticResource Subheading}" TextColor="White" />
+   <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" TextColor="#CBD5E1" />
+  </VerticalStackLayout>
+  <Image Grid.Row="1" Source="{Binding PreviewAsset}" Aspect="AspectFit" IsVisible="{Binding HasPhoto}" SemanticProperties.Description="{Binding Text[DemoImage]}" AutomationId="PhotoPreview" />
+  <Label Grid.Row="1" Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" VerticalOptions="Center" TextColor="White" />
+  <Label Grid.Row="2" Text="{Binding Text[DemoImage]}" IsVisible="{Binding HasPhoto}" Style="{StaticResource SecondaryText}" TextColor="#CBD5E1" />
+ </Grid>
 </ContentPage>

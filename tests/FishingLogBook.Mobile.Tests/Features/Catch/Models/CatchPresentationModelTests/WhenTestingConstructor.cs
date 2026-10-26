@@ -6,6 +6,40 @@ namespace FishingLogBook.Mobile.Tests.Features.Catch.Models.CatchPresentationMod
 public class WhenTestingConstructor : BaseCatchPresentationModelTest
 {
     [Fact]
+    public void ItShouldRefreshARetainedSampleWithoutTranslatingUserContent()
+    {
+        // Arrange
+        var text = CreateText("en-GB");
+        var sampleText = new SampleCatchTextModel("SampleSpecies", "SamplePlace", "SampleNotes", "MethodFly", CatchMethodEnum.Fly);
+        var sample = new CatchPresentationModel(Catch, text, "sample_catch.png", sampleText);
+        var recorded = new CatchPresentationModel(Catch with { SpeciesName = "Perch", Notes = "Released" }, text);
+        var changes = new List<string?>();
+        sample.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
+        // Act
+        text.SetCulture("fr-FR");
+        sample.RefreshLocalizedText();
+        // Assert
+        sample.Species.Should().Be("Truite fario");
+        sample.Notes.Should().Be(text["SampleNotes"]);
+        sample.ShortDate.Should().Be("14 juin 2026");
+        recorded.Species.Should().Be("Perch");
+        recorded.Notes.Should().Be("Released");
+        changes.Should().Contain(nameof(sample.Species)).And.Contain(nameof(sample.OpenDescription));
+    }
+
+    [Fact]
+    public void ItShouldNotTreatARealSpeciesNameAsSampleLocalisationMetadata()
+    {
+        // Arrange
+        var text = CreateText("fr-FR");
+        var dto = Catch with { SpeciesName = "Atlantic salmon" };
+        // Act
+        var sut = new CatchPresentationModel(dto, text);
+        // Assert
+        sut.Species.Should().Be("Atlantic salmon");
+    }
+
+    [Fact]
     public void ItShouldDisplayTheSameInstantInUtcRegardlessOfRecordedOffset()
     {
         // Arrange
@@ -24,7 +58,7 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
     public void ItShouldFormatMeasurementsAndRecordedTimeInSelectedCulture(string culture, string weight, string date)
     {
         // Arrange
-        var dto = Catch with { SpeciesName = "Perch", Weight = 2.4m, Length = 48m, PlaceName = "Lake", Notes = "Released" };
+        var dto = Catch with { SpeciesName = "Perch", Method = "Fly", Weight = 2.4m, Length = 48m, PlaceName = "Lake", Notes = "Released" };
 
         // Act
         var sut = new CatchPresentationModel(dto, CreateText(culture), "brand_mark.png");
@@ -37,6 +71,7 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
         sut.CaughtOn.Should().Be(date);
         sut.Place.Should().Be("Lake");
         sut.Notes.Should().Be("Released");
+        sut.MethodIdentifier.Should().Be(CatchMethodEnum.Fly);
         sut.HasPhoto.Should().BeTrue();
         sut.PreviewAsset.Should().Be("brand_mark.png");
         sut.HasNoPhoto.Should().BeFalse();

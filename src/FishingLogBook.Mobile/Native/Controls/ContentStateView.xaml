@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:FishingLogBook.Mobile.Presentation"
+             x:Class="FishingLogBook.Mobile.Native.Controls.ContentStateView"
+             x:DataType="models:ContentStateModel" IsVisible="{Binding IsVisible}">
+  <Border Style="{StaticResource Card}">
+    <VerticalStackLayout Spacing="{StaticResource SpaceMedium}" Padding="0,8">
+      <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" Color="{AppThemeBinding Light={StaticResource Teal}, Dark={StaticResource Mint}}" />
+      <Label Text="{Binding Title}" Style="{StaticResource Subheading}" />
+      <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />
+      <Button Text="{Binding Retry}" IsVisible="{Binding CanRetry}" Clicked="OnRetry" Style="{StaticResource SecondaryButton}" AutomationId="StateRetry" />
+    </VerticalStackLayout>
+  </Border>
+</ContentView>

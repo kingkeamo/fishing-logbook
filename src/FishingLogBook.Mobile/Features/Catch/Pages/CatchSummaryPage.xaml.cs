@@ -1,72 +1,62 @@
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.Navigation;
+using FishingLogBook.Mobile.Presentation;
 
 namespace FishingLogBook.Mobile.Features.Catch.Pages;
 
 public partial class CatchSummaryPage : ContentPage
 {
     private readonly CatchListViewModel _viewModel;
-    private bool _navigating;
-    private bool _changingLanguage;
+    private readonly NavigationService _navigation;
+    private readonly InteractionService _interactions;
 
-    public CatchSummaryPage(CatchListViewModel viewModel)
+    public CatchSummaryPage(CatchListViewModel viewModel, NavigationService navigation, InteractionService interactions)
     {
         _viewModel = viewModel;
+        _navigation = navigation;
+        _interactions = interactions;
         InitializeComponent();
         BindingContext = viewModel;
-        LanguagePicker.SelectedIndex = viewModel.Text.Culture.TwoLetterISOLanguageName == "fr" ? 1 : 0;
-        ThemePicker.SelectedIndex = 0;
     }
 
-    private void OnLanguageChanged(object? sender, EventArgs args)
+    private void OnSearchChanged(object? sender, TextChangedEventArgs args)
     {
-        if (LanguagePicker.SelectedIndex < 0)
+        if (_viewModel.SearchTerm != args.NewTextValue)
         {
-            return;
+            _viewModel.SetSearch(args.NewTextValue);
         }
-
-        var themeIndex = ThemePicker.SelectedIndex;
-        _changingLanguage = true;
-        _viewModel.Text.SetCulture(LanguagePicker.SelectedIndex == 1 ? "fr-FR" : "en-GB");
-        ThemePicker.SelectedIndex = themeIndex;
-        _changingLanguage = false;
     }
 
-    private void OnThemeChanged(object? sender, EventArgs args)
+    private void OnMethod(object? sender, EventArgs args)
     {
-        if (_changingLanguage || Application.Current is null || ThemePicker.SelectedIndex < 0)
+        if (sender is Button { CommandParameter: CatchMethodEnum method })
         {
-            return;
+            _viewModel.SetMethod(method);
         }
-
-        Application.Current.UserAppTheme = ThemePicker.SelectedIndex switch
-        {
-            1 => AppTheme.Light,
-            2 => AppTheme.Dark,
-            _ => AppTheme.Unspecified
-        };
     }
 
-    private void OnToggleEmpty(object? sender, EventArgs args)
+    private void OnClearFilters(object? sender, EventArgs args)
     {
-        _viewModel.ToggleEmpty();
+        _viewModel.ClearFilters();
+    }
+
+    private async void OnRecordCatch(object? sender, EventArgs args)
+    {
+        await _interactions.ShowModalAsync(_viewModel.Text["RecordCatch"], _viewModel.Text["RecordUnavailable"]);
+    }
+
+    private void OnRetry(object? sender, EventArgs args)
+    {
+        _viewModel.SetState(ContentStateEnum.Ready);
     }
 
     private async void OnOpenCatch(object? sender, EventArgs args)
     {
-        if (_navigating || sender is not Button { CommandParameter: CatchPresentationModel item })
+        if (sender is Button { CommandParameter: CatchPresentationModel item })
         {
-            return;
-        }
-
-        _navigating = true;
-        try
-        {
-            await Shell.Current.GoToAsync(nameof(CatchDetailPage), new ShellNavigationQueryParameters { ["catch"] = item });
-        }
-        finally
-        {
-            _navigating = false;
+            await _navigation.NavigateAsync(MobileRouteEnum.CatchDetail, item);
         }
     }
 }

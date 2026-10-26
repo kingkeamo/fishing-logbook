@@ -7,6 +7,7 @@
   <data name="PhotoPreview" xml:space="preserve"><value>Photo preview</value></data>
   <data name="DemoNotice" xml:space="preserve"><value>DEMO · Sample catches only. Nothing is saved or synced.</value></data>
   <data name="Brand" xml:space="preserve"><value>Catch, but don’t forget — Fishing Logbook</value></data>
+  <data name="AppTitle" xml:space="preserve"><value>Fishing Logbook</value></data>
   <data name="Language" xml:space="preserve"><value>Language</value></data>
   <data name="LanguageEnglish" xml:space="preserve"><value>English</value></data>
   <data name="LanguageFrench" xml:space="preserve"><value>Français</value></data>
@@ -24,12 +25,78 @@
   <data name="CaughtOn" xml:space="preserve"><value>Caught on · recorded time (UTC)</value></data>
   <data name="NoPhoto" xml:space="preserve"><value>No photo recorded</value></data>
   <data name="Preview" xml:space="preserve"><value>Open photo preview</value></data>
-  <data name="DemoImage" xml:space="preserve"><value>Demo illustration — brand artwork, not a catch photograph.</value></data>
+  <data name="DemoImage" xml:space="preserve"><value>Reference photo · Fictitious catch data</value></data>
   <data name="EmptyTitle" xml:space="preserve"><value>No catches to display</value></data>
   <data name="EmptyBody" xml:space="preserve"><value>This is the empty demo state. Restore the samples to explore a catch.</value></data>
   <data name="ShowEmpty" xml:space="preserve"><value>Preview empty list</value></data>
   <data name="RestoreSamples" xml:space="preserve"><value>Restore sample catches</value></data>
-  <data name="SampleSpecies" xml:space="preserve"><value>European perch</value></data>
+  <data name="SampleSpecies" xml:space="preserve"><value>Brown trout</value></data>
   <data name="SamplePlace" xml:space="preserve"><value>Sample lakeside venue</value></data>
-  <data name="SampleNotes" xml:space="preserve"><value>A sample morning catch, released. The preview uses our existing brand illustration.</value></data>
+  <data name="SampleNotes" xml:space="preserve"><value>A fictitious morning catch, released. Sample photo for demonstration only.</value></data>
+  <data name="Trips" xml:space="preserve"><value>Trips</value></data>
+  <data name="Explore" xml:space="preserve"><value>Explore</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="About" xml:space="preserve"><value>About Fishing Logbook</value></data>
+  <data name="AboutBody" xml:space="preserve"><value>Catch, but don’t forget. A native preview with fictitious catches. Recording, accounts and synchronisation are not available yet.</value></data>
+  <data name="Showcase" xml:space="preserve"><value>UX showcase · developer</value></data>
+  <data name="ShowcaseBody" xml:space="preserve"><value>Developer preview only. These actions simulate feedback; they never change your catches.</value></data>
+  <data name="Journal" xml:space="preserve"><value>Your time on the water</value></data>
+  <data name="RecentCatches" xml:space="preserve"><value>Recent catches</value></data>
+  <data name="SampleBadge" xml:space="preserve"><value>SAMPLE JOURNAL</value></data>
+  <data name="DemoShort" xml:space="preserve"><value>Sample catches · fictitious photo</value></data>
+  <data name="CatchFacts" xml:space="preserve"><value>The catch at a glance</value></data>
+  <data name="SettingsIntro" xml:space="preserve"><value>Preferences</value></data>
+  <data name="SettingsBody" xml:space="preserve"><value>Personalise your logbook on this device.</value></data>
+  <data name="PlannedTitle" xml:space="preserve"><value>A little further downstream</value></data>
+  <data name="PlannedBody" xml:space="preserve"><value>This destination is not implemented yet. Your catches are ready to explore in the Catches tab.</value></data>
+  <data name="LoadingTitle" xml:space="preserve"><value>Getting things ready</value></data>
+  <data name="LoadingBody" xml:space="preserve"><value>Please wait a moment.</value></data>
+  <data name="ErrorTitle" xml:space="preserve"><value>Something went wrong</value></data>
+  <data name="ErrorBody" xml:space="preserve"><value>We couldn’t display this content. You can try again.</value></data>
+  <data name="OfflineTitle" xml:space="preserve"><value>You’re offline</value></data>
+  <data name="OfflineBody" xml:space="preserve"><value>A connection is unavailable. This preview does not store or sync catches.</value></data>
+  <data name="ReadyTitle" xml:space="preserve"><value>Ready</value></data>
+  <data name="ReadyBody" xml:space="preserve"><value>Content is available.</value></data>
+  <data name="Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="Success" xml:space="preserve"><value>Success</value></data>
+  <data name="Info" xml:space="preserve"><value>Information</value></data>
+  <data name="Warning" xml:space="preserve"><value>Warning</value></data>
+  <data name="Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Dismiss" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="ConfirmTitle" xml:space="preserve"><value>Reset this demo?</value></data>
+  <data name="ConfirmBody" xml:space="preserve"><value>This demonstrates a destructive confirmation. No catches or preferences will be deleted.</value></data>
+  <data name="ConfirmAction" xml:space="preserve"><value>Reset demo</value></data>
+  <data name="ConfirmDemo" xml:space="preserve"><value>Try confirmation</value></data>
+  <data name="ModalDemo" xml:space="preserve"><value>Open modal</value></data>
+  <data name="ModalTitle" xml:space="preserve"><value>A moment by the water</value></data>
+  <data name="ModalBody" xml:space="preserve"><value>Shared modals keep a task in context. Close this preview with Done, Cancel or Android Back.</value></data>
+  <data name="Accepted" xml:space="preserve"><value>Accepted · demonstration only</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>Cancelled · nothing changed</value></data>
+  <data name="NotificationDemo" xml:space="preserve"><value>This is a demonstration notification.</value></data>
+  <data name="States" xml:space="preserve"><value>Content states</value></data>
+  <data name="Interactions" xml:space="preserve"><value>Shared interactions</value></data>
+  <data name="SimulateLoading" xml:space="preserve"><value>Loading</value></data>
+  <data name="SimulateEmpty" xml:space="preserve"><value>Empty</value></data>
+  <data name="SimulateError" xml:space="preserve"><value>Error</value></data>
+  <data name="SimulateOffline" xml:space="preserve"><value>Offline</value></data>
+  <data name="ResetStates" xml:space="preserve"><value>Restore sample journal</value></data>
+  <data name="StateDemoNotice" xml:space="preserve"><value>Preview state applied to Catches. Use the Catches tab to inspect it.</value></data>
+  <data name="CancelModalDemo" xml:space="preserve"><value>Cancel a modal after 3 seconds</value></data>
+  <data name="CancelModalBody" xml:space="preserve"><value>This demo closes automatically after three seconds using a cancellation token.</value></data>
+  <data name="Logbook" xml:space="preserve"><value>Logbook</value></data>
+  <data name="DemoCompact" xml:space="preserve"><value>Fictitious demo journal</value></data>
+  <data name="RecordCatch" xml:space="preserve"><value>Record catch</value></data>
+  <data name="RecordUnavailable" xml:space="preserve"><value>Catch recording is not available in this preview. Your sample journal is unchanged.</value></data>
+  <data name="SearchCatches" xml:space="preserve"><value>Search species, method or place</value></data>
+  <data name="AllCatches" xml:space="preserve"><value>All</value></data>
+  <data name="MethodSpinning" xml:space="preserve"><value>Spinning</value></data>
+  <data name="FishingMethod" xml:space="preserve"><value>Fishing method</value></data>
+  <data name="CatchCount" xml:space="preserve"><value>{0} catches</value></data>
+  <data name="ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="NoMatches" xml:space="preserve"><value>No matching catches</value></data>
+  <data name="NoMatchesBody" xml:space="preserve"><value>Try another search or clear the filters.</value></data>
+  <data name="SampleSalmon" xml:space="preserve"><value>Atlantic salmon</value></data>
+  <data name="MethodFly" xml:space="preserve"><value>Fly fishing</value></data>
 </root>

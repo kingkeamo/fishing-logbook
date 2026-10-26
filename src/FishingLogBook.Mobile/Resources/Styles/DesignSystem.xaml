@@ -1,58 +1,83 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+  <Color x:Key="Primary">#594AE2</Color>
+  <Color x:Key="PrimaryDark">#B5ADFF</Color>
   <Color x:Key="Navy">#0B1F3A</Color>
   <Color x:Key="Teal">#0F766E</Color>
   <Color x:Key="Sky">#E0F2FE</Color>
   <Color x:Key="Paper">#FFFFFF</Color>
-  <Color x:Key="Canvas">#F4F8FA</Color>
+  <Color x:Key="Canvas">#F7F8FC</Color>
   <Color x:Key="DarkSurface">#16304A</Color>
   <Color x:Key="MutedLight">#475569</Color>
   <Color x:Key="MutedDark">#CBD5E1</Color>
+  <Color x:Key="Mint">#80D4C3</Color>
+  <Color x:Key="OutlineLight">#DCE5E8</Color><Color x:Key="OutlineDark">#355069</Color>
+  <Color x:Key="NotificationSuccess">#116458</Color><Color x:Key="NotificationInfo">#1B4D75</Color>
+  <Color x:Key="NotificationWarning">#795000</Color><Color x:Key="NotificationError">#A62835</Color>
   <x:Double x:Key="SpaceSmall">8</x:Double>
   <x:Double x:Key="SpaceMedium">16</x:Double>
   <x:Double x:Key="SpaceLarge">24</x:Double>
-  <Thickness x:Key="PagePadding">24,16</Thickness>
+  <Thickness x:Key="PagePadding">16,12</Thickness>
   <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
     <Setter Property="SafeAreaEdges" Value="Container" />
     <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Canvas}, Dark={StaticResource Navy}}" />
   </Style>
   <Style TargetType="Label" x:Key="BodyText">
-    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontSize" Value="16" />
     <Setter Property="FontAutoScalingEnabled" Value="True" />
     <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
   </Style>
   <Style TargetType="Label" BasedOn="{StaticResource BodyText}" />
   <Style TargetType="Label" x:Key="Heading" BasedOn="{StaticResource BodyText}">
-    <Setter Property="FontSize" Value="28" />
+    <Setter Property="FontSize" Value="24" />
     <Setter Property="FontAttributes" Value="Bold" />
     <Setter Property="SemanticProperties.HeadingLevel" Value="Level1" />
   </Style>
   <Style TargetType="Label" x:Key="Subheading" BasedOn="{StaticResource BodyText}">
-    <Setter Property="FontSize" Value="22" />
+    <Setter Property="FontSize" Value="18" />
     <Setter Property="FontAttributes" Value="Bold" />
     <Setter Property="SemanticProperties.HeadingLevel" Value="Level2" />
   </Style>
   <Style TargetType="Label" x:Key="SecondaryText" BasedOn="{StaticResource BodyText}">
-    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontSize" Value="14" />
     <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
   </Style>
+  <Shadow x:Key="CardShadow" Brush="#0B1F3A" Offset="0,3" Radius="10" Opacity="0.10" />
   <Style TargetType="Border" x:Key="Card">
     <Setter Property="Padding" Value="16" />
     <Setter Property="StrokeThickness" Value="1" />
-    <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
+    <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
     <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}" />
-    <Setter Property="StrokeShape"><Setter.Value><RoundRectangle CornerRadius="16" /></Setter.Value></Setter>
+    <Setter Property="StrokeShape"><Setter.Value><RoundRectangle CornerRadius="12" /></Setter.Value></Setter>
+    <Setter Property="Shadow" Value="{StaticResource CardShadow}" />
   </Style>
-  <Style TargetType="Button">
+  <Style TargetType="Button" x:Key="PrimaryButton">
     <Setter Property="MinimumHeightRequest" Value="48" />
     <Setter Property="MinimumWidthRequest" Value="48" />
     <Setter Property="FontSize" Value="18" />
     <Setter Property="FontAutoScalingEnabled" Value="True" />
-    <Setter Property="Padding" Value="16,12" />
-    <Setter Property="CornerRadius" Value="12" />
-    <Setter Property="BackgroundColor" Value="{StaticResource Teal}" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="LineBreakMode" Value="WordWrap" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
     <Setter Property="TextColor" Value="{StaticResource Paper}" />
+    <Setter Property="VisualStateManager.VisualStateGroups">
+      <VisualStateGroupList>
+        <VisualStateGroup x:Name="CommonStates">
+          <VisualState x:Name="Normal" />
+          <VisualState x:Name="Focused">
+            <VisualState.Setters><Setter Property="BorderWidth" Value="3" /><Setter Property="BorderColor" Value="{StaticResource PrimaryDark}" /></VisualState.Setters>
+          </VisualState>
+          <VisualState x:Name="Pressed">
+            <VisualState.Setters><Setter Property="Opacity" Value="0.8" /></VisualState.Setters>
+          </VisualState>
+          <VisualState x:Name="Disabled">
+            <VisualState.Setters><Setter Property="Opacity" Value="0.5" /></VisualState.Setters>
+          </VisualState>
+        </VisualStateGroup>
+      </VisualStateGroupList>
+    </Setter>
   </Style>
   <Style TargetType="Picker">
     <Setter Property="MinimumHeightRequest" Value="48" />
@@ -69,5 +94,40 @@
     <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
     <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
     <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}" />
+  </Style>
+  <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}" />
+  <Style TargetType="Button" x:Key="SecondaryButton" BasedOn="{StaticResource PrimaryButton}">
+    <Setter Property="BackgroundColor" Value="Transparent" />
+    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+    <Setter Property="BorderWidth" Value="1" />
+    <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+  </Style>
+  <Style TargetType="Button" x:Key="DestructiveButton" BasedOn="{StaticResource PrimaryButton}">
+    <Setter Property="BackgroundColor" Value="{StaticResource NotificationError}" />
+  </Style>
+  <Style TargetType="Label" x:Key="Eyebrow" BasedOn="{StaticResource SecondaryText}">
+    <Setter Property="FontSize" Value="13" /><Setter Property="CharacterSpacing" Value="0.4" /><Setter Property="FontAttributes" Value="Bold" />
+    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
+  </Style>
+  <Style TargetType="Button" x:Key="CardAction" BasedOn="{StaticResource PrimaryButton}">
+    <Setter Property="BackgroundColor" Value="Transparent" /><Setter Property="Padding" Value="0" />
+  </Style>
+  <Style TargetType="Button" x:Key="FilterChip" BasedOn="{StaticResource SecondaryButton}">
+    <Setter Property="FontSize" Value="14" /><Setter Property="CornerRadius" Value="24" />
+    <Setter Property="Padding" Value="16,6" /><Setter Property="BorderColor" Value="{AppThemeBinding Light=#D8D5FA, Dark={StaticResource OutlineDark}}" />
+  </Style>
+  <Style TargetType="Button" x:Key="CompactPrimaryButton" BasedOn="{StaticResource PrimaryButton}">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontAttributes" Value="Bold" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="MinimumHeightRequest" Value="48" />
+    <Setter Property="MaximumHeightRequest" Value="48" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Shadow" Value="{x:Null}" />
+  </Style>
+  <Style TargetType="Entry" x:Key="SearchEntry">
+    <Setter Property="FontSize" Value="16" /><Setter Property="MinimumHeightRequest" Value="48" />
+    <Setter Property="BackgroundColor" Value="Transparent" /><Setter Property="Margin" Value="0" />
+    <Setter Property="ClearButtonVisibility" Value="WhileEditing" />
   </Style>
 </ResourceDictionary>

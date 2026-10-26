@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-       x:Class="FishingLogBook.Mobile.AppShell" FlyoutBehavior="Disabled"
-       Shell.BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}"
-       Shell.ForegroundColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}"
-       Shell.TitleColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:text="clr-namespace:FishingLogBook.Mobile.Localization" x:Class="FishingLogBook.Mobile.AppShell" x:DataType="text:UiTextService" FlyoutBehavior="Flyout"
+ Shell.BackgroundColor="{StaticResource Primary}"
+ Shell.ForegroundColor="{StaticResource Paper}"
+ Shell.TitleColor="{StaticResource Paper}"
+ FlyoutBackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}"
+ Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}"
+ Shell.TabBarForegroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+ Shell.TabBarTitleColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+ Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}">
+ <Shell.FlyoutHeader>
+  <Border BackgroundColor="White" StrokeThickness="0" Padding="24,16">
+   <Image Source="brand_horizontal.png" HeightRequest="56" Aspect="AspectFit" SemanticProperties.Description="{Binding [Brand]}" />
+  </Border>
+ </Shell.FlyoutHeader>
+</Shell>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Native.Pages.PlannedPage">
+ <ScrollView><VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="{StaticResource SpaceLarge}" MaximumWidthRequest="720">
+  <controls:ContentStateView x:Name="StateView" />
+ </VerticalStackLayout></ScrollView>
+</ContentPage>

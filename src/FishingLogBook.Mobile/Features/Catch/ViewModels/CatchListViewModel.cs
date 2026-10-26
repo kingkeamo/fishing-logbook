@@ -1,32 +1,73 @@
 using System.ComponentModel;
+using System.Globalization;
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Localization;
-using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Mobile.Presentation;
 
 namespace FishingLogBook.Mobile.Features.Catch.ViewModels;
 
 public sealed class CatchListViewModel : INotifyPropertyChanged
 {
-    private bool _showEmpty;
+    private ContentStateEnum _state;
+    private string _searchTerm = string.Empty;
+    private readonly IReadOnlyList<CatchPresentationModel> _samples;
+    private CatchMethodEnum _method;
 
-    public CatchListViewModel(UiTextService text)
+    public CatchListViewModel(UiTextService text, SampleCatchProvider samples)
     {
         Text = text;
+        _samples = samples.Catches;
         Text.PropertyChanged += OnCultureChanged;
         Refresh();
     }
 
     public UiTextService Text { get; }
     public IReadOnlyList<CatchPresentationModel> Catches { get; private set; } = [];
-    public IReadOnlyList<string> Languages => [Text["LanguageEnglish"], Text["LanguageFrench"]];
-    public IReadOnlyList<string> Themes => [Text["ThemeSystem"], Text["ThemeLight"], Text["ThemeDark"]];
-    public string EmptyToggleText => Text[_showEmpty ? "RestoreSamples" : "ShowEmpty"];
+    public IReadOnlyList<CatchGroupModel> Groups { get; private set; } = [];
+    public string SearchTerm => _searchTerm;
+    public CatchMethodEnum SelectedMethod => _method;
+    public bool AllSelected => _method == CatchMethodEnum.All;
+    public bool SpinningSelected => _method == CatchMethodEnum.Spinning;
+    public bool FlySelected => _method == CatchMethodEnum.Fly;
+    public bool HasFilters => !string.IsNullOrWhiteSpace(_searchTerm) || !AllSelected;
+    public bool HasNoMatches => HasContent && Catches.Count == 0;
+    public string ResultCount => string.Format(Text.Culture, Text["CatchCount"], Catches.Count);
+    public ContentStateModel State { get; private set; } = null!;
+    public bool HasContent => _state == ContentStateEnum.Ready;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void ToggleEmpty()
+    public void SetSearch(string? value)
     {
-        _showEmpty = !_showEmpty;
+        _searchTerm = value ?? string.Empty;
+        Refresh();
+    }
+
+    public void SetMethod(CatchMethodEnum value)
+    {
+        if (!Enum.IsDefined(value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(value));
+        }
+        _method = value;
+        Refresh();
+    }
+
+    public void ClearFilters()
+    {
+        _searchTerm = string.Empty;
+        _method = CatchMethodEnum.All;
+        Refresh();
+    }
+
+    public void SetState(ContentStateEnum state)
+    {
+        if (!Enum.IsDefined(state) || state == ContentStateEnum.Planned)
+        {
+            throw new ArgumentOutOfRangeException(nameof(state));
+        }
+        _state = state;
         Refresh();
     }
 
@@ -34,27 +75,32 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     {
         if (args.PropertyName == nameof(UiTextService.Culture))
         {
+            foreach (var sample in _samples)
+            {
+                sample.RefreshLocalizedText();
+            }
             Refresh();
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Themes)));
         }
+    }
+
+    private bool Matches(CatchPresentationModel item)
+    {
+        var matchesMethod = AllSelected || item.MethodIdentifier == _method;
+        var query = _searchTerm.Trim();
+        var fields = new[] { item.Species, item.Method, item.Place, item.Notes };
+        return matchesMethod && (query.Length == 0 || fields.Any(field => Text.Culture.CompareInfo.IndexOf(field, query, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0));
     }
 
     private void Refresh()
     {
-        var caughtOn = new DateTimeOffset(2026, 6, 14, 7, 30, 0, TimeSpan.Zero);
-        Catches = _showEmpty ? [] :
-        [
-            new CatchPresentationModel(new CatchDto(Guid.Parse("00000000-0000-0000-0000-000000000001"), caughtOn, [])
-            {
-                SpeciesName = Text["SampleSpecies"],
-                Weight = 2.4m,
-                Length = 48m,
-                PlaceName = Text["SamplePlace"],
-                Notes = Text["SampleNotes"]
-            }, Text, "brand_mark.png"),
-            new CatchPresentationModel(new CatchDto(Guid.Parse("00000000-0000-0000-0000-000000000002"), caughtOn.AddDays(-1), []), Text)
-        ];
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Catches)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EmptyToggleText)));
+        State = new ContentStateModel(_state, Text);
+        Catches = !HasContent ? [] : _samples.Where(Matches).OrderByDescending(item => item.RecordedAt).ToArray();
+        Groups = Catches.GroupBy(item => item.Day).Select(group => new CatchGroupModel(group.Key, group, Text)).ToArray();
+        foreach (var property in new[] { nameof(Catches), nameof(Groups), nameof(SearchTerm), nameof(SelectedMethod), nameof(AllSelected), nameof(SpinningSelected), nameof(FlySelected), nameof(HasFilters), nameof(HasNoMatches), nameof(ResultCount) })
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+        }
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(State)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasContent)));
     }
 }

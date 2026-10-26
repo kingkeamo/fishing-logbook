@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:services="clr-namespace:FishingLogBook.Mobile.Features.Settings.Services" x:Class="FishingLogBook.Mobile.Features.Settings.Pages.SettingsPage"
+ x:DataType="services:PreferenceService" Title="{Binding Text[Settings]}">
+ <ScrollView><VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="16" MaximumWidthRequest="720">
+  <Label Text="{Binding Text[SettingsIntro]}" Style="{StaticResource Heading}" />
+  <Label Text="{Binding Text[SettingsBody]}" Style="{StaticResource SecondaryText}" />
+  <Border Style="{StaticResource Card}"><VerticalStackLayout Spacing="4">
+   <Label Text="{Binding Text[Language]}" Style="{StaticResource Subheading}" />
+   <Picker x:Name="LanguagePicker" Title="{Binding Text[Language]}" SemanticProperties.Description="{Binding Text[Language]}" SelectedIndexChanged="OnLanguageChanged" AutomationId="LanguagePicker" />
+  </VerticalStackLayout></Border>
+  <Border Style="{StaticResource Card}"><VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
+   <Label Text="{Binding Text[Theme]}" Style="{StaticResource Subheading}" />
+   <Picker x:Name="ThemePicker" Title="{Binding Text[Theme]}" SemanticProperties.Description="{Binding Text[Theme]}" SelectedIndexChanged="OnAppearanceChanged" AutomationId="ThemePicker" />
+  </VerticalStackLayout></Border>
+ </VerticalStackLayout></ScrollView>
+</ContentPage>

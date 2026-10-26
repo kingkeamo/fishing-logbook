@@ -1,37 +1,30 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
-             x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchDetailPage"
-             x:DataType="models:CatchPresentationModel" Title="{Binding Text[Detail]}">
-  <ScrollView>
-    <VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="{StaticResource SpaceLarge}">
-      <Label Text="{Binding Text[DemoNotice]}" Style="{StaticResource SecondaryText}" />
-      <Label Text="{Binding Species}" Style="{StaticResource Heading}" AutomationId="CatchSpecies" />
-      <VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
-        <Label Text="{Binding Text[CaughtOn]}" Style="{StaticResource SecondaryText}" />
-        <Label Text="{Binding CaughtOn}" />
-      </VerticalStackLayout>
-      <Border Style="{StaticResource Card}">
-        <VerticalStackLayout Spacing="{StaticResource SpaceMedium}">
-          <Label Text="{Binding Text[Weight]}" Style="{StaticResource Subheading}" />
-          <Label Text="{Binding Weight}" />
-          <Label Text="{Binding Text[Length]}" Style="{StaticResource Subheading}" />
-          <Label Text="{Binding Length}" />
-          <Label Text="{Binding Text[Location]}" Style="{StaticResource Subheading}" />
-          <Label Text="{Binding Place}" />
-        </VerticalStackLayout>
-      </Border>
-      <VerticalStackLayout Spacing="{StaticResource SpaceSmall}" IsVisible="{Binding HasPhoto}">
-        <Border BackgroundColor="White" Padding="16" StrokeThickness="0">
-          <Image Source="{Binding PreviewAsset}" HeightRequest="200" Aspect="AspectFit" SemanticProperties.Description="{Binding Text[DemoImage]}" />
-        </Border>
-        <Label Text="{Binding Text[DemoImage]}" Style="{StaticResource SecondaryText}" />
-        <Button Text="{Binding Text[Preview]}" Clicked="OnPreview" AutomationId="OpenPhoto" />
-      </VerticalStackLayout>
-      <Label Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" />
-      <Label Text="{Binding Text[Notes]}" Style="{StaticResource Subheading}" />
-      <Label Text="{Binding Notes}" />
-    </VerticalStackLayout>
-  </ScrollView>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchDetailPage"
+ x:DataType="models:CatchPresentationModel" Title="{Binding Text[Detail]}">
+ <ScrollView><VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="16" MaximumWidthRequest="720">
+  <VerticalStackLayout Spacing="4">
+   <Label Text="{Binding Species}" Style="{StaticResource Heading}" AutomationId="CatchSpecies" />
+   <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" />
+   <Label Text="{Binding Text[CaughtOn]}" Style="{StaticResource Eyebrow}" />
+  </VerticalStackLayout>
+  <VerticalStackLayout Spacing="4" IsVisible="{Binding HasPhoto}">
+   <Border Style="{StaticResource Card}" Padding="0"><Grid HeightRequest="180">
+    <Image Source="{Binding PreviewAsset}" Aspect="AspectFill" SemanticProperties.Description="{Binding Text[DemoImage]}" />
+    <Button Style="{StaticResource CardAction}" SemanticProperties.Description="{Binding Text[Preview]}" Clicked="OnPreview" AutomationId="OpenPhoto" />
+   </Grid></Border>
+   <Label Text="{Binding Text[DemoImage]}" Style="{StaticResource SecondaryText}" />
+  </VerticalStackLayout>
+  <Border Style="{StaticResource Card}" IsVisible="{Binding HasNoPhoto}"><Label Text="{Binding Text[NoPhoto]}" Style="{StaticResource SecondaryText}" /></Border>
+  <Border Style="{StaticResource Card}" Padding="12"><VerticalStackLayout Spacing="12">
+   <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+    <VerticalStackLayout Spacing="4"><Label Text="{Binding Text[Weight]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Weight}" Style="{StaticResource Subheading}" /></VerticalStackLayout>
+    <VerticalStackLayout Grid.Column="1" Spacing="4"><Label Text="{Binding Text[Length]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Length}" Style="{StaticResource Subheading}" /></VerticalStackLayout>
+   </Grid>
+   <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+   <VerticalStackLayout Spacing="4"><Label Text="{Binding Text[FishingMethod]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Method}" /></VerticalStackLayout>
+   <VerticalStackLayout Spacing="4"><Label Text="{Binding Text[Location]}" Style="{StaticResource SecondaryText}" /><Label Text="{Binding Place}" /></VerticalStackLayout>
+  </VerticalStackLayout></Border>
+  <VerticalStackLayout Spacing="6"><Label Text="{Binding Text[Notes]}" Style="{StaticResource Subheading}" /><Label Text="{Binding Notes}" /></VerticalStackLayout>
+ </VerticalStackLayout></ScrollView>
 </ContentPage>
