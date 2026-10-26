@@ -4,12 +4,12 @@
              xmlns:models="clr-namespace:FishingLogBook.Mobile.Presentation"
              x:Class="FishingLogBook.Mobile.Native.Controls.ContentStateView"
              x:DataType="models:ContentStateModel" IsVisible="{Binding IsVisible}">
-  <Border Style="{StaticResource Card}">
-    <VerticalStackLayout Spacing="{StaticResource SpaceMedium}" Padding="0,8">
-      <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" Color="{AppThemeBinding Light={StaticResource Teal}, Dark={StaticResource Mint}}" />
-      <Label Text="{Binding Title}" Style="{StaticResource Subheading}" />
-      <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />
-      <Button Text="{Binding Retry}" IsVisible="{Binding CanRetry}" Clicked="OnRetry" Style="{StaticResource SecondaryButton}" AutomationId="StateRetry" />
-    </VerticalStackLayout>
-  </Border>
+  <VerticalStackLayout Spacing="12" Padding="24,32" HorizontalOptions="Center" MaximumWidthRequest="360">
+    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+    <Image Source="empty_catches.png" HeightRequest="140" IsVisible="{Binding IsEmpty}" AutomationProperties.IsInAccessibleTree="False" />
+    <Label Text="{Binding Title}" Style="{StaticResource Subheading}" HorizontalTextAlignment="Center" />
+    <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="Center" />
+    <Button Text="{Binding Action}" IsVisible="{Binding IsEmpty}" Clicked="OnAction" AutomationId="StateAction" />
+    <Button Text="{Binding Retry}" IsVisible="{Binding CanRetry}" Clicked="OnRetry" Style="{StaticResource SecondaryButton}" AutomationId="StateRetry" />
+  </VerticalStackLayout>
 </ContentView>

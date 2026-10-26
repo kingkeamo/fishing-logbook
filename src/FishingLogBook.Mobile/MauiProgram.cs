@@ -21,6 +21,7 @@ public static class MauiProgram
             handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
         });
         var builder = MauiApp.CreateBuilder().UseMauiApp<App>().UseMauiCommunityToolkit();
+        builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<UiTextService>();
         builder.Services.AddSingleton<IPreferenceStore, DevicePreferenceStore>();
         builder.Services.AddSingleton<IAppearanceService, DeviceAppearanceService>();
@@ -29,6 +30,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<NavigationService>();
         builder.Services.AddSingleton<IInteractionPresenter, NativeInteractionPresenter>();
         builder.Services.AddSingleton<InteractionService>();
+        builder.Services.AddSingleton<LocalDataService>();
         builder.Services.AddSingleton<SampleCatchProvider>();
         builder.Services.AddSingleton<CatchListViewModel>();
         builder.Services.AddSingleton<CatchSummaryPage>();

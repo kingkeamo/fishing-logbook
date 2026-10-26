@@ -19,9 +19,11 @@ public class WhenTestingSetMethod : BaseCatchListViewModelTest
     }
 
     [Theory]
-    [InlineData(CatchMethodEnum.All, 4)]
+    [InlineData(CatchMethodEnum.All, 7)]
     [InlineData(CatchMethodEnum.Spinning, 2)]
-    [InlineData(CatchMethodEnum.Fly, 1)]
+    [InlineData(CatchMethodEnum.Fly, 3)]
+    [InlineData(CatchMethodEnum.Lure, 1)]
+    [InlineData(CatchMethodEnum.Other, 0)]
     public void ItShouldFilterByStableMethodCode(CatchMethodEnum method, int count)
     {
         // Arrange
@@ -33,6 +35,8 @@ public class WhenTestingSetMethod : BaseCatchListViewModelTest
         Sut.AllSelected.Should().Be(method == CatchMethodEnum.All);
         Sut.SpinningSelected.Should().Be(method == CatchMethodEnum.Spinning);
         Sut.FlySelected.Should().Be(method == CatchMethodEnum.Fly);
+        Sut.LureSelected.Should().Be(method == CatchMethodEnum.Lure);
+        Sut.Filters.Method.Should().Be(method);
         Sut.Catches.Should().OnlyContain(item => method == CatchMethodEnum.All || item.MethodIdentifier == method);
     }
 }

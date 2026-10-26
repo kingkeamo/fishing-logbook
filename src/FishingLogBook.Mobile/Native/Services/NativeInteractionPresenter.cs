@@ -75,7 +75,7 @@ public sealed class NativeInteractionPresenter : IInteractionPresenter
                 var completion = Shell.Current.ShowPopupAsync<bool>(popup, new PopupOptions
                 {
                     CanBeDismissedByTappingOutsideOfPopup = !request.IsDestructive,
-                    PageOverlayColor = Color.FromArgb("#990B1F3A")
+                    PageOverlayColor = Color.FromArgb("#99102A43")
                 }, CancellationToken.None);
                 try
                 {

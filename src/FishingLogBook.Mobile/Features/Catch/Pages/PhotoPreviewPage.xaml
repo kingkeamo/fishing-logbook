@@ -1,14 +1,35 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
- xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" x:Class="FishingLogBook.Mobile.Features.Catch.Pages.PhotoPreviewPage"
- x:DataType="models:CatchPresentationModel" Title="{Binding Text[PhotoPreview]}" Shell.TabBarIsVisible="False" BackgroundColor="#05080D">
- <Grid Padding="16,12" RowDefinitions="Auto,*,Auto" RowSpacing="12">
-  <VerticalStackLayout Spacing="4">
-   <Label Text="{Binding Species}" Style="{StaticResource Subheading}" TextColor="White" />
-   <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" TextColor="#CBD5E1" />
-  </VerticalStackLayout>
-  <Image Grid.Row="1" Source="{Binding PreviewAsset}" Aspect="AspectFit" IsVisible="{Binding HasPhoto}" SemanticProperties.Description="{Binding Text[DemoImage]}" AutomationId="PhotoPreview" />
-  <Label Grid.Row="1" Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" VerticalOptions="Center" TextColor="White" />
-  <Label Grid.Row="2" Text="{Binding Text[DemoImage]}" IsVisible="{Binding HasPhoto}" Style="{StaticResource SecondaryText}" TextColor="#CBD5E1" />
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ x:Class="FishingLogBook.Mobile.Features.Catch.Pages.PhotoPreviewPage" x:DataType="models:CatchPresentationModel"
+ Title="{Binding Text[PhotoPreview]}" Shell.NavBarIsVisible="False" Shell.TabBarIsVisible="False" BackgroundColor="#05080D">
+ <Grid RowDefinitions="56,*,64">
+  <Grid ColumnDefinitions="48,*,48" Padding="4,0">
+   <Grid SemanticProperties.Description="{Binding Text[Back]}" AutomationId="PreviewBack">
+    <controls:IconView Source="icon_close.png" Tone="Inverse" WidthRequest="22" HeightRequest="22" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnBack" /></Grid.GestureRecognizers>
+   </Grid>
+   <Label x:Name="Counter" Grid.Column="1" TextColor="White" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" AutomationId="PhotoCounter" />
+  </Grid>
+  <CarouselView x:Name="Photos" Grid.Row="1" ItemsSource="{Binding Photos}" IsVisible="{Binding HasPhoto}" Loop="False" PositionChanged="OnPositionChanged" AutomationId="PhotoPreview">
+   <CarouselView.ItemTemplate><DataTemplate x:DataType="x:String">
+    <Image Source="{Binding .}" Aspect="AspectFit" SemanticProperties.Description="{Binding Source={RelativeSource AncestorType={x:Type models:CatchPresentationModel}}, Path=Text[PhotoLabel]}" />
+   </DataTemplate></CarouselView.ItemTemplate>
+  </CarouselView>
+  <Label Grid.Row="1" Text="{Binding Text[NoPhoto]}" IsVisible="{Binding HasNoPhoto}" HorizontalOptions="Center" VerticalOptions="Center" TextColor="White" />
+  <Grid Grid.Row="2" ColumnDefinitions="*,*,*" IsVisible="{Binding HasPhoto}">
+   <Grid SemanticProperties.Description="{Binding Text[DeletePhoto]}" AutomationId="PhotoDelete">
+    <controls:IconView Source="icon_trash.png" Tone="Inverse" WidthRequest="24" HeightRequest="24" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnAction" /></Grid.GestureRecognizers>
+   </Grid>
+   <Grid Grid.Column="1" SemanticProperties.Description="{Binding Text[Share]}" AutomationId="PhotoShare">
+    <controls:IconView Source="icon_share.png" Tone="Inverse" WidthRequest="24" HeightRequest="24" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnAction" /></Grid.GestureRecognizers>
+   </Grid>
+   <Grid Grid.Column="2" SemanticProperties.Description="{Binding Text[PhotoDetails]}" AutomationId="PhotoInfo">
+    <controls:IconView Source="icon_info.png" Tone="Inverse" WidthRequest="24" HeightRequest="24" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnAction" /></Grid.GestureRecognizers>
+   </Grid>
+  </Grid>
  </Grid>
 </ContentPage>

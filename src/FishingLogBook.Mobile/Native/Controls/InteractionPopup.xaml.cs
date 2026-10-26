@@ -14,6 +14,9 @@ public partial class InteractionPopup : Popup<bool>
         if (request.IsDestructive)
         {
             AcceptButton.Style = (Style)Application.Current!.Resources["DestructiveButton"];
+            DialogIcon.Source = "icon_trash.png";
+            DialogIcon.Tone = IconToneEnum.Danger;
+            IconCircle.SetAppThemeColor(VisualElement.BackgroundColorProperty, (Color)Application.Current.Resources["DangerTintLight"], (Color)Application.Current.Resources["DangerTintDark"]);
         }
     }
 

@@ -10,8 +10,8 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
     {
         // Arrange
         var text = CreateText("en-GB");
-        var sampleText = new SampleCatchTextModel("SampleSpecies", "SamplePlace", "SampleNotes", "MethodFly", CatchMethodEnum.Fly);
-        var sample = new CatchPresentationModel(Catch, text, "sample_catch.png", sampleText);
+        var sampleText = new SampleCatchTextModel("SpeciesBrownTrout", "PlaceCorrib", "SampleNotes", "MethodFly", CatchMethodEnum.Fly, CatchSpeciesEnum.BrownTrout);
+        var sample = new CatchPresentationModel(Catch, text, ["sample_catch.png"], sampleText);
         var recorded = new CatchPresentationModel(Catch with { SpeciesName = "Perch", Notes = "Released" }, text);
         var changes = new List<string?>();
         sample.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
@@ -61,7 +61,7 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
         var dto = Catch with { SpeciesName = "Perch", Method = "Fly", Weight = 2.4m, Length = 48m, PlaceName = "Lake", Notes = "Released" };
 
         // Act
-        var sut = new CatchPresentationModel(dto, CreateText(culture), "brand_mark.png");
+        var sut = new CatchPresentationModel(dto, CreateText(culture), ["brand_mark.png", "second.png"]);
 
         // Assert
         sut.Id.Should().Be(dto.Id);
@@ -74,6 +74,9 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
         sut.MethodIdentifier.Should().Be(CatchMethodEnum.Fly);
         sut.HasPhoto.Should().BeTrue();
         sut.PreviewAsset.Should().Be("brand_mark.png");
+        sut.PhotoCount.Should().Be(2);
+        sut.HasMultiplePhotos.Should().BeTrue();
+        sut.PhotoCounter.Should().Be("1/2");
         sut.HasNoPhoto.Should().BeFalse();
         sut.OpenDescription.Should().Contain("Perch").And.Contain(date);
     }
@@ -98,5 +101,20 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
         sut.HasPhoto.Should().BeFalse();
         sut.HasNoPhoto.Should().BeTrue();
         sut.PreviewAsset.Should().BeNull();
+        sut.PhotoCount.Should().Be(0);
+        sut.HasMultiplePhotos.Should().BeFalse();
+        sut.HasNotes.Should().BeFalse();
+        sut.SpeciesIdentifier.Should().Be(CatchSpeciesEnum.Other);
+    }
+
+    [Fact]
+    public void ItShouldNotShowAPhotoCounterBadgeForASinglePhoto()
+    {
+        // Arrange
+        // Act
+        var sut = new CatchPresentationModel(Catch, CreateText("en-GB"), ["one.png"]);
+        // Assert
+        sut.HasMultiplePhotos.Should().BeFalse();
+        sut.PreviewAsset.Should().Be("one.png");
     }
 }

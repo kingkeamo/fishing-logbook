@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
+               xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+               x:Class="FishingLogBook.Mobile.Features.Catch.Pages.FilterPopup"
+               x:TypeArguments="models:CatchFilterModel" x:DataType="models:CatchFilterDraftModel"
+               Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
+  <Border x:Name="Sheet" StrokeThickness="0" Padding="0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+    <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="Container">
+      <Grid Padding="20,8,8,0" ColumnDefinitions="*,48" RowDefinitions="Auto,48">
+        <BoxView Grid.ColumnSpan="2" WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center" Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+        <Label Grid.Row="1" Text="{Binding Text[Filters]}" Style="{StaticResource Heading}" FontSize="20" VerticalOptions="Center" AutomationId="FiltersTitle" />
+        <Grid Grid.Row="1" Grid.Column="1" SemanticProperties.Description="{Binding Text[CloseFilters]}" AutomationId="CloseFilters">
+          <controls:IconView Source="icon_close.png" Tone="Default" WidthRequest="22" HeightRequest="22" />
+          <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnClose" /></Grid.GestureRecognizers>
+        </Grid>
+      </Grid>
+      <ScrollView Grid.Row="1">
+        <VerticalStackLayout Padding="20,4,20,12" Spacing="4">
+          <Label Text="{Binding Text[FishingMethod]}" Style="{StaticResource SectionTitle}" Margin="0,8,0,0" />
+          <FlexLayout Wrap="Wrap">
+            <controls:ChipView Text="{Binding Text[AllCatches]}" IsSelected="{Binding AllMethodsSelected}" CommandParameter="{x:Static models:CatchMethodEnum.All}" Tapped="OnMethod" Margin="0,0,8,0" AutomationId="SheetMethodAll" />
+            <controls:ChipView Text="{Binding Text[MethodFly]}" IsSelected="{Binding FlySelected}" CommandParameter="{x:Static models:CatchMethodEnum.Fly}" Tapped="OnMethod" Margin="0,0,8,0" AutomationId="SheetMethodFly" />
+            <controls:ChipView Text="{Binding Text[MethodSpinning]}" IsSelected="{Binding SpinningSelected}" CommandParameter="{x:Static models:CatchMethodEnum.Spinning}" Tapped="OnMethod" Margin="0,0,8,0" AutomationId="SheetMethodSpinning" />
+            <controls:ChipView Text="{Binding Text[MethodLure]}" IsSelected="{Binding LureSelected}" CommandParameter="{x:Static models:CatchMethodEnum.Lure}" Tapped="OnMethod" Margin="0,0,8,0" AutomationId="SheetMethodLure" />
+            <controls:ChipView Text="{Binding Text[MethodOther]}" IsSelected="{Binding OtherSelected}" CommandParameter="{x:Static models:CatchMethodEnum.Other}" Tapped="OnMethod" Margin="0,0,8,0" AutomationId="SheetMethodOther" />
+          </FlexLayout>
+          <Label Text="{Binding Text[FilterSpecies]}" Style="{StaticResource SectionTitle}" Margin="0,8,0,0" />
+          <VerticalStackLayout BindableLayout.ItemsSource="{Binding Species}">
+            <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:SpeciesOptionModel">
+              <Grid ColumnDefinitions="48,*,Auto" HeightRequest="48" AutomationId="SpeciesOption">
+                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" SemanticProperties.Description="{Binding Label}" HorizontalOptions="Center" VerticalOptions="Center" />
+                <Label Grid.Column="1" Text="{Binding Label}" VerticalOptions="Center" FontSize="15" />
+                <Label Grid.Column="2" Text="{Binding CountText}" Style="{StaticResource SecondaryText}" VerticalOptions="Center" Margin="0,0,8,0" />
+              </Grid>
+            </DataTemplate></BindableLayout.ItemTemplate>
+          </VerticalStackLayout>
+          <Label Text="{Binding Text[DateRange]}" Style="{StaticResource SectionTitle}" Margin="0,8,0,0" />
+          <FlexLayout Wrap="Wrap">
+            <controls:ChipView Text="{Binding Text[AllTime]}" IsSelected="{Binding AllTimeSelected}" CommandParameter="{x:Static models:CatchDateRangeEnum.AllTime}" Tapped="OnDateRange" Margin="0,0,8,0" AutomationId="SheetRangeAll" />
+            <controls:ChipView Text="{Binding Text[Last7Days]}" IsSelected="{Binding Last7DaysSelected}" CommandParameter="{x:Static models:CatchDateRangeEnum.Last7Days}" Tapped="OnDateRange" Margin="0,0,8,0" AutomationId="SheetRange7" />
+            <controls:ChipView Text="{Binding Text[Last30Days]}" IsSelected="{Binding Last30DaysSelected}" CommandParameter="{x:Static models:CatchDateRangeEnum.Last30Days}" Tapped="OnDateRange" Margin="0,0,8,0" AutomationId="SheetRange30" />
+          </FlexLayout>
+          <Label Text="{Binding Text[Location]}" Style="{StaticResource SectionTitle}" Margin="0,8,0,4" />
+          <Border Style="{StaticResource Card}" Padding="12,0" Shadow="{x:Null}" HeightRequest="48">
+            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="24,*" ColumnSpacing="10">
+              <controls:IconView Source="icon_search.png" Tone="Muted" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+              <Entry Grid.Column="1" Placeholder="{Binding Text[SearchLocations]}" Text="{Binding Location, Mode=OneWay}" TextChanged="OnLocationChanged"
+                     Style="{StaticResource SearchEntry}" SemanticProperties.Description="{Binding Text[Location]}" AutomationId="FilterLocation" />
+            </Grid>
+          </Border>
+        </VerticalStackLayout>
+      </ScrollView>
+      <Grid Grid.Row="2" ColumnDefinitions="2*,3*" ColumnSpacing="12" Padding="20,8,20,16">
+        <Button Text="{Binding Text[ClearAll]}" Clicked="OnClearAll" Style="{StaticResource SecondaryButton}" AutomationId="ClearAllFilters" />
+        <Button Grid.Column="1" Text="{Binding ApplyText}" Clicked="OnApply" AutomationId="ApplyFilters" />
+      </Grid>
+    </Grid>
+  </Border>
+</toolkit:Popup>

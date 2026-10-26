@@ -270,3 +270,14 @@ Pre-merge self review:
 Remaining deliberate gap: CommunityToolkit snackbar/popup objects cannot be constructed
 by the portable `net10.0` test target. Their UI-thread and overlap behaviour is therefore
 covered by the Android emulator phase rather than a mock-only unit test.
+
+
+## Palette refinement
+
+The design tokens in `Resources/Styles/DesignSystem.xaml` use a restrained palette: indigo `#37318C` (pressed `#292467`) for primary actions and selected chips, deep navy `#102A43` for headings and structure, muted teal `#087F8C` for supporting information and `#F5F7FA` as the canvas. Dark mode uses lighter tints (`#5B54C8` fills, `#B9B5F5` text/icons, `#5CC8D2` teal) that keep text contrast above 4.5:1.
+
+Settings radio buttons now use a themed control template (indigo ring and dot) and a localised string label, which fixes labels that rendered as the type name. Card spacing is tighter. Clear local data shows a destructive confirmation; cancelling performs no action (`LocalDataService`, covered by unit tests).
+
+Screenshots: `docs/images/mobile-refinement/`.
+
+Known gaps: the first Catch card showed no clipping or overlap on a 1080x2400 emulator; sample dates are relative to the device clock; the filter sheet keeps the toolkit popup side inset.

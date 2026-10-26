@@ -6,9 +6,9 @@ namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchListViewMod
 public class WhenTestingSetSearch : BaseCatchListViewModelTest
 {
     [Theory]
-    [InlineData(null, 4)]
-    [InlineData("   ", 4)]
-    [InlineData(" TROUT ", 2)]
+    [InlineData(null, 7)]
+    [InlineData("   ", 7)]
+    [InlineData(" TROUT ", 4)]
     [InlineData("salmon", 1)]
     [InlineData("Spinning", 2)]
     [InlineData("not a species", 0)]

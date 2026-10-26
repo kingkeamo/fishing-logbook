@@ -5,40 +5,55 @@ namespace FishingLogBook.Mobile.Features.Settings.Pages;
 public partial class SettingsPage : ContentPage
 {
     private readonly PreferenceService _preferences;
+    private readonly LocalDataService _localData;
     private bool _refreshing;
 
-    public SettingsPage(PreferenceService preferences)
+    public SettingsPage(PreferenceService preferences, LocalDataService localData)
     {
         _preferences = preferences;
+        _localData = localData;
         InitializeComponent();
         BindingContext = preferences;
-        RefreshPickers();
+        RefreshSelection();
     }
 
-    private void RefreshPickers()
+    private void RefreshSelection()
     {
         _refreshing = true;
-        LanguagePicker.ItemsSource = _preferences.Languages.ToList();
-        ThemePicker.ItemsSource = _preferences.Themes.ToList();
-        LanguagePicker.SelectedIndex = _preferences.LanguageIndex;
-        ThemePicker.SelectedIndex = (int)_preferences.Appearance;
+        LanguageEnglish.IsChecked = _preferences.LanguageIndex == 0;
+        LanguageFrench.IsChecked = _preferences.LanguageIndex == 1;
+        ThemeSystem.IsChecked = _preferences.Appearance == AppearanceEnum.System;
+        ThemeLight.IsChecked = _preferences.Appearance == AppearanceEnum.Light;
+        ThemeDark.IsChecked = _preferences.Appearance == AppearanceEnum.Dark;
         _refreshing = false;
     }
 
-    private void OnLanguageChanged(object? sender, EventArgs args)
+    private void OnLanguageChanged(object? sender, CheckedChangedEventArgs args)
     {
-        if (!_refreshing && LanguagePicker.SelectedIndex >= 0)
+        if (_refreshing || !args.Value)
         {
-            _preferences.SetLanguage(LanguagePicker.SelectedIndex);
-            RefreshPickers();
+            return;
         }
+
+        _preferences.SetLanguage(ReferenceEquals(sender, LanguageFrench) ? 1 : 0);
+        RefreshSelection();
     }
 
-    private void OnAppearanceChanged(object? sender, EventArgs args)
+    private void OnAppearanceChanged(object? sender, CheckedChangedEventArgs args)
     {
-        if (!_refreshing && ThemePicker.SelectedIndex >= 0)
+        if (_refreshing || !args.Value)
         {
-            _preferences.SetAppearance((AppearanceEnum)ThemePicker.SelectedIndex);
+            return;
         }
+
+        var appearance = ReferenceEquals(sender, ThemeLight)
+            ? AppearanceEnum.Light
+            : ReferenceEquals(sender, ThemeDark) ? AppearanceEnum.Dark : AppearanceEnum.System;
+        _preferences.SetAppearance(appearance);
+    }
+
+    private async void OnClearLocalData(object? sender, EventArgs args)
+    {
+        await _localData.ClearAsync();
     }
 }

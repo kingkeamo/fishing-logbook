@@ -22,7 +22,7 @@
     <PackageReference Include="Microsoft.Maui.Controls" />
     <PackageReference Include="CommunityToolkit.Maui" />
     <MauiImage Include="Resources/Images/*.svg" />
-    <MauiImage Include="Resources/Images/sample_trout.jpg" Resize="True" BaseSize="640,480" />
+    <MauiImage Include="Resources/Images/*.jpg" Resize="True" BaseSize="480,360" />
     <MauiIcon Include="../FishingLogBook.Web/wwwroot/icon-512.png" Link="Resources/AppIcon/appicon.png" />
     <MauiSplashScreen Include="../FishingLogBook.Web/wwwroot/images/brand/brand-mark-transparent.png" Link="Resources/Splash/splash.png" Color="#E0F2FE" BaseSize="128,128" />
     <MauiImage Include="../FishingLogBook.Web/wwwroot/images/brand/brand-mark-transparent.png" Link="Resources/Images/brand_mark.png" Resize="True" BaseSize="256,256" />

@@ -26,13 +26,11 @@
   <data name="NoPhoto" xml:space="preserve"><value>No photo recorded</value></data>
   <data name="Preview" xml:space="preserve"><value>Open photo preview</value></data>
   <data name="DemoImage" xml:space="preserve"><value>Reference photo · Fictitious catch data</value></data>
-  <data name="EmptyTitle" xml:space="preserve"><value>No catches to display</value></data>
-  <data name="EmptyBody" xml:space="preserve"><value>This is the empty demo state. Restore the samples to explore a catch.</value></data>
+  <data name="EmptyTitle" xml:space="preserve"><value>No catches yet</value></data>
+  <data name="EmptyBody" xml:space="preserve"><value>Start recording your catches to build your fishing logbook.</value></data>
   <data name="ShowEmpty" xml:space="preserve"><value>Preview empty list</value></data>
   <data name="RestoreSamples" xml:space="preserve"><value>Restore sample catches</value></data>
-  <data name="SampleSpecies" xml:space="preserve"><value>Brown trout</value></data>
-  <data name="SamplePlace" xml:space="preserve"><value>Sample lakeside venue</value></data>
-  <data name="SampleNotes" xml:space="preserve"><value>A fictitious morning catch, released. Sample photo for demonstration only.</value></data>
+  <data name="SampleNotes" xml:space="preserve"><value>Beautiful fish caught on a sunny morning.</value></data>
   <data name="Trips" xml:space="preserve"><value>Trips</value></data>
   <data name="Explore" xml:space="preserve"><value>Explore</value></data>
   <data name="Settings" xml:space="preserve"><value>Settings</value></data>
@@ -97,6 +95,53 @@
   <data name="ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
   <data name="NoMatches" xml:space="preserve"><value>No matching catches</value></data>
   <data name="NoMatchesBody" xml:space="preserve"><value>Try another search or clear the filters.</value></data>
-  <data name="SampleSalmon" xml:space="preserve"><value>Atlantic salmon</value></data>
-  <data name="MethodFly" xml:space="preserve"><value>Fly fishing</value></data>
+  <data name="MethodFly" xml:space="preserve"><value>Fly</value></data>
+  <data name="MethodLure" xml:space="preserve"><value>Lure</value></data>
+  <data name="MethodOther" xml:space="preserve"><value>Other</value></data>
+  <data name="SpeciesAtlanticSalmon" xml:space="preserve"><value>Atlantic salmon</value></data>
+  <data name="SpeciesBrownTrout" xml:space="preserve"><value>Brown trout</value></data>
+  <data name="SpeciesRainbowTrout" xml:space="preserve"><value>Rainbow trout</value></data>
+  <data name="SpeciesPike" xml:space="preserve"><value>Pike</value></data>
+  <data name="SpeciesSeaTrout" xml:space="preserve"><value>Sea trout</value></data>
+  <data name="SpeciesOther" xml:space="preserve"><value>Other</value></data>
+  <data name="PlaceCorrib" xml:space="preserve"><value>Lough Corrib</value></data>
+  <data name="PlaceMask" xml:space="preserve"><value>Lough Mask</value></data>
+  <data name="PlaceCong" xml:space="preserve"><value>Cong River</value></data>
+  <data name="CatchCountSingle" xml:space="preserve"><value>{0} catch</value></data>
+  <data name="Filters" xml:space="preserve"><value>Filters</value></data>
+  <data name="OpenFilters" xml:space="preserve"><value>Open filters</value></data>
+  <data name="CloseFilters" xml:space="preserve"><value>Close filters</value></data>
+  <data name="FilterSpecies" xml:space="preserve"><value>Species</value></data>
+  <data name="SearchSpecies" xml:space="preserve"><value>Search species…</value></data>
+  <data name="DateRange" xml:space="preserve"><value>Date range</value></data>
+  <data name="AllTime" xml:space="preserve"><value>All time</value></data>
+  <data name="Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="Last30Days" xml:space="preserve"><value>Last 30 days</value></data>
+  <data name="SearchLocations" xml:space="preserve"><value>Search locations…</value></data>
+  <data name="ClearAll" xml:space="preserve"><value>Clear all</value></data>
+  <data name="ApplyFilters" xml:space="preserve"><value>Apply filters</value></data>
+  <data name="ApplyFiltersCount" xml:space="preserve"><value>Apply filters ({0})</value></data>
+  <data name="MoreActions" xml:space="preserve"><value>More actions</value></data>
+  <data name="OpenMenu" xml:space="preserve"><value>Open menu</value></data>
+  <data name="Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="RemoveCatchTitle" xml:space="preserve"><value>Remove this catch?</value></data>
+  <data name="RemoveCatchBody" xml:space="preserve"><value>This will permanently remove the catch and all associated photos. This action cannot be undone.</value></data>
+  <data name="ActionUnavailable" xml:space="preserve"><value>This action is not available in this preview. Your sample journal is unchanged.</value></data>
+  <data name="NoBait" xml:space="preserve"><value>No bait or lure recorded</value></data>
+  <data name="Photos" xml:space="preserve"><value>Photos</value></data>
+  <data name="PhotoOf" xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="PhotoLabel" xml:space="preserve"><value>Photo of {0}</value></data>
+  <data name="Share" xml:space="preserve"><value>Share</value></data>
+  <data name="PhotoDetails" xml:space="preserve"><value>Photo details</value></data>
+  <data name="DeletePhoto" xml:space="preserve"><value>Remove photo</value></data>
+  <data name="Back" xml:space="preserve"><value>Back</value></data>
+  <data name="ProfileName" xml:space="preserve"><value>Eamonn</value></data>
+  <data name="ViewProfile" xml:space="preserve"><value>View profile</value></data>
+  <data name="Profile" xml:space="preserve"><value>Profile</value></data>
+  <data name="DataSection" xml:space="preserve"><value>Data</value></data>
+  <data name="ClearLocalData" xml:space="preserve"><value>Clear local data</value></data>
+  <data name="ClearLocalDataTitle" xml:space="preserve"><value>Clear local data?</value></data>
+  <data name="ClearLocalDataBody" xml:space="preserve"><value>This will permanently remove data stored on this device. This action cannot be undone.</value></data>
+  <data name="RecordFirstCatch" xml:space="preserve"><value>Record your first catch</value></data>
+  <data name="CatchSaved" xml:space="preserve"><value>Catch saved</value></data>
 </root>

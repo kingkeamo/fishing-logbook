@@ -1,17 +1,28 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
- xmlns:services="clr-namespace:FishingLogBook.Mobile.Features.Settings.Services" x:Class="FishingLogBook.Mobile.Features.Settings.Pages.SettingsPage"
- x:DataType="services:PreferenceService" Title="{Binding Text[Settings]}">
- <ScrollView><VerticalStackLayout Padding="{StaticResource PagePadding}" Spacing="16" MaximumWidthRequest="720">
-  <Label Text="{Binding Text[SettingsIntro]}" Style="{StaticResource Heading}" />
-  <Label Text="{Binding Text[SettingsBody]}" Style="{StaticResource SecondaryText}" />
-  <Border Style="{StaticResource Card}"><VerticalStackLayout Spacing="4">
-   <Label Text="{Binding Text[Language]}" Style="{StaticResource Subheading}" />
-   <Picker x:Name="LanguagePicker" Title="{Binding Text[Language]}" SemanticProperties.Description="{Binding Text[Language]}" SelectedIndexChanged="OnLanguageChanged" AutomationId="LanguagePicker" />
+ xmlns:services="clr-namespace:FishingLogBook.Mobile.Features.Settings.Services" xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ x:Class="FishingLogBook.Mobile.Features.Settings.Pages.SettingsPage" x:DataType="services:PreferenceService" Title="{Binding Text[Settings]}">
+ <ScrollView><VerticalStackLayout Padding="16,12,16,20" Spacing="10" MaximumWidthRequest="720">
+  <Label Text="{Binding Text[SettingsIntro]}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level1" />
+  <Label Text="{Binding Text[SettingsBody]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
+  <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
+   <Label Text="{Binding Text[Theme]}" Style="{StaticResource SectionTitle}" />
+   <RadioButton x:Name="ThemeSystem" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeSystem" Content="{Binding Text[ThemeSystem]}" />
+   <RadioButton x:Name="ThemeLight" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeLight" Content="{Binding Text[ThemeLight]}" />
+   <RadioButton x:Name="ThemeDark" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeDark" Content="{Binding Text[ThemeDark]}" />
   </VerticalStackLayout></Border>
-  <Border Style="{StaticResource Card}"><VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
-   <Label Text="{Binding Text[Theme]}" Style="{StaticResource Subheading}" />
-   <Picker x:Name="ThemePicker" Title="{Binding Text[Theme]}" SemanticProperties.Description="{Binding Text[Theme]}" SelectedIndexChanged="OnAppearanceChanged" AutomationId="ThemePicker" />
+  <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
+   <Label Text="{Binding Text[Language]}" Style="{StaticResource SectionTitle}" />
+   <RadioButton x:Name="LanguageEnglish" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageEnglish" Content="{Binding Text[LanguageEnglish]}" />
+   <RadioButton x:Name="LanguageFrench" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageFrench" Content="{Binding Text[LanguageFrench]}" />
+  </VerticalStackLayout></Border>
+  <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
+   <Label Text="{Binding Text[DataSection]}" Style="{StaticResource SectionTitle}" />
+   <Grid ColumnDefinitions="*,24" HeightRequest="48" SemanticProperties.Description="{Binding Text[ClearLocalData]}" AutomationId="ClearLocalData">
+    <Label Text="{Binding Text[ClearLocalData]}" Style="{StaticResource ActionText}" TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" VerticalOptions="Center" />
+    <controls:IconView Grid.Column="1" Source="icon_chevron.png" Tone="Danger" WidthRequest="18" HeightRequest="18" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnClearLocalData" /></Grid.GestureRecognizers>
+   </Grid>
   </VerticalStackLayout></Border>
  </VerticalStackLayout></ScrollView>
 </ContentPage>

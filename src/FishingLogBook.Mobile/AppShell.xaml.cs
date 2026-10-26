@@ -14,7 +14,7 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
         BindingContext = text;
-        var primary = new FlyoutItem { Route = "main", FlyoutItemIsVisible = false };
+        var primary = new FlyoutItem { Route = "main", FlyoutDisplayOptions = FlyoutDisplayOptions.AsMultipleItems };
         foreach (var route in RouteConstants.Primary)
         {
             var key = route.ToString();
@@ -30,7 +30,7 @@ public partial class AppShell : Shell
             primary.Items.Add(tab);
         }
         Items.Add(primary);
-        var about = new MenuItem();
+        var about = new MenuItem { IconImageSource = "icon_info.png" };
         about.SetBinding(MenuItem.TextProperty, new Binding("[About]", source: text));
         about.Clicked += async (_, _) =>
         {
@@ -39,7 +39,7 @@ public partial class AppShell : Shell
         };
         Items.Add(about);
 #if DEBUG
-        var showcase = new MenuItem();
+        var showcase = new MenuItem { IconImageSource = "icon_flask.png" };
         showcase.SetBinding(MenuItem.TextProperty, new Binding("[Showcase]", source: text));
         showcase.Clicked += async (_, _) => await navigation.NavigateAsync(MobileRouteEnum.Showcase);
         Items.Add(showcase);
