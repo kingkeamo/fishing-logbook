@@ -1,11 +1,13 @@
-# Demo photograph
+﻿# Demo photographs
 
-`sample_trout.jpg` is copied from the repository owner's supplied
-`test-images/catch-brown-trout.jpg`.
+Photographs illustrate fictitious catch records; they are not evidence of species, measurements, location or date. No generated photos are bundled.
 
-Source: [Brown Trout (Salmo trutta), Garrison Dam — USFWS](https://commons.wikimedia.org/wiki/File:Brown_Trout_(Salmo_trutta)_Garrison_Dam.jpg).
-Public domain, as recorded in `test-images/SOURCES.md`.
+| File | Source / licence |
+|---|---|
+| `catch_brown_trout.jpg` | Brown Trout (Salmo trutta), Garrison Dam, USFWS, public domain (Wikimedia Commons) |
+| `catch_rainbow_trout.jpg` | Rainbow trout, CC BY-SA 3.0 (Wikimedia Commons) |
+| `catch_pike.jpg` | Pike, CC BY-SA 4.0 (Wikimedia Commons) |
+| `header_lough_corrib.jpg` | Lough Corrib, CC BY-SA 4.0 (Wikimedia Commons) |
+| `lake_sunset_fishing.jpg` | Sunset fishing, CC BY 2.0 (Wikimedia Commons) |
 
-The photograph illustrates fictitious catch records; it is not evidence of their
-species measurements, location or date. Salmon samples deliberately have no photo
-until an appropriate source image is available. No generated photos are bundled.
+Salmon samples deliberately have no photo.

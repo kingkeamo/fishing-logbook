@@ -1,4 +1,4 @@
-# Native UX foundation — #249
+﻿# Native UX foundation â€” #249
 
 Native .NET 10 MAUI XAML/C# on the existing mobile project. This implements the
 accepted architecture; it does not change the ADR, PWA, API contracts or database.
@@ -31,7 +31,7 @@ camera/gallery, ruler, scales or custom fishing loader.
   Text scales with Android; actions wrap and request at least 48dp. Scrollable
   layouts accommodate smaller screens. Tabs use native selection and accessibility
   behaviour. The native Shell app bar uses the same purple as the PWA app bar.
-- Catch summary cards follow the PWA's compact 80–104px photo-led pattern. They are
+- Catch summary cards follow the PWA's compact 80â€“104px photo-led pattern. They are
   grouped by day and expose time, method and available measurements through one
   accessible card action. Search and stable method filters run against the displayed
   fictitious data. Detail and immersive preview use the same hierarchy and surfaces.
@@ -115,34 +115,34 @@ without requiring the emulator artifacts:
 | Photo experience | [Immersive preview](images/mobile-249/photo-preview.png) |
 | Shared interactions | [Confirmation](images/mobile-249/confirmation.png), [Modal](images/mobile-249/modal.png) |
 
-## Validation record — 26 October 2026
+## Validation record â€” 26 October 2026
 
 Environment: Windows, .NET SDK 10.0.300, MAUI Android workload 10.0.0/10.0.100,
 Android SDK 36/build-tools 36.0.0, Microsoft JDK 17.0.14. Emulator:
-`emulator-5554`, `sdk_gphone64_x86_64`, Android 16/API 36, 1080×2400 at 420dpi.
+`emulator-5554`, `sdk_gphone64_x86_64`, Android 16/API 36, 1080Ã—2400 at 420dpi.
 
 Final results:
 
-- `dotnet format FishingLogBook.sln --no-restore --verbosity quiet` — passed.
+- `dotnet format FishingLogBook.sln --no-restore --verbosity quiet` â€” passed.
 - `dotnet build FishingLogBook.sln --no-restore --verbosity minimal` initially
   failed because the shell's default Android SDK did not contain API 36. Re-running
   with the installed SDK and JDK paths passed with zero warnings and zero errors.
 - `dotnet test FishingLogBook.sln --no-build --no-restore --verbosity minimal`
-  with those paths — 3,158 passed (Mobile 75, migrations 10, Shared 18,
+  with those paths â€” 3,158 passed (Mobile 75, migrations 10, Shared 18,
   Application 597, API 269, Infrastructure 289, Web 1,900).
-- `npm test -- --reporter=dot` — 405 passed across 34 files.
-- `npm run test:browser` — 159 passed and 7 expected WebKit service-worker tests
+- `npm test -- --reporter=dot` â€” 405 passed across 34 files.
+- `npm run test:browser` â€” 159 passed and 7 expected WebKit service-worker tests
   skipped.
-- Android ARM64 Release build with trimming and APK packaging — passed with zero
+- Android ARM64 Release build with trimming and APK packaging â€” passed with zero
   warnings and zero errors. This proves compilation/package generation, not device
   behaviour for the Release artifact.
-- Debug install on the Android 36 emulator — passed. All six ADB phases above passed:
+- Debug install on the Android 36 emulator â€” passed. All six ADB phases above passed:
   navigation/back/preview, persisted EN/FR and light/dark settings, all shared
   interactions, loading/empty/error/offline states, method filtering, and large-text
   narrow/landscape layouts. The actual native UI was visually inspected after each
   material polish change.
 
-Observed Debug cold starts during ADB validation were approximately 3.0–3.5 seconds.
+Observed Debug cold starts during ADB validation were approximately 3.0â€“3.5 seconds.
 That is indicative emulator data, not a valid Release/physical-device measurement
 against the 3-second budget. Memory and navigation latency were not instrumented.
 Interactive styles retain a 48dp minimum target.
@@ -159,24 +159,24 @@ the real Android controls and Shell boundaries.
 
 Self review:
 
-- Issue/AC: PASS — every #249 acceptance criterion is implemented or explicitly
+- Issue/AC: PASS â€” every #249 acceptance criterion is implemented or explicitly
   identified above as a physical-device/manual measurement gap; no #250, auth, API,
   offline persistence or Catch-entry scope was introduced.
-- Architecture/CQRS: PASS — changes remain inside native presentation, navigation,
+- Architecture/CQRS: PASS â€” changes remain inside native presentation, navigation,
   interaction and preference boundaries; no backend/CQRS path changed.
-- Rules: PASS — repository workflow, C#, test, commit and GitHub rules were re-read.
-- Security/privacy: PASS — fictitious samples only; no account, location, storage,
+- Rules: PASS â€” repository workflow, C#, test, commit and GitHub rules were re-read.
+- Security/privacy: PASS â€” fictitious samples only; no account, location, storage,
   upload or network privacy surface was added.
-- Database/migrations: N/A — none changed.
-- Tests/coverage: PASS — presentation transitions and failure/no-op paths have unit
+- Database/migrations: N/A â€” none changed.
+- Tests/coverage: PASS â€” presentation transitions and failure/no-op paths have unit
   coverage, and real Android Shell/control boundaries have emulator coverage.
-- Browser: PASS for regression — native E2E is handled by ADB; 159 browser tests
+- Browser: PASS for regression â€” native E2E is handled by ADB; 159 browser tests
   passed for the unchanged PWA, with 7 documented engine capability skips.
-- Web/UI/localisation: PASS — EN/FR resources have parity, user data is not translated,
+- Web/UI/localisation: PASS â€” EN/FR resources have parity, user data is not translated,
   dark/light, large text, narrow layout and rotation were rendered on Android.
-- Code smells: PASS — no feature-level framework or speculative abstraction was added;
+- Code smells: PASS â€” no feature-level framework or speculative abstraction was added;
   obsolete demo illustration and unused action artwork were removed.
-- CI/deployment: PASS — mobile dependencies remain Android-targeted, the web-only
+- CI/deployment: PASS â€” mobile dependencies remain Android-targeted, the web-only
   solution remains MAUI-workload independent, and no deployment step is required.
 
 Findings discovered during self-review:
@@ -209,13 +209,13 @@ Remaining deliberate gaps:
 - Physical-device screen reader, performance, memory and ergonomics checks remain.
 - iOS is outside #249; this Android foundation does not claim iOS validation.
 
-## Pre-merge maintainability review — PR #251
+## Pre-merge maintainability review â€” PR #251
 
 The review kept the accepted visual design and feature scope unchanged. Fictitious
 Catch construction now lives in a singleton `SampleCatchProvider`; its DTO and
 presentation instances are retained across filtering, state and culture refreshes.
-Sample text uses explicit resource keys, while real recorded species names—including
-names equal to an English sample value—remain untouched. Method filters and sample
+Sample text uses explicit resource keys, while real recorded species namesâ€”including
+names equal to an English sample valueâ€”remain untouched. Method filters and sample
 method identities use an explicit enum instead of UI strings.
 
 Catch presentation models now issue focused property-change notifications when the
@@ -234,37 +234,37 @@ Focused tests cover retained sample instances, typed method filtering, explicit 
 localisation versus real species text, property-change notifications, and one-time
 preference initialization. Final validation after the review changes:
 
-- `dotnet format FishingLogBook.sln --no-restore --verbosity quiet` — passed.
-- Full solution build with the installed Android SDK/JDK — passed with zero warnings
+- `dotnet format FishingLogBook.sln --no-restore --verbosity quiet` â€” passed.
+- Full solution build with the installed Android SDK/JDK â€” passed with zero warnings
   and zero errors.
-- Full solution tests — 3,158 passed, including 75 mobile tests.
-- Android ARM64 trimmed Release APK build — passed with zero warnings and zero errors.
-- `npm test -- --reporter=dot` — 405 passed.
-- `npm run test:browser` — 159 passed; 7 expected WebKit service-worker tests skipped.
+- Full solution tests â€” 3,158 passed, including 75 mobile tests.
+- Android ARM64 trimmed Release APK build â€” passed with zero warnings and zero errors.
+- `npm test -- --reporter=dot` â€” 405 passed.
+- `npm run test:browser` â€” 159 passed; 7 expected WebKit service-worker tests skipped.
 - Updated Debug APK on Android 36: interaction and preference ADB phases passed. The
   interaction phase deliberately replaces six-second notifications at one-second
   intervals before opening confirmation/modal UI, exercising the overlap boundary.
 
 Pre-merge self review:
 
-- Issue/AC: PASS — all requested cleanup findings are addressed without visual or
+- Issue/AC: PASS â€” all requested cleanup findings are addressed without visual or
   product-scope changes.
-- Architecture/CQRS: PASS — one concrete feature-owned provider was added; no interface,
+- Architecture/CQRS: PASS â€” one concrete feature-owned provider was added; no interface,
   repository or server dependency was introduced.
-- Rules: PASS — naming, explicit enum values, DI registration, formatting and test
+- Rules: PASS â€” naming, explicit enum values, DI registration, formatting and test
   structure follow repository conventions.
-- Security/privacy: PASS — only fictitious local demo data changed; no identity,
+- Security/privacy: PASS â€” only fictitious local demo data changed; no identity,
   location, storage or network surface changed.
 - Database/migrations: N/A.
-- Tests/coverage: PASS — portable logic has focused unit coverage; MAUI-specific
+- Tests/coverage: PASS â€” portable logic has focused unit coverage; MAUI-specific
   snackbar/popup concurrency is exercised through the installed Android UI.
-- Browser: PASS — full PWA browser regression passed; native controls are not a
+- Browser: PASS â€” full PWA browser regression passed; native controls are not a
   Playwright boundary.
-- Web/UI/localisation: PASS — appearance is unchanged; EN/FR switching and retained
+- Web/UI/localisation: PASS â€” appearance is unchanged; EN/FR switching and retained
   detail/preview bindings passed on Android.
-- Code smells: PASS — repeated DTO construction, magic species comparisons, string
+- Code smells: PASS â€” repeated DTO construction, magic species comparisons, string
   filter state, BindingContext resets and implicit startup side effects were removed.
-- CI/deployment: PASS — Android-only MAUI dependencies remain isolated; no migration,
+- CI/deployment: PASS â€” Android-only MAUI dependencies remain isolated; no migration,
   configuration or deployment action is required.
 
 Remaining deliberate gap: CommunityToolkit snackbar/popup objects cannot be constructed
@@ -281,3 +281,31 @@ Settings radio buttons now use a themed control template (indigo ring and dot) a
 Screenshots: `docs/images/mobile-refinement/`.
 
 Known gaps: the first Catch card showed no clipping or overlap on a 1080x2400 emulator; sample dates are relative to the device clock; the filter sheet keeps the toolkit popup side inset.
+
+## iOS readiness review — PR #252
+
+Goal: one shared MAUI app for Android and iOS. **No iOS runtime, simulator, signing or app-bundle validation has been performed** (no Mac/Xcode). The only iOS check done: `dotnet build -f net10.0-ios -p:IncludeIos=true` on Windows compiles the managed assembly (`iossimulator-x64`, 0 warnings/errors) without producing an app bundle. Everything else iOS below is unverified.
+
+### Changes made
+
+- `MauiProgram.cs` is platform-neutral. It calls the partial hook `ConfigurePlatformHandlers()`; the borderless Entry handler (Android tint removal) now lives in `Platforms/Android/MauiProgram.Android.cs`. iOS leaves the hook unimplemented (no-op).
+- `FishingLogBook.Mobile.csproj` adds `net10.0-ios` only on macOS or with `-p:IncludeIos=true`. Shared MAUI assets, packages and properties apply to every MAUI target; the minimum OS is per platform.
+- `Platforms/iOS/` holds `AppDelegate.cs`, `Program.cs` and `Info.plist` (`UIViewControllerBasedStatusBarAppearance=false`, required by the toolkit `StatusBarBehavior`; en/fr localisations; orientations).
+- Filter chips no longer truncate in the filter sheet: `ChipView` sets `FlexLayout.Shrink=0` (verified on the Android emulator).
+- `WhenTestingPlatformNeutrality` guards that shared sources contain no platform APIs, the handler stays under `Platforms/Android`, the csproj shares assets across targets, and the iOS head files exist.
+
+### Audit result
+
+Shared XAML, view models, Shell navigation, `Preferences`, `UserAppTheme`, `SemanticScreenReader`, `DisplayActionSheetAsync`, toolkit Popup/Snackbar and `MauiImage` assets use cross-platform APIs. The only Android-specific code in shared files was the Entry handler.
+
+### To implement and test on a Mac/Xcode
+
+1. Build `net10.0-ios` and fix any compile errors in the head files; confirm the minimum iOS version.
+2. Safe areas: `CatchSummaryPage` uses a fixed 132 header row; verify buttons are not covered by the notch/Dynamic Island. Check the filter sheet and page-level `SafeAreaEdges`.
+3. Status bar: verify `StatusBarBehavior` colour/style per page (may need `ApplyOn=OnPageNavigatedTo`).
+4. Popups: filter sheet width/insets, tap-outside dismissal, destructive dialog, snackbar position above the tab bar.
+5. Action sheet: native iOS rendering (destructive item red; iPad needs a popover anchor).
+6. Entry visuals (Search/Location) without the Android handler; Shell tab bar colours and edge-swipe back.
+7. App icon, splash, bundle id/signing (shared `ApplicationId` is a demo value), localised app name (`InfoPlist.strings`).
+8. System font metrics versus the Android layout; 48dp targets exceed the iOS 44pt guidance and are retained.
+9. Screenshots in EN/FR and light/dark on iPhone sizes.

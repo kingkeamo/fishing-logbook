@@ -9,6 +9,7 @@ public partial class ChipView : ContentView
     public ChipView()
     {
         InitializeComponent();
+        FlexLayout.SetShrink(this, 0);
     }
 
     public string Text

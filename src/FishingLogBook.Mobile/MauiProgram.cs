@@ -12,14 +12,11 @@ using FishingLogBook.Mobile.Navigation;
 
 namespace FishingLogBook.Mobile;
 
-public static class MauiProgram
+public static partial class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
-        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("BorderlessEntry", static (handler, _) =>
-        {
-            handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
-        });
+        ConfigurePlatformHandlers();
         var builder = MauiApp.CreateBuilder().UseMauiApp<App>().UseMauiCommunityToolkit();
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<UiTextService>();
@@ -43,4 +40,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<AppShell>();
         return builder.Build();
     }
+
+    static partial void ConfigurePlatformHandlers();
 }
