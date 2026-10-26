@@ -10,6 +10,8 @@ public static class TestJwt
 {
     public const string Issuer = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_testpool";
     public const string ClientId = "test-pwa-client";
+    public const string NativeClientId = "test-native-client";
+    public const string ArbitraryClientId = "unapproved-cognito-client";
     public const string Subject = "test-subject";
 
     // FishingLogBook API contract requires email. Cognito access tokens include it via
@@ -27,18 +29,24 @@ public static class TestJwt
         string? subject = null,
         string? email = null,
         bool includeAudience = true,
+        bool includeClientId = true,
         bool includeSubject = true,
         bool includeEmail = true,
-        DateTime? expires = null)
+        DateTime? expires = null,
+        bool useUntrustedSigningKey = false)
     {
         var expiresAt = expires ?? DateTime.UtcNow.AddMinutes(15);
         var notBefore = expiresAt.AddMinutes(-30);
         var claims = new Dictionary<string, object>
         {
             ["token_use"] = tokenUse ?? AuthConstants.TokenUseAccess,
-            ["client_id"] = clientId ?? ClientId,
             ["scope"] = scope ?? $"openid profile email {TestAuthConstants.ApiScope}"
         };
+        if (includeClientId)
+        {
+            claims["client_id"] = clientId ?? ClientId;
+        }
+
         if (includeSubject)
         {
             claims["sub"] = subject ?? Subject;
@@ -55,7 +63,9 @@ public static class TestJwt
             Audience = includeAudience ? audience ?? TestAuthConstants.ApiResource : null,
             NotBefore = notBefore,
             Expires = expiresAt,
-            SigningCredentials = new SigningCredentials(SigningKey, SecurityAlgorithms.RsaSha256),
+            SigningCredentials = new SigningCredentials(
+                useUntrustedSigningKey ? CreateSigningKey() : SigningKey,
+                SecurityAlgorithms.RsaSha256),
             Claims = claims
         };
 

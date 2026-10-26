@@ -64,6 +64,7 @@ jobs:
       - run: >-
           node --test
           .github/scripts/release-version.test.mjs
+          .github/scripts/production-fly-auth-docs.test.mjs
           src/FishingLogBook.Web/build/configure-web.test.mjs
           src/FishingLogBook.Root/build/root-site.test.mjs
 

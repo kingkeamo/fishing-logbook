@@ -748,9 +748,11 @@ Blazor assemblies
 # 25. Authentication Infrastructure
 
 Terraform defines Amazon Cognito in `infrastructure/terraform/modules/cognito/`. Each
-environment has its own user pool, resource server, public PWA app client, hosted-UI
-domain, managed-login branding, and a Pre Token Generation Lambda that adds the
-verified email claim to access tokens. Apply is **manual only** — see
+environment has its own user pool, resource server, public PWA client, hosted-UI domain,
+managed-login branding, and a Pre Token Generation Lambda that adds the verified email
+claim to access tokens. The native public client is enabled in Dev and opt-in in Prod
+until verified links are ready. Both clients use Authorization Code, have no client
+secret, and request the same API resource/scope. Apply is **manual only** — see
 `infrastructure/README.md`.
 
 ## Flow
@@ -761,10 +763,17 @@ FishingLogBook PWA
     -> Authorization Code callback (/authentication/login-callback)
     -> Microsoft.AspNetCore.Components.WebAssembly.Authentication completes code + PKCE S256
     -> Access token attached only to FishingLogBook API requests
+
+FishingLogBook native app
+    -> Cognito managed login in the system browser
+    -> Exact app callback
+    -> Authorization Code + PKCE S256 completes in the native OIDC client
+    -> Access token attached only to FishingLogBook API requests
 ```
 
-The PWA is a public browser client. There is **no Cognito client secret** in Blazor,
-`appsettings`, JavaScript, GitHub variables, Cloudflare Pages, or Terraform outputs.
+The PWA and native app are public clients. There is **no Cognito client secret** in
+Blazor, MAUI, `appsettings`, JavaScript, GitHub variables, Cloudflare Pages, or
+Terraform outputs.
 
 OIDC `Authority` is the user-pool issuer:
 
@@ -779,13 +788,24 @@ Sign in / Create account / Sign out actions.
 
 Exact URLs only (no wildcards). HTTP is allowed only for localhost.
 
+PWA:
+
 - `https://localhost:7005/authentication/login-callback`
 - `http://localhost:5019/authentication/login-callback`
 - `https://fishing-logbook-dev.pages.dev/authentication/login-callback`
 
 Logout URLs include the matching `/authentication/logout-callback` paths and site roots.
 
-Do not invent production callback URLs until the production web origin exists.
+Native Dev:
+
+- callback: `com.fishinglogbook.mobile.demo://oauth2redirect`
+- logout: `com.fishinglogbook.mobile.demo://signedout`
+
+The private-use scheme is derived from the current MAUI application ID and must be
+registered exactly by #242. It is acceptable for Dev but can be claimed by another app.
+Production should use verified Android App Links and iOS Universal Links on
+`app.catchbutdontforget.com`; do not apply Prod until the final package/bundle IDs,
+signing identities, `assetlinks.json`, and `apple-app-site-association` are in place.
 
 ## API JWT validation
 
@@ -799,7 +819,8 @@ Final validation requires all of:
 3. Valid lifetime
 4. Correct `aud` (FishingLogBook API resource URI)
 5. `token_use` == `access`
-6. Correct `client_id` (PWA app client)
+6. `client_id` exactly matches one entry in the API's environment-specific approved
+   PWA/native client allow-list
 7. Required API scope `https://fishing-logbook-dev-api.fly.dev/access`
 
 ID tokens are rejected even when `aud` is present.
@@ -808,7 +829,9 @@ Cognito access tokens normally identify the app client with `client_id` and do *
 inherently contain `aud`. FishingLogBook explicitly requests RFC 8707 resource binding
 by setting Microsoft OIDC `ProviderOptions.AdditionalProviderParameters["resource"]`
 to `Auth:ApiResource`. Cognito then adds `aud` containing that FishingLogBook API
-resource URI. The API validates **both** `aud` and `client_id`.
+resource URI. The API validates **both** `aud` and an exact, case-sensitive
+`client_id` allow-list match. A token from another client in the same user pool is
+rejected.
 
 Dev `Auth:ApiResource` is `https://fishing-logbook-dev-api.fly.dev` (the current Dev
 Fly API URL). Local Blazor still requests that same audience when using the Dev Cognito
@@ -836,8 +859,8 @@ only when that email is present and `email_verified` is true. Missing or unverif
 email leaves the token unchanged; `CurrentUserMiddleware` then returns 401. The
 Lambda does not log email or other PII. It does not call `/userinfo`.
 
-JWT validation is unchanged: signature, issuer, lifetime, `aud`, `token_use==access`,
-`client_id`, and API scope still apply. After those checks, the API still requires
+JWT validation still requires signature, issuer, lifetime, `aud`, `token_use==access`,
+an approved `client_id`, and the API scope. After those checks, the API still requires
 the trusted `email` claim together with `sub`.
 
 Tokens include Email only after a reviewed Terraform apply of this Lambda in that
@@ -847,8 +870,10 @@ environment.
 
 Copy Terraform outputs into (these values are public identifiers, not secrets):
 
-- Web `wwwroot/appsettings.Development.json` and API `appsettings.Development.json` →
-  `Auth:Authority`, `Auth:ClientId`, `Auth:ApiScope`, `Auth:ApiResource`
+- Web `wwwroot/appsettings.Development.json` → `Auth:Authority`, the PWA
+  `Auth:ClientId`, `Auth:ApiScope`, `Auth:ApiResource`
+- API `appsettings.Development.json` → `Auth:Authority`,
+  `Auth:ApprovedClientIds` (PWA and native), `Auth:ApiScope`, `Auth:ApiResource`
 - Web `wwwroot/appsettings.Production.json` is this repository's **Dev Cloudflare Pages
   overlay** (Release publish). Keep Dev Auth there until a real production overlay exists.
   Base `appsettings.json` must not contain environment Auth values.
@@ -856,11 +881,14 @@ Copy Terraform outputs into (these values are public identifiers, not secrets):
   `AUTH_API_SCOPE` (`https://fishing-logbook-dev-api.fly.dev/access`), `AUTH_API_RESOURCE`
   (`https://fishing-logbook-dev-api.fly.dev`). Missing variables fail `deploy-web`.
 - Fly.io Dev API env in `infrastructure/fly/fly.dev.toml`: `Auth__Authority`,
-  `Auth__ClientId`, `Auth__ApiScope`, `Auth__ApiResource`
+  `Auth__ApprovedClientIds__0`, `Auth__ApprovedClientIds__1`, `Auth__ApiScope`,
+  `Auth__ApiResource`
 
-API and Web startup fail if any of `Auth:Authority`, `Auth:ClientId`, `Auth:ApiResource`,
-or `Auth:ApiScope` is missing or whitespace. JWT validation always uses the configured
-`ApiResource` as `aud` and requires `ApiScope`.
+API startup fails if `Auth:Authority`, at least one non-empty
+`Auth:ApprovedClientIds` entry, `Auth:ApiResource`, or `Auth:ApiScope` is missing.
+Web startup still requires its single `Auth:ClientId`. JWT validation always uses the
+configured `ApiResource` as `aud`, requires `ApiScope`, and rejects client IDs outside
+the API allow-list.
 
 Local Web points at the **Dev** Cognito pool. Do not create a user pool on a laptop.
 

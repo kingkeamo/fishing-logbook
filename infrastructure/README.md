@@ -3,7 +3,7 @@
 Infrastructure for FishingLogBook is defined with **Terraform** and is applied
 **manually only**. Neon (`neon_project`), R2 photos (`cloudflare_r2_bucket`), Pages
 (`cloudflare_pages_project`), Grafana Cloud Loki write access, and Cognito (user pool,
-public PWA client, hosted-UI domain, API resource server) are defined. Fly remains a
+public PWA/native clients, hosted-UI domain, API resource server) are defined. Fly remains a
 skeleton. Further resources are added deliberately, one at a time, only when explicitly
 approved.
 
@@ -225,22 +225,49 @@ Do not apply Grafana in prod until you want a separate Loki write token for prod
 ## Amazon Cognito (authentication)
 
 Cognito is the only AWS application service this project uses. Terraform owns the user
-pool, resource server, public PWA app client (`generate_secret = false`), hosted-UI
-domain, managed-login branding, and a Pre Token Generation Lambda (event version V2_0)
-that copies the verified email user attribute onto the **access** token. Cognito access
-tokens omit email by default; ID tokens are rejected by the API. There is no client
-secret to output or store. The Lambda does not log PII. JWT validation is unchanged.
+pool, resource server, separate public PWA and native app clients
+(`generate_secret = false`), hosted-UI domain, managed-login branding, and a Pre Token
+Generation Lambda (event version V2_0) that copies the verified email user attribute
+onto the **access** token. Cognito access tokens omit email by default; ID tokens are
+rejected by the API. There is no client secret to output or store. The Lambda does not
+log PII.
 
 The PWA uses Authorization Code + PKCE S256 via
 `Microsoft.AspNetCore.Components.WebAssembly.Authentication`. FishingLogBook does not
 collect Cognito passwords. MFA is off (no SMS). Email is the username; Cognito sends
 verification with the default Cognito email quota (no SES).
 
+The native client also permits Authorization Code only. Cognito supports S256 for its
+PKCE code exchange; #242 must generate a new verifier/challenge per authorization
+request and must not use an implicit flow or an embedded web view. Dev uses exact
+reverse-domain private-use redirects derived from the current MAUI application ID:
+
+```text
+callback  com.fishinglogbook.mobile.demo://oauth2redirect
+logout    com.fishinglogbook.mobile.demo://signedout
+```
+
+Private-use schemes work before signing/domain association is available, but another
+app can claim the same scheme. The Prod native client is disabled by default so
+unrelated PWA-only production plans remain possible. Do not enable it until #238
+finalizes the Android package ID, iOS bundle ID, signing identities, and Team ID, and
+the site serves:
+
+- Android Digital Asset Links at
+  `https://app.catchbutdontforget.com/.well-known/assetlinks.json`
+- iOS `apple-app-site-association` at
+  `https://app.catchbutdontforget.com/.well-known/apple-app-site-association`
+
+Only then may Prod set `cognito_native_client_enabled = true` and use the exact verified
+links in `environments/prod/terraform.tfvars.example`. Do not add both private-use and
+verified production redirects as a convenience fallback; keep the registered surface
+minimal.
+
 Token settings (explicit):
 
 | Token | Lifetime | Why |
 |---|---|---|
-| Access | 1 hour | Short-lived API bearer for a PWA |
+| Access | 1 hour | Short-lived API bearer for public PWA/native clients |
 | ID | 1 hour | Matches access; used by the OIDC session, not the API |
 | Refresh | 30 days | Consumer app should not force daily re-login; rotation limits theft |
 | Refresh retry grace | 5 seconds | Enough for a flaky retry; Cognito max is 60 |
@@ -250,43 +277,104 @@ Also enabled: token revocation, refresh rotation, `prevent_user_existence_errors
 Password policy: minimum 12 characters, upper + lower + number required, symbols not
 required. Length over extra complexity.
 
-**Do not apply until you have reviewed `terraform plan`.** For an existing Dev user
-pool, expect to **add** the Pre Token Generation Lambda, IAM role, log-group (7-day
-retention), basic-execution attachment, and invoke permission, and to **update** the
-user pool `lambda_config` in place. Abort if the plan shows replace/destroy of the
-user pool, Neon, R2, Pages, or Grafana. Tokens include Email only after this apply.
+**Do not apply until you have reviewed `terraform plan`.** For #241 against the
+existing Dev pool, expect exactly one native `aws_cognito_user_pool_client`, one native
+`aws_cognito_managed_login_branding`, and new public outputs. Existing Cognito, Neon,
+R2, Pages, and Grafana resources must not be replaced or destroyed. Stop if the plan
+changes the PWA client flow, callback/logout URLs, secret setting, resource server,
+user pool, Lambda, or token validity unexpectedly.
 
-Prod must not be applied until real production callback/logout HTTPS URLs exist.
+PWA-only Prod plans keep `cognito_native_client_enabled = false`. A plan that enables
+the Prod native client must include the reviewed production callback/logout HTTPS URLs.
 
 After a reviewed apply, copy **public** outputs:
 
 ```powershell
 terraform output cognito_user_pool_id
 terraform output cognito_client_id
+terraform output cognito_native_client_id
+terraform output -json cognito_approved_client_ids
 terraform output cognito_authority
 terraform output cognito_hosted_ui_domain
 terraform output cognito_api_scope
 ```
 
-Put `Authority`, `ClientId`, `ApiScope`, and `ApiResource` into local
-`appsettings.Development.json`, GitHub `dev` **variables** `AUTH_AUTHORITY`,
-`AUTH_CLIENT_ID`, `AUTH_API_SCOPE`, `AUTH_API_RESOURCE`, and Fly
-`Auth__Authority` / `Auth__ClientId` / `Auth__ApiScope` / `Auth__ApiResource` in
-`infrastructure/fly/fly.dev.toml`. Base `appsettings.json` must not silently represent
-Dev. Missing GitHub `AUTH_*` variables fail `deploy-web`. Missing Auth at API/Web
-startup throws. These are public identifiers — do not mark the client ID as a GitHub
-secret.
+The Web keeps the PWA output as its single `Auth:ClientId`. Put both values from
+`cognito_approved_client_ids` into the API's `Auth:ApprovedClientIds` array, preserving
+the PWA ID at index 0 and native ID at index 1. The equivalent Fly names are
+`Auth__ApprovedClientIds__0` and `Auth__ApprovedClientIds__1`. GitHub `dev` variables
+`AUTH_AUTHORITY`, `AUTH_CLIENT_ID`, `AUTH_API_SCOPE`, and `AUTH_API_RESOURCE` remain Web
+deployment inputs and `AUTH_CLIENT_ID` remains the PWA ID. Base `appsettings.json` must
+not silently represent Dev. Missing or malformed Auth configuration fails API/Web
+startup. These are public identifiers; do not mark either client ID as a secret.
 
 Cognito resource-server identifier is the Dev API URL
 (`https://fishing-logbook-dev-api.fly.dev`). Custom scopes can only be requested
 together with RFC 8707 `resource` when they belong to that identifier. The PWA
 sends `resource` = `Auth:ApiResource` (the same URL). Cognito then puts that URL
 in access-token `aud`. The API scope is `https://fishing-logbook-dev-api.fly.dev/access`.
-The API validates both `aud` and `client_id`. Access tokens do not inherently contain
-`aud` unless resource binding is requested.
+The API validates `aud` and requires an exact, case-sensitive `client_id` match against
+the environment-specific PWA/native allow-list. An arbitrary app client in the same
+user pool cannot call the API. Access tokens do not inherently contain `aud` unless
+resource binding is requested.
 
 Create a test user in Cognito Hosted UI (email + verification), then Sign in from the
 PWA. Sign-out must clear the OIDC session and send the browser to an allowed logout URL.
+
+### #241 reviewed Dev apply sequence
+
+No command in this sequence is automatic. Stop after the plan until the plan and redirect
+choices have been reviewed together.
+
+1. Confirm #242 will register
+   `com.fishinglogbook.mobile.demo://oauth2redirect` and
+   `com.fishinglogbook.mobile.demo://signedout` on both Dev mobile heads.
+2. Use the AWS account/profile and `eu-west-2` region that own the existing Dev user
+   pool. Never paste AWS credentials into Terraform variables or repository files.
+3. Copy `environments/dev/terraform.tfvars.example` to the gitignored
+   `terraform.tfvars`. Keep the documented native URLs exact.
+4. Initialize against the existing remote state and create a saved plan:
+
+```powershell
+cd C:\git\fishing-logbook\infrastructure\terraform\environments\dev
+terraform init -backend-config=backend.hcl
+terraform fmt -check -recursive ..\..
+terraform validate
+terraform plan -out=dev-native-client.tfplan
+terraform show dev-native-client.tfplan
+```
+
+5. Review the complete plan together. It should add only the native app client and its
+   managed-login branding plus outputs. Stop on any destroy, replacement, client secret,
+   implicit flow, PWA callback/flow change, or unrelated infrastructure change.
+6. Only after explicit approval, apply the saved reviewed plan manually:
+
+```powershell
+terraform apply dev-native-client.tfplan
+```
+
+7. Read the public outputs and update configuration in a reviewed application change:
+
+```powershell
+terraform output -raw cognito_native_client_id
+terraform output -json cognito_approved_client_ids
+```
+
+   - API local config: `Auth:ApprovedClientIds:0` = PWA output and
+     `Auth:ApprovedClientIds:1` = native output.
+   - Fly Dev config: `Auth__ApprovedClientIds__0` and
+     `Auth__ApprovedClientIds__1`.
+   - Native #242 config: authority, hosted-UI domain, native client ID, API resource,
+     scope, and the exact Dev redirects. These are public values, not secrets.
+   - Web config remains on the PWA client ID.
+8. Deploy the API/application configuration separately through the normal reviewed
+   deployment path. Terraform does not deploy application code.
+9. In #242, prove S256 PKCE in the system browser, then call a protected endpoint with a
+   native-client token. Also prove a token from an unlisted pool client returns 401 and
+   the existing PWA still signs in.
+
+This work does not run `terraform apply`, alter the live user pool, deploy the API, or
+implement the native login/logout/token lifecycle.
 
 ## Manual deployment process
 

@@ -13,6 +13,19 @@ output "client_id" {
   value       = aws_cognito_user_pool_client.pwa.id
 }
 
+output "native_client_id" {
+  description = "Public native app client ID when enabled. Not a secret."
+  value       = try(aws_cognito_user_pool_client.native[0].id, null)
+}
+
+output "approved_client_ids" {
+  description = "Public PWA and enabled native client IDs approved to call the API."
+  value = concat(
+    [aws_cognito_user_pool_client.pwa.id],
+    aws_cognito_user_pool_client.native[*].id,
+  )
+}
+
 output "authority" {
   description = "OIDC issuer/authority for Blazor OIDC and API JWT validation."
   value       = "https://cognito-idp.${var.region}.amazonaws.com/${aws_cognito_user_pool.this.id}"

@@ -6,7 +6,7 @@ public sealed class AuthConfig
 
     public string Authority { get; set; } = string.Empty;
 
-    public string ClientId { get; set; } = string.Empty;
+    public string[] ApprovedClientIds { get; set; } = [];
 
     public string ApiScope { get; set; } = string.Empty;
 
@@ -20,9 +20,9 @@ public sealed class AuthConfig
             missing.Add("Auth:Authority");
         }
 
-        if (string.IsNullOrWhiteSpace(ClientId))
+        if (ApprovedClientIds is null || ApprovedClientIds.Length == 0)
         {
-            missing.Add("Auth:ClientId");
+            missing.Add("Auth:ApprovedClientIds");
         }
 
         if (string.IsNullOrWhiteSpace(ApiResource))
@@ -45,6 +45,23 @@ public sealed class AuthConfig
         {
             throw new InvalidOperationException("Auth:Authority must be an absolute HTTPS URI.");
         }
+
+        var approvedClientIds = ApprovedClientIds!;
+        if (approvedClientIds.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new InvalidOperationException("Auth:ApprovedClientIds must not contain empty values.");
+        }
+
+        if (approvedClientIds.Distinct(StringComparer.Ordinal).Count() != approvedClientIds.Length)
+        {
+            throw new InvalidOperationException("Auth:ApprovedClientIds must not contain duplicate values.");
+        }
+    }
+
+    public bool IsApprovedClientId(string? clientId)
+    {
+        return !string.IsNullOrWhiteSpace(clientId)
+            && ApprovedClientIds.Contains(clientId, StringComparer.Ordinal);
     }
 
     private static bool IsAbsoluteHttpsUri(string value)

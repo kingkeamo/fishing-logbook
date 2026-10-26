@@ -11,7 +11,8 @@ public static class TestAuthentication
     public static Dictionary<string, string?> Configuration { get; } = new()
     {
         ["Auth:Authority"] = TestJwt.Issuer,
-        ["Auth:ClientId"] = TestJwt.ClientId,
+        ["Auth:ApprovedClientIds:0"] = TestJwt.ClientId,
+        ["Auth:ApprovedClientIds:1"] = TestJwt.NativeClientId,
         ["Auth:ApiScope"] = TestAuthConstants.ApiScope,
         ["Auth:ApiResource"] = TestAuthConstants.ApiResource
     };
