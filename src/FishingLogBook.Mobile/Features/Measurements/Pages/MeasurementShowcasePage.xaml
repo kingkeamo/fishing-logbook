@@ -69,5 +69,6 @@
     </Border>
    </VerticalStackLayout>
   </Border>
+  <BoxView HeightRequest="{StaticResource SpaceLarge}" Color="Transparent" AutomationProperties.IsInAccessibleTree="False" />
  </VerticalStackLayout></ScrollView>
 </ContentPage>

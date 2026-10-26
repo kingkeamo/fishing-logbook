@@ -8,7 +8,7 @@ using FishingLogBook.Shared.Measurements;
 
 namespace FishingLogBook.Mobile.Features.Measurements.ViewModels;
 
-public sealed class MeasurementEditorViewModel : INotifyPropertyChanged
+public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDisposable
 {
     private const int OuncesPerPound = 16;
     private readonly IMeasurementService _measurement;
@@ -20,6 +20,7 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged
     private int _pounds;
     private int _ounces;
     private bool _hasInvalidInput;
+    private bool _disposed;
 
     public MeasurementEditorViewModel(
         IMeasurementService measurement,
@@ -73,6 +74,20 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged
     {
         return _text["MeasureRange" + range.Range];
     }
+
+    public string RangeHint => _text["MeasureRangeHint"];
+
+    public string RangeDescription(MeasurementScaleRangeModel range)
+    {
+        var label = RangeLabel(range);
+        if (!range.CanDisplay(_canonicalValue))
+        {
+            return string.Format(_text.Culture, _text["MeasureRangeUnavailable"], label);
+        }
+
+        return range == _range ? string.Format(_text.Culture, _text["MeasureRangeSelected"], label) : label;
+    }
+
     public decimal SliderStep => SliderStepFor(Kind, _weightUnit, _lengthUnit);
     public decimal FineStep => FineStepFor(Kind, _weightUnit, _lengthUnit);
     public string FineStepText => IsImperialWeight ? _text["MeasureOneOunce"] : string.Format(_text.Culture, _text["MeasureStep"], FineStep.ToString("0.##", _text.Culture), UnitLabel);
@@ -106,6 +121,17 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged
         }
 
         return lengthUnit == LengthUnitEnum.In ? 0.25m : 1m;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _text.PropertyChanged -= OnCultureChanged;
     }
 
     public void SelectRange(MeasurementScaleRangeModel range)

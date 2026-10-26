@@ -10,6 +10,9 @@ public sealed class FishingLoaderView : GraphicsView
 
     private const string AnimationName = "loader-phase";
     private readonly LoaderDrawable _drawable = new();
+    private Window? _window;
+    private bool _windowActive = true;
+    private bool _paused;
 
     public FishingLoaderView()
     {
@@ -39,6 +42,19 @@ public sealed class FishingLoaderView : GraphicsView
         set => SetValue(ReduceMotionProperty, value);
     }
 
+    public bool IsPaused
+    {
+        get => _paused;
+        set
+        {
+            if (_paused != value)
+            {
+                _paused = value;
+                UpdateMotion();
+            }
+        }
+    }
+
     private static void OnKindChanged(BindableObject bindable, object oldValue, object newValue)
     {
         ((FishingLoaderView)bindable).UpdateMotion();
@@ -53,10 +69,52 @@ public sealed class FishingLoaderView : GraphicsView
     {
         if (Application.Current is { } application)
         {
+            application.RequestedThemeChanged -= OnThemeChanged;
             application.RequestedThemeChanged += OnThemeChanged;
         }
 
+        AttachWindow();
         UpdateMotion();
+    }
+
+    private void OnWindowStopped(object? sender, EventArgs args)
+    {
+        _windowActive = false;
+        UpdateMotion();
+    }
+
+    private void OnWindowResumed(object? sender, EventArgs args)
+    {
+        _windowActive = true;
+        UpdateMotion();
+    }
+
+    private void AttachWindow()
+    {
+        DetachWindow();
+        _window = Window;
+        if (_window is null)
+        {
+            return;
+        }
+
+        _window.Stopped += OnWindowStopped;
+        _window.Resumed += OnWindowResumed;
+        _windowActive = true;
+    }
+
+    private void DetachWindow()
+    {
+        if (_window is null)
+        {
+            _windowActive = false;
+            return;
+        }
+
+        _window.Stopped -= OnWindowStopped;
+        _window.Resumed -= OnWindowResumed;
+        _window = null;
+        _windowActive = false;
     }
 
     private void OnUnloaded(object? sender, EventArgs args)
@@ -66,6 +124,7 @@ public sealed class FishingLoaderView : GraphicsView
             application.RequestedThemeChanged -= OnThemeChanged;
         }
 
+        DetachWindow();
         this.AbortAnimation(AnimationName);
     }
 
@@ -77,7 +136,7 @@ public sealed class FishingLoaderView : GraphicsView
     private void UpdateMotion()
     {
         this.AbortAnimation(AnimationName);
-        if (!IsLoaded || !IsRunning || ReduceMotion)
+        if (!LoaderPlayback.ShouldAnimate(IsLoaded, IsRunning, _paused, _windowActive, ReduceMotion))
         {
             Sync(LoaderMotion.StillPhase(Kind));
             return;

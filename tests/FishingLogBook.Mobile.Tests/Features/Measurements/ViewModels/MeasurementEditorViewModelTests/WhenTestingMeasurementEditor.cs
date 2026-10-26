@@ -67,6 +67,36 @@ public class WhenTestingMeasurementEditor
     }
 
     [Fact]
+    public void ItShouldSynchroniseExactEntryAfterRapidSliderMovementsAcrossBothBoundaries()
+    {
+        // Arrange
+        var sut = Create(MeasurementKindEnum.Weight);
+        // Act
+        sut.SetSliderFraction(-0.2m);
+        sut.SetSliderFraction(1.2m);
+        sut.SetSliderFraction(0.37m);
+        // Assert
+        sut.CanonicalValue.Should().Be(1.9m);
+        sut.SliderValue.Should().Be(1.9m);
+        sut.ExactText.Should().Be("1.9");
+        sut.Fraction.Should().Be(0.38m);
+    }
+
+    [Fact]
+    public void ItShouldSynchroniseSliderAndVisualFractionAfterExactEntry()
+    {
+        // Arrange
+        var sut = Create(MeasurementKindEnum.Length);
+        // Act
+        sut.SetExactText("12.5");
+        // Assert
+        sut.CanonicalValue.Should().Be(12.5m);
+        sut.SliderValue.Should().Be(12.5m);
+        sut.ExactText.Should().Be("12.5");
+        sut.Fraction.Should().Be(12.5m / 30m);
+    }
+
+    [Fact]
     public void ItShouldRollOuncesIntoThePoundWhenIncreasingPastFifteen()
     {
         // Arrange

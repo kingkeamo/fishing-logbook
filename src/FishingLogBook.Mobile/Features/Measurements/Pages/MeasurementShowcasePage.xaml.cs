@@ -2,6 +2,7 @@ using FishingLogBook.Mobile.Features.Measurements.Models;
 using FishingLogBook.Mobile.Features.Measurements.ViewModels;
 using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Native.Controls;
 using FishingLogBook.Mobile.Presentation;
 using FishingLogBook.Shared.Measurements;
 
@@ -27,7 +28,7 @@ public partial class MeasurementShowcasePage : ContentPage
         BindingContext = text;
         Editor.ReduceMotion = _reduceMotion;
         MotionLabel.Text = text[_reduceMotion ? "ReducedMotionOn" : "ReducedMotionOff"];
-        foreach (var loader in new[] { LeapLoader, LeapSmallLoader, BoatLoader, BoatSmallLoader, BobberLoader, BobberSmallLoader })
+        foreach (var loader in Loaders())
         {
             loader.ReduceMotion = _reduceMotion;
         }
@@ -38,10 +39,36 @@ public partial class MeasurementShowcasePage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        if (Editor.ViewModel is { } vm && (vm.WeightUnit != _preferences.WeightUnit || vm.LengthUnit != _preferences.LengthUnit))
+        if (Editor.ViewModel is not { } vm)
+        {
+            Rebuild();
+        }
+        else if (vm.WeightUnit != _preferences.WeightUnit || vm.LengthUnit != _preferences.LengthUnit)
         {
             StoreCurrent();
             Rebuild();
+        }
+
+        SetLoadersPaused(false);
+    }
+
+    protected override void OnDisappearing()
+    {
+        SetLoadersPaused(true);
+        Release();
+        base.OnDisappearing();
+    }
+
+    private IEnumerable<FishingLoaderView> Loaders()
+    {
+        return [LeapLoader, LeapSmallLoader, BoatLoader, BoatSmallLoader, BobberLoader, BobberSmallLoader];
+    }
+
+    private void SetLoadersPaused(bool paused)
+    {
+        foreach (var loader in Loaders())
+        {
+            loader.IsPaused = paused;
         }
     }
 
@@ -52,15 +79,35 @@ public partial class MeasurementShowcasePage : ContentPage
 
     private void Rebuild()
     {
+        var previous = Editor.ViewModel;
         Editor.ViewModel = CreateViewModel(_kind, _kind == MeasurementKindEnum.Weight ? _weight : _length);
+        previous?.Dispose();
         RefreshTiles();
         ResultLabel.Text = string.Empty;
     }
 
+    private void Release()
+    {
+        if (Editor.ViewModel is not { } vm)
+        {
+            return;
+        }
+
+        StoreCurrent();
+        Editor.ViewModel = null;
+        vm.Dispose();
+    }
+
+    private string TileText(MeasurementKindEnum kind, decimal? canonical)
+    {
+        using var vm = CreateViewModel(kind, canonical);
+        return vm.DisplayText;
+    }
+
     private void RefreshTiles()
     {
-        WeightValue.Text = CreateViewModel(MeasurementKindEnum.Weight, _weight).DisplayText;
-        LengthValue.Text = CreateViewModel(MeasurementKindEnum.Length, _length).DisplayText;
+        WeightValue.Text = TileText(MeasurementKindEnum.Weight, _weight);
+        LengthValue.Text = TileText(MeasurementKindEnum.Length, _length);
     }
 
     private void StoreCurrent()

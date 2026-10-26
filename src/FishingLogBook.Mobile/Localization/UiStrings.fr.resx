@@ -157,6 +157,9 @@
   <data name="MeasureExact" xml:space="preserve"><value>Valeur exacte ({0})</value></data>
   <data name="MeasureSlide" xml:space="preserve"><value>Faites glisser pour ajuster</value></data>
   <data name="MeasureRangeGroup" xml:space="preserve"><value>Plage de l’échelle</value></data>
+  <data name="MeasureRangeSelected" xml:space="preserve"><value>{0}, sélectionné</value></data>
+  <data name="MeasureRangeUnavailable" xml:space="preserve"><value>{0}, indisponible pour cette valeur</value></data>
+  <data name="MeasureRangeHint" xml:space="preserve"><value>Touchez deux fois pour utiliser cette plage</value></data>
   <data name="MeasureRangeSmall" xml:space="preserve"><value>Petit</value></data>
   <data name="MeasureRangeMedium" xml:space="preserve"><value>Moyen</value></data>
   <data name="MeasureRangeLarge" xml:space="preserve"><value>Grand</value></data>

@@ -1,4 +1,5 @@
 using FishingLogBook.Mobile.Features.Measurements.Models;
+using FishingLogBook.Mobile.Presentation;
 
 namespace FishingLogBook.Mobile.Native.Controls;
 
@@ -116,26 +117,12 @@ public sealed class MeasurementVisualView : GraphicsView
 
     private double TapeFraction(PointF point)
     {
-        var scale = _drawable.Scale <= 0f ? 1f : _drawable.Scale;
-        var viewBoxX = (point.X - _drawable.OffsetX) / scale;
-        return Math.Clamp((viewBoxX - 62f) / 166f, 0d, 1d);
+        return MeasurementGestureMath.TapeFraction(point.X, _drawable.OffsetX, _drawable.Scale);
     }
 
     private double DialFraction(PointF point)
     {
         var centre = _drawable.DialCentre;
-        var angle = Math.Atan2(point.X - centre.X, centre.Y - point.Y);
-        var fraction = (angle < 0 ? angle + (2d * Math.PI) : angle) / (2d * Math.PI);
-        if (Fraction > 0.75d && fraction < 0.25d)
-        {
-            return 1d;
-        }
-
-        if (Fraction < 0.25d && fraction > 0.75d)
-        {
-            return 0d;
-        }
-
-        return fraction;
+        return MeasurementGestureMath.DialFraction(point.X - centre.X, centre.Y - point.Y, Fraction);
     }
 }

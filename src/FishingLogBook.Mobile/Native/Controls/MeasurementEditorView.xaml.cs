@@ -10,12 +10,14 @@ public partial class MeasurementEditorView : ContentView
     public static readonly BindableProperty ReduceMotionProperty = BindableProperty.Create(nameof(ReduceMotion), typeof(bool), typeof(MeasurementEditorView), false, propertyChanged: OnReduceMotionChanged);
 
     private bool _syncing;
+    private bool _showRangeLabels;
     private string _rangeSignature = string.Empty;
 
     public MeasurementEditorView()
     {
         InitializeComponent();
         MeasureVisual.FractionDragged += OnFractionDragged;
+        SizeChanged += OnSizeChanged;
         Loaded += (_, _) =>
         {
             if (Application.Current is { } app)
@@ -77,6 +79,19 @@ public partial class MeasurementEditorView : ContentView
         Refresh();
     }
 
+    private void OnSizeChanged(object? sender, EventArgs args)
+    {
+        var showRangeLabels = Width >= 420d;
+        if (_showRangeLabels == showRangeLabels)
+        {
+            return;
+        }
+
+        _showRangeLabels = showRangeLabels;
+        _rangeSignature = string.Empty;
+        Refresh();
+    }
+
     private void Refresh()
     {
         if (ViewModel is not { } vm)
@@ -105,7 +120,7 @@ public partial class MeasurementEditorView : ContentView
     private void RebuildRanges(MeasurementEditorViewModel vm)
     {
         var theme = Application.Current?.RequestedTheme ?? AppTheme.Light;
-        var signature = $"{theme}|{vm.IsWeight}|{vm.SelectedRange.Range}|{vm.Title}|" + string.Join(',', vm.Ranges.Select(range => range.CanDisplay(vm.CanonicalValue)));
+        var signature = $"{theme}|{_showRangeLabels}|{vm.IsWeight}|{vm.SelectedRange.Range}|{vm.Title}|" + string.Join(',', vm.Ranges.Select(range => range.CanDisplay(vm.CanonicalValue)));
         if (signature == _rangeSignature)
         {
             return;
@@ -115,39 +130,47 @@ public partial class MeasurementEditorView : ContentView
         Ranges.Children.Clear();
         foreach (var range in vm.Ranges.Reverse())
         {
-            Ranges.Children.Add(BuildRange(vm, range, theme));
+            Ranges.Children.Add(BuildRange(vm, range, theme, _showRangeLabels));
         }
     }
 
-    private static Border BuildRange(MeasurementEditorViewModel vm, MeasurementScaleRangeModel range, AppTheme theme)
+    private static Border BuildRange(MeasurementEditorViewModel vm, MeasurementScaleRangeModel range, AppTheme theme, bool showLabel)
     {
         var dark = theme == AppTheme.Dark;
         var accent = Resource(dark ? "PrimaryDark" : "Primary");
         var surface = Resource(dark ? "DarkSurface" : "Paper");
         var selected = range == vm.SelectedRange;
         var enabled = range.CanDisplay(vm.CanonicalValue);
-        var label = new Label
-        {
-            Text = TextFor(range),
-            FontSize = 12,
-            VerticalOptions = LayoutOptions.Center,
-            LineBreakMode = LineBreakMode.NoWrap,
-            TextColor = accent,
-            FontAttributes = selected ? FontAttributes.Bold : FontAttributes.None
-        };
         var fish = new GraphicsView
         {
             Drawable = new FishGlyphDrawable(accent, surface),
             WidthRequest = 32 * FishScale(range.Range),
             HeightRequest = 20 * FishScale(range.Range),
+            HorizontalOptions = LayoutOptions.Center,
             VerticalOptions = LayoutOptions.Center
         };
-        var row = new HorizontalStackLayout { Spacing = 4, Children = { fish, label } };
+        View content = fish;
+        if (showLabel)
+        {
+            var label = new Label
+            {
+                Text = vm.RangeLabel(range),
+                FontSize = 12,
+                VerticalOptions = LayoutOptions.Center,
+                LineBreakMode = LineBreakMode.NoWrap,
+                TextColor = accent,
+                FontAttributes = selected ? FontAttributes.Bold : FontAttributes.None
+            };
+            content = new HorizontalStackLayout { Spacing = 4, Children = { fish, label } };
+        }
+
         var border = new Border
         {
-            Content = row,
-            Padding = new Thickness(8, 0),
-            MinimumHeightRequest = 44,
+            Content = content,
+            Padding = showLabel ? new Thickness(8, 0) : 0,
+            HeightRequest = 48,
+            MinimumHeightRequest = 48,
+            MinimumWidthRequest = 48,
             StrokeThickness = selected ? 1.5 : 0,
             Stroke = accent,
             BackgroundColor = selected ? surface : Colors.Transparent,
@@ -155,7 +178,13 @@ public partial class MeasurementEditorView : ContentView
             StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 10 },
             AutomationId = "MeasurementRange" + range.Range
         };
-        SemanticProperties.SetDescription(border, label.Text);
+        if (!showLabel)
+        {
+            border.WidthRequest = 48;
+        }
+
+        SemanticProperties.SetDescription(border, vm.RangeDescription(range));
+        SemanticProperties.SetHint(border, enabled ? vm.RangeHint : string.Empty);
         if (enabled)
         {
             var tap = new TapGestureRecognizer();
@@ -164,11 +193,6 @@ public partial class MeasurementEditorView : ContentView
         }
 
         return border;
-
-        string TextFor(MeasurementScaleRangeModel item)
-        {
-            return vm.RangeLabel(item);
-        }
     }
 
     private static double FishScale(MeasurementScaleRangeEnum range)

@@ -10,7 +10,7 @@
       <VerticalStackLayout x:Name="Ranges" Grid.Column="1" Spacing="2" VerticalOptions="Center" SemanticProperties.Description="{Binding RangeGroupLabel}" />
       <Border Grid.Column="0" StrokeThickness="0" Padding="8" BackgroundColor="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}">
         <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
-        <controls:MeasurementVisualView x:Name="MeasureVisual" Kind="{Binding Kind}" Fraction="{Binding FractionValue}" HeightRequest="150"
+        <controls:MeasurementVisualView x:Name="MeasureVisual" Kind="{Binding Kind}" Fraction="{Binding FractionValue}" HeightRequest="192"
                                         AccentColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
                                         SurfaceColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}"
                                         SemanticProperties.Description="{Binding CurrentDescription}"
