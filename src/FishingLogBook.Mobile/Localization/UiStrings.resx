@@ -200,4 +200,23 @@
   <data name="SignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
   <data name="SignOut" xml:space="preserve"><value>Sign out</value></data>
   <data name="SignOutDescription" xml:space="preserve"><value>Sign out of this account on this device</value></data>
+  <data name="FishingPreferences" xml:space="preserve"><value>Fishing preferences</value></data>
+  <data name="FishingPreferencesReadOnly" xml:space="preserve"><value>Saved to your account. To change them, edit your profile in the web app.</value></data>
+  <data name="PreferredMethods" xml:space="preserve"><value>Methods and species</value></data>
+  <data name="PreferredLocations" xml:space="preserve"><value>Preferred locations</value></data>
+  <data name="NoPreferredMethods" xml:space="preserve"><value>No fishing methods chosen yet.</value></data>
+  <data name="NoPreferredSpecies" xml:space="preserve"><value>No species chosen</value></data>
+  <data name="NoPreferredLocations" xml:space="preserve"><value>No preferred locations yet.</value></data>
+  <data name="PreferenceDefault" xml:space="preserve"><value>{0} (default)</value></data>
+  <data name="PreferencesLoadingTitle" xml:space="preserve"><value>Loading your preferences</value></data>
+  <data name="PreferencesLoadingBody" xml:space="preserve"><value>Please wait a moment.</value></data>
+  <data name="PreferencesOfflineTitle" xml:space="preserve"><value>You’re offline</value></data>
+  <data name="PreferencesOfflineBody" xml:space="preserve"><value>Your fishing preferences will load when you’re back online.</value></data>
+  <data name="PreferencesErrorTitle" xml:space="preserve"><value>Preferences unavailable</value></data>
+  <data name="PreferencesErrorBody" xml:space="preserve"><value>We couldn’t load your fishing preferences. You can try again.</value></data>
+  <data name="PreferencesSessionExpiredTitle" xml:space="preserve"><value>Your sign-in needs refreshing</value></data>
+  <data name="PreferencesSessionExpiredBody" xml:space="preserve"><value>We couldn’t confirm your session. Check your connection and try again, or sign out and sign in again.</value></data>
+  <data name="PreferencesOfflineCached" xml:space="preserve"><value>Showing your saved preferences. They’ll refresh when you’re back online.</value></data>
+  <data name="PreferencesErrorCached" xml:space="preserve"><value>Showing your saved preferences. We couldn’t refresh them.</value></data>
+  <data name="PreferencesSessionExpiredCached" xml:space="preserve"><value>Showing your saved preferences. We couldn’t confirm your session, so they may be out of date.</value></data>
 </root>

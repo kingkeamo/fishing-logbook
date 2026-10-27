@@ -42,6 +42,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Configuration\mobileauth.$(MobileEnvironment).json" LogicalName="FishingLogBook.Mobile.mobileauth.json" />
+    <EmbeddedResource Include="../FishingLogBook.Web/Localization/FishingMethodStrings.resx" Link="Localization/FishingMethodStrings.resx" LogicalName="FishingLogBook.Mobile.Localization.FishingMethodStrings.resources" />
+    <EmbeddedResource Include="../FishingLogBook.Web/Localization/FishingMethodStrings.fr.resx" Link="Localization/FishingMethodStrings.fr.resx" LogicalName="FishingLogBook.Mobile.Localization.FishingMethodStrings.fr.resources" />
+    <EmbeddedResource Include="../FishingLogBook.Web/Localization/SpeciesStrings.resx" Link="Localization/SpeciesStrings.resx" LogicalName="FishingLogBook.Mobile.Localization.SpeciesStrings.resources" />
+    <EmbeddedResource Include="../FishingLogBook.Web/Localization/SpeciesStrings.fr.resx" Link="Localization/SpeciesStrings.fr.resx" LogicalName="FishingLogBook.Mobile.Localization.SpeciesStrings.fr.resources" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
     <PackageReference Include="Microsoft.Maui.Controls" />

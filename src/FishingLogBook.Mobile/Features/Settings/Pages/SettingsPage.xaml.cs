@@ -1,4 +1,5 @@
 using FishingLogBook.Mobile.Features.Authentication.Services;
+using FishingLogBook.Mobile.Features.Profile.ViewModels;
 using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Shared.Enums;
 
@@ -9,22 +10,27 @@ public partial class SettingsPage : ContentPage
     private readonly PreferenceService _preferences;
     private readonly LocalDataService _localData;
     private readonly IAuthenticationService _authenticationService;
+    private readonly AnglerPreferencesViewModel _anglerPreferences;
     private bool _refreshing;
 
     public SettingsPage(
         PreferenceService preferences,
         LocalDataService localData,
-        IAuthenticationService authenticationService)
+        IAuthenticationService authenticationService,
+        AnglerPreferencesViewModel anglerPreferences)
     {
         _preferences = preferences;
         _localData = localData;
         _authenticationService = authenticationService;
+        _anglerPreferences = anglerPreferences;
         InitializeComponent();
         BindingContext = preferences;
+        FishingPreferencesCard.BindingContext = anglerPreferences;
+        _anglerPreferences.Attach(action => Dispatcher.Dispatch(action));
         RefreshSelection();
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
         var email = _authenticationService.CurrentSession?.Email ?? string.Empty;
@@ -32,6 +38,7 @@ public partial class SettingsPage : ContentPage
             _preferences.Text.Culture,
             _preferences.Text["SignedInAs"],
             email);
+        await _anglerPreferences.LoadAsync(CancellationToken.None);
     }
 
     private void RefreshSelection()
@@ -101,5 +108,10 @@ public partial class SettingsPage : ContentPage
     private async void OnSignOut(object? sender, EventArgs args)
     {
         await _authenticationService.SignOutAsync(CancellationToken.None);
+    }
+
+    private async void OnRetryPreferences(object? sender, EventArgs args)
+    {
+        await _anglerPreferences.LoadAsync(CancellationToken.None);
     }
 }
