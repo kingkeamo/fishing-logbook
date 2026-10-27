@@ -25,6 +25,7 @@ using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Mobile.Features.Showcase.Pages;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Browsers;
 using FishingLogBook.Mobile.Native.Services;
@@ -88,7 +89,9 @@ public static partial class MauiProgram
             .AddHttpMessageHandler<ApiBearerHandler>();
         builder.Services.AddTransient<IFishingPreferenceClient, FishingPreferenceClient>();
         builder.Services.AddTransient<IFishingLocationClient, FishingLocationClient>();
-        builder.Services.AddSingleton<IAnglerPreferencesStore>(_ => new FileAnglerPreferencesStore(
+        builder.Services.AddSingleton<IFileSystemAdapter, FileSystemAdapter>();
+        builder.Services.AddSingleton<IAnglerPreferencesStore>(services => new FileAnglerPreferencesStore(
+            services.GetRequiredService<IFileSystemAdapter>(),
             Path.Combine(FileSystem.AppDataDirectory, "angler-preferences")));
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
         builder.Services.AddSingleton<CatalogueTextService>();

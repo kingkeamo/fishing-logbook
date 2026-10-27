@@ -1,9 +1,9 @@
-using System.Collections;
+using System.Text;
 using System.Text.Json;
 using AwesomeAssertions;
-using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Tests.Support;
-using FishingLogBook.Shared.Dtos;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace FishingLogBook.Mobile.Tests.Features.Profile.Stores.FileAnglerPreferencesStoreTests;
 
@@ -17,86 +17,165 @@ public class WhenTestingSave : BaseFileAnglerPreferencesStoreTest
         // Act
         // Assert
         await action.Should().ThrowAsync<ArgumentException>();
-        System.IO.Directory.Exists(Directory).Should().BeFalse();
+        MockFileSystem.ReceivedCalls().Should().BeEmpty();
     }
 
     [Fact]
-    public async Task ItShouldRemoveTheTemporaryFileAndKeepThePreviousCacheWhenTheWriteIsCancelled()
+    public async Task ItShouldWriteATemporaryFileAndThenReplaceTheAccountsCache()
     {
         // Arrange
-        var previous = TestAnglerPreferences.Empty();
-        await Sut.SaveAsync(FirstUserId, previous, CancellationToken.None);
-        using var cancellation = new CancellationTokenSource();
-        var cancelling = TestAnglerPreferences.Create() with
-        {
-            Catalogue = new FishingCatalogueDto(new CancellingList<FishingMethodDto>(cancellation), [])
-        };
-        var action = () => Sut.SaveAsync(FirstUserId, cancelling, cancellation.Token);
+        var saved = TestAnglerPreferences.Create();
         // Act
-        await action.Should().ThrowAsync<OperationCanceledException>();
+        await Sut.SaveAsync(FirstUserId, saved, CancellationToken.None);
         // Assert
-        cancellation.IsCancellationRequested.Should().BeTrue();
-        System.IO.Directory.GetFiles(Directory).Should().Equal(PathFor(FirstUserId));
-        (await Sut.GetAsync(FirstUserId, CancellationToken.None)).Should().BeEquivalentTo(previous);
+        CreatedFiles.Should().ContainSingle();
+        var (temporaryPath, stream) = CreatedFiles[0];
+        IsTemporaryPathFor(temporaryPath, FirstUserId).Should().BeTrue();
+        Deserialize(stream).Should().BeEquivalentTo(saved);
+        MockFileSystem.Received(1).CreateDirectory(Directory);
+        MockFileSystem.Received(1).MoveFile(temporaryPath, PathFor(FirstUserId), true);
+        MockFileSystem.DidNotReceive().DeleteFile(Arg.Any<string>());
     }
 
     [Fact]
-    public async Task ItShouldRemoveTheTemporaryFileWhenTheCacheCannotBeReplaced()
+    public async Task ItShouldUseADifferentTemporaryFileForEachSave()
     {
         // Arrange
-        System.IO.Directory.CreateDirectory(PathFor(FirstUserId));
+        // Act
+        await Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None);
+        await Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Empty(), CancellationToken.None);
+        // Assert
+        CreatedFiles.Select(file => file.Path).Should().OnlyHaveUniqueItems()
+            .And.HaveCount(2)
+            .And.OnlyContain(path => IsTemporaryPathFor(path, FirstUserId));
+        MockFileSystem.Received(2).MoveFile(Arg.Any<string>(), PathFor(FirstUserId), true);
+    }
+
+    [Fact]
+    public async Task ItShouldNotStartASecondSaveForTheSameAccountUntilTheFirstHasFinished()
+    {
+        // Arrange
+        using var firstWriteStarted = new ManualResetEventSlim();
+        using var releaseFirstWrite = new ManualResetEventSlim();
+        var creates = 0;
+        MockFileSystem.Create(Arg.Any<string>()).Returns(_ =>
+        {
+            if (Interlocked.Increment(ref creates) == 1)
+            {
+                firstWriteStarted.Set();
+                releaseFirstWrite.Wait(TimeSpan.FromSeconds(10));
+            }
+
+            return new MemoryStream();
+        });
+        var first = Task.Run(() => Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None));
+        firstWriteStarted.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+        var second = Task.Run(() => Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Empty(), CancellationToken.None));
+        // Act
+        await Task.Delay(TimeSpan.FromMilliseconds(100));
+        var createsWhileFirstWriteWasRunning = Volatile.Read(ref creates);
+        releaseFirstWrite.Set();
+        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(10));
+        // Assert
+        createsWhileFirstWriteWasRunning.Should().Be(1);
+        MockFileSystem.Received(2).Create(Arg.Any<string>());
+        MockFileSystem.Received(2).MoveFile(Arg.Any<string>(), PathFor(FirstUserId), true);
+    }
+
+    [Fact]
+    public async Task ItShouldDeleteTheTemporaryFileAndKeepThePreviousCacheWhenTheWriteIsCancelled()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        string? temporaryPath = null;
+        MockFileSystem.Create(Arg.Any<string>()).Returns(call =>
+        {
+            temporaryPath = call.Arg<string>();
+            cancellation.Cancel();
+            return new MemoryStream();
+        });
+        var action = () => Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), cancellation.Token);
+        // Act
+        // Assert
+        await action.Should().ThrowAsync<OperationCanceledException>();
+        temporaryPath.Should().NotBeNull();
+        MockFileSystem.Received(1).DeleteFile(temporaryPath!);
+        MockFileSystem.DidNotReceive().MoveFile(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotTouchTheFileSystemWhenCancelledBeforeTheSaveStarts()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+        var action = () => Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), cancellation.Token);
+        // Act
+        // Assert
+        await action.Should().ThrowAsync<OperationCanceledException>();
+        MockFileSystem.ReceivedCalls().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldDeleteTheTemporaryFileWhenTheCacheCannotBeReplaced()
+    {
+        // Arrange
+        MockFileSystem
+            .When(fileSystem => fileSystem.MoveFile(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()))
+            .Throw(new IOException("Replace failed."));
         var action = () => Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None);
         // Act
-        await action.Should().ThrowAsync<Exception>();
         // Assert
-        System.IO.Directory.GetFiles(Directory).Should().BeEmpty();
-        System.IO.Directory.Exists(PathFor(FirstUserId)).Should().BeTrue();
+        await action.Should().ThrowAsync<IOException>();
+        var temporaryPath = CreatedFiles.Should().ContainSingle().Subject.Path;
+        MockFileSystem.Received(1).DeleteFile(temporaryPath);
     }
 
     [Fact]
-    public async Task ItShouldCompleteConcurrentSavesForTheSameAccountWithOneIntactCache()
+    public async Task ItShouldReportTheOriginalFailureWhenTheTemporaryFileCannotBeDeleted()
     {
         // Arrange
-        var full = TestAnglerPreferences.Create();
-        var empty = TestAnglerPreferences.Empty();
-        var saves = Enumerable.Range(0, 25)
-            .Select(index => Task.Run(() => Sut.SaveAsync(FirstUserId, index % 2 == 0 ? full : empty, CancellationToken.None)));
+        MockFileSystem
+            .When(fileSystem => fileSystem.MoveFile(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()))
+            .Throw(new IOException("Replace failed."));
+        MockFileSystem
+            .When(fileSystem => fileSystem.DeleteFile(Arg.Any<string>()))
+            .Throw(new UnauthorizedAccessException());
+        var action = () => Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None);
         // Act
-        await Task.WhenAll(saves);
         // Assert
-        System.IO.Directory.GetFiles(Directory).Should().Equal(PathFor(FirstUserId));
-        var result = await Sut.GetAsync(FirstUserId, CancellationToken.None);
-        result.Should().Match<AnglerPreferencesModel>(saved =>
-            saved.Preferences.Methods.Count == full.Preferences.Methods.Count ||
-            saved.Preferences.Methods.Count == empty.Preferences.Methods.Count);
+        await action.Should().ThrowAsync<IOException>().WithMessage("Replace failed.");
+        MockFileSystem.Received(1).DeleteFile(Arg.Any<string>());
     }
 
     [Fact]
-    public async Task ItShouldReplaceTheAccountsPreviousCacheWithoutLeavingTemporaryFiles()
+    public async Task ItShouldAcceptLaterSavesAfterASaveFails()
     {
         // Arrange
-        await Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None);
-        var replacement = TestAnglerPreferences.Empty();
+        MockFileSystem
+            .When(fileSystem => fileSystem.MoveFile(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()))
+            .Do(Callback.First(_ => throw new IOException("Replace failed.")));
+        var failedSave = () => Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None);
+        await failedSave.Should().ThrowAsync<IOException>();
         // Act
-        await Sut.SaveAsync(FirstUserId, replacement, CancellationToken.None);
+        await Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Empty(), CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(10));
         // Assert
-        var result = await Sut.GetAsync(FirstUserId, CancellationToken.None);
-        result.Should().BeEquivalentTo(replacement);
-        System.IO.Directory.GetFiles(Directory).Should().Equal(PathFor(FirstUserId));
+        MockFileSystem.Received(2).MoveFile(Arg.Any<string>(), PathFor(FirstUserId), true);
     }
 
     [Fact]
     public async Task ItShouldKeepEachAccountInItsOwnFile()
     {
         // Arrange
-        var first = TestAnglerPreferences.Create();
-        var second = TestAnglerPreferences.Empty();
         // Act
-        await Sut.SaveAsync(FirstUserId, first, CancellationToken.None);
-        await Sut.SaveAsync(SecondUserId, second, CancellationToken.None);
+        await Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None);
+        await Sut.SaveAsync(SecondUserId, TestAnglerPreferences.Empty(), CancellationToken.None);
         // Assert
-        (await Sut.GetAsync(FirstUserId, CancellationToken.None)).Should().BeEquivalentTo(first);
-        (await Sut.GetAsync(SecondUserId, CancellationToken.None)).Should().BeEquivalentTo(second);
+        MockFileSystem.Received(1).MoveFile(
+            Arg.Is<string>(path => IsTemporaryPathFor(path, FirstUserId)), PathFor(FirstUserId), true);
+        MockFileSystem.Received(1).MoveFile(
+            Arg.Is<string>(path => IsTemporaryPathFor(path, SecondUserId)), PathFor(SecondUserId), true);
     }
 
     [Fact]
@@ -106,29 +185,11 @@ public class WhenTestingSave : BaseFileAnglerPreferencesStoreTest
         // Act
         await Sut.SaveAsync(FirstUserId, TestAnglerPreferences.Create(), CancellationToken.None);
         // Assert
-        var json = await File.ReadAllTextAsync(PathFor(FirstUserId));
+        var json = Encoding.UTF8.GetString(CreatedFiles.Should().ContainSingle().Subject.Stream.ToArray());
         using var document = JsonDocument.Parse(json);
         document.RootElement.EnumerateObject().Select(property => property.Name)
             .Should().BeEquivalentTo("catalogue", "preferences", "locations");
         json.Should().NotContainEquivalentOf("token");
         json.Should().NotContainEquivalentOf("bearer");
-    }
-
-    private sealed class CancellingList<T>(CancellationTokenSource cancellation) : IReadOnlyList<T>
-    {
-        public int Count => 0;
-
-        public T this[int index] => throw new ArgumentOutOfRangeException(nameof(index));
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            cancellation.Cancel();
-            return Enumerable.Empty<T>().GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
     }
 }

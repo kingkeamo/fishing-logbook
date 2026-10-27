@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FishingLogBook.Mobile.Features.Profile.Models;
+using FishingLogBook.Mobile.IO.Adapters;
 
 namespace FishingLogBook.Mobile.Features.Profile.Stores;
 
@@ -7,11 +8,14 @@ public sealed class FileAnglerPreferencesStore : IAnglerPreferencesStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
     private readonly SemaphoreSlim _fileGate = new(1, 1);
+    private readonly IFileSystemAdapter _fileSystem;
     private readonly string _directory;
 
-    public FileAnglerPreferencesStore(string directory)
+    public FileAnglerPreferencesStore(IFileSystemAdapter fileSystem, string directory)
     {
+        ArgumentNullException.ThrowIfNull(fileSystem);
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
+        _fileSystem = fileSystem;
         _directory = directory;
     }
 
@@ -21,12 +25,12 @@ public sealed class FileAnglerPreferencesStore : IAnglerPreferencesStore
         await _fileGate.WaitAsync(cancellationToken);
         try
         {
-            if (!File.Exists(path))
+            if (!_fileSystem.FileExists(path))
             {
                 return null;
             }
 
-            await using var stream = File.OpenRead(path);
+            await using var stream = _fileSystem.OpenRead(path);
             return await JsonSerializer.DeserializeAsync<AnglerPreferencesModel>(stream, SerializerOptions, cancellationToken);
         }
         finally
@@ -40,29 +44,35 @@ public sealed class FileAnglerPreferencesStore : IAnglerPreferencesStore
         ArgumentNullException.ThrowIfNull(preferences);
         var path = GetPath(userId);
         var temporaryPath = $"{path}.{Guid.NewGuid():N}.tmp";
+        var replaced = false;
         await _fileGate.WaitAsync(cancellationToken);
         try
         {
-            Directory.CreateDirectory(_directory);
-            await using (var stream = File.Create(temporaryPath))
+            _fileSystem.CreateDirectory(_directory);
+            await using (var stream = _fileSystem.Create(temporaryPath))
             {
                 await JsonSerializer.SerializeAsync(stream, preferences, SerializerOptions, cancellationToken);
             }
 
-            File.Move(temporaryPath, path, overwrite: true);
+            _fileSystem.MoveFile(temporaryPath, path, overwrite: true);
+            replaced = true;
         }
         finally
         {
-            DeleteTemporaryFile(temporaryPath);
+            if (!replaced)
+            {
+                DeleteTemporaryFile(temporaryPath);
+            }
+
             _fileGate.Release();
         }
     }
 
-    private static void DeleteTemporaryFile(string temporaryPath)
+    private void DeleteTemporaryFile(string temporaryPath)
     {
         try
         {
-            File.Delete(temporaryPath);
+            _fileSystem.DeleteFile(temporaryPath);
         }
         catch (IOException)
         {
