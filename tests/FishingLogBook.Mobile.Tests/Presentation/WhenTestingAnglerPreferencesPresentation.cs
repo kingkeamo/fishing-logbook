@@ -75,6 +75,22 @@ public class WhenTestingAnglerPreferencesPresentation
             .Should().OnlyContain(name => name!.StartsWith("UiStrings", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void ItShouldDeclareTheAndroidConnectivityPermissionUsedByProfile()
+    {
+        // Arrange
+        var manifestPath = Path.Combine(MobileRoot, "Platforms", "Android", "AndroidManifest.xml");
+
+        // Act
+        var manifest = XDocument.Load(manifestPath);
+        XNamespace android = "http://schemas.android.com/apk/res/android";
+
+        // Assert
+        manifest.Root!.Elements("uses-permission")
+            .Select(element => (string?)element.Attribute(android + "name"))
+            .Should().Contain("android.permission.ACCESS_NETWORK_STATE");
+    }
+
     private static Dictionary<string, string> GetValues(XDocument document)
     {
         return document.Descendants("data")
