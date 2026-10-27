@@ -1,4 +1,5 @@
 using CommunityToolkit.Maui;
+using FishingLogBook.Mobile.Api.Clients;
 using FishingLogBook.Mobile.Configuration;
 using FishingLogBook.Mobile.Features.Authentication.Browsers;
 using FishingLogBook.Mobile.Features.Authentication.Clients;
@@ -15,6 +16,10 @@ using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
+using FishingLogBook.Mobile.Features.Profile.Clients;
+using FishingLogBook.Mobile.Features.Profile.Services;
+using FishingLogBook.Mobile.Features.Profile.Stores;
+using FishingLogBook.Mobile.Features.Profile.ViewModels;
 using FishingLogBook.Mobile.Features.Settings.Pages;
 using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Mobile.Features.Showcase.Pages;
@@ -77,10 +82,17 @@ public static partial class MauiProgram
                 client.BaseAddress = new Uri(authConfig.HostedUiDomain.TrimEnd('/') + "/"))
             .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create);
         builder.Services
-            .AddHttpClient(AuthenticationHttpClientConstants.AuthorizedApi, client =>
+            .AddHttpClient<AuthorizedApiClient>(AuthenticationHttpClientConstants.AuthorizedApi, client =>
                 client.BaseAddress = new Uri(authConfig.ApiBaseUrl.TrimEnd('/') + "/"))
             .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create)
             .AddHttpMessageHandler<ApiBearerHandler>();
+        builder.Services.AddTransient<IFishingPreferenceClient, FishingPreferenceClient>();
+        builder.Services.AddTransient<IFishingLocationClient, FishingLocationClient>();
+        builder.Services.AddSingleton<IAnglerPreferencesStore>(_ => new FileAnglerPreferencesStore(
+            Path.Combine(FileSystem.AppDataDirectory, "angler-preferences")));
+        builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
+        builder.Services.AddSingleton<CatalogueTextService>();
+        builder.Services.AddSingleton<AnglerPreferencesViewModel>();
         builder.Services
             .AddHttpClient(AuthenticationHttpClientConstants.Anonymous)
             .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create);

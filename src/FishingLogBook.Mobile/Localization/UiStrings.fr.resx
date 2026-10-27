@@ -200,4 +200,23 @@
   <data name="SignedInAs" xml:space="preserve"><value>Connecté en tant que {0}</value></data>
   <data name="SignOut" xml:space="preserve"><value>Se déconnecter</value></data>
   <data name="SignOutDescription" xml:space="preserve"><value>Se déconnecter de ce compte sur cet appareil</value></data>
+  <data name="FishingPreferences" xml:space="preserve"><value>Préférences de pêche</value></data>
+  <data name="FishingPreferencesReadOnly" xml:space="preserve"><value>Enregistrées dans votre compte. Pour les modifier, modifiez votre profil dans l’application web.</value></data>
+  <data name="PreferredMethods" xml:space="preserve"><value>Techniques et espèces</value></data>
+  <data name="PreferredLocations" xml:space="preserve"><value>Lieux préférés</value></data>
+  <data name="NoPreferredMethods" xml:space="preserve"><value>Aucune technique de pêche choisie pour le moment.</value></data>
+  <data name="NoPreferredSpecies" xml:space="preserve"><value>Aucune espèce choisie</value></data>
+  <data name="NoPreferredLocations" xml:space="preserve"><value>Aucun lieu préféré pour le moment.</value></data>
+  <data name="PreferenceDefault" xml:space="preserve"><value>{0} (par défaut)</value></data>
+  <data name="PreferencesLoadingTitle" xml:space="preserve"><value>Chargement de vos préférences</value></data>
+  <data name="PreferencesLoadingBody" xml:space="preserve"><value>Veuillez patienter un instant.</value></data>
+  <data name="PreferencesOfflineTitle" xml:space="preserve"><value>Vous êtes hors connexion</value></data>
+  <data name="PreferencesOfflineBody" xml:space="preserve"><value>Vos préférences de pêche se chargeront une fois la connexion rétablie.</value></data>
+  <data name="PreferencesErrorTitle" xml:space="preserve"><value>Préférences indisponibles</value></data>
+  <data name="PreferencesErrorBody" xml:space="preserve"><value>Impossible de charger vos préférences de pêche. Vous pouvez réessayer.</value></data>
+  <data name="PreferencesSessionExpiredTitle" xml:space="preserve"><value>Votre connexion doit être actualisée</value></data>
+  <data name="PreferencesSessionExpiredBody" xml:space="preserve"><value>Impossible de confirmer votre session. Vérifiez votre connexion et réessayez, ou déconnectez-vous puis reconnectez-vous.</value></data>
+  <data name="PreferencesOfflineCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Elles seront actualisées une fois la connexion rétablie.</value></data>
+  <data name="PreferencesErrorCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Impossible de les actualiser.</value></data>
+  <data name="PreferencesSessionExpiredCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Votre session n’a pas pu être confirmée : elles ne sont peut-être pas à jour.</value></data>
 </root>
