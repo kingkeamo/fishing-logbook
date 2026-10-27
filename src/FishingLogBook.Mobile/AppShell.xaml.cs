@@ -1,3 +1,4 @@
+using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.Settings.Pages;
@@ -11,10 +12,21 @@ namespace FishingLogBook.Mobile;
 
 public partial class AppShell : Shell
 {
-    public AppShell(CatchSummaryPage summary, SettingsPage settings, UiTextService text, InteractionService interactions, NavigationService navigation)
+    private readonly IAuthenticationService _authenticationService;
+
+    public AppShell(
+        CatchSummaryPage summary,
+        SettingsPage settings,
+        UiTextService text,
+        InteractionService interactions,
+        NavigationService navigation,
+        IAuthenticationService authenticationService)
     {
         InitializeComponent();
         BindingContext = text;
+        _authenticationService = authenticationService;
+        _authenticationService.SessionChanged += OnSessionChanged;
+        UpdateProfile();
         var primary = new FlyoutItem { Route = "main", FlyoutDisplayOptions = FlyoutDisplayOptions.AsMultipleItems };
         foreach (var route in RouteConstants.Primary)
         {
@@ -49,5 +61,17 @@ public partial class AppShell : Shell
 #endif
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
+    }
+
+    private void OnSessionChanged(object? sender, EventArgs args)
+    {
+        Dispatcher.Dispatch(UpdateProfile);
+    }
+
+    private void UpdateProfile()
+    {
+        var email = _authenticationService.CurrentSession?.Email ?? string.Empty;
+        ProfileName.Text = email;
+        ProfileInitial.Text = email.Length == 0 ? "?" : email[..1].ToUpperInvariant();
     }
 }

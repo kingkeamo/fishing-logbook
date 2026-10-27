@@ -16,11 +16,11 @@
    <Grid ColumnDefinitions="48,*" ColumnSpacing="12" SemanticProperties.Description="{Binding [ViewProfile]}">
     <Border WidthRequest="48" HeightRequest="48" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}">
      <Border.StrokeShape><Ellipse /></Border.StrokeShape>
-     <Label Text="E" TextColor="White" FontAttributes="Bold" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center" FontAutoScalingEnabled="False" />
+     <Label x:Name="ProfileInitial" TextColor="White" FontAttributes="Bold" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center" FontAutoScalingEnabled="False" />
     </Border>
     <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-     <Label Text="{Binding [ProfileName]}" Style="{StaticResource Subheading}" />
-     <Label Text="{Binding [ViewProfile]}" Style="{StaticResource LinkText}" />
+     <Label x:Name="ProfileName" Style="{StaticResource Subheading}" LineBreakMode="TailTruncation" />
+     <Label Text="{Binding [Account]}" Style="{StaticResource LinkText}" />
     </VerticalStackLayout>
    </Grid>
   </VerticalStackLayout>

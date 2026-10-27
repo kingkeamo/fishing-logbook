@@ -188,4 +188,16 @@
   <data name="LoaderLoading" xml:space="preserve"><value>Loading</value></data>
   <data name="ReducedMotionOn" xml:space="preserve"><value>Reduced motion is on. Loaders show a still frame.</value></data>
   <data name="ReducedMotionOff" xml:space="preserve"><value>Reduced motion is off. Loaders animate.</value></data>
+  <data name="SignInTitle" xml:space="preserve"><value>Sign in to your logbook</value></data>
+  <data name="SignInBody" xml:space="preserve"><value>Continue securely in your browser. Your password is never entered in this app.</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="CancelSignIn" xml:space="preserve"><value>Cancel sign-in</value></data>
+  <data name="SigningIn" xml:space="preserve"><value>Waiting for secure sign-in to finish in your browser.</value></data>
+  <data name="RestoringSession" xml:space="preserve"><value>Restoring your secure session.</value></data>
+  <data name="SignInFailed" xml:space="preserve"><value>Sign-in could not be completed. Please try again.</value></data>
+  <data name="SessionExpired" xml:space="preserve"><value>Your session has expired. Please sign in again.</value></data>
+  <data name="Account" xml:space="preserve"><value>Account</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="SignOutDescription" xml:space="preserve"><value>Sign out of this account on this device</value></data>
 </root>

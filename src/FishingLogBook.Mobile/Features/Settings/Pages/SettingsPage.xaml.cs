@@ -1,3 +1,4 @@
+using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Shared.Enums;
 
@@ -7,15 +8,30 @@ public partial class SettingsPage : ContentPage
 {
     private readonly PreferenceService _preferences;
     private readonly LocalDataService _localData;
+    private readonly IAuthenticationService _authenticationService;
     private bool _refreshing;
 
-    public SettingsPage(PreferenceService preferences, LocalDataService localData)
+    public SettingsPage(
+        PreferenceService preferences,
+        LocalDataService localData,
+        IAuthenticationService authenticationService)
     {
         _preferences = preferences;
         _localData = localData;
+        _authenticationService = authenticationService;
         InitializeComponent();
         BindingContext = preferences;
         RefreshSelection();
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        var email = _authenticationService.CurrentSession?.Email ?? string.Empty;
+        AccountEmail.Text = string.Format(
+            _preferences.Text.Culture,
+            _preferences.Text["SignedInAs"],
+            email);
     }
 
     private void RefreshSelection()
@@ -80,5 +96,10 @@ public partial class SettingsPage : ContentPage
     private async void OnClearLocalData(object? sender, EventArgs args)
     {
         await _localData.ClearAsync();
+    }
+
+    private async void OnSignOut(object? sender, EventArgs args)
+    {
+        await _authenticationService.SignOutAsync(CancellationToken.None);
     }
 }

@@ -188,4 +188,16 @@
   <data name="LoaderLoading" xml:space="preserve"><value>Chargement</value></data>
   <data name="ReducedMotionOn" xml:space="preserve"><value>Mouvement réduit activé. Les indicateurs sont immobiles.</value></data>
   <data name="ReducedMotionOff" xml:space="preserve"><value>Mouvement réduit désactivé. Les indicateurs s’animent.</value></data>
+  <data name="SignInTitle" xml:space="preserve"><value>Connectez-vous à votre carnet</value></data>
+  <data name="SignInBody" xml:space="preserve"><value>Continuez en toute sécurité dans votre navigateur. Votre mot de passe n’est jamais saisi dans cette application.</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Se connecter</value></data>
+  <data name="CancelSignIn" xml:space="preserve"><value>Annuler la connexion</value></data>
+  <data name="SigningIn" xml:space="preserve"><value>Finalisez la connexion sécurisée dans votre navigateur.</value></data>
+  <data name="RestoringSession" xml:space="preserve"><value>Restauration de votre session sécurisée.</value></data>
+  <data name="SignInFailed" xml:space="preserve"><value>La connexion n’a pas pu aboutir. Veuillez réessayer.</value></data>
+  <data name="SessionExpired" xml:space="preserve"><value>Votre session a expiré. Veuillez vous reconnecter.</value></data>
+  <data name="Account" xml:space="preserve"><value>Compte</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Connecté en tant que {0}</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Se déconnecter</value></data>
+  <data name="SignOutDescription" xml:space="preserve"><value>Se déconnecter de ce compte sur cet appareil</value></data>
 </root>
