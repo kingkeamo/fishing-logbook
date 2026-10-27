@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FishingLogBook.Mobile.Native.Controls.SelectionPillView"
+             x:Name="Root">
+  <HorizontalStackLayout Spacing="4">
+    <Button Text="{Binding Label, Source={x:Reference Root}}"
+            IsEnabled="{Binding IsEnabled, Source={x:Reference Root}}"
+            Clicked="OnSelectionClicked"
+            MinimumHeightRequest="48"
+            Padding="14,8"
+            FontSize="14"
+            CornerRadius="24"
+            BackgroundColor="Transparent"
+            BorderWidth="1"
+            BorderColor="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}"
+            TextColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}">
+      <Button.Triggers>
+        <DataTrigger TargetType="Button" Binding="{Binding IsSelected, Source={x:Reference Root}}" Value="True">
+          <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+          <Setter Property="BorderColor" Value="{StaticResource Primary}" />
+          <Setter Property="TextColor" Value="White" />
+        </DataTrigger>
+      </Button.Triggers>
+    </Button>
+    <Button Text="★"
+            IsVisible="{Binding IsSelected, Source={x:Reference Root}}"
+            IsEnabled="{Binding IsEnabled, Source={x:Reference Root}}"
+            Clicked="OnDefaultClicked"
+            MinimumWidthRequest="48"
+            MinimumHeightRequest="48"
+            Padding="0"
+            CornerRadius="24"
+            FontSize="18"
+            BackgroundColor="Transparent"
+            BorderWidth="1"
+            BorderColor="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}"
+            TextColor="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}"
+            SemanticProperties.Description="{Binding DefaultDescription, Source={x:Reference Root}}">
+      <Button.Triggers>
+        <DataTrigger TargetType="Button" Binding="{Binding IsDefault, Source={x:Reference Root}}" Value="True">
+          <Setter Property="BackgroundColor" Value="{StaticResource Teal}" />
+          <Setter Property="BorderColor" Value="{StaticResource Teal}" />
+          <Setter Property="TextColor" Value="White" />
+        </DataTrigger>
+      </Button.Triggers>
+    </Button>
+  </HorizontalStackLayout>
+</ContentView>

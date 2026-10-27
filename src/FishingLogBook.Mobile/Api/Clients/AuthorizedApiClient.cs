@@ -30,10 +30,31 @@ public sealed class AuthorizedApiClient
     public async Task<ApiResultModel<T>> GetAsync<T>(string path, CancellationToken cancellationToken)
         where T : class
     {
+        return await SendAsync<T>(new HttpRequestMessage(HttpMethod.Get, path), cancellationToken);
+    }
+
+    public async Task<ApiResultModel<TResponse>> PutAsync<TRequest, TResponse>(
+        string path,
+        TRequest value,
+        CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, path)
+        {
+            Content = JsonContent.Create(value)
+        };
+        return await SendAsync<TResponse>(request, cancellationToken);
+    }
+
+    private async Task<ApiResultModel<T>> SendAsync<T>(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+        where T : class
+    {
         var lease = _sessionCoordinator.Capture();
         try
         {
-            using var response = await _httpClient.GetAsync(path, cancellationToken);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
             return await ReadAsync<T>(response, cancellationToken);
         }
         catch (UnauthorizedAccessException)

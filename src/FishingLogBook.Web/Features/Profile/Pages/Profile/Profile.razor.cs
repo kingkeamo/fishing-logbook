@@ -1,6 +1,7 @@
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Shared.Preferences;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -340,12 +341,9 @@ public partial class Profile : ComponentBase, IDisposable
 
     private void EnsureDefaultMethod()
     {
-        if (_selectedMethods.Count == 0 || _selectedMethods.Any(method => method.IsDefault))
-        {
-            return;
-        }
-
-        _selectedMethods[0].IsDefault = true;
+        var selectedIds = _selectedMethods.Select(method => method.FishingMethodId).ToArray();
+        var currentDefault = _selectedMethods.FirstOrDefault(method => method.IsDefault)?.FishingMethodId;
+        ApplyDefaultMethod(SingleDefaultSelection.Ensure(selectedIds, currentDefault));
     }
 
     private bool IsMethodSelected(Guid methodId)
@@ -355,10 +353,8 @@ public partial class Profile : ComponentBase, IDisposable
 
     private void SetDefaultMethod(Guid methodId)
     {
-        foreach (var method in _selectedMethods)
-        {
-            method.IsDefault = method.FishingMethodId == methodId;
-        }
+        var selectedIds = _selectedMethods.Select(method => method.FishingMethodId).ToArray();
+        ApplyDefaultMethod(SingleDefaultSelection.Select(selectedIds, methodId));
     }
 
     private SelectedMethodPreference? GetSelectedMethod(Guid methodId)
@@ -423,20 +419,31 @@ public partial class Profile : ComponentBase, IDisposable
             return;
         }
 
-        foreach (var species in method.Species)
-        {
-            species.IsDefault = species.SpeciesId == speciesId;
-        }
+        var selectedIds = method.Species.Select(species => species.SpeciesId).ToArray();
+        ApplyDefaultSpecies(method, SingleDefaultSelection.Select(selectedIds, speciesId));
     }
 
     private static void EnsureDefaultSpecies(SelectedMethodPreference method)
     {
-        if (method.Species.Count == 0 || method.Species.Any(species => species.IsDefault))
-        {
-            return;
-        }
+        var selectedIds = method.Species.Select(species => species.SpeciesId).ToArray();
+        var currentDefault = method.Species.FirstOrDefault(species => species.IsDefault)?.SpeciesId;
+        ApplyDefaultSpecies(method, SingleDefaultSelection.Ensure(selectedIds, currentDefault));
+    }
 
-        method.Species[0].IsDefault = true;
+    private void ApplyDefaultMethod(Guid? defaultId)
+    {
+        foreach (var method in _selectedMethods)
+        {
+            method.IsDefault = method.FishingMethodId == defaultId;
+        }
+    }
+
+    private static void ApplyDefaultSpecies(SelectedMethodPreference method, Guid? defaultId)
+    {
+        foreach (var species in method.Species)
+        {
+            species.IsDefault = species.SpeciesId == defaultId;
+        }
     }
 
     public void Dispose()

@@ -12,4 +12,14 @@ public sealed class FishingLocationClient(AuthorizedApiClient apiClient) : IFish
     {
         return apiClient.GetAsync<FishingLocationPreferencesDto>(LocationsPath, cancellationToken);
     }
+
+    public Task<ApiResultModel<FishingLocationPreferencesDto>> UpdateAsync(
+        UpdateFishingLocationPreferencesDto locations,
+        CancellationToken cancellationToken)
+    {
+        return apiClient.PutAsync<UpdateFishingLocationPreferencesDto, FishingLocationPreferencesDto>(
+            LocationsPath,
+            locations,
+            cancellationToken);
+    }
 }

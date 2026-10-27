@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
  xmlns:services="clr-namespace:FishingLogBook.Mobile.Features.Settings.Services" xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
- xmlns:profile="clr-namespace:FishingLogBook.Mobile.Features.Profile.ViewModels" xmlns:profileModels="clr-namespace:FishingLogBook.Mobile.Features.Profile.Models"
  x:Class="FishingLogBook.Mobile.Features.Settings.Pages.SettingsPage" x:DataType="services:PreferenceService" Title="{Binding Text[Settings]}">
  <ScrollView><VerticalStackLayout Padding="16,12,16,20" Spacing="10" MaximumWidthRequest="720">
   <Label Text="{Binding Text[SettingsIntro]}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level1" />
@@ -18,33 +17,6 @@
    <Button Text="{Binding Text[SignOut]}" HeightRequest="48" Style="{StaticResource SecondaryButton}"
     Clicked="OnSignOut" AutomationId="SignOut"
     SemanticProperties.Description="{Binding Text[SignOutDescription]}" />
-  </VerticalStackLayout></Border>
-  <Border x:Name="FishingPreferencesCard" x:DataType="profile:AnglerPreferencesViewModel" Style="{StaticResource Card}" Padding="16,12" AutomationId="FishingPreferences"><VerticalStackLayout Spacing="8">
-   <Label Text="{Binding Text[FishingPreferences]}" Style="{StaticResource SectionTitle}" SemanticProperties.HeadingLevel="Level2" />
-   <Label Text="{Binding Text[FishingPreferencesReadOnly]}" Style="{StaticResource SecondaryText}" />
-   <controls:ContentStateView BindingContext="{Binding State}" RetryRequested="OnRetryPreferences" AutomationId="FishingPreferencesState" />
-   <VerticalStackLayout Spacing="8" IsVisible="{Binding HasPreferences}">
-    <Label Text="{Binding Notice}" IsVisible="{Binding HasNotice}" Style="{StaticResource SecondaryText}" AutomationId="FishingPreferencesNotice" />
-    <Button Text="{Binding Text[Retry]}" IsVisible="{Binding HasNotice}" HeightRequest="48" Style="{StaticResource SecondaryButton}"
-     Clicked="OnRetryPreferences" AutomationId="FishingPreferencesRetry" />
-    <Label Text="{Binding Text[PreferredMethods]}" Style="{StaticResource Subheading}" SemanticProperties.HeadingLevel="Level3" />
-    <Label Text="{Binding Text[NoPreferredMethods]}" IsVisible="{Binding HasNoMethods}" Style="{StaticResource SecondaryText}" />
-    <VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding Methods}" AutomationId="PreferredMethods">
-     <BindableLayout.ItemTemplate><DataTemplate x:DataType="profileModels:PreferenceSummaryItemModel">
-      <VerticalStackLayout Spacing="0">
-       <Label Text="{Binding Title}" Style="{StaticResource BodyText}" />
-       <Label Text="{Binding Detail}" IsVisible="{Binding HasDetail}" Style="{StaticResource SecondaryText}" />
-      </VerticalStackLayout>
-     </DataTemplate></BindableLayout.ItemTemplate>
-    </VerticalStackLayout>
-    <Label Text="{Binding Text[PreferredLocations]}" Style="{StaticResource Subheading}" SemanticProperties.HeadingLevel="Level3" />
-    <Label Text="{Binding Text[NoPreferredLocations]}" IsVisible="{Binding HasNoLocations}" Style="{StaticResource SecondaryText}" />
-    <VerticalStackLayout Spacing="4" BindableLayout.ItemsSource="{Binding Locations}" AutomationId="PreferredLocations">
-     <BindableLayout.ItemTemplate><DataTemplate x:DataType="profileModels:PreferenceSummaryItemModel">
-      <Label Text="{Binding Title}" Style="{StaticResource BodyText}" />
-     </DataTemplate></BindableLayout.ItemTemplate>
-    </VerticalStackLayout>
-   </VerticalStackLayout>
   </VerticalStackLayout></Border>
   <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
    <Label Text="{Binding Text[Language]}" Style="{StaticResource SectionTitle}" />

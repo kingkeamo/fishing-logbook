@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+             xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Profile.Models"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Profile.ViewModels"
+             x:Class="FishingLogBook.Mobile.Features.Profile.Pages.ProfilePage"
+             x:DataType="vm:ProfileViewModel"
+             Title="{Binding Text[Profile]}">
+  <Grid RowDefinitions="*,Auto">
+    <ScrollView>
+      <VerticalStackLayout Padding="16,12,16,24" Spacing="12" MaximumWidthRequest="720">
+        <Label Text="{Binding Text[ProfileTitle]}" Style="{StaticResource Heading}" />
+        <Label Text="{Binding Text[ProfileSubtitle]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
+        <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" Color="{StaticResource Primary}" AutomationId="ProfileLoading" />
+        <Border IsVisible="{Binding HasMessage}" Style="{StaticResource Card}" Padding="12" AutomationId="ProfileMessage">
+          <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />
+        </Border>
+        <VerticalStackLayout IsVisible="{Binding HasContent}" Spacing="12">
+          <Border Style="{StaticResource Card}">
+            <VerticalStackLayout Spacing="12">
+              <Label Text="{Binding Text[ProfileYourDetails]}" Style="{StaticResource Subheading}" />
+              <Grid ColumnDefinitions="72,*" ColumnSpacing="14">
+                <Border WidthRequest="72" HeightRequest="72" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}">
+                  <Border.StrokeShape><Ellipse /></Border.StrokeShape>
+                  <Image Source="brand_mark.png" WidthRequest="44" HeightRequest="44" Aspect="AspectFit" />
+                </Border>
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                  <Label Text="{Binding Text[ProfilePhotoPlaceholder]}" Style="{StaticResource SectionTitle}" />
+                  <Label Text="{Binding Text[ProfilePhotoDeferred]}" Style="{StaticResource SecondaryText}" />
+                </VerticalStackLayout>
+              </Grid>
+              <Label Text="{Binding Text[ProfileDisplayName]}" Style="{StaticResource Eyebrow}" />
+              <Entry Text="{Binding DisplayName}" MaxLength="100" AutomationId="ProfileDisplayName" />
+              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+                <Label Text="{Binding Text[ProfileShowDisplayName]}" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding ShowDisplayName}" AutomationId="ProfileShowDisplayName" />
+              </Grid>
+              <Label Text="{Binding Text[ProfileHomeRegion]}" Style="{StaticResource Eyebrow}" />
+              <Entry Text="{Binding HomeRegion}" MaxLength="200" AutomationId="ProfileHomeRegion" />
+              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+                <Label Text="{Binding Text[ProfileShowHomeRegion]}" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding ShowHomeRegion}" AutomationId="ProfileShowHomeRegion" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+                <Label Text="{Binding Text[ProfileShowPhoto]}" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding ShowPhotograph}" AutomationId="ProfileShowPhoto" />
+              </Grid>
+            </VerticalStackLayout>
+          </Border>
+
+          <Border Style="{StaticResource Card}">
+            <VerticalStackLayout Spacing="12">
+              <Label Text="{Binding Text[ProfileFishingDetails]}" Style="{StaticResource Subheading}" />
+              <Label Text="{Binding Text[ProfileMethods]}" Style="{StaticResource SectionTitle}" />
+              <Label Text="{Binding Text[ProfilePillHint]}" Style="{StaticResource SecondaryText}" />
+              <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
+                          BindableLayout.ItemsSource="{Binding Methods}" AutomationId="ProfileMethods">
+                <BindableLayout.ItemTemplate>
+                  <DataTemplate x:DataType="models:MethodPreferenceEditModel">
+                    <controls:SelectionPillView Margin="0,0,8,8"
+                                                Label="{Binding Name}"
+                                                IsSelected="{Binding IsSelected}"
+                                                IsDefault="{Binding IsDefault}"
+                                                IsEnabled="{Binding IsEnabled}"
+                                                DefaultDescription="{Binding DefaultDescription}"
+                                                SelectionRequested="OnMethodSelection"
+                                                DefaultRequested="OnMethodDefault" />
+                  </DataTemplate>
+                </BindableLayout.ItemTemplate>
+              </FlexLayout>
+
+              <VerticalStackLayout BindableLayout.ItemsSource="{Binding Methods}" Spacing="12">
+                <BindableLayout.ItemTemplate>
+                  <DataTemplate x:DataType="models:MethodPreferenceEditModel">
+                    <VerticalStackLayout IsVisible="{Binding IsSelected}" Spacing="6">
+                      <Label Text="{Binding Name}" Style="{StaticResource SectionTitle}" />
+                      <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
+                                  BindableLayout.ItemsSource="{Binding Species}">
+                        <BindableLayout.ItemTemplate>
+                          <DataTemplate x:DataType="models:SpeciesPreferenceEditModel">
+                            <controls:SelectionPillView Margin="0,0,8,8"
+                                                        Label="{Binding Name}"
+                                                        IsSelected="{Binding IsSelected}"
+                                                        IsDefault="{Binding IsDefault}"
+                                                        IsEnabled="{Binding IsEnabled}"
+                                                        DefaultDescription="{Binding DefaultDescription}"
+                                                        SelectionRequested="OnSpeciesSelection"
+                                                        DefaultRequested="OnSpeciesDefault" />
+                          </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                      </FlexLayout>
+                    </VerticalStackLayout>
+                  </DataTemplate>
+                </BindableLayout.ItemTemplate>
+              </VerticalStackLayout>
+
+              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+                <Label Text="{Binding Text[ProfileShowMethods]}" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding ShowPreferredFishingMethods}" AutomationId="ProfileShowMethods" />
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+                <Label Text="{Binding Text[ProfileShowSpecies]}" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding ShowPreferredSpecies}" AutomationId="ProfileShowSpecies" />
+              </Grid>
+            </VerticalStackLayout>
+          </Border>
+
+          <Border Style="{StaticResource Card}">
+            <VerticalStackLayout Spacing="10">
+              <Label Text="{Binding Text[ProfileLocations]}" Style="{StaticResource Subheading}" />
+              <Label Text="{Binding Text[ProfileLocationsHint]}" Style="{StaticResource SecondaryText}" />
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Entry x:Name="NewLocation" Placeholder="{Binding Text[ProfileLocationName]}" MaxLength="200" AutomationId="ProfileNewLocation" />
+                <Button Grid.Column="1" Text="{Binding Text[Add]}" Clicked="OnAddLocation" Style="{StaticResource SecondaryButton}" AutomationId="ProfileAddLocation" />
+              </Grid>
+              <VerticalStackLayout BindableLayout.ItemsSource="{Binding Locations}" Spacing="8" AutomationId="ProfileLocations">
+                <BindableLayout.ItemTemplate>
+                  <DataTemplate x:DataType="models:FishingLocationEditModel">
+                    <Grid ColumnDefinitions="*,48,48" ColumnSpacing="4">
+                      <Entry Text="{Binding Name}" MaxLength="200" Unfocused="OnLocationRenamed" />
+                      <Button Grid.Column="1" Text="★" Padding="0" Clicked="OnLocationDefault" SemanticProperties.Description="{Binding Name}">
+                        <Button.Triggers>
+                          <DataTrigger TargetType="Button" Binding="{Binding IsDefault}" Value="False">
+                            <Setter Property="Style" Value="{StaticResource SecondaryButton}" />
+                          </DataTrigger>
+                        </Button.Triggers>
+                      </Button>
+                      <Button Grid.Column="2" Text="×" Padding="0" Clicked="OnRemoveLocation" Style="{StaticResource SecondaryButton}" SemanticProperties.Description="{Binding Name}" />
+                    </Grid>
+                  </DataTemplate>
+                </BindableLayout.ItemTemplate>
+              </VerticalStackLayout>
+            </VerticalStackLayout>
+          </Border>
+        </VerticalStackLayout>
+      </VerticalStackLayout>
+    </ScrollView>
+    <Border Grid.Row="1" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}" Padding="16,10,16,14">
+      <Button Text="{Binding Text[ProfileSave]}" IsEnabled="{Binding CanSave}" Clicked="OnSave" AutomationId="ProfileSave" />
+    </Border>
+  </Grid>
+</ContentPage>

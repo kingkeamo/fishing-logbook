@@ -219,4 +219,36 @@
   <data name="PreferencesOfflineCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Elles seront actualisées une fois la connexion rétablie.</value></data>
   <data name="PreferencesErrorCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Impossible de les actualiser.</value></data>
   <data name="PreferencesSessionExpiredCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Votre session n’a pas pu être confirmée : elles ne sont peut-être pas à jour.</value></data>
+  <data name="ProfileTitle" xml:space="preserve"><value>Votre profil</value></data>
+  <data name="ProfileSubtitle" xml:space="preserve"><value>Vos informations personnelles et vos préférences de pêche.</value></data>
+  <data name="ProfileYourDetails" xml:space="preserve"><value>Vos informations</value></data>
+  <data name="ProfileFishingDetails" xml:space="preserve"><value>Préférences de pêche</value></data>
+  <data name="ProfilePhotoPlaceholder" xml:space="preserve"><value>Photo de profil</value></data>
+  <data name="ProfilePhotoDeferred" xml:space="preserve"><value>Le choix de photo arrivera avec la prise en charge des photos mobiles.</value></data>
+  <data name="ProfileDisplayName" xml:space="preserve"><value>Nom affiché</value></data>
+  <data name="ProfileHomeRegion" xml:space="preserve"><value>Région de résidence</value></data>
+  <data name="ProfileShowDisplayName" xml:space="preserve"><value>Afficher mon nom</value></data>
+  <data name="ProfileShowHomeRegion" xml:space="preserve"><value>Afficher ma région</value></data>
+  <data name="ProfileShowPhoto" xml:space="preserve"><value>Afficher ma photo de profil</value></data>
+  <data name="ProfileMethods" xml:space="preserve"><value>Techniques et espèces</value></data>
+  <data name="ProfilePillHint" xml:space="preserve"><value>Touchez une pastille pour la sélectionner. Utilisez l'étoile pour choisir la valeur par défaut.</value></data>
+  <data name="ProfileSetDefaultFor" xml:space="preserve"><value>Définir {0} comme valeur par défaut</value></data>
+  <data name="ProfileShowMethods" xml:space="preserve"><value>Afficher mes techniques préférées</value></data>
+  <data name="ProfileShowSpecies" xml:space="preserve"><value>Afficher mes espèces préférées</value></data>
+  <data name="ProfileLocations" xml:space="preserve"><value>Lieux de pêche préférés</value></data>
+  <data name="ProfileLocationsHint" xml:space="preserve"><value>Ajoutez, renommez ou supprimez des lieux. L'étoile indique le lieu par défaut.</value></data>
+  <data name="ProfileLocationName" xml:space="preserve"><value>Nom du lieu</value></data>
+  <data name="Add" xml:space="preserve"><value>Ajouter</value></data>
+  <data name="ProfileSave" xml:space="preserve"><value>Enregistrer le profil</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>Votre profil a été enregistré.</value></data>
+  <data name="ProfileOfflineSave" xml:space="preserve"><value>Connectez-vous à Internet pour enregistrer les modifications.</value></data>
+  <data name="ProfileOfflineError" xml:space="preserve"><value>Votre profil est indisponible hors ligne. Vos modifications sont conservées.</value></data>
+  <data name="ProfileValidationError" xml:space="preserve"><value>Vérifiez les informations du profil et réessayez.</value></data>
+  <data name="ProfileSaveError" xml:space="preserve"><value>Impossible d'enregistrer votre profil. Vos modifications sont conservées.</value></data>
+  <data name="ProfileSessionExpired" xml:space="preserve"><value>Votre connexion doit être actualisée. Déconnectez-vous puis reconnectez-vous.</value></data>
+  <data name="ProfileDisplayNameTooLong" xml:space="preserve"><value>Le nom affiché doit comporter au maximum {0} caractères.</value></data>
+  <data name="ProfileHomeRegionTooLong" xml:space="preserve"><value>La région doit comporter au maximum {0} caractères.</value></data>
+  <data name="ProfileLocationRequired" xml:space="preserve"><value>Saisissez un nom de lieu.</value></data>
+  <data name="ProfileLocationTooLong" xml:space="preserve"><value>Le nom du lieu doit comporter au maximum {0} caractères.</value></data>
+  <data name="ProfileLocationDuplicate" xml:space="preserve"><value>Ce lieu de pêche figure déjà dans votre liste.</value></data>
 </root>

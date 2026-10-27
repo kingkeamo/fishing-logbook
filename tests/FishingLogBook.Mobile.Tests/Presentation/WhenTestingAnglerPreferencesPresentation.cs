@@ -8,36 +8,40 @@ public class WhenTestingAnglerPreferencesPresentation
     private static readonly string MobileRoot = FindMobileRoot();
 
     [Fact]
-    public void ItShouldShowAReadOnlySummaryWithSharedStatesAndRetryInSettings()
+    public void ItShouldMoveEditablePreferencesFromSettingsToProfile()
     {
         // Arrange
-        var pagePath = Path.Combine(MobileRoot, "Features", "Settings", "Pages", "SettingsPage.xaml");
+        var settingsPath = Path.Combine(MobileRoot, "Features", "Settings", "Pages", "SettingsPage.xaml");
+        var profilePath = Path.Combine(MobileRoot, "Features", "Profile", "Pages", "ProfilePage.xaml");
         // Act
-        var page = File.ReadAllText(pagePath);
+        var settings = File.ReadAllText(settingsPath);
+        var profile = File.ReadAllText(profilePath);
         // Assert
-        page.Should().Contain("AutomationId=\"FishingPreferences\"");
-        page.Should().Contain("<controls:ContentStateView BindingContext=\"{Binding State}\" RetryRequested=\"OnRetryPreferences\"");
-        page.Should().Contain("AutomationId=\"FishingPreferencesRetry\"");
-        page.Should().Contain("BindableLayout.ItemsSource=\"{Binding Methods}\"");
-        page.Should().Contain("BindableLayout.ItemsSource=\"{Binding Locations}\"");
-        page.Should().NotContain("<Entry");
-        page.Should().Contain("AutomationId=\"WeightUnitKg\"");
-        page.Should().Contain("AutomationId=\"LanguageFrench\"");
-        page.Should().Contain("AutomationId=\"ThemeDark\"");
+        settings.Should().NotContain("AutomationId=\"FishingPreferences\"");
+        settings.Should().Contain("AutomationId=\"WeightUnitKg\"");
+        settings.Should().Contain("AutomationId=\"LanguageFrench\"");
+        settings.Should().Contain("AutomationId=\"ThemeDark\"");
+        profile.Should().Contain("AutomationId=\"ProfileMethods\"");
+        profile.Should().Contain("AutomationId=\"ProfileLocations\"");
+        profile.Should().Contain("AutomationId=\"ProfileSave\"");
+        profile.Should().Contain("<controls:SelectionPillView");
     }
 
     [Fact]
-    public void ItShouldProvideEnglishAndFrenchPreferenceText()
+    public void ItShouldProvideEnglishAndFrenchProfileText()
     {
         // Arrange
         var localisation = Path.Combine(MobileRoot, "Localization");
         var required = new[]
         {
-            "FishingPreferences", "FishingPreferencesReadOnly", "PreferredMethods", "PreferredLocations",
-            "NoPreferredMethods", "NoPreferredSpecies", "NoPreferredLocations", "PreferenceDefault",
-            "PreferencesLoadingTitle", "PreferencesLoadingBody", "PreferencesOfflineTitle", "PreferencesOfflineBody",
-            "PreferencesErrorTitle", "PreferencesErrorBody", "PreferencesSessionExpiredTitle", "PreferencesSessionExpiredBody",
-            "PreferencesOfflineCached", "PreferencesErrorCached", "PreferencesSessionExpiredCached"
+            "Profile", "ProfileTitle", "ProfileSubtitle", "ProfileYourDetails", "ProfileFishingDetails",
+            "ProfilePhotoPlaceholder", "ProfilePhotoDeferred", "ProfileDisplayName", "ProfileHomeRegion",
+            "ProfileShowDisplayName", "ProfileShowHomeRegion", "ProfileShowPhoto", "ProfileMethods",
+            "ProfilePillHint", "ProfileSetDefaultFor", "ProfileShowMethods", "ProfileShowSpecies",
+            "ProfileLocations", "ProfileLocationsHint", "ProfileLocationName", "ProfileSave", "ProfileSaved",
+            "ProfileOfflineSave", "ProfileOfflineError", "ProfileValidationError", "ProfileSaveError",
+            "ProfileSessionExpired", "ProfileDisplayNameTooLong", "ProfileHomeRegionTooLong",
+            "ProfileLocationRequired", "ProfileLocationTooLong", "ProfileLocationDuplicate"
         };
         // Act
         var english = GetValues(XDocument.Load(Path.Combine(localisation, "UiStrings.resx")));
@@ -45,8 +49,7 @@ public class WhenTestingAnglerPreferencesPresentation
         // Assert
         english.Keys.Should().Contain(required);
         french.Keys.Should().Contain(required);
-        required.Where(key => key != "PreferencesLoadingBody")
-            .Should().OnlyContain(key => english[key] != french[key]);
+        required.Should().OnlyContain(key => english[key] != french[key]);
     }
 
     [Fact]
