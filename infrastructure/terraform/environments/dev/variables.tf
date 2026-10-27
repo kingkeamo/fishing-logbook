@@ -71,6 +71,7 @@ variable "cognito_native_callback_urls" {
   type        = list(string)
   description = "Exact OAuth callback URLs for the Dev native public app client."
   default = [
+    "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
     "com.fishinglogbook.mobile.demo://oauth2redirect",
   ]
 }
@@ -79,6 +80,7 @@ variable "cognito_native_logout_urls" {
   type        = list(string)
   description = "Exact sign-out redirect URLs for the Dev native public app client."
   default = [
+    "https://fishing-logbook-dev.pages.dev/native/signedout",
     "com.fishinglogbook.mobile.demo://signedout",
   ]
 }

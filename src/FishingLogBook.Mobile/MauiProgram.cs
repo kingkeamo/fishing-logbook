@@ -37,7 +37,7 @@ public static partial class MauiProgram
     {
         ConfigurePlatformHandlers();
         var builder = MauiApp.CreateBuilder().UseMauiApp<App>().UseMauiCommunityToolkit();
-        var authConfig = MobileAuthConfig.Load();
+        var authConfig = SelectPlatformCallbacks(MobileAuthConfig.Load());
         builder.Services.AddSingleton(authConfig);
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<UiTextService>();
@@ -99,6 +99,8 @@ public static partial class MauiProgram
     }
 
     static partial void ConfigurePlatformHandlers();
+
+    private static partial MobileAuthConfig SelectPlatformCallbacks(MobileAuthConfig config);
 
     static partial void ConfigurePlatformLogging(ILoggingBuilder logging);
 }

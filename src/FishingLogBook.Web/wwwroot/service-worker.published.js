@@ -108,6 +108,11 @@ async function onFetch(event) {
         return fetch(event.request, { cache: 'no-store' });
     }
 
+    // Native app association files and callback pages must never be answered by the SPA shell.
+    if (url.pathname.startsWith('/.well-known/') || url.pathname.startsWith('/native/')) {
+        return fetch(event.request, { cache: 'no-store' });
+    }
+
     const shouldServeIndexHtml = event.request.mode === 'navigate'
         && !manifestUrlList.some(manifestUrl => manifestUrl === event.request.url);
 

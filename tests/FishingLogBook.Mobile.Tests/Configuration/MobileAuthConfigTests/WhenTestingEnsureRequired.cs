@@ -22,10 +22,15 @@ public class WhenTestingEnsureRequired
     }
 
     [Theory]
-    [InlineData("http://api.example.com", "com.fishinglogbook.mobile.demo://oauth2redirect")]
-    [InlineData("https://api.example.com", "other.application://oauth2redirect")]
-    [InlineData("https://api.example.com", "com.fishinglogbook.mobile.demo://wrong")]
-    public void ItShouldRejectInsecureEndpointsOrUnregisteredCallbacks(
+    [InlineData("http://api.example.com", "https://fishing-logbook-dev.pages.dev/native/oauth2redirect")]
+    [InlineData("https://api.example.com", "com.fishinglogbook.mobile.demo://oauth2redirect")]
+    [InlineData("https://api.example.com", "http://fishing-logbook-dev.pages.dev/native/oauth2redirect")]
+    [InlineData("https://api.example.com", "https://fishing-logbook-dev.pages.dev/oauth2redirect")]
+    [InlineData("https://api.example.com", "https://fishing-logbook-dev.pages.dev:8443/native/oauth2redirect")]
+    [InlineData("https://api.example.com", "https://fishing-logbook-dev.pages.dev/native/oauth2redirect?next=x")]
+    [InlineData("https://api.example.com", "https://user@fishing-logbook-dev.pages.dev/native/oauth2redirect")]
+    [InlineData("https://api.example.com", "https://other.pages.dev/native/oauth2redirect")]
+    public void ItShouldRejectInsecureEndpointsOrUnverifiedCallbacks(
         string apiBaseUrl,
         string redirectUri)
     {
@@ -43,6 +48,25 @@ public class WhenTestingEnsureRequired
         action.Should().Throw<InvalidOperationException>();
     }
 
+    [Theory]
+    [InlineData("other.application://oauth2redirect", "com.fishinglogbook.mobile.demo://signedout")]
+    [InlineData("com.fishinglogbook.mobile.demo://wrong", "com.fishinglogbook.mobile.demo://signedout")]
+    [InlineData("com.fishinglogbook.mobile.demo://oauth2redirect", "https://fishing-logbook-dev.pages.dev/native/signedout")]
+    public void ItShouldRejectUnregisteredSchemeCallbacks(string schemeRedirectUri, string schemeLogoutRedirectUri)
+    {
+        // Arrange
+        var config = CreateValidConfig() with
+        {
+            SchemeRedirectUri = schemeRedirectUri,
+            SchemeLogoutRedirectUri = schemeLogoutRedirectUri
+        };
+        var action = config.EnsureRequired;
+        // Act
+        var assertion = action.Should().Throw<InvalidOperationException>();
+        // Assert
+        assertion.Which.Message.Should().StartWith("Scheme");
+    }
+
     [Fact]
     public void ItShouldAcceptTheProvisionedDevelopmentConfiguration()
     {
@@ -52,6 +76,19 @@ public class WhenTestingEnsureRequired
         // Act
         // Assert
         action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ItShouldSelectTheSchemeCallbacksForPlatformsWithoutVerifiedHttpsCallbacks()
+    {
+        // Arrange
+        var config = CreateValidConfig();
+        // Act
+        var result = config.WithSchemeCallbacks();
+        // Assert
+        result.RedirectUri.Should().Be("com.fishinglogbook.mobile.demo://oauth2redirect");
+        result.LogoutRedirectUri.Should().Be("com.fishinglogbook.mobile.demo://signedout");
+        result.ClientId.Should().Be(config.ClientId);
     }
 
     private static MobileAuthConfig CreateValidConfig()
@@ -64,8 +101,10 @@ public class WhenTestingEnsureRequired
             ApiBaseUrl = "https://fishing-logbook-dev-api.fly.dev",
             ApiScope = "https://fishing-logbook-dev-api.fly.dev/access",
             ApiResource = "https://fishing-logbook-dev-api.fly.dev",
-            RedirectUri = "com.fishinglogbook.mobile.demo://oauth2redirect",
-            LogoutRedirectUri = "com.fishinglogbook.mobile.demo://signedout"
+            RedirectUri = "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
+            LogoutRedirectUri = "https://fishing-logbook-dev.pages.dev/native/signedout",
+            SchemeRedirectUri = "com.fishinglogbook.mobile.demo://oauth2redirect",
+            SchemeLogoutRedirectUri = "com.fishinglogbook.mobile.demo://signedout"
         };
     }
 }

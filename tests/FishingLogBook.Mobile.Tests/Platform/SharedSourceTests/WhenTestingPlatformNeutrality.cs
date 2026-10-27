@@ -50,10 +50,20 @@ public class WhenTestingPlatformNeutrality
             .Where(group => group.Elements().Any(item => item.Name.LocalName is "MauiImage" or "MauiIcon" or "MauiSplashScreen" or "PackageReference"))
             .ToList();
         // Act
-        var conditions = sharedGroups.Select(group => (string?)group.Attribute("Condition")).ToList();
+        var androidOnlyPackages = sharedGroups
+            .Where(group => (string?)group.Attribute("Condition") == "'$(TargetFramework)' == 'net10.0-android'")
+            .SelectMany(group => group.Elements())
+            .ToList();
+        var conditions = sharedGroups
+            .Select(group => (string?)group.Attribute("Condition"))
+            .Where(condition => condition != "'$(TargetFramework)' == 'net10.0-android'")
+            .ToList();
         var targets = project.Descendants("TargetFrameworks").Select(element => element.Value).ToList();
         // Assert
         conditions.Should().OnlyContain(condition => condition == null || condition == "'$(TargetFramework)' != 'net10.0'");
+        androidOnlyPackages.Should().OnlyContain(item =>
+            item.Name.LocalName == "PackageReference" &&
+            ((string?)item.Attribute("Include") ?? string.Empty).StartsWith("Xamarin.AndroidX.", StringComparison.Ordinal));
         targets.Should().Contain(target => target.Contains("net10.0-ios"));
         targets.Should().Contain(target => target.Contains("net10.0-android"));
     }
@@ -72,6 +82,9 @@ public class WhenTestingPlatformNeutrality
         plist.Should().Contain("<string>fr</string>");
         plist.Should().Contain("<string>com.fishinglogbook.mobile.demo</string>");
         File.ReadAllText(Path.Combine(ios, "AppDelegate.cs")).Should().Contain("AuthenticationCallbackHandler");
+        var entitlements = File.ReadAllText(Path.Combine(ios, "Entitlements.plist"));
+        entitlements.Should().Contain("<string>applinks:fishing-logbook-dev.pages.dev</string>");
+        entitlements.Should().Contain("<string>webcredentials:fishing-logbook-dev.pages.dev</string>");
     }
 
     [Fact]
@@ -83,9 +96,12 @@ public class WhenTestingPlatformNeutrality
         var activity = File.ReadAllText(Path.Combine(android, "MainActivity.cs"));
         var manifest = File.ReadAllText(Path.Combine(android, "AndroidManifest.xml"));
         // Assert
-        activity.Should().Contain("DataScheme = \"com.fishinglogbook.mobile.demo\"");
-        activity.Should().Contain("DataHost = \"oauth2redirect\"");
-        activity.Should().Contain("DataHost = \"signedout\"");
+        activity.Should().Contain("DataScheme = \"https\"");
+        activity.Should().Contain("DataHost = \"fishing-logbook-dev.pages.dev\"");
+        activity.Should().Contain("DataPaths = [\"/native/oauth2redirect\", \"/native/signedout\"]");
+        activity.Should().Contain("AutoVerify = true");
+        activity.Should().NotContain("DataScheme = \"com.fishinglogbook.mobile.demo\"");
+        activity.Should().Contain("RegisterAuthTab(this)");
         activity.Should().Contain("OnNewIntent");
         activity.Should().Contain("AuthenticationCallbackHandler");
         manifest.Should().Contain("android.intent.action.VIEW");

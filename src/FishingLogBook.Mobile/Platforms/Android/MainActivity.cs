@@ -3,6 +3,7 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using FishingLogBook.Mobile.Features.Authentication.Handlers;
+using FishingLogBook.Mobile.Native.Browsers;
 using Microsoft.Extensions.DependencyInjection;
 using AndroidLog = Android.Util.Log;
 
@@ -15,18 +16,16 @@ namespace FishingLogBook.Mobile;
 [IntentFilter(
     [Intent.ActionView],
     Categories = [Intent.CategoryDefault, Intent.CategoryBrowsable],
-    DataScheme = "com.fishinglogbook.mobile.demo",
-    DataHost = "oauth2redirect")]
-[IntentFilter(
-    [Intent.ActionView],
-    Categories = [Intent.CategoryDefault, Intent.CategoryBrowsable],
-    DataScheme = "com.fishinglogbook.mobile.demo",
-    DataHost = "signedout")]
+    DataScheme = "https",
+    DataHost = "fishing-logbook-dev.pages.dev",
+    DataPaths = ["/native/oauth2redirect", "/native/signedout"],
+    AutoVerify = true)]
 public class MainActivity : MauiAppCompatActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        MauiAuthenticationBrowser.RegisterAuthTab(this);
         DispatchAuthenticationCallback(Intent);
     }
 

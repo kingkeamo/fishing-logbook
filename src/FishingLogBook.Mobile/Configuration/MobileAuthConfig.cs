@@ -5,6 +5,10 @@ namespace FishingLogBook.Mobile.Configuration;
 
 public sealed record MobileAuthConfig
 {
+    private const string ApplicationScheme = "com.fishinglogbook.mobile.demo";
+    private const string AppLinkCallbackPath = "/native/oauth2redirect";
+    private const string AppLinkSignedOutPath = "/native/signedout";
+
     public required string Authority { get; init; }
     public required string ClientId { get; init; }
     public required string HostedUiDomain { get; init; }
@@ -13,6 +17,8 @@ public sealed record MobileAuthConfig
     public required string ApiResource { get; init; }
     public required string RedirectUri { get; init; }
     public required string LogoutRedirectUri { get; init; }
+    public required string SchemeRedirectUri { get; init; }
+    public required string SchemeLogoutRedirectUri { get; init; }
 
     public static MobileAuthConfig Load(Assembly? assembly = null)
     {
@@ -25,14 +31,25 @@ public sealed record MobileAuthConfig
         return config;
     }
 
+    public MobileAuthConfig WithSchemeCallbacks()
+    {
+        return this with
+        {
+            RedirectUri = SchemeRedirectUri,
+            LogoutRedirectUri = SchemeLogoutRedirectUri
+        };
+    }
+
     public void EnsureRequired()
     {
         var authority = RequireHttpsOrigin(Authority, nameof(Authority), allowPath: true);
         RequireHttpsOrigin(HostedUiDomain, nameof(HostedUiDomain), allowPath: false);
         var apiBase = RequireHttpsOrigin(ApiBaseUrl, nameof(ApiBaseUrl), allowPath: true);
         var apiResource = RequireHttpsOrigin(ApiResource, nameof(ApiResource), allowPath: true);
-        var redirect = RequireCustomRedirect(RedirectUri, nameof(RedirectUri), "oauth2redirect");
-        var logoutRedirect = RequireCustomRedirect(LogoutRedirectUri, nameof(LogoutRedirectUri), "signedout");
+        var redirect = RequireAppLinkRedirect(RedirectUri, nameof(RedirectUri), AppLinkCallbackPath);
+        var logoutRedirect = RequireAppLinkRedirect(LogoutRedirectUri, nameof(LogoutRedirectUri), AppLinkSignedOutPath);
+        RequireCustomRedirect(SchemeRedirectUri, nameof(SchemeRedirectUri), "oauth2redirect");
+        RequireCustomRedirect(SchemeLogoutRedirectUri, nameof(SchemeLogoutRedirectUri), "signedout");
 
         if (string.IsNullOrWhiteSpace(ClientId) || ClientId.Any(character => !char.IsLetterOrDigit(character)))
         {
@@ -49,10 +66,14 @@ public sealed record MobileAuthConfig
             throw new InvalidOperationException($"{nameof(ApiScope)} must be a scope belonging to {nameof(ApiResource)}.");
         }
 
-        if (!string.Equals(redirect.Scheme, logoutRedirect.Scheme, StringComparison.Ordinal) ||
-            !authority.AbsolutePath.Contains('_', StringComparison.Ordinal))
+        if (!string.Equals(redirect.Host, logoutRedirect.Host, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException("The Cognito authority or native redirect scheme is invalid.");
+            throw new InvalidOperationException($"{nameof(RedirectUri)} and {nameof(LogoutRedirectUri)} must use the same verified host.");
+        }
+
+        if (!authority.AbsolutePath.Contains('_', StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The Cognito authority is invalid.");
         }
     }
 
@@ -71,10 +92,26 @@ public sealed record MobileAuthConfig
         return uri;
     }
 
-    private static Uri RequireCustomRedirect(string value, string name, string expectedHost)
+    private static Uri RequireAppLinkRedirect(string value, string name, string expectedPath)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
-            uri.Scheme != "com.fishinglogbook.mobile.demo" ||
+            uri.Scheme != Uri.UriSchemeHttps ||
+            !uri.IsDefaultPort ||
+            !string.IsNullOrEmpty(uri.UserInfo) ||
+            !string.Equals(uri.AbsolutePath, expectedPath, StringComparison.Ordinal) ||
+            !string.IsNullOrEmpty(uri.Query) ||
+            !string.IsNullOrEmpty(uri.Fragment))
+        {
+            throw new InvalidOperationException($"{name} must be the verified HTTPS application callback.");
+        }
+
+        return uri;
+    }
+
+    private static void RequireCustomRedirect(string value, string name, string expectedHost)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+            uri.Scheme != ApplicationScheme ||
             !string.Equals(uri.Host, expectedHost, StringComparison.Ordinal) ||
             uri.AbsolutePath != "/" ||
             !string.IsNullOrEmpty(uri.Query) ||
@@ -82,7 +119,5 @@ public sealed record MobileAuthConfig
         {
             throw new InvalidOperationException($"{name} must use the registered application callback.");
         }
-
-        return uri;
     }
 }

@@ -178,6 +178,7 @@ public sealed class OidcProtocolClient : IOidcProtocolClient
         var expected = new Uri(_config.RedirectUri);
         return string.Equals(callback.Scheme, expected.Scheme, StringComparison.Ordinal) &&
             string.Equals(callback.Host, expected.Host, StringComparison.Ordinal) &&
+            callback.Port == expected.Port &&
             string.Equals(callback.AbsolutePath, expected.AbsolutePath, StringComparison.Ordinal);
     }
 }
