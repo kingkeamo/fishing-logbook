@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Text.Json;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Api.Models;
@@ -39,7 +40,8 @@ public sealed class AuthorizedApiClient
         {
             return ApiResultModel<T>.Failed(ApiOutcomeEnum.SessionExpired);
         }
-        catch (HttpRequestException exception)
+        catch (Exception exception) when (
+            exception is HttpRequestException or WebException or IOException or SocketException)
         {
             _logger.LogWarning("Authenticated API request failed with {ExceptionType}.", exception.GetType().FullName);
             return ApiResultModel<T>.Failed(ApiOutcomeEnum.Unavailable);

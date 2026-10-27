@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Api.Clients;
 using FishingLogBook.Mobile.Api.Enums;
@@ -75,6 +76,22 @@ public class WhenTestingGet : BaseAuthorizedApiClientTest
         result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
         server.Requests.Should().ContainSingle();
         Logger.Entries.Should().ContainSingle(entry => entry.Message.Contains(typeof(HttpRequestException).FullName!));
+    }
+
+    [Theory]
+    [InlineData(typeof(WebException))]
+    [InlineData(typeof(IOException))]
+    [InlineData(typeof(SocketException))]
+    public async Task ItShouldReportTheApiAsUnavailableWhenTheNativeNetworkStackFails(Type exceptionType)
+    {
+        // Arrange
+        var (sut, server) = CreateSut((_, _) => throw (Exception)Activator.CreateInstance(exceptionType)!);
+        // Act
+        var result = await sut.GetAsync<SampleDto>("api/fishing-catalogue", CancellationToken.None);
+        // Assert
+        result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
+        server.Requests.Should().ContainSingle();
+        Logger.Entries.Should().ContainSingle(entry => entry.Message.Contains(exceptionType.FullName!));
     }
 
     [Fact]
