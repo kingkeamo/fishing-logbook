@@ -125,4 +125,8 @@ jobs:
             check_association /.well-known/apple-app-site-association "${APPLE_TEAM_ID}.com.fishinglogbook.mobile.demo"
           else
             echo "APPLE_TEAM_ID is not set: apple-app-site-association is intentionally not published."
+            if curl -sS -o /dev/null -D - "https://fishing-logbook-dev.pages.dev/.well-known/apple-app-site-association" | grep -qiE '^content-type: application/json'; then
+              echo "apple-app-site-association is served as JSON without a configured Team ID"
+              exit 1
+            fi
           fi

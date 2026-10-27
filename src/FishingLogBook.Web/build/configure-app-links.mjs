@@ -79,15 +79,11 @@ export function buildAppLinks(config, environment, appleTeamId) {
     return { files, fallbackPaths: config.callbackPaths, hasAppleAssociation: Boolean(teamId) };
 }
 
-export function buildHeaders(fallbackPaths) {
-    const rules = [
-        '/.well-known/assetlinks.json',
-        '  Content-Type: application/json',
-        '  Cache-Control: no-cache',
-        '/.well-known/apple-app-site-association',
-        '  Content-Type: application/json',
-        '  Cache-Control: no-cache',
-    ];
+export function buildHeaders(associationFiles, fallbackPaths) {
+    const rules = [];
+    for (const name of associationFiles) {
+        rules.push(`/${name}`, '  Content-Type: application/json', '  Cache-Control: no-cache');
+    }
     for (const path of fallbackPaths) {
         rules.push(path, '  Cache-Control: no-store', '  Referrer-Policy: no-referrer', '  X-Robots-Tag: noindex');
     }
@@ -114,7 +110,7 @@ async function main(args = process.argv.slice(2)) {
     for (const path of result.fallbackPaths) {
         await writeFile(resolve(root, `${path.slice(1)}.html`), fallbackPage, 'utf8');
     }
-    await appendFile(resolve(root, '_headers'), buildHeaders(result.fallbackPaths), 'utf8');
+    await appendFile(resolve(root, '_headers'), buildHeaders([...result.files.keys()], result.fallbackPaths), 'utf8');
     if (!result.hasAppleAssociation) {
         console.log('APPLE_TEAM_ID is not set: apple-app-site-association was not generated; iOS Universal Links are unavailable.');
     }

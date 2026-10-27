@@ -52,9 +52,18 @@ describe('dev app link association files', () => {
         assert.deepEqual(association.webcredentials.apps, [appId]);
     });
 
-    it('serves association files as JSON and fallback pages without caching or referrers', () => {
-        const headers = buildHeaders(config.callbackPaths);
+    it('serves generated association files as JSON and fallback pages without caching or referrers', () => {
+        const result = buildAppLinks(config, 'dev', 'ABCDE12345');
+        const headers = buildHeaders([...result.files.keys()], result.fallbackPaths);
+        assert.match(headers, /\/\.well-known\/assetlinks\.json\n {2}Content-Type: application\/json/);
         assert.match(headers, /\/\.well-known\/apple-app-site-association\n {2}Content-Type: application\/json/);
         assert.match(headers, /\/native\/oauth2redirect\n {2}Cache-Control: no-store\n {2}Referrer-Policy: no-referrer/);
+    });
+
+    it('does not label the SPA fallback as JSON when the Apple association is not generated', () => {
+        const result = buildAppLinks(config, 'dev', undefined);
+        const headers = buildHeaders([...result.files.keys()], result.fallbackPaths);
+        assert.match(headers, /\/\.well-known\/assetlinks\.json/);
+        assert.doesNotMatch(headers, /apple-app-site-association/);
     });
 });
