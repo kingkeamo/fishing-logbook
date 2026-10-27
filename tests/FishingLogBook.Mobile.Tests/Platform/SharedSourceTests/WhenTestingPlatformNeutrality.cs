@@ -70,6 +70,25 @@ public class WhenTestingPlatformNeutrality
         File.Exists(Path.Combine(ios, "Program.cs")).Should().BeTrue();
         Regex.IsMatch(plist, @"UIViewControllerBasedStatusBarAppearance</key>\s*<false/>").Should().BeTrue();
         plist.Should().Contain("<string>fr</string>");
+        plist.Should().Contain("<string>com.fishinglogbook.mobile.demo</string>");
+        File.ReadAllText(Path.Combine(ios, "AppDelegate.cs")).Should().Contain("AuthenticationCallbackHandler");
+    }
+
+    [Fact]
+    public void ItShouldRegisterTheAndroidColdStartAuthenticationCallback()
+    {
+        // Arrange
+        var android = Path.Combine(MobileRoot, "Platforms", "Android");
+        // Act
+        var activity = File.ReadAllText(Path.Combine(android, "MainActivity.cs"));
+        var manifest = File.ReadAllText(Path.Combine(android, "AndroidManifest.xml"));
+        // Assert
+        activity.Should().Contain("DataScheme = \"com.fishinglogbook.mobile.demo\"");
+        activity.Should().Contain("DataHost = \"oauth2redirect\"");
+        activity.Should().Contain("DataHost = \"signedout\"");
+        activity.Should().Contain("OnNewIntent");
+        activity.Should().Contain("AuthenticationCallbackHandler");
+        manifest.Should().Contain("android.intent.action.VIEW");
     }
 
     [Fact]

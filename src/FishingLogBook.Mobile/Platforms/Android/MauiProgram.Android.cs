@@ -1,10 +1,16 @@
 using Android.Content.Res;
+using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 
 namespace FishingLogBook.Mobile;
 
 public static partial class MauiProgram
 {
+    static partial void ConfigurePlatformLogging(ILoggingBuilder logging)
+    {
+        logging.AddProvider(new AndroidLogcatLoggerProvider());
+    }
+
     static partial void ConfigurePlatformHandlers()
     {
         EntryHandler.Mapper.AppendToMapping("BorderlessEntry", static (handler, _) =>

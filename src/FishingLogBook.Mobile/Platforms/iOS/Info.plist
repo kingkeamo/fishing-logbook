@@ -33,6 +33,17 @@
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.fishinglogbook.mobile.demo</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.fishinglogbook.mobile.demo</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 	<key>XSAppIconAssets</key>

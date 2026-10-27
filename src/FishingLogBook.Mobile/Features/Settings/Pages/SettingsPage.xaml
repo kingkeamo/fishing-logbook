@@ -11,6 +11,13 @@
    <RadioButton x:Name="ThemeLight" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeLight" Content="{Binding Text[ThemeLight]}" />
    <RadioButton x:Name="ThemeDark" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeDark" Content="{Binding Text[ThemeDark]}" />
   </VerticalStackLayout></Border>
+  <Border Style="{StaticResource Card}" Padding="16,12"><VerticalStackLayout Spacing="8">
+   <Label Text="{Binding Text[Account]}" Style="{StaticResource SectionTitle}" />
+   <Label x:Name="AccountEmail" Style="{StaticResource SecondaryText}" AutomationId="AccountEmail" />
+   <Button Text="{Binding Text[SignOut]}" HeightRequest="48" Style="{StaticResource SecondaryButton}"
+    Clicked="OnSignOut" AutomationId="SignOut"
+    SemanticProperties.Description="{Binding Text[SignOutDescription]}" />
+  </VerticalStackLayout></Border>
   <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
    <Label Text="{Binding Text[Language]}" Style="{StaticResource SectionTitle}" />
    <RadioButton x:Name="LanguageEnglish" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageEnglish" Content="{Binding Text[LanguageEnglish]}" />

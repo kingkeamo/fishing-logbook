@@ -11,6 +11,7 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Dapper" Version="2.1.79" />
     <PackageVersion Include="dbup-postgresql" Version="7.0.1" />
+    <PackageVersion Include="Duende.IdentityModel.OidcClient" Version="7.1.1" />
     <PackageVersion Include="FluentResults" Version="4.0.0" />
     <PackageVersion Include="FluentValidation" Version="11.11.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
