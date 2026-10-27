@@ -10,7 +10,8 @@ namespace FishingLogBook.Mobile.Features.Profile.Services;
 public sealed class ProfileEditorService(
     IProfileClient profileClient,
     IAnglerPreferencesService preferencesService,
-    IAccountSessionCoordinator sessionCoordinator) : IProfileEditorService
+    IAccountSessionCoordinator sessionCoordinator,
+    IAccountUnitsService unitsService) : IProfileEditorService
 {
     public async Task<ApiResultModel<ProfileEditorDataModel>> LoadAsync(CancellationToken cancellationToken)
     {
@@ -39,6 +40,7 @@ public sealed class ProfileEditorService(
             throw new OperationCanceledException("The account session changed while the profile was loading.");
         }
 
+        unitsService.Remember(lease, profile.Value!);
         return ApiResultModel<ProfileEditorDataModel>.Succeeded(
             new ProfileEditorDataModel(profile.Value!, preferences.Value!));
     }
@@ -59,18 +61,7 @@ public sealed class ProfileEditorService(
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
             lease.CancellationToken);
-        var latest = await profileClient.GetAsync(linkedCancellation.Token);
-        if (!latest.IsSuccess)
-        {
-            return SaveResultModel<ProfileEditorDataModel>.NotAttempted(latest.Outcome);
-        }
-
-        var update = profile with
-        {
-            PreferredWeightUnit = latest.Value!.PreferredWeightUnit,
-            PreferredLengthUnit = latest.Value.PreferredLengthUnit
-        };
-        var savedProfile = await profileClient.UpdateAsync(update, linkedCancellation.Token);
+        var savedProfile = await profileClient.UpdateAsync(profile, linkedCancellation.Token);
         if (!savedProfile.IsSuccess)
         {
             return SaveResultModel<ProfileEditorDataModel>.WriteFailed(savedProfile.Outcome, earlierWritesSaved: false);
@@ -81,6 +72,7 @@ public sealed class ProfileEditorService(
             throw new OperationCanceledException("The account session changed while the profile was saving.");
         }
 
+        unitsService.Remember(lease, savedProfile.Value!);
         var savedPreferences = await preferencesService.SaveAsync(
             lease,
             current.Preferences.Catalogue,

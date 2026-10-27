@@ -96,6 +96,7 @@ public static partial class MauiProgram
             services.GetRequiredService<IFileSystemAdapter>(),
             Path.Combine(FileSystem.AppDataDirectory, "angler-preferences")));
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
+        builder.Services.AddSingleton<IAccountUnitsService, AccountUnitsService>();
         builder.Services.AddSingleton<IProfileEditorService, ProfileEditorService>();
         builder.Services.AddSingleton<IConnectivityService, DeviceConnectivityService>();
         builder.Services.AddSingleton<CatalogueTextService>();

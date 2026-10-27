@@ -18,7 +18,8 @@ public class WhenTestingAnglerPreferencesPresentation
         var profile = File.ReadAllText(profilePath);
         // Assert
         settings.Should().NotContain("AutomationId=\"FishingPreferences\"");
-        settings.Should().Contain("AutomationId=\"WeightUnitKg\"");
+        settings.Should().NotContain("AutomationId=\"WeightUnitKg\"");
+        settings.Should().NotContain("AutomationId=\"LengthUnitCm\"");
         settings.Should().Contain("AutomationId=\"LanguageFrench\"");
         settings.Should().Contain("AutomationId=\"ThemeDark\"");
         profile.Should().Contain("AutomationId=\"ProfileMethods\"");
@@ -28,6 +29,8 @@ public class WhenTestingAnglerPreferencesPresentation
         profile.Should().Contain("AutomationId=\"ProfileMore\"");
         profile.Should().Contain("AutomationId=\"ProfileFishingDetailsPanel\"");
         profile.Should().Contain("AutomationId=\"ProfileDiscardAndReload\"");
+        profile.Should().Contain("AutomationId=\"ProfileWeightUnit\"");
+        profile.Should().Contain("AutomationId=\"ProfileLengthUnit\"");
         var picker = File.ReadAllText(Path.Combine(MobileRoot, "Features", "Profile", "Popups", "CataloguePickerPopup.xaml"));
         picker.Should().Contain("AutomationId=\"CataloguePickerSearch\"");
         picker.Should().Contain("AutomationId=\"CataloguePickerAvailable\"");
@@ -69,7 +72,9 @@ public class WhenTestingAnglerPreferencesPresentation
             "ProfileOfflineSave", "ProfileOfflineError", "ProfileValidationError", "ProfileSaveError",
             "ProfileSessionExpired", "ProfileDisplayNameTooLong", "ProfileHomeRegionTooLong",
             "ProfileLocationRequired", "ProfileLocationTooLong", "ProfileLocationDuplicate",
-            "ProfilePartialSaveError", "ProfileDiscardAndReload", "SetAsDefault"
+            "ProfilePartialSaveError", "ProfileDiscardAndReload", "SetAsDefault",
+            "ProfileWeightUnit", "ProfileWeightUnitKg", "ProfileWeightUnitLb",
+            "ProfileLengthUnit", "ProfileLengthUnitCm", "ProfileLengthUnitIn"
         };
         // Act
         var english = GetValues(XDocument.Load(Path.Combine(localisation, "UiStrings.resx")));

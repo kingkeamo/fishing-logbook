@@ -151,6 +151,22 @@
                 <Label Text="{Binding Text[ProfileShowSpecies]}" VerticalOptions="Center" />
                 <Switch Grid.Column="1" IsToggled="{Binding ShowPreferredSpecies}" AutomationId="ProfileShowSpecies" />
               </Grid>
+              <VerticalStackLayout Spacing="4">
+                <Label Text="{Binding Text[ProfileWeightUnit]}" Style="{StaticResource Eyebrow}" />
+                <Border Style="{StaticResource InputField}">
+                  <Picker ItemsSource="{Binding WeightUnitOptions}"
+                          ItemDisplayBinding="{Binding Label, x:DataType={x:Null}}"
+                          SelectedItem="{Binding SelectedWeightUnit}" AutomationId="ProfileWeightUnit" />
+                </Border>
+              </VerticalStackLayout>
+              <VerticalStackLayout Spacing="4">
+                <Label Text="{Binding Text[ProfileLengthUnit]}" Style="{StaticResource Eyebrow}" />
+                <Border Style="{StaticResource InputField}">
+                  <Picker ItemsSource="{Binding LengthUnitOptions}"
+                          ItemDisplayBinding="{Binding Label, x:DataType={x:Null}}"
+                          SelectedItem="{Binding SelectedLengthUnit}" AutomationId="ProfileLengthUnit" />
+                </Border>
+              </VerticalStackLayout>
 
               <BoxView Style="{StaticResource Divider}" />
               <Label Text="{Binding Text[ProfileLocations]}" Style="{StaticResource SectionTitle}" />

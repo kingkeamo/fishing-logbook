@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Api.Models;
+using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Dtos;
@@ -27,6 +28,9 @@ public sealed class WhenTestingLoad : BaseProfileEditorServiceTest
         result.IsSuccess.Should().BeTrue();
         result.Value!.Profile.Should().BeSameAs(Profile);
         result.Value.Preferences.Should().BeSameAs(preferences);
+        MockUnitsService.Received(1).Remember(
+            Arg.Is<AccountSessionLeaseModel>(lease => lease.UserId == UserId),
+            Arg.Is<ProfileDto>(profile => ReferenceEquals(profile, Profile)));
     }
 
     [Fact]
@@ -47,5 +51,6 @@ public sealed class WhenTestingLoad : BaseProfileEditorServiceTest
 
         // Assert
         await action.Should().ThrowAsync<OperationCanceledException>();
+        MockUnitsService.DidNotReceive().Remember(Arg.Any<AccountSessionLeaseModel>(), Arg.Any<ProfileDto>());
     }
 }

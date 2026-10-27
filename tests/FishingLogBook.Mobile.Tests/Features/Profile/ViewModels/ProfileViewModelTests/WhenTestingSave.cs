@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Profile.ViewModels.ProfileViewModelTests;
@@ -136,7 +137,11 @@ public sealed class WhenTestingSave : BaseProfileViewModelTest
         result.Should().BeTrue();
         await MockService.Received(1).SaveAsync(
             Arg.Is<ProfileEditorDataModel>(value => ReferenceEquals(value, Data)),
-            Arg.Is<UpdateProfileDto>(value => value.DisplayName == "Updated" && value.ShowPhotograph),
+            Arg.Is<UpdateProfileDto>(value =>
+                value.DisplayName == "Updated" &&
+                value.ShowPhotograph &&
+                value.PreferredWeightUnit == WeightUnitEnum.Lb &&
+                value.PreferredLengthUnit == LengthUnitEnum.In),
             Arg.Is<UpdateFishingPreferencesDto>(value =>
                 value.Methods.Count == 2 &&
                 value.Methods.SelectMany(method => method.Species).Count() == 2),

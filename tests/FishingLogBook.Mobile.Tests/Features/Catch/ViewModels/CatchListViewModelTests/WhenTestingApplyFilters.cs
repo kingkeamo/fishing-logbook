@@ -73,7 +73,7 @@ public class WhenTestingApplyFilters : BaseCatchListViewModelTest
     {
         // Arrange
         var clock = new FixedTimeProvider(new DateTimeOffset(year, month, day, hour, minute, 0, TimeSpan.Zero));
-        var sut = new CatchListViewModel(Text, new SampleCatchProvider(Text, Clock), clock);
+        var sut = CreateSut(clock);
         // Act
         sut.ApplyFilters(Filter(range: CatchDateRangeEnum.Last7Days));
         // Assert

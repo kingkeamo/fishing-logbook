@@ -1,5 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Shared.Enums;
+using FishingLogBook.Shared.Measurements;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.Models.CatchPresentationModelTests;
 
@@ -105,6 +107,22 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
         sut.HasMultiplePhotos.Should().BeFalse();
         sut.HasNotes.Should().BeFalse();
         sut.SpeciesIdentifier.Should().Be(CatchSpeciesEnum.Other);
+    }
+
+    [Fact]
+    public void ItShouldConvertCanonicalMeasurementsToTheAccountUnits()
+    {
+        // Arrange
+        var dto = Catch with { Weight = 2.4m, Length = 48m };
+        var sut = new CatchPresentationModel(dto, CreateText("en-GB"));
+
+        // Act
+        sut.SetUnits(new MeasurementService(), WeightUnitEnum.Lb, LengthUnitEnum.In);
+
+        // Assert
+        sut.Weight.Should().Be("5.29 lb");
+        sut.Length.Should().Be("18.9 in");
+        sut.Measurements.Should().Be("5.29 lb · 18.9 in");
     }
 
     [Fact]

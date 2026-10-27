@@ -14,6 +14,7 @@ public abstract class BaseProfileEditorServiceTest : IDisposable
     protected static readonly Guid OtherUserId = Guid.Parse("4c124e8d-1864-463c-8ccb-489611f8cde5");
     protected readonly IProfileClient MockProfileClient = Substitute.For<IProfileClient>();
     protected readonly IAnglerPreferencesService MockPreferencesService = Substitute.For<IAnglerPreferencesService>();
+    protected readonly IAccountUnitsService MockUnitsService = Substitute.For<IAccountUnitsService>();
     protected readonly AccountSessionCoordinator SessionCoordinator = new();
     protected readonly ProfileEditorService Sut;
     protected readonly ProfileDto Profile = new(
@@ -22,7 +23,7 @@ public abstract class BaseProfileEditorServiceTest : IDisposable
 
     protected BaseProfileEditorServiceTest()
     {
-        Sut = new ProfileEditorService(MockProfileClient, MockPreferencesService, SessionCoordinator);
+        Sut = new ProfileEditorService(MockProfileClient, MockPreferencesService, SessionCoordinator, MockUnitsService);
     }
 
     protected Task SignInAsync(Guid userId)

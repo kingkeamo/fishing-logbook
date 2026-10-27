@@ -1,6 +1,5 @@
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Settings.Services;
-using FishingLogBook.Shared.Enums;
 
 namespace FishingLogBook.Mobile.Features.Settings.Pages;
 
@@ -42,31 +41,7 @@ public partial class SettingsPage : ContentPage
         ThemeSystem.IsChecked = _preferences.Appearance == AppearanceEnum.System;
         ThemeLight.IsChecked = _preferences.Appearance == AppearanceEnum.Light;
         ThemeDark.IsChecked = _preferences.Appearance == AppearanceEnum.Dark;
-        WeightKg.IsChecked = _preferences.WeightUnit == WeightUnitEnum.Kg;
-        WeightLb.IsChecked = _preferences.WeightUnit == WeightUnitEnum.Lb;
-        LengthCm.IsChecked = _preferences.LengthUnit == LengthUnitEnum.Cm;
-        LengthIn.IsChecked = _preferences.LengthUnit == LengthUnitEnum.In;
         _refreshing = false;
-    }
-
-    private void OnWeightUnitChanged(object? sender, CheckedChangedEventArgs args)
-    {
-        if (_refreshing || !args.Value)
-        {
-            return;
-        }
-
-        _preferences.SetWeightUnit(ReferenceEquals(sender, WeightLb) ? WeightUnitEnum.Lb : WeightUnitEnum.Kg);
-    }
-
-    private void OnLengthUnitChanged(object? sender, CheckedChangedEventArgs args)
-    {
-        if (_refreshing || !args.Value)
-        {
-            return;
-        }
-
-        _preferences.SetLengthUnit(ReferenceEquals(sender, LengthIn) ? LengthUnitEnum.In : LengthUnitEnum.Cm);
     }
 
     private void OnLanguageChanged(object? sender, CheckedChangedEventArgs args)

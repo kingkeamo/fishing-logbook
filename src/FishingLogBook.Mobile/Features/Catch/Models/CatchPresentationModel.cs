@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
+using FishingLogBook.Shared.Measurements;
 
 namespace FishingLogBook.Mobile.Features.Catch.Models;
 
@@ -10,6 +12,11 @@ public sealed class CatchPresentationModel(
     IReadOnlyList<string>? photos = null,
     SampleCatchTextModel? sampleText = null) : INotifyPropertyChanged
 {
+    private static readonly IMeasurementService DefaultMeasurement = new MeasurementService();
+    private IMeasurementService _measurement = DefaultMeasurement;
+    private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
+    private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
+
     public UiTextService Text { get; } = text;
     public Guid Id => catchDto.Id;
     public string Species => LocalizedOrRecorded(sampleText?.SpeciesKey, catchDto.SpeciesName);
@@ -24,8 +31,8 @@ public sealed class CatchPresentationModel(
     public bool HasMeasurements => catchDto.Weight.HasValue || catchDto.Length.HasValue;
     public string Measurements => string.Join(" · ", new[] { catchDto.Weight.HasValue ? Weight : null, catchDto.Length.HasValue ? Length : null }.Where(value => value is not null));
     public string CardDescription => string.Join(", ", new[] { OpenDescription, HasMethod ? Method : null, HasMeasurements ? Measurements : null }.Where(value => value is not null));
-    public string Weight => FormatMeasurement(catchDto.Weight, "kg");
-    public string Length => FormatMeasurement(catchDto.Length, "cm");
+    public string Weight => FormatWeight();
+    public string Length => FormatLength();
     public string Place => LocalizedOrRecorded(sampleText?.PlaceKey, catchDto.PlaceName);
     public string Notes => LocalizedOrRecorded(sampleText?.NotesKey, catchDto.Notes);
     public IReadOnlyList<string> Photos { get; } = photos ?? [];
@@ -39,6 +46,15 @@ public sealed class CatchPresentationModel(
     public bool HasNoPhoto => !HasPhoto;
     public string OpenDescription => string.Format(Text.Culture, Text["OpenCatchDescription"], Species, CaughtOn);
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void SetUnits(IMeasurementService measurement, WeightUnitEnum weightUnit, LengthUnitEnum lengthUnit)
+    {
+        ArgumentNullException.ThrowIfNull(measurement);
+        _measurement = measurement;
+        _weightUnit = weightUnit;
+        _lengthUnit = lengthUnit;
+        RefreshLocalizedText();
+    }
 
     public void RefreshLocalizedText()
     {
@@ -65,9 +81,28 @@ public sealed class CatchPresentationModel(
         return string.IsNullOrWhiteSpace(value) ? Text["NotRecorded"] : value;
     }
 
-    private string FormatMeasurement(decimal? value, string unit)
+    private string FormatWeight()
     {
-        return value.HasValue ? $"{value.Value.ToString("0.##", Text.Culture)} {unit}" : Text["NotRecorded"];
+        var display = _measurement.ToDisplayWeight(catchDto.Weight, _weightUnit);
+        if (display is null)
+        {
+            return Text["NotRecorded"];
+        }
+
+        var unit = Text[_weightUnit == WeightUnitEnum.Lb ? "MeasureUnitLb" : "MeasureUnitKg"];
+        return $"{display.Value.ToString("0.##", Text.Culture)} {unit}";
+    }
+
+    private string FormatLength()
+    {
+        var display = _measurement.ToDisplayLength(catchDto.Length, _lengthUnit);
+        if (display is null)
+        {
+            return Text["NotRecorded"];
+        }
+
+        var unit = Text[_lengthUnit == LengthUnitEnum.In ? "MeasureUnitIn" : "MeasureUnitCm"];
+        return $"{display.Value.ToString("0.##", Text.Culture)} {unit}";
     }
 }
 

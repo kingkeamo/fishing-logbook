@@ -7,6 +7,7 @@ using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Shared.Enums;
 using FishingLogBook.Shared.Preferences;
 
 namespace FishingLogBook.Mobile.Features.Profile.ViewModels;
@@ -32,6 +33,8 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     private bool _isSaving;
     private bool _isSaveIncomplete;
     private string? _message;
+    private MeasurementUnitOptionModel<WeightUnitEnum>? _selectedWeightUnit;
+    private MeasurementUnitOptionModel<LengthUnitEnum>? _selectedLengthUnit;
 
     public ProfileViewModel(
         IProfileEditorService service,
@@ -47,6 +50,7 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         Text = text;
         Text.PropertyChanged += OnCultureChanged;
         _connectivity.ConnectivityChanged += OnConnectivityChanged;
+        PublishUnitOptions();
     }
 
     public UiTextService Text { get; }
@@ -74,6 +78,18 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     public bool CanSave => HasContent && IsOnline && !IsSaving && !IsLoading;
     public string? Message { get => _message; private set => Set(ref _message, value, nameof(Message)); }
     public bool HasMessage => !string.IsNullOrWhiteSpace(Message);
+    public IReadOnlyList<MeasurementUnitOptionModel<WeightUnitEnum>> WeightUnitOptions { get; private set; } = [];
+    public IReadOnlyList<MeasurementUnitOptionModel<LengthUnitEnum>> LengthUnitOptions { get; private set; } = [];
+    public MeasurementUnitOptionModel<WeightUnitEnum>? SelectedWeightUnit
+    {
+        get => _selectedWeightUnit;
+        set => Set(ref _selectedWeightUnit, value, nameof(SelectedWeightUnit));
+    }
+    public MeasurementUnitOptionModel<LengthUnitEnum>? SelectedLengthUnit
+    {
+        get => _selectedLengthUnit;
+        set => Set(ref _selectedLengthUnit, value, nameof(SelectedLengthUnit));
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -342,6 +358,9 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         ShowPhotograph = data.Profile.ShowPhotograph;
         ShowPreferredFishingMethods = data.Profile.ShowPreferredFishingMethods;
         ShowPreferredSpecies = data.Profile.ShowPreferredSpecies;
+        PublishUnitOptions();
+        SelectedWeightUnit = SelectOption(WeightUnitOptions, data.Profile.PreferredWeightUnit);
+        SelectedLengthUnit = SelectOption(LengthUnitOptions, data.Profile.PreferredLengthUnit);
         Methods = CreateMethods(data.Preferences);
         Locations.Clear();
         foreach (var location in data.Preferences.Locations.Locations)
@@ -449,8 +468,8 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
             ShowHomeRegion,
             ShowPreferredFishingMethods,
             ShowPreferredSpecies,
-            current.PreferredWeightUnit,
-            current.PreferredLengthUnit);
+            SelectedWeightUnit?.Value ?? current.PreferredWeightUnit,
+            SelectedLengthUnit?.Value ?? current.PreferredLengthUnit);
     }
 
     private UpdateFishingPreferencesDto BuildPreferencesUpdate()
@@ -534,6 +553,8 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         _current = null;
         Methods = [];
         Locations.Clear();
+        SelectedWeightUnit = null;
+        SelectedLengthUnit = null;
         IsSaveIncomplete = false;
         Message = null;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Methods)));
@@ -546,6 +567,19 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         if (args.PropertyName != nameof(UiTextService.Culture))
         {
             return;
+        }
+
+        var weight = SelectedWeightUnit?.Value;
+        var length = SelectedLengthUnit?.Value;
+        PublishUnitOptions();
+        if (weight is not null)
+        {
+            SelectedWeightUnit = SelectOption(WeightUnitOptions, weight.Value);
+        }
+
+        if (length is not null)
+        {
+            SelectedLengthUnit = SelectOption(LengthUnitOptions, length.Value);
         }
 
         if (_current is null)
@@ -626,6 +660,31 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         }
 
         method.NotifySelectedSpecies();
+    }
+
+    private void PublishUnitOptions()
+    {
+        WeightUnitOptions =
+        [
+            new MeasurementUnitOptionModel<WeightUnitEnum>(WeightUnitEnum.Kg, Text["ProfileWeightUnitKg"]),
+            new MeasurementUnitOptionModel<WeightUnitEnum>(WeightUnitEnum.Lb, Text["ProfileWeightUnitLb"])
+        ];
+        LengthUnitOptions =
+        [
+            new MeasurementUnitOptionModel<LengthUnitEnum>(LengthUnitEnum.Cm, Text["ProfileLengthUnitCm"]),
+            new MeasurementUnitOptionModel<LengthUnitEnum>(LengthUnitEnum.In, Text["ProfileLengthUnitIn"])
+        ];
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(WeightUnitOptions)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LengthUnitOptions)));
+    }
+
+    private static MeasurementUnitOptionModel<T>? SelectOption<T>(
+        IReadOnlyList<MeasurementUnitOptionModel<T>> options,
+        T value)
+        where T : struct, Enum
+    {
+        return options.FirstOrDefault(option => EqualityComparer<T>.Default.Equals(option.Value, value))
+            ?? options.FirstOrDefault();
     }
 
     private void PublishMethodSelection()

@@ -248,6 +248,12 @@
   <data name="PickerShowingLimited" xml:space="preserve"><value>Showing {0} of {1}. Search to find more.</value></data>
   <data name="PickerNoMatches" xml:space="preserve"><value>No matches found.</value></data>
   <data name="PickerNoneSelected" xml:space="preserve"><value>None selected</value></data>
+  <data name="ProfileWeightUnit" xml:space="preserve"><value>Preferred Weight Unit</value></data>
+  <data name="ProfileWeightUnitKg" xml:space="preserve"><value>Kilograms (kg)</value></data>
+  <data name="ProfileWeightUnitLb" xml:space="preserve"><value>Pounds (lb)</value></data>
+  <data name="ProfileLengthUnit" xml:space="preserve"><value>Preferred Length Unit</value></data>
+  <data name="ProfileLengthUnitCm" xml:space="preserve"><value>Centimetres (cm)</value></data>
+  <data name="ProfileLengthUnitIn" xml:space="preserve"><value>Inches (in)</value></data>
   <data name="ProfileShowMethods" xml:space="preserve"><value>Show my preferred fishing methods</value></data>
   <data name="ProfileShowSpecies" xml:space="preserve"><value>Show my preferred species</value></data>
   <data name="ProfileLocations" xml:space="preserve"><value>Preferred fishing locations</value></data>

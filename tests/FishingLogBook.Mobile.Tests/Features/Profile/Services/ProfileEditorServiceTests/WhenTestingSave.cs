@@ -12,32 +12,26 @@ namespace FishingLogBook.Mobile.Tests.Features.Profile.Services.ProfileEditorSer
 
 public sealed class WhenTestingSave : BaseProfileEditorServiceTest
 {
-    private readonly UpdateProfileDto _profileUpdate = new(null, null, true, false, false, false, false);
+    private readonly UpdateProfileDto _profileUpdate = new(
+        "Updated", "Mayo", false, true, false, true, true,
+        WeightUnitEnum.Kg, LengthUnitEnum.Cm);
     private readonly UpdateFishingPreferencesDto _preferenceUpdate = new([]);
     private readonly UpdateFishingLocationPreferencesDto _locationUpdate = new([]);
 
     [Fact]
-    public async Task ItShouldReportNothingSavedWhenTheLatestProfileCannotBeRead()
+    public async Task ItShouldNotCallTheApiWithoutAnActiveAccount()
     {
         // Arrange
-        await SignInAsync(UserId);
         var current = new ProfileEditorDataModel(Profile, TestAnglerPreferences.Create());
-        MockProfileClient.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Failed(ApiOutcomeEnum.Unavailable));
 
         // Act
         var result = await Sut.SaveAsync(current, _profileUpdate, _preferenceUpdate, _locationUpdate, CancellationToken.None);
 
         // Assert
-        result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
+        result.Outcome.Should().Be(ApiOutcomeEnum.SessionExpired);
         result.MayHavePartiallySaved.Should().BeFalse();
         await MockProfileClient.DidNotReceive().UpdateAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>());
-        await MockPreferencesService.DidNotReceive().SaveAsync(
-            Arg.Any<AccountSessionLeaseModel>(),
-            Arg.Any<FishingCatalogueDto>(),
-            Arg.Any<UpdateFishingPreferencesDto>(),
-            Arg.Any<UpdateFishingLocationPreferencesDto>(),
-            Arg.Any<CancellationToken>());
+        MockUnitsService.DidNotReceive().Remember(Arg.Any<AccountSessionLeaseModel>(), Arg.Any<ProfileDto>());
     }
 
     [Fact]
@@ -46,8 +40,6 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
         // Arrange
         await SignInAsync(UserId);
         var current = new ProfileEditorDataModel(Profile, TestAnglerPreferences.Create());
-        MockProfileClient.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Succeeded(Profile));
         MockProfileClient.UpdateAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
             .Returns(ApiResultModel<ProfileDto>.Failed(ApiOutcomeEnum.ValidationFailed));
 
@@ -63,6 +55,7 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
             Arg.Any<UpdateFishingPreferencesDto>(),
             Arg.Any<UpdateFishingLocationPreferencesDto>(),
             Arg.Any<CancellationToken>());
+        MockUnitsService.DidNotReceive().Remember(Arg.Any<AccountSessionLeaseModel>(), Arg.Any<ProfileDto>());
     }
 
     [Fact]
@@ -71,8 +64,6 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
         // Arrange
         await SignInAsync(UserId);
         var current = new ProfileEditorDataModel(Profile, TestAnglerPreferences.Create());
-        MockProfileClient.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Succeeded(Profile));
         MockProfileClient.UpdateAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
             .Returns(ApiResultModel<ProfileDto>.Failed(ApiOutcomeEnum.Unavailable));
 
@@ -89,6 +80,7 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
             Arg.Any<UpdateFishingPreferencesDto>(),
             Arg.Any<UpdateFishingLocationPreferencesDto>(),
             Arg.Any<CancellationToken>());
+        MockUnitsService.DidNotReceive().Remember(Arg.Any<AccountSessionLeaseModel>(), Arg.Any<ProfileDto>());
     }
 
     [Fact]
@@ -97,10 +89,9 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
         // Arrange
         await SignInAsync(UserId);
         var current = new ProfileEditorDataModel(Profile, TestAnglerPreferences.Create());
-        MockProfileClient.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Succeeded(Profile));
+        var saved = Profile with { DisplayName = "Updated", PreferredWeightUnit = WeightUnitEnum.Kg, PreferredLengthUnit = LengthUnitEnum.Cm };
         MockProfileClient.UpdateAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Succeeded(Profile));
+            .Returns(ApiResultModel<ProfileDto>.Succeeded(saved));
         MockPreferencesService.SaveAsync(
                 Arg.Any<AccountSessionLeaseModel>(),
                 Arg.Any<FishingCatalogueDto>(),
@@ -116,7 +107,11 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
         result.IsSuccess.Should().BeFalse();
         result.Outcome.Should().Be(ApiOutcomeEnum.ValidationFailed);
         result.MayHavePartiallySaved.Should().BeTrue();
-        await MockProfileClient.Received(1).UpdateAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>());
+        MockUnitsService.Received(1).Remember(
+            Arg.Is<AccountSessionLeaseModel>(lease => lease.UserId == UserId),
+            Arg.Is<ProfileDto>(profile =>
+                profile.PreferredWeightUnit == WeightUnitEnum.Kg &&
+                profile.PreferredLengthUnit == LengthUnitEnum.Cm));
         await MockPreferencesService.Received(1).SaveAsync(
             Arg.Is<AccountSessionLeaseModel>(value => value.UserId == UserId),
             Arg.Is<FishingCatalogueDto>(value => ReferenceEquals(value, current.Preferences.Catalogue)),
@@ -131,8 +126,6 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
         // Arrange
         await SignInAsync(UserId);
         var current = new ProfileEditorDataModel(Profile, TestAnglerPreferences.Create());
-        MockProfileClient.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Succeeded(Profile));
         MockProfileClient.UpdateAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>()).Returns(async _ =>
         {
             await SignInAsync(OtherUserId);
@@ -144,6 +137,7 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
         await action.Should().ThrowAsync<OperationCanceledException>();
 
         // Assert
+        MockUnitsService.DidNotReceive().Remember(Arg.Any<AccountSessionLeaseModel>(), Arg.Any<ProfileDto>());
         await MockPreferencesService.DidNotReceive().SaveAsync(
             Arg.Any<AccountSessionLeaseModel>(),
             Arg.Any<FishingCatalogueDto>(),
@@ -153,18 +147,25 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
     }
 
     [Fact]
-    public async Task ItShouldPreserveCurrentMeasurementUnitsWhenUpdatingPersonalDetails()
+    public async Task ItShouldSendTheRequestedUnitsWithoutRereadingTheProfile()
     {
         // Arrange
         await SignInAsync(UserId);
         var current = new ProfileEditorDataModel(Profile, TestAnglerPreferences.Create());
-        var requested = new UpdateProfileDto(
-            "Updated", "Mayo", false, true, false, true, true,
-            WeightUnitEnum.Kg, LengthUnitEnum.Cm);
-        MockProfileClient.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Succeeded(Profile));
+        var saved = Profile with
+        {
+            DisplayName = "Updated",
+            HomeRegion = "Mayo",
+            ShowDisplayName = false,
+            ShowPhotograph = true,
+            ShowHomeRegion = false,
+            ShowPreferredFishingMethods = true,
+            ShowPreferredSpecies = true,
+            PreferredWeightUnit = WeightUnitEnum.Kg,
+            PreferredLengthUnit = LengthUnitEnum.Cm
+        };
         MockProfileClient.UpdateAsync(Arg.Any<UpdateProfileDto>(), Arg.Any<CancellationToken>())
-            .Returns(ApiResultModel<ProfileDto>.Succeeded(Profile with { DisplayName = "Updated" }));
+            .Returns(ApiResultModel<ProfileDto>.Succeeded(saved));
         MockPreferencesService.SaveAsync(
                 Arg.Any<AccountSessionLeaseModel>(),
                 Arg.Any<FishingCatalogueDto>(),
@@ -174,17 +175,27 @@ public sealed class WhenTestingSave : BaseProfileEditorServiceTest
             .Returns(SaveResultModel<AnglerPreferencesModel>.Saved(current.Preferences));
 
         // Act
-        var result = await Sut.SaveAsync(current, requested, _preferenceUpdate, _locationUpdate, CancellationToken.None);
+        var result = await Sut.SaveAsync(current, _profileUpdate, _preferenceUpdate, _locationUpdate, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.MayHavePartiallySaved.Should().BeFalse();
+        await MockProfileClient.DidNotReceive().GetAsync(Arg.Any<CancellationToken>());
         await MockProfileClient.Received(1).UpdateAsync(
             Arg.Is<UpdateProfileDto>(value =>
                 value.DisplayName == "Updated" &&
-                value.PreferredWeightUnit == WeightUnitEnum.Lb &&
-                value.PreferredLengthUnit == LengthUnitEnum.In),
+                value.HomeRegion == "Mayo" &&
+                !value.ShowDisplayName &&
+                value.ShowPhotograph &&
+                !value.ShowHomeRegion &&
+                value.ShowPreferredFishingMethods &&
+                value.ShowPreferredSpecies &&
+                value.PreferredWeightUnit == WeightUnitEnum.Kg &&
+                value.PreferredLengthUnit == LengthUnitEnum.Cm),
             Arg.Any<CancellationToken>());
+        MockUnitsService.Received(1).Remember(
+            Arg.Is<AccountSessionLeaseModel>(lease => lease.UserId == UserId),
+            Arg.Is<ProfileDto>(profile => ReferenceEquals(profile, saved)));
         await MockPreferencesService.Received(1).SaveAsync(
             Arg.Is<AccountSessionLeaseModel>(value => value.UserId == UserId),
             Arg.Is<FishingCatalogueDto>(value => ReferenceEquals(value, current.Preferences.Catalogue)),
