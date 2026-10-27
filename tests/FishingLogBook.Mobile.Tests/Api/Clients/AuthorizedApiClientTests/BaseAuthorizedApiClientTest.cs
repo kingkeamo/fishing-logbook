@@ -23,6 +23,7 @@ public abstract class BaseAuthorizedApiClientTest
     {
         MockAccessTokenProvider.GetAccessTokenAsync(Arg.Any<CancellationToken>())
             .Returns(new ApiAccessTokenModel(AccessToken, Lease));
+        MockSessionCoordinator.Capture().Returns(Lease);
         MockSessionCoordinator.IsCurrent(Lease).Returns(true);
     }
 
@@ -35,7 +36,7 @@ public abstract class BaseAuthorizedApiClientTest
             InnerHandler = server
         };
         var httpClient = new HttpClient(bearer) { BaseAddress = new Uri(TestMobileAuthConfig.ApiBaseUrl + "/") };
-        return (new AuthorizedApiClient(httpClient, Logger), server);
+        return (new AuthorizedApiClient(httpClient, MockSessionCoordinator, Logger), server);
     }
 
     protected (AuthorizedApiClient Client, RecordingHttpMessageHandler Server) CreateSut(

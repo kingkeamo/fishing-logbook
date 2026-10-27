@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Api.Models;
+using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Api.Clients;
@@ -11,18 +12,24 @@ public sealed class AuthorizedApiClient
 {
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
     private readonly HttpClient _httpClient;
+    private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly ILogger<AuthorizedApiClient> _logger;
 
-    public AuthorizedApiClient(HttpClient httpClient, ILogger<AuthorizedApiClient> logger)
+    public AuthorizedApiClient(
+        HttpClient httpClient,
+        IAccountSessionCoordinator sessionCoordinator,
+        ILogger<AuthorizedApiClient> logger)
     {
         _httpClient = httpClient;
         _httpClient.Timeout = RequestTimeout;
+        _sessionCoordinator = sessionCoordinator;
         _logger = logger;
     }
 
     public async Task<ApiResultModel<T>> GetAsync<T>(string path, CancellationToken cancellationToken)
         where T : class
     {
+        var lease = _sessionCoordinator.Capture();
         try
         {
             using var response = await _httpClient.GetAsync(path, cancellationToken);
@@ -37,9 +44,10 @@ public sealed class AuthorizedApiClient
             _logger.LogWarning("Authenticated API request failed with {ExceptionType}.", exception.GetType().FullName);
             return ApiResultModel<T>.Failed(ApiOutcomeEnum.Unavailable);
         }
-        catch (TaskCanceledException exception) when (
+        catch (OperationCanceledException) when (
             !cancellationToken.IsCancellationRequested &&
-            exception.InnerException is TimeoutException)
+            lease is not null &&
+            _sessionCoordinator.IsCurrent(lease))
         {
             _logger.LogWarning("Authenticated API request timed out.");
             return ApiResultModel<T>.Failed(ApiOutcomeEnum.Unavailable);

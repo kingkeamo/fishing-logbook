@@ -78,7 +78,7 @@ public class WhenTestingGet : BaseAuthorizedApiClientTest
     }
 
     [Fact]
-    public async Task ItShouldReportTheApiAsUnavailableWhenTheRequestTimesOut()
+    public async Task ItShouldReportTheApiAsUnavailableWhenTheHttpClientTimesOut()
     {
         // Arrange
         var (sut, _) = CreateSut((_, _) => throw new TaskCanceledException("timeout", new TimeoutException()));
@@ -87,6 +87,21 @@ public class WhenTestingGet : BaseAuthorizedApiClientTest
         // Assert
         result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
         AuthorizedApiClient.RequestTimeout.Should().Be(TimeSpan.FromSeconds(10));
+        MockSessionCoordinator.Received(1).IsCurrent(Lease);
+    }
+
+    [Fact]
+    public async Task ItShouldReportTheApiAsUnavailableWhenTheNetworkStackCancelsWithoutATimeoutException()
+    {
+        // Arrange
+        var (sut, server) = CreateSut((_, _) => throw new TaskCanceledException("The request was canceled."));
+        // Act
+        var result = await sut.GetAsync<SampleDto>("api/fishing-catalogue", CancellationToken.None);
+        // Assert
+        result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
+        server.Requests.Should().ContainSingle();
+        MockSessionCoordinator.Received(1).Capture();
+        MockSessionCoordinator.Received(1).IsCurrent(Lease);
     }
 
     [Fact]
@@ -103,6 +118,41 @@ public class WhenTestingGet : BaseAuthorizedApiClientTest
     }
 
     [Fact]
+    public async Task ItShouldPropagateCallerCancellationThatHappensDuringTheRequest()
+    {
+        // Arrange
+        using var cancellation = new CancellationTokenSource();
+        var (sut, _) = CreateSut(async (_, token) =>
+        {
+            await cancellation.CancelAsync();
+            token.ThrowIfCancellationRequested();
+            return Json("{}");
+        });
+        var action = () => sut.GetAsync<SampleDto>("api/fishing-catalogue", cancellation.Token);
+        // Act
+        // Assert
+        await action.Should().ThrowAsync<OperationCanceledException>();
+        MockSessionCoordinator.DidNotReceive().IsCurrent(Lease);
+    }
+
+    [Fact]
+    public async Task ItShouldPropagateCancellationWhenTheAccountSwitchesMidRequest()
+    {
+        // Arrange
+        var (sut, server) = CreateSut((_, _) =>
+        {
+            MockSessionCoordinator.IsCurrent(Lease).Returns(false);
+            throw new TaskCanceledException("The account session was cancelled.");
+        });
+        var action = () => sut.GetAsync<SampleDto>("api/fishing-catalogue", CancellationToken.None);
+        // Act
+        await action.Should().ThrowAsync<OperationCanceledException>();
+        // Assert
+        server.Requests.Should().ContainSingle();
+        MockSessionCoordinator.Received(1).IsCurrent(Lease);
+    }
+
+    [Fact]
     public async Task ItShouldDiscardTheResponseWhenTheAccountChangedDuringTheRequest()
     {
         // Arrange
@@ -113,7 +163,7 @@ public class WhenTestingGet : BaseAuthorizedApiClientTest
         await action.Should().ThrowAsync<OperationCanceledException>();
         // Assert
         server.Requests.Should().ContainSingle();
-        MockSessionCoordinator.Received(1).IsCurrent(Lease);
+        MockSessionCoordinator.Received(2).IsCurrent(Lease);
     }
 
     [Theory]
