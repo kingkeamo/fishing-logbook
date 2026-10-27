@@ -254,8 +254,8 @@
   <data name="ProfileLengthUnit" xml:space="preserve"><value>Unité de longueur préférée</value></data>
   <data name="ProfileLengthUnitCm" xml:space="preserve"><value>Centimètres (cm)</value></data>
   <data name="ProfileLengthUnitIn" xml:space="preserve"><value>Pouces (in)</value></data>
-  <data name="ProfileShowMethods" xml:space="preserve"><value>Afficher mes techniques préférées</value></data>
-  <data name="ProfileShowSpecies" xml:space="preserve"><value>Afficher mes espèces préférées</value></data>
+  <data name="ProfileShowMethods" xml:space="preserve"><value>Afficher mes techniques préférées aux autres pêcheurs</value></data>
+  <data name="ProfileShowSpecies" xml:space="preserve"><value>Afficher mes espèces préférées aux autres pêcheurs</value></data>
   <data name="ProfileLocations" xml:space="preserve"><value>Lieux de pêche préférés</value></data>
   <data name="ProfileLocationsHint" xml:space="preserve"><value>Ajoutez, renommez ou supprimez des lieux. L'étoile indique le lieu par défaut.</value></data>
   <data name="ProfileLocationName" xml:space="preserve"><value>Nom du lieu</value></data>

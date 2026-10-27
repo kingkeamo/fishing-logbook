@@ -45,10 +45,46 @@ public sealed class WhenTestingSave : BaseOnboardingViewModelTest
         profile.PreferredWeightUnit.Should().Be(WeightUnitEnum.Kg);
         profile.PreferredLengthUnit.Should().Be(LengthUnitEnum.Cm);
         profile.HomeRegion.Should().Be("Connemara");
+        profile.ShowPreferredFishingMethods.Should().BeFalse();
+        profile.ShowPreferredSpecies.Should().BeFalse();
         preferences!.Methods.Should().ContainSingle(method => method.FishingMethodId == TestAnglerPreferences.FlyId);
         locations!.Locations.Select(location => location.Id).Should().Equal(
             TestAnglerPreferences.CorribId,
             TestAnglerPreferences.MoyId);
+    }
+
+    [Fact]
+    public async Task ItShouldSaveVisibilityFlagsChosenOnTheWelcomeStep()
+    {
+        // Arrange
+        await LoadAsync();
+        Profile.ShowPreferredFishingMethods = true;
+        Profile.ShowPreferredSpecies = true;
+        await Sut.ContinueAsync(CancellationToken.None);
+        Sut.Back();
+        Profile.ShowPreferredFishingMethods.Should().BeTrue();
+        await Sut.ContinueAsync(CancellationToken.None);
+        KeepValidPreferences();
+        UpdateProfileDto? profile = null;
+        MockEditor.SaveAsync(
+                Arg.Any<ProfileEditorDataModel>(),
+                Arg.Any<UpdateProfileDto>(),
+                Arg.Any<UpdateFishingPreferencesDto>(),
+                Arg.Any<UpdateFishingLocationPreferencesDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                profile = call.Arg<UpdateProfileDto>();
+                return SaveResultModel<ProfileEditorDataModel>.Saved(ValidSavedData());
+            });
+
+        // Act
+        await Sut.ContinueAsync(CancellationToken.None);
+
+        // Assert
+        Sut.StepNumber.Should().Be(3);
+        profile!.ShowPreferredFishingMethods.Should().BeTrue();
+        profile.ShowPreferredSpecies.Should().BeTrue();
     }
 
     [Fact]

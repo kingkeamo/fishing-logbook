@@ -40,6 +40,16 @@
           </Border>
           <Label Text="{Binding Text[OnboardingDisplayNameHelp]}" Style="{StaticResource SecondaryText}" />
         </VerticalStackLayout>
+        <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+          <Label Text="{Binding Text[ProfileShowMethods]}" VerticalOptions="Center" />
+          <Switch Grid.Column="1" IsToggled="{Binding Profile.ShowPreferredFishingMethods}"
+                  AutomationId="OnboardingShowMethods" />
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+          <Label Text="{Binding Text[ProfileShowSpecies]}" VerticalOptions="Center" />
+          <Switch Grid.Column="1" IsToggled="{Binding Profile.ShowPreferredSpecies}"
+                  AutomationId="OnboardingShowSpecies" />
+        </Grid>
       </VerticalStackLayout>
 
       <VerticalStackLayout IsVisible="{Binding IsPreferencesStep}" Spacing="8" AutomationId="OnboardingPreferencesStep">

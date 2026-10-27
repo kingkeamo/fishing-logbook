@@ -21,6 +21,9 @@ public class WhenTestingOnboardingPresentation
         page.Should().Contain("<controls:FishingPreferenceEditorView");
         page.Should().Contain("ShowPrivacySwitches=\"False\"");
         page.Should().Contain("AutomationId=\"OnboardingDisplayName\"");
+        page.Should().Contain("AutomationId=\"OnboardingShowMethods\"");
+        page.Should().Contain("AutomationId=\"OnboardingShowSpecies\"");
+        page.Should().Contain("IsWelcomeStep");
         page.Should().Contain("AutomationId=\"OnboardingAllowLocation\"");
         page.Should().Contain("AutomationId=\"OnboardingNotNow\"");
         stepper.Should().Contain("AutomationId=\"WizardProgress\"");
@@ -54,6 +57,10 @@ public class WhenTestingOnboardingPresentation
         english.Keys.Should().Contain(required);
         french.Keys.Should().Contain(required);
         required.Should().OnlyContain(key => english[key] != french[key]);
+        english["ProfileShowMethods"].Should().Contain("other anglers");
+        english["ProfileShowSpecies"].Should().Contain("other anglers");
+        french["ProfileShowMethods"].Should().Contain("autres pêcheurs");
+        french["ProfileShowSpecies"].Should().Contain("autres pêcheurs");
     }
 
     [Fact]

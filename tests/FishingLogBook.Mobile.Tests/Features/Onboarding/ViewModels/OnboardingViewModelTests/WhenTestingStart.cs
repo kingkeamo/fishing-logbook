@@ -23,6 +23,8 @@ public sealed class WhenTestingStart : BaseOnboardingViewModelTest
         Profile.SelectedWeightUnit!.Value.Should().Be(WeightUnitEnum.Lb);
         Profile.SelectedLengthUnit!.Value.Should().Be(LengthUnitEnum.In);
         Profile.SelectedMethods.Should().Contain(method => method.Id == TestAnglerPreferences.FlyId);
+        Profile.ShowPreferredFishingMethods.Should().BeFalse();
+        Profile.ShowPreferredSpecies.Should().BeFalse();
     }
 
     [Fact]

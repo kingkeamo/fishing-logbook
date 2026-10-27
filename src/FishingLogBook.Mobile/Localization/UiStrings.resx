@@ -254,8 +254,8 @@
   <data name="ProfileLengthUnit" xml:space="preserve"><value>Preferred Length Unit</value></data>
   <data name="ProfileLengthUnitCm" xml:space="preserve"><value>Centimetres (cm)</value></data>
   <data name="ProfileLengthUnitIn" xml:space="preserve"><value>Inches (in)</value></data>
-  <data name="ProfileShowMethods" xml:space="preserve"><value>Show my preferred fishing methods</value></data>
-  <data name="ProfileShowSpecies" xml:space="preserve"><value>Show my preferred species</value></data>
+  <data name="ProfileShowMethods" xml:space="preserve"><value>Show my preferred fishing methods to other anglers</value></data>
+  <data name="ProfileShowSpecies" xml:space="preserve"><value>Show my preferred species to other anglers</value></data>
   <data name="ProfileLocations" xml:space="preserve"><value>Preferred fishing locations</value></data>
   <data name="ProfileLocationsHint" xml:space="preserve"><value>Add, rename or remove locations. The star marks your default.</value></data>
   <data name="ProfileLocationName" xml:space="preserve"><value>Location name</value></data>
