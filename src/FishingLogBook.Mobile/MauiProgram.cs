@@ -17,6 +17,7 @@ using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.Profile.Clients;
+using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Profile.Stores;
 using FishingLogBook.Mobile.Features.Profile.ViewModels;
@@ -89,13 +90,17 @@ public static partial class MauiProgram
             .AddHttpMessageHandler<ApiBearerHandler>();
         builder.Services.AddTransient<IFishingPreferenceClient, FishingPreferenceClient>();
         builder.Services.AddTransient<IFishingLocationClient, FishingLocationClient>();
+        builder.Services.AddTransient<IProfileClient, ProfileClient>();
         builder.Services.AddSingleton<IFileSystemAdapter, FileSystemAdapter>();
         builder.Services.AddSingleton<IAnglerPreferencesStore>(services => new FileAnglerPreferencesStore(
             services.GetRequiredService<IFileSystemAdapter>(),
             Path.Combine(FileSystem.AppDataDirectory, "angler-preferences")));
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
+        builder.Services.AddSingleton<IAccountUnitsService, AccountUnitsService>();
+        builder.Services.AddSingleton<IProfileEditorService, ProfileEditorService>();
+        builder.Services.AddSingleton<IConnectivityService, DeviceConnectivityService>();
         builder.Services.AddSingleton<CatalogueTextService>();
-        builder.Services.AddSingleton<AnglerPreferencesViewModel>();
+        builder.Services.AddSingleton<ProfileViewModel>();
         builder.Services
             .AddHttpClient(AuthenticationHttpClientConstants.Anonymous)
             .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create);
@@ -104,6 +109,7 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<SettingsPage>();
         builder.Services.AddTransient<CatchDetailPage>();
         builder.Services.AddTransient<PhotoPreviewPage>();
+        builder.Services.AddSingleton<ProfilePage>();
 #if DEBUG
         ConfigurePlatformLogging(builder.Logging);
         builder.Services.AddTransient<ShowcasePage>();

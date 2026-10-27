@@ -26,6 +26,12 @@ public partial class CatchSummaryPage : ContentPage
         BindingContext = viewModel;
     }
 
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await _viewModel.LoadUnitsAsync(CancellationToken.None);
+    }
+
     private void OnSearchChanged(object? sender, TextChangedEventArgs args)
     {
         if (_viewModel.SearchTerm != args.NewTextValue)

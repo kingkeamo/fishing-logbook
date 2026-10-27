@@ -1,6 +1,7 @@
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
+using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Settings.Pages;
 using FishingLogBook.Mobile.Features.Showcase.Pages;
 using FishingLogBook.Mobile.Interactions;
@@ -43,6 +44,14 @@ public partial class AppShell : Shell
             primary.Items.Add(tab);
         }
         Items.Add(primary);
+        var profile = new MenuItem { IconImageSource = "tab_settings.png" };
+        profile.SetBinding(MenuItem.TextProperty, new Binding("[Profile]", source: text));
+        profile.Clicked += async (_, _) =>
+        {
+            FlyoutIsPresented = false;
+            await navigation.NavigateAsync(MobileRouteEnum.Profile);
+        };
+        Items.Add(profile);
         var about = new MenuItem { IconImageSource = "icon_info.png" };
         about.SetBinding(MenuItem.TextProperty, new Binding("[About]", source: text));
         about.Clicked += async (_, _) =>
@@ -61,6 +70,7 @@ public partial class AppShell : Shell
 #endif
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Profile), typeof(ProfilePage));
     }
 
     private void OnSessionChanged(object? sender, EventArgs args)

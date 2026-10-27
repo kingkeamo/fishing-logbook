@@ -11,6 +11,7 @@
   <Color x:Key="Navy">#102A43</Color>
   <Color x:Key="Teal">#087F8C</Color>
   <Color x:Key="TealDark">#5CC8D2</Color>
+  <Color x:Key="PreferenceDefault">#FF4081</Color>
   <Color x:Key="Sky">#E0F2FE</Color>
   <Color x:Key="Paper">#FFFFFF</Color>
   <Color x:Key="Canvas">#F5F7FA</Color>
@@ -189,6 +190,19 @@
     <Setter Property="MinimumHeightRequest" Value="48" />
     <Setter Property="MinimumWidthRequest" Value="48" />
     <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+  </Style>
+  <Style TargetType="Border" x:Key="InputField">
+    <Setter Property="Padding" Value="12,2" />
+    <Setter Property="MinimumHeightRequest" Value="52" />
+    <Setter Property="StrokeThickness" Value="1" />
+    <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
+    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}" />
+    <Setter Property="StrokeShape"><Setter.Value><RoundRectangle CornerRadius="8" /></Setter.Value></Setter>
+  </Style>
+  <Style TargetType="Entry" x:Key="FieldEntry">
+    <Setter Property="FontSize" Value="16" /><Setter Property="MinimumHeightRequest" Value="48" />
+    <Setter Property="BackgroundColor" Value="Transparent" /><Setter Property="Margin" Value="0" />
+    <Setter Property="VerticalOptions" Value="Center" />
   </Style>
   <Style TargetType="Entry" x:Key="SearchEntry">
     <Setter Property="FontSize" Value="16" /><Setter Property="MinimumHeightRequest" Value="48" />

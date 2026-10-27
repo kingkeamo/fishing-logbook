@@ -20,6 +20,7 @@ public static class RouteConstants
             MobileRouteEnum.PhotoPreview => "photo-preview",
             MobileRouteEnum.Showcase => "showcase",
             MobileRouteEnum.MeasurementShowcase => "measurement-showcase",
+            MobileRouteEnum.Profile => "profile",
             _ => throw new ArgumentOutOfRangeException(nameof(route))
         };
     }

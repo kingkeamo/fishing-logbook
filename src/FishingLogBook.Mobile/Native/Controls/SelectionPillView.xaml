@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FishingLogBook.Mobile.Native.Controls.SelectionPillView"
+             x:Name="Root">
+  <Border MinimumHeightRequest="48" Padding="18,10" StrokeThickness="1"
+          Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}"
+          BackgroundColor="Transparent" SemanticProperties.Description="{Binding PillDescription, Source={x:Reference Root}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+    <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnSelectionClicked" /></Border.GestureRecognizers>
+    <Border.Triggers>
+      <DataTrigger TargetType="Border" Binding="{Binding IsSelected, Source={x:Reference Root}}" Value="True">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="Stroke" Value="{StaticResource Primary}" />
+      </DataTrigger>
+      <MultiTrigger TargetType="Border">
+        <MultiTrigger.Conditions>
+          <BindingCondition Binding="{Binding ShowDefaultIndicator, Source={x:Reference Root}}" Value="True" />
+          <BindingCondition Binding="{Binding IsDefault, Source={x:Reference Root}}" Value="True" />
+        </MultiTrigger.Conditions>
+        <Setter Property="BackgroundColor" Value="{StaticResource PreferenceDefault}" />
+        <Setter Property="Stroke" Value="{StaticResource PreferenceDefault}" />
+      </MultiTrigger>
+    </Border.Triggers>
+    <HorizontalStackLayout Spacing="7" VerticalOptions="Center">
+      <Label Text="★" IsVisible="{Binding ShowDefaultStar, Source={x:Reference Root}}" TextColor="White" FontSize="16" VerticalOptions="Center" />
+      <Label Text="{Binding Label, Source={x:Reference Root}}" FontSize="14" FontAttributes="Bold" VerticalOptions="Center"
+             TextColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}">
+        <Label.Triggers>
+          <DataTrigger TargetType="Label" Binding="{Binding IsSelected, Source={x:Reference Root}}" Value="True"><Setter Property="TextColor" Value="White" /></DataTrigger>
+        </Label.Triggers>
+      </Label>
+      <Label Text="{Binding DefaultText, Source={x:Reference Root}}" IsVisible="{Binding ShowDefaultText, Source={x:Reference Root}}"
+             TextColor="White" FontSize="11" Margin="-3,2,0,0" VerticalOptions="Center" />
+      <Label Text="×" IsVisible="{Binding ShowRemoveAction, Source={x:Reference Root}}" TextColor="White" FontSize="20" FontAttributes="Bold"
+             MinimumWidthRequest="40" MinimumHeightRequest="48" Margin="-4,-10,-16,-10"
+             HorizontalTextAlignment="Center" VerticalTextAlignment="Center" VerticalOptions="Center"
+             SemanticProperties.Description="{Binding RemoveDescription, Source={x:Reference Root}}">
+        <Label.GestureRecognizers><TapGestureRecognizer Tapped="OnRemoveClicked" /></Label.GestureRecognizers>
+      </Label>
+    </HorizontalStackLayout>
+  </Border>
+</ContentView>

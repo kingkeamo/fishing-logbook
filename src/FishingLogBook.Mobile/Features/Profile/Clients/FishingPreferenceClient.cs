@@ -18,4 +18,14 @@ public sealed class FishingPreferenceClient(AuthorizedApiClient apiClient) : IFi
     {
         return apiClient.GetAsync<FishingPreferencesDto>(PreferencesPath, cancellationToken);
     }
+
+    public Task<ApiResultModel<FishingPreferencesDto>> UpdatePreferencesAsync(
+        UpdateFishingPreferencesDto preferences,
+        CancellationToken cancellationToken)
+    {
+        return apiClient.PutAsync<UpdateFishingPreferencesDto, FishingPreferencesDto>(
+            PreferencesPath,
+            preferences,
+            cancellationToken);
+    }
 }

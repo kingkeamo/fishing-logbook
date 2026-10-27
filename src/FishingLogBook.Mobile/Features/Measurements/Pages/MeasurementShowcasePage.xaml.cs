@@ -1,6 +1,7 @@
 using FishingLogBook.Mobile.Features.Measurements.Models;
 using FishingLogBook.Mobile.Features.Measurements.ViewModels;
-using FishingLogBook.Mobile.Features.Settings.Services;
+using FishingLogBook.Mobile.Features.Profile.Models;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Controls;
 using FishingLogBook.Mobile.Presentation;
@@ -12,17 +13,22 @@ public partial class MeasurementShowcasePage : ContentPage
 {
     private readonly UiTextService _text;
     private readonly IMeasurementService _measurement;
-    private readonly PreferenceService _preferences;
+    private readonly IAccountUnitsService _units;
     private readonly bool _reduceMotion;
     private MeasurementKindEnum _kind = MeasurementKindEnum.Weight;
+    private MeasurementUnitsModel _accountUnits = MeasurementUnitsModel.Default;
     private decimal? _weight;
     private decimal? _length;
 
-    public MeasurementShowcasePage(UiTextService text, IMeasurementService measurement, PreferenceService preferences, IMotionPreference motion)
+    public MeasurementShowcasePage(
+        UiTextService text,
+        IMeasurementService measurement,
+        IAccountUnitsService units,
+        IMotionPreference motion)
     {
         _text = text;
         _measurement = measurement;
-        _preferences = preferences;
+        _units = units;
         _reduceMotion = motion.ReduceMotion;
         InitializeComponent();
         BindingContext = text;
@@ -36,16 +42,19 @@ public partial class MeasurementShowcasePage : ContentPage
         Rebuild();
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
+        var units = await _units.GetAsync(CancellationToken.None);
         if (Editor.ViewModel is not { } vm)
         {
+            _accountUnits = units;
             Rebuild();
         }
-        else if (vm.WeightUnit != _preferences.WeightUnit || vm.LengthUnit != _preferences.LengthUnit)
+        else if (vm.WeightUnit != units.WeightUnit || vm.LengthUnit != units.LengthUnit)
         {
             StoreCurrent();
+            _accountUnits = units;
             Rebuild();
         }
 
@@ -74,7 +83,13 @@ public partial class MeasurementShowcasePage : ContentPage
 
     private MeasurementEditorViewModel CreateViewModel(MeasurementKindEnum kind, decimal? canonical)
     {
-        return new MeasurementEditorViewModel(_measurement, _text, kind, canonical, _preferences.WeightUnit, _preferences.LengthUnit);
+        return new MeasurementEditorViewModel(
+            _measurement,
+            _text,
+            kind,
+            canonical,
+            _accountUnits.WeightUnit,
+            _accountUnits.LengthUnit);
     }
 
     private void Rebuild()

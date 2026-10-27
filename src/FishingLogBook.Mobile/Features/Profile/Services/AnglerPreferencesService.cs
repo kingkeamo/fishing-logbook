@@ -1,9 +1,11 @@
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Api.Models;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
+using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Profile.Clients;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Stores;
+using FishingLogBook.Shared.Dtos;
 using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Features.Profile.Services;
@@ -98,6 +100,51 @@ public sealed class AnglerPreferencesService : IAnglerPreferencesService
         }
 
         return ApiResultModel<AnglerPreferencesModel>.Succeeded(refreshed);
+    }
+
+    public async Task<SaveResultModel<AnglerPreferencesModel>> SaveAsync(
+        AccountSessionLeaseModel lease,
+        FishingCatalogueDto catalogue,
+        UpdateFishingPreferencesDto preferences,
+        UpdateFishingLocationPreferencesDto locations,
+        CancellationToken cancellationToken)
+    {
+        if (!_sessionCoordinator.IsCurrent(lease))
+        {
+            return SaveResultModel<AnglerPreferencesModel>.NotAttempted(ApiOutcomeEnum.SessionExpired);
+        }
+
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            lease.CancellationToken);
+        var savedPreferences = await _preferenceClient.UpdatePreferencesAsync(preferences, linkedCancellation.Token);
+        if (!savedPreferences.IsSuccess)
+        {
+            return SaveResultModel<AnglerPreferencesModel>.WriteFailed(savedPreferences.Outcome, earlierWritesSaved: false);
+        }
+
+        if (!_sessionCoordinator.IsCurrent(lease))
+        {
+            throw new OperationCanceledException("The account session changed while preferences were saving.");
+        }
+
+        var savedLocations = await _locationClient.UpdateAsync(locations, linkedCancellation.Token);
+        if (!savedLocations.IsSuccess)
+        {
+            return SaveResultModel<AnglerPreferencesModel>.WriteFailed(savedLocations.Outcome, earlierWritesSaved: true);
+        }
+
+        var saved = new AnglerPreferencesModel(catalogue, savedPreferences.Value!, savedLocations.Value!);
+        var committed = await _sessionCoordinator.TryCommitAsync(
+            lease,
+            token => CommitAsync(lease.UserId, saved, token),
+            linkedCancellation.Token);
+        if (!committed)
+        {
+            throw new OperationCanceledException("The account session changed while preferences were saving.");
+        }
+
+        return SaveResultModel<AnglerPreferencesModel>.Saved(saved);
     }
 
     private static ApiOutcomeEnum? SelectFailure(params ApiOutcomeEnum[] outcomes)

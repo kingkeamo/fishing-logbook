@@ -2,8 +2,10 @@ using System.ComponentModel;
 using System.Globalization;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.Services;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Presentation;
+using FishingLogBook.Shared.Measurements;
 
 namespace FishingLogBook.Mobile.Features.Catch.ViewModels;
 
@@ -20,15 +22,24 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     ];
 
     private readonly IReadOnlyList<CatchPresentationModel> _samples;
+    private readonly IAccountUnitsService _units;
+    private readonly IMeasurementService _measurement;
     private readonly TimeProvider _clock;
     private ContentStateEnum _state;
     private string _searchTerm = string.Empty;
     private CatchFilterModel _filters = CatchFilterModel.None;
 
-    public CatchListViewModel(UiTextService text, SampleCatchProvider samples, TimeProvider clock)
+    public CatchListViewModel(
+        UiTextService text,
+        SampleCatchProvider samples,
+        IAccountUnitsService units,
+        IMeasurementService measurement,
+        TimeProvider clock)
     {
         Text = text;
         _samples = samples.Catches;
+        _units = units;
+        _measurement = measurement;
         _clock = clock;
         Text.PropertyChanged += OnCultureChanged;
         Refresh();
@@ -54,6 +65,17 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     public bool HasContent => _state == ContentStateEnum.Ready;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public async Task LoadUnitsAsync(CancellationToken cancellationToken)
+    {
+        var units = await _units.GetAsync(cancellationToken);
+        foreach (var item in _samples)
+        {
+            item.SetUnits(_measurement, units.WeightUnit, units.LengthUnit);
+        }
+
+        Refresh();
+    }
 
     public void SetSearch(string? value)
     {

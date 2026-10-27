@@ -124,6 +124,7 @@
   <data name="MoreActions" xml:space="preserve"><value>More actions</value></data>
   <data name="OpenMenu" xml:space="preserve"><value>Open menu</value></data>
   <data name="Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="SetAsDefault" xml:space="preserve"><value>Set as default</value></data>
   <data name="RemoveCatchTitle" xml:space="preserve"><value>Remove this catch?</value></data>
   <data name="RemoveCatchBody" xml:space="preserve"><value>This will permanently remove the catch and all associated photos. This action cannot be undone.</value></data>
   <data name="ActionUnavailable" xml:space="preserve"><value>This action is not available in this preview. Your sample journal is unchanged.</value></data>
@@ -219,4 +220,61 @@
   <data name="PreferencesOfflineCached" xml:space="preserve"><value>Showing your saved preferences. They’ll refresh when you’re back online.</value></data>
   <data name="PreferencesErrorCached" xml:space="preserve"><value>Showing your saved preferences. We couldn’t refresh them.</value></data>
   <data name="PreferencesSessionExpiredCached" xml:space="preserve"><value>Showing your saved preferences. We couldn’t confirm your session, so they may be out of date.</value></data>
+  <data name="ProfileTitle" xml:space="preserve"><value>Your profile</value></data>
+  <data name="ProfileSubtitle" xml:space="preserve"><value>Personal details and the fishing you enjoy.</value></data>
+  <data name="ProfileYourDetails" xml:space="preserve"><value>Your details</value></data>
+  <data name="ProfileFishingDetails" xml:space="preserve"><value>Fishing details</value></data>
+  <data name="ProfilePhotoPlaceholder" xml:space="preserve"><value>Profile photograph</value></data>
+  <data name="ProfilePhotoDeferred" xml:space="preserve"><value>Photo selection is coming with mobile photo support.</value></data>
+  <data name="ProfileDisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="ProfileHomeRegion" xml:space="preserve"><value>Home region</value></data>
+  <data name="ProfileShowDisplayName" xml:space="preserve"><value>Show my display name</value></data>
+  <data name="ProfileShowHomeRegion" xml:space="preserve"><value>Show my home region</value></data>
+  <data name="ProfileShowPhoto" xml:space="preserve"><value>Show my profile photograph</value></data>
+  <data name="ProfileMethods" xml:space="preserve"><value>Fishing methods and species</value></data>
+  <data name="ProfileSpeciesForMethod" xml:space="preserve"><value>Preferred species for {0}</value></data>
+  <data name="ProfileSetDefaultFor" xml:space="preserve"><value>Set {0} as the default</value></data>
+  <data name="More" xml:space="preserve"><value>More…</value></data>
+  <data name="Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Selected" xml:space="preserve"><value>Selected</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="ProfileSetDefaultMethod" xml:space="preserve"><value>Set as default method:</value></data>
+  <data name="ProfileSetDefaultSpecies" xml:space="preserve"><value>Set as default species:</value></data>
+  <data name="ProfileRemoveItem" xml:space="preserve"><value>Remove {0}</value></data>
+  <data name="ProfileDefault" xml:space="preserve"><value>default</value></data>
+  <data name="SectionExpand" xml:space="preserve"><value>Double tap to expand</value></data>
+  <data name="SectionCollapse" xml:space="preserve"><value>Double tap to collapse</value></data>
+  <data name="PickerShowingLimited" xml:space="preserve"><value>Showing {0} of {1}. Search to find more.</value></data>
+  <data name="PickerNoMatches" xml:space="preserve"><value>No matches found.</value></data>
+  <data name="PickerNoneSelected" xml:space="preserve"><value>None selected</value></data>
+  <data name="ProfileWeightUnit" xml:space="preserve"><value>Preferred Weight Unit</value></data>
+  <data name="ProfileWeightUnitKg" xml:space="preserve"><value>Kilograms (kg)</value></data>
+  <data name="ProfileWeightUnitLb" xml:space="preserve"><value>Pounds (lb)</value></data>
+  <data name="ProfileLengthUnit" xml:space="preserve"><value>Preferred Length Unit</value></data>
+  <data name="ProfileLengthUnitCm" xml:space="preserve"><value>Centimetres (cm)</value></data>
+  <data name="ProfileLengthUnitIn" xml:space="preserve"><value>Inches (in)</value></data>
+  <data name="ProfileShowMethods" xml:space="preserve"><value>Show my preferred fishing methods</value></data>
+  <data name="ProfileShowSpecies" xml:space="preserve"><value>Show my preferred species</value></data>
+  <data name="ProfileLocations" xml:space="preserve"><value>Preferred fishing locations</value></data>
+  <data name="ProfileLocationsHint" xml:space="preserve"><value>Add, rename or remove locations. The star marks your default.</value></data>
+  <data name="ProfileLocationName" xml:space="preserve"><value>Location name</value></data>
+  <data name="Add" xml:space="preserve"><value>Add</value></data>
+  <data name="ProfileSave" xml:space="preserve"><value>Save profile</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>Your profile has been saved.</value></data>
+  <data name="ProfileOfflineSave" xml:space="preserve"><value>Connect to the internet to save profile changes.</value></data>
+  <data name="ProfileOfflineError" xml:space="preserve"><value>Your profile is unavailable while offline. Your edits have not been discarded.</value></data>
+  <data name="ProfileValidationError" xml:space="preserve"><value>Check the highlighted profile details and try again.</value></data>
+  <data name="ProfileSaveError" xml:space="preserve"><value>We couldn't save your profile. Your edits are still here.</value></data>
+  <data name="ProfilePartialSaveError" xml:space="preserve"><value>Some of your changes may have been saved, but not all of them. Your edits are still here: save again to retry, or discard them and reload what is saved.</value></data>
+  <data name="ProfileDiscardAndReload" xml:space="preserve"><value>Discard edits and reload</value></data>
+  <data name="ProfileSessionExpired" xml:space="preserve"><value>Your sign-in needs refreshing. Sign out and sign in again.</value></data>
+  <data name="ProfileDisplayNameTooLong" xml:space="preserve"><value>Display name must be {0} characters or fewer.</value></data>
+  <data name="ProfileHomeRegionTooLong" xml:space="preserve"><value>Home region must be {0} characters or fewer.</value></data>
+  <data name="ProfileLocationRequired" xml:space="preserve"><value>Enter a location name.</value></data>
+  <data name="ProfileLocationTooLong" xml:space="preserve"><value>Location name must be {0} characters or fewer.</value></data>
+  <data name="ProfileLocationDuplicate" xml:space="preserve"><value>That fishing location is already in your list.</value></data>
+  <data name="ProfileRemoveDefaultLocationTitle" xml:space="preserve"><value>Remove this location?</value></data>
+  <data name="ProfileRemoveDefaultLocationBody" xml:space="preserve"><value>This is your default fishing location. Another remaining location will become the default.</value></data>
+  <data name="ProfileRemoveLastLocationBody" xml:space="preserve"><value>This is your only fishing location. You will have no preferred location until you add another.</value></data>
 </root>

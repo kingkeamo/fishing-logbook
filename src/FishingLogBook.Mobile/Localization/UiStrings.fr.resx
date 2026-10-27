@@ -124,6 +124,7 @@
   <data name="MoreActions" xml:space="preserve"><value>Plus d’actions</value></data>
   <data name="OpenMenu" xml:space="preserve"><value>Ouvrir le menu</value></data>
   <data name="Remove" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="SetAsDefault" xml:space="preserve"><value>Définir par défaut</value></data>
   <data name="RemoveCatchTitle" xml:space="preserve"><value>Supprimer cette prise ?</value></data>
   <data name="RemoveCatchBody" xml:space="preserve"><value>Cette prise et toutes ses photos seront définitivement supprimées. Cette action est irréversible.</value></data>
   <data name="ActionUnavailable" xml:space="preserve"><value>Cette action n’est pas disponible dans cet aperçu. Votre carnet fictif reste inchangé.</value></data>
@@ -219,4 +220,61 @@
   <data name="PreferencesOfflineCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Elles seront actualisées une fois la connexion rétablie.</value></data>
   <data name="PreferencesErrorCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Impossible de les actualiser.</value></data>
   <data name="PreferencesSessionExpiredCached" xml:space="preserve"><value>Affichage de vos préférences enregistrées. Votre session n’a pas pu être confirmée : elles ne sont peut-être pas à jour.</value></data>
+  <data name="ProfileTitle" xml:space="preserve"><value>Votre profil</value></data>
+  <data name="ProfileSubtitle" xml:space="preserve"><value>Vos informations personnelles et vos préférences de pêche.</value></data>
+  <data name="ProfileYourDetails" xml:space="preserve"><value>Vos informations</value></data>
+  <data name="ProfileFishingDetails" xml:space="preserve"><value>Préférences de pêche</value></data>
+  <data name="ProfilePhotoPlaceholder" xml:space="preserve"><value>Photo de profil</value></data>
+  <data name="ProfilePhotoDeferred" xml:space="preserve"><value>Le choix de photo arrivera avec la prise en charge des photos mobiles.</value></data>
+  <data name="ProfileDisplayName" xml:space="preserve"><value>Nom affiché</value></data>
+  <data name="ProfileHomeRegion" xml:space="preserve"><value>Région de résidence</value></data>
+  <data name="ProfileShowDisplayName" xml:space="preserve"><value>Afficher mon nom</value></data>
+  <data name="ProfileShowHomeRegion" xml:space="preserve"><value>Afficher ma région</value></data>
+  <data name="ProfileShowPhoto" xml:space="preserve"><value>Afficher ma photo de profil</value></data>
+  <data name="ProfileMethods" xml:space="preserve"><value>Techniques et espèces</value></data>
+  <data name="ProfileSpeciesForMethod" xml:space="preserve"><value>Espèces préférées pour {0}</value></data>
+  <data name="ProfileSetDefaultFor" xml:space="preserve"><value>Définir {0} comme valeur par défaut</value></data>
+  <data name="More" xml:space="preserve"><value>Plus…</value></data>
+  <data name="Search" xml:space="preserve"><value>Rechercher</value></data>
+  <data name="Available" xml:space="preserve"><value>Disponibles</value></data>
+  <data name="Selected" xml:space="preserve"><value>Sélectionnés</value></data>
+  <data name="Save" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="ProfileSetDefaultMethod" xml:space="preserve"><value>Définir comme technique par défaut :</value></data>
+  <data name="ProfileSetDefaultSpecies" xml:space="preserve"><value>Définir comme espèce par défaut :</value></data>
+  <data name="ProfileRemoveItem" xml:space="preserve"><value>Retirer {0}</value></data>
+  <data name="ProfileDefault" xml:space="preserve"><value>défaut</value></data>
+  <data name="SectionExpand" xml:space="preserve"><value>Touchez deux fois pour développer</value></data>
+  <data name="SectionCollapse" xml:space="preserve"><value>Touchez deux fois pour réduire</value></data>
+  <data name="PickerShowingLimited" xml:space="preserve"><value>Affichage de {0} sur {1}. Recherchez pour en trouver davantage.</value></data>
+  <data name="PickerNoMatches" xml:space="preserve"><value>Aucun résultat.</value></data>
+  <data name="PickerNoneSelected" xml:space="preserve"><value>Aucune sélection</value></data>
+  <data name="ProfileWeightUnit" xml:space="preserve"><value>Unité de poids préférée</value></data>
+  <data name="ProfileWeightUnitKg" xml:space="preserve"><value>Kilogrammes (kg)</value></data>
+  <data name="ProfileWeightUnitLb" xml:space="preserve"><value>Livres (lb)</value></data>
+  <data name="ProfileLengthUnit" xml:space="preserve"><value>Unité de longueur préférée</value></data>
+  <data name="ProfileLengthUnitCm" xml:space="preserve"><value>Centimètres (cm)</value></data>
+  <data name="ProfileLengthUnitIn" xml:space="preserve"><value>Pouces (in)</value></data>
+  <data name="ProfileShowMethods" xml:space="preserve"><value>Afficher mes techniques préférées</value></data>
+  <data name="ProfileShowSpecies" xml:space="preserve"><value>Afficher mes espèces préférées</value></data>
+  <data name="ProfileLocations" xml:space="preserve"><value>Lieux de pêche préférés</value></data>
+  <data name="ProfileLocationsHint" xml:space="preserve"><value>Ajoutez, renommez ou supprimez des lieux. L'étoile indique le lieu par défaut.</value></data>
+  <data name="ProfileLocationName" xml:space="preserve"><value>Nom du lieu</value></data>
+  <data name="Add" xml:space="preserve"><value>Ajouter</value></data>
+  <data name="ProfileSave" xml:space="preserve"><value>Enregistrer le profil</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>Votre profil a été enregistré.</value></data>
+  <data name="ProfileOfflineSave" xml:space="preserve"><value>Connectez-vous à Internet pour enregistrer les modifications.</value></data>
+  <data name="ProfileOfflineError" xml:space="preserve"><value>Votre profil est indisponible hors ligne. Vos modifications sont conservées.</value></data>
+  <data name="ProfileValidationError" xml:space="preserve"><value>Vérifiez les informations du profil et réessayez.</value></data>
+  <data name="ProfileSaveError" xml:space="preserve"><value>Impossible d'enregistrer votre profil. Vos modifications sont conservées.</value></data>
+  <data name="ProfilePartialSaveError" xml:space="preserve"><value>Une partie de vos modifications a peut-être été enregistrée, mais pas la totalité. Vos modifications sont conservées : enregistrez à nouveau pour réessayer, ou abandonnez-les et rechargez ce qui est enregistré.</value></data>
+  <data name="ProfileDiscardAndReload" xml:space="preserve"><value>Abandonner et recharger</value></data>
+  <data name="ProfileSessionExpired" xml:space="preserve"><value>Votre connexion doit être actualisée. Déconnectez-vous puis reconnectez-vous.</value></data>
+  <data name="ProfileDisplayNameTooLong" xml:space="preserve"><value>Le nom affiché doit comporter au maximum {0} caractères.</value></data>
+  <data name="ProfileHomeRegionTooLong" xml:space="preserve"><value>La région doit comporter au maximum {0} caractères.</value></data>
+  <data name="ProfileLocationRequired" xml:space="preserve"><value>Saisissez un nom de lieu.</value></data>
+  <data name="ProfileLocationTooLong" xml:space="preserve"><value>Le nom du lieu doit comporter au maximum {0} caractères.</value></data>
+  <data name="ProfileLocationDuplicate" xml:space="preserve"><value>Ce lieu de pêche figure déjà dans votre liste.</value></data>
+  <data name="ProfileRemoveDefaultLocationTitle" xml:space="preserve"><value>Supprimer ce lieu ?</value></data>
+  <data name="ProfileRemoveDefaultLocationBody" xml:space="preserve"><value>C'est votre lieu de pêche par défaut. Un autre lieu restant deviendra le lieu par défaut.</value></data>
+  <data name="ProfileRemoveLastLocationBody" xml:space="preserve"><value>C'est votre seul lieu de pêche. Vous n'aurez plus de lieu préféré tant que vous n'en aurez pas ajouté un autre.</value></data>
 </root>

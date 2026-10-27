@@ -8,36 +8,74 @@ public class WhenTestingAnglerPreferencesPresentation
     private static readonly string MobileRoot = FindMobileRoot();
 
     [Fact]
-    public void ItShouldShowAReadOnlySummaryWithSharedStatesAndRetryInSettings()
+    public void ItShouldMoveEditablePreferencesFromSettingsToProfile()
     {
         // Arrange
-        var pagePath = Path.Combine(MobileRoot, "Features", "Settings", "Pages", "SettingsPage.xaml");
+        var settingsPath = Path.Combine(MobileRoot, "Features", "Settings", "Pages", "SettingsPage.xaml");
+        var profilePath = Path.Combine(MobileRoot, "Features", "Profile", "Pages", "ProfilePage.xaml");
         // Act
-        var page = File.ReadAllText(pagePath);
+        var settings = File.ReadAllText(settingsPath);
+        var profile = File.ReadAllText(profilePath);
         // Assert
-        page.Should().Contain("AutomationId=\"FishingPreferences\"");
-        page.Should().Contain("<controls:ContentStateView BindingContext=\"{Binding State}\" RetryRequested=\"OnRetryPreferences\"");
-        page.Should().Contain("AutomationId=\"FishingPreferencesRetry\"");
-        page.Should().Contain("BindableLayout.ItemsSource=\"{Binding Methods}\"");
-        page.Should().Contain("BindableLayout.ItemsSource=\"{Binding Locations}\"");
-        page.Should().NotContain("<Entry");
-        page.Should().Contain("AutomationId=\"WeightUnitKg\"");
-        page.Should().Contain("AutomationId=\"LanguageFrench\"");
-        page.Should().Contain("AutomationId=\"ThemeDark\"");
+        settings.Should().NotContain("AutomationId=\"FishingPreferences\"");
+        settings.Should().NotContain("AutomationId=\"WeightUnitKg\"");
+        settings.Should().NotContain("AutomationId=\"LengthUnitCm\"");
+        settings.Should().Contain("AutomationId=\"LanguageFrench\"");
+        settings.Should().Contain("AutomationId=\"ThemeDark\"");
+        profile.Should().Contain("AutomationId=\"ProfileMethods\"");
+        profile.Should().Contain("AutomationId=\"ProfileLocations\"");
+        profile.Should().Contain("AutomationId=\"ProfileSave\"");
+        profile.Should().Contain("<controls:SelectionPillView");
+        profile.Should().Contain("AutomationId=\"ProfileMore\"");
+        profile.Should().Contain("AutomationId=\"ProfileFishingDetailsPanel\"");
+        profile.Should().Contain("AutomationId=\"ProfileDiscardAndReload\"");
+        profile.Should().Contain("AutomationId=\"ProfileWeightUnit\"");
+        profile.Should().Contain("AutomationId=\"ProfileLengthUnit\"");
+        var picker = File.ReadAllText(Path.Combine(MobileRoot, "Features", "Profile", "Popups", "CataloguePickerPopup.xaml"));
+        picker.Should().Contain("AutomationId=\"CataloguePickerSearch\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerAvailable\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerSelected\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerSave\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerCancel\"");
     }
 
     [Fact]
-    public void ItShouldProvideEnglishAndFrenchPreferenceText()
+    public void ItShouldRenderMoreAsATemplatedItemBecauseBoundLayoutsReplaceStaticChildren()
+    {
+        // Arrange
+        var profile = XDocument.Load(Path.Combine(MobileRoot, "Features", "Profile", "Pages", "ProfilePage.xaml"));
+        // Act
+        var button = profile.Descendants().Single(element => (string?)element.Attribute("AutomationId") == "ProfileMore");
+        var boundLayouts = profile.Descendants()
+            .Where(element => element.Attribute("BindableLayout.ItemTemplateSelector") is not null)
+            .Select(element => (string)element.Attribute("BindableLayout.ItemsSource")!)
+            .ToArray();
+        // Assert
+        button.Parent!.Name.LocalName.Should().Be("DataTemplate");
+        boundLayouts.Should().Equal("{Binding MethodChipItems}", "{Binding SpeciesChipItems}");
+    }
+
+    [Fact]
+    public void ItShouldProvideEnglishAndFrenchProfileText()
     {
         // Arrange
         var localisation = Path.Combine(MobileRoot, "Localization");
         var required = new[]
         {
-            "FishingPreferences", "FishingPreferencesReadOnly", "PreferredMethods", "PreferredLocations",
-            "NoPreferredMethods", "NoPreferredSpecies", "NoPreferredLocations", "PreferenceDefault",
-            "PreferencesLoadingTitle", "PreferencesLoadingBody", "PreferencesOfflineTitle", "PreferencesOfflineBody",
-            "PreferencesErrorTitle", "PreferencesErrorBody", "PreferencesSessionExpiredTitle", "PreferencesSessionExpiredBody",
-            "PreferencesOfflineCached", "PreferencesErrorCached", "PreferencesSessionExpiredCached"
+            "Profile", "ProfileTitle", "ProfileSubtitle", "ProfileYourDetails", "ProfileFishingDetails",
+            "ProfilePhotoPlaceholder", "ProfilePhotoDeferred", "ProfileDisplayName", "ProfileHomeRegion",
+            "ProfileShowDisplayName", "ProfileShowHomeRegion", "ProfileShowPhoto", "ProfileMethods",
+            "ProfileSetDefaultFor", "ProfileSetDefaultMethod", "ProfileSetDefaultSpecies", "ProfileSpeciesForMethod",
+            "ProfileRemoveItem", "More", "Search", "Available", "Selected", "Save", "PickerShowingLimited",
+            "PickerNoMatches", "PickerNoneSelected", "ProfileDefault", "SectionExpand", "SectionCollapse", "ProfileShowMethods", "ProfileShowSpecies",
+            "ProfileLocations", "ProfileLocationsHint", "ProfileLocationName", "ProfileSave", "ProfileSaved",
+            "ProfileOfflineSave", "ProfileOfflineError", "ProfileValidationError", "ProfileSaveError",
+            "ProfileSessionExpired", "ProfileDisplayNameTooLong", "ProfileHomeRegionTooLong",
+            "ProfileLocationRequired", "ProfileLocationTooLong", "ProfileLocationDuplicate",
+            "ProfileRemoveDefaultLocationTitle", "ProfileRemoveDefaultLocationBody", "ProfileRemoveLastLocationBody",
+            "ProfilePartialSaveError", "ProfileDiscardAndReload", "SetAsDefault",
+            "ProfileWeightUnit", "ProfileWeightUnitKg", "ProfileWeightUnitLb",
+            "ProfileLengthUnit", "ProfileLengthUnitCm", "ProfileLengthUnitIn"
         };
         // Act
         var english = GetValues(XDocument.Load(Path.Combine(localisation, "UiStrings.resx")));
@@ -45,8 +83,7 @@ public class WhenTestingAnglerPreferencesPresentation
         // Assert
         english.Keys.Should().Contain(required);
         french.Keys.Should().Contain(required);
-        required.Where(key => key != "PreferencesLoadingBody")
-            .Should().OnlyContain(key => english[key] != french[key]);
+        required.Should().OnlyContain(key => english[key] != french[key]);
     }
 
     [Fact]
@@ -70,6 +107,22 @@ public class WhenTestingAnglerPreferencesPresentation
         Directory.EnumerateFiles(MobileRoot, "*Strings*.resx", SearchOption.AllDirectories)
             .Select(Path.GetFileName)
             .Should().OnlyContain(name => name!.StartsWith("UiStrings", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ItShouldDeclareTheAndroidConnectivityPermissionUsedByProfile()
+    {
+        // Arrange
+        var manifestPath = Path.Combine(MobileRoot, "Platforms", "Android", "AndroidManifest.xml");
+
+        // Act
+        var manifest = XDocument.Load(manifestPath);
+        XNamespace android = "http://schemas.android.com/apk/res/android";
+
+        // Assert
+        manifest.Root!.Elements("uses-permission")
+            .Select(element => (string?)element.Attribute(android + "name"))
+            .Should().Contain("android.permission.ACCESS_NETWORK_STATE");
     }
 
     private static Dictionary<string, string> GetValues(XDocument document)
