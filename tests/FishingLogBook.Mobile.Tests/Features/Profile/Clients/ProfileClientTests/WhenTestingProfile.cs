@@ -44,4 +44,27 @@ public sealed class WhenTestingProfile : BaseProfileClientTest
         request.Method.Should().Be(HttpMethod.Put);
         request.Uri.Should().Be(new Uri("https://api.example.com/api/profiles/me"));
     }
+
+    [Fact]
+    public async Task ItShouldCompleteOnboardingWithoutARequestBody()
+    {
+        // Arrange
+        HttpContent? content = null;
+        var (sut, server) = CreateClient(request =>
+        {
+            content = request.Content;
+            return Json(Response);
+        });
+
+        // Act
+        var result = await sut.CompleteOnboardingAsync(CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.OnboardingCompleted.Should().BeTrue();
+        var request = server.Requests.Should().ContainSingle().Subject;
+        request.Method.Should().Be(HttpMethod.Put);
+        request.Uri.Should().Be(new Uri("https://api.example.com/api/profiles/me/onboarding"));
+        content.Should().BeNull();
+    }
 }

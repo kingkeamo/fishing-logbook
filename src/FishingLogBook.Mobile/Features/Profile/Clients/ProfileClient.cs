@@ -7,6 +7,7 @@ namespace FishingLogBook.Mobile.Features.Profile.Clients;
 public sealed class ProfileClient(AuthorizedApiClient apiClient) : IProfileClient
 {
     private const string ProfilePath = "api/profiles/me";
+    private const string OnboardingPath = "api/profiles/me/onboarding";
 
     public Task<ApiResultModel<ProfileDto>> GetAsync(CancellationToken cancellationToken)
     {
@@ -18,5 +19,10 @@ public sealed class ProfileClient(AuthorizedApiClient apiClient) : IProfileClien
         CancellationToken cancellationToken)
     {
         return apiClient.PutAsync<UpdateProfileDto, ProfileDto>(ProfilePath, profile, cancellationToken);
+    }
+
+    public Task<ApiResultModel<ProfileDto>> CompleteOnboardingAsync(CancellationToken cancellationToken)
+    {
+        return apiClient.PutAsync<ProfileDto>(OnboardingPath, cancellationToken);
     }
 }

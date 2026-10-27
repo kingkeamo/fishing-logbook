@@ -22,15 +22,17 @@ public class WhenTestingAnglerPreferencesPresentation
         settings.Should().NotContain("AutomationId=\"LengthUnitCm\"");
         settings.Should().Contain("AutomationId=\"LanguageFrench\"");
         settings.Should().Contain("AutomationId=\"ThemeDark\"");
-        profile.Should().Contain("AutomationId=\"ProfileMethods\"");
+        var editor = File.ReadAllText(Path.Combine(MobileRoot, "Native", "Controls", "FishingPreferenceEditorView.xaml"));
+        profile.Should().Contain("<controls:FishingPreferenceEditorView");
         profile.Should().Contain("AutomationId=\"ProfileLocations\"");
         profile.Should().Contain("AutomationId=\"ProfileSave\"");
-        profile.Should().Contain("<controls:SelectionPillView");
-        profile.Should().Contain("AutomationId=\"ProfileMore\"");
         profile.Should().Contain("AutomationId=\"ProfileFishingDetailsPanel\"");
         profile.Should().Contain("AutomationId=\"ProfileDiscardAndReload\"");
-        profile.Should().Contain("AutomationId=\"ProfileWeightUnit\"");
-        profile.Should().Contain("AutomationId=\"ProfileLengthUnit\"");
+        editor.Should().Contain("<controls:SelectionPillView");
+        editor.Should().Contain("AutomationId=\"ProfileMethods\"");
+        editor.Should().Contain("AutomationId=\"ProfileMore\"");
+        editor.Should().Contain("AutomationId=\"ProfileWeightUnit\"");
+        editor.Should().Contain("AutomationId=\"ProfileLengthUnit\"");
         var picker = File.ReadAllText(Path.Combine(MobileRoot, "Features", "Profile", "Popups", "CataloguePickerPopup.xaml"));
         picker.Should().Contain("AutomationId=\"CataloguePickerSearch\"");
         picker.Should().Contain("AutomationId=\"CataloguePickerAvailable\"");
@@ -43,7 +45,7 @@ public class WhenTestingAnglerPreferencesPresentation
     public void ItShouldRenderMoreAsATemplatedItemBecauseBoundLayoutsReplaceStaticChildren()
     {
         // Arrange
-        var profile = XDocument.Load(Path.Combine(MobileRoot, "Features", "Profile", "Pages", "ProfilePage.xaml"));
+        var profile = XDocument.Load(Path.Combine(MobileRoot, "Native", "Controls", "FishingPreferenceEditorView.xaml"));
         // Act
         var button = profile.Descendants().Single(element => (string?)element.Attribute("AutomationId") == "ProfileMore");
         var boundLayouts = profile.Descendants()

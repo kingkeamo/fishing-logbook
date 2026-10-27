@@ -46,6 +46,15 @@ public sealed class AuthorizedApiClient
         return await SendAsync<TResponse>(request, cancellationToken);
     }
 
+    public async Task<ApiResultModel<TResponse>> PutAsync<TResponse>(
+        string path,
+        CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, path);
+        return await SendAsync<TResponse>(request, cancellationToken);
+    }
+
     private async Task<ApiResultModel<T>> SendAsync<T>(
         HttpRequestMessage request,
         CancellationToken cancellationToken)

@@ -47,4 +47,26 @@ public sealed class WhenTestingPut : BaseAuthorizedApiClientTest
         result.IsSuccess.Should().BeFalse();
         result.Outcome.Should().Be(FishingLogBook.Mobile.Api.Enums.ApiOutcomeEnum.ValidationFailed);
     }
+
+    [Fact]
+    public async Task ItShouldSendAPutWithoutAJsonBody()
+    {
+        // Arrange
+        HttpContent? content = null;
+        var (sut, server) = CreateSut(request =>
+        {
+            content = request.Content;
+            return Json("{\"name\":\"Saved\"}");
+        });
+
+        // Act
+        var result = await sut.PutAsync<SampleDto>("api/profiles/me/onboarding", CancellationToken.None);
+
+        // Assert
+        result.Value!.Name.Should().Be("Saved");
+        var request = server.Requests.Should().ContainSingle().Subject;
+        request.Method.Should().Be(HttpMethod.Put);
+        request.Uri!.AbsolutePath.Should().Be("/api/profiles/me/onboarding");
+        content.Should().BeNull();
+    }
 }

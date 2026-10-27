@@ -3,47 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
              xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Profile.Models"
-             xmlns:selectors="clr-namespace:FishingLogBook.Mobile.Features.Profile.Selectors"
              xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Profile.ViewModels"
              x:Class="FishingLogBook.Mobile.Features.Profile.Pages.ProfilePage"
              x:DataType="vm:ProfileViewModel"
              Title="{Binding Text[Profile]}">
-  <ContentPage.Resources>
-    <DataTemplate x:Key="MoreChipTemplate" x:DataType="models:PreferenceMoreActionModel">
-      <Button Text="{Binding Source={RelativeSource AncestorType={x:Type vm:ProfileViewModel}}, Path=Text[More]}"
-              Clicked="OnMore" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
-              MinimumHeightRequest="48" Padding="18,10" CornerRadius="24" AutomationId="ProfileMore" />
-    </DataTemplate>
-    <selectors:PreferenceChipTemplateSelector x:Key="MethodChipSelector" MoreTemplate="{StaticResource MoreChipTemplate}">
-      <selectors:PreferenceChipTemplateSelector.ItemTemplate>
-        <DataTemplate x:DataType="models:MethodPreferenceEditModel">
-          <controls:SelectionPillView Margin="0,0,8,8"
-                                      Label="{Binding Name}"
-                                      IsSelected="{Binding IsSelected}"
-                                      IsEnabled="{Binding IsEnabled}"
-                                      SelectionRequested="OnMethodSelection" />
-        </DataTemplate>
-      </selectors:PreferenceChipTemplateSelector.ItemTemplate>
-    </selectors:PreferenceChipTemplateSelector>
-    <selectors:PreferenceChipTemplateSelector x:Key="SpeciesChipSelector" MoreTemplate="{StaticResource MoreChipTemplate}">
-      <selectors:PreferenceChipTemplateSelector.ItemTemplate>
-        <DataTemplate x:DataType="models:SpeciesPreferenceEditModel">
-          <controls:SelectionPillView Margin="0,0,8,8"
-                                      Label="{Binding Name}"
-                                      IsSelected="True"
-                                      IsDefault="{Binding IsDefault}"
-                                      ShowDefaultIndicator="True"
-                                      DefaultText="{Binding Source={RelativeSource AncestorType={x:Type vm:ProfileViewModel}}, Path=Text[ProfileDefault]}"
-                                      ShowRemoveAction="True"
-                                      IsEnabled="{Binding IsEnabled}"
-                                      DefaultDescription="{Binding DefaultDescription}"
-                                      RemoveDescription="{Binding RemoveDescription}"
-                                      DefaultRequested="OnSpeciesDefault"
-                                      RemoveRequested="OnSpeciesRemove" />
-        </DataTemplate>
-      </selectors:PreferenceChipTemplateSelector.ItemTemplate>
-    </selectors:PreferenceChipTemplateSelector>
-  </ContentPage.Resources>
   <Grid RowDefinitions="*,Auto">
     <ScrollView>
       <VerticalStackLayout Padding="16,12,16,24" Spacing="12" MaximumWidthRequest="720">
@@ -104,70 +67,7 @@
                                        ExpandHint="{Binding Text[SectionExpand]}" CollapseHint="{Binding Text[SectionCollapse]}"
                                        AutomationId="ProfileFishingDetailsPanel">
             <VerticalStackLayout Spacing="12">
-              <Label Text="{Binding Text[ProfileMethods]}" Style="{StaticResource SectionTitle}" />
-              <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
-                          BindableLayout.ItemsSource="{Binding MethodChipItems}"
-                          BindableLayout.ItemTemplateSelector="{StaticResource MethodChipSelector}"
-                          AutomationId="ProfileMethods" />
-
-              <Label Text="{Binding Text[ProfileSetDefaultMethod]}" Style="{StaticResource SecondaryText}" />
-              <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
-                          BindableLayout.ItemsSource="{Binding SelectedMethods}" AutomationId="ProfileDefaultMethods">
-                <BindableLayout.ItemTemplate>
-                  <DataTemplate x:DataType="models:MethodPreferenceEditModel">
-                    <controls:SelectionPillView Margin="0,0,8,8"
-                                                Label="{Binding Name}"
-                                                IsSelected="True"
-                                                IsDefault="{Binding IsDefault}"
-                                                ShowDefaultIndicator="True"
-                                                DefaultText="{Binding Source={RelativeSource AncestorType={x:Type vm:ProfileViewModel}}, Path=Text[ProfileDefault]}"
-                                                IsEnabled="{Binding IsEnabled}"
-                                                DefaultDescription="{Binding DefaultDescription}"
-                                                DefaultRequested="OnMethodDefault" />
-                  </DataTemplate>
-                </BindableLayout.ItemTemplate>
-              </FlexLayout>
-
-              <VerticalStackLayout BindableLayout.ItemsSource="{Binding SelectedMethods}" Spacing="12">
-                <BindableLayout.ItemTemplate>
-                  <DataTemplate x:DataType="models:MethodPreferenceEditModel">
-                    <VerticalStackLayout Spacing="6">
-                      <BoxView Style="{StaticResource Divider}" Margin="0,0,0,6" />
-                      <Label Text="{Binding Name}" Style="{StaticResource SectionTitle}" />
-                      <Label Text="{Binding Source={RelativeSource AncestorType={x:Type vm:ProfileViewModel}}, Path=Text[ProfileSetDefaultSpecies]}" Style="{StaticResource SecondaryText}" />
-                      <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
-                                  BindableLayout.ItemsSource="{Binding SpeciesChipItems}"
-                                  BindableLayout.ItemTemplateSelector="{StaticResource SpeciesChipSelector}" />
-                    </VerticalStackLayout>
-                  </DataTemplate>
-                </BindableLayout.ItemTemplate>
-              </VerticalStackLayout>
-
-              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
-                <Label Text="{Binding Text[ProfileShowMethods]}" VerticalOptions="Center" />
-                <Switch Grid.Column="1" IsToggled="{Binding ShowPreferredFishingMethods}" AutomationId="ProfileShowMethods" />
-              </Grid>
-              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
-                <Label Text="{Binding Text[ProfileShowSpecies]}" VerticalOptions="Center" />
-                <Switch Grid.Column="1" IsToggled="{Binding ShowPreferredSpecies}" AutomationId="ProfileShowSpecies" />
-              </Grid>
-              <VerticalStackLayout Spacing="4">
-                <Label Text="{Binding Text[ProfileWeightUnit]}" Style="{StaticResource Eyebrow}" />
-                <Border Style="{StaticResource InputField}">
-                  <Picker ItemsSource="{Binding WeightUnitOptions}"
-                          ItemDisplayBinding="{Binding Label, x:DataType={x:Null}}"
-                          SelectedItem="{Binding SelectedWeightUnit}" AutomationId="ProfileWeightUnit" />
-                </Border>
-              </VerticalStackLayout>
-              <VerticalStackLayout Spacing="4">
-                <Label Text="{Binding Text[ProfileLengthUnit]}" Style="{StaticResource Eyebrow}" />
-                <Border Style="{StaticResource InputField}">
-                  <Picker ItemsSource="{Binding LengthUnitOptions}"
-                          ItemDisplayBinding="{Binding Label, x:DataType={x:Null}}"
-                          SelectedItem="{Binding SelectedLengthUnit}" AutomationId="ProfileLengthUnit" />
-                </Border>
-              </VerticalStackLayout>
-
+              <controls:FishingPreferenceEditorView ShowPrivacySwitches="True" PickerPresented="OnPreferencePickerPresented" />
               <BoxView Style="{StaticResource Divider}" />
               <Label Text="{Binding Text[ProfileLocations]}" Style="{StaticResource SectionTitle}" />
               <Label Text="{Binding Text[ProfileLocationsHint]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Onboarding.ViewModels"
+             x:Class="FishingLogBook.Mobile.Features.Onboarding.Pages.OnboardingPage"
+             x:DataType="vm:OnboardingViewModel"
+             Shell.NavBarIsVisible="False">
+  <controls:WizardStepperView CurrentStep="{Binding StepNumber}"
+                              StepCount="{Binding StepCount}"
+                              StepLabel="{Binding StepLabel}"
+                              Title="{Binding StepTitle}"
+                              Description="{Binding StepDescription}"
+                              BackText="{Binding Text[Back]}"
+                              ContinueText="{Binding ContinueText}"
+                              CanGoBack="{Binding CanGoBack}"
+                              CanContinue="{Binding CanContinue}"
+                              IsBusy="{Binding IsBusy}"
+                              BackRequested="OnBack"
+                              ContinueRequested="OnContinue">
+    <VerticalStackLayout Spacing="16">
+      <ActivityIndicator IsRunning="{Binding Profile.IsLoading}" IsVisible="{Binding Profile.IsLoading}"
+                         Color="{StaticResource Primary}" AutomationId="OnboardingLoading" />
+      <Border IsVisible="{Binding HasMessage}" Style="{StaticResource Card}" Padding="12" AutomationId="OnboardingMessage">
+        <VerticalStackLayout Spacing="8">
+          <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />
+          <Button Text="{Binding Text[Retry]}" IsVisible="{Binding CanRetryLoad}" Clicked="OnRetryLoad"
+                  Style="{StaticResource SecondaryButton}" HorizontalOptions="Start" AutomationId="OnboardingRetryLoad" />
+        </VerticalStackLayout>
+      </Border>
+
+      <VerticalStackLayout IsVisible="{Binding IsWelcomeStep}" Spacing="16" AutomationId="OnboardingWelcomeStep">
+        <Image Source="brand_horizontal.png" HeightRequest="64" Aspect="AspectFit" HorizontalOptions="Start"
+               SemanticProperties.Description="{Binding Text[Brand]}" />
+        <VerticalStackLayout Spacing="4">
+          <Label Text="{Binding Text[ProfileDisplayName]}" Style="{StaticResource Eyebrow}" />
+          <Border Style="{StaticResource InputField}">
+            <Entry Text="{Binding Profile.DisplayName}" MaxLength="100" Style="{StaticResource FieldEntry}"
+                   AutomationId="OnboardingDisplayName" />
+          </Border>
+          <Label Text="{Binding Text[OnboardingDisplayNameHelp]}" Style="{StaticResource SecondaryText}" />
+        </VerticalStackLayout>
+      </VerticalStackLayout>
+
+      <VerticalStackLayout IsVisible="{Binding IsPreferencesStep}" Spacing="8" AutomationId="OnboardingPreferencesStep">
+        <controls:FishingPreferenceEditorView BindingContext="{Binding Profile}" ShowPrivacySwitches="False" />
+      </VerticalStackLayout>
+
+      <VerticalStackLayout IsVisible="{Binding IsLocationStep}" Spacing="12" AutomationId="OnboardingLocationStep">
+        <Label Text="{Binding Text[OnboardingLocationPrivacy]}" Style="{StaticResource SecondaryText}" />
+        <Button Text="{Binding Text[OnboardingAllowLocation]}" Clicked="OnAllowLocation"
+                IsVisible="{Binding CanChooseLocation}" IsEnabled="{Binding CanChooseLocation}"
+                AutomationId="OnboardingAllowLocation" />
+        <Button Text="{Binding Text[OnboardingNotNow]}" Clicked="OnSkipLocation" Style="{StaticResource SecondaryButton}"
+                IsVisible="{Binding CanChooseLocation}" IsEnabled="{Binding CanChooseLocation}"
+                AutomationId="OnboardingNotNow" />
+      </VerticalStackLayout>
+
+      <VerticalStackLayout IsVisible="{Binding IsFinishStep}" Spacing="8" AutomationId="OnboardingFinishStep">
+        <Image Source="brand_mark.png" WidthRequest="72" HeightRequest="72" Aspect="AspectFit" HorizontalOptions="Start"
+               SemanticProperties.Description="{Binding Text[Brand]}" />
+      </VerticalStackLayout>
+    </VerticalStackLayout>
+  </controls:WizardStepperView>
+</ContentPage>

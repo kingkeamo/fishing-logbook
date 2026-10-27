@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="FishingLogBook.Mobile.Native.Controls.WizardStepperView"
+             x:Name="Root">
+  <ContentView.Content>
+    <Grid RowDefinitions="Auto,*,Auto">
+      <VerticalStackLayout Padding="16,12,16,8" Spacing="10">
+        <Label Text="{Binding StepLabel, Source={x:Reference Root}}" Style="{StaticResource Eyebrow}"
+               SemanticProperties.HeadingLevel="Level2" AutomationId="WizardStepLabel" />
+        <Grid x:Name="Segments" ColumnSpacing="6" HeightRequest="6"
+              SemanticProperties.Description="{Binding StepLabel, Source={x:Reference Root}}"
+              AutomationId="WizardProgress" />
+        <Label Text="{Binding Title, Source={x:Reference Root}}" Style="{StaticResource Heading}" AutomationId="WizardTitle" />
+        <Label Text="{Binding Description, Source={x:Reference Root}}" Style="{StaticResource SecondaryText}"
+               AutomationId="WizardDescription" />
+      </VerticalStackLayout>
+      <ScrollView Grid.Row="1" Padding="16,0,16,16" AutomationId="WizardBodyScroll">
+        <ContentView x:Name="Body" />
+      </ScrollView>
+      <Border Grid.Row="2" StrokeThickness="0"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}"
+              Padding="16,10,16,14">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+          <Button Text="{Binding BackText, Source={x:Reference Root}}"
+                  IsVisible="{Binding CanGoBack, Source={x:Reference Root}}"
+                  IsEnabled="{Binding IsNavigationEnabled, Source={x:Reference Root}}"
+                  Clicked="OnBack" Style="{StaticResource SecondaryButton}" AutomationId="WizardBack" />
+          <Grid Grid.Column="1">
+            <Button Text="{Binding ContinueText, Source={x:Reference Root}}"
+                    IsEnabled="{Binding CanContinue, Source={x:Reference Root}}"
+                    Clicked="OnContinue" AutomationId="WizardContinue" />
+            <ActivityIndicator IsRunning="{Binding IsBusy, Source={x:Reference Root}}"
+                               IsVisible="{Binding IsBusy, Source={x:Reference Root}}"
+                               Color="{StaticResource Paper}" HorizontalOptions="End" VerticalOptions="Center"
+                               Margin="0,0,18,0" AutomationId="WizardBusy" />
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+  </ContentView.Content>
+</ContentView>
