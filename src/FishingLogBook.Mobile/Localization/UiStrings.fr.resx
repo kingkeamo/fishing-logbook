@@ -260,6 +260,8 @@
   <data name="ProfileOfflineError" xml:space="preserve"><value>Votre profil est indisponible hors ligne. Vos modifications sont conservées.</value></data>
   <data name="ProfileValidationError" xml:space="preserve"><value>Vérifiez les informations du profil et réessayez.</value></data>
   <data name="ProfileSaveError" xml:space="preserve"><value>Impossible d'enregistrer votre profil. Vos modifications sont conservées.</value></data>
+  <data name="ProfilePartialSaveError" xml:space="preserve"><value>Une partie de vos modifications a peut-être été enregistrée, mais pas la totalité. Vos modifications sont conservées : enregistrez à nouveau pour réessayer, ou abandonnez-les et rechargez ce qui est enregistré.</value></data>
+  <data name="ProfileDiscardAndReload" xml:space="preserve"><value>Abandonner et recharger</value></data>
   <data name="ProfileSessionExpired" xml:space="preserve"><value>Votre connexion doit être actualisée. Déconnectez-vous puis reconnectez-vous.</value></data>
   <data name="ProfileDisplayNameTooLong" xml:space="preserve"><value>Le nom affiché doit comporter au maximum {0} caractères.</value></data>
   <data name="ProfileHomeRegionTooLong" xml:space="preserve"><value>La région doit comporter au maximum {0} caractères.</value></data>

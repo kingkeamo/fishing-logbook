@@ -260,6 +260,8 @@
   <data name="ProfileOfflineError" xml:space="preserve"><value>Your profile is unavailable while offline. Your edits have not been discarded.</value></data>
   <data name="ProfileValidationError" xml:space="preserve"><value>Check the highlighted profile details and try again.</value></data>
   <data name="ProfileSaveError" xml:space="preserve"><value>We couldn't save your profile. Your edits are still here.</value></data>
+  <data name="ProfilePartialSaveError" xml:space="preserve"><value>Some of your changes may have been saved, but not all of them. Your edits are still here: save again to retry, or discard them and reload what is saved.</value></data>
+  <data name="ProfileDiscardAndReload" xml:space="preserve"><value>Discard edits and reload</value></data>
   <data name="ProfileSessionExpired" xml:space="preserve"><value>Your sign-in needs refreshing. Sign out and sign in again.</value></data>
   <data name="ProfileDisplayNameTooLong" xml:space="preserve"><value>Display name must be {0} characters or fewer.</value></data>
   <data name="ProfileHomeRegionTooLong" xml:space="preserve"><value>Home region must be {0} characters or fewer.</value></data>

@@ -27,6 +27,7 @@ public class WhenTestingAnglerPreferencesPresentation
         profile.Should().Contain("<controls:SelectionPillView");
         profile.Should().Contain("AutomationId=\"ProfileMore\"");
         profile.Should().Contain("AutomationId=\"ProfileFishingDetailsPanel\"");
+        profile.Should().Contain("AutomationId=\"ProfileDiscardAndReload\"");
         var picker = File.ReadAllText(Path.Combine(MobileRoot, "Features", "Profile", "Popups", "CataloguePickerPopup.xaml"));
         picker.Should().Contain("AutomationId=\"CataloguePickerSearch\"");
         picker.Should().Contain("AutomationId=\"CataloguePickerAvailable\"");
@@ -67,7 +68,8 @@ public class WhenTestingAnglerPreferencesPresentation
             "ProfileLocations", "ProfileLocationsHint", "ProfileLocationName", "ProfileSave", "ProfileSaved",
             "ProfileOfflineSave", "ProfileOfflineError", "ProfileValidationError", "ProfileSaveError",
             "ProfileSessionExpired", "ProfileDisplayNameTooLong", "ProfileHomeRegionTooLong",
-            "ProfileLocationRequired", "ProfileLocationTooLong", "ProfileLocationDuplicate"
+            "ProfileLocationRequired", "ProfileLocationTooLong", "ProfileLocationDuplicate",
+            "ProfilePartialSaveError", "ProfileDiscardAndReload", "SetAsDefault"
         };
         // Act
         var english = GetValues(XDocument.Load(Path.Combine(localisation, "UiStrings.resx")));

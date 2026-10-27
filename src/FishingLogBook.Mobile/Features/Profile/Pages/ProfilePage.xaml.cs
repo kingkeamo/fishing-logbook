@@ -133,6 +133,11 @@ public partial class ProfilePage : ContentPage
         }
     }
 
+    private async void OnDiscardAndReload(object? sender, EventArgs args)
+    {
+        await _viewModel.DiscardEditsAndReloadAsync(CancellationToken.None);
+    }
+
     private async void OnSave(object? sender, EventArgs args)
     {
         await _viewModel.SaveAsync(CancellationToken.None);

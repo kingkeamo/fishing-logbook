@@ -9,7 +9,7 @@ public interface IAnglerPreferencesService
 {
     Task<AnglerPreferencesModel?> GetCachedAsync(CancellationToken cancellationToken);
     Task<ApiResultModel<AnglerPreferencesModel>> RefreshAsync(CancellationToken cancellationToken);
-    Task<ApiResultModel<AnglerPreferencesModel>> SaveAsync(
+    Task<SaveResultModel<AnglerPreferencesModel>> SaveAsync(
         AccountSessionLeaseModel lease,
         FishingCatalogueDto catalogue,
         UpdateFishingPreferencesDto preferences,

@@ -43,7 +43,7 @@ public sealed class ProfileEditorService(
             new ProfileEditorDataModel(profile.Value!, preferences.Value!));
     }
 
-    public async Task<ApiResultModel<ProfileEditorDataModel>> SaveAsync(
+    public async Task<SaveResultModel<ProfileEditorDataModel>> SaveAsync(
         ProfileEditorDataModel current,
         UpdateProfileDto profile,
         UpdateFishingPreferencesDto preferences,
@@ -53,7 +53,7 @@ public sealed class ProfileEditorService(
         var lease = sessionCoordinator.Capture();
         if (lease is null)
         {
-            return ApiResultModel<ProfileEditorDataModel>.Failed(ApiOutcomeEnum.SessionExpired);
+            return SaveResultModel<ProfileEditorDataModel>.NotAttempted(ApiOutcomeEnum.SessionExpired);
         }
 
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
@@ -62,7 +62,7 @@ public sealed class ProfileEditorService(
         var latest = await profileClient.GetAsync(linkedCancellation.Token);
         if (!latest.IsSuccess)
         {
-            return ApiResultModel<ProfileEditorDataModel>.Failed(latest.Outcome);
+            return SaveResultModel<ProfileEditorDataModel>.NotAttempted(latest.Outcome);
         }
 
         var update = profile with
@@ -73,7 +73,7 @@ public sealed class ProfileEditorService(
         var savedProfile = await profileClient.UpdateAsync(update, linkedCancellation.Token);
         if (!savedProfile.IsSuccess)
         {
-            return ApiResultModel<ProfileEditorDataModel>.Failed(savedProfile.Outcome);
+            return SaveResultModel<ProfileEditorDataModel>.WriteFailed(savedProfile.Outcome, earlierWritesSaved: false);
         }
 
         if (!sessionCoordinator.IsCurrent(lease))
@@ -89,7 +89,7 @@ public sealed class ProfileEditorService(
             linkedCancellation.Token);
         if (!savedPreferences.IsSuccess)
         {
-            return ApiResultModel<ProfileEditorDataModel>.Failed(savedPreferences.Outcome);
+            return SaveResultModel<ProfileEditorDataModel>.WriteFailed(savedPreferences.Outcome, earlierWritesSaved: true);
         }
 
         if (!sessionCoordinator.IsCurrent(lease))
@@ -97,7 +97,7 @@ public sealed class ProfileEditorService(
             throw new OperationCanceledException("The account session changed while the profile was saving.");
         }
 
-        return ApiResultModel<ProfileEditorDataModel>.Succeeded(
+        return SaveResultModel<ProfileEditorDataModel>.Saved(
             new ProfileEditorDataModel(savedProfile.Value!, savedPreferences.Value!));
     }
 

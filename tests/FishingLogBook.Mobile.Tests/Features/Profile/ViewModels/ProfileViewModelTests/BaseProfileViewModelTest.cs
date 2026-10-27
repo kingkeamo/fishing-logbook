@@ -42,6 +42,25 @@ public abstract class BaseProfileViewModelTest
         await Sut.LoadAsync(CancellationToken.None);
     }
 
+    protected void ArrangeSave(SaveResultModel<ProfileEditorDataModel> first, params SaveResultModel<ProfileEditorDataModel>[] then)
+    {
+        MockService.SaveAsync(
+                Arg.Any<ProfileEditorDataModel>(),
+                Arg.Any<UpdateProfileDto>(),
+                Arg.Any<UpdateFishingPreferencesDto>(),
+                Arg.Any<UpdateFishingLocationPreferencesDto>(),
+                Arg.Any<CancellationToken>())
+            .Returns(first, then);
+    }
+
+    protected static ProfileEditorDataModel WithLocations(ProfileEditorDataModel data, params FishingLocationPreferenceDto[] locations)
+    {
+        return data with
+        {
+            Preferences = data.Preferences with { Locations = new FishingLocationPreferencesDto(locations) }
+        };
+    }
+
     protected static ProfileEditorDataModel CreateData()
     {
         var profile = new ProfileDto(

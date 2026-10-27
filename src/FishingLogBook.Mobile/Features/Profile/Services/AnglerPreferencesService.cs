@@ -102,7 +102,7 @@ public sealed class AnglerPreferencesService : IAnglerPreferencesService
         return ApiResultModel<AnglerPreferencesModel>.Succeeded(refreshed);
     }
 
-    public async Task<ApiResultModel<AnglerPreferencesModel>> SaveAsync(
+    public async Task<SaveResultModel<AnglerPreferencesModel>> SaveAsync(
         AccountSessionLeaseModel lease,
         FishingCatalogueDto catalogue,
         UpdateFishingPreferencesDto preferences,
@@ -111,7 +111,7 @@ public sealed class AnglerPreferencesService : IAnglerPreferencesService
     {
         if (!_sessionCoordinator.IsCurrent(lease))
         {
-            return ApiResultModel<AnglerPreferencesModel>.Failed(ApiOutcomeEnum.SessionExpired);
+            return SaveResultModel<AnglerPreferencesModel>.NotAttempted(ApiOutcomeEnum.SessionExpired);
         }
 
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
@@ -120,7 +120,7 @@ public sealed class AnglerPreferencesService : IAnglerPreferencesService
         var savedPreferences = await _preferenceClient.UpdatePreferencesAsync(preferences, linkedCancellation.Token);
         if (!savedPreferences.IsSuccess)
         {
-            return ApiResultModel<AnglerPreferencesModel>.Failed(savedPreferences.Outcome);
+            return SaveResultModel<AnglerPreferencesModel>.WriteFailed(savedPreferences.Outcome, earlierWritesSaved: false);
         }
 
         if (!_sessionCoordinator.IsCurrent(lease))
@@ -131,7 +131,7 @@ public sealed class AnglerPreferencesService : IAnglerPreferencesService
         var savedLocations = await _locationClient.UpdateAsync(locations, linkedCancellation.Token);
         if (!savedLocations.IsSuccess)
         {
-            return ApiResultModel<AnglerPreferencesModel>.Failed(savedLocations.Outcome);
+            return SaveResultModel<AnglerPreferencesModel>.WriteFailed(savedLocations.Outcome, earlierWritesSaved: true);
         }
 
         var saved = new AnglerPreferencesModel(catalogue, savedPreferences.Value!, savedLocations.Value!);
@@ -144,7 +144,7 @@ public sealed class AnglerPreferencesService : IAnglerPreferencesService
             throw new OperationCanceledException("The account session changed while preferences were saving.");
         }
 
-        return ApiResultModel<AnglerPreferencesModel>.Succeeded(saved);
+        return SaveResultModel<AnglerPreferencesModel>.Saved(saved);
     }
 
     private static ApiOutcomeEnum? SelectFailure(params ApiOutcomeEnum[] outcomes)

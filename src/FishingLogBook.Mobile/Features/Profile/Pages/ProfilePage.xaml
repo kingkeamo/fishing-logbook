@@ -51,7 +51,12 @@
         <Label Text="{Binding Text[ProfileSubtitle]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
         <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" Color="{StaticResource Primary}" AutomationId="ProfileLoading" />
         <Border IsVisible="{Binding HasMessage}" Style="{StaticResource Card}" Padding="12" AutomationId="ProfileMessage">
-          <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />
+          <VerticalStackLayout Spacing="8">
+            <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />
+            <Button Text="{Binding Text[ProfileDiscardAndReload]}" IsVisible="{Binding IsSaveIncomplete}" IsEnabled="{Binding CanSave}"
+                    Clicked="OnDiscardAndReload" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start"
+                    AutomationId="ProfileDiscardAndReload" />
+          </VerticalStackLayout>
         </Border>
         <VerticalStackLayout IsVisible="{Binding HasContent}" Spacing="12">
           <controls:ExpansionPanelView Title="{Binding Text[ProfileYourDetails]}" IsExpanded="True"

@@ -41,6 +41,27 @@ public sealed class WhenTestingSave : BaseAnglerPreferencesServiceTest
     }
 
     [Fact]
+    public async Task ItShouldReportNothingSavedWhenThePreferencesUpdateIsRejected()
+    {
+        // Arrange
+        await SignInAsync(FirstUserId);
+        var lease = SessionCoordinator.Capture()!;
+        MockPreferenceClient.UpdatePreferencesAsync(_preferenceUpdate, Arg.Any<CancellationToken>())
+            .Returns(ApiResultModel<FishingPreferencesDto>.Failed(ApiOutcomeEnum.ValidationFailed));
+
+        // Act
+        var result = await Sut.SaveAsync(lease, Catalogue, _preferenceUpdate, _locationUpdate, CancellationToken.None);
+
+        // Assert
+        result.Outcome.Should().Be(ApiOutcomeEnum.ValidationFailed);
+        result.MayHavePartiallySaved.Should().BeFalse();
+        await MockLocationClient.DidNotReceive().UpdateAsync(
+            Arg.Any<UpdateFishingLocationPreferencesDto>(), Arg.Any<CancellationToken>());
+        await MockStore.DidNotReceive().SaveAsync(
+            Arg.Any<Guid>(), Arg.Any<AnglerPreferencesModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldKeepTheCacheUnchangedWhenLocationSavingFails()
     {
         // Arrange
@@ -56,6 +77,8 @@ public sealed class WhenTestingSave : BaseAnglerPreferencesServiceTest
 
         // Assert
         result.Outcome.Should().Be(ApiOutcomeEnum.ValidationFailed);
+        result.MayHavePartiallySaved.Should().BeTrue();
+        await MockPreferenceClient.Received(1).UpdatePreferencesAsync(_preferenceUpdate, Arg.Any<CancellationToken>());
         await MockStore.DidNotReceive().SaveAsync(
             Arg.Any<Guid>(), Arg.Any<AnglerPreferencesModel>(), Arg.Any<CancellationToken>());
     }
@@ -99,6 +122,7 @@ public sealed class WhenTestingSave : BaseAnglerPreferencesServiceTest
 
         // Assert
         result.IsSuccess.Should().BeTrue();
+        result.MayHavePartiallySaved.Should().BeFalse();
         await MockPreferenceClient.Received(1).UpdatePreferencesAsync(
             Arg.Is<UpdateFishingPreferencesDto>(value =>
                 value.Methods.Count == 1 && value.Methods[0].Species.Count == 1),

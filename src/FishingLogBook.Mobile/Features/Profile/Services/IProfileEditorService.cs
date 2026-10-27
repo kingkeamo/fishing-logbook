@@ -7,7 +7,7 @@ namespace FishingLogBook.Mobile.Features.Profile.Services;
 public interface IProfileEditorService
 {
     Task<ApiResultModel<ProfileEditorDataModel>> LoadAsync(CancellationToken cancellationToken);
-    Task<ApiResultModel<ProfileEditorDataModel>> SaveAsync(
+    Task<SaveResultModel<ProfileEditorDataModel>> SaveAsync(
         ProfileEditorDataModel current,
         UpdateProfileDto profile,
         UpdateFishingPreferencesDto preferences,

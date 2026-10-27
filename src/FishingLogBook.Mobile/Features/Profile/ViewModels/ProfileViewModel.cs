@@ -30,6 +30,7 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     private bool _showPreferredSpecies;
     private bool _isLoading;
     private bool _isSaving;
+    private bool _isSaveIncomplete;
     private string? _message;
 
     public ProfileViewModel(
@@ -67,6 +68,7 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     public bool ShowPreferredSpecies { get => _showPreferredSpecies; set => Set(ref _showPreferredSpecies, value, nameof(ShowPreferredSpecies)); }
     public bool IsLoading { get => _isLoading; private set => Set(ref _isLoading, value, nameof(IsLoading)); }
     public bool IsSaving { get => _isSaving; private set => Set(ref _isSaving, value, nameof(IsSaving)); }
+    public bool IsSaveIncomplete { get => _isSaveIncomplete; private set => Set(ref _isSaveIncomplete, value, nameof(IsSaveIncomplete)); }
     public bool HasContent => _current is not null;
     public bool IsOnline => _connectivity.IsOnline;
     public bool CanSave => HasContent && IsOnline && !IsSaving && !IsLoading;
@@ -89,32 +91,19 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
-        if (IsLoading || IsSaving)
+        if (IsSaveIncomplete)
         {
             return;
         }
 
-        IsLoading = true;
-        Message = null;
-        try
-        {
-            var result = await _service.LoadAsync(cancellationToken);
-            if (result.IsSuccess)
-            {
-                Apply(result.Value!);
-                return;
-            }
+        await ReloadAsync(cancellationToken);
+    }
 
-            Message = Text[GetErrorKey(result.Outcome)];
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+    public async Task DiscardEditsAndReloadAsync(CancellationToken cancellationToken)
+    {
+        if (await ReloadAsync(cancellationToken))
         {
-            ResetForAccountChange();
-        }
-        finally
-        {
-            IsLoading = false;
-            PublishAvailability();
+            IsSaveIncomplete = false;
         }
     }
 
@@ -221,7 +210,8 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
             return false;
         }
 
-        Locations.Add(new FishingLocationEditModel(Guid.Empty, name, Locations.Count == 0));
+        Locations.Add(new FishingLocationEditModel(Guid.Empty, name, false));
+        EnsureLocationDefault();
         Message = null;
         return true;
     }
@@ -252,12 +242,12 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     public void SetDefaultLocation(FishingLocationEditModel location)
     {
         var selectedIds = Locations.Select(item => item.SelectionId).ToArray();
-        var targetId = location.SelectionId;
-        var defaultId = SingleDefaultSelection.Select(selectedIds, targetId);
-        foreach (var item in Locations)
+        if (!selectedIds.Contains(location.SelectionId))
         {
-            item.IsDefault = item.SelectionId == defaultId;
+            return;
         }
+
+        ApplyLocationDefault(SingleDefaultSelection.Select(selectedIds, location.SelectionId));
     }
 
     public async Task<bool> SaveAsync(CancellationToken cancellationToken)
@@ -283,10 +273,16 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
                 cancellationToken);
             if (!result.IsSuccess)
             {
-                Message = Text[GetErrorKey(result.Outcome)];
+                if (result.MayHavePartiallySaved)
+                {
+                    IsSaveIncomplete = true;
+                }
+
+                Message = Text[IsSaveIncomplete ? "ProfilePartialSaveError" : GetErrorKey(result.Outcome)];
                 return false;
             }
 
+            IsSaveIncomplete = false;
             Apply(result.Value!);
             Message = Text["ProfileSaved"];
             return true;
@@ -299,6 +295,39 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         finally
         {
             IsSaving = false;
+            PublishAvailability();
+        }
+    }
+
+    private async Task<bool> ReloadAsync(CancellationToken cancellationToken)
+    {
+        if (IsLoading || IsSaving)
+        {
+            return false;
+        }
+
+        IsLoading = true;
+        Message = null;
+        try
+        {
+            var result = await _service.LoadAsync(cancellationToken);
+            if (result.IsSuccess)
+            {
+                Apply(result.Value!);
+                return true;
+            }
+
+            Message = Text[GetErrorKey(result.Outcome)];
+            return false;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            ResetForAccountChange();
+            return false;
+        }
+        finally
+        {
+            IsLoading = false;
             PublishAvailability();
         }
     }
@@ -319,6 +348,7 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         {
             Locations.Add(new FishingLocationEditModel(location.Id, location.Name, location.IsDefault));
         }
+        EnsureLocationDefault();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Methods)));
         PublishMethodSelection();
         PublishAvailability();
@@ -475,13 +505,18 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
 
     private void EnsureLocationDefault()
     {
-        var current = Locations.FirstOrDefault(location => location.IsDefault);
-        if (current is not null || Locations.Count == 0)
-        {
-            return;
-        }
+        var defaultId = SingleDefaultSelection.Ensure(
+            Locations.Select(location => location.SelectionId).ToArray(),
+            Locations.FirstOrDefault(location => location.IsDefault)?.SelectionId);
+        ApplyLocationDefault(defaultId);
+    }
 
-        Locations[0].IsDefault = true;
+    private void ApplyLocationDefault(Guid? defaultId)
+    {
+        foreach (var location in Locations)
+        {
+            location.IsDefault = location.SelectionId == defaultId;
+        }
     }
 
     private void OnConnectivityChanged(object? sender, EventArgs args)
@@ -499,6 +534,7 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         _current = null;
         Methods = [];
         Locations.Clear();
+        IsSaveIncomplete = false;
         Message = null;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Methods)));
         PublishMethodSelection();
