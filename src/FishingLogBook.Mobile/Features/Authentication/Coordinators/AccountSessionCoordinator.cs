@@ -38,6 +38,14 @@ public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDis
         CancellationTokenSource? previousCancellation;
         lock (_stateLock)
         {
+            if (userId.HasValue &&
+                _userId == userId &&
+                !_transitionPending &&
+                _sessionCancellation is { IsCancellationRequested: false })
+            {
+                return;
+            }
+
             _transitionPending = true;
             previousCancellation = _sessionCancellation;
             previousCancellation?.Cancel();

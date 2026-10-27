@@ -29,6 +29,35 @@ public class WhenTestingTransition : BaseAccountSessionCoordinatorTest
     }
 
     [Fact]
+    public async Task ItShouldKeepInFlightWorkValidWhenTheSameOwnerRefreshes()
+    {
+        // Arrange
+        var owner = Guid.NewGuid();
+        await Sut.TransitionAsync(owner, CancellationToken.None);
+        var lease = Sut.Capture()!;
+        // Act
+        await Sut.TransitionAsync(owner, CancellationToken.None);
+        // Assert
+        Sut.IsCurrent(lease).Should().BeTrue();
+        lease.CancellationToken.IsCancellationRequested.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldInvalidateTheSameOwnersWorkAfterSignOutAndSignIn()
+    {
+        // Arrange
+        var owner = Guid.NewGuid();
+        await Sut.TransitionAsync(owner, CancellationToken.None);
+        var lease = Sut.Capture()!;
+        // Act
+        await Sut.TransitionAsync(null, CancellationToken.None);
+        await Sut.TransitionAsync(owner, CancellationToken.None);
+        // Assert
+        Sut.IsCurrent(lease).Should().BeFalse();
+        lease.CancellationToken.IsCancellationRequested.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task ItShouldWaitForAnInFlightCommitBeforeCompletingOwnerSwitch()
     {
         // Arrange
