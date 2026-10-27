@@ -22,6 +22,30 @@ public sealed class AuthenticationCallbackHandler
         _logger = logger;
     }
 
+    public bool CanForward(string? callbackUri)
+    {
+        return TryParseCallback(callbackUri, out _);
+    }
+
+    public async Task ForwardAsync(string? callbackUri)
+    {
+        if (!TryParseCallback(callbackUri, out var callback))
+        {
+            return;
+        }
+
+        try
+        {
+            await HandleAsync(callback);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                "Native authentication callback forwarding failed with {ExceptionType}.",
+                exception.GetType().FullName);
+        }
+    }
+
     public async Task HandleAsync(Uri callback)
     {
         if (Matches(callback, _logoutCallback))
@@ -41,8 +65,23 @@ public sealed class AuthenticationCallbackHandler
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(exception, "Native authentication callback handling failed.");
+            _logger.LogWarning(
+                "Native authentication callback handling failed with {ExceptionType}.",
+                exception.GetType().FullName);
         }
+    }
+
+    private bool TryParseCallback(string? callbackUri, out Uri callback)
+    {
+        if (Uri.TryCreate(callbackUri, UriKind.Absolute, out var parsed) &&
+            (Matches(parsed, _loginCallback) || Matches(parsed, _logoutCallback)))
+        {
+            callback = parsed;
+            return true;
+        }
+
+        callback = _loginCallback;
+        return false;
     }
 
     private static bool Matches(Uri callback, Uri expected)

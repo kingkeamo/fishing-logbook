@@ -12,6 +12,9 @@ namespace FishingLogBook.Mobile.Features.Authentication.Services;
 public sealed class AuthenticationService : IAuthenticationService, IDisposable
 {
     private static readonly TimeSpan RefreshWindow = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan InitialRefreshBackoff = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan MaximumRefreshBackoff = TimeSpan.FromMinutes(5);
+    private const int MaximumBackoffDoublings = 5;
     private readonly object _stateLock = new();
     private readonly SemaphoreSlim _operationGate = new(1, 1);
     private readonly IOidcProtocolClient _oidcClient;
@@ -24,6 +27,8 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
     private readonly ILogger<AuthenticationService> _logger;
     private AuthenticationSessionModel? _currentSession;
     private bool _hasPendingAuthorization;
+    private int _consecutiveRefreshFailures;
+    private DateTimeOffset _refreshRetryAfter = DateTimeOffset.MinValue;
 
     public AuthenticationService(
         IOidcProtocolClient oidcClient,
@@ -181,19 +186,16 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         try
         {
             var session = CurrentSession ?? throw new UnauthorizedAccessException("No authenticated session is active.");
-            if (session.AccessTokenExpiresAt <= _timeProvider.GetUtcNow().Add(RefreshWindow))
+            var now = _timeProvider.GetUtcNow();
+            if (session.AccessTokenExpiresAt <= now.Add(RefreshWindow) && now >= _refreshRetryAfter)
             {
-                var credential = new PersistedAuthenticationModel(
-                    session.RefreshToken,
-                    session.Subject,
-                    session.UserId);
-                var result = await RefreshAndEstablishAsync(credential, cancellationToken);
-                if (result != AuthenticationResultEnum.Success)
-                {
-                    throw new UnauthorizedAccessException("The authenticated session could not be refreshed.");
-                }
-
+                await TryRefreshSessionAsync(session, cancellationToken);
                 session = CurrentSession ?? throw new UnauthorizedAccessException("No authenticated session is active.");
+            }
+
+            if (session.AccessTokenExpiresAt <= _timeProvider.GetUtcNow())
+            {
+                throw new UnauthorizedAccessException("The authenticated session could not be refreshed.");
             }
 
             var lease = _sessionCoordinator.Capture()
@@ -276,15 +278,61 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         var tokenResult = await _oidcClient.RefreshAsync(credential.RefreshToken, cancellationToken);
         if (!tokenResult.IsSuccess)
         {
-            if (tokenResult.Failure == OidcFailureKindEnum.InvalidGrant)
+            if (IsPermanentRefreshFailure(tokenResult.Failure))
             {
                 await InvalidateLocalSessionAsync(removeCredential: true);
+            }
+            else
+            {
+                RecordRefreshFailure();
             }
 
             return MapFailure(tokenResult.Failure);
         }
 
         return await EstablishSessionAsync(tokenResult, credential, cancellationToken);
+    }
+
+    private async Task TryRefreshSessionAsync(
+        AuthenticationSessionModel session,
+        CancellationToken cancellationToken)
+    {
+        var credential = new PersistedAuthenticationModel(
+            session.RefreshToken,
+            session.Subject,
+            session.UserId);
+        try
+        {
+            await RefreshAndEstablishAsync(credential, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "Native session refresh failed with {ExceptionType}.",
+                exception.GetType().FullName);
+            RecordRefreshFailure();
+        }
+    }
+
+    private void RecordRefreshFailure()
+    {
+        _consecutiveRefreshFailures++;
+        var doublings = Math.Min(_consecutiveRefreshFailures - 1, MaximumBackoffDoublings);
+        var backoff = TimeSpan.FromTicks(Math.Min(
+            InitialRefreshBackoff.Ticks << doublings,
+            MaximumRefreshBackoff.Ticks));
+        _refreshRetryAfter = _timeProvider.GetUtcNow().Add(backoff);
+    }
+
+    private void ResetRefreshBackoff()
+    {
+        _consecutiveRefreshFailures = 0;
+        _refreshRetryAfter = DateTimeOffset.MinValue;
+    }
+
+    private static bool IsPermanentRefreshFailure(OidcFailureKindEnum failure)
+    {
+        return failure is OidcFailureKindEnum.InvalidGrant or OidcFailureKindEnum.Rejected;
     }
 
     private async Task<AuthenticationResultEnum> EstablishSessionAsync(
@@ -328,6 +376,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         }
 
         await _sessionCoordinator.TransitionAsync(currentUser.UserId, CancellationToken.None);
+        ResetRefreshBackoff();
         SetSession(new AuthenticationSessionModel(
             tokenResult.AccessToken,
             tokenResult.AccessTokenExpiresAt,
@@ -340,6 +389,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
 
     private async Task InvalidateLocalSessionAsync(bool removeCredential)
     {
+        ResetRefreshBackoff();
         SetSession(null);
         await _sessionCoordinator.TransitionAsync(userId: null, CancellationToken.None);
         if (!removeCredential)
@@ -426,6 +476,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             OidcFailureKindEnum.Cancelled => AuthenticationResultEnum.Cancelled,
             OidcFailureKindEnum.InvalidResponse => AuthenticationResultEnum.Invalid,
             OidcFailureKindEnum.InvalidGrant => AuthenticationResultEnum.Invalid,
+            OidcFailureKindEnum.Rejected => AuthenticationResultEnum.Invalid,
             _ => AuthenticationResultEnum.TemporarilyUnavailable
         };
     }

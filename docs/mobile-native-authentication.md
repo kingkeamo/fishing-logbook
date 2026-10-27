@@ -66,6 +66,11 @@ same custom scheme and forwards `OpenUrl` callbacks. Android runtime behaviour m
 verified on an emulator or device. iOS is compile/configuration-only until the project is
 built and exercised on a Mac and physical device.
 
+Both platforms forward only the registered sign-in and sign-out callbacks. Forwarding never
+throws back into the platform entry point: Android's `async void` intent dispatch and the
+iOS fire-and-forget `OpenUrl` path contain every failure and log only the exception type,
+never the callback URI, authorization code, state or exception message.
+
 Custom schemes can be claimed by another installed application. PKCE and state validation
 limit interception risk, but verified Android App Links and iOS Universal Links are
 preferred before production. They require an owned HTTPS domain, platform association
@@ -79,8 +84,23 @@ storage.
 
 Access-token refresh is serialized. Concurrent callers wait for one refresh operation and
 receive the same renewed session. A rotated refresh token is persisted before the renewed
-access token is exposed. Revoked or invalid refresh credentials clear only authentication
-state. A transient network failure retains the refresh credential for a later retry.
+access token is exposed.
+
+Refresh failures are classified from the Cognito token-endpoint error:
+
+- `invalid_grant` and the non-retryable OAuth errors `invalid_client`, `invalid_request`,
+  `invalid_scope`, `unauthorized_client` and `unsupported_grant_type` are permanent. They
+  clear only authentication state and the stored refresh credential, so no further refresh
+  is attempted.
+- Every other failure, including network errors, HTTP failures without a protocol error,
+  `temporarily_unavailable`, discovery failures and an owner check that cannot complete, is
+  retryable. The credential is retained, and refresh is suspended for an exponential backoff
+  of 15 seconds doubling to a 5-minute maximum. A still-valid access token keeps working
+  during the backoff; an expired one fails immediately without contacting Cognito.
+
+Unclassifiable failures such as identity-token validation errors are therefore retried at
+most once per backoff window rather than signing the user out, which keeps an offline or
+degraded device signed in without allowing a tight retry loop.
 
 Every authenticated session has an owner and generation lease. An owner transition:
 
@@ -88,14 +108,22 @@ Every authenticated session has an owner and generation lease. An owner transiti
 2. waits for an in-progress guarded commit;
 3. activates a new generation only after the old commit boundary has completed.
 
+Each transition request takes a sequence number. When transitions overlap, only the most
+recently requested one is applied; earlier requests waiting on the commit boundary are
+discarded, so a stale login, logout or refresh cannot overwrite the final owner or
+generation. A transition to the owner that is already active and current is a no-op, so a
+same-account token refresh does not cancel that account's in-flight work.
+
 Future storage and synchronization operations must perform their final local commit
 through this lease. A stale lease cannot commit after a completed owner transition.
 Authentication and secure-storage failures do not call local catch deletion.
 
 ## HTTP and logout
 
-The authorized HTTP client accepts only the exact configured HTTPS API origin. It rejects
-other hosts and HTTP downgrades before obtaining a token. Automatic redirects are disabled
+The authorized HTTP client accepts only the exact configured HTTPS API origin and the
+`api/` path namespace beneath the configured base path. It rejects other hosts, HTTP
+downgrades, non-API paths such as `/health`, and raw or percent-encoded dot segments and
+backslashes before obtaining a token. Automatic redirects are disabled
 on all authentication-related clients so a bearer header cannot be forwarded to another
 origin. Presigned object-storage URLs use the separate anonymous client.
 

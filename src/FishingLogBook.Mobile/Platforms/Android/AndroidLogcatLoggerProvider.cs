@@ -5,7 +5,7 @@ namespace FishingLogBook.Mobile;
 
 public sealed class AndroidLogcatLoggerProvider : ILoggerProvider
 {
-    private const string Tag = "FishingLogBook";
+    public const string Tag = "FishingLogBook";
 
     public ILogger CreateLogger(string categoryName)
     {

@@ -9,6 +9,7 @@ public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDis
     private CancellationTokenSource? _sessionCancellation;
     private Guid? _userId;
     private long _generation;
+    private long _requestedTransition;
     private bool _transitionPending;
 
     public AccountSessionLeaseModel? Capture()
@@ -35,37 +36,27 @@ public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDis
     public async Task TransitionAsync(Guid? userId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        CancellationTokenSource? previousCancellation;
+        long transition;
         lock (_stateLock)
         {
-            if (userId.HasValue &&
-                _userId == userId &&
-                !_transitionPending &&
-                _sessionCancellation is { IsCancellationRequested: false })
+            if (IsActiveOwnerLocked(userId))
             {
                 return;
             }
 
+            transition = ++_requestedTransition;
             _transitionPending = true;
-            previousCancellation = _sessionCancellation;
-            previousCancellation?.Cancel();
+            _sessionCancellation?.Cancel();
         }
 
         await _commitGate.WaitAsync(CancellationToken.None);
         try
         {
-            lock (_stateLock)
-            {
-                _generation++;
-                _userId = userId;
-                _sessionCancellation = userId.HasValue ? new CancellationTokenSource() : null;
-                _transitionPending = false;
-            }
+            ApplyTransition(transition, userId);
         }
         finally
         {
             _commitGate.Release();
-            previousCancellation?.Dispose();
         }
     }
 
@@ -105,6 +96,35 @@ public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDis
         }
 
         _commitGate.Dispose();
+    }
+
+    private void ApplyTransition(long transition, Guid? userId)
+    {
+        CancellationTokenSource? previousCancellation;
+        lock (_stateLock)
+        {
+            if (transition != _requestedTransition)
+            {
+                return;
+            }
+
+            previousCancellation = _sessionCancellation;
+            _generation++;
+            _userId = userId;
+            _sessionCancellation = userId.HasValue ? new CancellationTokenSource() : null;
+            _transitionPending = false;
+        }
+
+        previousCancellation?.Cancel();
+        previousCancellation?.Dispose();
+    }
+
+    private bool IsActiveOwnerLocked(Guid? userId)
+    {
+        return userId.HasValue &&
+            _userId == userId &&
+            !_transitionPending &&
+            _sessionCancellation is { IsCancellationRequested: false };
     }
 
     private bool IsCurrentLocked(AccountSessionLeaseModel lease)

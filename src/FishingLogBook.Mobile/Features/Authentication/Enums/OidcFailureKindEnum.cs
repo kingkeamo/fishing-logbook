@@ -6,5 +6,6 @@ public enum OidcFailureKindEnum
     Cancelled = 1,
     InvalidResponse = 2,
     InvalidGrant = 3,
-    Transient = 4
+    Transient = 4,
+    Rejected = 5
 }

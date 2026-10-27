@@ -21,6 +21,32 @@ public class WhenTestingSend : BaseApiBearerHandlerTest
         await MockAccessTokenProvider.DidNotReceive().GetAccessTokenAsync(Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData("https://api.example.com/")]
+    [InlineData("https://api.example.com/health")]
+    [InlineData("https://api.example.com/apix/catches")]
+    [InlineData("https://api.example.com/API/catches")]
+    [InlineData("https://api.example.com/api/../health")]
+    [InlineData("https://api.example.com/api/%2E%2E/health")]
+    [InlineData("https://api.example.com/api/..%2Fhealth")]
+    [InlineData("https://api.example.com/api/%5C..%5Chealth")]
+    public async Task ItShouldRejectPathsOutsideTheApiNamespaceOnTheApprovedOrigin(string url)
+    {
+        // Arrange
+        var sent = false;
+        using var client = CreateClient(_ =>
+        {
+            sent = true;
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        var action = () => client.GetAsync(url);
+        // Act
+        await action.Should().ThrowAsync<InvalidOperationException>();
+        // Assert
+        sent.Should().BeFalse();
+        await MockAccessTokenProvider.DidNotReceive().GetAccessTokenAsync(Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task ItShouldDiscardAResponseCompletedAfterTheSessionChanged()
     {

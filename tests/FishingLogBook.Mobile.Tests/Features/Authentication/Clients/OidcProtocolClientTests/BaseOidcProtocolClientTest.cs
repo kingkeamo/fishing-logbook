@@ -11,12 +11,23 @@ public abstract class BaseOidcProtocolClientTest
     protected const string Authority = "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_pool";
     protected const string HostedUiDomain = "https://auth.example.com";
 
-    protected static OidcProtocolClient CreateSut(string endpointBaseAddress = HostedUiDomain)
+    protected static OidcProtocolClient CreateSut(
+        string endpointBaseAddress = HostedUiDomain,
+        Func<HttpRequestMessage, HttpResponseMessage>? tokenEndpoint = null,
+        bool discoveryAvailable = true)
     {
         return new OidcProtocolClient(
             CreateConfig(),
             new FixedTimeProvider(DateTimeOffset.UtcNow),
-            new DiscoveryMessageHandler(endpointBaseAddress));
+            new DiscoveryMessageHandler(endpointBaseAddress, tokenEndpoint, discoveryAvailable));
+    }
+
+    protected static HttpResponseMessage CreateTokenError(HttpStatusCode statusCode, string error)
+    {
+        return new HttpResponseMessage(statusCode)
+        {
+            Content = new StringContent($$"""{ "error": "{{error}}" }""", Encoding.UTF8, "application/json")
+        };
     }
 
     private static MobileAuthConfig CreateConfig()
@@ -34,13 +45,26 @@ public abstract class BaseOidcProtocolClientTest
         };
     }
 
-    private sealed class DiscoveryMessageHandler(string endpointBaseAddress) : HttpMessageHandler
+    private sealed class DiscoveryMessageHandler(
+        string endpointBaseAddress,
+        Func<HttpRequestMessage, HttpResponseMessage>? tokenEndpoint,
+        bool discoveryAvailable) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
             var path = request.RequestUri!.AbsoluteUri;
+            if (path.EndsWith("/oauth2/token", StringComparison.Ordinal) && tokenEndpoint is not null)
+            {
+                return Task.FromResult(tokenEndpoint(request));
+            }
+
+            if (!discoveryAvailable)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            }
+
             var body = path.EndsWith("/.well-known/openid-configuration", StringComparison.Ordinal)
                 ? $$"""
                     {

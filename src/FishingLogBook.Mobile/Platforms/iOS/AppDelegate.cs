@@ -18,14 +18,12 @@ public class AppDelegate : MauiUIApplicationDelegate
         NSUrl url,
         NSDictionary options)
     {
-        if (Uri.TryCreate(url.AbsoluteString, UriKind.Absolute, out var callback))
+        var callbackUri = url.AbsoluteString;
+        var handler = IPlatformApplication.Current?.Services.GetService<AuthenticationCallbackHandler>();
+        if (handler is not null && handler.CanForward(callbackUri))
         {
-            var handler = IPlatformApplication.Current?.Services.GetService<AuthenticationCallbackHandler>();
-            if (handler is not null)
-            {
-                _ = handler.HandleAsync(callback);
-                return true;
-            }
+            _ = handler.ForwardAsync(callbackUri);
+            return true;
         }
 
         return base.OpenUrl(application, url, options);

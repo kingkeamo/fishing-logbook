@@ -4,6 +4,7 @@ using Android.Content.PM;
 using Android.OS;
 using FishingLogBook.Mobile.Features.Authentication.Handlers;
 using Microsoft.Extensions.DependencyInjection;
+using AndroidLog = Android.Util.Log;
 
 namespace FishingLogBook.Mobile;
 
@@ -38,16 +39,20 @@ public class MainActivity : MauiAppCompatActivity
 
     private static async void DispatchAuthenticationCallback(Intent? intent)
     {
-        if (!Uri.TryCreate(intent?.DataString, UriKind.Absolute, out var callback))
+        try
         {
-            return;
+            var callbackUri = intent?.DataString;
+            var handler = IPlatformApplication.Current?.Services.GetService<AuthenticationCallbackHandler>();
+            if (handler is not null && handler.CanForward(callbackUri))
+            {
+                await handler.ForwardAsync(callbackUri);
+            }
         }
-
-        var services = IPlatformApplication.Current?.Services;
-        var handler = services?.GetService<AuthenticationCallbackHandler>();
-        if (handler is not null)
+        catch (Exception exception)
         {
-            await handler.HandleAsync(callback);
+            AndroidLog.Warn(
+                AndroidLogcatLoggerProvider.Tag,
+                $"Native authentication callback dispatch failed with {exception.GetType().FullName}.");
         }
     }
 }

@@ -7,7 +7,9 @@ namespace FishingLogBook.Mobile.Features.Authentication.Handlers;
 
 public sealed class ApiBearerHandler : DelegatingHandler
 {
+    private const string ApiPathNamespace = "api/";
     private readonly Uri _apiBaseUri;
+    private readonly string _apiPathPrefix;
     private readonly IAccessTokenProvider _accessTokenProvider;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
 
@@ -17,6 +19,7 @@ public sealed class ApiBearerHandler : DelegatingHandler
         IAccountSessionCoordinator sessionCoordinator)
     {
         _apiBaseUri = new Uri(config.ApiBaseUrl.TrimEnd('/') + "/");
+        _apiPathPrefix = _apiBaseUri.AbsolutePath + ApiPathNamespace;
         _accessTokenProvider = accessTokenProvider;
         _sessionCoordinator = sessionCoordinator;
     }
@@ -56,6 +59,14 @@ public sealed class ApiBearerHandler : DelegatingHandler
             return false;
         }
 
-        return requestUri.AbsolutePath.StartsWith(_apiBaseUri.AbsolutePath, StringComparison.Ordinal);
+        return requestUri.AbsolutePath.StartsWith(_apiPathPrefix, StringComparison.Ordinal) &&
+            !ContainsTraversal(requestUri.AbsolutePath);
+    }
+
+    private static bool ContainsTraversal(string path)
+    {
+        var decodedPath = Uri.UnescapeDataString(path);
+        return decodedPath.Contains('\\') ||
+            decodedPath.Split('/').Any(segment => segment is "." or "..");
     }
 }

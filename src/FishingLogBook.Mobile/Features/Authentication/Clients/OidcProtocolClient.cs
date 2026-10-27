@@ -11,6 +11,14 @@ namespace FishingLogBook.Mobile.Features.Authentication.Clients;
 public sealed class OidcProtocolClient : IOidcProtocolClient
 {
     private static readonly TimeSpan PendingAuthorizationLifetime = TimeSpan.FromMinutes(5);
+    private static readonly HashSet<string> PermanentRefreshErrors = new(StringComparer.Ordinal)
+    {
+        "invalid_client",
+        "invalid_request",
+        "invalid_scope",
+        "unauthorized_client",
+        "unsupported_grant_type"
+    };
     private readonly MobileAuthConfig _config;
     private readonly OidcClient _client;
     private readonly TimeProvider _timeProvider;
@@ -109,10 +117,7 @@ public sealed class OidcProtocolClient : IOidcProtocolClient
             var result = await _client.RefreshTokenAsync(refreshToken, cancellationToken: cancellationToken);
             if (result.IsError)
             {
-                var failure = string.Equals(result.Error, "invalid_grant", StringComparison.Ordinal)
-                    ? OidcFailureKindEnum.InvalidGrant
-                    : OidcFailureKindEnum.Transient;
-                return OidcTokenResultModel.Failed(failure);
+                return OidcTokenResultModel.Failed(ClassifyRefreshError(result.Error));
             }
 
             if (string.IsNullOrWhiteSpace(result.AccessToken))
@@ -128,10 +133,22 @@ public sealed class OidcProtocolClient : IOidcProtocolClient
                 null,
                 null);
         }
-        catch (HttpRequestException)
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
         {
             return OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient);
         }
+    }
+
+    private static OidcFailureKindEnum ClassifyRefreshError(string? error)
+    {
+        if (string.Equals(error, "invalid_grant", StringComparison.Ordinal))
+        {
+            return OidcFailureKindEnum.InvalidGrant;
+        }
+
+        return error is not null && PermanentRefreshErrors.Contains(error)
+            ? OidcFailureKindEnum.Rejected
+            : OidcFailureKindEnum.Transient;
     }
 
     private static OidcTokenResultModel CreateResult(

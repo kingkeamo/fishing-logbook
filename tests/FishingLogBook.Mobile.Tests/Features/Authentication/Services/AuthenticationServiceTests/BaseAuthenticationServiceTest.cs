@@ -6,7 +6,6 @@ using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
 using FishingLogBook.Mobile.Features.Users.Clients;
-using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Dtos;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -27,10 +26,12 @@ public abstract class BaseAuthenticationServiceTest
     protected readonly ICurrentUserClient MockCurrentUserClient = Substitute.For<ICurrentUserClient>();
     protected readonly ICognitoSessionClient MockCognitoSessionClient = Substitute.For<ICognitoSessionClient>();
     protected readonly IAccountSessionCoordinator MockSessionCoordinator = Substitute.For<IAccountSessionCoordinator>();
+    protected readonly TimeProvider MockTimeProvider = Substitute.For<TimeProvider>();
     protected readonly AuthenticationService Sut;
 
     protected BaseAuthenticationServiceTest()
     {
+        MockTimeProvider.GetUtcNow().Returns(Now);
         Sut = new AuthenticationService(
             MockOidcClient,
             MockBrowser,
@@ -38,7 +39,7 @@ public abstract class BaseAuthenticationServiceTest
             MockCurrentUserClient,
             MockCognitoSessionClient,
             MockSessionCoordinator,
-            new FixedTimeProvider(Now),
+            MockTimeProvider,
             NullLogger<AuthenticationService>.Instance);
     }
 
@@ -63,6 +64,11 @@ public abstract class BaseAuthenticationServiceTest
             expiresAt ?? Now.AddHours(1),
             Subject,
             Email);
+    }
+
+    protected void AdvanceTo(DateTimeOffset now)
+    {
+        MockTimeProvider.GetUtcNow().Returns(now);
     }
 
     protected async Task EstablishSessionAsync(DateTimeOffset? expiresAt = null)
