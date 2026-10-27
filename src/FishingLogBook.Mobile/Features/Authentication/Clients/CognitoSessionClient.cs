@@ -36,6 +36,6 @@ public sealed class CognitoSessionClient : ICognitoSessionClient
             $"{_config.HostedUiDomain.TrimEnd('/')}/logout" +
             $"?client_id={Uri.EscapeDataString(_config.ClientId)}" +
             $"&logout_uri={Uri.EscapeDataString(_config.LogoutRedirectUri)}");
-        await _browser.OpenAsync(logoutUrl, cancellationToken);
+        await _browser.OpenAsync(logoutUrl, new Uri(_config.LogoutRedirectUri), cancellationToken);
     }
 }

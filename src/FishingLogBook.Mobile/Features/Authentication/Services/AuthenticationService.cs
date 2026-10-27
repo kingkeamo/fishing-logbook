@@ -115,7 +115,10 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             var pendingAuthorization = await _oidcClient.PrepareLoginAsync(cancellationToken);
             await _store.SavePendingAuthorizationAsync(pendingAuthorization);
             SetPendingAuthorization(true);
-            await _browser.OpenAsync(new Uri(pendingAuthorization.StartUrl), cancellationToken);
+            await _browser.OpenAsync(
+                new Uri(pendingAuthorization.StartUrl),
+                new Uri(pendingAuthorization.RedirectUri),
+                cancellationToken);
             return AuthenticationResultEnum.Pending;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -146,14 +149,21 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
 
     public async Task CancelSignInAsync()
     {
+        bool wasPending;
         await _operationGate.WaitAsync();
         try
         {
+            wasPending = HasPendingAuthorization;
             await RemovePendingAuthorizationSafelyAsync();
         }
         finally
         {
             _operationGate.Release();
+        }
+
+        if (wasPending)
+        {
+            SignInCompleted?.Invoke(this, AuthenticationResultEnum.Cancelled);
         }
     }
 

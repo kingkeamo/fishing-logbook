@@ -1,0 +1,16 @@
+{
+  "host": "fishing-logbook-dev.pages.dev",
+  "callbackPaths": [
+    "/native/oauth2redirect",
+    "/native/signedout"
+  ],
+  "android": {
+    "packageName": "com.fishinglogbook.mobile.demo",
+    "sha256CertFingerprints": [
+      "5A:18:DD:77:E7:E3:51:86:65:E6:74:60:37:01:83:44:5C:D0:8D:AE:60:35:42:39:03:A4:16:F7:20:A0:7E:68"
+    ]
+  },
+  "ios": {
+    "bundleId": "com.fishinglogbook.mobile.demo"
+  }
+}

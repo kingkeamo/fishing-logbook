@@ -73,6 +73,17 @@ jobs:
       - name: Publish Web
         run: dotnet publish src/FishingLogBook.Web --configuration Release -o artifacts/web
 
+      # Dev-only native App Link / Universal Link association. The Apple file is generated
+      # only when the public APPLE_TEAM_ID variable holds a valid team identifier.
+      - name: Add Dev native app link association
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: >-
+          node src/FishingLogBook.Web/build/configure-app-links.mjs
+          --environment dev
+          --config src/FishingLogBook.Web/build/app-links.dev.json
+          --output artifacts/web/wwwroot
+
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
@@ -88,3 +99,30 @@ jobs:
           echo "Checking ${url}"
           body="$(curl -fsS --retry 8 --retry-all-errors --retry-delay 5 "${url}")"
           echo "${body}" | grep -q "FishingLogBook"
+
+      # The association files must be served directly as JSON, never as the SPA shell.
+      - name: Native app association smoke check
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          check_association() {
+            local path="$1" expected="$2"
+            local url="https://fishing-logbook-dev.pages.dev${path}"
+            local headers body status
+            headers="$(mktemp)"
+            body="$(mktemp)"
+            status="$(curl -sS --retry 8 --retry-all-errors --retry-delay 5 -D "${headers}" -o "${body}" -w '%{http_code}' "${url}")"
+            [ "${status}" = "200" ] || { echo "${path} returned HTTP ${status}"; exit 1; }
+            grep -qiE '^content-type: application/json' "${headers}" || { echo "${path} is not served as application/json"; exit 1; }
+            ! grep -qi '<html' "${body}" || { echo "${path} returned the SPA shell"; exit 1; }
+            node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "${body}"
+            grep -q "${expected}" "${body}" || { echo "${path} does not reference ${expected}"; exit 1; }
+            echo "${path} OK"
+          }
+          check_association /.well-known/assetlinks.json com.fishinglogbook.mobile.demo
+          if [ -n "${APPLE_TEAM_ID}" ]; then
+            check_association /.well-known/apple-app-site-association "${APPLE_TEAM_ID}.com.fishinglogbook.mobile.demo"
+          else
+            echo "APPLE_TEAM_ID is not set: apple-app-site-association is intentionally not published."
+          fi

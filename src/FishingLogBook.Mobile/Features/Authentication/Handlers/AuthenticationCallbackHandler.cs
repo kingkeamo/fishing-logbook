@@ -46,6 +46,20 @@ public sealed class AuthenticationCallbackHandler
         }
     }
 
+    public async Task AbandonAsync()
+    {
+        try
+        {
+            await _authenticationService.CancelSignInAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                "Abandoning native sign-in failed with {ExceptionType}.",
+                exception.GetType().FullName);
+        }
+    }
+
     public async Task HandleAsync(Uri callback)
     {
         if (Matches(callback, _logoutCallback))
@@ -88,6 +102,7 @@ public sealed class AuthenticationCallbackHandler
     {
         return string.Equals(callback.Scheme, expected.Scheme, StringComparison.Ordinal) &&
             string.Equals(callback.Host, expected.Host, StringComparison.Ordinal) &&
+            callback.Port == expected.Port &&
             string.Equals(callback.AbsolutePath, expected.AbsolutePath, StringComparison.Ordinal);
     }
 }

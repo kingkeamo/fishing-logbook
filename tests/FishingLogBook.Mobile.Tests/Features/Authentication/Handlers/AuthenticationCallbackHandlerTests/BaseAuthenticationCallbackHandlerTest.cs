@@ -8,8 +8,8 @@ namespace FishingLogBook.Mobile.Tests.Features.Authentication.Handlers.Authentic
 
 public abstract class BaseAuthenticationCallbackHandlerTest
 {
-    protected const string LoginCallback = "com.fishinglogbook.mobile.demo://oauth2redirect?code=secret-code&state=secret-state";
-    protected const string LogoutCallback = "com.fishinglogbook.mobile.demo://signedout";
+    protected const string LoginCallback = "https://fishing-logbook-dev.pages.dev/native/oauth2redirect?code=secret-code&state=secret-state";
+    protected const string LogoutCallback = "https://fishing-logbook-dev.pages.dev/native/signedout";
     protected readonly IAuthenticationService MockAuthenticationService = Substitute.For<IAuthenticationService>();
     protected readonly CapturingLogger<AuthenticationCallbackHandler> Logger = new();
     protected readonly AuthenticationCallbackHandler Sut;
@@ -25,8 +25,10 @@ public abstract class BaseAuthenticationCallbackHandlerTest
                 ApiBaseUrl = "https://api.example.com",
                 ApiScope = "https://api.example.com/access",
                 ApiResource = "https://api.example.com",
-                RedirectUri = "com.fishinglogbook.mobile.demo://oauth2redirect",
-                LogoutRedirectUri = LogoutCallback
+                RedirectUri = "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
+                LogoutRedirectUri = LogoutCallback,
+                SchemeRedirectUri = "com.fishinglogbook.mobile.demo://oauth2redirect",
+                SchemeLogoutRedirectUri = "com.fishinglogbook.mobile.demo://signedout"
             },
             MockAuthenticationService,
             Logger);

@@ -19,4 +19,30 @@ public class WhenTestingCancelSignIn : BaseAuthenticationServiceTest
         Sut.HasPendingAuthorization.Should().BeFalse();
         await MockStore.Received(2).RemovePendingAuthorizationAsync();
     }
+
+    [Fact]
+    public async Task ItShouldReportCancellationWhenAPendingSignInIsAbandoned()
+    {
+        // Arrange
+        var results = new List<AuthenticationResultEnum>();
+        Sut.SignInCompleted += (_, result) => results.Add(result);
+        MockOidcClient.PrepareLoginAsync(CancellationToken.None).Returns(CreatePending());
+        await Sut.BeginSignInAsync(CancellationToken.None);
+        // Act
+        await Sut.CancelSignInAsync();
+        // Assert
+        results.Should().Equal(AuthenticationResultEnum.Cancelled);
+    }
+
+    [Fact]
+    public async Task ItShouldNotReportCancellationWhenNoSignInIsPending()
+    {
+        // Arrange
+        var results = new List<AuthenticationResultEnum>();
+        Sut.SignInCompleted += (_, result) => results.Add(result);
+        // Act
+        await Sut.CancelSignInAsync();
+        // Assert
+        results.Should().BeEmpty();
+    }
 }

@@ -5,6 +5,8 @@
   "ApiBaseUrl": "https://fishing-logbook-dev-api.fly.dev",
   "ApiScope": "https://fishing-logbook-dev-api.fly.dev/access",
   "ApiResource": "https://fishing-logbook-dev-api.fly.dev",
-  "RedirectUri": "com.fishinglogbook.mobile.demo://oauth2redirect",
-  "LogoutRedirectUri": "com.fishinglogbook.mobile.demo://signedout"
+  "RedirectUri": "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
+  "LogoutRedirectUri": "https://fishing-logbook-dev.pages.dev/native/signedout",
+  "SchemeRedirectUri": "com.fishinglogbook.mobile.demo://oauth2redirect",
+  "SchemeLogoutRedirectUri": "com.fishinglogbook.mobile.demo://signedout"
 }

@@ -1,4 +1,5 @@
 using Android.Content.Res;
+using FishingLogBook.Mobile.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 
@@ -9,6 +10,11 @@ public static partial class MauiProgram
     static partial void ConfigurePlatformLogging(ILoggingBuilder logging)
     {
         logging.AddProvider(new AndroidLogcatLoggerProvider());
+    }
+
+    private static partial MobileAuthConfig SelectPlatformCallbacks(MobileAuthConfig config)
+    {
+        return config;
     }
 
     static partial void ConfigurePlatformHandlers()

@@ -7,8 +7,9 @@ namespace FishingLogBook.Mobile.Tests.Features.Authentication.Clients.OidcProtoc
 public class WhenTestingCompleteLogin : BaseOidcProtocolClientTest
 {
     [Theory]
-    [InlineData("other.application://oauth2redirect?code=code&state=expected")]
-    [InlineData("com.fishinglogbook.mobile.demo://oauth2redirect?code=code&state=wrong")]
+    [InlineData("https://evil.test/native/oauth2redirect?code=code&state=expected")]
+    [InlineData("com.fishinglogbook.mobile.demo://oauth2redirect?code=code&state=expected")]
+    [InlineData("https://fishing-logbook-dev.pages.dev/native/oauth2redirect?code=code&state=wrong")]
     public async Task ItShouldRejectCallbackAndStateMismatchesBeforeTokenExchange(string callback)
     {
         // Arrange
@@ -17,7 +18,7 @@ public class WhenTestingCompleteLogin : BaseOidcProtocolClientTest
             "https://auth.example.com/oauth2/authorize",
             "expected",
             "verifier",
-            "com.fishinglogbook.mobile.demo://oauth2redirect",
+            "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
             DateTimeOffset.UtcNow.AddMinutes(5));
         // Act
         var result = await sut.CompleteLoginAsync(

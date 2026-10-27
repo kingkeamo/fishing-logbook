@@ -8,9 +8,11 @@ public class WhenTestingCanForward : BaseAuthenticationCallbackHandlerTest
     [InlineData(null)]
     [InlineData("")]
     [InlineData("not a uri")]
-    [InlineData("https://evil.test/oauth2redirect?code=code")]
-    [InlineData("com.fishinglogbook.mobile.demo://other?code=code")]
-    [InlineData("other.application://oauth2redirect?code=code")]
+    [InlineData("https://evil.test/native/oauth2redirect?code=code")]
+    [InlineData("http://fishing-logbook-dev.pages.dev/native/oauth2redirect?code=code")]
+    [InlineData("https://fishing-logbook-dev.pages.dev:8443/native/oauth2redirect?code=code")]
+    [InlineData("https://fishing-logbook-dev.pages.dev/native/other?code=code")]
+    [InlineData("com.fishinglogbook.mobile.demo://oauth2redirect?code=code")]
     public void ItShouldRejectUrisThatAreNotRegisteredAuthenticationCallbacks(string? callbackUri)
     {
         // Arrange

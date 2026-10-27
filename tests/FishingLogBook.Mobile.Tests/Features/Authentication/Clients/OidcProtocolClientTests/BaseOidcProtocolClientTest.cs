@@ -40,8 +40,10 @@ public abstract class BaseOidcProtocolClientTest
             ApiBaseUrl = "https://api.example.com",
             ApiScope = "https://api.example.com/access",
             ApiResource = "https://api.example.com",
-            RedirectUri = "com.fishinglogbook.mobile.demo://oauth2redirect",
-            LogoutRedirectUri = "com.fishinglogbook.mobile.demo://signedout"
+            RedirectUri = "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
+            LogoutRedirectUri = "https://fishing-logbook-dev.pages.dev/native/signedout",
+            SchemeRedirectUri = "com.fishinglogbook.mobile.demo://oauth2redirect",
+            SchemeLogoutRedirectUri = "com.fishinglogbook.mobile.demo://signedout"
         };
     }
 

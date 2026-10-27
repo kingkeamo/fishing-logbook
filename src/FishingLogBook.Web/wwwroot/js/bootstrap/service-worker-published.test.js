@@ -388,4 +388,22 @@ describe('published service worker', () => {
         expect(worker.fetch).toHaveBeenCalledWith(expect.anything(), { cache: 'no-store' });
         expect(worker.cache.match).not.toHaveBeenCalled();
     });
+
+    it.each([
+        'https://app.test/.well-known/assetlinks.json',
+        'https://app.test/.well-known/apple-app-site-association',
+        'https://app.test/native/oauth2redirect?code=secret-code&state=secret-state',
+        'https://app.test/native/signedout'
+    ])('never serves the app shell for native association or callback navigation %s', async url => {
+        const worker = createWorker({
+            match: async () => new TestResponse('cached shell')
+        });
+
+        const result = await worker.dispatchFetch(url).response;
+
+        expect(result.body).toBe('network');
+        expect(worker.fetch).toHaveBeenCalledWith(expect.objectContaining({ url }), { cache: 'no-store' });
+        expect(worker.cache.match).not.toHaveBeenCalled();
+        expect(worker.cache.put).not.toHaveBeenCalled();
+    });
 });
