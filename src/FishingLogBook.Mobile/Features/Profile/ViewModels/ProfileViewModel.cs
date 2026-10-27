@@ -4,6 +4,7 @@ using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
@@ -20,6 +21,7 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     private readonly IConnectivityService _connectivity;
     private readonly IAuthenticationService _authentication;
     private readonly CatalogueTextService _catalogueText;
+    private readonly InteractionService _interactions;
     private ProfileEditorDataModel? _current;
     private Action<Action>? _dispatch;
     private string? _displayName;
@@ -41,12 +43,14 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         IConnectivityService connectivity,
         IAuthenticationService authentication,
         CatalogueTextService catalogueText,
+        InteractionService interactions,
         UiTextService text)
     {
         _service = service;
         _connectivity = connectivity;
         _authentication = authentication;
         _catalogueText = catalogueText;
+        _interactions = interactions;
         Text = text;
         Text.PropertyChanged += OnCultureChanged;
         _connectivity.ConnectivityChanged += OnConnectivityChanged;
@@ -245,13 +249,19 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         return true;
     }
 
-    public void RemoveLocation(FishingLocationEditModel location)
+    public async Task RemoveLocationAsync(FishingLocationEditModel location, CancellationToken cancellationToken = default)
     {
-        if (!Locations.Remove(location))
+        if (!Locations.Contains(location))
         {
             return;
         }
 
+        if (location.IsDefault && !await ConfirmDefaultLocationRemovalAsync(cancellationToken))
+        {
+            return;
+        }
+
+        Locations.Remove(location);
         EnsureLocationDefault();
     }
 
@@ -520,6 +530,21 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         {
             species.IsDefault = species.IsSelected && species.Id == defaultId;
         }
+    }
+
+    private Task<bool> ConfirmDefaultLocationRemovalAsync(CancellationToken cancellationToken)
+    {
+        var body = Locations.Count == 1
+            ? Text["ProfileRemoveLastLocationBody"]
+            : Text["ProfileRemoveDefaultLocationBody"];
+        return _interactions.ConfirmAsync(
+            new DialogRequest(
+                Text["ProfileRemoveDefaultLocationTitle"],
+                body,
+                Text["Remove"],
+                Text["Cancel"],
+                true),
+            cancellationToken);
     }
 
     private void EnsureLocationDefault()

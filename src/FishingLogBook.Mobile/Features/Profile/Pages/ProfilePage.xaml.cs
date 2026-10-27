@@ -125,12 +125,19 @@ public partial class ProfilePage : ContentPage
         }
     }
 
-    private void OnRemoveLocation(object? sender, TappedEventArgs args)
+    private async void OnRemoveLocation(object? sender, TappedEventArgs args)
     {
-        if (sender is BindableObject { BindingContext: FishingLocationEditModel location })
+        if (sender is not BindableObject { BindingContext: FishingLocationEditModel location })
         {
-            _viewModel.RemoveLocation(location);
+            return;
         }
+
+        if (location.IsDefault)
+        {
+            _returningFromPicker = true;
+        }
+
+        await _viewModel.RemoveLocationAsync(location);
     }
 
     private async void OnDiscardAndReload(object? sender, EventArgs args)

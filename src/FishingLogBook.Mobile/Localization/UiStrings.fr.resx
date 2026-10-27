@@ -274,4 +274,7 @@
   <data name="ProfileLocationRequired" xml:space="preserve"><value>Saisissez un nom de lieu.</value></data>
   <data name="ProfileLocationTooLong" xml:space="preserve"><value>Le nom du lieu doit comporter au maximum {0} caractères.</value></data>
   <data name="ProfileLocationDuplicate" xml:space="preserve"><value>Ce lieu de pêche figure déjà dans votre liste.</value></data>
+  <data name="ProfileRemoveDefaultLocationTitle" xml:space="preserve"><value>Supprimer ce lieu ?</value></data>
+  <data name="ProfileRemoveDefaultLocationBody" xml:space="preserve"><value>C'est votre lieu de pêche par défaut. Un autre lieu restant deviendra le lieu par défaut.</value></data>
+  <data name="ProfileRemoveLastLocationBody" xml:space="preserve"><value>C'est votre seul lieu de pêche. Vous n'aurez plus de lieu préféré tant que vous n'en aurez pas ajouté un autre.</value></data>
 </root>

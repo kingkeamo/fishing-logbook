@@ -274,4 +274,7 @@
   <data name="ProfileLocationRequired" xml:space="preserve"><value>Enter a location name.</value></data>
   <data name="ProfileLocationTooLong" xml:space="preserve"><value>Location name must be {0} characters or fewer.</value></data>
   <data name="ProfileLocationDuplicate" xml:space="preserve"><value>That fishing location is already in your list.</value></data>
+  <data name="ProfileRemoveDefaultLocationTitle" xml:space="preserve"><value>Remove this location?</value></data>
+  <data name="ProfileRemoveDefaultLocationBody" xml:space="preserve"><value>This is your default fishing location. Another remaining location will become the default.</value></data>
+  <data name="ProfileRemoveLastLocationBody" xml:space="preserve"><value>This is your only fishing location. You will have no preferred location until you add another.</value></data>
 </root>

@@ -4,6 +4,7 @@ using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Profile.ViewModels;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Dtos;
@@ -18,6 +19,7 @@ public abstract class BaseProfileViewModelTest
     protected readonly IProfileEditorService MockService = Substitute.For<IProfileEditorService>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly IAuthenticationService MockAuthentication = Substitute.For<IAuthenticationService>();
+    protected readonly IInteractionPresenter MockPresenter = Substitute.For<IInteractionPresenter>();
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
     protected readonly ProfileEditorDataModel Data;
     protected readonly ProfileViewModel Sut;
@@ -25,6 +27,7 @@ public abstract class BaseProfileViewModelTest
     protected BaseProfileViewModelTest()
     {
         MockConnectivity.IsOnline.Returns(true);
+        MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(true);
         Data = CreateData();
         MockService.LoadAsync(Arg.Any<CancellationToken>())
             .Returns(ApiResultModel<ProfileEditorDataModel>.Succeeded(Data));
@@ -33,6 +36,7 @@ public abstract class BaseProfileViewModelTest
             MockConnectivity,
             MockAuthentication,
             new CatalogueTextService(Text),
+            new InteractionService(MockPresenter, Text),
             Text);
         Sut.Attach(action => action());
     }

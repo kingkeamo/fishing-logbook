@@ -72,6 +72,7 @@ public class WhenTestingAnglerPreferencesPresentation
             "ProfileOfflineSave", "ProfileOfflineError", "ProfileValidationError", "ProfileSaveError",
             "ProfileSessionExpired", "ProfileDisplayNameTooLong", "ProfileHomeRegionTooLong",
             "ProfileLocationRequired", "ProfileLocationTooLong", "ProfileLocationDuplicate",
+            "ProfileRemoveDefaultLocationTitle", "ProfileRemoveDefaultLocationBody", "ProfileRemoveLastLocationBody",
             "ProfilePartialSaveError", "ProfileDiscardAndReload", "SetAsDefault",
             "ProfileWeightUnit", "ProfileWeightUnitKg", "ProfileWeightUnitLb",
             "ProfileLengthUnit", "ProfileLengthUnitCm", "ProfileLengthUnitIn"

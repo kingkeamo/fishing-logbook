@@ -1,6 +1,8 @@
 using AwesomeAssertions;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Constants;
+using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Profile.ViewModels.ProfileViewModelTests;
 
@@ -29,7 +31,7 @@ public sealed class WhenTestingLocations : BaseProfileViewModelTest
         // Arrange
         await LoadAsync();
         var moy = Sut.Locations.Single(location => location.Id == TestAnglerPreferences.MoyId);
-        Sut.RemoveLocation(moy);
+        await Sut.RemoveLocationAsync(moy);
 
         // Act
         Sut.SetDefaultLocation(moy);
@@ -48,7 +50,7 @@ public sealed class WhenTestingLocations : BaseProfileViewModelTest
         var corrib = Sut.Locations.Single(location => location.Id == TestAnglerPreferences.CorribId);
 
         // Act
-        Sut.RemoveLocation(corrib);
+        await Sut.RemoveLocationAsync(corrib);
 
         // Assert
         Sut.Locations.Should().HaveCount(2);
@@ -61,8 +63,8 @@ public sealed class WhenTestingLocations : BaseProfileViewModelTest
     {
         // Arrange
         await LoadAsync();
-        Sut.RemoveLocation(Sut.Locations[0]);
-        Sut.RemoveLocation(Sut.Locations[0]);
+        await Sut.RemoveLocationAsync(Sut.Locations[0]);
+        await Sut.RemoveLocationAsync(Sut.Locations[0]);
         var emptied = Sut.Locations.ToArray();
 
         // Act
@@ -113,7 +115,7 @@ public sealed class WhenTestingLocations : BaseProfileViewModelTest
         var added = Sut.AddLocation("  Lough Mask  ");
         var renamed = Sut.RenameLocation(moy, "River Moy Upper");
         Sut.SetDefaultLocation(moy);
-        Sut.RemoveLocation(Sut.Locations.Single(location => location.Name == "Lough Mask"));
+        await Sut.RemoveLocationAsync(Sut.Locations.Single(location => location.Name == "Lough Mask"));
 
         // Assert
         added.Should().BeTrue();
@@ -144,5 +146,81 @@ public sealed class WhenTestingLocations : BaseProfileViewModelTest
             Text.Culture,
             Text["ProfileLocationTooLong"],
             FishingLocationConstants.MaxNameLength));
+    }
+
+    [Fact]
+    public async Task ItShouldRemoveANonDefaultLocationWithoutAsking()
+    {
+        // Arrange
+        await LoadAsync();
+        var moy = Sut.Locations.Single(location => location.Id == TestAnglerPreferences.MoyId);
+
+        // Act
+        await Sut.RemoveLocationAsync(moy);
+
+        // Assert
+        Sut.Locations.Should().ContainSingle(location => location.Id == TestAnglerPreferences.CorribId);
+        await MockPresenter.DidNotReceive().ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldAskBeforeRemovingTheDefaultLocation()
+    {
+        // Arrange
+        await LoadAsync();
+        var corrib = Sut.Locations.Single(location => location.Id == TestAnglerPreferences.CorribId);
+
+        // Act
+        await Sut.RemoveLocationAsync(corrib);
+
+        // Assert
+        Sut.Locations.Should().ContainSingle(location => location.Id == TestAnglerPreferences.MoyId);
+        await MockPresenter.Received(1).ShowDialogAsync(
+            Arg.Is<DialogRequest>(request =>
+                request.IsDestructive &&
+                request.Title == Text["ProfileRemoveDefaultLocationTitle"] &&
+                request.Message == Text["ProfileRemoveDefaultLocationBody"] &&
+                request.Accept == Text["Remove"] &&
+                request.Cancel == Text["Cancel"]),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheDefaultLocationWhenRemovalIsCancelled()
+    {
+        // Arrange
+        await LoadAsync();
+        MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(false);
+        var corrib = Sut.Locations.Single(location => location.Id == TestAnglerPreferences.CorribId);
+
+        // Act
+        await Sut.RemoveLocationAsync(corrib);
+
+        // Assert
+        Sut.Locations.Should().HaveCount(2);
+        corrib.IsDefault.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ItShouldAskBeforeRemovingTheLastLocation()
+    {
+        // Arrange
+        await LoadAsync();
+        await Sut.RemoveLocationAsync(Sut.Locations.Single(location => location.Id == TestAnglerPreferences.MoyId));
+        var last = Sut.Locations.Single();
+
+        // Act
+        await Sut.RemoveLocationAsync(last);
+
+        // Assert
+        Sut.Locations.Should().BeEmpty();
+        await MockPresenter.Received(1).ShowDialogAsync(
+            Arg.Is<DialogRequest>(request =>
+                request.IsDestructive &&
+                request.Title == Text["ProfileRemoveDefaultLocationTitle"] &&
+                request.Message == Text["ProfileRemoveLastLocationBody"] &&
+                request.Accept == Text["Remove"] &&
+                request.Cancel == Text["Cancel"]),
+            Arg.Any<CancellationToken>());
     }
 }
