@@ -25,6 +25,30 @@ public class WhenTestingAnglerPreferencesPresentation
         profile.Should().Contain("AutomationId=\"ProfileLocations\"");
         profile.Should().Contain("AutomationId=\"ProfileSave\"");
         profile.Should().Contain("<controls:SelectionPillView");
+        profile.Should().Contain("AutomationId=\"ProfileMore\"");
+        profile.Should().Contain("AutomationId=\"ProfileFishingDetailsPanel\"");
+        var picker = File.ReadAllText(Path.Combine(MobileRoot, "Features", "Profile", "Popups", "CataloguePickerPopup.xaml"));
+        picker.Should().Contain("AutomationId=\"CataloguePickerSearch\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerAvailable\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerSelected\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerSave\"");
+        picker.Should().Contain("AutomationId=\"CataloguePickerCancel\"");
+    }
+
+    [Fact]
+    public void ItShouldRenderMoreAsATemplatedItemBecauseBoundLayoutsReplaceStaticChildren()
+    {
+        // Arrange
+        var profile = XDocument.Load(Path.Combine(MobileRoot, "Features", "Profile", "Pages", "ProfilePage.xaml"));
+        // Act
+        var button = profile.Descendants().Single(element => (string?)element.Attribute("AutomationId") == "ProfileMore");
+        var boundLayouts = profile.Descendants()
+            .Where(element => element.Attribute("BindableLayout.ItemTemplateSelector") is not null)
+            .Select(element => (string)element.Attribute("BindableLayout.ItemsSource")!)
+            .ToArray();
+        // Assert
+        button.Parent!.Name.LocalName.Should().Be("DataTemplate");
+        boundLayouts.Should().Equal("{Binding MethodChipItems}", "{Binding SpeciesChipItems}");
     }
 
     [Fact]
@@ -37,7 +61,9 @@ public class WhenTestingAnglerPreferencesPresentation
             "Profile", "ProfileTitle", "ProfileSubtitle", "ProfileYourDetails", "ProfileFishingDetails",
             "ProfilePhotoPlaceholder", "ProfilePhotoDeferred", "ProfileDisplayName", "ProfileHomeRegion",
             "ProfileShowDisplayName", "ProfileShowHomeRegion", "ProfileShowPhoto", "ProfileMethods",
-            "ProfilePillHint", "ProfileSetDefaultFor", "ProfileShowMethods", "ProfileShowSpecies",
+            "ProfileSetDefaultFor", "ProfileSetDefaultMethod", "ProfileSetDefaultSpecies", "ProfileSpeciesForMethod",
+            "ProfileRemoveItem", "More", "Search", "Available", "Selected", "Save", "PickerShowingLimited",
+            "PickerNoMatches", "PickerNoneSelected", "ProfileDefault", "SectionExpand", "SectionCollapse", "ProfileShowMethods", "ProfileShowSpecies",
             "ProfileLocations", "ProfileLocationsHint", "ProfileLocationName", "ProfileSave", "ProfileSaved",
             "ProfileOfflineSave", "ProfileOfflineError", "ProfileValidationError", "ProfileSaveError",
             "ProfileSessionExpired", "ProfileDisplayNameTooLong", "ProfileHomeRegionTooLong",

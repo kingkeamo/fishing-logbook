@@ -13,6 +13,8 @@ namespace FishingLogBook.Mobile.Features.Profile.ViewModels;
 
 public sealed class ProfileViewModel : INotifyPropertyChanged
 {
+    private const int MaxMethodChips = 3;
+    private readonly PreferenceMoreActionModel _moreMethodsAction = new(null);
     private readonly IProfileEditorService _service;
     private readonly IConnectivityService _connectivity;
     private readonly IAuthenticationService _authentication;
@@ -48,6 +50,13 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
 
     public UiTextService Text { get; }
     public IReadOnlyList<MethodPreferenceEditModel> Methods { get; private set; } = [];
+    public IReadOnlyList<MethodPreferenceEditModel> MethodChips => Methods
+        .OrderByDescending(method => method.IsSelected)
+        .ThenBy(method => method.Name, StringComparer.CurrentCultureIgnoreCase)
+        .Take(Math.Max(MaxMethodChips, Methods.Count(method => method.IsSelected)))
+        .ToArray();
+    public IReadOnlyList<object> MethodChipItems => [.. MethodChips, _moreMethodsAction];
+    public IReadOnlyList<MethodPreferenceEditModel> SelectedMethods => Methods.Where(method => method.IsSelected).ToArray();
     public ObservableCollection<FishingLocationEditModel> Locations { get; } = [];
     public string? DisplayName { get => _displayName; set => Set(ref _displayName, value, nameof(DisplayName)); }
     public string? HomeRegion { get => _homeRegion; set => Set(ref _homeRegion, value, nameof(HomeRegion)); }
@@ -111,46 +120,97 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
 
     public void ToggleMethod(MethodPreferenceEditModel method)
     {
-        method.IsSelected = !method.IsSelected;
-        if (!method.IsSelected)
+        if (method.IsSelected)
         {
-            method.IsDefault = false;
-            foreach (var species in method.Species)
-            {
-                species.IsSelected = false;
-                species.IsDefault = false;
-            }
+            Deselect(method);
+        }
+        else
+        {
+            method.IsSelected = true;
         }
 
         EnsureMethodDefault();
+        PublishMethodSelection();
     }
 
     public void SetDefaultMethod(MethodPreferenceEditModel method)
     {
         var selectedIds = Methods.Where(item => item.IsSelected).Select(item => item.Id).ToArray();
         ApplyMethodDefault(SingleDefaultSelection.Select(selectedIds, method.Id));
-    }
-
-    public void ToggleSpecies(MethodPreferenceEditModel method, SpeciesPreferenceEditModel species)
-    {
-        if (!method.IsSelected)
-        {
-            return;
-        }
-
-        species.IsSelected = !species.IsSelected;
-        if (!species.IsSelected)
-        {
-            species.IsDefault = false;
-        }
-
-        EnsureSpeciesDefault(method);
+        PublishMethodSelection();
     }
 
     public void SetDefaultSpecies(MethodPreferenceEditModel method, SpeciesPreferenceEditModel species)
     {
         var selectedIds = method.Species.Where(item => item.IsSelected).Select(item => item.Id).ToArray();
         ApplySpeciesDefault(method, SingleDefaultSelection.Select(selectedIds, species.Id));
+        method.NotifySelectedSpecies();
+    }
+
+    public CataloguePickerViewModel CreateMethodPicker()
+    {
+        return new CataloguePickerViewModel(Text, Text["ProfileMethods"], Methods.Select(method =>
+            new CataloguePickerOptionModel(method.Id, method.Name, RemoveDescription(method.Name), method.IsSelected)).ToArray());
+    }
+
+    public void ApplyMethodPicker(CataloguePickerResultModel result)
+    {
+        foreach (var method in Methods)
+        {
+            if (result.SelectedIds.Contains(method.Id))
+            {
+                method.IsSelected = true;
+            }
+            else if (method.IsSelected)
+            {
+                Deselect(method);
+            }
+        }
+
+        EnsureMethodDefault();
+        PublishMethodSelection();
+    }
+
+    public CataloguePickerViewModel CreateSpeciesPicker(MethodPreferenceEditModel method)
+    {
+        return new CataloguePickerViewModel(
+            Text,
+            string.Format(Text.Culture, Text["ProfileSpeciesForMethod"], method.Name),
+            method.Species.Select(species =>
+                new CataloguePickerOptionModel(species.Id, species.Name, RemoveDescription(species.Name), species.IsSelected)).ToArray());
+    }
+
+    public void ApplySpeciesPicker(MethodPreferenceEditModel method, CataloguePickerResultModel result)
+    {
+        if (!method.IsSelected)
+        {
+            return;
+        }
+
+        foreach (var species in method.Species)
+        {
+            species.IsSelected = result.SelectedIds.Contains(species.Id);
+            if (!species.IsSelected)
+            {
+                species.IsDefault = false;
+            }
+        }
+
+        EnsureSpeciesDefault(method);
+        method.NotifySelectedSpecies();
+    }
+
+    public void RemoveSpecies(MethodPreferenceEditModel method, SpeciesPreferenceEditModel species)
+    {
+        if (!species.IsSelected)
+        {
+            return;
+        }
+
+        species.IsSelected = false;
+        species.IsDefault = false;
+        EnsureSpeciesDefault(method);
+        method.NotifySelectedSpecies();
     }
 
     public bool AddLocation(string? value)
@@ -260,6 +320,7 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
             Locations.Add(new FishingLocationEditModel(location.Id, location.Name, location.IsDefault));
         }
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Methods)));
+        PublishMethodSelection();
         PublishAvailability();
     }
 
@@ -278,7 +339,8 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
                 {
                     IsSelected = selectedItem is not null,
                     IsDefault = selectedItem?.IsDefault == true,
-                    DefaultDescription = DefaultDescription(speciesName)
+                    DefaultDescription = DefaultDescription(speciesName),
+                    RemoveDescription = RemoveDescription(speciesName)
                 };
             }).ToArray();
             var methodName = _catalogueText.GetFishingMethodLabel(method.Code, method.Name);
@@ -439,12 +501,18 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         Locations.Clear();
         Message = null;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Methods)));
+        PublishMethodSelection();
         PublishAvailability();
     }
 
     private void OnCultureChanged(object? sender, PropertyChangedEventArgs args)
     {
-        if (args.PropertyName != nameof(UiTextService.Culture) || _current is null)
+        if (args.PropertyName != nameof(UiTextService.Culture))
+        {
+            return;
+        }
+
+        if (_current is null)
         {
             return;
         }
@@ -459,9 +527,11 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
                 var catalogueSpecies = _current.Preferences.Catalogue.AllSpecies.First(item => item.Id == species.Id);
                 species.Name = _catalogueText.GetSpeciesLabel(species.Code, catalogueSpecies.Name);
                 species.DefaultDescription = DefaultDescription(species.Name);
+                species.RemoveDescription = RemoveDescription(species.Name);
             }
         }
 
+        PublishMethodSelection();
         PublishAvailability();
     }
 
@@ -502,6 +572,31 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     private string DefaultDescription(string name)
     {
         return string.Format(Text.Culture, Text["ProfileSetDefaultFor"], name);
+    }
+
+    private string RemoveDescription(string name)
+    {
+        return string.Format(Text.Culture, Text["ProfileRemoveItem"], name);
+    }
+
+    private static void Deselect(MethodPreferenceEditModel method)
+    {
+        method.IsSelected = false;
+        method.IsDefault = false;
+        foreach (var species in method.Species)
+        {
+            species.IsSelected = false;
+            species.IsDefault = false;
+        }
+
+        method.NotifySelectedSpecies();
+    }
+
+    private void PublishMethodSelection()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MethodChips)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MethodChipItems)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedMethods)));
     }
 
     private static string? TrimOptional(string? value)

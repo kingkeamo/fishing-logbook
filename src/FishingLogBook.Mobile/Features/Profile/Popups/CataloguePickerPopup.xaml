@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Profile.Models"
+               xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Profile.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Profile.Popups.CataloguePickerPopup"
+               x:TypeArguments="models:CataloguePickerResultModel" x:DataType="vm:CataloguePickerViewModel"
+               Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
+  <Border x:Name="Sheet" StrokeThickness="0" Padding="0" HorizontalOptions="Fill"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+    <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="Container">
+      <Grid Padding="20,8,8,4" ColumnDefinitions="*,48" RowDefinitions="Auto,48">
+        <BoxView Grid.ColumnSpan="2" WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center"
+                 Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+        <Label Grid.Row="1" Text="{Binding Title}" Style="{StaticResource Heading}" FontSize="20" VerticalOptions="Center"
+               SemanticProperties.HeadingLevel="Level1" />
+        <Button Grid.Row="1" Grid.Column="1" Text="×" Clicked="OnCancel" Style="{StaticResource SecondaryButton}" Padding="0"
+                SemanticProperties.Description="{Binding Text[Cancel]}" AutomationId="CataloguePickerClose" />
+      </Grid>
+      <ScrollView Grid.Row="1">
+        <VerticalStackLayout Padding="20,4,20,12" Spacing="12">
+          <Border Style="{StaticResource Card}" Padding="12,0" Shadow="{x:Null}" HeightRequest="48">
+            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+            <Grid ColumnDefinitions="24,*" ColumnSpacing="10">
+              <controls:IconView Source="icon_search.png" Tone="Muted" WidthRequest="20" HeightRequest="20" VerticalOptions="Center" />
+              <Entry Grid.Column="1" Placeholder="{Binding Text[Search]}" Text="{Binding Search, Mode=TwoWay}"
+                     Style="{StaticResource SearchEntry}" AutomationId="CataloguePickerSearch" />
+            </Grid>
+          </Border>
+          <Label Text="{Binding Text[Available]}" Style="{StaticResource SectionTitle}" />
+          <Label Text="{Binding LimitMessage}" IsVisible="{Binding IsLimited}" Style="{StaticResource SecondaryText}"
+                 AutomationId="CataloguePickerLimit" />
+          <Label Text="{Binding Text[PickerNoMatches]}" IsVisible="{Binding HasNoMatches}" Style="{StaticResource SecondaryText}"
+                 AutomationId="CataloguePickerNoMatches" />
+          <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding Options}" AutomationId="CataloguePickerAvailable">
+            <BindableLayout.ItemTemplate>
+              <DataTemplate x:DataType="models:CataloguePickerOptionModel">
+                <controls:SelectionPillView Margin="0,0,8,8" Label="{Binding Name}" IsSelected="{Binding IsSelected}"
+                                            SelectionRequested="OnOption" />
+              </DataTemplate>
+            </BindableLayout.ItemTemplate>
+          </FlexLayout>
+          <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}">
+            <VerticalStackLayout Spacing="8">
+              <Label Text="{Binding Text[Selected]}" Style="{StaticResource SectionTitle}" />
+              <Label Text="{Binding Text[PickerNoneSelected]}" IsVisible="{Binding HasNoSelection}" Style="{StaticResource SecondaryText}" />
+              <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding SelectedOptions}" AutomationId="CataloguePickerSelected">
+                <BindableLayout.ItemTemplate>
+                  <DataTemplate x:DataType="models:CataloguePickerOptionModel">
+                    <controls:SelectionPillView Margin="0,0,8,8" Label="{Binding Name}" IsSelected="True" ShowRemoveAction="True"
+                                                RemoveDescription="{Binding RemoveDescription}"
+                                                SelectionRequested="OnOption" RemoveRequested="OnOption" />
+                  </DataTemplate>
+                </BindableLayout.ItemTemplate>
+              </FlexLayout>
+            </VerticalStackLayout>
+          </Border>
+        </VerticalStackLayout>
+      </ScrollView>
+      <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12" Padding="20,8,20,16">
+        <Button Text="{Binding Text[Cancel]}" Clicked="OnCancel" Style="{StaticResource SecondaryButton}"
+                AutomationId="CataloguePickerCancel" />
+        <Button Grid.Column="1" Text="{Binding Text[Save]}" Clicked="OnSave" AutomationId="CataloguePickerSave" />
+      </Grid>
+    </Grid>
+  </Border>
+</toolkit:Popup>

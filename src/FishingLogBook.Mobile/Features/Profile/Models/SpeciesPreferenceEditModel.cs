@@ -8,6 +8,7 @@ public sealed class SpeciesPreferenceEditModel(Guid methodId, Guid id, string co
     private bool _isSelected;
     private bool _isDefault;
     private string _defaultDescription = string.Empty;
+    private string _removeDescription = string.Empty;
 
     public Guid MethodId { get; } = methodId;
     public Guid Id { get; } = id;
@@ -39,6 +40,16 @@ public sealed class SpeciesPreferenceEditModel(Guid methodId, Guid id, string co
 
             _defaultDescription = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DefaultDescription)));
+        }
+    }
+    public string RemoveDescription
+    {
+        get => _removeDescription;
+        set
+        {
+            if (_removeDescription == value) return;
+            _removeDescription = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RemoveDescription)));
         }
     }
     public bool IsSelected

@@ -1,4 +1,7 @@
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Extensions;
 using FishingLogBook.Mobile.Features.Profile.Models;
+using FishingLogBook.Mobile.Features.Profile.Popups;
 using FishingLogBook.Mobile.Features.Profile.ViewModels;
 using FishingLogBook.Mobile.Native.Controls;
 
@@ -7,6 +10,7 @@ namespace FishingLogBook.Mobile.Features.Profile.Pages;
 public partial class ProfilePage : ContentPage
 {
     private readonly ProfileViewModel _viewModel;
+    private bool _returningFromPicker;
 
     public ProfilePage(ProfileViewModel viewModel)
     {
@@ -19,6 +23,12 @@ public partial class ProfilePage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_returningFromPicker)
+        {
+            _returningFromPicker = false;
+            return;
+        }
+
         await _viewModel.LoadAsync(CancellationToken.None);
     }
 
@@ -38,15 +48,6 @@ public partial class ProfilePage : ContentPage
         }
     }
 
-    private void OnSpeciesSelection(object? sender, EventArgs args)
-    {
-        if (sender is SelectionPillView { BindingContext: SpeciesPreferenceEditModel species })
-        {
-            var method = _viewModel.Methods.First(item => item.Id == species.MethodId);
-            _viewModel.ToggleSpecies(method, species);
-        }
-    }
-
     private void OnSpeciesDefault(object? sender, EventArgs args)
     {
         if (sender is SelectionPillView { BindingContext: SpeciesPreferenceEditModel species } && species.IsSelected)
@@ -54,6 +55,50 @@ public partial class ProfilePage : ContentPage
             var method = _viewModel.Methods.First(item => item.Id == species.MethodId);
             _viewModel.SetDefaultSpecies(method, species);
         }
+    }
+
+    private void OnSpeciesRemove(object? sender, EventArgs args)
+    {
+        if (sender is SelectionPillView { BindingContext: SpeciesPreferenceEditModel species })
+        {
+            var method = _viewModel.Methods.First(item => item.Id == species.MethodId);
+            _viewModel.RemoveSpecies(method, species);
+        }
+    }
+
+    private async void OnMore(object? sender, EventArgs args)
+    {
+        if (sender is not Button { BindingContext: PreferenceMoreActionModel action })
+        {
+            return;
+        }
+
+        if (action.Method is null)
+        {
+            var methods = await ShowPickerAsync(_viewModel.CreateMethodPicker());
+            if (methods is not null)
+            {
+                _viewModel.ApplyMethodPicker(methods);
+            }
+
+            return;
+        }
+
+        var species = await ShowPickerAsync(_viewModel.CreateSpeciesPicker(action.Method));
+        if (species is not null)
+        {
+            _viewModel.ApplySpeciesPicker(action.Method, species);
+        }
+    }
+
+    private async Task<CataloguePickerResultModel?> ShowPickerAsync(CataloguePickerViewModel picker)
+    {
+        // Closing the popup raises OnAppearing on Android; reloading then would discard the picker's unsaved edits.
+        _returningFromPicker = true;
+        var result = await this.ShowPopupAsync<CataloguePickerResultModel>(
+            new CataloguePickerPopup(picker),
+            new PopupOptions { CanBeDismissedByTappingOutsideOfPopup = true });
+        return result.WasDismissedByTappingOutsideOfPopup ? null : result.Result;
     }
 
     private void OnAddLocation(object? sender, EventArgs args)
@@ -72,17 +117,17 @@ public partial class ProfilePage : ContentPage
         }
     }
 
-    private void OnLocationDefault(object? sender, EventArgs args)
+    private void OnLocationDefault(object? sender, TappedEventArgs args)
     {
-        if (sender is Button { BindingContext: FishingLocationEditModel location })
+        if (sender is BindableObject { BindingContext: FishingLocationEditModel location })
         {
             _viewModel.SetDefaultLocation(location);
         }
     }
 
-    private void OnRemoveLocation(object? sender, EventArgs args)
+    private void OnRemoveLocation(object? sender, TappedEventArgs args)
     {
-        if (sender is Button { BindingContext: FishingLocationEditModel location })
+        if (sender is BindableObject { BindingContext: FishingLocationEditModel location })
         {
             _viewModel.RemoveLocation(location);
         }

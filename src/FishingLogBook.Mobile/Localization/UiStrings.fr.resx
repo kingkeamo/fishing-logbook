@@ -124,6 +124,7 @@
   <data name="MoreActions" xml:space="preserve"><value>Plus d’actions</value></data>
   <data name="OpenMenu" xml:space="preserve"><value>Ouvrir le menu</value></data>
   <data name="Remove" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="SetAsDefault" xml:space="preserve"><value>Définir par défaut</value></data>
   <data name="RemoveCatchTitle" xml:space="preserve"><value>Supprimer cette prise ?</value></data>
   <data name="RemoveCatchBody" xml:space="preserve"><value>Cette prise et toutes ses photos seront définitivement supprimées. Cette action est irréversible.</value></data>
   <data name="ActionUnavailable" xml:space="preserve"><value>Cette action n’est pas disponible dans cet aperçu. Votre carnet fictif reste inchangé.</value></data>
@@ -231,8 +232,22 @@
   <data name="ProfileShowHomeRegion" xml:space="preserve"><value>Afficher ma région</value></data>
   <data name="ProfileShowPhoto" xml:space="preserve"><value>Afficher ma photo de profil</value></data>
   <data name="ProfileMethods" xml:space="preserve"><value>Techniques et espèces</value></data>
-  <data name="ProfilePillHint" xml:space="preserve"><value>Touchez une pastille pour la sélectionner. Utilisez l'étoile pour choisir la valeur par défaut.</value></data>
+  <data name="ProfileSpeciesForMethod" xml:space="preserve"><value>Espèces préférées pour {0}</value></data>
   <data name="ProfileSetDefaultFor" xml:space="preserve"><value>Définir {0} comme valeur par défaut</value></data>
+  <data name="More" xml:space="preserve"><value>Plus…</value></data>
+  <data name="Search" xml:space="preserve"><value>Rechercher</value></data>
+  <data name="Available" xml:space="preserve"><value>Disponibles</value></data>
+  <data name="Selected" xml:space="preserve"><value>Sélectionnés</value></data>
+  <data name="Save" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="ProfileSetDefaultMethod" xml:space="preserve"><value>Définir comme technique par défaut :</value></data>
+  <data name="ProfileSetDefaultSpecies" xml:space="preserve"><value>Définir comme espèce par défaut :</value></data>
+  <data name="ProfileRemoveItem" xml:space="preserve"><value>Retirer {0}</value></data>
+  <data name="ProfileDefault" xml:space="preserve"><value>défaut</value></data>
+  <data name="SectionExpand" xml:space="preserve"><value>Touchez deux fois pour développer</value></data>
+  <data name="SectionCollapse" xml:space="preserve"><value>Touchez deux fois pour réduire</value></data>
+  <data name="PickerShowingLimited" xml:space="preserve"><value>Affichage de {0} sur {1}. Recherchez pour en trouver davantage.</value></data>
+  <data name="PickerNoMatches" xml:space="preserve"><value>Aucun résultat.</value></data>
+  <data name="PickerNoneSelected" xml:space="preserve"><value>Aucune sélection</value></data>
   <data name="ProfileShowMethods" xml:space="preserve"><value>Afficher mes techniques préférées</value></data>
   <data name="ProfileShowSpecies" xml:space="preserve"><value>Afficher mes espèces préférées</value></data>
   <data name="ProfileLocations" xml:space="preserve"><value>Lieux de pêche préférés</value></data>

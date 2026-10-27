@@ -12,6 +12,7 @@ public sealed class MethodPreferenceEditModel(
     private bool _isSelected;
     private bool _isDefault;
     private string _defaultDescription = string.Empty;
+    private PreferenceMoreActionModel? _moreAction;
 
     public Guid Id { get; } = id;
     public string Code { get; } = code;
@@ -30,6 +31,9 @@ public sealed class MethodPreferenceEditModel(
         }
     }
     public IReadOnlyList<SpeciesPreferenceEditModel> Species { get; } = species;
+    public IReadOnlyList<SpeciesPreferenceEditModel> SelectedSpecies => Species.Where(item => item.IsSelected).ToArray();
+    public IReadOnlyList<object> SpeciesChipItems => [.. SelectedSpecies, MoreAction];
+    public PreferenceMoreActionModel MoreAction => _moreAction ??= new PreferenceMoreActionModel(this);
     public string DefaultDescription
     {
         get => _defaultDescription;
@@ -57,6 +61,12 @@ public sealed class MethodPreferenceEditModel(
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void NotifySelectedSpecies()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedSpecies)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpeciesChipItems)));
+    }
 
     private void Set(ref bool field, bool value, string propertyName)
     {

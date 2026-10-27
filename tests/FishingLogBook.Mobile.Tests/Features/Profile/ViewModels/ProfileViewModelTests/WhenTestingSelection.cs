@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Tests.Support;
 
 namespace FishingLogBook.Mobile.Tests.Features.Profile.ViewModels.ProfileViewModelTests;
@@ -36,23 +37,23 @@ public sealed class WhenTestingSelection : BaseProfileViewModelTest
     }
 
     [Fact]
-    public async Task ItShouldSelectAndDefaultTheFirstSpecies()
+    public async Task ItShouldSelectAndDefaultTheFirstSpeciesChosenInThePicker()
     {
         // Arrange
         await LoadAsync();
         var spinning = Sut.Methods.Single(method => method.Id == TestAnglerPreferences.SpinningId);
-        var salmon = spinning.Species.Single(species => species.Id == TestAnglerPreferences.SalmonId);
 
         // Act
-        Sut.ToggleSpecies(spinning, salmon);
+        Sut.ApplySpeciesPicker(spinning, new CataloguePickerResultModel(new HashSet<Guid> { TestAnglerPreferences.SalmonId }));
 
         // Assert
-        salmon.IsSelected.Should().BeTrue();
+        var salmon = spinning.SelectedSpecies.Should().ContainSingle().Subject;
+        salmon.Id.Should().Be(TestAnglerPreferences.SalmonId);
         salmon.IsDefault.Should().BeTrue();
     }
 
     [Fact]
-    public async Task ItShouldPromoteAnotherSpeciesWhenTheDefaultIsDeselected()
+    public async Task ItShouldPromoteAnotherSpeciesWhenTheDefaultIsRemoved()
     {
         // Arrange
         await LoadAsync();
@@ -60,10 +61,121 @@ public sealed class WhenTestingSelection : BaseProfileViewModelTest
         var salmon = fly.Species.Single(species => species.Id == TestAnglerPreferences.SalmonId);
 
         // Act
-        Sut.ToggleSpecies(fly, salmon);
+        Sut.RemoveSpecies(fly, salmon);
 
         // Assert
-        fly.Species.Should().ContainSingle(species => species.IsDefault);
-        fly.Species.Single(species => species.IsDefault).Id.Should().Be(TestAnglerPreferences.BrownTroutId);
+        salmon.IsSelected.Should().BeFalse();
+        fly.SelectedSpecies.Should().ContainSingle(species => species.IsDefault)
+            .Which.Id.Should().Be(TestAnglerPreferences.BrownTroutId);
+    }
+
+    [Fact]
+    public async Task ItShouldOnlyShowSelectedSpeciesForAMethod()
+    {
+        // Arrange
+        await LoadAsync();
+        var fly = Sut.Methods.Single(method => method.Id == TestAnglerPreferences.FlyId);
+
+        // Act
+        Sut.RemoveSpecies(fly, fly.Species.Single(species => species.Id == TestAnglerPreferences.BrownTroutId));
+
+        // Assert
+        fly.SelectedSpecies.Should().ContainSingle().Which.Id.Should().Be(TestAnglerPreferences.SalmonId);
+        fly.Species.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task ItShouldListSelectedMethodsFirstInTheVisibleChips()
+    {
+        // Arrange
+        await LoadAsync();
+        var fly = Sut.Methods.Single(method => method.Id == TestAnglerPreferences.FlyId);
+
+        // Act
+        Sut.ToggleMethod(fly);
+
+        // Assert
+        Sut.MethodChips.Select(method => method.Id)
+            .Should().Equal(TestAnglerPreferences.SpinningId, TestAnglerPreferences.FlyId);
+        Sut.SelectedMethods.Should().ContainSingle().Which.Id.Should().Be(TestAnglerPreferences.SpinningId);
+    }
+
+    [Fact]
+    public async Task ItShouldEndTheMethodChipsWithTheMoreAction()
+    {
+        // Arrange
+        await LoadAsync();
+
+        // Act
+        var items = Sut.MethodChipItems;
+
+        // Assert
+        items.Should().HaveCount(Sut.MethodChips.Count + 1);
+        items[^1].Should().BeOfType<PreferenceMoreActionModel>().Which.Method.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldEndEachMethodsSpeciesChipsWithItsMoreAction()
+    {
+        // Arrange
+        await LoadAsync();
+        var fly = Sut.Methods.Single(method => method.Id == TestAnglerPreferences.FlyId);
+        var changes = new List<string?>();
+        fly.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
+
+        // Act
+        Sut.RemoveSpecies(fly, fly.SelectedSpecies[0]);
+
+        // Assert
+        fly.SpeciesChipItems.Should().HaveCount(fly.SelectedSpecies.Count + 1);
+        fly.SpeciesChipItems[^1].Should().BeOfType<PreferenceMoreActionModel>().Which.Method.Should().BeSameAs(fly);
+        changes.Should().Contain(nameof(MethodPreferenceEditModel.SpeciesChipItems));
+    }
+
+    [Fact]
+    public async Task ItShouldKeepTheExistingDefaultMethodWhenThePickerKeepsIt()
+    {
+        // Arrange
+        await LoadAsync();
+
+        // Act
+        Sut.ApplyMethodPicker(new CataloguePickerResultModel(
+            new HashSet<Guid> { TestAnglerPreferences.FlyId, TestAnglerPreferences.SpinningId }));
+
+        // Assert
+        Sut.SelectedMethods.Should().ContainSingle(method => method.IsDefault)
+            .Which.Id.Should().Be(TestAnglerPreferences.FlyId);
+        Sut.Methods.Single(method => method.Id == TestAnglerPreferences.FlyId).SelectedSpecies.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task ItShouldApplyTheCompleteMethodSelectionFromThePicker()
+    {
+        // Arrange
+        await LoadAsync();
+
+        // Act
+        Sut.ApplyMethodPicker(new CataloguePickerResultModel(new HashSet<Guid> { TestAnglerPreferences.SpinningId }));
+
+        // Assert
+        Sut.SelectedMethods.Should().ContainSingle().Which.Id.Should().Be(TestAnglerPreferences.SpinningId);
+        Sut.SelectedMethods.Single().IsDefault.Should().BeTrue();
+        Sut.Methods.Single(method => method.Id == TestAnglerPreferences.FlyId).Species
+            .Should().OnlyContain(species => !species.IsSelected && !species.IsDefault);
+    }
+
+    [Fact]
+    public async Task ItShouldApplySpeciesPickerSelectionAndPromoteADefault()
+    {
+        // Arrange
+        await LoadAsync();
+        var fly = Sut.Methods.Single(method => method.Id == TestAnglerPreferences.FlyId);
+
+        // Act
+        Sut.ApplySpeciesPicker(fly, new CataloguePickerResultModel(new HashSet<Guid> { TestAnglerPreferences.BrownTroutId }));
+
+        // Assert
+        fly.SelectedSpecies.Should().ContainSingle().Which.Id.Should().Be(TestAnglerPreferences.BrownTroutId);
+        fly.SelectedSpecies.Single().IsDefault.Should().BeTrue();
     }
 }
