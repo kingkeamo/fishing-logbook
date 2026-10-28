@@ -796,14 +796,24 @@ PWA:
 
 Logout URLs include the matching `/authentication/logout-callback` paths and site roots.
 
-Native Dev:
+Native Dev HTTPS App Links (Android and iOS 17.4+; unchanged by the Play package ID):
+
+- callback: `https://fishing-logbook-dev.pages.dev/native/oauth2redirect`
+- logout: `https://fishing-logbook-dev.pages.dev/native/signedout`
+
+Native Dev custom scheme (iOS < 17.4 only):
 
 - callback: `com.fishinglogbook.mobile.demo://oauth2redirect`
 - logout: `com.fishinglogbook.mobile.demo://signedout`
 
-The private-use scheme is derived from the current MAUI application ID and must be
-registered exactly by #242. It is acceptable for Dev but can be claimed by another app.
-Production should use verified Android App Links and iOS Universal Links on
+Android Release / Google Play Internal testing uses application ID
+`com.catchbutdontforget.app` and display name Catch. Debug and emulator installs keep
+`com.fishinglogbook.mobile.demo` so local development is not overwritten. See
+`docs/google-play-internal-testing.md`.
+
+The private-use scheme is derived from the iOS / Android debug MAUI application ID and
+must be registered exactly by #242. It is acceptable for Dev but can be claimed by another
+app. Production should use verified Android App Links and iOS Universal Links on
 `app.catchbutdontforget.com`; do not apply Prod until the final package/bundle IDs,
 signing identities, `assetlinks.json`, and `apple-app-site-association` are in place.
 

@@ -5,9 +5,19 @@
     "/native/signedout"
   ],
   "android": {
-    "packageName": "com.fishinglogbook.mobile.demo",
-    "sha256CertFingerprints": [
-      "5A:18:DD:77:E7:E3:51:86:65:E6:74:60:37:01:83:44:5C:D0:8D:AE:60:35:42:39:03:A4:16:F7:20:A0:7E:68"
+    "apps": [
+      {
+        "packageName": "com.fishinglogbook.mobile.demo",
+        "sha256CertFingerprints": [
+          "5A:18:DD:77:E7:E3:51:86:65:E6:74:60:37:01:83:44:5C:D0:8D:AE:60:35:42:39:03:A4:16:F7:20:A0:7E:68"
+        ]
+      },
+      {
+        "packageName": "com.catchbutdontforget.app",
+        "sha256CertFingerprints": [
+          "7C:34:00:29:A4:87:17:8C:DA:20:51:B0:3E:CB:61:60:00:23:69:3A:C4:40:E8:D4:BB:63:55:7D:CF:08:45:28"
+        ]
+      }
     ]
   },
   "ios": {

@@ -86,11 +86,14 @@ Android:
   verified App Link because the tab was launched by the app; the activity receives it via
   cold launch or `OnNewIntent`. A Custom Tab closed by the user is not reported, so the
   page keeps its Cancel action.
-- `assetlinks.json` binds `com.fishinglogbook.mobile.demo` to the SHA-256 fingerprints in
-  `src/FishingLogBook.Web/build/app-links.dev.json`. The committed fingerprint is the local
-  Android debug keystore used for emulator validation; debug keystores are per machine, so
-  other developers' or CI-built debug APKs will not verify until their fingerprints are
-  added. Unverified installs never receive the callback: there is no unverified fallback.
+- `assetlinks.json` is generated from `src/FishingLogBook.Web/build/app-links.dev.json`.
+  Debug/emulator builds (`com.fishinglogbook.mobile.demo`) use the committed local debug
+  keystore fingerprint. Google Play Internal testing installs (`com.catchbutdontforget.app`)
+  use the Play App Signing SHA-256 fingerprint in that file. Play-installed sign-in is not
+  ready until the generated statement is deployed to Dev Pages and verified; see
+  `docs/google-play-internal-testing.md`. Debug keystores are per machine, so other
+  developers' or CI-built debug APKs will not verify until their fingerprints are added.
+  Unverified installs never receive the callback: there is no unverified fallback.
 
 iOS:
 

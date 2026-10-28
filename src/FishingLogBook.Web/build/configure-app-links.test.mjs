@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { buildAppLinks, buildHeaders } from './configure-app-links.mjs';
+import { buildAppLinks, buildHeaders, resolveAndroidApps } from './configure-app-links.mjs';
 
 const config = JSON.parse(readFileSync(new URL('./app-links.dev.json', import.meta.url), 'utf8'));
+const debugPackage = 'com.fishinglogbook.mobile.demo';
+const playPackage = 'com.catchbutdontforget.app';
+const playFingerprint = '7C:34:00:29:A4:87:17:8C:DA:20:51:B0:3E:CB:61:60:00:23:69:3A:C4:40:E8:D4:BB:63:55:7D:CF:08:45:28';
+
+function app(packageName) {
+    return resolveAndroidApps(config.android).find(entry => entry.packageName === packageName);
+}
 
 describe('dev app link association files', () => {
     it('refuses to generate association files for production', () => {
@@ -18,8 +25,14 @@ describe('dev app link association files', () => {
 
     it('rejects malformed Android signing fingerprints', () => {
         const invalid = structuredClone(config);
-        invalid.android.sha256CertFingerprints = ['5a:18:dd'];
+        resolveAndroidApps(invalid.android)[0].sha256CertFingerprints = ['5a:18:dd'];
         assert.throws(() => buildAppLinks(invalid, 'dev', undefined), /sha256CertFingerprints/);
+    });
+
+    it('rejects an invalid Play package name even before a fingerprint is supplied', () => {
+        const invalid = structuredClone(config);
+        resolveAndroidApps(invalid.android).find(entry => entry.packageName === playPackage).packageName = 'Catch';
+        assert.throws(() => buildAppLinks(invalid, 'dev', undefined), /android.packageName is invalid/);
     });
 
     it('rejects callback paths outside the native namespace', () => {
@@ -34,16 +47,34 @@ describe('dev app link association files', () => {
         assert.equal(result.files.has('.well-known/apple-app-site-association'), false);
     });
 
-    it('binds the Android association to the dev package and signing certificate only', () => {
-        const [statement] = buildAppLinks(config, 'dev', undefined).files.get('.well-known/assetlinks.json');
-        assert.deepEqual(statement.relation, ['delegate_permission/common.handle_all_urls']);
-        assert.equal(statement.target.package_name, 'com.fishinglogbook.mobile.demo');
-        assert.deepEqual(statement.target.sha256_cert_fingerprints, config.android.sha256CertFingerprints);
+    it('keeps the native HTTPS callback paths and iOS development bundle', () => {
+        assert.deepEqual(config.callbackPaths, ['/native/oauth2redirect', '/native/signedout']);
+        assert.equal(config.host, 'fishing-logbook-dev.pages.dev');
+        assert.equal(config.ios.bundleId, debugPackage);
+    });
+
+    it('binds Android associations to the debug package and the Play signing certificate', () => {
+        const statements = buildAppLinks(config, 'dev', undefined).files.get('.well-known/assetlinks.json');
+        assert.equal(statements.length, 2);
+        assert.deepEqual(statements[0].relation, ['delegate_permission/common.handle_all_urls']);
+        assert.equal(statements[0].target.package_name, debugPackage);
+        assert.deepEqual(statements[0].target.sha256_cert_fingerprints, app(debugPackage).sha256CertFingerprints);
+        assert.equal(statements[1].target.package_name, playPackage);
+        assert.deepEqual(statements[1].target.sha256_cert_fingerprints, [playFingerprint]);
+    });
+
+    it('omits a Play statement when the fingerprint array is empty', () => {
+        const withoutPlay = structuredClone(config);
+        resolveAndroidApps(withoutPlay.android)
+            .find(entry => entry.packageName === playPackage).sha256CertFingerprints = [];
+        const statements = buildAppLinks(withoutPlay, 'dev', undefined).files.get('.well-known/assetlinks.json');
+        assert.equal(statements.length, 1);
+        assert.equal(statements[0].target.package_name, debugPackage);
     });
 
     it('limits the Apple association to the native callback paths with web credentials', () => {
         const association = buildAppLinks(config, 'dev', 'ABCDE12345').files.get('.well-known/apple-app-site-association');
-        const appId = 'ABCDE12345.com.fishinglogbook.mobile.demo';
+        const appId = `ABCDE12345.${debugPackage}`;
         assert.deepEqual(association.applinks.details[0].appIDs, [appId]);
         assert.deepEqual(association.applinks.details[0].components, [
             { '/': '/native/oauth2redirect' },
