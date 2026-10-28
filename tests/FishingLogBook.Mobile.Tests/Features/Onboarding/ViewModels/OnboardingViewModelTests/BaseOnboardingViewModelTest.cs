@@ -26,7 +26,7 @@ public abstract class BaseOnboardingViewModelTest
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly IAuthenticationService MockAuthentication = Substitute.For<IAuthenticationService>();
     protected readonly IInteractionPresenter MockPresenter = Substitute.For<IInteractionPresenter>();
-    protected readonly IDeviceLocationPermissionService MockLocation = Substitute.For<IDeviceLocationPermissionService>();
+    protected readonly IDeviceLocationService MockLocation = Substitute.For<IDeviceLocationService>();
     protected readonly IOnboardingStatusService MockStatus = Substitute.For<IOnboardingStatusService>();
     protected readonly IOnboardingNavigator MockNavigator = Substitute.For<IOnboardingNavigator>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();

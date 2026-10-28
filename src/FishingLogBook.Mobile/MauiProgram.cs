@@ -31,6 +31,7 @@ using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Native.Adapters;
 using FishingLogBook.Mobile.Native.Browsers;
 using FishingLogBook.Mobile.Native.Services;
 using FishingLogBook.Mobile.Native.Stores;
@@ -105,7 +106,8 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<CatalogueTextService>();
         builder.Services.AddSingleton<ProfileViewModel>();
         builder.Services.AddSingleton<IOnboardingStatusService, OnboardingStatusService>();
-        builder.Services.AddSingleton<IDeviceLocationPermissionService, DeviceLocationPermissionService>();
+        builder.Services.AddSingleton<IGeolocationAdapter, GeolocationAdapter>();
+        builder.Services.AddSingleton<IDeviceLocationService, DeviceLocationService>();
         builder.Services.AddSingleton<IOnboardingNavigator, WindowWorkspaceNavigator>();
         builder.Services.AddTransient<OnboardingViewModel>();
         builder.Services.AddTransient<OnboardingGateViewModel>();

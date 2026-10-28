@@ -43,7 +43,9 @@ public class WhenTestingOnboardingPresentation
             "OnboardingStepOf", "OnboardingContinue", "OnboardingWelcomeTitle", "OnboardingWelcomeBody",
             "OnboardingDisplayNameHelp", "OnboardingPreferencesTitle", "OnboardingPreferencesBody",
             "OnboardingLocationTitle", "OnboardingLocationBody", "OnboardingLocationPrivacy",
-            "OnboardingAllowLocation", "OnboardingNotNow", "OnboardingLocationHandled",
+            "OnboardingAllowLocation", "OnboardingNotNow", "OnboardingLocationCaptured",
+            "OnboardingLocationDenied", "OnboardingLocationUnavailable", "OnboardingLocationTimeout",
+            "OnboardingLocationSkipped",
             "OnboardingFinishTitle", "OnboardingFinishBody", "OnboardingFinish", "OnboardingSaveFailed",
             "OnboardingStatusError", "OnboardingValidationFishingMethod",
             "OnboardingValidationSpeciesForMethod", "OnboardingValidationSpeciesForMethods"

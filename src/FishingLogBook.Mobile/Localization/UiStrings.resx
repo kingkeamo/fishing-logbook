@@ -289,7 +289,11 @@
   <data name="OnboardingLocationPrivacy" xml:space="preserve"><value>New catch locations are private by default. The device asks for permission only after you choose Allow location.</value></data>
   <data name="OnboardingAllowLocation" xml:space="preserve"><value>Allow location</value></data>
   <data name="OnboardingNotNow" xml:space="preserve"><value>Not now</value></data>
-  <data name="OnboardingLocationHandled" xml:space="preserve"><value>Your choice is saved. It will not block setup.</value></data>
+  <data name="OnboardingLocationCaptured" xml:space="preserve"><value>Location captured. New catch locations stay private by default.</value></data>
+  <data name="OnboardingLocationDenied" xml:space="preserve"><value>Location permission was not granted. You can still finish setup.</value></data>
+  <data name="OnboardingLocationUnavailable" xml:space="preserve"><value>We couldn’t get a location from this device. You can still finish setup.</value></data>
+  <data name="OnboardingLocationTimeout" xml:space="preserve"><value>Location timed out. You can still finish setup.</value></data>
+  <data name="OnboardingLocationSkipped" xml:space="preserve"><value>You can enable location later. Setup can continue.</value></data>
   <data name="OnboardingFinishTitle" xml:space="preserve"><value>You’re ready</value></data>
   <data name="OnboardingFinishBody" xml:space="preserve"><value>Your logbook is set up. Open it to start recording catches.</value></data>
   <data name="OnboardingFinish" xml:space="preserve"><value>Open my Logbook</value></data>

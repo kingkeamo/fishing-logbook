@@ -289,7 +289,11 @@
   <data name="OnboardingLocationPrivacy" xml:space="preserve"><value>Les nouveaux lieux de prise sont privés par défaut. L’appareil demande l’autorisation seulement après que vous avez choisi Autoriser la localisation.</value></data>
   <data name="OnboardingAllowLocation" xml:space="preserve"><value>Autoriser la position</value></data>
   <data name="OnboardingNotNow" xml:space="preserve"><value>Pas maintenant</value></data>
-  <data name="OnboardingLocationHandled" xml:space="preserve"><value>Votre choix est enregistré et ne bloque pas la configuration.</value></data>
+  <data name="OnboardingLocationCaptured" xml:space="preserve"><value>Position enregistrée. Les nouveaux lieux de prise restent privés par défaut.</value></data>
+  <data name="OnboardingLocationDenied" xml:space="preserve"><value>L’autorisation de localisation n’a pas été accordée. Vous pouvez tout de même terminer la configuration.</value></data>
+  <data name="OnboardingLocationUnavailable" xml:space="preserve"><value>Impossible d’obtenir une position sur cet appareil. Vous pouvez tout de même terminer la configuration.</value></data>
+  <data name="OnboardingLocationTimeout" xml:space="preserve"><value>La localisation a expiré. Vous pouvez tout de même terminer la configuration.</value></data>
+  <data name="OnboardingLocationSkipped" xml:space="preserve"><value>Vous pourrez activer la localisation plus tard. La configuration peut continuer.</value></data>
   <data name="OnboardingFinishTitle" xml:space="preserve"><value>Vous êtes prêt</value></data>
   <data name="OnboardingFinishBody" xml:space="preserve"><value>Votre carnet est configuré. Ouvrez-le pour commencer à enregistrer vos prises.</value></data>
   <data name="OnboardingFinish" xml:space="preserve"><value>Ouvrir mon carnet</value></data>

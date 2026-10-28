@@ -3,6 +3,7 @@ using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Onboarding.Enums;
+using FishingLogBook.Mobile.Features.Onboarding.Models;
 using FishingLogBook.Mobile.Features.Onboarding.Services;
 using FishingLogBook.Mobile.Features.Profile.Clients;
 using FishingLogBook.Mobile.Features.Profile.ViewModels;
@@ -15,7 +16,7 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
 {
     public const int TotalSteps = 4;
 
-    private readonly IDeviceLocationPermissionService _locationPermission;
+    private readonly IDeviceLocationService _location;
     private readonly IProfileClient _profileClient;
     private readonly IOnboardingStatusService _status;
     private readonly IOnboardingNavigator _navigator;
@@ -28,7 +29,7 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
 
     public OnboardingViewModel(
         ProfileViewModel profile,
-        IDeviceLocationPermissionService locationPermission,
+        IDeviceLocationService location,
         IOnboardingStatusService status,
         IOnboardingNavigator navigator,
         IAccountSessionCoordinator sessionCoordinator,
@@ -37,7 +38,7 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
         UiTextService text)
     {
         Profile = profile;
-        _locationPermission = locationPermission;
+        _location = location;
         _status = status;
         _navigator = navigator;
         _sessionCoordinator = sessionCoordinator;
@@ -150,9 +151,25 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
         Publish();
         try
         {
-            await _locationPermission.RequestWhenInUseAsync(cancellationToken);
+            var lease = _sessionCoordinator.Capture();
+            if (lease is null)
+            {
+                Message = Text["ProfileSessionExpired"];
+                return;
+            }
+
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                lease.CancellationToken);
+            var capture = await _location.CaptureCurrentAsync(linked.Token)
+                ?? DeviceLocationCaptureModel.WithoutCoordinates(LocationCaptureOutcomeEnum.Unavailable);
+            if (!_sessionCoordinator.IsCurrent(lease) || _authentication.CurrentSession?.UserId != lease.UserId)
+            {
+                return;
+            }
+
             _locationHandled = true;
-            Message = Text["OnboardingLocationHandled"];
+            Message = MessageFor(capture);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -173,7 +190,7 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
         }
 
         _locationHandled = true;
-        Message = Text["OnboardingLocationHandled"];
+        Message = Text["OnboardingLocationSkipped"];
         Publish();
     }
 
@@ -363,6 +380,18 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanRetryLoad)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanContinue)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsBusy)));
+    }
+
+    private string MessageFor(DeviceLocationCaptureModel capture)
+    {
+        return capture.Outcome switch
+        {
+            LocationCaptureOutcomeEnum.Captured => Text["OnboardingLocationCaptured"],
+            LocationCaptureOutcomeEnum.Denied => Text["OnboardingLocationDenied"],
+            LocationCaptureOutcomeEnum.PermanentlyDenied => Text["OnboardingLocationDenied"],
+            LocationCaptureOutcomeEnum.Timeout => Text["OnboardingLocationTimeout"],
+            _ => Text["OnboardingLocationUnavailable"]
+        };
     }
 
     private static string GetErrorKey(ApiOutcomeEnum outcome)
