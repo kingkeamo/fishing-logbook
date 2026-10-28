@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   android:
-    name: Build Android demo and test presentation
+    name: Build Android and test presentation
     runs-on: windows-latest
     timeout-minutes: 30
     defaults:

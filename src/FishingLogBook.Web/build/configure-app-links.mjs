@@ -27,6 +27,51 @@ const fallbackPage = `<!doctype html>
 </html>
 `;
 
+export function resolveAndroidApps(android) {
+    if (Array.isArray(android?.apps)) {
+        return android.apps;
+    }
+    if (android?.packageName) {
+        return [{
+            packageName: android.packageName,
+            sha256CertFingerprints: android.sha256CertFingerprints ?? [],
+        }];
+    }
+    return [];
+}
+
+function androidAssociationStatements(apps, errors) {
+    const statements = [];
+    for (const app of apps) {
+        if (!packagePattern.test(app.packageName ?? '')) {
+            errors.push('android.packageName is invalid');
+            continue;
+        }
+        const fingerprints = app.sha256CertFingerprints ?? [];
+        if (fingerprints.length === 0) {
+            continue;
+        }
+        if (!fingerprints.every(value => fingerprintPattern.test(value))) {
+            errors.push('android.sha256CertFingerprints must contain uppercase colon-separated SHA-256 fingerprints');
+            continue;
+        }
+        statements.push({
+            relation: ['delegate_permission/common.handle_all_urls'],
+            target: {
+                namespace: 'android_app',
+                package_name: app.packageName,
+                sha256_cert_fingerprints: fingerprints,
+            },
+        });
+    }
+    if (apps.length === 0) {
+        errors.push('android.packageName is invalid');
+    } else if (statements.length === 0) {
+        errors.push('at least one Android app must have a SHA-256 certificate fingerprint');
+    }
+    return statements;
+}
+
 export function buildAppLinks(config, environment, appleTeamId) {
     if (environment !== 'dev') {
         throw new Error('App link association files are only generated for the dev environment');
@@ -38,11 +83,7 @@ export function buildAppLinks(config, environment, appleTeamId) {
         !config.callbackPaths.every(path => callbackPathPattern.test(path))) {
         errors.push('callbackPaths must be /native/<name> paths');
     }
-    if (!packagePattern.test(config.android?.packageName ?? '')) errors.push('android.packageName is invalid');
-    const fingerprints = config.android?.sha256CertFingerprints ?? [];
-    if (fingerprints.length === 0 || !fingerprints.every(value => fingerprintPattern.test(value))) {
-        errors.push('android.sha256CertFingerprints must contain uppercase colon-separated SHA-256 fingerprints');
-    }
+    const androidStatements = androidAssociationStatements(resolveAndroidApps(config.android), errors);
     if (!packagePattern.test(config.ios?.bundleId ?? '')) errors.push('ios.bundleId is invalid');
 
     const teamId = appleTeamId?.trim();
@@ -54,14 +95,7 @@ export function buildAppLinks(config, environment, appleTeamId) {
     }
 
     const files = new Map();
-    files.set('.well-known/assetlinks.json', [{
-        relation: ['delegate_permission/common.handle_all_urls'],
-        target: {
-            namespace: 'android_app',
-            package_name: config.android.packageName,
-            sha256_cert_fingerprints: fingerprints,
-        },
-    }]);
+    files.set('.well-known/assetlinks.json', androidStatements);
 
     if (teamId) {
         const appId = `${teamId}.${config.ios.bundleId}`;
