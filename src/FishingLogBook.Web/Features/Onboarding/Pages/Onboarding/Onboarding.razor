@@ -37,6 +37,14 @@
                                                        id="onboarding-display-name-help" />
                                     </MudTooltip>
                                 </MudStack>
+                                <MudSwitch @bind-Value="_showPreferredFishingMethods"
+                                           Color="Color.Primary"
+                                           Label="@Loc["Profile_ShowPreferredFishingMethods"]"
+                                           id="onboarding-show-preferred-fishing-methods" />
+                                <MudSwitch @bind-Value="_showPreferredSpecies"
+                                           Color="Color.Primary"
+                                           Label="@Loc["Profile_ShowPreferredSpecies"]"
+                                           id="onboarding-show-preferred-species" />
                             </MudStack>
                         </MudStep>
                         <MudStep Title="@Loc["Onboarding_PreferencesStep"]">

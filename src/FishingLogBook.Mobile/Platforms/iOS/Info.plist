@@ -44,6 +44,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Fishing Logbook can record where you caught a fish if you allow location while logging a catch.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 	<key>XSAppIconAssets</key>

@@ -254,8 +254,8 @@
   <data name="ProfileLengthUnit" xml:space="preserve"><value>Preferred Length Unit</value></data>
   <data name="ProfileLengthUnitCm" xml:space="preserve"><value>Centimetres (cm)</value></data>
   <data name="ProfileLengthUnitIn" xml:space="preserve"><value>Inches (in)</value></data>
-  <data name="ProfileShowMethods" xml:space="preserve"><value>Show my preferred fishing methods</value></data>
-  <data name="ProfileShowSpecies" xml:space="preserve"><value>Show my preferred species</value></data>
+  <data name="ProfileShowMethods" xml:space="preserve"><value>Show my preferred fishing methods to other anglers</value></data>
+  <data name="ProfileShowSpecies" xml:space="preserve"><value>Show my preferred species to other anglers</value></data>
   <data name="ProfileLocations" xml:space="preserve"><value>Preferred fishing locations</value></data>
   <data name="ProfileLocationsHint" xml:space="preserve"><value>Add, rename or remove locations. The star marks your default.</value></data>
   <data name="ProfileLocationName" xml:space="preserve"><value>Location name</value></data>
@@ -277,4 +277,29 @@
   <data name="ProfileRemoveDefaultLocationTitle" xml:space="preserve"><value>Remove this location?</value></data>
   <data name="ProfileRemoveDefaultLocationBody" xml:space="preserve"><value>This is your default fishing location. Another remaining location will become the default.</value></data>
   <data name="ProfileRemoveLastLocationBody" xml:space="preserve"><value>This is your only fishing location. You will have no preferred location until you add another.</value></data>
+  <data name="OnboardingStepOf" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="OnboardingContinue" xml:space="preserve"><value>Continue</value></data>
+  <data name="OnboardingWelcomeTitle" xml:space="preserve"><value>Welcome to Catch But Don’t Forget</value></data>
+  <data name="OnboardingWelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Set up your private fishing logbook in about a minute.</value></data>
+  <data name="OnboardingDisplayNameHelp" xml:space="preserve"><value>Other anglers may see this name. If left blank, your email address will be used.</value></data>
+  <data name="OnboardingPreferencesTitle" xml:space="preserve"><value>Set your fishing preferences</value></data>
+  <data name="OnboardingPreferencesBody" xml:space="preserve"><value>Choose what you fish for and the measurements you use. You can change these later in Profile.</value></data>
+  <data name="OnboardingLocationTitle" xml:space="preserve"><value>Remember where you caught it</value></data>
+  <data name="OnboardingLocationBody" xml:space="preserve"><value>Allow location only when you want the app to capture a catch position. You can skip this step.</value></data>
+  <data name="OnboardingLocationPrivacy" xml:space="preserve"><value>New catch locations are private by default. The device asks for permission only after you choose Allow location.</value></data>
+  <data name="OnboardingAllowLocation" xml:space="preserve"><value>Allow location</value></data>
+  <data name="OnboardingNotNow" xml:space="preserve"><value>Not now</value></data>
+  <data name="OnboardingLocationCaptured" xml:space="preserve"><value>Location captured. New catch locations stay private by default.</value></data>
+  <data name="OnboardingLocationDenied" xml:space="preserve"><value>Location permission was not granted. You can still finish setup.</value></data>
+  <data name="OnboardingLocationUnavailable" xml:space="preserve"><value>We couldn’t get a location from this device. You can still finish setup.</value></data>
+  <data name="OnboardingLocationTimeout" xml:space="preserve"><value>Location timed out. You can still finish setup.</value></data>
+  <data name="OnboardingLocationSkipped" xml:space="preserve"><value>You can enable location later. Setup can continue.</value></data>
+  <data name="OnboardingFinishTitle" xml:space="preserve"><value>You’re ready</value></data>
+  <data name="OnboardingFinishBody" xml:space="preserve"><value>Your logbook is set up. Open it to start recording catches.</value></data>
+  <data name="OnboardingFinish" xml:space="preserve"><value>Open my Logbook</value></data>
+  <data name="OnboardingSaveFailed" xml:space="preserve"><value>We couldn’t save that yet. Check your connection and try again.</value></data>
+  <data name="OnboardingStatusError" xml:space="preserve"><value>We couldn’t check whether your logbook is already set up. Check your connection and try again.</value></data>
+  <data name="OnboardingValidationFishingMethod" xml:space="preserve"><value>Choose at least one fishing method.</value></data>
+  <data name="OnboardingValidationSpeciesForMethod" xml:space="preserve"><value>Choose at least one species for {0}.</value></data>
+  <data name="OnboardingValidationSpeciesForMethods" xml:space="preserve"><value>Choose at least one species for each of these fishing methods: {0}.</value></data>
 </root>

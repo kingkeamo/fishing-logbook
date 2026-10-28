@@ -254,8 +254,8 @@
   <data name="ProfileLengthUnit" xml:space="preserve"><value>Unité de longueur préférée</value></data>
   <data name="ProfileLengthUnitCm" xml:space="preserve"><value>Centimètres (cm)</value></data>
   <data name="ProfileLengthUnitIn" xml:space="preserve"><value>Pouces (in)</value></data>
-  <data name="ProfileShowMethods" xml:space="preserve"><value>Afficher mes techniques préférées</value></data>
-  <data name="ProfileShowSpecies" xml:space="preserve"><value>Afficher mes espèces préférées</value></data>
+  <data name="ProfileShowMethods" xml:space="preserve"><value>Afficher mes techniques préférées aux autres pêcheurs</value></data>
+  <data name="ProfileShowSpecies" xml:space="preserve"><value>Afficher mes espèces préférées aux autres pêcheurs</value></data>
   <data name="ProfileLocations" xml:space="preserve"><value>Lieux de pêche préférés</value></data>
   <data name="ProfileLocationsHint" xml:space="preserve"><value>Ajoutez, renommez ou supprimez des lieux. L'étoile indique le lieu par défaut.</value></data>
   <data name="ProfileLocationName" xml:space="preserve"><value>Nom du lieu</value></data>
@@ -277,4 +277,29 @@
   <data name="ProfileRemoveDefaultLocationTitle" xml:space="preserve"><value>Supprimer ce lieu ?</value></data>
   <data name="ProfileRemoveDefaultLocationBody" xml:space="preserve"><value>C'est votre lieu de pêche par défaut. Un autre lieu restant deviendra le lieu par défaut.</value></data>
   <data name="ProfileRemoveLastLocationBody" xml:space="preserve"><value>C'est votre seul lieu de pêche. Vous n'aurez plus de lieu préféré tant que vous n'en aurez pas ajouté un autre.</value></data>
+  <data name="OnboardingStepOf" xml:space="preserve"><value>Étape {0} sur {1}</value></data>
+  <data name="OnboardingContinue" xml:space="preserve"><value>Continuer</value></data>
+  <data name="OnboardingWelcomeTitle" xml:space="preserve"><value>Bienvenue dans Catch But Don’t Forget</value></data>
+  <data name="OnboardingWelcomeBody" xml:space="preserve"><value>Catch · Release · Remember. Configurez votre carnet de pêche privé en une minute environ.</value></data>
+  <data name="OnboardingDisplayNameHelp" xml:space="preserve"><value>Les autres pêcheurs pourront voir ce nom. S’il est laissé vide, votre adresse e-mail sera utilisée.</value></data>
+  <data name="OnboardingPreferencesTitle" xml:space="preserve"><value>Définissez vos préférences de pêche</value></data>
+  <data name="OnboardingPreferencesBody" xml:space="preserve"><value>Choisissez votre type de pêche, les espèces recherchées et vos unités de mesure. Vous pourrez les modifier dans votre profil.</value></data>
+  <data name="OnboardingLocationTitle" xml:space="preserve"><value>Souvenez-vous du lieu de capture</value></data>
+  <data name="OnboardingLocationBody" xml:space="preserve"><value>Autorisez la position uniquement pour enregistrer le lieu d’une prise. Vous pouvez passer cette étape.</value></data>
+  <data name="OnboardingLocationPrivacy" xml:space="preserve"><value>Les nouveaux lieux de prise sont privés par défaut. L’appareil demande l’autorisation seulement après que vous avez choisi Autoriser la localisation.</value></data>
+  <data name="OnboardingAllowLocation" xml:space="preserve"><value>Autoriser la position</value></data>
+  <data name="OnboardingNotNow" xml:space="preserve"><value>Pas maintenant</value></data>
+  <data name="OnboardingLocationCaptured" xml:space="preserve"><value>Position enregistrée. Les nouveaux lieux de prise restent privés par défaut.</value></data>
+  <data name="OnboardingLocationDenied" xml:space="preserve"><value>L’autorisation de localisation n’a pas été accordée. Vous pouvez tout de même terminer la configuration.</value></data>
+  <data name="OnboardingLocationUnavailable" xml:space="preserve"><value>Impossible d’obtenir une position sur cet appareil. Vous pouvez tout de même terminer la configuration.</value></data>
+  <data name="OnboardingLocationTimeout" xml:space="preserve"><value>La localisation a expiré. Vous pouvez tout de même terminer la configuration.</value></data>
+  <data name="OnboardingLocationSkipped" xml:space="preserve"><value>Vous pourrez activer la localisation plus tard. La configuration peut continuer.</value></data>
+  <data name="OnboardingFinishTitle" xml:space="preserve"><value>Vous êtes prêt</value></data>
+  <data name="OnboardingFinishBody" xml:space="preserve"><value>Votre carnet est configuré. Ouvrez-le pour commencer à enregistrer vos prises.</value></data>
+  <data name="OnboardingFinish" xml:space="preserve"><value>Ouvrir mon carnet</value></data>
+  <data name="OnboardingSaveFailed" xml:space="preserve"><value>Enregistrement impossible. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="OnboardingStatusError" xml:space="preserve"><value>Impossible de vérifier si votre carnet est déjà configuré. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="OnboardingValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
+  <data name="OnboardingValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espèce pour {0}.</value></data>
+  <data name="OnboardingValidationSpeciesForMethods" xml:space="preserve"><value>Choisissez au moins une espèce pour chacune de ces méthodes de pêche : {0}.</value></data>
 </root>

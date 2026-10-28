@@ -88,4 +88,47 @@ public class WhenTestingDisplayName : BaseOnboardingTest
                 && profile.DisplayName != "tester@example.test"),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldRenderPreferredVisibilityFlagsOnTheWelcomeStep()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var fixture = CreateFixture(ValidPreferences());
+
+        // Act
+        var cut = fixture.Context.Render<OnboardingPage>();
+
+        // Assert
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("#onboarding-show-preferred-fishing-methods").Should().NotBeNull();
+            cut.Find("#onboarding-show-preferred-species").Should().NotBeNull();
+        });
+        cut.Markup.Should().Contain("Show preferred fishing methods to other anglers");
+        cut.Markup.Should().Contain("Show preferred species to other anglers");
+    }
+
+    [Fact]
+    public async Task ItShouldSavePreferredVisibilityFlagsChosenOnTheWelcomeStep()
+    {
+        // Arrange
+        using var culture = TestCulture.Use(CultureNames.English);
+        await using var fixture = CreateFixture(ValidPreferences());
+        var cut = fixture.Context.Render<OnboardingPage>();
+        cut.WaitForAssertion(() => cut.Find("#onboarding-show-preferred-fishing-methods"));
+        cut.Find("#onboarding-show-preferred-fishing-methods").Change(true);
+        cut.Find("#onboarding-show-preferred-species").Change(true);
+
+        // Act
+        await MoveToPreferencesAsync(cut);
+        await cut.Find("#onboarding-next").ClickAsync();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#onboarding-allow-location").Should().NotBeNull());
+        await fixture.Profile.Received(1).UpdateOwnAsync(
+            Arg.Is<UpdateProfileDto>(profile =>
+                profile.ShowPreferredFishingMethods && profile.ShowPreferredSpecies),
+            Arg.Any<CancellationToken>());
+    }
 }

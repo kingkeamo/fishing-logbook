@@ -16,6 +16,9 @@ using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
+using FishingLogBook.Mobile.Features.Onboarding.Pages;
+using FishingLogBook.Mobile.Features.Onboarding.Services;
+using FishingLogBook.Mobile.Features.Onboarding.ViewModels;
 using FishingLogBook.Mobile.Features.Profile.Clients;
 using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Profile.Services;
@@ -28,6 +31,7 @@ using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Native.Adapters;
 using FishingLogBook.Mobile.Native.Browsers;
 using FishingLogBook.Mobile.Native.Services;
 using FishingLogBook.Mobile.Native.Stores;
@@ -101,6 +105,14 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IConnectivityService, DeviceConnectivityService>();
         builder.Services.AddSingleton<CatalogueTextService>();
         builder.Services.AddSingleton<ProfileViewModel>();
+        builder.Services.AddSingleton<IOnboardingStatusService, OnboardingStatusService>();
+        builder.Services.AddSingleton<IGeolocationAdapter, GeolocationAdapter>();
+        builder.Services.AddSingleton<IDeviceLocationService, DeviceLocationService>();
+        builder.Services.AddSingleton<IOnboardingNavigator, WindowWorkspaceNavigator>();
+        builder.Services.AddTransient<OnboardingViewModel>();
+        builder.Services.AddTransient<OnboardingGateViewModel>();
+        builder.Services.AddTransient<OnboardingPage>();
+        builder.Services.AddTransient<OnboardingGatePage>();
         builder.Services
             .AddHttpClient(AuthenticationHttpClientConstants.Anonymous)
             .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create);
