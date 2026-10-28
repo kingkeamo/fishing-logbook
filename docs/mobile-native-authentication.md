@@ -89,11 +89,11 @@ Android:
 - `assetlinks.json` is generated from `src/FishingLogBook.Web/build/app-links.dev.json`.
   Debug/emulator builds (`com.fishinglogbook.mobile.demo`) use the committed local debug
   keystore fingerprint. Google Play Internal testing installs (`com.catchbutdontforget.app`)
-  are omitted from the deployed file until the Play App Signing SHA-256 fingerprint is
-  inserted; see `docs/google-play-internal-testing.md`. Play-installed sign-in is not
-  ready until that statement is deployed and verified. Debug keystores are per machine, so
-  other developers' or CI-built debug APKs will not verify until their fingerprints are
-  added. Unverified installs never receive the callback: there is no unverified fallback.
+  use the Play App Signing SHA-256 fingerprint in that file. Play-installed sign-in is not
+  ready until the generated statement is deployed to Dev Pages and verified; see
+  `docs/google-play-internal-testing.md`. Debug keystores are per machine, so other
+  developers' or CI-built debug APKs will not verify until their fingerprints are added.
+  Unverified installs never receive the callback: there is no unverified fallback.
 
 iOS:
 

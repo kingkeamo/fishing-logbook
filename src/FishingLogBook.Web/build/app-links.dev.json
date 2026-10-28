@@ -14,7 +14,9 @@
       },
       {
         "packageName": "com.catchbutdontforget.app",
-        "sha256CertFingerprints": []
+        "sha256CertFingerprints": [
+          "7C:34:00:29:A4:87:17:8C:DA:20:51:B0:3E:CB:61:60:00:23:69:3A:C4:40:E8:D4:BB:63:55:7D:CF:08:45:28"
+        ]
       }
     ]
   },

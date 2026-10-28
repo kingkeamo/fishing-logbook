@@ -6,17 +6,10 @@ import { buildAppLinks, buildHeaders, resolveAndroidApps } from './configure-app
 const config = JSON.parse(readFileSync(new URL('./app-links.dev.json', import.meta.url), 'utf8'));
 const debugPackage = 'com.fishinglogbook.mobile.demo';
 const playPackage = 'com.catchbutdontforget.app';
-const sampleFingerprint = '00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF';
+const playFingerprint = '7C:34:00:29:A4:87:17:8C:DA:20:51:B0:3E:CB:61:60:00:23:69:3A:C4:40:E8:D4:BB:63:55:7D:CF:08:45:28';
 
 function app(packageName) {
     return resolveAndroidApps(config.android).find(entry => entry.packageName === packageName);
-}
-
-function withPlayFingerprint(fingerprint) {
-    const next = structuredClone(config);
-    const play = resolveAndroidApps(next.android).find(entry => entry.packageName === playPackage);
-    play.sha256CertFingerprints = [fingerprint];
-    return next;
 }
 
 describe('dev app link association files', () => {
@@ -60,24 +53,23 @@ describe('dev app link association files', () => {
         assert.equal(config.ios.bundleId, debugPackage);
     });
 
-    it('binds the Android association to the debug package while Play fingerprints are absent', () => {
+    it('binds Android associations to the debug package and the Play signing certificate', () => {
         const statements = buildAppLinks(config, 'dev', undefined).files.get('.well-known/assetlinks.json');
-        assert.equal(statements.length, 1);
+        assert.equal(statements.length, 2);
         assert.deepEqual(statements[0].relation, ['delegate_permission/common.handle_all_urls']);
         assert.equal(statements[0].target.package_name, debugPackage);
         assert.deepEqual(statements[0].target.sha256_cert_fingerprints, app(debugPackage).sha256CertFingerprints);
-        assert.equal(app(playPackage).packageName, playPackage);
-        assert.deepEqual(app(playPackage).sha256CertFingerprints, []);
-        assert.equal(statements.some(statement => statement.target.package_name === playPackage), false);
+        assert.equal(statements[1].target.package_name, playPackage);
+        assert.deepEqual(statements[1].target.sha256_cert_fingerprints, [playFingerprint]);
     });
 
-    it('emits a Play statement only after a real SHA-256 fingerprint is provided', () => {
-        const statements = buildAppLinks(withPlayFingerprint(sampleFingerprint), 'dev', undefined)
-            .files.get('.well-known/assetlinks.json');
-        assert.equal(statements.length, 2);
+    it('omits a Play statement when the fingerprint array is empty', () => {
+        const withoutPlay = structuredClone(config);
+        resolveAndroidApps(withoutPlay.android)
+            .find(entry => entry.packageName === playPackage).sha256CertFingerprints = [];
+        const statements = buildAppLinks(withoutPlay, 'dev', undefined).files.get('.well-known/assetlinks.json');
+        assert.equal(statements.length, 1);
         assert.equal(statements[0].target.package_name, debugPackage);
-        assert.equal(statements[1].target.package_name, playPackage);
-        assert.deepEqual(statements[1].target.sha256_cert_fingerprints, [sampleFingerprint]);
     });
 
     it('limits the Apple association to the native callback paths with web credentials', () => {

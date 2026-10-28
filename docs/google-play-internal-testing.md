@@ -33,8 +33,9 @@ on-device name through `ApplicationTitle`.
   when started by hand, always embeds `MobileEnvironment=Development`, and uploads the
   `.aab` as a GitHub Actions artifact. It does not upload to Play and does not apply
   Terraform.
-- Digital Asset Links generation already knows the Play package ID. It **does not**
-  emit a Play statement until the real Play App Signing SHA-256 fingerprint is inserted.
+- Digital Asset Links generation includes both the debug package and
+  `com.catchbutdontforget.app` with the Play App Signing SHA-256 fingerprint. Sign-in
+  for Play installs still requires that file to be deployed on Dev Pages.
 - Native HTTPS callbacks stay:
   - `https://fishing-logbook-dev.pages.dev/native/oauth2redirect`
   - `https://fishing-logbook-dev.pages.dev/native/signedout`
@@ -105,28 +106,11 @@ build **cannot** complete verified HTTPS sign-in.
 
 ### 5. Update and deploy Digital Asset Links
 
-In `src/FishingLogBook.Web/build/app-links.dev.json`, find the Play app entry:
-
-```json
-{
-  "packageName": "com.catchbutdontforget.app",
-  "sha256CertFingerprints": []
-}
-```
-
-Replace the empty array with the Play App Signing SHA-256 from Console:
-
-```json
-{
-  "packageName": "com.catchbutdontforget.app",
-  "sha256CertFingerprints": [
-    "PASTE-PLAY-APP-SIGNING-SHA256-HERE"
-  ]
-}
-```
-
+The Play App Signing SHA-256 is already in
+`src/FishingLogBook.Web/build/app-links.dev.json` for `com.catchbutdontforget.app`.
 Keep the debug package and its existing fingerprint. Do not change `callbackPaths` or
-the iOS `bundleId`.
+the iOS `bundleId`. If Play rotates the app-signing certificate, replace that fingerprint
+with the new value from Console (uppercase, colon-separated).
 
 Merge to the branch that Dev Pages deploys from so `.github/workflows/deploy-web.yml`
 regenerates `https://fishing-logbook-dev.pages.dev/.well-known/assetlinks.json`.
