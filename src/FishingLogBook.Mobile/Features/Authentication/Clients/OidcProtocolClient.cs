@@ -146,9 +146,27 @@ public sealed class OidcProtocolClient : IOidcProtocolClient
             return OidcFailureKindEnum.InvalidGrant;
         }
 
-        return error is not null && PermanentRefreshErrors.Contains(error)
-            ? OidcFailureKindEnum.Rejected
+        if (error is not null && PermanentRefreshErrors.Contains(error))
+        {
+            return OidcFailureKindEnum.Rejected;
+        }
+
+        if (error is null ||
+            error.StartsWith("temporarily_unavailable", StringComparison.Ordinal) ||
+            error.StartsWith("server_error", StringComparison.Ordinal))
+        {
+            return OidcFailureKindEnum.Transient;
+        }
+
+        return IsOAuthErrorCode(error)
+            ? OidcFailureKindEnum.InvalidResponse
             : OidcFailureKindEnum.Transient;
+    }
+
+    private static bool IsOAuthErrorCode(string error)
+    {
+        return error.Length > 0 && error.All(character =>
+            character is >= 'a' and <= 'z' or >= '0' and <= '9' or '_');
     }
 
     private static OidcTokenResultModel CreateResult(

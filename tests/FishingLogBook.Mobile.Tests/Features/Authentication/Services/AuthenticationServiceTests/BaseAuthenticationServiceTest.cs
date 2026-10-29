@@ -5,6 +5,7 @@ using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Shared.Dtos;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,11 +22,14 @@ public abstract class BaseAuthenticationServiceTest
     protected const string AccessToken = "access-token";
     protected const string RefreshToken = "refresh-token";
     protected readonly IOidcProtocolClient MockOidcClient = Substitute.For<IOidcProtocolClient>();
+    protected readonly IOidcRefreshService MockRefreshService = Substitute.For<IOidcRefreshService>();
     protected readonly IAuthenticationBrowser MockBrowser = Substitute.For<IAuthenticationBrowser>();
     protected readonly ISecureAuthenticationStore MockStore = Substitute.For<ISecureAuthenticationStore>();
     protected readonly ICurrentUserClient MockCurrentUserClient = Substitute.For<ICurrentUserClient>();
     protected readonly ICognitoSessionClient MockCognitoSessionClient = Substitute.For<ICognitoSessionClient>();
     protected readonly IAccountSessionCoordinator MockSessionCoordinator = Substitute.For<IAccountSessionCoordinator>();
+    protected readonly IOfflineCapabilityService MockOfflineCapability = Substitute.For<IOfflineCapabilityService>();
+    protected readonly IOfflineSessionService MockOfflineSession = Substitute.For<IOfflineSessionService>();
     protected readonly TimeProvider MockTimeProvider = Substitute.For<TimeProvider>();
     protected readonly AuthenticationService Sut;
 
@@ -34,11 +38,14 @@ public abstract class BaseAuthenticationServiceTest
         MockTimeProvider.GetUtcNow().Returns(Now);
         Sut = new AuthenticationService(
             MockOidcClient,
+            MockRefreshService,
             MockBrowser,
             MockStore,
             MockCurrentUserClient,
             MockCognitoSessionClient,
             MockSessionCoordinator,
+            MockOfflineCapability,
+            MockOfflineSession,
             MockTimeProvider,
             NullLogger<AuthenticationService>.Instance);
     }

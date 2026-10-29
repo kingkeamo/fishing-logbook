@@ -1,16 +1,17 @@
 using System.Net;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
 
-namespace FishingLogBook.Web.Configuration;
+namespace FishingLogBook.Client.Resilience;
 
-internal static class HttpClientResilienceExtensions
+public static class HttpClientResilienceExtensions
 {
-    internal const string PipelineName = "get-read-retry";
-    internal const int MaxRetryAttempts = 2;
-    internal static readonly TimeSpan InitialRetryDelay = TimeSpan.FromMilliseconds(200);
+    public const string PipelineName = "get-read-retry";
+    public const int MaxRetryAttempts = 2;
+    public static readonly TimeSpan InitialRetryDelay = TimeSpan.FromMilliseconds(200);
 
-    internal static IHttpClientBuilder ConfigureGetReadResilience(this IHttpClientBuilder builder)
+    public static IHttpClientBuilder ConfigureGetReadResilience(this IHttpClientBuilder builder)
     {
         builder.AddResilienceHandler(
             PipelineName,

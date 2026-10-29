@@ -36,7 +36,22 @@ public class WhenTestingInitialize : BaseAuthenticationServiceTest
         result.Should().Be(AuthenticationResultEnum.Success);
         Sut.HasPendingAuthorization.Should().BeFalse();
         await MockStore.Received(1).RemovePendingAuthorizationAsync();
-        await MockOidcClient.DidNotReceive().RefreshAsync(
+        await MockRefreshService.DidNotReceive().RefreshAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRestoreAPendingBrowserAuthorizationWithoutRefreshing()
+    {
+        // Arrange
+        MockStore.GetPendingAuthorizationAsync().Returns(CreatePending());
+        // Act
+        var result = await Sut.InitializeAsync(CancellationToken.None);
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.Pending);
+        Sut.HasPendingAuthorization.Should().BeTrue();
+        await MockRefreshService.DidNotReceive().RefreshAsync(
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
@@ -47,7 +62,7 @@ public class WhenTestingInitialize : BaseAuthenticationServiceTest
         // Arrange
         var credential = new PersistedAuthenticationModel(RefreshToken, Subject, UserId);
         MockStore.GetCredentialAsync().Returns(credential);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.InvalidGrant));
         // Act
         var result = await Sut.InitializeAsync(CancellationToken.None);
@@ -55,7 +70,27 @@ public class WhenTestingInitialize : BaseAuthenticationServiceTest
         result.Should().Be(AuthenticationResultEnum.Invalid);
         Sut.CurrentSession.Should().BeNull();
         await MockStore.Received(1).RemoveCredentialAsync();
+        await MockOfflineCapability.Received(1).RevokeAsync(CancellationToken.None);
         await MockSessionCoordinator.Received(1).TransitionAsync(null, CancellationToken.None);
+        await MockCurrentUserClient.DidNotReceive().GetCurrentAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRequireANewLoginAfterAnInvalidRefreshResponse()
+    {
+        // Arrange
+        var credential = new PersistedAuthenticationModel(RefreshToken, Subject, UserId);
+        MockStore.GetCredentialAsync().Returns(credential);
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
+            .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.InvalidResponse));
+        // Act
+        var result = await Sut.InitializeAsync(CancellationToken.None);
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.Invalid);
+        await MockStore.Received(1).RemoveCredentialAsync();
+        await MockOfflineCapability.Received(1).RevokeAsync(CancellationToken.None);
         await MockCurrentUserClient.DidNotReceive().GetCurrentAsync(
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -67,7 +102,7 @@ public class WhenTestingInitialize : BaseAuthenticationServiceTest
         // Arrange
         var credential = new PersistedAuthenticationModel(RefreshToken, Subject, UserId);
         MockStore.GetCredentialAsync().Returns(credential);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient));
         // Act
         var result = await Sut.InitializeAsync(CancellationToken.None);
@@ -77,6 +112,23 @@ public class WhenTestingInitialize : BaseAuthenticationServiceTest
         await MockSessionCoordinator.DidNotReceive().TransitionAsync(
             Arg.Any<Guid?>(),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldApplyRefreshBackoffAcrossStartupRetries()
+    {
+        // Arrange
+        var credential = new PersistedAuthenticationModel(RefreshToken, Subject, UserId);
+        MockStore.GetCredentialAsync().Returns(credential);
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
+            .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient));
+        // Act
+        var firstResult = await Sut.InitializeAsync(CancellationToken.None);
+        var retryResult = await Sut.InitializeAsync(CancellationToken.None);
+        // Assert
+        firstResult.Should().Be(AuthenticationResultEnum.TemporarilyUnavailable);
+        retryResult.Should().Be(AuthenticationResultEnum.TemporarilyUnavailable);
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
     }
 
     [Fact]
@@ -92,7 +144,7 @@ public class WhenTestingInitialize : BaseAuthenticationServiceTest
             null,
             null);
         MockStore.GetCredentialAsync().Returns(credential);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None).Returns(refreshed);
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(refreshed);
         MockCurrentUserClient.GetCurrentAsync("refreshed-access", CancellationToken.None)
             .Returns(new CurrentUserDto(UserId, Email, "Cognito", Subject));
         // Act
@@ -106,5 +158,9 @@ public class WhenTestingInitialize : BaseAuthenticationServiceTest
                 value.Subject == Subject &&
                 value.UserId == UserId));
         await MockSessionCoordinator.Received(1).TransitionAsync(UserId, CancellationToken.None);
+        await MockOfflineCapability.Received(1).RevokeIfOwnedByAnotherAccountAsync(
+            Subject,
+            UserId,
+            CancellationToken.None);
     }
 }

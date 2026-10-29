@@ -24,6 +24,7 @@ public class WhenTestingSignOut : BaseAuthenticationServiceTest
         Sut.CurrentSession.Should().BeNull();
         await MockSessionCoordinator.Received(1).TransitionAsync(null, CancellationToken.None);
         await MockStore.Received(1).RemoveCredentialAsync();
+        await MockOfflineCapability.Received(1).RevokeAsync(CancellationToken.None);
         await MockStore.Received(1).RemovePendingAuthorizationAsync();
         await MockCognitoSessionClient.Received(1).RevokeRefreshTokenAsync(
             RefreshToken,
@@ -47,7 +48,7 @@ public class WhenTestingSignOut : BaseAuthenticationServiceTest
         // Assert
         await action.Should().ThrowAsync<UnauthorizedAccessException>();
         Sut.CurrentSession.Should().BeNull();
-        await MockOidcClient.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await MockRefreshService.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await MockSessionCoordinator.Received(1).TransitionAsync(UserId, CancellationToken.None);
         await MockSessionCoordinator.Received(1).TransitionAsync(null, CancellationToken.None);
     }
@@ -59,7 +60,7 @@ public class WhenTestingSignOut : BaseAuthenticationServiceTest
         await EstablishSessionAsync(Now.AddSeconds(30));
         var refreshCompletion = new TaskCompletionSource<OidcTokenResultModel>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None).Returns(refreshCompletion.Task);
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(refreshCompletion.Task);
         MockCurrentUserClient.GetCurrentAsync("refreshed-access", CancellationToken.None)
             .Returns(new CurrentUserDto(UserId, Email, "Cognito", Subject));
         MockSessionCoordinator.Capture().Returns(new AccountSessionLeaseModel(UserId, 2, CancellationToken.None));

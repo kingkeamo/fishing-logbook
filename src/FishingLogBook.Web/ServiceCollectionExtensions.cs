@@ -1,3 +1,4 @@
+using FishingLogBook.Client.Resilience;
 using FishingLogBook.Web.Browser.Install;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;

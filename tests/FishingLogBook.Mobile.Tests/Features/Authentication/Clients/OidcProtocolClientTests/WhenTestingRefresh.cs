@@ -48,6 +48,18 @@ public class WhenTestingRefresh : BaseOidcProtocolClientTest
     }
 
     [Fact]
+    public async Task ItShouldNotClassifyAnUnknownOAuthResponseAsRetryable()
+    {
+        // Arrange
+        var sut = CreateSut(tokenEndpoint: _ => CreateTokenError(HttpStatusCode.BadRequest, "unexpected_error"));
+        // Act
+        var result = await sut.RefreshAsync("refresh-token", CancellationToken.None);
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(OidcFailureKindEnum.InvalidResponse);
+    }
+
+    [Fact]
     public async Task ItShouldClassifyAnHttpFailureWithoutAProtocolErrorAsTransient()
     {
         // Arrange

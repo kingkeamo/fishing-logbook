@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FishingLogBook.Client\FishingLogBook.Client.csproj" />
     <ProjectReference Include="..\..\src\FishingLogBook.Web\FishingLogBook.Web.csproj" />
     <ProjectReference Include="..\..\src\FishingLogBook.Shared\FishingLogBook.Shared.csproj" />
     <ProjectReference Include="..\FishingLogBook.Tests.Common\FishingLogBook.Tests.Common.csproj" />

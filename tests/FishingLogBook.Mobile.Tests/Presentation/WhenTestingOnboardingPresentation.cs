@@ -14,6 +14,11 @@ public class WhenTestingOnboardingPresentation
         var page = File.ReadAllText(Path.Combine(MobileRoot, "Features", "Onboarding", "Pages", "OnboardingPage.xaml"));
         var stepper = File.ReadAllText(Path.Combine(MobileRoot, "Native", "Controls", "WizardStepperView.xaml"));
         var app = File.ReadAllText(Path.Combine(MobileRoot, "App.xaml.cs"));
+        var startupNavigator = File.ReadAllText(Path.Combine(
+            MobileRoot,
+            "Native",
+            "Navigation",
+            "WindowStartupNavigator.cs"));
 
         // Act
         // Assert
@@ -29,8 +34,10 @@ public class WhenTestingOnboardingPresentation
         stepper.Should().Contain("AutomationId=\"WizardProgress\"");
         stepper.Should().Contain("AutomationId=\"WizardContinue\"");
         stepper.Should().NotContain("Clicked=\"OnSegment");
-        app.Should().Contain("OnboardingGatePage");
+        app.Should().Contain("GetRequiredService<StartupPage>()");
         app.Should().NotContain("GetRequiredService<AppShell>()");
+        app.Should().Contain("GetRequiredService<OnboardingGatePage>()");
+        startupNavigator.Should().Contain("GetRequiredService<OnboardingGatePage>()");
     }
 
     [Fact]

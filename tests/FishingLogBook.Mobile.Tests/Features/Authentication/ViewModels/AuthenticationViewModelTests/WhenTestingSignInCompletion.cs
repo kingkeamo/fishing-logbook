@@ -1,10 +1,25 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
+using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Authentication.ViewModels.AuthenticationViewModelTests;
 
 public class WhenTestingSignInCompletion : BaseAuthenticationViewModelTest
 {
+    [Fact]
+    public void ItShouldRestoreAnUnfinishedBrowserSignInWithoutStartingAnotherRequest()
+    {
+        // Arrange
+        MockAuthenticationService.HasPendingAuthorization.Returns(true);
+        // Act
+        Sut.RestorePendingState();
+        // Assert
+        Sut.IsPending.Should().BeTrue();
+        Sut.CanCancel.Should().BeTrue();
+        Sut.StatusText.Should().Be(Text["SigningIn"]);
+        MockAuthenticationService.DidNotReceive().BeginSignInAsync(Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task ItShouldStopWaitingAndExplainWhenTheBrowserCallbackFails()
     {

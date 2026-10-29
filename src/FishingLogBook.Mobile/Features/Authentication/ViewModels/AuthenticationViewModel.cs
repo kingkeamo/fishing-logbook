@@ -9,7 +9,6 @@ public sealed class AuthenticationViewModel : INotifyPropertyChanged
 {
     private readonly IAuthenticationService _authenticationService;
     private Action<Action>? _dispatch;
-    private bool _initialized;
     private bool _isBusy;
     private bool _isPending;
     private string? _statusKey;
@@ -63,19 +62,10 @@ public sealed class AuthenticationViewModel : INotifyPropertyChanged
         _authenticationService.SignInCompleted -= OnSignInCompleted;
     }
 
-    public async Task InitializeAsync()
+    public void RestorePendingState()
     {
-        if (_initialized)
-        {
-            return;
-        }
-
-        _initialized = true;
-        IsBusy = true;
-        SetStatus("RestoringSession");
-        var result = await _authenticationService.InitializeAsync(CancellationToken.None);
-        IsBusy = false;
-        ApplyResult(result);
+        IsPending = _authenticationService.HasPendingAuthorization;
+        SetStatus(IsPending ? "SigningIn" : null);
     }
 
     public async Task SignInAsync()

@@ -4,6 +4,7 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using Microsoft.Extensions.Logging;
 
@@ -18,11 +19,14 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
     private readonly object _stateLock = new();
     private readonly SemaphoreSlim _operationGate = new(1, 1);
     private readonly IOidcProtocolClient _oidcClient;
+    private readonly IOidcRefreshService _refreshService;
     private readonly IAuthenticationBrowser _browser;
     private readonly ISecureAuthenticationStore _store;
     private readonly ICurrentUserClient _currentUserClient;
     private readonly ICognitoSessionClient _cognitoSessionClient;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
+    private readonly IOfflineCapabilityService _offlineCapability;
+    private readonly IOfflineSessionService _offlineSession;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AuthenticationService> _logger;
     private AuthenticationSessionModel? _currentSession;
@@ -32,20 +36,26 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
 
     public AuthenticationService(
         IOidcProtocolClient oidcClient,
+        IOidcRefreshService refreshService,
         IAuthenticationBrowser browser,
         ISecureAuthenticationStore store,
         ICurrentUserClient currentUserClient,
         ICognitoSessionClient cognitoSessionClient,
         IAccountSessionCoordinator sessionCoordinator,
+        IOfflineCapabilityService offlineCapability,
+        IOfflineSessionService offlineSession,
         TimeProvider timeProvider,
         ILogger<AuthenticationService> logger)
     {
         _oidcClient = oidcClient;
+        _refreshService = refreshService;
         _browser = browser;
         _store = store;
         _currentUserClient = currentUserClient;
         _cognitoSessionClient = cognitoSessionClient;
         _sessionCoordinator = sessionCoordinator;
+        _offlineCapability = offlineCapability;
+        _offlineSession = offlineSession;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -81,7 +91,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         try
         {
             var pendingResult = await RestorePendingAuthorizationAsync();
-            if (pendingResult == AuthenticationResultEnum.StorageUnavailable)
+            if (pendingResult != AuthenticationResultEnum.Success)
             {
                 return pendingResult;
             }
@@ -90,6 +100,11 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             if (credential is null)
             {
                 return AuthenticationResultEnum.Success;
+            }
+
+            if (_timeProvider.GetUtcNow() < _refreshRetryAfter)
+            {
+                return AuthenticationResultEnum.TemporarilyUnavailable;
             }
 
             return await RefreshAndEstablishAsync(credential, cancellationToken);
@@ -174,7 +189,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         try
         {
             refreshToken = CurrentSession?.RefreshToken;
-            await InvalidateLocalSessionAsync(removeCredential: true);
+            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
             await RemovePendingAuthorizationSafelyAsync();
         }
         finally
@@ -274,7 +289,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         {
             await _store.RemovePendingAuthorizationAsync();
             SetPendingAuthorization(false);
-            return AuthenticationResultEnum.Invalid;
+            return AuthenticationResultEnum.Success;
         }
 
         SetPendingAuthorization(true);
@@ -285,12 +300,12 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         PersistedAuthenticationModel credential,
         CancellationToken cancellationToken)
     {
-        var tokenResult = await _oidcClient.RefreshAsync(credential.RefreshToken, cancellationToken);
+        var tokenResult = await _refreshService.RefreshAsync(credential.RefreshToken, cancellationToken);
         if (!tokenResult.IsSuccess)
         {
             if (IsPermanentRefreshFailure(tokenResult.Failure))
             {
-                await InvalidateLocalSessionAsync(removeCredential: true);
+                await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
             }
             else
             {
@@ -342,7 +357,9 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
 
     private static bool IsPermanentRefreshFailure(OidcFailureKindEnum failure)
     {
-        return failure is OidcFailureKindEnum.InvalidGrant or OidcFailureKindEnum.Rejected;
+        return failure is OidcFailureKindEnum.InvalidGrant or
+            OidcFailureKindEnum.InvalidResponse or
+            OidcFailureKindEnum.Rejected;
     }
 
     private async Task<AuthenticationResultEnum> EstablishSessionAsync(
@@ -354,14 +371,14 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         var refreshToken = tokenResult.RefreshToken ?? expectedCredential?.RefreshToken;
         if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(refreshToken))
         {
-            await InvalidateLocalSessionAsync(removeCredential: false);
+            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
             return AuthenticationResultEnum.Invalid;
         }
 
         if (expectedCredential is not null &&
             !string.Equals(subject, expectedCredential.Subject, StringComparison.Ordinal))
         {
-            await InvalidateLocalSessionAsync(removeCredential: true);
+            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
             return AuthenticationResultEnum.Invalid;
         }
 
@@ -369,13 +386,17 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         if (!string.Equals(currentUser.Subject, subject, StringComparison.Ordinal) ||
             expectedCredential is not null && currentUser.UserId != expectedCredential.UserId)
         {
-            await InvalidateLocalSessionAsync(removeCredential: true);
+            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
             return AuthenticationResultEnum.Invalid;
         }
 
         var credential = new PersistedAuthenticationModel(refreshToken, subject, currentUser.UserId);
         try
         {
+            await _offlineCapability.RevokeIfOwnedByAnotherAccountAsync(
+                subject,
+                currentUser.UserId,
+                cancellationToken);
             await _store.SaveCredentialAsync(credential);
         }
         catch (Exception exception)
@@ -385,6 +406,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             return AuthenticationResultEnum.StorageUnavailable;
         }
 
+        var offlineWasActive = _offlineSession.Lock();
         await _sessionCoordinator.TransitionAsync(currentUser.UserId, CancellationToken.None);
         ResetRefreshBackoff();
         SetSession(new AuthenticationSessionModel(
@@ -393,15 +415,30 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             refreshToken,
             subject,
             tokenResult.Email ?? currentUser.Email,
-            currentUser.UserId));
+            currentUser.UserId), offlineWasActive);
         return AuthenticationResultEnum.Success;
     }
 
-    private async Task InvalidateLocalSessionAsync(bool removeCredential)
+    private async Task InvalidateLocalSessionAsync(
+        bool removeCredential,
+        bool revokeOfflineCapability = false)
     {
         ResetRefreshBackoff();
-        SetSession(null);
+        var offlineWasActive = _offlineSession.Lock();
+        SetSession(null, offlineWasActive);
         await _sessionCoordinator.TransitionAsync(userId: null, CancellationToken.None);
+        if (revokeOfflineCapability)
+        {
+            try
+            {
+                await _offlineCapability.RevokeAsync(CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(exception, "The offline capability could not be revoked.");
+            }
+        }
+
         if (!removeCredential)
         {
             return;
@@ -454,12 +491,12 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         }
     }
 
-    private void SetSession(AuthenticationSessionModel? session)
+    private void SetSession(AuthenticationSessionModel? session, bool forceChanged = false)
     {
         bool changed;
         lock (_stateLock)
         {
-            changed = (_currentSession is null) != (session is null) ||
+            changed = forceChanged || (_currentSession is null) != (session is null) ||
                 _currentSession?.UserId != session?.UserId ||
                 !string.Equals(_currentSession?.Email, session?.Email, StringComparison.Ordinal);
             _currentSession = session;

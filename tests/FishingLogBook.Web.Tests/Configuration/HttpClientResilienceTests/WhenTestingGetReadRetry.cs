@@ -1,5 +1,6 @@
 using System.Net;
 using AwesomeAssertions;
+using FishingLogBook.Client.Resilience;
 using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Web.Configuration;
 using FishingLogBook.Web.Features.Diagnostics.Http;

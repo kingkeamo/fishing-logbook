@@ -1,7 +1,7 @@
-using FishingLogBook.Mobile.Features.Authentication.Pages;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Onboarding.Pages;
 using FishingLogBook.Mobile.Features.Settings.Services;
+using FishingLogBook.Mobile.Features.Startup.Pages;
 
 namespace FishingLogBook.Mobile;
 
@@ -27,10 +27,7 @@ public partial class App : Application
     protected override Window CreateWindow(IActivationState? activationState)
     {
         _preferences.Initialize();
-        Page page = _authenticationService.CurrentSession is null
-            ? _services.GetRequiredService<AuthenticationPage>()
-            : _services.GetRequiredService<OnboardingGatePage>();
-        _window = new Window(page);
+        _window = new Window(_services.GetRequiredService<StartupPage>());
         return _window;
     }
 
@@ -45,7 +42,7 @@ public partial class App : Application
         window.Dispatcher.Dispatch(() =>
         {
             window.Page = _authenticationService.CurrentSession is null
-                ? _services.GetRequiredService<AuthenticationPage>()
+                ? _services.GetRequiredService<StartupPage>()
                 : _services.GetRequiredService<OnboardingGatePage>();
         });
     }
