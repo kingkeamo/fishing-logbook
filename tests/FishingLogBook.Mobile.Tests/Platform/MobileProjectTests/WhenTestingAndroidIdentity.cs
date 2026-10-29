@@ -64,6 +64,21 @@ public class WhenTestingAndroidIdentity
         localhostHits.Should().BeEmpty();
     }
 
+    [Fact]
+    public void ItShouldDeclareTheInternetPermissionForReleaseNetworkAccess()
+    {
+        // Arrange
+        var manifest = XDocument.Load(Path.Combine(MobileRoot, "Platforms", "Android", "AndroidManifest.xml"));
+        XNamespace android = "http://schemas.android.com/apk/res/android";
+        // Act
+        var permissions = manifest.Root!
+            .Elements("uses-permission")
+            .Select(element => (string?)element.Attribute(android + "name"))
+            .ToList();
+        // Assert
+        permissions.Should().Contain("android.permission.INTERNET");
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
