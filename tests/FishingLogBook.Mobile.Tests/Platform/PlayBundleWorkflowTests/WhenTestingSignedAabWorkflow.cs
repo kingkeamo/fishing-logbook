@@ -31,12 +31,14 @@ public class WhenTestingSignedAabWorkflow
         signingScript.Should().Contain("-p:AndroidKeyStore=true");
         signingScript.Should().Contain("AndroidSigningStorePass=env:ANDROID_UPLOAD_KEYSTORE_PASSWORD");
         signingScript.Should().Contain("AndroidSigningKeyPass=env:ANDROID_UPLOAD_KEY_PASSWORD");
+        signingScript.Should().Contain("Guid]::NewGuid()");
+        signingScript.Should().Contain("--output $publishDirectory");
         workflow.Should().Contain("ANDROID_UPLOAD_KEYSTORE_BASE64");
         workflow.Should().Contain("ANDROID_UPLOAD_KEY_ALIAS");
         signingScript.Should().Contain("ApplicationVersion");
         workflow.Should().Contain("actions/upload-artifact@v4");
         workflow.Should().Contain("catch-android-internal-testing");
-        signingScript.Should().Contain("*-Signed.aab");
+        signingScript.Should().Contain("resolve-signed-android-bundle.mjs");
         workflow.Should().NotContain("terraform");
         workflow.Should().NotContain("fly deploy");
         validation.Should().Contain("AndroidPackageFormats=apk");

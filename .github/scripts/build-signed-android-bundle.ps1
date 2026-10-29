@@ -29,6 +29,7 @@ if ($missingSecrets.Count -gt 0) {
 }
 
 $keystorePath = Join-Path $env:RUNNER_TEMP 'catch-upload.keystore'
+$publishDirectory = Join-Path $env:RUNNER_TEMP "catch-android-publish-$([Guid]::NewGuid().ToString('N'))"
 try {
     $keystoreBytes = [Convert]::FromBase64String($env:ANDROID_UPLOAD_KEYSTORE_BASE64)
     if ($keystoreBytes.Length -eq 0) {
@@ -57,17 +58,15 @@ try {
         $properties += "-p:ApplicationDisplayVersion=$ApplicationDisplayVersion"
     }
 
-    dotnet publish src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj @properties
+    dotnet publish src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj @properties --output $publishDirectory
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet publish failed with exit code $LASTEXITCODE."
     }
 
-    $bundles = @(Get-ChildItem 'src/FishingLogBook.Mobile/bin/Release/net10.0-android' -Filter '*-Signed.aab' -Recurse)
-    if ($bundles.Count -ne 1) {
-        throw "Expected exactly one signed AAB but found $($bundles.Count)."
+    node .github/scripts/resolve-signed-android-bundle.mjs $publishDirectory $OutputPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Signed AAB resolution failed with exit code $LASTEXITCODE."
     }
-
-    "bundle_path=$($bundles[0].FullName)" | Out-File -FilePath $OutputPath -Append
 }
 finally {
     if (Test-Path -LiteralPath $keystorePath) {
