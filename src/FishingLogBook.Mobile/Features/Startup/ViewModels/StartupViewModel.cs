@@ -13,6 +13,7 @@ public sealed class StartupViewModel(
     UiTextService text,
     ILogger<StartupViewModel> logger) : INotifyPropertyChanged
 {
+    private readonly SemaphoreSlim _startGate = new(1, 1);
     private bool _isBusy;
     private string? _statusKey;
 
@@ -26,29 +27,32 @@ public sealed class StartupViewModel(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (IsBusy)
-        {
-            return;
-        }
-
-        IsBusy = true;
-        SetStatus(null);
+        await _startGate.WaitAsync(cancellationToken);
         try
         {
-            Apply(await coordinator.StartAsync(cancellationToken));
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            SetStatus("StartupCancelled");
-        }
-        catch (Exception exception)
-        {
-            logger.LogWarning(exception, "Mobile startup failed before a destination was selected.");
-            SetStatus("StartupServiceUnavailable");
+            IsBusy = true;
+            SetStatus(null);
+            try
+            {
+                Apply(await coordinator.StartAsync(cancellationToken));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                SetStatus("StartupCancelled");
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Mobile startup failed before a destination was selected.");
+                SetStatus("StartupServiceUnavailable");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
         finally
         {
-            IsBusy = false;
+            _startGate.Release();
         }
     }
 

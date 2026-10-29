@@ -17,6 +17,36 @@ public sealed class WhenTestingStart
     private readonly UiTextService _text = new(CultureInfo.GetCultureInfo("en-GB"));
 
     [Fact]
+    public async Task ItShouldRunARetryQueuedWhileStartupIsBeingCancelled()
+    {
+        // Arrange
+        using var firstCancellation = new CancellationTokenSource();
+        var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var call = 0;
+        _coordinator.StartAsync(Arg.Any<CancellationToken>()).Returns(async callInfo =>
+        {
+            if (Interlocked.Increment(ref call) == 1)
+            {
+                firstStarted.SetResult();
+                await Task.Delay(Timeout.InfiniteTimeSpan, callInfo.Arg<CancellationToken>());
+            }
+
+            return StartupResultEnum.SignInRequired;
+        });
+        var sut = CreateSut();
+        var first = sut.StartAsync(firstCancellation.Token);
+        await firstStarted.Task;
+        // Act
+        var retry = sut.StartAsync(CancellationToken.None);
+        await firstCancellation.CancelAsync();
+        await first;
+        await retry;
+        // Assert
+        await _coordinator.Received(2).StartAsync(Arg.Any<CancellationToken>());
+        _navigator.Received(1).ShowSignIn();
+    }
+
+    [Fact]
     public async Task ItShouldShowARecoverableStateWhenOnlineServicesRemainUnavailable()
     {
         // Arrange
