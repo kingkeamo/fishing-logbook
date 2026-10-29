@@ -5,8 +5,9 @@ It is not a production or public release. The first beta uses the existing
 Development API (`https://fishing-logbook-dev-api.fly.dev`) and the existing
 Development Cognito user pool.
 
-Repository work stops at a signed Android App Bundle (`.aab`) artifact. Google Play
-Console steps are manual.
+The normal workflow builds, signs, uploads and commits an Internal testing release.
+A signed Android App Bundle (`.aab`) remains available as a GitHub artifact, and the
+same workflow can still be run in artifact-only mode.
 
 ## Identity
 
@@ -30,9 +31,9 @@ on-device name through `ApplicationTitle`.
 
 - Android Release builds use `com.catchbutdontforget.app`.
 - The signed AAB workflow is `.github/workflows/mobile-play-bundle.yml`. It runs only
-  when started by hand, always embeds `MobileEnvironment=Development`, and uploads the
-  `.aab` as a GitHub Actions artifact. It does not upload to Play and does not apply
-  Terraform.
+  when started by hand from `main`, always embeds `MobileEnvironment=Development`,
+  preserves the `.aab` as a GitHub Actions artifact, and can publish only to the Play
+  Internal testing track. It does not apply Terraform.
 - Digital Asset Links generation includes both the debug package and
   `com.catchbutdontforget.app` with the Play App Signing SHA-256 fingerprint. Sign-in
   for Play installs still requires that file to be deployed on Dev Pages.
@@ -147,12 +148,157 @@ Paste into the secret. Do not write the base64 to the repository. Do not print t
 secrets in workflow logs; the workflow reads passwords through `env:` MSBuild
 properties.
 
-### 7. Generate the signed AAB
+### 7. Configure Google Play Developer API access
 
-1. GitHub → **Actions** → **mobile-play-bundle**.
-2. **Run workflow**.
-3. For the first upload leave version inputs empty (project file is `0.1.0` / `1`).
-4. Download the `catch-android-internal-testing` artifact. It contains the `.aab`.
+Do this once, in this order. These steps create a dedicated identity but no long-lived
+service-account key.
+
+1. In Google Cloud Console, create or select a project dedicated to release automation.
+2. Enable **Google Play Android Developer API**, **IAM Service Account Credentials
+   API**, and **Security Token Service API**.
+3. Create a service account named `catch-play-publisher`. Do not create or download a
+   JSON key.
+4. In Play Console, open **Users and permissions** and invite the service-account email.
+5. Limit its app access to **Catch But Don't Forget**.
+6. Grant only **View app information (read-only)** and **Release apps to testing
+   tracks**. Do not grant production-release, financial, order, subscription or
+   account-admin permissions.
+
+Equivalent Cloud Shell setup (replace `PROJECT_ID`):
+
+```bash
+gcloud config set project PROJECT_ID
+gcloud services enable \
+  androidpublisher.googleapis.com \
+  iamcredentials.googleapis.com \
+  sts.googleapis.com
+gcloud iam service-accounts create catch-play-publisher \
+  --display-name="Catch Play Internal publisher"
+```
+
+The Android Publisher permission is granted in Play Console, not through a broad Google
+Cloud IAM role.
+
+### 8. Configure GitHub OIDC with Workload Identity Federation
+
+Continue in the same Google Cloud project. The provider condition below trusts only
+`kingkeamo/fishing-logbook` runs dispatched from `main`.
+
+```bash
+PROJECT_ID="your-project-id"
+PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+SERVICE_ACCOUNT="catch-play-publisher@${PROJECT_ID}.iam.gserviceaccount.com"
+
+gcloud iam workload-identity-pools create github \
+  --project="$PROJECT_ID" \
+  --location=global \
+  --display-name="GitHub Actions"
+
+gcloud iam workload-identity-pools providers create-oidc fishing-logbook-main \
+  --project="$PROJECT_ID" \
+  --location=global \
+  --workload-identity-pool=github \
+  --display-name="Fishing Logbook main" \
+  --issuer-uri="https://token.actions.githubusercontent.com" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
+  --attribute-condition="assertion.repository=='kingkeamo/fishing-logbook' && assertion.ref=='refs/heads/main'"
+
+gcloud iam service-accounts add-iam-policy-binding "$SERVICE_ACCOUNT" \
+  --project="$PROJECT_ID" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github/attribute.repository/kingkeamo/fishing-logbook"
+
+gcloud iam workload-identity-pools providers describe fishing-logbook-main \
+  --project="$PROJECT_ID" \
+  --location=global \
+  --workload-identity-pool=github \
+  --format='value(name)'
+```
+
+Save the final provider resource name. It has this form:
+
+```text
+projects/123456789/locations/global/workloadIdentityPools/github/providers/fishing-logbook-main
+```
+
+Normal Workload Identity service-account impersonation requires
+`roles/iam.workloadIdentityUser`; do not add a service-account key.
+
+### 9. Configure the protected GitHub environment
+
+1. In repository **Settings** open **Environments** and create
+   `google-play-internal`.
+2. Restrict deployment branches to `main` only.
+3. Add these environment variables:
+
+| Variable | Value |
+|---|---|
+| `GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER` | Full provider resource name returned above |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT` | `catch-play-publisher@PROJECT_ID.iam.gserviceaccount.com` |
+
+4. Keep the four existing Android upload-signing values as repository secrets. Both the
+   protected publishing job and the unprotected artifact-only job need them; do not move
+   them exclusively into the publishing environment.
+5. Optionally require a reviewer for the environment as a second release confirmation.
+
+OIDC tokens are short-lived. There is no Google service-account JSON key to store in
+GitHub.
+
+### 10. Run an automated Internal testing release
+
+1. In GitHub open **Actions** then **mobile-play-bundle**.
+2. Select branch **main** and choose **Run workflow**.
+3. Leave **Publish to Google Play Internal testing** enabled.
+4. Optionally enter a version name and release notes. If the version name is blank, the
+   workflow uses `<project-version>-internal.<version-code>`.
+
+After the protected environment is approved, the publishing job authenticates with
+GitHub OIDC and creates a temporary Play edit to list every existing AAB and legacy APK
+version code. It selects `highest + 1`, deletes that read-only edit, then builds and signs
+the Development AAB. Immediately before upload it creates a fresh edit and checks the
+current Play artifacts again. If the selected version is no longer the next available
+code, the run fails and must be rerun; it never uploads with or silently substitutes a
+different code. Otherwise it uploads only to `internal` with status `completed`,
+validates the edit and commits it. The signed `catch-android-internal-testing` artifact
+remains downloadable for 14 days.
+
+Runs share one non-cancelling concurrency group, so two workflow runs cannot select the
+same next version. The Android Publisher API returns an absolute
+`expiryTimeSeconds` for each edit rather than promising a fixed lifetime. A new edit by
+the same API user, another committed edit, or a Play Console change can invalidate an
+open edit. The workflow therefore keeps only the final upload/track/validate/commit
+operations in the publication edit. If that short-lived edit expires or is invalidated,
+Play rejects the operation without committing a release; rerun the workflow. The commit
+also refuses to replace changes already in review, and there is no automatic retry.
+
+Missing OIDC configuration, insufficient Play permissions, rejected bundles,
+validation errors and incomplete commits fail the workflow clearly.
+
+### 11. Generate a signed AAB without publishing
+
+This is the fallback when Play API access is unavailable or a bundle needs manual
+review.
+
+1. Run **mobile-play-bundle** from `main`.
+2. Disable **Publish to Google Play Internal testing**.
+3. Optionally supply an artifact-only version code and version name. Blank values use
+   the project file.
+4. Download `catch-android-internal-testing` from the completed workflow.
+
+Artifact-only mode runs in its own job without the `google-play-internal` environment,
+OIDC permission, environment approval, Play authentication, or Play edit. It still uses
+the existing repository signing secrets and retains the signed AAB artifact.
+
+The publishing path selects the Play-derived version code and builds its final AAB in
+the same protected job because the version code is embedded in the signed bundle. This
+keeps approval, version selection, signing and publication atomic and avoids passing an
+OIDC token or a mutable release candidate across an unprotected job boundary.
+
+### 12. Legacy manual signed AAB procedure
+
+1. Run **mobile-play-bundle** from `main` with publishing disabled.
+2. Supply a version code higher than every version already uploaded to Play.
+3. Download the `catch-android-internal-testing` artifact. It contains the `.aab`.
 
 The workflow always sets `-p:MobileEnvironment=Development`. It never points at
 localhost or the emulator alias `10.0.2.2`.
@@ -175,7 +321,7 @@ dotnet publish src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj `
   -p:AndroidSigningKeyPass=env:ANDROID_UPLOAD_KEY_PASSWORD
 ```
 
-### 8. Upload to the Internal testing track
+### 13. Upload the fallback artifact manually
 
 1. Play Console → **Test and release** → **Testing** → **Internal testing**.
 2. Create a release.
@@ -183,17 +329,17 @@ dotnet publish src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj `
 4. Play will reject the package if the application ID, version code, or signing does
    not match. Do not switch to production.
 
-### 9. Add tester email addresses
+### 14. Add tester email addresses
 
 Internal testing → testers → add the Google accounts that should install Catch,
 including the Samsung phone's account.
 
-### 10. Obtain the opt-in installation link
+### 15. Obtain the opt-in installation link
 
 Internal testing shows an opt-in URL. Open it while signed into a tester Google
 account, accept the test, then install from Play Store.
 
-### 11. Install Catch on a real Android device
+### 16. Install Catch on a real Android device
 
 Install from Play Store after opt-in. Do not sideload the CI APK from
 `mobile-build-test.yml`; that job is unsigned ARM64 validation, not a Play build.
@@ -206,16 +352,18 @@ After Digital Asset Links are deployed, smoke-test:
 - Location permission
 - Authenticated API access against `https://fishing-logbook-dev-api.fly.dev`
 
-### 12. Increment the version code for later betas
+### 17. Versioning behaviour
 
-Every Play upload needs a higher `ApplicationVersion` (version code). Either:
+Published runs query Play before building and use one greater than the highest uploaded
+AAB or legacy APK version code. This includes inactive and superseded artifacts and does
+not rely on the GitHub run number. A fresh publication edit rechecks that code after the
+build and before upload. If another actor consumed it, the run fails safely and a new
+manual run selects a new code. The `application_version` input is intentionally limited
+to artifact-only fallback builds.
 
-- bump `<ApplicationVersion>` in `src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj`,
-  or
-- pass **application_version** when starting `mobile-play-bundle`.
-
-`ApplicationDisplayVersion` (`0.1.0`, then `0.1.1`, …) is the name testers see. It
-does not need to change on every upload, but the version code must.
+`ApplicationDisplayVersion` is the human-readable name testers see. Enter one for a
+specific release, or let the workflow create a unique internal name from the project
+version and selected Play version code.
 
 ## Local emulator development
 
@@ -236,4 +384,4 @@ build before installing if Fast Deployment leaves a broken incremental install.
 - Production Play track and production Cognito
 - A second backend environment for this beta
 - Creating or applying Cognito Terraform
-- Automatic Play uploads from GitHub Actions
+- Production, closed-testing or open-testing uploads

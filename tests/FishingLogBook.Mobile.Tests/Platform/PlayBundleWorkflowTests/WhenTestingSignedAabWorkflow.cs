@@ -7,34 +7,37 @@ public class WhenTestingSignedAabWorkflow
     private static readonly string RepositoryRoot = FindRepositoryRoot();
 
     [Fact]
-    public void ItShouldBuildAManuallyTriggeredSignedPlayBundleWithoutPublishing()
+    public void ItShouldBuildAManuallyTriggeredSignedPlayBundle()
     {
         // Arrange
         var workflow = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "mobile-play-bundle.yml"));
+        var signingScript = File.ReadAllText(Path.Combine(
+            RepositoryRoot,
+            ".github",
+            "scripts",
+            "build-signed-android-bundle.ps1"));
         var validation = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "mobile-build-test.yml"));
         // Act
         // Assert
         workflow.Should().Contain("workflow_dispatch:");
         workflow.Should().NotContain("pull_request:");
         workflow.Should().NotContain("push:");
-        workflow.Should().Contain("-f', 'net10.0-android'");
-        workflow.Should().Contain("'-c', 'Release'");
-        workflow.Should().Contain("-p:RuntimeIdentifier=android-arm64");
-        workflow.Should().Contain("-p:MobileEnvironment=Development");
-        workflow.Should().Contain("-p:AndroidPackageFormats=aab");
-        workflow.Should().Contain("-p:AndroidKeyStore=true");
-        workflow.Should().Contain("AndroidSigningStorePass=env:ANDROID_UPLOAD_KEYSTORE_PASSWORD");
-        workflow.Should().Contain("AndroidSigningKeyPass=env:ANDROID_UPLOAD_KEY_PASSWORD");
+        workflow.Should().Contain("build-signed-android-bundle.ps1");
+        signingScript.Should().Contain("'-f', 'net10.0-android'");
+        signingScript.Should().Contain("'-c', 'Release'");
+        signingScript.Should().Contain("-p:RuntimeIdentifier=android-arm64");
+        signingScript.Should().Contain("-p:MobileEnvironment=Development");
+        signingScript.Should().Contain("-p:AndroidPackageFormats=aab");
+        signingScript.Should().Contain("-p:AndroidKeyStore=true");
+        signingScript.Should().Contain("AndroidSigningStorePass=env:ANDROID_UPLOAD_KEYSTORE_PASSWORD");
+        signingScript.Should().Contain("AndroidSigningKeyPass=env:ANDROID_UPLOAD_KEY_PASSWORD");
         workflow.Should().Contain("ANDROID_UPLOAD_KEYSTORE_BASE64");
         workflow.Should().Contain("ANDROID_UPLOAD_KEY_ALIAS");
-        workflow.Should().Contain("ApplicationVersion");
+        signingScript.Should().Contain("ApplicationVersion");
         workflow.Should().Contain("actions/upload-artifact@v4");
         workflow.Should().Contain("catch-android-internal-testing");
-        workflow.Should().Contain("*-Signed.aab");
+        signingScript.Should().Contain("*-Signed.aab");
         workflow.Should().NotContain("terraform");
-        workflow.Should().NotContain("play.google.com");
-        workflow.Should().NotContain("r0adkll/upload-google-play");
-        workflow.Should().NotContain("android-publisher");
         workflow.Should().NotContain("fly deploy");
         validation.Should().Contain("AndroidPackageFormats=apk");
         validation.Should().NotContain("AndroidPackageFormats=aab");
