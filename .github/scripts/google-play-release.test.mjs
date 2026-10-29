@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { createInternalTrack, nextVersionCode } from './google-play-release.mjs';
+import {
+    assertVersionStillAvailable,
+    createInternalTrack,
+    nextVersionCode,
+} from './google-play-release.mjs';
 
 describe('Google Play Android version selection', () => {
     it('starts at one when Play has no uploaded artifacts', () => {
@@ -23,6 +27,16 @@ describe('Google Play Android version selection', () => {
         assert.throws(
             () => nextVersionCode([{ versionCode: '2100000000' }]),
             /exceeds 2100000000/);
+    });
+
+    it('accepts the selected version when Play state is unchanged', () => {
+        assert.doesNotThrow(() => assertVersionStillAvailable('42', [{ versionCode: '41' }]));
+    });
+
+    it('fails safely when another upload has consumed the selected version', () => {
+        assert.throws(
+            () => assertVersionStillAvailable('42', [{ versionCode: '42' }]),
+            /42 is no longer available; Play now requires 43/);
     });
 });
 
@@ -49,6 +63,10 @@ describe('Google Play internal track release', () => {
 
 describe('mobile Play workflow security', () => {
     const workflow = readFileSync(new URL('../workflows/mobile-play-bundle.yml', import.meta.url), 'utf8');
+    const artifactJob = workflow.slice(
+        workflow.indexOf('  artifact-only:'),
+        workflow.indexOf('  publish-internal:'));
+    const publishingJob = workflow.slice(workflow.indexOf('  publish-internal:'));
 
     it('is manual, serialized, and restricted to main', () => {
         assert.match(workflow, /workflow_dispatch:/);
@@ -60,11 +78,26 @@ describe('mobile Play workflow security', () => {
     });
 
     it('uses short-lived OIDC credentials and least-privilege GitHub permissions', () => {
-        assert.match(workflow, /google-github-actions\/auth@[a-f0-9]{40} # v3/);
-        assert.match(workflow, /id-token: write/);
-        assert.match(workflow, /contents: read/);
-        assert.match(workflow, /create_credentials_file: false/);
+        assert.match(publishingJob, /google-github-actions\/auth@[a-f0-9]{40} # v3/);
+        assert.match(publishingJob, /id-token: write/);
+        assert.match(publishingJob, /contents: read/);
+        assert.match(publishingJob, /create_credentials_file: false/);
         assert.doesNotMatch(workflow, /credentials_json|SERVICE_ACCOUNT_JSON|contents: write/);
+    });
+
+    it('keeps artifact-only builds outside the protected publishing environment', () => {
+        assert.match(artifactJob, /if: inputs\.publish_to_play == false/);
+        assert.match(artifactJob, /contents: read/);
+        assert.doesNotMatch(artifactJob, /environment:|id-token: write|google-github-actions\/auth/);
+        assert.match(publishingJob, /if: inputs\.publish_to_play == true/);
+        assert.match(publishingJob, /environment: google-play-internal/);
+    });
+
+    it('uses the same isolated signing helper and retains the AAB in both paths', () => {
+        assert.equal(workflow.match(/build-signed-android-bundle\.ps1/gu)?.length, 2);
+        assert.equal(workflow.match(/actions\/upload-artifact@v4/gu)?.length, 2);
+        assert.match(artifactJob, /APPLICATION_VERSION: \$\{\{ inputs\.application_version \}\}/);
+        assert.match(publishingJob, /APPLICATION_VERSION: \$\{\{ steps\.play-version\.outputs\.application_version \}\}/);
     });
 
     it('publishes only to the internal track and retains an artifact-only fallback', () => {
@@ -83,5 +116,12 @@ describe('mobile Play workflow security', () => {
         assert.match(publisher, /:validate/);
         assert.match(publisher, /changesInReviewBehavior=ERROR_IF_IN_REVIEW/);
         assert.match(publisher, /status: 'completed'/);
+    });
+
+    it('deletes the version-selection edit and creates a fresh publication edit', () => {
+        const publisher = readFileSync(new URL('./google-play-release.mjs', import.meta.url), 'utf8');
+        assert.match(publisher, /selectVersion[\s\S]*method: 'DELETE'/);
+        assert.match(publisher, /publishEdit[\s\S]*insertEdit[\s\S]*assertVersionStillAvailable[\s\S]*readFile/);
+        assert.doesNotMatch(workflow, /GOOGLE_PLAY_EDIT_ID/);
     });
 });

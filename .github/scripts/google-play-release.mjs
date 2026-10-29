@@ -39,6 +39,14 @@ export function createInternalTrack(versionCode, releaseName, releaseNotes) {
     return { track: 'internal', releases: [release] };
 }
 
+export function assertVersionStillAvailable(applicationVersion, bundles = [], apks = []) {
+    const availableVersion = nextVersionCode(bundles, apks);
+    if (availableVersion !== applicationVersion) {
+        throw new Error(
+            `Android version code ${applicationVersion} is no longer available; Play now requires ${availableVersion}. Run the workflow again.`);
+    }
+}
+
 async function requestJson(url, accessToken, options = {}) {
     const response = await fetch(url, {
         ...options,
@@ -65,8 +73,7 @@ async function requestJson(url, accessToken, options = {}) {
     return responseText ? JSON.parse(responseText) : {};
 }
 
-async function createEdit(packageName, accessToken, outputPath) {
-    const packagePath = encodeURIComponent(packageName);
+async function insertEdit(packagePath, accessToken) {
     const edit = await requestJson(
         `${publisherBaseUrl}/applications/${packagePath}/edits`,
         accessToken,
@@ -76,24 +83,48 @@ async function createEdit(packageName, accessToken, outputPath) {
         throw new Error('Google Play created an edit without returning a valid edit ID.');
     }
 
-    const editPath = `${publisherBaseUrl}/applications/${packagePath}/edits/${encodeURIComponent(edit.id)}`;
+    return edit;
+}
+
+async function listArtifacts(packagePath, editId, accessToken) {
+    const editPath = `${publisherBaseUrl}/applications/${packagePath}/edits/${encodeURIComponent(editId)}`;
     const [bundleResponse, apkResponse] = await Promise.all([
         requestJson(`${editPath}/bundles`, accessToken),
         requestJson(`${editPath}/apks`, accessToken),
     ]);
-    const applicationVersion = nextVersionCode(bundleResponse.bundles, apkResponse.apks);
 
-    await appendFile(outputPath, `edit_id=${edit.id}\napplication_version=${applicationVersion}\n`, 'utf8');
-    process.stdout.write(`Reserved Google Play edit; selected Android version code ${applicationVersion}.\n`);
+    return {
+        bundles: bundleResponse.bundles ?? [],
+        apks: apkResponse.apks ?? [],
+    };
 }
 
-async function publishEdit(packageName, accessToken, editId, applicationVersion, bundlePath, releaseName, releaseNotes) {
+async function selectVersion(packageName, accessToken, outputPath) {
+    const packagePath = encodeURIComponent(packageName);
+    const edit = await insertEdit(packagePath, accessToken);
+    const artifacts = await listArtifacts(packagePath, edit.id, accessToken);
+    const applicationVersion = nextVersionCode(artifacts.bundles, artifacts.apks);
+
+    await requestJson(
+        `${publisherBaseUrl}/applications/${packagePath}/edits/${encodeURIComponent(edit.id)}`,
+        accessToken,
+        { method: 'DELETE' });
+
+    await appendFile(outputPath, `application_version=${applicationVersion}\n`, 'utf8');
+    process.stdout.write(`Selected Android version code ${applicationVersion}; the temporary Play edit was deleted.\n`);
+}
+
+async function publishEdit(packageName, accessToken, applicationVersion, bundlePath, releaseName, releaseNotes) {
     if (releaseNotes.length > 500) {
         throw new Error('Google Play release notes must not exceed 500 characters.');
     }
 
     const packagePath = encodeURIComponent(packageName);
-    const editPath = `applications/${packagePath}/edits/${encodeURIComponent(editId)}`;
+    const edit = await insertEdit(packagePath, accessToken);
+    const artifacts = await listArtifacts(packagePath, edit.id, accessToken);
+    assertVersionStillAvailable(applicationVersion, artifacts.bundles, artifacts.apks);
+
+    const editPath = `applications/${packagePath}/edits/${encodeURIComponent(edit.id)}`;
     const bundle = await readFile(bundlePath);
     const uploaded = await requestJson(
         `${publisherUploadBaseUrl}/${editPath}/bundles?uploadType=media`,
@@ -136,8 +167,8 @@ async function main() {
     const packageName = requiredEnvironment('GOOGLE_PLAY_PACKAGE_NAME');
     const accessToken = requiredEnvironment('GOOGLE_PLAY_ACCESS_TOKEN');
 
-    if (operation === 'create-edit') {
-        await createEdit(packageName, accessToken, requiredEnvironment('GITHUB_OUTPUT'));
+    if (operation === 'select-version') {
+        await selectVersion(packageName, accessToken, requiredEnvironment('GITHUB_OUTPUT'));
         return;
     }
 
@@ -145,7 +176,6 @@ async function main() {
         await publishEdit(
             packageName,
             accessToken,
-            requiredEnvironment('GOOGLE_PLAY_EDIT_ID'),
             requiredEnvironment('APPLICATION_VERSION'),
             requiredEnvironment('ANDROID_APP_BUNDLE'),
             process.env.APPLICATION_DISPLAY_VERSION?.trim() ?? '',
@@ -153,7 +183,7 @@ async function main() {
         return;
     }
 
-    throw new Error('Operation must be create-edit or publish.');
+    throw new Error('Operation must be select-version or publish.');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

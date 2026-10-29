@@ -236,8 +236,9 @@ Normal Workload Identity service-account impersonation requires
 | `GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER` | Full provider resource name returned above |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT` | `catch-play-publisher@PROJECT_ID.iam.gserviceaccount.com` |
 
-4. Keep the four existing Android upload-signing secrets available to this environment,
-   either as environment secrets or existing repository secrets.
+4. Keep the four existing Android upload-signing values as repository secrets. Both the
+   protected publishing job and the unprotected artifact-only job need them; do not move
+   them exclusively into the publishing environment.
 5. Optionally require a reviewer for the environment as a second release confirmation.
 
 OIDC tokens are short-lived. There is no Google service-account JSON key to store in
@@ -251,16 +252,24 @@ GitHub.
 4. Optionally enter a version name and release notes. If the version name is blank, the
    workflow uses `<project-version>-internal.<version-code>`.
 
-The workflow authenticates with GitHub OIDC, creates a Play edit, lists every existing
-AAB and legacy APK version code, selects `highest + 1`, builds and signs the Development
-AAB, uploads it only to `internal` with status `completed`, validates the edit and commits
-it. The signed `catch-android-internal-testing` artifact remains downloadable for 14
-days.
+After the protected environment is approved, the publishing job authenticates with
+GitHub OIDC and creates a temporary Play edit to list every existing AAB and legacy APK
+version code. It selects `highest + 1`, deletes that read-only edit, then builds and signs
+the Development AAB. Immediately before upload it creates a fresh edit and checks the
+current Play artifacts again. If the selected version is no longer the next available
+code, the run fails and must be rerun; it never uploads with or silently substitutes a
+different code. Otherwise it uploads only to `internal` with status `completed`,
+validates the edit and commits it. The signed `catch-android-internal-testing` artifact
+remains downloadable for 14 days.
 
 Runs share one non-cancelling concurrency group, so two workflow runs cannot select the
-same next version. A manual Play Console change during the run can invalidate the edit;
-Play then rejects the run safely and it can be rerun. The commit also refuses to replace
-changes already in review.
+same next version. The Android Publisher API returns an absolute
+`expiryTimeSeconds` for each edit rather than promising a fixed lifetime. A new edit by
+the same API user, another committed edit, or a Play Console change can invalidate an
+open edit. The workflow therefore keeps only the final upload/track/validate/commit
+operations in the publication edit. If that short-lived edit expires or is invalidated,
+Play rejects the operation without committing a release; rerun the workflow. The commit
+also refuses to replace changes already in review, and there is no automatic retry.
 
 Missing OIDC configuration, insufficient Play permissions, rejected bundles,
 validation errors and incomplete commits fail the workflow clearly.
@@ -276,8 +285,14 @@ review.
    the project file.
 4. Download `catch-android-internal-testing` from the completed workflow.
 
-Artifact-only mode does not authenticate to Google Play and does not create or commit a
-Play edit.
+Artifact-only mode runs in its own job without the `google-play-internal` environment,
+OIDC permission, environment approval, Play authentication, or Play edit. It still uses
+the existing repository signing secrets and retains the signed AAB artifact.
+
+The publishing path selects the Play-derived version code and builds its final AAB in
+the same protected job because the version code is embedded in the signed bundle. This
+keeps approval, version selection, signing and publication atomic and avoids passing an
+OIDC token or a mutable release candidate across an unprotected job boundary.
 
 ### 12. Legacy manual signed AAB procedure
 
@@ -339,10 +354,12 @@ After Digital Asset Links are deployed, smoke-test:
 
 ### 17. Versioning behaviour
 
-Published runs query Play inside the release edit and build with one greater than the
-highest uploaded AAB or legacy APK version code. This includes inactive and superseded
-artifacts and does not rely on the GitHub run number. The `application_version` input is
-intentionally limited to artifact-only fallback builds.
+Published runs query Play before building and use one greater than the highest uploaded
+AAB or legacy APK version code. This includes inactive and superseded artifacts and does
+not rely on the GitHub run number. A fresh publication edit rechecks that code after the
+build and before upload. If another actor consumed it, the run fails safely and a new
+manual run selects a new code. The `application_version` input is intentionally limited
+to artifact-only fallback builds.
 
 `ApplicationDisplayVersion` is the human-readable name testers see. Enter one for a
 specific release, or let the workflow create a unique internal name from the project
