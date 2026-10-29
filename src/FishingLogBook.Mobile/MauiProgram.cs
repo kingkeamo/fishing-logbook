@@ -128,6 +128,7 @@ public static partial class MauiProgram
             services.GetRequiredService<UiTextService>(),
             TimeSpan.FromSeconds(30)));
         builder.Services.AddTransient<StartupViewModel>();
+        builder.Services.AddTransient<StartupOperationCoordinator>();
         builder.Services.AddTransient<StartupPage>();
         builder.Services.AddSingleton<CatalogueTextService>();
         builder.Services.AddSingleton<ProfileViewModel>();

@@ -32,18 +32,36 @@ public sealed class OfflineCapabilityService(
     public async Task RevokeAsync(CancellationToken cancellationToken)
     {
         var capability = await store.GetAsync(cancellationToken);
-        if (capability is not null)
+        Exception? persistenceFailure = null;
+        if (capability is not null && capability.IsDeviceReady)
         {
             var disabled = capability with { IsDeviceReady = false };
-            await store.SaveAsync(disabled, cancellationToken);
-            var persisted = await store.GetAsync(cancellationToken);
-            if (persisted != disabled)
+            try
             {
-                throw new InvalidOperationException("The offline capability could not be disabled.");
+                await store.SaveAsync(disabled, cancellationToken);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                persistenceFailure = exception;
             }
         }
 
-        await store.RemoveAsync(cancellationToken);
+        try
+        {
+            await store.RemoveAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            persistenceFailure ??= exception;
+        }
+
+        var persisted = await store.GetAsync(cancellationToken);
+        if (persisted?.IsDeviceReady == true)
+        {
+            throw new InvalidOperationException(
+                "The offline capability could not be revoked.",
+                persistenceFailure);
+        }
     }
 
     public async Task RevokeIfOwnedByAnotherAccountAsync(

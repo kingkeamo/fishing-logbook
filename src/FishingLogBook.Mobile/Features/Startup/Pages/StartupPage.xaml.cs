@@ -1,3 +1,4 @@
+using FishingLogBook.Mobile.Features.Startup.Coordinators;
 using FishingLogBook.Mobile.Features.Startup.ViewModels;
 
 namespace FishingLogBook.Mobile.Features.Startup.Pages;
@@ -5,12 +6,15 @@ namespace FishingLogBook.Mobile.Features.Startup.Pages;
 public partial class StartupPage : ContentPage
 {
     private readonly StartupViewModel _viewModel;
-    private CancellationTokenSource? _startupCancellation;
+    private readonly StartupOperationCoordinator _operationCoordinator;
 
-    public StartupPage(StartupViewModel viewModel)
+    public StartupPage(
+        StartupViewModel viewModel,
+        StartupOperationCoordinator operationCoordinator)
     {
         InitializeComponent();
         _viewModel = viewModel;
+        _operationCoordinator = operationCoordinator;
         BindingContext = viewModel;
     }
 
@@ -22,9 +26,7 @@ public partial class StartupPage : ContentPage
 
     protected override void OnDisappearing()
     {
-        _startupCancellation?.Cancel();
-        _startupCancellation?.Dispose();
-        _startupCancellation = null;
+        _operationCoordinator.Cancel();
         base.OnDisappearing();
     }
 
@@ -35,9 +37,6 @@ public partial class StartupPage : ContentPage
 
     private async Task StartAsync()
     {
-        _startupCancellation?.Cancel();
-        _startupCancellation?.Dispose();
-        _startupCancellation = new CancellationTokenSource();
-        await _viewModel.StartAsync(_startupCancellation.Token);
+        await _operationCoordinator.RestartAsync(_viewModel.StartAsync);
     }
 }

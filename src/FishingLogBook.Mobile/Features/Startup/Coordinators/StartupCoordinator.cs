@@ -2,6 +2,7 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.OfflineAccess.Enums;
+using FishingLogBook.Mobile.Features.OfflineAccess.Models;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Startup.Enums;
@@ -79,6 +80,40 @@ public sealed class StartupCoordinator(
                 : StartupResultEnum.UnlockFailed;
         }
 
+        if (connectivity.IsOnline)
+        {
+            return await ResolveOnlineRestorationAsync(capability, cancellationToken);
+        }
+
+        return await ActivateOfflineAsync(capability, cancellationToken);
+    }
+
+    private async Task<StartupResultEnum> ResolveOnlineRestorationAsync(
+        OfflineCapabilityModel verifiedCapability,
+        CancellationToken cancellationToken)
+    {
+        var authenticationResult = await RestoreOnlineAsync(cancellationToken);
+        if (authenticationResult == AuthenticationResultEnum.Success)
+        {
+            return authentication.CurrentSession is null
+                ? StartupResultEnum.SignInRequired
+                : StartupResultEnum.OnlineSessionReady;
+        }
+
+        if (authenticationResult is AuthenticationResultEnum.Pending or AuthenticationResultEnum.Invalid)
+        {
+            return StartupResultEnum.SignInRequired;
+        }
+
+        return connectivity.IsOnline
+            ? StartupResultEnum.ServiceUnavailable
+            : await ActivateOfflineAsync(verifiedCapability, cancellationToken);
+    }
+
+    private async Task<StartupResultEnum> ActivateOfflineAsync(
+        OfflineCapabilityModel capability,
+        CancellationToken cancellationToken)
+    {
         await accountSession.TransitionAsync(capability.UserId, cancellationToken);
         offlineSession.Activate(capability);
         return StartupResultEnum.OfflineSessionReady;

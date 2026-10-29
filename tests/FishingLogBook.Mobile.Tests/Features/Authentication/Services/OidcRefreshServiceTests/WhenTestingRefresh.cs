@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Mobile.Features.Authentication.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Authentication.Services.OidcRefreshServiceTests;
@@ -34,10 +35,12 @@ public sealed class WhenTestingRefresh : BaseOidcRefreshServiceTest
     }
 
     [Fact]
-    public async Task ItShouldNotRetryAfterTheRotationSafetyWindow()
+    public async Task ItShouldNotDispatchTheRetryAfterTheSafetyWindow()
     {
         // Arrange
-        MockTimeProvider.GetTimestamp().Returns(0, TimeSpan.FromSeconds(4).Ticks);
+        MockTimeProvider.GetTimestamp().Returns(
+            0,
+            OidcRefreshService.RetrySafetyWindow.Add(TimeSpan.FromTicks(1)).Ticks);
         MockOidcClient.RefreshAsync(RefreshToken, Arg.Any<CancellationToken>())
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient));
         // Act
@@ -45,6 +48,20 @@ public sealed class WhenTestingRefresh : BaseOidcRefreshServiceTest
         // Assert
         result.Failure.Should().Be(OidcFailureKindEnum.Transient);
         await MockOidcClient.Received(1).RefreshAsync(RefreshToken, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldDispatchTheRetryAtTheSafetyWindowBoundary()
+    {
+        // Arrange
+        MockTimeProvider.GetTimestamp().Returns(0, OidcRefreshService.RetrySafetyWindow.Ticks);
+        MockOidcClient.RefreshAsync(RefreshToken, Arg.Any<CancellationToken>())
+            .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient));
+        // Act
+        var result = await Sut.RefreshAsync(RefreshToken, CancellationToken.None);
+        // Assert
+        result.Failure.Should().Be(OidcFailureKindEnum.Transient);
+        await MockOidcClient.Received(2).RefreshAsync(RefreshToken, Arg.Any<CancellationToken>());
     }
 
     [Fact]

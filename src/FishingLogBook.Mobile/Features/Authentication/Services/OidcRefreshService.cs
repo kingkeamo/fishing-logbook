@@ -6,34 +6,52 @@ using Polly.Retry;
 
 namespace FishingLogBook.Mobile.Features.Authentication.Services;
 
-public sealed class OidcRefreshService(
-    IOidcProtocolClient oidcClient,
-    TimeProvider timeProvider) : IOidcRefreshService
+public sealed class OidcRefreshService : IOidcRefreshService
 {
     public const int MaximumRetryAttempts = 1;
     public static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(200);
-    public static readonly TimeSpan LatestRetryDecision = TimeSpan.FromMilliseconds(3500);
+    public static readonly TimeSpan RetrySafetyWindow = TimeSpan.FromSeconds(4);
+    private readonly IOidcProtocolClient _oidcClient;
+    private readonly TimeProvider _timeProvider;
+    private readonly ResiliencePipeline<OidcTokenResultModel> _pipeline;
 
-    public async Task<OidcTokenResultModel> RefreshAsync(
-        string refreshToken,
-        CancellationToken cancellationToken)
+    public OidcRefreshService(IOidcProtocolClient oidcClient, TimeProvider timeProvider)
     {
-        var startedAt = timeProvider.GetTimestamp();
-        var pipeline = new ResiliencePipelineBuilder<OidcTokenResultModel>()
+        _oidcClient = oidcClient;
+        _timeProvider = timeProvider;
+        _pipeline = new ResiliencePipelineBuilder<OidcTokenResultModel>()
             .AddRetry(new RetryStrategyOptions<OidcTokenResultModel>
             {
                 MaxRetryAttempts = MaximumRetryAttempts,
                 Delay = RetryDelay,
                 BackoffType = DelayBackoffType.Constant,
                 UseJitter = false,
-                ShouldHandle = args => ValueTask.FromResult(
-                    args.Outcome.Result?.Failure == OidcFailureKindEnum.Transient &&
-                    timeProvider.GetElapsedTime(startedAt) <= LatestRetryDecision)
+                ShouldHandle = static args => ValueTask.FromResult(
+                    args.Outcome.Result?.Failure == OidcFailureKindEnum.Transient)
             })
             .Build();
+    }
 
-        return await pipeline.ExecuteAsync(
-            async token => await oidcClient.RefreshAsync(refreshToken, token),
+    public async Task<OidcTokenResultModel> RefreshAsync(
+        string refreshToken,
+        CancellationToken cancellationToken)
+    {
+        var startedAt = _timeProvider.GetTimestamp();
+        var dispatchedRequests = 0;
+        OidcTokenResultModel? lastResult = null;
+        return await _pipeline.ExecuteAsync(
+            async token =>
+            {
+                if (dispatchedRequests > 0 &&
+                    _timeProvider.GetElapsedTime(startedAt) > RetrySafetyWindow)
+                {
+                    return lastResult!;
+                }
+
+                dispatchedRequests++;
+                lastResult = await _oidcClient.RefreshAsync(refreshToken, token);
+                return lastResult;
+            },
             cancellationToken);
     }
 }

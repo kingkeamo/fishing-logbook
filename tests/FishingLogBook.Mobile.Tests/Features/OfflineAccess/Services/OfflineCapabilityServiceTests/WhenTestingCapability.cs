@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.OfflineAccess.Models;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.OfflineAccess.Services.OfflineCapabilityServiceTests;
@@ -28,7 +29,10 @@ public sealed class WhenTestingCapability : BaseOfflineCapabilityServiceTest
             Guid.NewGuid(),
             IsDeviceReady: true);
         MockStore.GetAsync(CancellationToken.None)
-            .Returns(oldCapability, oldCapability with { IsDeviceReady = false });
+            .Returns(
+                oldCapability,
+                oldCapability,
+                oldCapability with { IsDeviceReady = false });
         // Act
         await Sut.RevokeIfOwnedByAnotherAccountAsync(Subject, UserId, CancellationToken.None);
         // Assert
@@ -39,7 +43,7 @@ public sealed class WhenTestingCapability : BaseOfflineCapabilityServiceTest
     }
 
     [Fact]
-    public async Task ItShouldDisableTheCapabilityBeforeAttemptingDeletion()
+    public async Task ItShouldRemainRevokedWhenDeletionFailsAfterDisabling()
     {
         // Arrange
         var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
@@ -48,14 +52,51 @@ public sealed class WhenTestingCapability : BaseOfflineCapabilityServiceTest
         MockStore.RemoveAsync(CancellationToken.None)
             .Returns(Task.FromException(new InvalidOperationException("Secure deletion failed")));
         // Act
-        var action = () => Sut.RevokeAsync(CancellationToken.None);
+        await Sut.RevokeAsync(CancellationToken.None);
+        var restartedService = new OfflineCapabilityService(MockStore);
+        var resultAfterRestart = await restartedService.GetReadyAsync(CancellationToken.None);
         // Assert
-        await action.Should().ThrowAsync<InvalidOperationException>();
+        resultAfterRestart.Should().BeNull();
         Received.InOrder(() =>
         {
             MockStore.SaveAsync(disabled, CancellationToken.None);
             MockStore.RemoveAsync(CancellationToken.None);
         });
+    }
+
+    [Fact]
+    public async Task ItShouldRemainRevokedAfterRestartWhenDisablingFailsButDeletionSucceeds()
+    {
+        // Arrange
+        OfflineCapabilityModel? persisted = new(Subject, UserId, IsDeviceReady: true);
+        MockStore.GetAsync(CancellationToken.None).Returns(_ => persisted);
+        MockStore.SaveAsync(Arg.Any<OfflineCapabilityModel>(), CancellationToken.None)
+            .Returns(Task.FromException(new InvalidOperationException("Secure write failed")));
+        MockStore.When(store => store.RemoveAsync(CancellationToken.None))
+            .Do(_ => persisted = null);
+        // Act
+        await Sut.RevokeAsync(CancellationToken.None);
+        var restartedService = new OfflineCapabilityService(MockStore);
+        var resultAfterRestart = await restartedService.GetReadyAsync(CancellationToken.None);
+        // Assert
+        resultAfterRestart.Should().BeNull();
+        await MockStore.Received(1).RemoveAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ItShouldFailWhenNeitherDisablingNorDeletionCanRevokeReadiness()
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockStore.GetAsync(CancellationToken.None).Returns(capability);
+        MockStore.SaveAsync(Arg.Any<OfflineCapabilityModel>(), CancellationToken.None)
+            .Returns(Task.FromException(new InvalidOperationException("Secure write failed")));
+        MockStore.RemoveAsync(CancellationToken.None)
+            .Returns(Task.FromException(new InvalidOperationException("Secure deletion failed")));
+        // Act
+        var action = () => Sut.RevokeAsync(CancellationToken.None);
+        // Assert
+        await action.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [Fact]

@@ -424,21 +424,14 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         bool revokeOfflineCapability = false)
     {
         ResetRefreshBackoff();
+        if (revokeOfflineCapability)
+        {
+            await _offlineCapability.RevokeAsync(CancellationToken.None);
+        }
+
         var offlineWasActive = _offlineSession.Lock();
         SetSession(null, offlineWasActive);
         await _sessionCoordinator.TransitionAsync(userId: null, CancellationToken.None);
-        if (revokeOfflineCapability)
-        {
-            try
-            {
-                await _offlineCapability.RevokeAsync(CancellationToken.None);
-            }
-            catch (Exception exception)
-            {
-                _logger.LogWarning(exception, "The offline capability could not be revoked.");
-            }
-        }
-
         if (!removeCredential)
         {
             return;

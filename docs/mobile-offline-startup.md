@@ -13,13 +13,14 @@ The native startup coordinator makes one bounded decision and always selects a d
 or a recoverable error:
 
 1. With internet connectivity, restore the Cognito credential.
-2. Refresh transient failures receive at most one immediate retry. The retry decision must
-   occur within 3.5 seconds, leaving margin inside Cognito's configured five-second refresh
-   rotation grace period.
+2. Refresh transient failures receive at most one immediate retry. The retry pipeline is
+   shared, and the second refresh request is dispatched only when it can begin within the
+   four-second safety window inside Cognito's configured five-second rotation grace period.
 3. After transient exhaustion, check connectivity again. A device that lost connectivity
    may use offline unlock; a still-online device receives a retryable service error.
 4. Without internet connectivity, read the secure device capability and require Android or
-   iOS device-owner authentication.
+   iOS device-owner authentication. If connectivity returns while that prompt is active,
+   resume normal online restoration instead of activating an offline session.
 5. A successful offline unlock activates only an account-scoped local session lease. It
    does not create or expose an API bearer token.
 

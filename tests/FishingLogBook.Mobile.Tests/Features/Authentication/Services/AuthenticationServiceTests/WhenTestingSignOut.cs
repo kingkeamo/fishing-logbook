@@ -1,6 +1,9 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Mobile.Features.OfflineAccess.Models;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
+using FishingLogBook.Mobile.Features.OfflineAccess.Stores;
 using FishingLogBook.Shared.Dtos;
 using NSubstitute;
 
@@ -8,6 +11,51 @@ namespace FishingLogBook.Mobile.Tests.Features.Authentication.Services.Authentic
 
 public class WhenTestingSignOut : BaseAuthenticationServiceTest
 {
+    [Fact]
+    public async Task ItShouldNotCompleteLogoutWhenOfflineReadinessCannotBeRevoked()
+    {
+        // Arrange
+        await EstablishSessionAsync();
+        MockOfflineCapability.RevokeAsync(CancellationToken.None)
+            .Returns(Task.FromException(new InvalidOperationException("Secure storage unavailable")));
+        // Act
+        var action = () => Sut.SignOutAsync(CancellationToken.None);
+        // Assert
+        await action.Should().ThrowAsync<InvalidOperationException>();
+        Sut.CurrentSession.Should().NotBeNull();
+        await MockStore.DidNotReceive().RemoveCredentialAsync();
+        await MockSessionCoordinator.DidNotReceive().TransitionAsync(null, CancellationToken.None);
+        await MockCognitoSessionClient.DidNotReceive().RevokeRefreshTokenAsync(
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRemainIneligibleAfterRestartWhenCapabilityDisablingFailsDuringLogout()
+    {
+        // Arrange
+        await EstablishSessionAsync();
+        OfflineCapabilityModel? persisted = new(Subject, UserId, IsDeviceReady: true);
+        var offlineStore = Substitute.For<ISecureOfflineCapabilityStore>();
+        offlineStore.GetAsync(CancellationToken.None).Returns(_ => persisted);
+        offlineStore.SaveAsync(Arg.Any<OfflineCapabilityModel>(), CancellationToken.None)
+            .Returns(Task.FromException(new InvalidOperationException("Secure write failed")));
+        offlineStore.When(store => store.RemoveAsync(CancellationToken.None))
+            .Do(_ => persisted = null);
+        var capabilityService = new OfflineCapabilityService(offlineStore);
+        MockOfflineCapability.RevokeAsync(CancellationToken.None)
+            .Returns(_ => capabilityService.RevokeAsync(CancellationToken.None));
+        // Act
+        await Sut.SignOutAsync(CancellationToken.None);
+        var restartedService = new OfflineCapabilityService(offlineStore);
+        var readinessAfterRestart = await restartedService.GetReadyAsync(CancellationToken.None);
+        // Assert
+        Sut.CurrentSession.Should().BeNull();
+        readinessAfterRestart.Should().BeNull();
+        await MockStore.Received(1).RemoveCredentialAsync();
+        await offlineStore.Received(1).RemoveAsync(CancellationToken.None);
+    }
+
     [Fact]
     public async Task ItShouldCompleteLocalSignOutWhenRemoteCleanupFails()
     {

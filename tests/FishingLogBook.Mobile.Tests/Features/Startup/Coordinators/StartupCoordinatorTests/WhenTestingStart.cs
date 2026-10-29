@@ -59,6 +59,54 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
     }
 
     [Fact]
+    public async Task ItShouldRestoreOnlineInsteadOfActivatingOfflineWhenConnectivityReturnsDuringUnlock()
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        var session = new AuthenticationSessionModel(
+            "access-token",
+            DateTimeOffset.UtcNow.AddHours(1),
+            "refresh-token",
+            Subject,
+            "angler@example.com",
+            UserId);
+        MockConnectivity.IsOnline.Returns(false, true);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockDeviceUnlock.UnlockAsync(Arg.Any<string>(), CancellationToken.None)
+            .Returns(DeviceUnlockResultEnum.Success);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>())
+            .Returns(AuthenticationResultEnum.Success);
+        MockAuthentication.CurrentSession.Returns(session);
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+        // Assert
+        result.Should().Be(StartupResultEnum.OnlineSessionReady);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+        await MockAccountSession.DidNotReceive().TransitionAsync(
+            Arg.Any<Guid?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowARecoverableErrorWhenOnlineRestorationFailsAfterUnlock()
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockConnectivity.IsOnline.Returns(false, true);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockDeviceUnlock.UnlockAsync(Arg.Any<string>(), CancellationToken.None)
+            .Returns(DeviceUnlockResultEnum.Success);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>())
+            .Returns(AuthenticationResultEnum.TemporarilyUnavailable);
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+        // Assert
+        result.Should().Be(StartupResultEnum.ServiceUnavailable);
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+    }
+
+    [Fact]
     public async Task ItShouldRestoreAReturningOnlineUser()
     {
         // Arrange
