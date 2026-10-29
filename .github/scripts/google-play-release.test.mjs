@@ -1,11 +1,50 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import {
     assertVersionStillAvailable,
     createInternalTrack,
     nextVersionCode,
 } from './google-play-release.mjs';
+import { resolveSignedAndroidBundle } from './resolve-signed-android-bundle.mjs';
+
+describe('signed Android App Bundle resolution', () => {
+    it('selects the bundle from the explicit publish directory when another output is stale', async () => {
+        const testDirectory = await mkdtemp(join(tmpdir(), 'play-bundle-'));
+        const publishDirectory = join(testDirectory, 'publish');
+        const staleDirectory = join(testDirectory, 'stale-runtime-output');
+        const expectedBundle = join(publishDirectory, 'com.catchbutdontforget.app-Signed.aab');
+
+        try {
+            await mkdir(publishDirectory);
+            await mkdir(staleDirectory);
+            await writeFile(expectedBundle, 'current');
+            await writeFile(join(staleDirectory, 'com.catchbutdontforget.app-Signed.aab'), 'stale');
+
+            assert.equal(await resolveSignedAndroidBundle(publishDirectory), resolve(expectedBundle));
+        } finally {
+            await rm(testDirectory, { recursive: true, force: true });
+        }
+    });
+
+    it('rejects ambiguity inside the explicit publish directory', async () => {
+        const publishDirectory = await mkdtemp(join(tmpdir(), 'play-bundle-'));
+
+        try {
+            await writeFile(join(publishDirectory, 'first-Signed.aab'), 'first');
+            await writeFile(join(publishDirectory, 'second-Signed.aab'), 'second');
+
+            await assert.rejects(
+                resolveSignedAndroidBundle(publishDirectory),
+                /Expected exactly one signed AAB.*found 2/u);
+        } finally {
+            await rm(publishDirectory, { recursive: true, force: true });
+        }
+    });
+});
 
 describe('Google Play Android version selection', () => {
     it('starts at one when Play has no uploaded artifacts', () => {
