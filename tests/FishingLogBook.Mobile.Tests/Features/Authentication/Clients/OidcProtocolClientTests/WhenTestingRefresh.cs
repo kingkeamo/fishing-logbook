@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 
@@ -45,6 +46,49 @@ public class WhenTestingRefresh : BaseOidcProtocolClientTest
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Failure.Should().Be(OidcFailureKindEnum.Transient);
+    }
+
+    [Fact]
+    public async Task ItShouldClassifyAServerErrorAsTransient()
+    {
+        // Arrange
+        var sut = CreateSut(tokenEndpoint: _ => CreateTokenError(HttpStatusCode.ServiceUnavailable, "server_error"));
+        // Act
+        var result = await sut.RefreshAsync("refresh-token", CancellationToken.None);
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(OidcFailureKindEnum.Transient);
+    }
+
+    [Fact]
+    public async Task ItShouldClassifyANonProtocolErrorAsTransient()
+    {
+        // Arrange
+        var sut = CreateSut(tokenEndpoint: _ => CreateTokenError(HttpStatusCode.BadGateway, "upstream failure"));
+        // Act
+        var result = await sut.RefreshAsync("refresh-token", CancellationToken.None);
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Failure.Should().Be(OidcFailureKindEnum.Transient);
+    }
+
+    [Fact]
+    public async Task ItShouldReturnTheRefreshedTokens()
+    {
+        // Arrange
+        var sut = CreateSut(tokenEndpoint: _ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                """{"access_token":"new-access","refresh_token":"new-refresh","token_type":"Bearer","expires_in":3600}""",
+                Encoding.UTF8,
+                "application/json")
+        });
+        // Act
+        var result = await sut.RefreshAsync("refresh-token", CancellationToken.None);
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.AccessToken.Should().Be("new-access");
+        result.RefreshToken.Should().Be("new-refresh");
     }
 
     [Fact]
