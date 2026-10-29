@@ -13,11 +13,11 @@ public partial class AuthenticationPage : ContentPage
         BindingContext = viewModel;
     }
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
         base.OnAppearing();
         _viewModel.Attach(action => Dispatcher.Dispatch(action));
-        await _viewModel.InitializeAsync();
+        _viewModel.RestorePendingState();
     }
 
     protected override void OnDisappearing()

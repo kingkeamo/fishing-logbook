@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+ xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:viewModels="clr-namespace:FishingLogBook.Mobile.Features.Startup.ViewModels"
+ x:Class="FishingLogBook.Mobile.Features.Startup.Pages.StartupPage"
+ x:DataType="viewModels:StartupViewModel"
+ BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}"
+ Shell.NavBarIsVisible="False">
+ <ScrollView>
+  <VerticalStackLayout Padding="24,48,24,32" Spacing="20" MaximumWidthRequest="520" VerticalOptions="Center">
+   <Image Source="brand_horizontal.png" HeightRequest="72" Aspect="AspectFit"
+    SemanticProperties.Description="{Binding Text[Brand]}" />
+   <Label Text="{Binding Text[StartupTitle]}" Style="{StaticResource Heading}"
+    HorizontalTextAlignment="Center" SemanticProperties.HeadingLevel="Level1" />
+   <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+    SemanticProperties.Description="{Binding Text[RestoringSession]}" />
+   <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Style="{StaticResource SecondaryText}"
+    HorizontalTextAlignment="Center" AutomationId="StartupStatus" />
+   <Button Text="{Binding Text[Retry]}" IsVisible="{Binding HasStatus}" IsEnabled="{Binding CanRetry}"
+    HeightRequest="52" Clicked="OnRetry" AutomationId="StartupRetry"
+    SemanticProperties.Description="{Binding Text[Retry]}" />
+  </VerticalStackLayout>
+ </ScrollView>
+</ContentPage>

@@ -15,7 +15,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
     {
         // Arrange
         await EstablishSessionAsync(Now.AddSeconds(30));
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.InvalidGrant));
         var action = () => Sut.GetAccessTokenAsync(CancellationToken.None);
         // Act
@@ -31,7 +31,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
     {
         // Arrange
         await EstablishSessionAsync(Now.AddSeconds(30));
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Rejected));
         var action = () => Sut.GetAccessTokenAsync(CancellationToken.None);
         // Act
@@ -39,7 +39,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         await action.Should().ThrowAsync<UnauthorizedAccessException>();
         // Assert
         Sut.CurrentSession.Should().BeNull();
-        await MockOidcClient.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
         await MockStore.Received(1).RemoveCredentialAsync();
         await MockSessionCoordinator.Received(1).TransitionAsync(null, CancellationToken.None);
     }
@@ -50,7 +50,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         // Arrange
         await EstablishSessionAsync(Now.AddSeconds(30));
         AdvanceTo(ExpiredAt);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient));
         var action = () => Sut.GetAccessTokenAsync(CancellationToken.None);
         // Act
@@ -59,7 +59,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         await action.Should().ThrowAsync<UnauthorizedAccessException>();
         // Assert
         Sut.CurrentSession.Should().NotBeNull();
-        await MockOidcClient.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
         await MockStore.DidNotReceive().RemoveCredentialAsync();
     }
 
@@ -72,7 +72,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
     {
         // Arrange
         await EstablishSessionAsync(Now.AddSeconds(30));
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient));
         var action = () => Sut.GetAccessTokenAsync(CancellationToken.None);
         AdvanceTo(ExpiredAt);
@@ -83,7 +83,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         // Act
         await action.Should().ThrowAsync<UnauthorizedAccessException>();
         // Assert
-        await MockOidcClient.Received(expectedRefreshAttempts).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockRefreshService.Received(expectedRefreshAttempts).RefreshAsync(RefreshToken, CancellationToken.None);
         await MockStore.DidNotReceive().RemoveCredentialAsync();
     }
 
@@ -94,7 +94,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         await EstablishSessionAsync(Now.AddSeconds(30));
         var lease = new AccountSessionLeaseModel(UserId, 2, CancellationToken.None);
         MockSessionCoordinator.Capture().Returns(lease);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient));
         // Act
         var first = await Sut.GetAccessTokenAsync(CancellationToken.None);
@@ -102,7 +102,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         // Assert
         first.AccessToken.Should().Be(AccessToken);
         second.AccessToken.Should().Be(AccessToken);
-        await MockOidcClient.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         await EstablishSessionAsync(Now.AddSeconds(30));
         var lease = new AccountSessionLeaseModel(UserId, 2, CancellationToken.None);
         MockSessionCoordinator.Capture().Returns(lease);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(new OidcTokenResultModel(
                 OidcFailureKindEnum.None,
                 "refreshed-access",
@@ -128,7 +128,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         // Assert
         first.AccessToken.Should().Be(AccessToken);
         second.AccessToken.Should().Be(AccessToken);
-        await MockOidcClient.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
         await MockStore.DidNotReceive().SaveCredentialAsync(Arg.Is<PersistedAuthenticationModel>(
             value => value.RefreshToken == "rotated-refresh"));
     }
@@ -140,7 +140,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         await EstablishSessionAsync(Now.AddSeconds(30));
         var lease = new AccountSessionLeaseModel(UserId, 2, CancellationToken.None);
         MockSessionCoordinator.Capture().Returns(lease);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(
                 OidcTokenResultModel.Failed(OidcFailureKindEnum.Transient),
                 new OidcTokenResultModel(
@@ -160,7 +160,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         var credential = await Sut.GetAccessTokenAsync(CancellationToken.None);
         // Assert
         credential.AccessToken.Should().Be("refreshed-access");
-        await MockOidcClient.Received(2).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockRefreshService.Received(2).RefreshAsync(RefreshToken, CancellationToken.None);
         await MockStore.Received(1).SaveCredentialAsync(Arg.Is<PersistedAuthenticationModel>(
             value => value.RefreshToken == "rotated-refresh" && value.UserId == UserId));
     }
@@ -179,7 +179,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
             null);
         var refreshCompletion = new TaskCompletionSource<OidcTokenResultModel>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        MockOidcClient.RefreshAsync(RefreshToken, CancellationToken.None)
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
             .Returns(refreshCompletion.Task);
         MockCurrentUserClient.GetCurrentAsync("refreshed-access", CancellationToken.None)
             .Returns(new CurrentUserDto(UserId, Email, "Cognito", Subject));
@@ -197,7 +197,7 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
             credential.AccessToken.Should().Be("refreshed-access");
             credential.SessionLease.Should().Be(lease);
         });
-        await MockOidcClient.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
         await MockStore.Received(1).SaveCredentialAsync(Arg.Is<PersistedAuthenticationModel>(
             value => value.RefreshToken == "rotated-refresh"));
     }

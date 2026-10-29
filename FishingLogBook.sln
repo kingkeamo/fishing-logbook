@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -42,6 +42,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingLogBook.Mobile", "src\FishingLogBook.Mobile\FishingLogBook.Mobile.csproj", "{3C70B659-A1DD-467F-B0E3-951826AA7A31}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingLogBook.Mobile.Tests", "tests\FishingLogBook.Mobile.Tests\FishingLogBook.Mobile.Tests.csproj", "{5181C918-0BA5-4F68-B19D-059D2FFDC89A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FishingLogBook.Client", "src\FishingLogBook.Client\FishingLogBook.Client.csproj", "{652D6E83-D0DF-4B39-B40D-F497C5C99B31}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -269,6 +271,18 @@ Global
 		{5181C918-0BA5-4F68-B19D-059D2FFDC89A}.Release|x64.Build.0 = Release|Any CPU
 		{5181C918-0BA5-4F68-B19D-059D2FFDC89A}.Release|x86.ActiveCfg = Release|Any CPU
 		{5181C918-0BA5-4F68-B19D-059D2FFDC89A}.Release|x86.Build.0 = Release|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Debug|x64.Build.0 = Debug|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Debug|x86.Build.0 = Debug|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Release|x64.ActiveCfg = Release|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Release|x64.Build.0 = Release|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Release|x86.ActiveCfg = Release|Any CPU
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -292,5 +306,6 @@ Global
 		{DAE27130-82C9-4FA1-AF31-F4A3511DC1EB} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{3C70B659-A1DD-467F-B0E3-951826AA7A31} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{5181C918-0BA5-4F68-B19D-059D2FFDC89A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{652D6E83-D0DF-4B39-B40D-F497C5C99B31} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

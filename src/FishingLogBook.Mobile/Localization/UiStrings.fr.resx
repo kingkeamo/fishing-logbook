@@ -52,6 +52,13 @@
   <data name="ErrorTitle" xml:space="preserve"><value>Un problème est survenu</value></data>
   <data name="ErrorBody" xml:space="preserve"><value>Impossible d’afficher ce contenu. Vous pouvez réessayer.</value></data>
   <data name="OfflineTitle" xml:space="preserve"><value>Vous êtes hors connexion</value></data>
+  <data name="StartupTitle" xml:space="preserve"><value>Ouverture de votre carnet</value></data>
+  <data name="OfflineUnlockReason" xml:space="preserve"><value>Déverrouillez votre carnet de pêche hors connexion</value></data>
+  <data name="OfflineAccessUnavailable" xml:space="preserve"><value>Connectez-vous à Internet pour vous identifier et préparer l’accès hors connexion sur cet appareil.</value></data>
+  <data name="OfflineUnlockCancelled" xml:space="preserve"><value>Votre carnet reste verrouillé. Réessayez lorsque vous êtes prêt.</value></data>
+  <data name="OfflineUnlockFailed" xml:space="preserve"><value>Cet appareil n’a pas pu vérifier votre identité. Vérifiez le verrouillage de l’appareil et réessayez.</value></data>
+  <data name="StartupServiceUnavailable" xml:space="preserve"><value>Les services de connexion sont temporairement indisponibles alors que votre appareil est en ligne. Veuillez réessayer.</value></data>
+  <data name="StartupCancelled" xml:space="preserve"><value>Le démarrage a été annulé. Veuillez réessayer.</value></data>
   <data name="OfflineBody" xml:space="preserve"><value>Aucune connexion disponible. Cet aperçu ne stocke ni ne synchronise les prises.</value></data>
   <data name="ReadyTitle" xml:space="preserve"><value>Prêt</value></data>
   <data name="ReadyBody" xml:space="preserve"><value>Le contenu est disponible.</value></data>

@@ -1,5 +1,6 @@
 using Android.Content.Res;
 using FishingLogBook.Mobile.Configuration;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 
@@ -23,5 +24,10 @@ public static partial class MauiProgram
         {
             handler.PlatformView.BackgroundTintList = ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
         });
+    }
+
+    static partial void ConfigurePlatformServices(IServiceCollection services)
+    {
+        services.AddSingleton<IDeviceUnlockService, AndroidDeviceUnlockService>();
     }
 }
