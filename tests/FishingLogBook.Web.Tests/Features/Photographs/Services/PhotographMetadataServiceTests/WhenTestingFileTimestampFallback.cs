@@ -16,7 +16,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldNotProposeADateWhenNoMetadataAndNoFileTimestampExist()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var metadata = await sut.ReadAsync(
@@ -37,7 +37,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldRejectAnUnusableFileTimestamp(string lastModified)
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var metadata = await sut.ReadAsync(
@@ -56,7 +56,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldUseAPlausibleFileTimestampForAJpegWithoutACaptureDate()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var metadata = await sut.ReadAsync(
@@ -75,7 +75,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldUseAPlausibleFileTimestampForAPngWithoutAnyMetadata()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var metadata = await sut.ReadAsync(
@@ -94,7 +94,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldUseAPlausibleFileTimestampForAWebpWithoutACaptureDate()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var metadata = await sut.ReadAsync(
@@ -114,7 +114,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldAcceptAnOldButPlausibleFileTimestamp()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var longAgo = DateTimeOffset.Parse("1998-07-04T11:15:00+00:00");
 
         // Act
@@ -134,7 +134,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldPreferTheExifCaptureDateOverTheFileTimestamp()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
 
         // Act
@@ -154,7 +154,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldRecordTheDigitizedTagAsItsOwnProvenance()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeDigitizedTag] = "2025:06:14 07:32:10" } });
 
         // Act
@@ -175,7 +175,7 @@ public class WhenTestingFileTimestampFallback : BasePhotographMetadataServiceTes
     public async Task ItShouldFallBackToTheFileTimestampWhenTheExifDateIsUnusable()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText = { [DateTimeOriginalTag] = "0000:00:00 00:00:00" },

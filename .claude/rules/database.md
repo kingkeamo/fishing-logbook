@@ -45,6 +45,9 @@ paths:
   …) but must still be lowercase with no underscores. Feature offline stores live under
   `Features/<Feature>/Offline/` (mirroring Web); shared SQLite/outbox infrastructure
   lives under `Common/Offline/`.
+- Catch photograph **files** on mobile are app-owned bytes under `{app data}/photographs/{userId:N}/…`;
+  SQLite `localcatchphotographs.localfilepath` stores paths **relative to that root** (see
+  `docs/mobile-photo-foundation.md`).
 
 ## DbUp migrations — two dedicated projects
 

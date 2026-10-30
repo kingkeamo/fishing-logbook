@@ -13,6 +13,7 @@ using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
+using FishingLogBook.Shared.Photographs.Services;
 using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Models;
@@ -94,7 +95,13 @@ public class BaseRecordCatchTest
 
     protected static IPhotographMetadataService RealPhotoMetadata()
     {
-        return new PhotographMetadataService(TestTimeService.WithOffset(TimeSpan.Zero));
+        return CreateMetadataService(TestTimeService.WithOffset(TimeSpan.Zero));
+    }
+
+    protected static PhotographMetadataService CreateMetadataService(ITimeService time)
+    {
+        return new PhotographMetadataService(
+            new PhotographMetadataProcessor(new WebPhotographLocalTimeMapper(time)));
     }
 
     protected static byte[] MinimalJpeg()

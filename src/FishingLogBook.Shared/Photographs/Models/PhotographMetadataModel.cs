@@ -1,6 +1,6 @@
-using FishingLogBook.Web.Features.Photographs.Enums;
+using FishingLogBook.Shared.Photographs.Enums;
 
-namespace FishingLogBook.Web.Features.Photographs.Models;
+namespace FishingLogBook.Shared.Photographs.Models;
 
 public sealed record PhotographMetadataModel(
     DateTimeOffset? CapturedOn,

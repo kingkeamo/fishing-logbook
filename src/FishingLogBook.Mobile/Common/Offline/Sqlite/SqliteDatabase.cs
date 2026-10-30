@@ -7,26 +7,30 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
 {
     private readonly ISqliteConnectionFactory _connectionFactory;
     private readonly ISqliteMigrator _migrator;
+    private readonly IReadOnlyList<ILocalDatabaseInitializedObserver> _initializedObservers;
     private readonly ILogger<SqliteDatabase> _logger;
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly object _initLock = new();
     private Task? _initializeTask;
+    private int _observersNotified;
     private bool _disposed;
 
     public SqliteDatabase(
         ISqliteConnectionFactory connectionFactory,
         ISqliteMigrator migrator,
-        ILogger<SqliteDatabase> logger)
+        ILogger<SqliteDatabase> logger,
+        IEnumerable<ILocalDatabaseInitializedObserver>? initializedObservers = null)
     {
         ArgumentNullException.ThrowIfNull(connectionFactory);
         ArgumentNullException.ThrowIfNull(migrator);
         ArgumentNullException.ThrowIfNull(logger);
         _connectionFactory = connectionFactory;
         _migrator = migrator;
+        _initializedObservers = initializedObservers?.ToArray() ?? Array.Empty<ILocalDatabaseInitializedObserver>();
         _logger = logger;
     }
 
-    public Task EnsureInitializedAsync(CancellationToken cancellationToken)
+    public async Task EnsureInitializedAsync(CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         Task initializeTask;
@@ -36,7 +40,8 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
             initializeTask = _initializeTask;
         }
 
-        return WaitForInitializationAsync(initializeTask, cancellationToken);
+        await WaitForInitializationAsync(initializeTask, cancellationToken);
+        await NotifyInitializedObserversOnceAsync(cancellationToken);
     }
 
     public async Task ExecuteInTransactionAsync(
@@ -114,6 +119,33 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
         finally
         {
             _writeGate.Release();
+        }
+    }
+
+    private async Task NotifyInitializedObserversOnceAsync(CancellationToken cancellationToken)
+    {
+        if (_initializedObservers.Count == 0)
+        {
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _observersNotified, 1, 0) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (var observer in _initializedObservers)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await observer.OnDatabaseInitializedAsync(cancellationToken);
+            }
+        }
+        catch
+        {
+            Interlocked.Exchange(ref _observersNotified, 0);
+            throw;
         }
     }
 

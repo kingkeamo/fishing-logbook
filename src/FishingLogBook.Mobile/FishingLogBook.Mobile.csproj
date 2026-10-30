@@ -65,6 +65,6 @@
     <MauiImage Include="../FishingLogBook.Web/wwwroot/images/brand/brand-horizontal-transparent.png" Link="Resources/Images/brand_horizontal.png" Resize="True" BaseSize="320,100" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-    <Compile Remove="App.xaml.cs;AppShell.xaml.cs;MauiProgram.cs;Platforms/**/*.cs;Features/**/Pages/**/*.cs;Features/**/Popups/**/*.cs;Features/**/Selectors/**/*.cs;Native/**/*.cs" />
+    <Compile Remove="App.xaml.cs;AppShell.xaml.cs;MauiProgram.cs;Platforms/**/*.cs;Features/**/Pages/**/*.cs;Features/**/Popups/**/*.cs;Features/**/Selectors/**/*.cs;Features/**/Views/**/*.cs;Native/**/*.cs" />
   </ItemGroup>
 </Project>

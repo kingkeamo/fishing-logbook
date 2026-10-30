@@ -26,6 +26,8 @@ using FishingLogBook.Web.Features.Locations.Clients;
 using FishingLogBook.Web.Features.OfflineAccess.Clients;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
+using FishingLogBook.Shared.Photographs.Contracts;
+using FishingLogBook.Shared.Photographs.Services;
 using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Offline;
@@ -111,6 +113,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILocalCatchOwnerService, LocalCatchOwnerService>();
         services.AddScoped<IMeasurementService, MeasurementService>();
         services.AddScoped<ICatchDateGroupingService, CatchDateGroupingService>();
+        services.AddScoped<IPhotographLocalTimeMapper, WebPhotographLocalTimeMapper>();
+        services.AddScoped<PhotographMetadataProcessor>();
         services.AddScoped<IPhotographMetadataService, PhotographMetadataService>();
         services.AddScoped<IPhotographPreparationService, PhotographPreparationService>();
         services.AddScoped<IImportPhotoBlobRegistryService, ImportPhotoBlobRegistryService>();

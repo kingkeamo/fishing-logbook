@@ -13,7 +13,7 @@ public class WhenTestingJpegStructure : BasePhotographMetadataServiceTest
     public void ItShouldRejectAJpegThatNeverReachesEndOfImage()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = new List<byte> { 0xFF, 0xD8 };
         bytes.AddRange([0xFF, 0xDB, 0x00, 0x05, 0x00, 0x01, 0x02]);
 
@@ -28,7 +28,7 @@ public class WhenTestingJpegStructure : BasePhotographMetadataServiceTest
     public void ItShouldRejectAJpegWithACorruptSegmentLength()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = new List<byte> { 0xFF, 0xD8 };
         bytes.AddRange([0xFF, 0xE0, 0x7F, 0xFF]);
         bytes.AddRange([0xFF, 0xD9]);
@@ -44,7 +44,7 @@ public class WhenTestingJpegStructure : BasePhotographMetadataServiceTest
     public void ItShouldRemoveMetadataThatFollowsTheScanAndDropTrailingBytes()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = new List<byte> { 0xFF, 0xD8 };
         bytes.AddRange(Scan());
         bytes.AddRange([0xFF, 0xE1]);
@@ -73,7 +73,7 @@ public class WhenTestingJpegStructure : BasePhotographMetadataServiceTest
     public void ItShouldKeepEveryScanOfAProgressiveJpeg()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = new List<byte> { 0xFF, 0xD8 };
         bytes.AddRange([0xFF, 0xE1, 0x00, 0x08, 0x45, 0x78, 0x69, 0x66, 0x00, 0x00]);
         bytes.AddRange(Scan());
@@ -95,7 +95,7 @@ public class WhenTestingJpegStructure : BasePhotographMetadataServiceTest
     public void ItShouldPreserveRestartMarkersAndStuffedBytesInsideTheScan()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var entropy = new byte[] { 0x9A, 0xFF, 0x00, 0x2B, 0xFF, 0xD0, 0x7C, 0xFF, 0x00, 0x11 };
         var bytes = new List<byte> { 0xFF, 0xD8 };
         bytes.AddRange([0xFF, 0xFE, 0x00, 0x08, 0x53, 0x45, 0x43, 0x52, 0x45, 0x54]);

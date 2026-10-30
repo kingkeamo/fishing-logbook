@@ -34,4 +34,14 @@ public sealed class FileSystemAdapter : IFileSystemAdapter
     {
         File.Delete(path);
     }
+
+    public bool DirectoryExists(string path)
+    {
+        return Directory.Exists(path);
+    }
+
+    public IEnumerable<string> EnumerateFiles(string directory, string searchPattern)
+    {
+        return Directory.EnumerateFiles(directory, searchPattern);
+    }
 }

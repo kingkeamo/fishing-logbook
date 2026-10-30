@@ -14,7 +14,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldRejectAnExifCaptureBeyondTheAllowedFutureSkew()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -41,7 +41,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldKeepValidCoordinatesWhenTheExifCaptureIsInTheFuture()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -73,7 +73,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldFallBackToAPlausibleFileTimestampWhenTheExifCaptureIsInTheFuture()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -102,7 +102,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldFallBackToTheDigitizedDateWhenTheOriginalIsInTheFuture()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -132,7 +132,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldRejectAFileTimestampBeyondTheAllowedFutureSkew()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var metadata = await sut.ReadAsync(
@@ -151,7 +151,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldAcceptAFileTimestampWithinTheAllowedFutureSkew()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var lastModified = ReferenceNow.AddMinutes(14);
 
         // Act
@@ -171,7 +171,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldAcceptAnExifCaptureWithinTheAllowedFutureSkew()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -199,7 +199,7 @@ public class WhenTestingCaptureTimestampPlausibility : BasePhotographMetadataSer
     public async Task ItShouldKeepAnOldHistoricalCaptureTimestamp()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
