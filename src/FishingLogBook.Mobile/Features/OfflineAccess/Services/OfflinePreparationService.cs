@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
+using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.OfflineAccess.Models;
 using FishingLogBook.Mobile.Features.OfflineAccess.Stores;
@@ -37,7 +38,7 @@ public sealed class OfflinePreparationService(
         }
 
         var capability = new OfflineCapabilityModel(session.Subject, session.UserId, IsDeviceReady: true);
-        if (await IsPreparedAsync(capability, cancellationToken))
+        if (await IsPreparedAsync(capability, profile, cancellationToken))
         {
             return true;
         }
@@ -74,12 +75,24 @@ public sealed class OfflinePreparationService(
             }
 
             await capabilityService.MarkReadyAsync(session.Subject, session.UserId, linked.Token);
-            if (!sessionCoordinator.IsCurrent(lease) || authentication.CurrentSession?.UserId != lease.UserId)
+            if (!IsCurrent(lease))
+            {
+                await RevokeCommittedCapabilityAsync(session);
+                return false;
+            }
+
+            if (!await IsPreparedAsync(capability, profile, linked.Token))
             {
                 return false;
             }
 
-            return await IsPreparedAsync(capability, linked.Token);
+            if (!IsCurrent(lease))
+            {
+                await RevokeCommittedCapabilityAsync(session);
+                return false;
+            }
+
+            return true;
         }
         catch (OperationCanceledException)
         {
@@ -94,6 +107,14 @@ public sealed class OfflinePreparationService(
 
     public async Task<bool> IsPreparedAsync(
         OfflineCapabilityModel capability,
+        CancellationToken cancellationToken)
+    {
+        return await IsPreparedAsync(capability, expectedProfile: null, cancellationToken);
+    }
+
+    private async Task<bool> IsPreparedAsync(
+        OfflineCapabilityModel capability,
+        ProfileDto? expectedProfile,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(capability);
@@ -114,6 +135,7 @@ public sealed class OfflinePreparationService(
                 !string.IsNullOrWhiteSpace(account.Email) &&
                 account.Profile.UserId == capability.UserId &&
                 account.Profile.OnboardingCompleted &&
+                (expectedProfile is null || account.Profile == expectedProfile) &&
                 preferences is not null &&
                 IsEssential(preferences);
         }
@@ -131,6 +153,19 @@ public sealed class OfflinePreparationService(
     private static bool IsEssential(AnglerPreferencesModel preferences)
     {
         return preferences.Catalogue.Methods.Count > 0 && preferences.Catalogue.AllSpecies.Count > 0;
+    }
+
+    private bool IsCurrent(AccountSessionLeaseModel lease)
+    {
+        return sessionCoordinator.IsCurrent(lease) && authentication.CurrentSession?.UserId == lease.UserId;
+    }
+
+    private Task RevokeCommittedCapabilityAsync(AuthenticationSessionModel session)
+    {
+        return capabilityService.RevokeIfOwnedByAsync(
+            session.Subject,
+            session.UserId,
+            CancellationToken.None);
     }
 
     private static bool Matches(OfflineAccountModel expected, OfflineAccountModel? actual)

@@ -2,7 +2,10 @@ using AwesomeAssertions;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Api.Models;
 using FishingLogBook.Mobile.Features.OfflineAccess.Models;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
+using FishingLogBook.Mobile.Features.OfflineAccess.Stores;
 using FishingLogBook.Mobile.Features.Profile.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.OfflineAccess.Services.OfflinePreparationServiceTests;
@@ -122,6 +125,46 @@ public sealed class WhenTestingEnsurePrepared : BaseOfflinePreparationServiceTes
         result.Should().BeFalse();
         await MockCapabilityService.Received(1).MarkReadyAsync(
             Subject, UserId, Arg.Any<CancellationToken>());
+        await MockCapabilityService.Received(1).RevokeIfOwnedByAsync(
+            Subject, UserId, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ItShouldRemoveThePersistedEntitlementWhenTheLeaseChangesAfterCommit()
+    {
+        // Arrange
+        OfflineCapabilityModel? persistedCapability = null;
+        var secureStore = Substitute.For<ISecureOfflineCapabilityStore>();
+        secureStore.GetAsync(Arg.Any<CancellationToken>()).Returns(_ => persistedCapability);
+        secureStore.When(store => store.SaveAsync(
+                Arg.Any<OfflineCapabilityModel>(),
+                Arg.Any<CancellationToken>()))
+            .Do(call => persistedCapability = call.Arg<OfflineCapabilityModel>());
+        secureStore.When(store => store.RemoveAsync(Arg.Any<CancellationToken>()))
+            .Do(_ => persistedCapability = null);
+        var capabilityService = new OfflineCapabilityService(secureStore);
+        MockAccountStore.GetAsync(UserId, Arg.Any<CancellationToken>()).Returns(Account(), Account());
+        MockPreferencesStore.GetAsync(UserId, Arg.Any<CancellationToken>()).Returns(Preferences, Preferences);
+        MockSessionCoordinator.IsCurrent(Lease).Returns(true, true, true, false);
+        var sut = new OfflinePreparationService(
+            MockAuthentication,
+            MockSessionCoordinator,
+            MockPreferencesService,
+            MockPreferencesStore,
+            MockAccountStore,
+            capabilityService,
+            NullLogger<OfflinePreparationService>.Instance);
+
+        // Act
+        var result = await sut.EnsurePreparedAsync(Profile(), CancellationToken.None);
+
+        // Assert
+        result.Should().BeFalse();
+        persistedCapability.Should().BeNull();
+        await MockAccountStore.Received(1).SaveAsync(
+            Arg.Any<OfflineAccountModel>(), Arg.Any<CancellationToken>());
+        await MockPreferencesStore.Received(1).SaveAsync(
+            UserId, Preferences, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -203,6 +246,32 @@ public sealed class WhenTestingEnsurePrepared : BaseOfflinePreparationServiceTes
             Arg.Any<OfflineAccountModel>(), Arg.Any<CancellationToken>());
         await MockCapabilityService.DidNotReceive().MarkReadyAsync(
             Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRefreshTheOfflineSnapshotWhenTheServerProfileHasChanged()
+    {
+        // Arrange
+        var capability = Capability();
+        var updatedProfile = Profile() with { DisplayName = "Updated angler" };
+        var updatedAccount = Account() with { Profile = updatedProfile };
+        MockCapabilityService.GetReadyAsync(Arg.Any<CancellationToken>()).Returns(capability);
+        MockAccountStore.GetAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns(Account(), updatedAccount, updatedAccount);
+        MockPreferencesStore.GetAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns(Preferences);
+
+        // Act
+        var result = await Sut.EnsurePreparedAsync(updatedProfile, CancellationToken.None);
+
+        // Assert
+        result.Should().BeTrue();
+        await MockPreferencesService.Received(1).RefreshAsync(Arg.Any<CancellationToken>());
+        await MockAccountStore.Received(1).SaveAsync(
+            Arg.Is<OfflineAccountModel>(account => account.Profile == updatedProfile),
+            Arg.Any<CancellationToken>());
+        await MockCapabilityService.Received(1).MarkReadyAsync(
+            Subject, UserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]

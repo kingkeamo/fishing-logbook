@@ -7,6 +7,10 @@ public interface IOfflineCapabilityService
     Task<OfflineCapabilityModel?> GetReadyAsync(CancellationToken cancellationToken);
     Task MarkReadyAsync(string subject, Guid userId, CancellationToken cancellationToken);
     Task RevokeAsync(CancellationToken cancellationToken);
+    Task RevokeIfOwnedByAsync(
+        string subject,
+        Guid userId,
+        CancellationToken cancellationToken);
     Task RevokeIfOwnedByAnotherAccountAsync(
         string subject,
         Guid userId,
