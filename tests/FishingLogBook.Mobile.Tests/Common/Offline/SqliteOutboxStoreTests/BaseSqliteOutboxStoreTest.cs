@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FishingLogBook.Mobile.Tests.Common.Offline.SqliteOutboxStoreTests;
 
-[Collection(SqliteTestCollection.Name)]
 public abstract class BaseSqliteOutboxStoreTest : IDisposable
 {
     protected static readonly Guid UserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");

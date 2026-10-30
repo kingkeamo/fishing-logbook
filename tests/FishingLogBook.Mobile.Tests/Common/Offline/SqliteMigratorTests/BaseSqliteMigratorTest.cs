@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FishingLogBook.Mobile.Tests.Common.Offline.SqliteMigratorTests;
 
-[Collection(SqliteTestCollection.Name)]
 public abstract class BaseSqliteMigratorTest : IDisposable
 {
     protected readonly string DatabasePath;

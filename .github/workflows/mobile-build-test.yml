@@ -33,8 +33,20 @@ jobs:
           dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj
           -f net10.0
           --verbosity normal
+          --results-directory "${{ github.workspace }}/mobile-test-results"
           --blame-hang
           --blame-hang-timeout 2m
+
+      - name: Upload mobile test hang diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-test-hang-diagnostics
+          path: |
+            mobile-test-results/
+            tests/FishingLogBook.Mobile.Tests/TestResults/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - uses: actions/setup-java@v4
         with:
