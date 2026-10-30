@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Photographs.Models;
+
 namespace FishingLogBook.Mobile.Features.Photographs.Models;
 
 public sealed class PhotographEditorItemModel
@@ -11,4 +13,6 @@ public sealed class PhotographEditorItemModel
     public required string RelativeFilePath { get; init; }
 
     public required string ContentType { get; init; }
+
+    public PhotographMetadataModel Metadata { get; init; } = PhotographMetadataModel.Empty;
 }

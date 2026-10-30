@@ -28,6 +28,8 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    public event EventHandler? ItemsChanged;
+
     public ObservableCollection<PhotographEditorItemModel> Items { get; }
 
     public UiTextService Text => _text;
@@ -94,6 +96,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
         ClearStatus();
         Notify(nameof(CanAddMore));
+        ItemsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public async Task TakePhotoAsync(CancellationToken cancellationToken)

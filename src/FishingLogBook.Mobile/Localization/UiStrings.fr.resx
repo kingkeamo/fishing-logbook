@@ -322,4 +322,28 @@
   <data name="RestoringConnection" xml:space="preserve"><value>RÃ©tablissement de votre connexion sÃ©curisÃ©eâ€¦</value></data>
   <data name="ConnectionRecoveryFailed" xml:space="preserve"><value>Impossible de rÃ©tablir la connexion en ligne</value></data>
   <data name="RetryConnection" xml:space="preserve"><value>RÃ©essayer la connexion sÃ©curisÃ©e</value></data>
+  <data name="EditCatch" xml:space="preserve"><value>Modifier la prise</value></data>
+  <data name="CaughtOnLabel" xml:space="preserve"><value>Prise le</value></data>
+  <data name="CatchBaitOrLure" xml:space="preserve"><value>Appât ou leurre</value></data>
+  <data name="CatchSavedLocally" xml:space="preserve"><value>Enregistrée localement sur cet appareil.</value></data>
+  <data name="CatchSaveFailed" xml:space="preserve"><value>Impossible d'enregistrer cette prise. Réessayez.</value></data>
+  <data name="CatchSaveNotSignedIn" xml:space="preserve"><value>Connectez-vous pour enregistrer des prises sur cet appareil.</value></data>
+  <data name="CatchNotSignedIn" xml:space="preserve"><value>Connectez-vous pour enregistrer ou modifier des prises.</value></data>
+  <data name="CatchSaveRequiresPhoto" xml:space="preserve"><value>Ajoutez au moins une photo avant d'enregistrer.</value></data>
+  <data name="CatchCaughtOnInvalid" xml:space="preserve"><value>Choisissez une date et une heure valides pour cette prise.</value></data>
+  <data name="CatchWeightInvalid" xml:space="preserve"><value>Saisissez un poids valide ou laissez le champ vide.</value></data>
+  <data name="CatchLengthInvalid" xml:space="preserve"><value>Saisissez une longueur valide ou laissez le champ vide.</value></data>
+  <data name="CatchTextTooLong" xml:space="preserve"><value>L'un des champs texte est trop long.</value></data>
+  <data name="CatchPhotoDateConflict" xml:space="preserve"><value>Vos photos indiquent des heures différentes. Ajustez la date et l'heure pour continuer.</value></data>
+  <data name="CatchPhotoLocationConflict" xml:space="preserve"><value>Vos photos indiquent des lieux différents.</value></data>
+  <data name="CatchPhotoDateAndLocationConflict" xml:space="preserve"><value>Vos photos ne concordent pas sur le moment ni le lieu de la prise.</value></data>
+  <data name="CatchDraftRestored" xml:space="preserve"><value>Votre brouillon de prise a été restauré.</value></data>
+  <data name="CatchEditNotFound" xml:space="preserve"><value>Cette prise n'est plus disponible sur cet appareil.</value></data>
+  <data name="CatchCannotRemoveLastPhoto" xml:space="preserve"><value>Au moins une photo est requise.</value></data>
+  <data name="CatchCaptureLocation" xml:space="preserve"><value>Utiliser la position actuelle</value></data>
+  <data name="CatchLocationNotRecorded" xml:space="preserve"><value>Aucun lieu enregistré</value></data>
+  <data name="CatchLocationPrivateCaption" xml:space="preserve"><value>Lieu privé · {0:F4}, {1:F4}</value></data>
+  <data name="CatchLocationCaptureFailed" xml:space="preserve"><value>Impossible d'obtenir la position.</value></data>
+  <data name="EmptyJournalTitle" xml:space="preserve"><value>Aucune prise pour l'instant</value></data>
+  <data name="EmptyJournalBody" xml:space="preserve"><value>Enregistrez votre première prise pour commencer votre carnet hors ligne.</value></data>
 </root>

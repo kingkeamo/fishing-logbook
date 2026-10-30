@@ -1,7 +1,7 @@
-using FishingLogBook.Web.Features.Catch.Models;
-using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Shared.Catches.Models;
+using FishingLogBook.Shared.Photographs.Models;
 
-namespace FishingLogBook.Web.Features.Catch.Services;
+namespace FishingLogBook.Shared.Catches.Services;
 
 public interface ICatchPhotographProposalService
 {

@@ -73,7 +73,7 @@ public partial class CatchSummaryPage : ContentPage
 
     private async void OnRecordCatch(object? sender, EventArgs args)
     {
-        await _interactions.ShowModalAsync(_viewModel.Text["RecordCatch"], _viewModel.Text["RecordUnavailable"]);
+        await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit);
     }
 
     private void OnRetry(object? sender, EventArgs args)

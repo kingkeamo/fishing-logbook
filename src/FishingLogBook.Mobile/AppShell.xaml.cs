@@ -84,6 +84,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Showcase), typeof(ShowcasePage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.MeasurementShowcase), typeof(MeasurementShowcasePage));
 #endif
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchEdit), typeof(CatchEditPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Profile), typeof(ProfilePage));
