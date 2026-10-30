@@ -13,6 +13,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
     private readonly UiTextService _text;
     private Guid _userId;
     private int _maximumCount = 10;
+    private int _minimumCount;
     private bool _isBusy;
     private string? _statusKey;
 
@@ -65,6 +66,24 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         }
     }
 
+    public int MinimumCount
+    {
+        get => _minimumCount;
+        set
+        {
+            if (_minimumCount == value)
+            {
+                return;
+            }
+
+            _minimumCount = Math.Max(0, value);
+            Notify(nameof(MinimumCount));
+            Notify(nameof(CanRemove));
+        }
+    }
+
+    public bool CanRemove => Items.Count > MinimumCount;
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -96,6 +115,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
         ClearStatus();
         Notify(nameof(CanAddMore));
+        Notify(nameof(CanRemove));
         ItemsChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -115,6 +135,11 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
     public void Remove(Guid photographId)
     {
+        if (!CanRemove)
+        {
+            return;
+        }
+
         var result = _editor.Remove(Items.ToArray(), photographId);
         Apply(result);
     }

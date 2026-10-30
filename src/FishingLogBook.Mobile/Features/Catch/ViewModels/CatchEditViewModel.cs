@@ -409,6 +409,17 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             return;
         }
 
+        if (IsEditingSavedCatch)
+        {
+            // Flush valid edits as Saved so navigate-away / modal opens never demote lifecycle.
+            if (ResolveValidationKey() is null)
+            {
+                await PersistAsync(LocalCatchLifecycleEnum.Saved, cancellationToken, markUiSaved: false);
+            }
+
+            return;
+        }
+
         await SaveDraftAsync(cancellationToken);
     }
 
@@ -442,6 +453,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     private async Task InitializeNewAsync(Guid userId, CancellationToken cancellationToken)
     {
         IsEditingSavedCatch = false;
+        Photographs.MinimumCount = 0;
         _catchId = Guid.NewGuid();
         ApplyProfileDefaults();
         var draft = (await _catchStore.ListAsync(cancellationToken))
@@ -470,6 +482,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         }
 
         IsEditingSavedCatch = record.Lifecycle == LocalCatchLifecycleEnum.Saved;
+        Photographs.MinimumCount = IsEditingSavedCatch ? 1 : 0;
         _catchId = record.Id;
         await BindRecordAsync(record, cancellationToken);
     }
@@ -669,7 +682,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     private void ScheduleDraftSave()
     {
-        if (!CanInteract || IsSaved)
+        // Saved-catch edits must not be written as Draft (would demote the journal row).
+        if (!CanInteract || IsSaved || IsEditingSavedCatch)
         {
             return;
         }
@@ -697,7 +711,10 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         return PersistAsync(LocalCatchLifecycleEnum.Draft, cancellationToken);
     }
 
-    private async Task<bool> PersistAsync(LocalCatchLifecycleEnum lifecycle, CancellationToken cancellationToken)
+    private async Task<bool> PersistAsync(
+        LocalCatchLifecycleEnum lifecycle,
+        CancellationToken cancellationToken,
+        bool markUiSaved = true)
     {
         if (lifecycle == LocalCatchLifecycleEnum.Saved)
         {
@@ -723,7 +740,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
         try
         {
-            if (lifecycle == LocalCatchLifecycleEnum.Saved)
+            if (lifecycle == LocalCatchLifecycleEnum.Saved && markUiSaved)
             {
                 IsSaving = true;
             }
@@ -774,7 +791,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
                 return false;
             }
 
-            if (lifecycle == LocalCatchLifecycleEnum.Saved)
+            if (lifecycle == LocalCatchLifecycleEnum.Saved && markUiSaved)
             {
                 IsSaved = true;
                 _statusKey = "CatchSavedLocally";

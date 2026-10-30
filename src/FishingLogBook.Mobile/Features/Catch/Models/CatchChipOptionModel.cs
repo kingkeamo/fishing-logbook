@@ -1,10 +1,10 @@
 namespace FishingLogBook.Mobile.Features.Catch.Models;
 
-public sealed record CatchChipOptionModel(string Code, string Name)
+public sealed record CatchChipOptionModel(string Code, string Name, bool IsSelected = false)
 {
-    public static CatchChipOptionModel FromValue(string value)
+    public static CatchChipOptionModel FromValue(string value, bool isSelected = false)
     {
-        return new CatchChipOptionModel(new string([.. value.Where(char.IsLetterOrDigit)]), value);
+        return new CatchChipOptionModel(new string([.. value.Where(char.IsLetterOrDigit)]), value, isSelected);
     }
 
     public static IReadOnlyList<CatchChipOptionModel> BuildShortlist(
@@ -12,15 +12,20 @@ public sealed record CatchChipOptionModel(string Code, string Name)
         string currentValue,
         int maximum)
     {
-        var shortlist = options.Take(maximum).ToList();
         var current = currentValue.Trim();
-        if (current.Length == 0
-            || shortlist.Any(option => string.Equals(option.Name, current, StringComparison.OrdinalIgnoreCase)))
+        var shortlist = options.Take(maximum).ToList();
+        if (current.Length > 0
+            && !shortlist.Any(option => string.Equals(option.Name, current, StringComparison.OrdinalIgnoreCase)))
         {
-            return shortlist;
+            shortlist.Insert(0, FromValue(current, isSelected: true));
         }
 
-        shortlist.Insert(0, FromValue(current));
-        return shortlist;
+        return shortlist
+            .Select(option => option with
+            {
+                IsSelected = current.Length > 0
+                    && string.Equals(option.Name, current, StringComparison.OrdinalIgnoreCase)
+            })
+            .ToArray();
     }
 }

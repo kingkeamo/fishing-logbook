@@ -10,6 +10,7 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
     private readonly CatchEditViewModel _viewModel;
     private readonly NavigationService _navigation;
     private Guid? _catchId;
+    private bool _initialized;
 
     public CatchEditPage(CatchEditViewModel viewModel, NavigationService navigation)
     {
@@ -30,6 +31,12 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_initialized)
+        {
+            return;
+        }
+
+        _initialized = true;
         await _viewModel.InitializeAsync(_catchId, CancellationToken.None);
     }
 

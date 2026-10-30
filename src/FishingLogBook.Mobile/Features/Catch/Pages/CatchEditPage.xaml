@@ -24,7 +24,7 @@
         <Label Text="{Binding Text[CatchNotSignedIn]}" IsVisible="{Binding NotSignedIn}" Style="{StaticResource SecondaryText}" />
         <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" />
         <Label Text="{Binding Text[CatchDraftRestored]}" IsVisible="{Binding ShowDraftRestored}" Style="{StaticResource SecondaryText}" />
-        <photoViews:PhotographCollectionEditorView BindingContext="{Binding Photographs}" />
+        <photoViews:PhotoCollectionEditorView ViewModel="{Binding Photographs}" MaximumCount="10" />
         <Label Text="{Binding PhotoConflictText}" IsVisible="{Binding ShowPhotoConflict}" TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
         <Label Text="{Binding Text[CatchPhotoDateConflict]}" IsVisible="{Binding ShowDateConflict}" TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
         <Label Text="{Binding ValidationText}" IsVisible="{Binding HasValidation}" TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
@@ -35,7 +35,7 @@
             <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding MethodOptions}">
               <BindableLayout.ItemTemplate>
                 <DataTemplate x:DataType="models:CatchChipOptionModel">
-                  <controls:ChipView Text="{Binding Name}" Tapped="OnMethodChip" CommandParameter="{Binding Name}" />
+                  <controls:ChipView Text="{Binding Name}" IsSelected="{Binding IsSelected}" Tapped="OnMethodChip" CommandParameter="{Binding Name}" />
                 </DataTemplate>
               </BindableLayout.ItemTemplate>
             </HorizontalStackLayout>
@@ -45,7 +45,7 @@
             <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding SpeciesOptions}">
               <BindableLayout.ItemTemplate>
                 <DataTemplate x:DataType="models:CatchChipOptionModel">
-                  <controls:ChipView Text="{Binding Name}" Tapped="OnSpeciesChip" CommandParameter="{Binding Name}" />
+                  <controls:ChipView Text="{Binding Name}" IsSelected="{Binding IsSelected}" Tapped="OnSpeciesChip" CommandParameter="{Binding Name}" />
                 </DataTemplate>
               </BindableLayout.ItemTemplate>
             </HorizontalStackLayout>

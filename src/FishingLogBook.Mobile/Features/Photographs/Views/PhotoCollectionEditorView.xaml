@@ -24,7 +24,9 @@
                         Style="{StaticResource SecondaryButton}" Clicked="OnMoveLater" CommandParameter="{Binding Id}" />
               </Grid>
               <Button Text="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=Text[DeletePhoto]}"
-                      Style="{StaticResource SecondaryButton}" Clicked="OnRemove" CommandParameter="{Binding Id}" />
+                      Style="{StaticResource SecondaryButton}"
+                      IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=CanRemove}"
+                      Clicked="OnRemove" CommandParameter="{Binding Id}" />
             </VerticalStackLayout>
           </Border>
         </DataTemplate>
