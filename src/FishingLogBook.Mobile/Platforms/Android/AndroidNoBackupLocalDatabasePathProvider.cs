@@ -1,4 +1,4 @@
-using FishingLogBook.Mobile.Features.LocalPersistence.Sqlite;
+using FishingLogBook.Mobile.Common.Offline.Sqlite;
 
 namespace FishingLogBook.Mobile;
 

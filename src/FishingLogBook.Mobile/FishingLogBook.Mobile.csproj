@@ -47,7 +47,7 @@
     <ProjectReference Include="../FishingLogBook.Shared/FishingLogBook.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Features\LocalPersistence\Sqlite\Migrations\*.sql" />
+    <EmbeddedResource Include="Common\Offline\Sqlite\Migrations\*.sql" />
     <EmbeddedResource Include="Configuration\mobileauth.$(MobileEnvironment).json" LogicalName="FishingLogBook.Mobile.mobileauth.json" />
     <EmbeddedResource Include="../FishingLogBook.Web/Localization/FishingMethodStrings.resx" Link="Localization/FishingMethodStrings.resx" LogicalName="FishingLogBook.Mobile.Localization.FishingMethodStrings.resources" />
     <EmbeddedResource Include="../FishingLogBook.Web/Localization/FishingMethodStrings.fr.resx" Link="Localization/FishingMethodStrings.fr.resx" LogicalName="FishingLogBook.Mobile.Localization.FishingMethodStrings.fr.resources" />

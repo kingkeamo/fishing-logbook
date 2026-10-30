@@ -34,14 +34,18 @@ Pending outbox rows coalesce via a partial unique index on
 
 ## Atomic save + outbox
 
-`ILocalCatchService.SaveAsync` opens one SQLite transaction that:
+`ICatchStore.SaveAsync` (in `Features/Catch/Offline/Stores`, mirroring Web) opens one
+SQLite transaction that:
 
 1. Upserts an optional `localtrips` stub when `tripid` is set
 2. Upserts the catch and replaces photograph rows
 3. Upserts a pending `UpsertCatchMetadata` outbox operation (coalesce on conflict)
 
 Commit succeeds only when catch state and outbox intent are both durable. Mid-
-transaction failure rolls both back. The service never calls the API.
+transaction failure rolls both back. The store never calls the API.
+
+Shared SQLite/outbox infrastructure lives under `Common/Offline/` (like Web
+`Common/Offline`).
 
 ## Account isolation
 

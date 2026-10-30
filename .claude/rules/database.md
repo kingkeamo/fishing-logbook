@@ -5,9 +5,9 @@ paths:
   - "src/FishingLogBook.Db.Migrations.App/**/*.cs"
   - "src/FishingLogBook.Infrastructure/Persistence/**/*.cs"
   - "src/FishingLogBook.Application/Contracts/**/*.cs"
-  - "src/FishingLogBook.Mobile/Features/LocalPersistence/**/*.sql"
-  - "src/FishingLogBook.Mobile/Features/LocalPersistence/**/*.cs"
-  - "src/FishingLogBook.Mobile/Features/Catch/Persistence/**/*.cs"
+  - "src/FishingLogBook.Mobile/Common/Offline/**/*.sql"
+  - "src/FishingLogBook.Mobile/Common/Offline/**/*.cs"
+  - "src/FishingLogBook.Mobile/Features/Catch/Offline/**/*.cs"
 ---
 
 # Database & Persistence Conventions
@@ -42,7 +42,9 @@ paths:
   naming rules as PostgreSQL. Prefer server column names and units for mirrored catch
   fields (`weight` kilograms, `length` centimetres, `createdon`, …). Local-only columns
   and tables are allowed (`userid` ownership, `revision`, `lifecycle`, `outboxoperations`,
-  …) but must still be lowercase with no underscores.
+  …) but must still be lowercase with no underscores. Feature offline stores live under
+  `Features/<Feature>/Offline/` (mirroring Web); shared SQLite/outbox infrastructure
+  lives under `Common/Offline/`.
 
 ## DbUp migrations — two dedicated projects
 
