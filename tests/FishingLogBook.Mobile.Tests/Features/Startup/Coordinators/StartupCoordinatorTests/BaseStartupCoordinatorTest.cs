@@ -1,6 +1,7 @@
 using System.Globalization;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Services;
+using FishingLogBook.Mobile.Features.OfflineAccess.Models;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Startup.Coordinators;
@@ -16,10 +17,19 @@ public abstract class BaseStartupCoordinatorTest
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly IAuthenticationService MockAuthentication = Substitute.For<IAuthenticationService>();
     protected readonly IOfflineCapabilityService MockOfflineCapability = Substitute.For<IOfflineCapabilityService>();
+    protected readonly IOfflinePreparationService MockOfflinePreparation = Substitute.For<IOfflinePreparationService>();
     protected readonly IDeviceUnlockService MockDeviceUnlock = Substitute.For<IDeviceUnlockService>();
     protected readonly IOfflineSessionService MockOfflineSession = Substitute.For<IOfflineSessionService>();
     protected readonly IAccountSessionCoordinator MockAccountSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
+
+    protected BaseStartupCoordinatorTest()
+    {
+        MockOfflinePreparation.IsPreparedAsync(
+                Arg.Any<OfflineCapabilityModel>(),
+                Arg.Any<CancellationToken>())
+            .Returns(true);
+    }
 
     protected StartupCoordinator CreateSut(TimeSpan? restorationTimeout = null)
     {
@@ -27,6 +37,7 @@ public abstract class BaseStartupCoordinatorTest
             MockConnectivity,
             MockAuthentication,
             MockOfflineCapability,
+            MockOfflinePreparation,
             MockDeviceUnlock,
             MockOfflineSession,
             MockAccountSession,

@@ -1,5 +1,7 @@
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Services;
+using FishingLogBook.Mobile.Features.OfflineAccess.Models;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Onboarding.Enums;
 using FishingLogBook.Mobile.Features.Profile.Clients;
 using FishingLogBook.Mobile.Features.Settings.Services;
@@ -10,7 +12,8 @@ public sealed class OnboardingStatusService(
     IProfileClient profileClient,
     IAuthenticationService authentication,
     IAccountSessionCoordinator sessionCoordinator,
-    IPreferenceStore preferences) : IOnboardingStatusService
+    IPreferenceStore preferences,
+    IOfflinePreparationService offlinePreparation) : IOnboardingStatusService
 {
     private const string CompletedCachePrefix = "mobile.onboardingCompleted.";
     private const string CompletedCacheValue = "1";
@@ -23,7 +26,9 @@ public sealed class OnboardingStatusService(
             return OnboardingStatusEnum.Unknown;
         }
 
-        if (HasCompletedCache(session.UserId))
+        var expectedCapability = new OfflineCapabilityModel(session.Subject, session.UserId, IsDeviceReady: true);
+        if (HasCompletedCache(session.UserId) &&
+            await offlinePreparation.IsPreparedAsync(expectedCapability, cancellationToken))
         {
             return OnboardingStatusEnum.Completed;
         }
@@ -48,6 +53,16 @@ public sealed class OnboardingStatusService(
         if (!result.Value.OnboardingCompleted)
         {
             return OnboardingStatusEnum.Incomplete;
+        }
+
+        if (!await offlinePreparation.EnsurePreparedAsync(result.Value, cancellationToken))
+        {
+            return OnboardingStatusEnum.Unknown;
+        }
+
+        if (!sessionCoordinator.IsCurrent(lease) || authentication.CurrentSession?.UserId != lease.UserId)
+        {
+            return OnboardingStatusEnum.Unknown;
         }
 
         RememberCompleted(lease.UserId);
