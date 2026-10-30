@@ -21,6 +21,7 @@
     <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
      <Label x:Name="ProfileName" Style="{StaticResource Subheading}" LineBreakMode="TailTruncation" />
      <Label Text="{Binding [Account]}" Style="{StaticResource LinkText}" />
+     <Label x:Name="ConnectionStatus" IsVisible="False" Style="{StaticResource SecondaryText}" TextColor="{StaticResource NotificationWarning}" />
     </VerticalStackLayout>
    </Grid>
   </VerticalStackLayout>

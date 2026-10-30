@@ -6,6 +6,7 @@ using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Shared.Dtos;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,12 +31,19 @@ public abstract class BaseAuthenticationServiceTest
     protected readonly IAccountSessionCoordinator MockSessionCoordinator = Substitute.For<IAccountSessionCoordinator>();
     protected readonly IOfflineCapabilityService MockOfflineCapability = Substitute.For<IOfflineCapabilityService>();
     protected readonly IOfflineSessionService MockOfflineSession = Substitute.For<IOfflineSessionService>();
+    protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly TimeProvider MockTimeProvider = Substitute.For<TimeProvider>();
     protected readonly AuthenticationService Sut;
 
     protected BaseAuthenticationServiceTest()
     {
         MockTimeProvider.GetUtcNow().Returns(Now);
+        MockConnectivity.IsOnline.Returns(true);
+        MockConnectivity.TryRunWhileOnline(Arg.Any<Action>()).Returns(call =>
+        {
+            call.Arg<Action>()();
+            return true;
+        });
         Sut = new AuthenticationService(
             MockOidcClient,
             MockRefreshService,
@@ -46,6 +54,7 @@ public abstract class BaseAuthenticationServiceTest
             MockSessionCoordinator,
             MockOfflineCapability,
             MockOfflineSession,
+            MockConnectivity,
             MockTimeProvider,
             NullLogger<AuthenticationService>.Instance);
     }

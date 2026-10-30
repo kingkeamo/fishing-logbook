@@ -46,6 +46,10 @@
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Fishing Logbook can record where you caught a fish if you allow location while logging a catch.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Fishing Logbook uses the camera to photograph catches you want to keep in your logbook.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fishing Logbook can use photos from your library when you attach them to a catch.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Fishing Logbook uses Face ID to unlock your offline logbook on this device.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>

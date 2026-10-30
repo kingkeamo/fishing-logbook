@@ -4,7 +4,9 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
+using FishingLogBook.Mobile.Features.OfflineAccess.Models;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using Microsoft.Extensions.Logging;
 
@@ -27,12 +29,14 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
     private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly IOfflineCapabilityService _offlineCapability;
     private readonly IOfflineSessionService _offlineSession;
+    private readonly IConnectivityService _connectivity;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AuthenticationService> _logger;
     private AuthenticationSessionModel? _currentSession;
     private bool _hasPendingAuthorization;
     private int _consecutiveRefreshFailures;
     private DateTimeOffset _refreshRetryAfter = DateTimeOffset.MinValue;
+    private bool _signOutRequested;
 
     public AuthenticationService(
         IOidcProtocolClient oidcClient,
@@ -44,6 +48,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         IAccountSessionCoordinator sessionCoordinator,
         IOfflineCapabilityService offlineCapability,
         IOfflineSessionService offlineSession,
+        IConnectivityService connectivity,
         TimeProvider timeProvider,
         ILogger<AuthenticationService> logger)
     {
@@ -56,6 +61,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         _sessionCoordinator = sessionCoordinator;
         _offlineCapability = offlineCapability;
         _offlineSession = offlineSession;
+        _connectivity = connectivity;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -88,8 +94,16 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
     public async Task<AuthenticationResultEnum> InitializeAsync(CancellationToken cancellationToken)
     {
         await _operationGate.WaitAsync(cancellationToken);
+        OfflineRecoveryContext? recovery = null;
         try
         {
+            var offlineCapability = _offlineSession.Current;
+            recovery = CaptureOfflineRecovery(offlineCapability);
+            if (offlineCapability is not null && recovery is null)
+            {
+                return AuthenticationResultEnum.Cancelled;
+            }
+
             var pendingResult = await RestorePendingAuthorizationAsync();
             if (pendingResult != AuthenticationResultEnum.Success)
             {
@@ -99,7 +113,21 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             var credential = await _store.GetCredentialAsync();
             if (credential is null)
             {
+                if (recovery is not null)
+                {
+                    await InvalidateRecoveredAccountAsync(recovery);
+                    return AuthenticationResultEnum.Invalid;
+                }
+
                 return AuthenticationResultEnum.Success;
+            }
+
+            if (recovery is not null &&
+                (!string.Equals(credential.Subject, recovery.Capability.Subject, StringComparison.Ordinal) ||
+                    credential.UserId != recovery.Capability.UserId))
+            {
+                await InvalidateRecoveredAccountAsync(recovery);
+                return AuthenticationResultEnum.Invalid;
             }
 
             if (_timeProvider.GetUtcNow() < _refreshRetryAfter)
@@ -107,11 +135,17 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
                 return AuthenticationResultEnum.TemporarilyUnavailable;
             }
 
-            return await RefreshAndEstablishAsync(credential, cancellationToken);
+            return await RefreshAndEstablishAsync(credential, recovery, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _logger.LogWarning(exception, "Native authentication restoration failed.");
+            if (recovery is not null)
+            {
+                RecordRefreshFailure();
+                return AuthenticationResultEnum.StorageUnavailable;
+            }
+
             await InvalidateLocalSessionAsync(removeCredential: false);
             return AuthenticationResultEnum.StorageUnavailable;
         }
@@ -184,25 +218,33 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
 
     public async Task SignOutAsync(CancellationToken cancellationToken)
     {
-        await _operationGate.WaitAsync(cancellationToken);
-        string? refreshToken;
+        SetSignOutRequested(true);
         try
         {
-            refreshToken = CurrentSession?.RefreshToken;
-            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
-            await RemovePendingAuthorizationSafelyAsync();
+            await _operationGate.WaitAsync(cancellationToken);
+            string? refreshToken;
+            try
+            {
+                refreshToken = CurrentSession?.RefreshToken;
+                await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
+                await RemovePendingAuthorizationSafelyAsync();
+            }
+            finally
+            {
+                _operationGate.Release();
+            }
+
+            if (!string.IsNullOrWhiteSpace(refreshToken))
+            {
+                await TryRevokeAsync(refreshToken, cancellationToken);
+            }
+
+            await TryOpenLogoutAsync(cancellationToken);
         }
         finally
         {
-            _operationGate.Release();
+            SetSignOutRequested(false);
         }
-
-        if (!string.IsNullOrWhiteSpace(refreshToken))
-        {
-            await TryRevokeAsync(refreshToken, cancellationToken);
-        }
-
-        await TryOpenLogoutAsync(cancellationToken);
     }
 
     public async Task<ApiAccessTokenModel> GetAccessTokenAsync(CancellationToken cancellationToken)
@@ -262,7 +304,11 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
                 return MapFailure(tokenResult.Failure);
             }
 
-            return await EstablishSessionAsync(tokenResult, expectedCredential: null, cancellationToken);
+            return await EstablishSessionAsync(
+                tokenResult,
+                expectedCredential: null,
+                recovery: null,
+                cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -298,6 +344,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
 
     private async Task<AuthenticationResultEnum> RefreshAndEstablishAsync(
         PersistedAuthenticationModel credential,
+        OfflineRecoveryContext? recovery,
         CancellationToken cancellationToken)
     {
         var tokenResult = await _refreshService.RefreshAsync(credential.RefreshToken, cancellationToken);
@@ -305,7 +352,14 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         {
             if (IsPermanentRefreshFailure(tokenResult.Failure))
             {
-                await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
+                if (recovery is null)
+                {
+                    await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
+                }
+                else
+                {
+                    await InvalidateRecoveredAccountAsync(recovery);
+                }
             }
             else
             {
@@ -315,7 +369,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             return MapFailure(tokenResult.Failure);
         }
 
-        return await EstablishSessionAsync(tokenResult, credential, cancellationToken);
+        return await EstablishSessionAsync(tokenResult, credential, recovery, cancellationToken);
     }
 
     private async Task TryRefreshSessionAsync(
@@ -328,7 +382,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             session.UserId);
         try
         {
-            await RefreshAndEstablishAsync(credential, cancellationToken);
+            await RefreshAndEstablishAsync(credential, recovery: null, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -365,20 +419,21 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
     private async Task<AuthenticationResultEnum> EstablishSessionAsync(
         OidcTokenResultModel tokenResult,
         PersistedAuthenticationModel? expectedCredential,
+        OfflineRecoveryContext? recovery,
         CancellationToken cancellationToken)
     {
         var subject = tokenResult.Subject ?? expectedCredential?.Subject;
         var refreshToken = tokenResult.RefreshToken ?? expectedCredential?.RefreshToken;
         if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(refreshToken))
         {
-            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
+            await InvalidateRejectedSessionAsync(recovery);
             return AuthenticationResultEnum.Invalid;
         }
 
         if (expectedCredential is not null &&
             !string.Equals(subject, expectedCredential.Subject, StringComparison.Ordinal))
         {
-            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
+            await InvalidateRejectedSessionAsync(recovery);
             return AuthenticationResultEnum.Invalid;
         }
 
@@ -386,11 +441,21 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         if (!string.Equals(currentUser.Subject, subject, StringComparison.Ordinal) ||
             expectedCredential is not null && currentUser.UserId != expectedCredential.UserId)
         {
-            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
+            await InvalidateRejectedSessionAsync(recovery);
             return AuthenticationResultEnum.Invalid;
         }
 
         var credential = new PersistedAuthenticationModel(refreshToken, subject, currentUser.UserId);
+        if (recovery is not null)
+        {
+            return await CommitRecoveredSessionAsync(
+                recovery,
+                credential,
+                tokenResult,
+                currentUser.Email,
+                cancellationToken);
+        }
+
         try
         {
             await _offlineCapability.RevokeIfOwnedByAnotherAccountAsync(
@@ -399,7 +464,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
                 cancellationToken);
             await _store.SaveCredentialAsync(credential);
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _logger.LogWarning(exception, "The refreshed native credential could not be stored.");
             await InvalidateLocalSessionAsync(removeCredential: false);
@@ -417,6 +482,186 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             tokenResult.Email ?? currentUser.Email,
             currentUser.UserId), offlineWasActive);
         return AuthenticationResultEnum.Success;
+    }
+
+    private OfflineRecoveryContext? CaptureOfflineRecovery(OfflineCapabilityModel? capability)
+    {
+        if (capability is null)
+        {
+            return null;
+        }
+
+        var lease = _sessionCoordinator.Capture();
+        return lease is not null && lease.UserId == capability.UserId
+            ? new OfflineRecoveryContext(capability, lease)
+            : null;
+    }
+
+    private async Task InvalidateRejectedSessionAsync(OfflineRecoveryContext? recovery)
+    {
+        if (recovery is null)
+        {
+            await InvalidateLocalSessionAsync(removeCredential: true, revokeOfflineCapability: true);
+            return;
+        }
+
+        await InvalidateRecoveredAccountAsync(recovery);
+    }
+
+    private async Task InvalidateRecoveredAccountAsync(OfflineRecoveryContext recovery)
+    {
+        Exception? revocationFailure = null;
+        try
+        {
+            await _offlineCapability.RevokeIfOwnedByAsync(
+                recovery.Capability.Subject,
+                recovery.Capability.UserId,
+                CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            revocationFailure = exception;
+        }
+
+        if (_sessionCoordinator.IsCurrent(recovery.Lease) &&
+            _offlineSession.Current == recovery.Capability)
+        {
+            _offlineSession.Lock();
+            SetSession(null, forceChanged: true);
+            await _sessionCoordinator.TransitionAsync(userId: null, CancellationToken.None);
+        }
+
+        await RemoveCredentialIfOwnedByAsync(recovery.Capability);
+
+        if (revocationFailure is not null)
+        {
+            throw new InvalidOperationException(
+                "Offline access could not be revoked after authentication rejection.",
+                revocationFailure);
+        }
+    }
+
+    private async Task<AuthenticationResultEnum> CommitRecoveredSessionAsync(
+        OfflineRecoveryContext recovery,
+        PersistedAuthenticationModel credential,
+        OidcTokenResultModel tokenResult,
+        string currentUserEmail,
+        CancellationToken cancellationToken)
+    {
+        if (!IsRecoveryOwnerCurrent(recovery, credential))
+        {
+            return AuthenticationResultEnum.Cancelled;
+        }
+
+        var ownerWasCurrent = true;
+        var sessionPublished = false;
+        try
+        {
+            var committed = await _sessionCoordinator.TryCommitAsync(
+                recovery.Lease,
+                async token =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (!IsRecoveryOwnerCurrent(recovery, credential))
+                    {
+                        ownerWasCurrent = false;
+                        return;
+                    }
+
+                    await _store.SaveCredentialAsync(credential);
+                    token.ThrowIfCancellationRequested();
+                    if (!IsRecoveryOwnerCurrent(recovery, credential))
+                    {
+                        ownerWasCurrent = false;
+                        return;
+                    }
+
+                    var stillOnline = _connectivity.TryRunWhileOnline(() =>
+                    {
+                        token.ThrowIfCancellationRequested();
+                        if (!IsRecoveryOwnerCurrent(recovery, credential))
+                        {
+                            ownerWasCurrent = false;
+                            return;
+                        }
+
+                        _offlineSession.Lock();
+                        ResetRefreshBackoff();
+                        SetSession(new AuthenticationSessionModel(
+                            tokenResult.AccessToken,
+                            tokenResult.AccessTokenExpiresAt,
+                            credential.RefreshToken,
+                            credential.Subject,
+                            tokenResult.Email ?? currentUserEmail,
+                            credential.UserId), forceChanged: true);
+                        sessionPublished = true;
+                    });
+
+                    if (sessionPublished && !stillOnline)
+                    {
+                        SetSession(null, forceChanged: true);
+                        _offlineSession.Activate(recovery.Capability);
+                        sessionPublished = false;
+                    }
+                },
+                cancellationToken);
+            return committed && ownerWasCurrent && sessionPublished
+                ? AuthenticationResultEnum.Success
+                : AuthenticationResultEnum.Cancelled;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogWarning(exception, "The recovered native credential could not be stored.");
+            return AuthenticationResultEnum.StorageUnavailable;
+        }
+    }
+
+    private async Task RemoveCredentialIfOwnedByAsync(OfflineCapabilityModel capability)
+    {
+        try
+        {
+            var credential = await _store.GetCredentialAsync();
+            if (credential is null ||
+                !string.Equals(credential.Subject, capability.Subject, StringComparison.Ordinal) ||
+                credential.UserId != capability.UserId)
+            {
+                return;
+            }
+
+            await _store.RemoveCredentialAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "The rejected native credential could not be removed.");
+        }
+    }
+
+    private bool IsRecoveryOwnerCurrent(
+        OfflineRecoveryContext recovery,
+        PersistedAuthenticationModel credential)
+    {
+        return _sessionCoordinator.IsCurrent(recovery.Lease) &&
+            !IsSignOutRequested() &&
+            _offlineSession.Current == recovery.Capability &&
+            recovery.Capability.IsDeviceReady &&
+            string.Equals(credential.Subject, recovery.Capability.Subject, StringComparison.Ordinal) &&
+            credential.UserId == recovery.Capability.UserId;
+    }
+
+    private bool IsSignOutRequested()
+    {
+        lock (_stateLock)
+        {
+            return _signOutRequested;
+        }
+    }
+
+    private void SetSignOutRequested(bool value)
+    {
+        lock (_stateLock)
+        {
+            _signOutRequested = value;
+        }
     }
 
     private async Task InvalidateLocalSessionAsync(
@@ -520,4 +765,8 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             _ => AuthenticationResultEnum.TemporarilyUnavailable
         };
     }
+
+    private sealed record OfflineRecoveryContext(
+        OfflineCapabilityModel Capability,
+        AccountSessionLeaseModel Lease);
 }
