@@ -103,6 +103,40 @@ public sealed class WhenTestingResolve
     }
 
     [Fact]
+    public async Task ItShouldNotCompleteThePreviousAccountWhenTheAccountChangesDuringReadinessVerification()
+    {
+        // Arrange
+        var readinessStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resumeReadiness = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _preferences.Get($"mobile.onboardingCompleted.{UserId:D}", string.Empty).Returns("1");
+        _offlinePreparation.IsPreparedAsync(
+                Arg.Any<OfflineCapabilityModel>(),
+                Arg.Any<CancellationToken>())
+            .Returns(async _ =>
+            {
+                readinessStarted.SetResult();
+                return await resumeReadiness.Task;
+            });
+        var pendingStatus = _sut.ResolveAsync(CancellationToken.None);
+        await readinessStarted.Task;
+        _authentication.CurrentSession.Returns(_user with
+        {
+            Subject = "new-subject",
+            UserId = Guid.NewGuid()
+        });
+        _session.IsCurrent(_lease).Returns(false);
+
+        // Act
+        resumeReadiness.SetResult(true);
+        var status = await pendingStatus;
+
+        // Assert
+        status.Should().Be(OnboardingStatusEnum.Unknown);
+        await _profiles.DidNotReceive().GetAsync(Arg.Any<CancellationToken>());
+        _preferences.DidNotReceive().Set(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
     public async Task ItShouldRepairMissingOfflinePreparationForAnExistingOnboardedAccount()
     {
         // Arrange
