@@ -70,6 +70,21 @@ public class WhenTestingSaveAsync : IDisposable
         _sut.GetAccountDirectory(owner).Should().NotBe(_sut.GetAccountDirectory(other));
     }
 
+    [Fact]
+    public void ShouldRejectPathTraversalWhenResolving()
+    {
+        var userId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+
+        _sut.TryResolveRelativePath(userId, "../escape.jpg", out _).Should().BeFalse();
+        _sut.TryResolveRelativePath(
+                userId,
+                $"{userId:N}/../../other/escape.jpg",
+                out _)
+            .Should().BeFalse();
+        var act = () => _sut.GetAbsolutePath(userId, "../escape.jpg");
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

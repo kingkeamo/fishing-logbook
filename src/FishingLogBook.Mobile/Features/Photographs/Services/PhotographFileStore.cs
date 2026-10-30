@@ -12,8 +12,12 @@ public sealed class PhotographFileStore(
     public string GetAbsolutePath(Guid userId, string relativeFilePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(relativeFilePath);
-        _ = userId;
-        return Path.Combine(rootPathProvider.GetPhotographRootDirectory(), NormalizeRelativePath(relativeFilePath));
+        if (!TryBuildOwnedAbsolutePath(userId, relativeFilePath, out var absolutePath))
+        {
+            throw new InvalidOperationException("Photograph path is outside the account photograph folder.");
+        }
+
+        return absolutePath;
     }
 
     public string GetAccountDirectory(Guid userId)
@@ -67,8 +71,41 @@ public sealed class PhotographFileStore(
 
     public bool TryResolveRelativePath(Guid userId, string relativeFilePath, out string absolutePath)
     {
-        absolutePath = GetAbsolutePath(userId, relativeFilePath);
+        if (!TryBuildOwnedAbsolutePath(userId, relativeFilePath, out absolutePath))
+        {
+            absolutePath = string.Empty;
+            return false;
+        }
+
         return fileSystem.FileExists(absolutePath);
+    }
+
+    private bool TryBuildOwnedAbsolutePath(Guid userId, string relativeFilePath, out string absolutePath)
+    {
+        absolutePath = string.Empty;
+        var normalized = NormalizeRelativePath(relativeFilePath);
+        if (normalized.Contains("..", StringComparison.Ordinal)
+            || Path.IsPathRooted(normalized)
+            || !normalized.StartsWith($"{userId:N}/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var root = Path.GetFullPath(rootPathProvider.GetPhotographRootDirectory());
+        var candidate = Path.GetFullPath(Path.Combine(root, normalized.Replace('/', Path.DirectorySeparatorChar)));
+        var accountRoot = Path.GetFullPath(Path.Combine(root, userId.ToString("N")))
+            .TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!candidate.StartsWith(accountRoot, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(
+                candidate.TrimEnd(Path.DirectorySeparatorChar),
+                accountRoot.TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        absolutePath = candidate;
+        return true;
     }
 
     private static string? ExtensionFor(string contentType)
