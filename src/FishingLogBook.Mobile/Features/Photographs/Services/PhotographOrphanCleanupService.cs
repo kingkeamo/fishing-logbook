@@ -52,7 +52,7 @@ public sealed class PhotographOrphanCleanupService(
         {
             cancellationToken.ThrowIfCancellationRequested();
             var fileName = Path.GetFileName(file);
-            if (fileName.StartsWith(".", StringComparison.Ordinal))
+            if (IsAbandonedTempFile(fileName))
             {
                 TryDelete(file);
                 continue;
@@ -64,8 +64,17 @@ public sealed class PhotographOrphanCleanupService(
                 continue;
             }
 
-            TryDelete(file);
+            logger.LogDebug(
+                "Retaining unreferenced durable photograph {RelativePath} for account {UserId}; it may be a prepared draft not yet saved to SQLite.",
+                relative,
+                userId);
         }
+    }
+
+    private static bool IsAbandonedTempFile(string fileName)
+    {
+        return fileName.StartsWith(".", StringComparison.Ordinal)
+            && fileName.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase);
     }
 
     private void TryDelete(string path)

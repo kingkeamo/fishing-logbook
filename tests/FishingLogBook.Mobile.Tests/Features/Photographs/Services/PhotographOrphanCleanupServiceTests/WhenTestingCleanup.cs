@@ -14,18 +14,19 @@ namespace FishingLogBook.Mobile.Tests.Features.Photographs.Services.PhotographOr
 public class WhenTestingCleanup : BaseSqliteCatchStoreTest
 {
     [Fact]
-    public async Task ShouldDeleteUnreferencedFilesAndKeepSqliteReferencedFiles()
+    public async Task ShouldRetainUnreferencedDurableFilesAndKeepSqliteReferencedFiles()
     {
+        // Arrange
         var photoRoot = Path.Combine(Path.GetDirectoryName(DatabasePath)!, "photographs");
         Directory.CreateDirectory(photoRoot);
         var referencedId = Guid.NewGuid();
-        var orphanId = Guid.NewGuid();
+        var preparedNotSavedId = Guid.NewGuid();
         var referencedRelative = $"{OwnerUserId:N}/{referencedId:N}.jpg";
         var referencedAbsolute = Path.Combine(photoRoot, OwnerUserId.ToString("N"), $"{referencedId:N}.jpg");
-        var orphanAbsolute = Path.Combine(photoRoot, OwnerUserId.ToString("N"), $"{orphanId:N}.jpg");
+        var preparedAbsolute = Path.Combine(photoRoot, OwnerUserId.ToString("N"), $"{preparedNotSavedId:N}.jpg");
         Directory.CreateDirectory(Path.GetDirectoryName(referencedAbsolute)!);
         await File.WriteAllBytesAsync(referencedAbsolute, [0xFF, 0xD8, 0xFF, 0xD9]);
-        await File.WriteAllBytesAsync(orphanAbsolute, [0xFF, 0xD8, 0xFF, 0xD9]);
+        await File.WriteAllBytesAsync(preparedAbsolute, [0xFF, 0xD8, 0xFF, 0xD9]);
 
         var catchId = Guid.NewGuid();
         await Sut.SaveAsync(new LocalCatchSaveArgs
@@ -49,18 +50,70 @@ public class WhenTestingCleanup : BaseSqliteCatchStoreTest
             ]
         }, CancellationToken.None);
 
+        var sut = CreateCleanupService(photoRoot);
+
+        // Act
+        await sut.CleanupAllAccountsAsync(CancellationToken.None);
+
+        // Assert
+        File.Exists(referencedAbsolute).Should().BeTrue();
+        File.Exists(preparedAbsolute).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ShouldDeleteAbandonedTempFilesOnly()
+    {
+        // Arrange
+        var photoRoot = Path.Combine(Path.GetDirectoryName(DatabasePath)!, "photographs");
+        var accountDirectory = Path.Combine(photoRoot, OwnerUserId.ToString("N"));
+        Directory.CreateDirectory(accountDirectory);
+        var durableAbsolute = Path.Combine(accountDirectory, $"{Guid.NewGuid():N}.jpg");
+        var tempAbsolute = Path.Combine(accountDirectory, $".{Guid.NewGuid():N}.tmp");
+        await File.WriteAllBytesAsync(durableAbsolute, [0xFF, 0xD8, 0xFF, 0xD9]);
+        await File.WriteAllBytesAsync(tempAbsolute, [0x00, 0x01]);
+        var sut = CreateCleanupService(photoRoot);
+
+        // Act
+        await sut.CleanupAllAccountsAsync(CancellationToken.None);
+
+        // Assert
+        File.Exists(durableAbsolute).Should().BeTrue();
+        File.Exists(tempAbsolute).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShouldRetainPreparedPhotographAcrossRestartBeforeSqliteSave()
+    {
+        // Arrange
+        var photoRoot = Path.Combine(Path.GetDirectoryName(DatabasePath)!, "photographs");
+        var preparedId = Guid.NewGuid();
+        var preparedAbsolute = Path.Combine(photoRoot, OwnerUserId.ToString("N"), $"{preparedId:N}.jpg");
+        Directory.CreateDirectory(Path.GetDirectoryName(preparedAbsolute)!);
+        await File.WriteAllBytesAsync(preparedAbsolute, [0xFF, 0xD8, 0xFF, 0xD9]);
+        var cleanup = CreateCleanupService(photoRoot);
+        var database = new FishingLogBook.Mobile.Common.Offline.Sqlite.SqliteDatabase(
+            ConnectionFactory,
+            Migrator,
+            NullLogger<FishingLogBook.Mobile.Common.Offline.Sqlite.SqliteDatabase>.Instance,
+            [cleanup]);
+
+        // Act
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await database.EnsureInitializedAsync(timeout.Token);
+
+        // Assert
+        File.Exists(preparedAbsolute).Should().BeTrue();
+    }
+
+    private PhotographOrphanCleanupService CreateCleanupService(string photoRoot)
+    {
         var referenceStore = new SqlitePhotographReferenceStore(ConnectionFactory, Database);
-        var sut = new PhotographOrphanCleanupService(
+        return new PhotographOrphanCleanupService(
             new FileSystemAdapter(),
             new FixedRoot(photoRoot),
             referenceStore,
             Database,
             NullLogger<PhotographOrphanCleanupService>.Instance);
-
-        await sut.CleanupAllAccountsAsync(CancellationToken.None);
-
-        File.Exists(referencedAbsolute).Should().BeTrue();
-        File.Exists(orphanAbsolute).Should().BeFalse();
     }
 
     private sealed class FixedRoot(string root) : IPhotographRootPathProvider

@@ -47,7 +47,17 @@ Maximum photos in `PhotoCollectionEditorView`: bindable `MaximumCount` (default 
 
 ## Orphan cleanup
 
-`PhotographOrphanCleanupService` runs after SQLite migration via `ILocalDatabaseInitializedObserver`. For each account folder `{root}/{userId:N}`, it deletes files not referenced by any `localcatchphotographs.localfilepath` row for that user (including unsynced rows). Referenced files are never deleted; other users' folders are not touched.
+`PhotographOrphanCleanupService` runs after SQLite migration via `ILocalDatabaseInitializedObserver`.
+`SqliteDatabase` finishes migration (and marks initialization complete) **before** notifying
+observers, so observer work that calls `EnsureInitializedAsync` cannot deadlock.
+
+For each account folder `{root}/{userId:N}`:
+
+- Abandoned write temps (`.{id}.tmp`) are deleted.
+- Durable files referenced by `localcatchphotographs.localfilepath` are retained (including unsynced rows).
+- Durable files **without** a SQLite reference are **retained** — they may be prepared photos
+  interrupted before a Catch/draft save. Reclaim of long-abandoned durable files is out of scope here.
+- Other users' folders are not touched.
 
 ## Shared EXIF reuse
 
