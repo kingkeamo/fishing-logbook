@@ -16,4 +16,7 @@
     <Using Include="Xunit" />
     <ProjectReference Include="../../src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Common\Offline\SqliteMigratorTests\BrokenMigrations\001_Broken.sql" LogicalName="FishingLogBook.Mobile.Common.Offline.Sqlite.Migrations.001_Broken.sql" />
+  </ItemGroup>
 </Project>

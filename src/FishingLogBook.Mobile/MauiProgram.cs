@@ -14,8 +14,11 @@ using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
 using FishingLogBook.Mobile.Features.Authentication.ViewModels;
 using FishingLogBook.Mobile.Features.Catch.Pages;
+using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Common.Offline.Sqlite;
+using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.OfflineAccess.Stores;
@@ -116,6 +119,17 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IOfflineAccountStore>(services => new FileOfflineAccountStore(
             services.GetRequiredService<IFileSystemAdapter>(),
             Path.Combine(FileSystem.AppDataDirectory, "offline-accounts")));
+        builder.Services.AddSingleton<ISqliteConnectionFactory>(services =>
+        {
+            var pathProvider = services.GetService<ILocalDatabasePathProvider>();
+            var databasePath = pathProvider?.GetDatabasePath()
+                ?? Path.Combine(FileSystem.AppDataDirectory, "local-logbook.db");
+            return new SqliteConnectionFactory(databasePath);
+        });
+        builder.Services.AddSingleton<ISqliteMigrator, SqliteMigrator>();
+        builder.Services.AddSingleton<ISqliteDatabase, SqliteDatabase>();
+        builder.Services.AddSingleton<IOutboxStore, SqliteOutboxStore>();
+        builder.Services.AddSingleton<ICatchStore, SqliteCatchStore>();
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
         builder.Services.AddSingleton<IOfflinePreparationService, OfflinePreparationService>();
         builder.Services.AddSingleton<IAccountUnitsService, AccountUnitsService>();

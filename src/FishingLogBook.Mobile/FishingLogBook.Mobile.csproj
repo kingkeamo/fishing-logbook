@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Duende.IdentityModel.OidcClient" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.13" />
     <PackageReference Include="Polly.Core" />
@@ -46,6 +47,7 @@
     <ProjectReference Include="../FishingLogBook.Shared/FishingLogBook.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Common\Offline\Sqlite\Migrations\*.sql" />
     <EmbeddedResource Include="Configuration\mobileauth.$(MobileEnvironment).json" LogicalName="FishingLogBook.Mobile.mobileauth.json" />
     <EmbeddedResource Include="../FishingLogBook.Web/Localization/FishingMethodStrings.resx" Link="Localization/FishingMethodStrings.resx" LogicalName="FishingLogBook.Mobile.Localization.FishingMethodStrings.resources" />
     <EmbeddedResource Include="../FishingLogBook.Web/Localization/FishingMethodStrings.fr.resx" Link="Localization/FishingMethodStrings.fr.resx" LogicalName="FishingLogBook.Mobile.Localization.FishingMethodStrings.fr.resources" />

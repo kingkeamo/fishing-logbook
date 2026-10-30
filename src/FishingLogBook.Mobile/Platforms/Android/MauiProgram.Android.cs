@@ -1,5 +1,6 @@
 using Android.Content.Res;
 using FishingLogBook.Mobile.Configuration;
+using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
@@ -29,5 +30,6 @@ public static partial class MauiProgram
     static partial void ConfigurePlatformServices(IServiceCollection services)
     {
         services.AddSingleton<IDeviceUnlockService, AndroidDeviceUnlockService>();
+        services.AddSingleton<ILocalDatabasePathProvider, AndroidNoBackupLocalDatabasePathProvider>();
     }
 }

@@ -270,8 +270,11 @@ public sealed class WhenTestingOfflineRecovery : BaseAuthenticationServiceTest
     public async Task ItShouldNotActivateWhenConnectivityChangesAtTheFinalActivationBoundary()
     {
         // Arrange
+        // TryRunWhileOnline is synchronous, so the mock must block. Running InitializeAsync on
+        // the test thread can deadlock when that block happens before this method reaches the
+        // await that would release it (CI blame-hang: 2m inactivity on this test).
         var activationReached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var resumeActivation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var resumeActivation = new ManualResetEventSlim(false);
         var online = true;
         MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(CreateTokenResult());
         MockCurrentUserClient.GetCurrentAsync(AccessToken, CancellationToken.None)
@@ -281,7 +284,11 @@ public sealed class WhenTestingOfflineRecovery : BaseAuthenticationServiceTest
         MockConnectivity.TryRunWhileOnline(Arg.Any<Action>()).Returns(call =>
         {
             activationReached.SetResult();
-            resumeActivation.Task.GetAwaiter().GetResult();
+            if (!resumeActivation.Wait(TimeSpan.FromSeconds(10)))
+            {
+                throw new TimeoutException("Timed out waiting to resume the activation boundary.");
+            }
+
             if (!online)
             {
                 return false;
@@ -290,13 +297,13 @@ public sealed class WhenTestingOfflineRecovery : BaseAuthenticationServiceTest
             call.Arg<Action>()();
             return true;
         });
-        var recovery = Sut.InitializeAsync(CancellationToken.None);
-        await activationReached.Task;
+        var recovery = Task.Run(() => Sut.InitializeAsync(CancellationToken.None));
+        await activationReached.Task.WaitAsync(TimeSpan.FromSeconds(10));
         online = false;
 
         // Act
-        resumeActivation.SetResult();
-        var result = await recovery;
+        resumeActivation.Set();
+        var result = await recovery.WaitAsync(TimeSpan.FromSeconds(10));
 
         // Assert
         result.Should().Be(AuthenticationResultEnum.Cancelled);
