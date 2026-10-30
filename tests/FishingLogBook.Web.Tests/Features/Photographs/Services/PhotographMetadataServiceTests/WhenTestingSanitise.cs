@@ -16,7 +16,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public void ItShouldReturnTheBytesUnchangedWhenTheContentTypeIsNotSupported()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = CaptureWallClock } });
 
         // Act
@@ -30,7 +30,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public void ItShouldReturnTheBytesUnchangedWhenTheContainerIsNotRecognised()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
 
         // Act
@@ -44,7 +44,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public async Task ItShouldRemoveTheJpegExifDateAndCoordinates()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             ExifText = { [DateTimeOriginalTag] = CaptureWallClock },
@@ -76,7 +76,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public async Task ItShouldRemoveTheJpegCommentAndPhotoshopSegments()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = JpegWithExtraSegments(
             new ExifContent { Latitude = 53.2707, Longitude = -9.0568 },
             (0xFE, "GPS 53.2707,-9.0568"u8.ToArray()),
@@ -105,7 +105,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public void ItShouldKeepTheJpegImageDataAndColourSegments()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var iccPayload = Encoding.ASCII.GetBytes("ICC_PROFILE\0colour");
         var bytes = JpegWithExtraSegments(
             new ExifContent { ExifText = { [DateTimeOriginalTag] = CaptureWallClock } },
@@ -128,7 +128,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public async Task ItShouldPreserveTheJpegOrientationWithoutTheRestOfTheExifBlock()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             Orientation = 6,
@@ -157,7 +157,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public void ItShouldNotAddAnExifBlockWhenTheJpegOrientationIsTheDefault()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Jpeg(new ExifContent
         {
             Orientation = 1,
@@ -176,7 +176,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public async Task ItShouldRemoveThePngExifAndTextChunks()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Png(new ExifContent
         {
             ExifText = { [DateTimeOriginalTag] = CaptureWallClock },
@@ -206,7 +206,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public void ItShouldPreserveThePngOrientationChunkWithACorrectChecksum()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Png(new ExifContent
         {
             Orientation = 8,
@@ -227,7 +227,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public async Task ItShouldRemoveTheWebpExifChunkAndKeepTheRiffStructureValid()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Webp(new ExifContent
         {
             ExifText = { [DateTimeOriginalTag] = CaptureWallClock },
@@ -256,7 +256,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public void ItShouldClearTheWebpExtendedFormatMetadataFlags()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Webp(
             new ExifContent { ExifText = { [DateTimeOriginalTag] = CaptureWallClock } },
             withExtendedHeader: true);
@@ -275,7 +275,7 @@ public class WhenTestingSanitise : BasePhotographMetadataServiceTest
     public void ItShouldPreserveTheWebpOrientationAndKeepItsExifFlag()
     {
         // Arrange
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
         var bytes = Webp(
             new ExifContent { Orientation = 3, ExifText = { [DateTimeOriginalTag] = CaptureWallClock } },
             withExtendedHeader: true);

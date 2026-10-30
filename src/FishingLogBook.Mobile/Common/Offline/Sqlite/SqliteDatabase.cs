@@ -7,6 +7,7 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
 {
     private readonly ISqliteConnectionFactory _connectionFactory;
     private readonly ISqliteMigrator _migrator;
+    private readonly IReadOnlyList<ILocalDatabaseInitializedObserver> _initializedObservers;
     private readonly ILogger<SqliteDatabase> _logger;
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly object _initLock = new();
@@ -16,13 +17,15 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
     public SqliteDatabase(
         ISqliteConnectionFactory connectionFactory,
         ISqliteMigrator migrator,
-        ILogger<SqliteDatabase> logger)
+        ILogger<SqliteDatabase> logger,
+        IEnumerable<ILocalDatabaseInitializedObserver>? initializedObservers = null)
     {
         ArgumentNullException.ThrowIfNull(connectionFactory);
         ArgumentNullException.ThrowIfNull(migrator);
         ArgumentNullException.ThrowIfNull(logger);
         _connectionFactory = connectionFactory;
         _migrator = migrator;
+        _initializedObservers = initializedObservers?.ToArray() ?? Array.Empty<ILocalDatabaseInitializedObserver>();
         _logger = logger;
     }
 
@@ -100,6 +103,10 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
         try
         {
             await _migrator.MigrateAsync(CancellationToken.None);
+            foreach (var observer in _initializedObservers)
+            {
+                await observer.OnDatabaseInitializedAsync(CancellationToken.None);
+            }
         }
         catch (Exception exception)
         {

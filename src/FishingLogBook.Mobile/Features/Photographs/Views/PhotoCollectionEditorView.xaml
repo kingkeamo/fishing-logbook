@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Photographs.ViewModels"
+             xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Models"
+             x:Class="FishingLogBook.Mobile.Features.Photographs.Views.PhotoCollectionEditorView"
+             x:DataType="vm:PhotographCollectionEditorViewModel">
+  <VerticalStackLayout Spacing="{StaticResource SpaceMedium}">
+    <Label Text="{Binding Text[Photos]}" Style="{StaticResource SectionTitle}" />
+    <CollectionView ItemsSource="{Binding Items}" SelectionMode="None">
+      <CollectionView.ItemsLayout>
+        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+      </CollectionView.ItemsLayout>
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="models:PhotographEditorItemModel">
+          <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" Padding="4">
+            <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+            <VerticalStackLayout Spacing="4" WidthRequest="112">
+              <Image Source="{Binding PreviewPath}" Aspect="AspectFill" HeightRequest="96" WidthRequest="104" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
+                <Button Grid.Column="0" Text="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=Text[PhotoMoveEarlier]}"
+                        Style="{StaticResource SecondaryButton}" Clicked="OnMoveEarlier" CommandParameter="{Binding Id}" />
+                <Button Grid.Column="1" Text="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=Text[PhotoMoveLater]}"
+                        Style="{StaticResource SecondaryButton}" Clicked="OnMoveLater" CommandParameter="{Binding Id}" />
+              </Grid>
+              <Button Text="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=Text[DeletePhoto]}"
+                      Style="{StaticResource SecondaryButton}" Clicked="OnRemove" CommandParameter="{Binding Id}" />
+            </VerticalStackLayout>
+          </Border>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+      <Button Grid.Column="0" Text="{Binding Text[PhotoTakePicture]}" Style="{StaticResource PrimaryButton}"
+              IsEnabled="{Binding CanAddMore}" Clicked="OnTakePhoto" AutomationId="PhotoTakePicture" />
+      <Button Grid.Column="1" Text="{Binding Text[PhotoChooseGallery]}" Style="{StaticResource SecondaryButton}"
+              IsEnabled="{Binding CanAddMore}" Clicked="OnChooseGallery" AutomationId="PhotoChooseGallery" />
+    </Grid>
+    <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}"
+           TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+  </VerticalStackLayout>
+</ContentView>

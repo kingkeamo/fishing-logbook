@@ -1,6 +1,6 @@
 using System.Text;
+using FishingLogBook.Shared.Photographs.Services;
 using FishingLogBook.Web.Browser.Time;
-using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Photographs.Services;
 using NSubstitute;
 
@@ -15,6 +15,12 @@ public class BasePhotographMetadataServiceTest
 
     protected static readonly DateTimeOffset ReferenceNow =
         DateTimeOffset.Parse("2026-08-26T12:00:00Z");
+
+    protected static PhotographMetadataService CreateMetadataService(ITimeService time)
+    {
+        return new PhotographMetadataService(
+            new PhotographMetadataProcessor(new WebPhotographLocalTimeMapper(time)));
+    }
 
     protected static ITimeService BrowserTime(TimeSpan offset)
     {

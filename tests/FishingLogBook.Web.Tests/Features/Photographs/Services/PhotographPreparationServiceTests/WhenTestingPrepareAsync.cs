@@ -328,7 +328,7 @@ public class WhenTestingPrepareAsync : BasePhotographPreparationServiceTest
             result.Outcome.Should().Be(PhotographPreparationOutcomeEnum.Prepared);
             result.Photograph!.Metadata.CapturedOn.Should().NotBeNull();
             ReadOrientationTag(result.Photograph.Bytes, container.ContentType).Should().Be(6);
-            var reread = await new PhotographMetadataService(TestTimeService.WithOffset(TimeSpan.Zero)).ReadAsync(
+            var reread = await CreateMetadataService(TestTimeService.WithOffset(TimeSpan.Zero)).ReadAsync(
                 result.Photograph.Bytes,
                 container.ContentType,
                 null,

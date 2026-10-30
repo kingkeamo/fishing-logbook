@@ -13,4 +13,8 @@ public interface IFileSystemAdapter
     void MoveFile(string sourcePath, string destinationPath, bool overwrite);
 
     void DeleteFile(string path);
+
+    bool DirectoryExists(string path);
+
+    IEnumerable<string> EnumerateFiles(string directory, string searchPattern);
 }

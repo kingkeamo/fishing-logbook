@@ -21,7 +21,7 @@ public class BasePhotographPreparationServiceTest : BasePhotographMetadataServic
     {
         var timeService = time ?? TestTimeService.WithOffset(TimeSpan.Zero);
         return new PhotographPreparationService(
-            metadata ?? new PhotographMetadataService(timeService),
+            metadata ?? CreateMetadataService(timeService),
             timeService,
             logging ?? QuietLogging());
     }

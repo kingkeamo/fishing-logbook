@@ -14,10 +14,13 @@ using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
 using FishingLogBook.Mobile.Features.Authentication.ViewModels;
 using FishingLogBook.Mobile.Features.Catch.Pages;
+using FishingLogBook.Mobile.Features.Photographs.Services;
+using FishingLogBook.Mobile.Features.Photographs.ViewModels;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
+using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
@@ -48,6 +51,8 @@ using FishingLogBook.Mobile.Native.Stores;
 using FishingLogBook.Mobile.Navigation;
 using FishingLogBook.Mobile.Presentation;
 using FishingLogBook.Shared.Measurements;
+using FishingLogBook.Shared.Photographs.Contracts;
+using FishingLogBook.Shared.Photographs.Services;
 using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile;
@@ -127,7 +132,16 @@ public static partial class MauiProgram
             return new SqliteConnectionFactory(databasePath);
         });
         builder.Services.AddSingleton<ISqliteMigrator, SqliteMigrator>();
-        builder.Services.AddSingleton<ISqliteDatabase, SqliteDatabase>();
+        builder.Services.AddSingleton<PhotographOrphanCleanupService>();
+        builder.Services.AddSingleton<IPhotographOrphanCleanupService>(services =>
+            services.GetRequiredService<PhotographOrphanCleanupService>());
+        builder.Services.AddSingleton<ILocalDatabaseInitializedObserver>(services =>
+            services.GetRequiredService<PhotographOrphanCleanupService>());
+        builder.Services.AddSingleton<ISqliteDatabase>(services => new SqliteDatabase(
+            services.GetRequiredService<ISqliteConnectionFactory>(),
+            services.GetRequiredService<ISqliteMigrator>(),
+            services.GetRequiredService<ILogger<SqliteDatabase>>(),
+            services.GetServices<ILocalDatabaseInitializedObserver>()));
         builder.Services.AddSingleton<IOutboxStore, SqliteOutboxStore>();
         builder.Services.AddSingleton<ICatchStore, SqliteCatchStore>();
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
@@ -161,6 +175,19 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<ProfileViewModel>();
         builder.Services.AddSingleton<IOnboardingStatusService, OnboardingStatusService>();
         builder.Services.AddSingleton<IGeolocationAdapter, GeolocationAdapter>();
+        builder.Services.AddSingleton<IPhotographRootPathProvider>(services => new PhotographRootPathProvider(
+            services.GetRequiredService<IFileSystemAdapter>(),
+            () => FileSystem.AppDataDirectory,
+            services.GetService<ILocalDatabasePathProvider>()));
+        builder.Services.AddSingleton<IPhotographFileStore, PhotographFileStore>();
+        builder.Services.AddSingleton<IPhotographReferenceStore, SqlitePhotographReferenceStore>();
+        builder.Services.AddSingleton<IPhotographLocalTimeMapper, DevicePhotographLocalTimeMapper>();
+        builder.Services.AddSingleton<PhotographMetadataProcessor>();
+        builder.Services.AddSingleton<IPhotographPreparationService, PhotographPreparationService>();
+        builder.Services.AddSingleton<IPhotographCollectionEditorService, PhotographCollectionEditorService>();
+        builder.Services.AddSingleton<ICatchPhotographSaveArgsMapper, CatchPhotographSaveArgsMapper>();
+        builder.Services.AddSingleton<IPhotographMediaAdapter, PhotographMediaAdapter>();
+        builder.Services.AddTransient<PhotographCollectionEditorViewModel>();
         builder.Services.AddSingleton<IDeviceLocationService, DeviceLocationService>();
         builder.Services.AddSingleton<IOnboardingNavigator, WindowWorkspaceNavigator>();
         builder.Services.AddTransient<OnboardingViewModel>();

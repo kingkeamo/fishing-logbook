@@ -15,7 +15,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
 
         // Act
         var metadata = await sut.ReadAsync([], PhotographContentTypeConstants.Jpeg, null, ReferenceNow, CancellationToken.None);
@@ -32,7 +32,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
 
         // Act
@@ -50,7 +50,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
 
         // Act
         var metadata = await sut.ReadAsync(
@@ -72,7 +72,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
         for (var index = 12; index < bytes.Length - 2; index++)
         {
@@ -96,7 +96,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { Latitude = 53.2707, Longitude = -9.0568 });
 
         // Act
@@ -120,7 +120,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = dateTimeOriginal } });
 
         // Act
@@ -143,7 +143,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = UnavailableBrowserTime();
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
 
         // Act
@@ -166,7 +166,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent
         {
             Latitude = 53.2707,
@@ -196,7 +196,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent
         {
             Latitude = 53.2707,
@@ -222,7 +222,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { Latitude = 91.5, Longitude = 9.0568 });
 
         // Act
@@ -242,7 +242,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { Latitude = 0, Longitude = 0 });
 
         // Act
@@ -262,7 +262,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
 
         // Act
@@ -283,7 +283,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(1));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { Latitude = 53.2707, Longitude = -9.0568 });
 
         // Act
@@ -308,7 +308,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(2));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } });
 
         // Act
@@ -331,7 +331,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.FromHours(5));
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -361,7 +361,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -388,7 +388,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent
         {
             ExifText =
@@ -418,7 +418,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(new ExifContent { Latitude = -33.8688, Longitude = -70.6693 });
 
         // Act
@@ -439,7 +439,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(
             new ExifContent
             {
@@ -468,7 +468,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Jpeg(
             new ExifContent { ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" } },
             withJfifSegment: false);
@@ -490,7 +490,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Png(new ExifContent
         {
             ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" },
@@ -516,7 +516,7 @@ public class WhenTestingReadAsync : BasePhotographMetadataServiceTest
     {
         // Arrange
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
         var bytes = Webp(new ExifContent
         {
             ExifText = { [DateTimeOriginalTag] = "2025:06:14 07:32:10" },

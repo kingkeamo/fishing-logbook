@@ -142,6 +142,14 @@
   <data name="Share" xml:space="preserve"><value>Partager</value></data>
   <data name="PhotoDetails" xml:space="preserve"><value>Détails de la photo</value></data>
   <data name="DeletePhoto" xml:space="preserve"><value>Supprimer la photo</value></data>
+  <data name="PhotoTakePicture" xml:space="preserve"><value>Prendre une photo</value></data>
+  <data name="PhotoChooseGallery" xml:space="preserve"><value>Choisir dans la galerie</value></data>
+  <data name="PhotoMoveEarlier" xml:space="preserve"><value>Plus tôt</value></data>
+  <data name="PhotoMoveLater" xml:space="preserve"><value>Plus tard</value></data>
+  <data name="PhotoPermissionDenied" xml:space="preserve"><value>L'accès à l'appareil photo ou à la photothèque a été refusé.</value></data>
+  <data name="PhotoUnsupportedFormat" xml:space="preserve"><value>Ce format de photo n'est pas pris en charge.</value></data>
+  <data name="PhotoPrepareFailed" xml:space="preserve"><value>Cette photo n'a pas pu être préparée.</value></data>
+  <data name="PhotoTooLarge" xml:space="preserve"><value>Cette photo dépasse la taille maximale.</value></data>
   <data name="Back" xml:space="preserve"><value>Retour</value></data>
   <data name="ProfileName" xml:space="preserve"><value>Eamonn</value></data>
   <data name="ViewProfile" xml:space="preserve"><value>Voir le profil</value></data>

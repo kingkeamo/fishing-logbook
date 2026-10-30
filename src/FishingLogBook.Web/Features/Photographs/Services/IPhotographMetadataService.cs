@@ -1,4 +1,4 @@
-using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Shared.Photographs.Models;
 
 namespace FishingLogBook.Web.Features.Photographs.Services;
 

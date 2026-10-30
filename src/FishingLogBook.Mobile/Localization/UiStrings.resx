@@ -142,6 +142,14 @@
   <data name="Share" xml:space="preserve"><value>Share</value></data>
   <data name="PhotoDetails" xml:space="preserve"><value>Photo details</value></data>
   <data name="DeletePhoto" xml:space="preserve"><value>Remove photo</value></data>
+  <data name="PhotoTakePicture" xml:space="preserve"><value>Take photo</value></data>
+  <data name="PhotoChooseGallery" xml:space="preserve"><value>Choose from gallery</value></data>
+  <data name="PhotoMoveEarlier" xml:space="preserve"><value>Earlier</value></data>
+  <data name="PhotoMoveLater" xml:space="preserve"><value>Later</value></data>
+  <data name="PhotoPermissionDenied" xml:space="preserve"><value>Camera or photo library access was denied.</value></data>
+  <data name="PhotoUnsupportedFormat" xml:space="preserve"><value>This photo format is not supported.</value></data>
+  <data name="PhotoPrepareFailed" xml:space="preserve"><value>This photo could not be prepared.</value></data>
+  <data name="PhotoTooLarge" xml:space="preserve"><value>This photo exceeds the maximum size.</value></data>
   <data name="Back" xml:space="preserve"><value>Back</value></data>
   <data name="ProfileName" xml:space="preserve"><value>Eamonn</value></data>
   <data name="ViewProfile" xml:space="preserve"><value>View profile</value></data>

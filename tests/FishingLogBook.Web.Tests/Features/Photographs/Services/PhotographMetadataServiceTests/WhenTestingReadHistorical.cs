@@ -20,7 +20,7 @@ public class WhenTestingReadHistorical : BasePhotographMetadataServiceTest
                 [OffsetTimeOriginalTag] = "+01:00"
             }
         });
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.FromHours(4)));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.FromHours(4)));
 
         // Act
         var result = sut.ReadHistorical(bytes, PhotographContentTypeConstants.Jpeg, null, ReferenceNow);
@@ -40,7 +40,7 @@ public class WhenTestingReadHistorical : BasePhotographMetadataServiceTest
         {
             ExifText = { [DateTimeOriginalTag] = "2025:06:14 09:30:00" }
         });
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.FromHours(4)));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.FromHours(4)));
 
         // Act
         var result = sut.ReadHistorical(bytes, PhotographContentTypeConstants.Jpeg, null, ReferenceNow);
@@ -60,7 +60,7 @@ public class WhenTestingReadHistorical : BasePhotographMetadataServiceTest
         {
             ExifText = { [DateTimeOriginalTag] = "not-a-date" }
         });
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var result = sut.ReadHistorical(
@@ -81,7 +81,7 @@ public class WhenTestingReadHistorical : BasePhotographMetadataServiceTest
     {
         // Arrange
         var fallback = ReferenceNow.AddDays(-1);
-        var sut = new PhotographMetadataService(BrowserTime(TimeSpan.Zero));
+        var sut = CreateMetadataService(BrowserTime(TimeSpan.Zero));
 
         // Act
         var result = sut.ReadHistorical(
@@ -102,7 +102,7 @@ public class WhenTestingReadHistorical : BasePhotographMetadataServiceTest
         // Arrange
         var bytes = Jpeg(new ExifContent { Latitude = 53.3498, Longitude = -6.2603 });
         var time = BrowserTime(TimeSpan.Zero);
-        var sut = new PhotographMetadataService(time);
+        var sut = CreateMetadataService(time);
 
         // Act
         var result = sut.ReadHistorical(bytes, PhotographContentTypeConstants.Jpeg, null, ReferenceNow);

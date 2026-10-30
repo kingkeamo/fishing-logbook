@@ -1,3 +1,4 @@
+using FishingLogBook.Shared.Photographs.Models;
 using FishingLogBook.Web.Features.Photographs.Enums;
 
 namespace FishingLogBook.Web.Features.Photographs.Models;

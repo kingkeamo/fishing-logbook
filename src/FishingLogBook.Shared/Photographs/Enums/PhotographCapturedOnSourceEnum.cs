@@ -1,4 +1,4 @@
-namespace FishingLogBook.Web.Features.Photographs.Enums;
+namespace FishingLogBook.Shared.Photographs.Enums;
 
 public enum PhotographCapturedOnSourceEnum
 {
