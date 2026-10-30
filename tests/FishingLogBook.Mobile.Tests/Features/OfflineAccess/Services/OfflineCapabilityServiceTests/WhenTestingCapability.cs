@@ -43,6 +43,38 @@ public sealed class WhenTestingCapability : BaseOfflineCapabilityServiceTest
     }
 
     [Fact]
+    public async Task ItShouldRevokeACapabilityOwnedByTheSpecifiedAccount()
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        var disabled = capability with { IsDeviceReady = false };
+        MockStore.GetAsync(CancellationToken.None).Returns(capability, capability, disabled);
+
+        // Act
+        await Sut.RevokeIfOwnedByAsync(Subject, UserId, CancellationToken.None);
+
+        // Assert
+        await MockStore.Received(1).SaveAsync(disabled, CancellationToken.None);
+        await MockStore.Received(1).RemoveAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ItShouldRetainANewerCapabilityOwnedByAnotherAccount()
+    {
+        // Arrange
+        var newer = new OfflineCapabilityModel("new-subject", Guid.NewGuid(), IsDeviceReady: true);
+        MockStore.GetAsync(CancellationToken.None).Returns(newer);
+
+        // Act
+        await Sut.RevokeIfOwnedByAsync(Subject, UserId, CancellationToken.None);
+
+        // Assert
+        await MockStore.DidNotReceive().SaveAsync(
+            Arg.Any<OfflineCapabilityModel>(), Arg.Any<CancellationToken>());
+        await MockStore.DidNotReceive().RemoveAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldRemainRevokedWhenDeletionFailsAfterDisabling()
     {
         // Arrange

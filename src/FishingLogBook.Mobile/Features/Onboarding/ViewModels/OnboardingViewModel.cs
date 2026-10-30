@@ -2,6 +2,7 @@ using System.ComponentModel;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Services;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Onboarding.Enums;
 using FishingLogBook.Mobile.Features.Onboarding.Models;
 using FishingLogBook.Mobile.Features.Onboarding.Services;
@@ -22,6 +23,7 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
     private readonly IOnboardingNavigator _navigator;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly IAuthenticationService _authentication;
+    private readonly IOfflinePreparationService _offlinePreparation;
     private OnboardingStepEnum _step;
     private bool _isBusy;
     private bool _locationHandled;
@@ -35,6 +37,7 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
         IAccountSessionCoordinator sessionCoordinator,
         IAuthenticationService authentication,
         IProfileClient profileClient,
+        IOfflinePreparationService offlinePreparation,
         UiTextService text)
     {
         Profile = profile;
@@ -44,6 +47,7 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
         _sessionCoordinator = sessionCoordinator;
         _authentication = authentication;
         _profileClient = profileClient;
+        _offlinePreparation = offlinePreparation;
         Text = text;
         Profile.PropertyChanged += OnProfileChanged;
         Text.PropertyChanged += OnCultureChanged;
@@ -250,6 +254,17 @@ public sealed class OnboardingViewModel : INotifyPropertyChanged
             if (!result.Value.OnboardingCompleted)
             {
                 Message = Text["OnboardingSaveFailed"];
+                return;
+            }
+
+            if (!await _offlinePreparation.EnsurePreparedAsync(result.Value, cancellationToken))
+            {
+                Message = Text["OnboardingPreparationError"];
+                return;
+            }
+
+            if (!_sessionCoordinator.IsCurrent(lease) || _authentication.CurrentSession?.UserId != lease.UserId)
+            {
                 return;
             }
 

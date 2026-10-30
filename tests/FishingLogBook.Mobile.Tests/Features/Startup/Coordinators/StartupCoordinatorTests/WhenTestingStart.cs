@@ -40,6 +40,24 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
     }
 
     [Fact]
+    public async Task ItShouldRejectAReadyCapabilityWhenEssentialCachedDataIsMissing()
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockConnectivity.IsOnline.Returns(false);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockOfflinePreparation.IsPreparedAsync(capability, CancellationToken.None).Returns(false);
+
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(StartupResultEnum.OfflineAccessUnavailable);
+        await MockDeviceUnlock.DidNotReceive().UnlockAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+    }
+
+    [Fact]
     public async Task ItShouldNotActivateOfflineAccessWhenDeviceUnlockIsCancelled()
     {
         // Arrange

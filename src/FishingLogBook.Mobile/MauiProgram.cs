@@ -113,7 +113,11 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IAnglerPreferencesStore>(services => new FileAnglerPreferencesStore(
             services.GetRequiredService<IFileSystemAdapter>(),
             Path.Combine(FileSystem.AppDataDirectory, "angler-preferences")));
+        builder.Services.AddSingleton<IOfflineAccountStore>(services => new FileOfflineAccountStore(
+            services.GetRequiredService<IFileSystemAdapter>(),
+            Path.Combine(FileSystem.AppDataDirectory, "offline-accounts")));
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
+        builder.Services.AddSingleton<IOfflinePreparationService, OfflinePreparationService>();
         builder.Services.AddSingleton<IAccountUnitsService, AccountUnitsService>();
         builder.Services.AddSingleton<IProfileEditorService, ProfileEditorService>();
         builder.Services.AddSingleton<IConnectivityService, DeviceConnectivityService>();
@@ -122,6 +126,7 @@ public static partial class MauiProgram
             services.GetRequiredService<IConnectivityService>(),
             services.GetRequiredService<IAuthenticationService>(),
             services.GetRequiredService<IOfflineCapabilityService>(),
+            services.GetRequiredService<IOfflinePreparationService>(),
             services.GetRequiredService<IDeviceUnlockService>(),
             services.GetRequiredService<IOfflineSessionService>(),
             services.GetRequiredService<IAccountSessionCoordinator>(),

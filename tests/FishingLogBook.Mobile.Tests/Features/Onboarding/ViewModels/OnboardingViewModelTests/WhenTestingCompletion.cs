@@ -9,6 +9,26 @@ namespace FishingLogBook.Mobile.Tests.Features.Onboarding.ViewModels.OnboardingV
 public sealed class WhenTestingCompletion : BaseOnboardingViewModelTest
 {
     [Fact]
+    public async Task ItShouldStayOnFinishWhenOfflinePreparationFails()
+    {
+        // Arrange
+        await ReachFinishAsync();
+        var completed = Data.Profile with { OnboardingCompleted = true };
+        MockProfileClient.CompleteOnboardingAsync(Arg.Any<CancellationToken>())
+            .Returns(ApiResultModel<ProfileDto>.Succeeded(completed));
+        MockOfflinePreparation.EnsurePreparedAsync(completed, CancellationToken.None).Returns(false);
+
+        // Act
+        await Sut.ContinueAsync(CancellationToken.None);
+
+        // Assert
+        Sut.StepNumber.Should().Be(4);
+        Sut.Message.Should().Be(Text["OnboardingPreparationError"]);
+        MockStatus.DidNotReceive().RememberCompleted(Arg.Any<Guid>());
+        MockNavigator.DidNotReceive().ShowAuthenticatedApp();
+    }
+
+    [Fact]
     public async Task ItShouldEnterTheAppOnlyAfterTheServerConfirmsCompletion()
     {
         // Arrange
@@ -21,6 +41,9 @@ public sealed class WhenTestingCompletion : BaseOnboardingViewModelTest
 
         // Assert
         MockStatus.Received(1).RememberCompleted(UserId);
+        await MockOfflinePreparation.Received(1).EnsurePreparedAsync(
+            Arg.Is<ProfileDto>(profile => profile.UserId == UserId && profile.OnboardingCompleted),
+            CancellationToken.None);
         MockNavigator.Received(1).ShowAuthenticatedApp();
         MockNavigator.DidNotReceive().ShowOnboarding();
     }
@@ -117,5 +140,28 @@ public sealed class WhenTestingCompletion : BaseOnboardingViewModelTest
         MockNavigator.DidNotReceive().ShowAuthenticatedApp();
         MockStatus.DidNotReceive().RememberCompleted(Arg.Any<Guid>());
         Sut.StepNumber.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task ItShouldNotNavigateWhenTheAccountChangesDuringOfflinePreparation()
+    {
+        // Arrange
+        await ReachFinishAsync();
+        var completed = Data.Profile with { OnboardingCompleted = true };
+        MockProfileClient.CompleteOnboardingAsync(Arg.Any<CancellationToken>())
+            .Returns(ApiResultModel<ProfileDto>.Succeeded(completed));
+        MockOfflinePreparation.EnsurePreparedAsync(completed, CancellationToken.None)
+            .Returns(_ =>
+            {
+                MockSession.IsCurrent(Lease).Returns(false);
+                return true;
+            });
+
+        // Act
+        await Sut.ContinueAsync(CancellationToken.None);
+
+        // Assert
+        MockStatus.DidNotReceive().RememberCompleted(Arg.Any<Guid>());
+        MockNavigator.DidNotReceive().ShowAuthenticatedApp();
     }
 }

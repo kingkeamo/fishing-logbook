@@ -3,6 +3,7 @@ using FishingLogBook.Mobile.Api.Models;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Services;
+using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Onboarding.Services;
 using FishingLogBook.Mobile.Features.Onboarding.ViewModels;
 using FishingLogBook.Mobile.Features.Profile.Clients;
@@ -31,6 +32,7 @@ public abstract class BaseOnboardingViewModelTest
     protected readonly IOnboardingNavigator MockNavigator = Substitute.For<IOnboardingNavigator>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly IProfileClient MockProfileClient = Substitute.For<IProfileClient>();
+    protected readonly IOfflinePreparationService MockOfflinePreparation = Substitute.For<IOfflinePreparationService>();
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
     protected readonly AccountSessionLeaseModel Lease = new(UserId, 1, CancellationToken.None);
     protected readonly AuthenticationSessionModel Session = new(
@@ -51,6 +53,8 @@ public abstract class BaseOnboardingViewModelTest
         MockAuthentication.CurrentSession.Returns(Session);
         MockSession.Capture().Returns(Lease);
         MockSession.IsCurrent(Lease).Returns(true);
+        MockOfflinePreparation.EnsurePreparedAsync(Arg.Any<ProfileDto>(), Arg.Any<CancellationToken>())
+            .Returns(true);
         Data = CreateData();
         MockEditor.LoadAsync(Arg.Any<CancellationToken>())
             .Returns(ApiResultModel<ProfileEditorDataModel>.Succeeded(Data));
@@ -70,6 +74,7 @@ public abstract class BaseOnboardingViewModelTest
             MockSession,
             MockAuthentication,
             MockProfileClient,
+            MockOfflinePreparation,
             Text);
     }
 

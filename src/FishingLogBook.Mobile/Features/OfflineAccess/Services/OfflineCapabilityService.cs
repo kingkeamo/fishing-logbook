@@ -3,13 +3,28 @@ using FishingLogBook.Mobile.Features.OfflineAccess.Stores;
 
 namespace FishingLogBook.Mobile.Features.OfflineAccess.Services;
 
-public sealed class OfflineCapabilityService(
-    ISecureOfflineCapabilityStore store) : IOfflineCapabilityService
+public sealed class OfflineCapabilityService : IOfflineCapabilityService
 {
+    private readonly SemaphoreSlim _operationGate = new(1, 1);
+    private readonly ISecureOfflineCapabilityStore _store;
+
+    public OfflineCapabilityService(ISecureOfflineCapabilityStore store)
+    {
+        _store = store;
+    }
+
     public async Task<OfflineCapabilityModel?> GetReadyAsync(CancellationToken cancellationToken)
     {
-        var capability = await store.GetAsync(cancellationToken);
-        return IsValid(capability) && capability!.IsDeviceReady ? capability : null;
+        await _operationGate.WaitAsync(cancellationToken);
+        try
+        {
+            var capability = await _store.GetAsync(cancellationToken);
+            return IsValid(capability) && capability!.IsDeviceReady ? capability : null;
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
     }
 
     public async Task MarkReadyAsync(string subject, Guid userId, CancellationToken cancellationToken)
@@ -20,25 +35,90 @@ public sealed class OfflineCapabilityService(
             throw new ArgumentException("An offline capability requires an account owner.", nameof(userId));
         }
 
-        var capability = new OfflineCapabilityModel(subject, userId, IsDeviceReady: true);
-        await store.SaveAsync(capability, cancellationToken);
-        var persisted = await store.GetAsync(cancellationToken);
-        if (persisted != capability)
+        await _operationGate.WaitAsync(cancellationToken);
+        try
         {
-            throw new InvalidOperationException("The offline capability could not be verified after persistence.");
+            var capability = new OfflineCapabilityModel(subject, userId, IsDeviceReady: true);
+            await _store.SaveAsync(capability, cancellationToken);
+            var persisted = await _store.GetAsync(cancellationToken);
+            if (persisted != capability)
+            {
+                throw new InvalidOperationException("The offline capability could not be verified after persistence.");
+            }
+        }
+        finally
+        {
+            _operationGate.Release();
         }
     }
 
     public async Task RevokeAsync(CancellationToken cancellationToken)
     {
-        var capability = await store.GetAsync(cancellationToken);
+        await _operationGate.WaitAsync(cancellationToken);
+        try
+        {
+            await RevokeCoreAsync(cancellationToken);
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
+    }
+
+    public async Task RevokeIfOwnedByAsync(
+        string subject,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        await _operationGate.WaitAsync(cancellationToken);
+        try
+        {
+            var capability = await _store.GetAsync(cancellationToken);
+            if (!IsOwnedBy(capability, subject, userId))
+            {
+                return;
+            }
+
+            await RevokeCoreAsync(cancellationToken);
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
+    }
+
+    public async Task RevokeIfOwnedByAnotherAccountAsync(
+        string subject,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        await _operationGate.WaitAsync(cancellationToken);
+        try
+        {
+            var capability = await _store.GetAsync(cancellationToken);
+            if (capability is null || IsOwnedBy(capability, subject, userId))
+            {
+                return;
+            }
+
+            await RevokeCoreAsync(cancellationToken);
+        }
+        finally
+        {
+            _operationGate.Release();
+        }
+    }
+
+    private async Task RevokeCoreAsync(CancellationToken cancellationToken)
+    {
+        var capability = await _store.GetAsync(cancellationToken);
         Exception? persistenceFailure = null;
         if (capability is not null && capability.IsDeviceReady)
         {
             var disabled = capability with { IsDeviceReady = false };
             try
             {
-                await store.SaveAsync(disabled, cancellationToken);
+                await _store.SaveAsync(disabled, cancellationToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -48,14 +128,14 @@ public sealed class OfflineCapabilityService(
 
         try
         {
-            await store.RemoveAsync(cancellationToken);
+            await _store.RemoveAsync(cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             persistenceFailure ??= exception;
         }
 
-        var persisted = await store.GetAsync(cancellationToken);
+        var persisted = await _store.GetAsync(cancellationToken);
         if (persisted?.IsDeviceReady == true)
         {
             throw new InvalidOperationException(
@@ -64,19 +144,11 @@ public sealed class OfflineCapabilityService(
         }
     }
 
-    public async Task RevokeIfOwnedByAnotherAccountAsync(
-        string subject,
-        Guid userId,
-        CancellationToken cancellationToken)
+    private static bool IsOwnedBy(OfflineCapabilityModel? capability, string subject, Guid userId)
     {
-        var capability = await store.GetAsync(cancellationToken);
-        if (capability is null ||
-            string.Equals(capability.Subject, subject, StringComparison.Ordinal) && capability.UserId == userId)
-        {
-            return;
-        }
-
-        await RevokeAsync(cancellationToken);
+        return capability is not null &&
+            string.Equals(capability.Subject, subject, StringComparison.Ordinal) &&
+            capability.UserId == userId;
     }
 
     private static bool IsValid(OfflineCapabilityModel? capability)

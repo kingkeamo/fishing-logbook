@@ -1,7 +1,7 @@
 # Mobile offline startup foundation
 
-Issue #268 is delivered in three sequential pull requests. This document describes the
-PR 1 boundary only.
+Issue #268 is delivered in three sequential pull requests. PR 1 established startup and
+secure unlock; PR 2 adds automatic, verified device preparation after onboarding.
 
 CBDF remains online-first. Offline access is available only when the device reports that
 it has no internet connection. A Cognito or CBDF API outage while the device remains online
@@ -40,21 +40,44 @@ the system device-credential confirmation screen. Android 29 and later uses the 
 biometric prompt with device credentials allowed. iOS uses
 `LAPolicy.DeviceOwnerAuthentication`, which permits Face ID, Touch ID, or the device passcode.
 
+## Automatic offline preparation
+
+A server-completed onboarding profile is not sufficient on its own. Before the native app
+records device-local onboarding completion or enters the authenticated workspace, it:
+
+1. verifies that the authenticated Cognito subject, CBDF user ID, account lease, and profile
+   owner all agree;
+2. downloads the current fishing catalogue, preferences, locations, profile, identity, and
+   measurement-unit settings;
+3. atomically persists account-scoped profile and preference snapshots and reads them back;
+4. writes and verifies the secure offline capability last; and
+5. revalidates the complete cache/capability set before reporting preparation complete.
+
+The profile snapshot carries the server-confirmed onboarding state and measurement units.
+The preferences snapshot carries the required fishing method/species catalogue, the user's
+selections, and fishing locations. These are essential startup data. Catch data, photographs,
+discovery content, and other refreshable screens remain outside this preparation boundary.
+
+Preparation is idempotent. A verified prepared account causes no network refresh or secure
+storage rewrite. An interrupted or partially completed preparation remains in a recoverable
+state and can safely retry; because the capability is committed last, partial local files do
+not grant offline access. Returning users who completed onboarding before installing this
+version are prepared automatically while online.
+
+Offline startup validates the secure capability and both account-scoped snapshots before it
+shows the device-owner prompt. Missing, corrupt, incomplete, or differently owned data fails
+closed and asks the user to reconnect. No offline session contains an API bearer token.
+
 ## PR boundaries
 
-PR 1 deliberately does not call the readiness method from onboarding. Consequently, an
-ordinary installed build will not become offline-ready from this PR alone. PR 2 must prepare
-the required local onboarding/profile/catalogue data, persist and verify the secure
-capability, and only then mark device-local onboarding readiness complete. Server-confirmed
-onboarding status remains separate.
-
-PR 2 owns profile, measurement, and catalogue cache fallback. PR 3 owns the complete
+PR 2 persists and validates the profile, measurement, preference, location, and catalogue
+foundation required by offline startup. PR 3 owns the complete
 connectivity-return, online identity revalidation, and synchronization-readiness lifecycle.
 Offline catch/photo persistence and synchronization remain in issue #269 and later issues.
 
 ## Manual Android validation
 
-After PR 2 can prepare an entitlement, validate on a physical Android device:
+Validate the complete PR 2 journey on a physical Android device:
 
 1. Sign in and complete onboarding online.
 2. Force stop the app, disable internet connectivity, and relaunch.
@@ -64,5 +87,6 @@ After PR 2 can prepare an entitlement, validate on a physical Android device:
 6. Confirm protected API calls cannot obtain a bearer token while offline.
 7. Sign out and confirm a later offline launch cannot unlock.
 
-PR 1 unit tests exercise these state transitions with a pre-provisioned capability; device
-prompt presentation still requires emulator or physical-device validation.
+Automated tests exercise preparation, partial failure, ownership, persistence verification,
+and startup rejection with incomplete data. Device prompt presentation and operating-system
+secure-storage behaviour still require emulator or physical-device validation.

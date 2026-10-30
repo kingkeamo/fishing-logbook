@@ -306,6 +306,7 @@
   <data name="OnboardingFinish" xml:space="preserve"><value>Ouvrir mon carnet</value></data>
   <data name="OnboardingSaveFailed" xml:space="preserve"><value>Enregistrement impossible. Vérifiez votre connexion et réessayez.</value></data>
   <data name="OnboardingStatusError" xml:space="preserve"><value>Impossible de vérifier si votre carnet est déjà configuré. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="OnboardingPreparationError" xml:space="preserve"><value>Impossible de préparer cet appareil pour une utilisation hors connexion. Vérifiez votre connexion et réessayez.</value></data>
   <data name="OnboardingValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
   <data name="OnboardingValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espèce pour {0}.</value></data>
   <data name="OnboardingValidationSpeciesForMethods" xml:space="preserve"><value>Choisissez au moins une espèce pour chacune de ces méthodes de pêche : {0}.</value></data>

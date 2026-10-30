@@ -306,6 +306,7 @@
   <data name="OnboardingFinish" xml:space="preserve"><value>Open my Logbook</value></data>
   <data name="OnboardingSaveFailed" xml:space="preserve"><value>We couldn’t save that yet. Check your connection and try again.</value></data>
   <data name="OnboardingStatusError" xml:space="preserve"><value>We couldn’t check whether your logbook is already set up. Check your connection and try again.</value></data>
+  <data name="OnboardingPreparationError" xml:space="preserve"><value>We couldn’t prepare this device for offline use. Check your connection and try again.</value></data>
   <data name="OnboardingValidationFishingMethod" xml:space="preserve"><value>Choose at least one fishing method.</value></data>
   <data name="OnboardingValidationSpeciesForMethod" xml:space="preserve"><value>Choose at least one species for {0}.</value></data>
   <data name="OnboardingValidationSpeciesForMethods" xml:space="preserve"><value>Choose at least one species for each of these fishing methods: {0}.</value></data>

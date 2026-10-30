@@ -14,6 +14,7 @@ public sealed class StartupCoordinator(
     IConnectivityService connectivity,
     IAuthenticationService authentication,
     IOfflineCapabilityService offlineCapability,
+    IOfflinePreparationService offlinePreparation,
     IDeviceUnlockService deviceUnlock,
     IOfflineSessionService offlineSession,
     IAccountSessionCoordinator accountSession,
@@ -68,6 +69,11 @@ public sealed class StartupCoordinator(
     {
         var capability = await offlineCapability.GetReadyAsync(cancellationToken);
         if (capability is null)
+        {
+            return StartupResultEnum.OfflineAccessUnavailable;
+        }
+
+        if (!await offlinePreparation.IsPreparedAsync(capability, cancellationToken))
         {
             return StartupResultEnum.OfflineAccessUnavailable;
         }
