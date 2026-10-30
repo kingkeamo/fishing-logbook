@@ -280,6 +280,57 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
     }
 
     [Fact]
+    public async Task ItShouldIncludeLocationPrivacyFieldsInThePendingOutboxPayload()
+    {
+        // Arrange
+        var args = CreateSaveArgs();
+        args = new FishingLogBook.Mobile.Features.Catch.Offline.Models.LocalCatchSaveArgs
+        {
+            Id = args.Id,
+            CaughtOn = args.CaughtOn,
+            SpeciesName = args.SpeciesName,
+            Weight = args.Weight,
+            Length = args.Length,
+            Method = args.Method,
+            BaitOrLure = args.BaitOrLure,
+            Notes = args.Notes,
+            PlaceName = args.PlaceName,
+            Lifecycle = LocalCatchLifecycleEnum.Saved,
+            Location = new FishingLogBook.Mobile.Features.Catch.Offline.Models.LocalCatchLocationModel
+            {
+                Latitude = 53.4,
+                Longitude = -9.1,
+                AccuracyMetres = 12.5,
+                CapturedOn = DateTimeOffset.Parse("2026-05-01T12:01:00Z"),
+                Source = "Gps",
+                Visibility = "Private",
+                ConsentVersion = "location-v1"
+            },
+            Photographs = args.Photographs
+        };
+
+        // Act
+        await Sut.SaveAsync(args, CancellationToken.None);
+        var loaded = await Sut.GetAsync(args.Id, CancellationToken.None);
+        var pending = await OutboxStore.ListPendingForAggregateAsync(
+            OwnerUserId,
+            OutboxAggregateTypeEnum.Catch,
+            args.Id,
+            CancellationToken.None);
+
+        // Assert
+        loaded!.Location.Should().NotBeNull();
+        loaded.Location!.Visibility.Should().Be("Private");
+        loaded.Location.ConsentVersion.Should().Be("location-v1");
+        pending.Should().HaveCount(1);
+        pending[0].PayloadJson.Should().Contain("\"latitude\":53.4");
+        pending[0].PayloadJson.Should().Contain("\"longitude\":-9.1");
+        pending[0].PayloadJson.Should().Contain("\"visibility\":\"Private\"");
+        pending[0].PayloadJson.Should().Contain("\"consentVersion\":\"location-v1\"");
+        pending[0].PayloadJson.Should().Contain("\"accuracyMetres\":12.5");
+    }
+
+    [Fact]
     public async Task ItShouldRejectASaveRecordedAsAnotherAccount()
     {
         // Arrange

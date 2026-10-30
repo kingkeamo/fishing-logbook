@@ -498,6 +498,16 @@ public sealed class SqliteCatchStore : ICatchStore
                 catchRecord.BaitOrLure,
                 catchRecord.Notes,
                 catchRecord.PlaceName,
+                catchRecord.Location is null
+                    ? null
+                    : new CatchOutboxLocationPayload(
+                        catchRecord.Location.Latitude,
+                        catchRecord.Location.Longitude,
+                        catchRecord.Location.AccuracyMetres,
+                        catchRecord.Location.CapturedOn,
+                        catchRecord.Location.Source,
+                        catchRecord.Location.Visibility,
+                        catchRecord.Location.ConsentVersion),
                 catchRecord.Revision,
                 catchRecord.Lifecycle.ToString()),
             PayloadSerializerOptions);
@@ -742,6 +752,16 @@ public sealed class SqliteCatchStore : ICatchStore
         string? BaitOrLure,
         string? Notes,
         string? PlaceName,
+        CatchOutboxLocationPayload? Location,
         long Revision,
         string Lifecycle);
+
+    private sealed record CatchOutboxLocationPayload(
+        double Latitude,
+        double Longitude,
+        double? AccuracyMetres,
+        DateTimeOffset CapturedOn,
+        string Source,
+        string Visibility,
+        string ConsentVersion);
 }

@@ -32,6 +32,32 @@ GUIDs are `TEXT`; timestamps are ISO-8601 `TEXT`.
 Pending outbox rows coalesce via a partial unique index on
 `(userid, aggregatetype, aggregateid, operationtype) WHERE status = 'Pending'`.
 
+### Outbox lifecycle invariant (concurrent edit while syncing)
+
+Statuses: `Pending` → `InProgress` (claim) → `Completed` / `Failed` / `Dead`.
+
+`UpsertPendingAsync` only coalesces rows that are still `Pending`. When sync claims a
+row by moving it to `InProgress` (or any non-`Pending` status), a later local edit
+creates a **new** `Pending` row. Completing or failing the claimed row updates that row
+only and must not clear or rewrite the newer `Pending` intent.
+
+The unique index enforces at most one `Pending` row per
+`(userid, aggregatetype, aggregateid, operationtype)`. Multiple historical rows may
+exist for the same aggregate once statuses leave `Pending`.
+
+Future sync must treat each outbox row as revision-scoped: completing revision *N*
+must not mark the local catch synchronised if `localcatches.revision` is already
+greater than *N*, and must not overwrite newer local fields from an older payload.
+
+### Outbox payload vs local catch (location)
+
+The pending `UpsertCatchMetadata` payload is a **revision-scoped snapshot** of catch
+metadata, including location coordinates, accuracy, captured-on, source, visibility
+and consent version when present (aligned with Web `CatchDto` / `CatchLocationDto`).
+Sync may POST from that snapshot for the claimed operation. The durable local catch
+row remains the live device state; privacy fields stay on-device until an authenticated
+sync uses them. This PR does not implement sync or coordinate disclosure policy.
+
 ## Atomic save + outbox
 
 `ICatchStore.SaveAsync` (in `Features/Catch/Offline/Stores`, mirroring Web) opens one
