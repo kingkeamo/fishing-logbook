@@ -40,7 +40,12 @@ jobs:
           dotnet build FishingLogBook.Mobile.slnx
           "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME"
       - name: Test mobile presentation
-        run: dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj --no-build --no-restore
+        # Rebuild net10.0 explicitly: --no-build after the multi-TFM Android solution
+        # build has hung at testhost start on windows-latest. Avoid ClearAllPools races
+        # by not relying on leftover android build outputs for the test host.
+        run: >-
+          dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj
+          -f net10.0 --verbosity minimal
       - name: Build trimmed ARM64 release APK
         run: >-
           dotnet build src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj

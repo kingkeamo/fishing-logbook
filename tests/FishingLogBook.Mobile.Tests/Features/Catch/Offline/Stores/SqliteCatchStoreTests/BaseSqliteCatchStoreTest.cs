@@ -5,7 +5,6 @@ using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
@@ -126,21 +125,31 @@ public abstract class BaseSqliteCatchStoreTest : IDisposable
 
         _disposed = true;
         Database.Dispose();
-        SqliteConnection.ClearAllPools();
-        try
+        TryDeleteDirectory(_directory);
+        GC.SuppressFinalize(this);
+    }
+
+    private static void TryDeleteDirectory(string directory)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
         {
-            if (Directory.Exists(_directory))
+            try
             {
-                Directory.Delete(_directory, recursive: true);
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, recursive: true);
+                }
+
+                return;
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(25);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Thread.Sleep(25);
             }
         }
-        catch (IOException)
-        {
-        }
-        catch (UnauthorizedAccessException)
-        {
-        }
-
-        GC.SuppressFinalize(this);
     }
 }
