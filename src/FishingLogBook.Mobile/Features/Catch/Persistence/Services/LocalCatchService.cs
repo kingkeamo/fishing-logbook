@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Mobile.Features.Catch.Persistence.Enums;
 using FishingLogBook.Mobile.Features.Catch.Persistence.Models;
 using FishingLogBook.Mobile.Features.Catch.Persistence.Stores;
 using FishingLogBook.Mobile.Features.LocalPersistence.Enums;
@@ -52,11 +53,15 @@ public sealed class LocalCatchService : ILocalCatchService
         ArgumentNullException.ThrowIfNull(args);
         if (args.Id == Guid.Empty)
         {
-            throw new ArgumentException("A client-generated catch id is required.", nameof(args));
+            return LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.InvalidRequest);
         }
 
-        var lease = _sessionCoordinator.Capture()
-            ?? throw new InvalidOperationException("A signed-in account session is required.");
+        var lease = _sessionCoordinator.Capture();
+        if (lease is null)
+        {
+            return LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.NotSignedIn);
+        }
+
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
             lease.CancellationToken);
@@ -72,14 +77,29 @@ public sealed class LocalCatchService : ILocalCatchService
                 },
                 linkedCancellation.Token);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException exception) when (IsOwnershipFailure(exception))
+        {
+            _logger.LogWarning(exception, "Local catch save rejected for catch {CatchId}.", args.Id);
+            return LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.Forbidden);
+        }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _logger.LogError(exception, "Failed to save local catch {CatchId}.", args.Id);
-            throw;
+            return LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.StorageFailed);
         }
 
-        return result
-            ?? throw new InvalidOperationException("The local catch save completed without a result.");
+        return result ?? LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.StorageFailed);
+    }
+
+    private static bool IsOwnershipFailure(InvalidOperationException exception)
+    {
+        return exception.Message.Contains("different account", StringComparison.OrdinalIgnoreCase)
+            || exception.Message.Contains("ownership", StringComparison.OrdinalIgnoreCase)
+            || exception.Message.Contains("current account", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<LocalCatchRecordModel?> GetAsync(Guid catchId, CancellationToken cancellationToken)
@@ -135,8 +155,7 @@ public sealed class LocalCatchService : ILocalCatchService
         var caughtByUserId = args.CaughtByUserId ?? lease.UserId;
         if (recordedByUserId != lease.UserId)
         {
-            throw new InvalidOperationException(
-                "A catch can only be recorded under the signed-in account.");
+            return LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.Forbidden);
         }
 
         await UpsertTripIfNeededAsync(connection, transaction, lease.UserId, args, now, cancellationToken);
@@ -172,11 +191,7 @@ public sealed class LocalCatchService : ILocalCatchService
             cancellationToken);
         EnsureCurrentSession(lease, "during the save");
 
-        return new LocalCatchSaveResultModel
-        {
-            CatchId = args.Id,
-            Revision = revision
-        };
+        return LocalCatchSaveResultModel.Saved(args.Id, revision);
     }
 
     private void EnsureCurrentSession(AccountSessionLeaseModel lease, string phase)
@@ -219,8 +234,8 @@ public sealed class LocalCatchService : ILocalCatchService
         Guid recordedByUserId,
         LocalCatchSaveArgs args,
         long revision,
-        DateTimeOffset createdAt,
-        DateTimeOffset updatedAt)
+        DateTimeOffset createdOn,
+        DateTimeOffset updatedOn)
     {
         var photographs = args.Photographs
             .Select(photograph => new LocalCatchPhotographModel
@@ -231,7 +246,7 @@ public sealed class LocalCatchService : ILocalCatchService
                 SortOrder = photograph.SortOrder,
                 LocalFilePath = photograph.LocalFilePath,
                 ContentType = photograph.ContentType,
-                CreatedOn = updatedAt
+                CreatedOn = updatedOn
             })
             .ToArray();
 
@@ -253,8 +268,8 @@ public sealed class LocalCatchService : ILocalCatchService
             Location = args.Location,
             Revision = revision,
             Lifecycle = args.Lifecycle,
-            CreatedOn = createdAt,
-            UpdatedOn = updatedAt,
+            CreatedOn = createdOn,
+            UpdatedOn = updatedOn,
             Photographs = photographs
         };
     }

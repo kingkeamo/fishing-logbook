@@ -23,6 +23,8 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
         var loaded = await reopened.GetAsync(args.Id, CancellationToken.None);
 
         // Assert
+        saved.IsSuccess.Should().BeTrue();
+        saved.Outcome.Should().Be(LocalCatchSaveOutcomeEnum.Success);
         saved.CatchId.Should().Be(args.Id);
         saved.Revision.Should().Be(1);
         loaded.Should().NotBeNull();
@@ -127,14 +129,15 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
         // Act
         var otherRead = await otherService.GetAsync(args.Id, CancellationToken.None);
         var otherList = await otherService.ListAsync(CancellationToken.None);
-        var overwrite = async () => await otherService.SaveAsync(
+        var overwrite = await otherService.SaveAsync(
             CreateSaveArgs(catchId: args.Id, speciesName: "Hijacked"),
             CancellationToken.None);
 
         // Assert
         otherRead.Should().BeNull();
         otherList.Should().BeEmpty();
-        await overwrite.Should().ThrowAsync<InvalidOperationException>();
+        overwrite.IsSuccess.Should().BeFalse();
+        overwrite.Outcome.Should().Be(LocalCatchSaveOutcomeEnum.Forbidden);
         var ownerRead = await Sut.GetAsync(args.Id, CancellationToken.None);
         ownerRead!.SpeciesName.Should().Be("Brown trout");
     }
@@ -161,7 +164,9 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
             CancellationToken.None);
 
         // Assert
+        second.IsSuccess.Should().BeTrue();
         second.Revision.Should().Be(2);
+        third.IsSuccess.Should().BeTrue();
         third.Revision.Should().Be(3);
         loaded!.Revision.Should().Be(3);
         loaded.SpeciesName.Should().Be("Third");
@@ -288,10 +293,11 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
         };
 
         // Act
-        var act = async () => await Sut.SaveAsync(args, CancellationToken.None);
+        var result = await Sut.SaveAsync(args, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        result.IsSuccess.Should().BeFalse();
+        result.Outcome.Should().Be(LocalCatchSaveOutcomeEnum.Forbidden);
         (await CatchStore.GetAsync(OwnerUserId, args.Id, CancellationToken.None)).Should().BeNull();
     }
 
