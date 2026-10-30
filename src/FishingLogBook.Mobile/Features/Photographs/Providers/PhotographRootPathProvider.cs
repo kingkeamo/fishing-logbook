@@ -1,7 +1,7 @@
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using FishingLogBook.Mobile.IO.Adapters;
 
-namespace FishingLogBook.Mobile.Features.Photographs.Services;
+namespace FishingLogBook.Mobile.Features.Photographs.Providers;
 
 public sealed class PhotographRootPathProvider(
     IFileSystemAdapter fileSystem,

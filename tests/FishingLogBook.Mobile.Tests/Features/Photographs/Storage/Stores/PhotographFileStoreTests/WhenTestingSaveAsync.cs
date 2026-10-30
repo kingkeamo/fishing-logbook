@@ -1,10 +1,11 @@
 using AwesomeAssertions;
-using FishingLogBook.Mobile.Features.Photographs.Services;
+using FishingLogBook.Mobile.Features.Photographs.Providers;
+using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Shared.Constants;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace FishingLogBook.Mobile.Tests.Features.Photographs.Services.PhotographFileStoreTests;
+namespace FishingLogBook.Mobile.Tests.Features.Photographs.Storage.Stores.PhotographFileStoreTests;
 
 public class WhenTestingSaveAsync : IDisposable
 {

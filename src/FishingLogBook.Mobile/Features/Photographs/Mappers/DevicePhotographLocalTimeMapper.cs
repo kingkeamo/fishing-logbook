@@ -1,7 +1,7 @@
 using System.Globalization;
 using FishingLogBook.Shared.Photographs.Contracts;
 
-namespace FishingLogBook.Mobile.Features.Photographs.Services;
+namespace FishingLogBook.Mobile.Features.Photographs.Mappers;
 
 public sealed class DevicePhotographLocalTimeMapper(TimeProvider timeProvider) : IPhotographLocalTimeMapper
 {

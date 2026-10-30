@@ -1,6 +1,7 @@
 using FishingLogBook.Mobile.Features.Photographs.Constants;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Photographs.Models;

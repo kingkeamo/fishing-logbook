@@ -1,4 +1,6 @@
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
+using FishingLogBook.Mobile.Features.Photographs.Offline.Stores;
+using FishingLogBook.Mobile.Features.Photographs.Providers;
 using FishingLogBook.Mobile.IO.Adapters;
 using Microsoft.Extensions.Logging;
 

@@ -7,7 +7,9 @@ Native MAUI photograph picking, preparation, durable storage, and SQLite path re
 | Area | Types |
 |------|--------|
 | Shared EXIF | `FishingLogBook.Shared.Photographs` — `PhotographMetadataProcessor`, models, `IPhotographLocalTimeMapper` |
-| Mobile feature | `Features/Photographs/` — preparation, file store, collection editor service/view-model, views |
+| Mobile services | `Features/Photographs/Services/` — preparation, collection editor, orphan cleanup |
+| Mobile stores | `Storage/Stores/PhotographFileStore`, `Offline/Stores/SqlitePhotographReferenceStore` |
+| Mobile providers/mappers | `Providers/PhotographRootPathProvider`, `Mappers/` (save-args + local-time) |
 | IO adapters | `IPhotographMediaAdapter` (MAUI `MediaPicker` / permissions in `Native/Adapters/PhotographMediaAdapter`) |
 | SQLite | `localcatchphotographs.localfilepath` stores **relative** paths under the photograph root |
 

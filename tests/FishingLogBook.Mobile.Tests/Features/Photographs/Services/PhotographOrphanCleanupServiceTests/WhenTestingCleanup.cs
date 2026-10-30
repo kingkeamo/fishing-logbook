@@ -1,6 +1,8 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
+using FishingLogBook.Mobile.Features.Photographs.Offline.Stores;
+using FishingLogBook.Mobile.Features.Photographs.Providers;
 using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Tests.Features.Catch.Offline.Stores.SqliteCatchStoreTests;

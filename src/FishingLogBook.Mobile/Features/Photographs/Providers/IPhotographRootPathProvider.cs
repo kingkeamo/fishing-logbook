@@ -1,4 +1,4 @@
-namespace FishingLogBook.Mobile.Features.Photographs.Services;
+namespace FishingLogBook.Mobile.Features.Photographs.Providers;
 
 public interface IPhotographRootPathProvider
 {

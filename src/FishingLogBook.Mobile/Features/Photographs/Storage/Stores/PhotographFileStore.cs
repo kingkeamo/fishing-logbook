@@ -1,8 +1,9 @@
+using FishingLogBook.Mobile.Features.Photographs.Providers;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Shared.Constants;
 using Microsoft.Extensions.Logging;
 
-namespace FishingLogBook.Mobile.Features.Photographs.Services;
+namespace FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 
 public sealed class PhotographFileStore(
     IFileSystemAdapter fileSystem,

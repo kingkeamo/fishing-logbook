@@ -1,7 +1,7 @@
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using Microsoft.Data.Sqlite;
 
-namespace FishingLogBook.Mobile.Features.Photographs.Services;
+namespace FishingLogBook.Mobile.Features.Photographs.Offline.Stores;
 
 public sealed class SqlitePhotographReferenceStore(
     ISqliteConnectionFactory connectionFactory,
