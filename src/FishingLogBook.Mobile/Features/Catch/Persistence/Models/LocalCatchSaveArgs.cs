@@ -18,10 +18,8 @@ public sealed class LocalCatchSaveArgs
 
     public string? SpeciesName { get; init; }
 
-    /// <summary>Canonical weight in kilograms (matches server <c>weight</c>).</summary>
     public double? Weight { get; init; }
 
-    /// <summary>Canonical length in centimetres (matches server <c>length</c>).</summary>
     public double? Length { get; init; }
 
     public string? Method { get; init; }
