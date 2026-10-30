@@ -88,6 +88,40 @@ public sealed class WhenTestingOfflineRecovery : BaseAuthenticationServiceTest
     }
 
     [Fact]
+    public async Task ItShouldNotRemoveANewerAccountsCredentialWhenTheLeaseChangesDuringRejectionCleanup()
+    {
+        // Arrange
+        var rejectionCleanupStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resumeRejectionCleanup = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        PersistedAuthenticationModel? persisted = new(RefreshToken, Subject, UserId);
+        var newerCredential = new PersistedAuthenticationModel("new-refresh", "new-subject", Guid.NewGuid());
+        MockStore.GetCredentialAsync().Returns(_ => persisted);
+        MockStore.When(store => store.RemoveCredentialAsync()).Do(_ => persisted = null);
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
+            .Returns(OidcTokenResultModel.Failed(OidcFailureKindEnum.InvalidGrant));
+        MockOfflineCapability.RevokeIfOwnedByAsync(Subject, UserId, CancellationToken.None)
+            .Returns(async _ =>
+            {
+                rejectionCleanupStarted.SetResult();
+                await resumeRejectionCleanup.Task;
+            });
+        var recovery = Sut.InitializeAsync(CancellationToken.None);
+        await rejectionCleanupStarted.Task;
+        persisted = newerCredential;
+        MockSessionCoordinator.IsCurrent(_lease).Returns(false);
+
+        // Act
+        resumeRejectionCleanup.SetResult();
+        var result = await recovery;
+
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.Invalid);
+        persisted.Should().Be(newerCredential);
+        await MockStore.DidNotReceive().RemoveCredentialAsync();
+        MockOfflineSession.DidNotReceive().Lock();
+    }
+
+    [Fact]
     public async Task ItShouldFailClosedWhenTheStoredCredentialBelongsToAnotherAccount()
     {
         // Arrange
@@ -105,7 +139,7 @@ public sealed class WhenTestingOfflineRecovery : BaseAuthenticationServiceTest
             UserId,
             CancellationToken.None);
         await MockOfflineCapability.DidNotReceive().RevokeAsync(Arg.Any<CancellationToken>());
-        await MockStore.Received(1).RemoveCredentialAsync();
+        await MockStore.DidNotReceive().RemoveCredentialAsync();
         await MockRefreshService.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -200,6 +234,97 @@ public sealed class WhenTestingOfflineRecovery : BaseAuthenticationServiceTest
         await action.Should().ThrowAsync<OperationCanceledException>();
         Sut.CurrentSession.Should().BeNull();
         MockOfflineSession.DidNotReceive().Lock();
+    }
+
+    [Fact]
+    public async Task ItShouldNotActivateWhenConnectivityIsLostDuringSecureCredentialPersistence()
+    {
+        // Arrange
+        var saveStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var saveCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(CreateTokenResult());
+        MockCurrentUserClient.GetCurrentAsync(AccessToken, CancellationToken.None)
+            .Returns(new CurrentUserDto(UserId, Email, "Cognito", Subject));
+        MockStore.SaveCredentialAsync(Arg.Any<PersistedAuthenticationModel>()).Returns(_ =>
+        {
+            saveStarted.SetResult();
+            return saveCompletion.Task;
+        });
+        var recovery = Sut.InitializeAsync(CancellationToken.None);
+        await saveStarted.Task;
+        MockConnectivity.IsOnline.Returns(false);
+        MockConnectivity.TryRunWhileOnline(Arg.Any<Action>()).Returns(false);
+
+        // Act
+        saveCompletion.SetResult();
+        var result = await recovery;
+
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.Cancelled);
+        Sut.CurrentSession.Should().BeNull();
+        MockOfflineSession.DidNotReceive().Lock();
+        MockConnectivity.Received(1).TryRunWhileOnline(Arg.Any<Action>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotActivateWhenConnectivityChangesAtTheFinalActivationBoundary()
+    {
+        // Arrange
+        var activationReached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resumeActivation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var online = true;
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(CreateTokenResult());
+        MockCurrentUserClient.GetCurrentAsync(AccessToken, CancellationToken.None)
+            .Returns(new CurrentUserDto(UserId, Email, "Cognito", Subject));
+        MockStore.SaveCredentialAsync(Arg.Any<PersistedAuthenticationModel>())
+            .Returns(async _ => await Task.Yield());
+        MockConnectivity.TryRunWhileOnline(Arg.Any<Action>()).Returns(call =>
+        {
+            activationReached.SetResult();
+            resumeActivation.Task.GetAwaiter().GetResult();
+            if (!online)
+            {
+                return false;
+            }
+
+            call.Arg<Action>()();
+            return true;
+        });
+        var recovery = Sut.InitializeAsync(CancellationToken.None);
+        await activationReached.Task;
+        online = false;
+
+        // Act
+        resumeActivation.SetResult();
+        var result = await recovery;
+
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.Cancelled);
+        Sut.CurrentSession.Should().BeNull();
+        MockOfflineSession.DidNotReceive().Lock();
+    }
+
+    [Fact]
+    public async Task ItShouldRollBackOnlineActivationWhenConnectivityIsLostImmediatelyAfterPublish()
+    {
+        // Arrange
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(CreateTokenResult());
+        MockCurrentUserClient.GetCurrentAsync(AccessToken, CancellationToken.None)
+            .Returns(new CurrentUserDto(UserId, Email, "Cognito", Subject));
+        MockConnectivity.TryRunWhileOnline(Arg.Any<Action>()).Returns(call =>
+        {
+            call.Arg<Action>()();
+            return false;
+        });
+
+        // Act
+        var result = await Sut.InitializeAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.Cancelled);
+        Sut.CurrentSession.Should().BeNull();
+        MockOfflineSession.Received(1).Lock();
+        MockOfflineSession.Received(1).Activate(_capability);
     }
 
     [Fact]

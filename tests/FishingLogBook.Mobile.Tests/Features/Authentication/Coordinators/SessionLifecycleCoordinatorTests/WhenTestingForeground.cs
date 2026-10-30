@@ -114,6 +114,44 @@ public sealed class WhenTestingForeground : BaseSessionLifecycleCoordinatorTest
     }
 
     [Fact]
+    public async Task ItShouldRemainLocalWhenConnectivityIsLostBeforeRecoveryCompletes()
+    {
+        // Arrange
+        var recovery = new TaskCompletionSource<AuthenticationResultEnum>(TaskCreationOptions.RunContinuationsAsynchronously);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(recovery.Task);
+        var operation = Sut.ForegroundAsync(CancellationToken.None);
+        MockConnectivity.IsOnline.Returns(false);
+
+        // Act
+        recovery.SetResult(AuthenticationResultEnum.Cancelled);
+        await operation;
+
+        // Assert
+        Sut.State.Should().Be(SessionLifecycleStateEnum.LocalOffline);
+        MockAuthentication.CurrentSession.Should().BeNull();
+        MockOfflineSession.Current.Should().Be(Capability);
+    }
+
+    [Fact]
+    public async Task ItShouldNotMarkOnlineWhenConnectivityIsLostBeforeRecoveryResultIsApplied()
+    {
+        // Arrange
+        var recovery = new TaskCompletionSource<AuthenticationResultEnum>(TaskCreationOptions.RunContinuationsAsynchronously);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(recovery.Task);
+        var operation = Sut.ForegroundAsync(CancellationToken.None);
+        MockConnectivity.IsOnline.Returns(false);
+        MockAuthentication.CurrentSession.Returns(OnlineSession());
+        MockOfflineSession.Current.Returns((OfflineCapabilityModel?)null);
+
+        // Act
+        recovery.SetResult(AuthenticationResultEnum.Success);
+        await operation;
+
+        // Assert
+        Sut.State.Should().Be(SessionLifecycleStateEnum.RecoverableError);
+    }
+
+    [Fact]
     public async Task ItShouldShareOneRecoveryAcrossSimultaneousConnectivityAndForegroundEvents()
     {
         // Arrange

@@ -4,4 +4,5 @@ public interface IConnectivityService
 {
     bool IsOnline { get; }
     event EventHandler? ConnectivityChanged;
+    bool TryRunWhileOnline(Action action);
 }

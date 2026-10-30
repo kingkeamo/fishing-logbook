@@ -6,6 +6,7 @@ using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
 using FishingLogBook.Mobile.Features.OfflineAccess.Models;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +29,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
     private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly IOfflineCapabilityService _offlineCapability;
     private readonly IOfflineSessionService _offlineSession;
+    private readonly IConnectivityService _connectivity;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<AuthenticationService> _logger;
     private AuthenticationSessionModel? _currentSession;
@@ -46,6 +48,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         IAccountSessionCoordinator sessionCoordinator,
         IOfflineCapabilityService offlineCapability,
         IOfflineSessionService offlineSession,
+        IConnectivityService connectivity,
         TimeProvider timeProvider,
         ILogger<AuthenticationService> logger)
     {
@@ -58,6 +61,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         _sessionCoordinator = sessionCoordinator;
         _offlineCapability = offlineCapability;
         _offlineSession = offlineSession;
+        _connectivity = connectivity;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -527,14 +531,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
             await _sessionCoordinator.TransitionAsync(userId: null, CancellationToken.None);
         }
 
-        try
-        {
-            await _store.RemoveCredentialAsync();
-        }
-        catch (Exception exception)
-        {
-            _logger.LogWarning(exception, "The rejected native credential could not be removed.");
-        }
+        await RemoveCredentialIfOwnedByAsync(recovery.Capability);
 
         if (revocationFailure is not null)
         {
@@ -557,6 +554,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         }
 
         var ownerWasCurrent = true;
+        var sessionPublished = false;
         try
         {
             var committed = await _sessionCoordinator.TryCommitAsync(
@@ -578,18 +576,36 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
                         return;
                     }
 
-                    _offlineSession.Lock();
-                    ResetRefreshBackoff();
-                    SetSession(new AuthenticationSessionModel(
-                        tokenResult.AccessToken,
-                        tokenResult.AccessTokenExpiresAt,
-                        credential.RefreshToken,
-                        credential.Subject,
-                        tokenResult.Email ?? currentUserEmail,
-                        credential.UserId), forceChanged: true);
+                    var stillOnline = _connectivity.TryRunWhileOnline(() =>
+                    {
+                        token.ThrowIfCancellationRequested();
+                        if (!IsRecoveryOwnerCurrent(recovery, credential))
+                        {
+                            ownerWasCurrent = false;
+                            return;
+                        }
+
+                        _offlineSession.Lock();
+                        ResetRefreshBackoff();
+                        SetSession(new AuthenticationSessionModel(
+                            tokenResult.AccessToken,
+                            tokenResult.AccessTokenExpiresAt,
+                            credential.RefreshToken,
+                            credential.Subject,
+                            tokenResult.Email ?? currentUserEmail,
+                            credential.UserId), forceChanged: true);
+                        sessionPublished = true;
+                    });
+
+                    if (sessionPublished && !stillOnline)
+                    {
+                        SetSession(null, forceChanged: true);
+                        _offlineSession.Activate(recovery.Capability);
+                        sessionPublished = false;
+                    }
                 },
                 cancellationToken);
-            return committed && ownerWasCurrent
+            return committed && ownerWasCurrent && sessionPublished
                 ? AuthenticationResultEnum.Success
                 : AuthenticationResultEnum.Cancelled;
         }
@@ -597,6 +613,26 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         {
             _logger.LogWarning(exception, "The recovered native credential could not be stored.");
             return AuthenticationResultEnum.StorageUnavailable;
+        }
+    }
+
+    private async Task RemoveCredentialIfOwnedByAsync(OfflineCapabilityModel capability)
+    {
+        try
+        {
+            var credential = await _store.GetCredentialAsync();
+            if (credential is null ||
+                !string.Equals(credential.Subject, capability.Subject, StringComparison.Ordinal) ||
+                credential.UserId != capability.UserId)
+            {
+                return;
+            }
+
+            await _store.RemoveCredentialAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "The rejected native credential could not be removed.");
         }
     }
 
