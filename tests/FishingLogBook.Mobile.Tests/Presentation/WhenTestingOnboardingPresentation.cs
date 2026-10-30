@@ -93,6 +93,36 @@ public class WhenTestingOnboardingPresentation
         plist.Should().Contain("NSLocationWhenInUseUsageDescription");
     }
 
+    [Fact]
+    public void ItShouldDeclareOfflineUnlockAndCapturePermissions()
+    {
+        // Arrange
+        var manifestPath = Path.Combine(MobileRoot, "Platforms", "Android", "AndroidManifest.xml");
+        var plistPath = Path.Combine(MobileRoot, "Platforms", "iOS", "Info.plist");
+
+        // Act
+        var manifest = XDocument.Load(manifestPath);
+        var plist = File.ReadAllText(plistPath);
+        XNamespace android = "http://schemas.android.com/apk/res/android";
+        var permissions = manifest.Root!.Elements("uses-permission")
+            .Select(element => (string?)element.Attribute(android + "name"))
+            .ToArray();
+        var cameraRequired = manifest.Root!.Elements("uses-feature")
+            .Where(element => (string?)element.Attribute(android + "name") == "android.hardware.camera")
+            .Select(element => (string?)element.Attribute(android + "required"))
+            .SingleOrDefault();
+
+        // Assert
+        permissions.Should().Contain("android.permission.USE_BIOMETRIC");
+        permissions.Should().Contain("android.permission.CAMERA");
+        permissions.Should().Contain("android.permission.READ_MEDIA_IMAGES");
+        permissions.Should().Contain("android.permission.READ_EXTERNAL_STORAGE");
+        cameraRequired.Should().Be("false");
+        plist.Should().Contain("NSFaceIDUsageDescription");
+        plist.Should().Contain("NSCameraUsageDescription");
+        plist.Should().Contain("NSPhotoLibraryUsageDescription");
+    }
+
     private static Dictionary<string, string> GetValues(XDocument document)
     {
         return document.Descendants("data")

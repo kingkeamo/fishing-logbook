@@ -81,20 +81,27 @@ public class MainActivity : MauiAppCompatActivity
                 return;
             }
 
-            if (OperatingSystem.IsAndroidVersionAtLeast(29))
+            try
             {
-                StartDeviceAuthentication(reason);
-                return;
-            }
+                if (OperatingSystem.IsAndroidVersionAtLeast(29))
+                {
+                    StartDeviceAuthentication(reason);
+                    return;
+                }
 
-            var intent = keyguard.CreateConfirmDeviceCredentialIntent(reason, reason);
-            if (intent is null)
+                var intent = keyguard.CreateConfirmDeviceCredentialIntent(reason, reason);
+                if (intent is null)
+                {
+                    CompleteDeviceUnlock(DeviceUnlockResultEnum.Unavailable);
+                    return;
+                }
+
+                StartActivityForResult(intent, DeviceUnlockRequestCode);
+            }
+            catch (Exception)
             {
-                CompleteDeviceUnlock(DeviceUnlockResultEnum.Unavailable);
-                return;
+                CompleteDeviceUnlock(DeviceUnlockResultEnum.Failed);
             }
-
-            StartActivityForResult(intent, DeviceUnlockRequestCode);
         });
         return completion.Task;
     }
