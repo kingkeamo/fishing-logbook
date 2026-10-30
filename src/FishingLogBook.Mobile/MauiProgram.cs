@@ -121,6 +121,14 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IAccountUnitsService, AccountUnitsService>();
         builder.Services.AddSingleton<IProfileEditorService, ProfileEditorService>();
         builder.Services.AddSingleton<IConnectivityService, DeviceConnectivityService>();
+        builder.Services.AddSingleton<ISessionLifecycleCoordinator>(services => new SessionLifecycleCoordinator(
+            services.GetRequiredService<IConnectivityService>(),
+            services.GetRequiredService<IAuthenticationService>(),
+            services.GetRequiredService<IOfflineSessionService>(),
+            services.GetRequiredService<IAccountSessionCoordinator>(),
+            services.GetRequiredService<TimeProvider>(),
+            TimeSpan.FromSeconds(30),
+            services.GetRequiredService<ILogger<SessionLifecycleCoordinator>>()));
         builder.Services.AddSingleton<IStartupNavigator, WindowStartupNavigator>();
         builder.Services.AddSingleton<IStartupCoordinator>(services => new StartupCoordinator(
             services.GetRequiredService<IConnectivityService>(),

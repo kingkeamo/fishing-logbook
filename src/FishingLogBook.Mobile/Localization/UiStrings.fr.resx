@@ -310,4 +310,8 @@
   <data name="OnboardingValidationFishingMethod" xml:space="preserve"><value>Choisissez au moins une méthode de pêche.</value></data>
   <data name="OnboardingValidationSpeciesForMethod" xml:space="preserve"><value>Choisissez au moins une espèce pour {0}.</value></data>
   <data name="OnboardingValidationSpeciesForMethods" xml:space="preserve"><value>Choisissez au moins une espèce pour chacune de ces méthodes de pêche : {0}.</value></data>
+  <data name="WorkingOffline" xml:space="preserve"><value>Utilisation hors connexion</value></data>
+  <data name="RestoringConnection" xml:space="preserve"><value>RÃ©tablissement de votre connexion sÃ©curisÃ©eâ€¦</value></data>
+  <data name="ConnectionRecoveryFailed" xml:space="preserve"><value>Impossible de rÃ©tablir la connexion en ligne</value></data>
+  <data name="RetryConnection" xml:space="preserve"><value>RÃ©essayer la connexion sÃ©curisÃ©e</value></data>
 </root>

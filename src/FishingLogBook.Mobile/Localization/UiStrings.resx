@@ -310,4 +310,8 @@
   <data name="OnboardingValidationFishingMethod" xml:space="preserve"><value>Choose at least one fishing method.</value></data>
   <data name="OnboardingValidationSpeciesForMethod" xml:space="preserve"><value>Choose at least one species for {0}.</value></data>
   <data name="OnboardingValidationSpeciesForMethods" xml:space="preserve"><value>Choose at least one species for each of these fishing methods: {0}.</value></data>
+  <data name="WorkingOffline" xml:space="preserve"><value>Working offline</value></data>
+  <data name="RestoringConnection" xml:space="preserve"><value>Restoring your secure connectionâ€¦</value></data>
+  <data name="ConnectionRecoveryFailed" xml:space="preserve"><value>Online sign-in could not be restored</value></data>
+  <data name="RetryConnection" xml:space="preserve"><value>Retry secure connection</value></data>
 </root>
