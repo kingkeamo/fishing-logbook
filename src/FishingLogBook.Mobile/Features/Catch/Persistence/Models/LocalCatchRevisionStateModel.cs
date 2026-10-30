@@ -4,5 +4,5 @@ public sealed class LocalCatchRevisionStateModel
 {
     public required long Revision { get; init; }
 
-    public required DateTimeOffset CreatedAt { get; init; }
+    public required DateTimeOffset CreatedOn { get; init; }
 }

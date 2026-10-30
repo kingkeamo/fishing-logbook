@@ -32,8 +32,8 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         ownershipCommand.Transaction = transaction;
         ownershipCommand.CommandText =
             """
-            SELECT user_id
-            FROM local_trips
+            SELECT userid
+            FROM localtrips
             WHERE id = $id
             LIMIT 1;
             """;
@@ -48,17 +48,17 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         command.Transaction = transaction;
         command.CommandText =
             """
-            INSERT INTO local_trips (id, user_id, title, updated_at)
-            VALUES ($id, $userId, $title, $updatedAt)
+            INSERT INTO localtrips (id, userid, title, updatedon)
+            VALUES ($id, $userId, $title, $updatedOn)
             ON CONFLICT(id) DO UPDATE SET
-                title = COALESCE(excluded.title, local_trips.title),
-                updated_at = excluded.updated_at
-            WHERE local_trips.user_id = excluded.user_id;
+                title = COALESCE(excluded.title, localtrips.title),
+                updatedon = excluded.updatedon
+            WHERE localtrips.userid = excluded.userid;
             """;
         command.Parameters.AddWithValue("$id", trip.Id.ToString("D"));
         command.Parameters.AddWithValue("$userId", trip.UserId.ToString("D"));
         command.Parameters.AddWithValue("$title", (object?)trip.Title ?? DBNull.Value);
-        command.Parameters.AddWithValue("$updatedAt", SqliteDateTime.Format(trip.UpdatedAt));
+        command.Parameters.AddWithValue("$updatedOn", SqliteDateTime.Format(trip.UpdatedOn));
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
@@ -75,10 +75,10 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         command.Transaction = transaction;
         command.CommandText =
             """
-            SELECT revision, created_at
-            FROM local_catches
+            SELECT revision, createdon
+            FROM localcatches
             WHERE id = $id
-              AND user_id = $userId
+              AND userid = $userId
             LIMIT 1;
             """;
         command.Parameters.AddWithValue("$id", catchId.ToString("D"));
@@ -92,7 +92,7 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         return new LocalCatchRevisionStateModel
         {
             Revision = reader.GetInt64(0),
-            CreatedAt = SqliteDateTime.Parse(reader.GetString(1))
+            CreatedOn = SqliteDateTime.Parse(reader.GetString(1))
         };
     }
 
@@ -110,8 +110,8 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         foreignCommand.Transaction = transaction;
         foreignCommand.CommandText =
             """
-            SELECT user_id
-            FROM local_catches
+            SELECT userid
+            FROM localcatches
             WHERE id = $id
             LIMIT 1;
             """;
@@ -127,41 +127,41 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         command.Transaction = transaction;
         command.CommandText =
             """
-            INSERT INTO local_catches (
-                id, user_id, trip_id, caught_by_user_id, recorded_by_user_id, caught_on,
-                species_name, weight_grams, length_millimetres, method, bait_or_lure, notes,
-                place_name, latitude, longitude, location_accuracy_metres, location_captured_on,
-                location_source, location_visibility, location_consent_version, revision,
-                lifecycle, created_at, updated_at)
+            INSERT INTO localcatches (
+                id, userid, tripid, caughtbyuserid, recordedbyuserid, caughton,
+                speciesname, weight, length, method, baitorlure, notes,
+                placename, latitude, longitude, locationaccuracymetres, locationcapturedon,
+                locationsource, locationvisibility, locationconsentversion, revision,
+                lifecycle, createdon, updatedon)
             VALUES (
                 $id, $userId, $tripId, $caughtByUserId, $recordedByUserId, $caughtOn,
-                $speciesName, $weightGrams, $lengthMillimetres, $method, $baitOrLure, $notes,
+                $speciesName, $weight, $length, $method, $baitOrLure, $notes,
                 $placeName, $latitude, $longitude, $locationAccuracyMetres, $locationCapturedOn,
                 $locationSource, $locationVisibility, $locationConsentVersion, $revision,
-                $lifecycle, $createdAt, $updatedAt)
+                $lifecycle, $createdOn, $updatedOn)
             ON CONFLICT(id) DO UPDATE SET
-                trip_id = excluded.trip_id,
-                caught_by_user_id = excluded.caught_by_user_id,
-                recorded_by_user_id = excluded.recorded_by_user_id,
-                caught_on = excluded.caught_on,
-                species_name = excluded.species_name,
-                weight_grams = excluded.weight_grams,
-                length_millimetres = excluded.length_millimetres,
+                tripid = excluded.tripid,
+                caughtbyuserid = excluded.caughtbyuserid,
+                recordedbyuserid = excluded.recordedbyuserid,
+                caughton = excluded.caughton,
+                speciesname = excluded.speciesname,
+                weight = excluded.weight,
+                length = excluded.length,
                 method = excluded.method,
-                bait_or_lure = excluded.bait_or_lure,
+                baitorlure = excluded.baitorlure,
                 notes = excluded.notes,
-                place_name = excluded.place_name,
+                placename = excluded.placename,
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
-                location_accuracy_metres = excluded.location_accuracy_metres,
-                location_captured_on = excluded.location_captured_on,
-                location_source = excluded.location_source,
-                location_visibility = excluded.location_visibility,
-                location_consent_version = excluded.location_consent_version,
+                locationaccuracymetres = excluded.locationaccuracymetres,
+                locationcapturedon = excluded.locationcapturedon,
+                locationsource = excluded.locationsource,
+                locationvisibility = excluded.locationvisibility,
+                locationconsentversion = excluded.locationconsentversion,
                 revision = excluded.revision,
                 lifecycle = excluded.lifecycle,
-                updated_at = excluded.updated_at
-            WHERE local_catches.user_id = excluded.user_id;
+                updatedon = excluded.updatedon
+            WHERE localcatches.userid = excluded.userid;
             """;
         BindCatchParameters(command, catchRecord);
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -187,9 +187,9 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         deleteCommand.Transaction = transaction;
         deleteCommand.CommandText =
             """
-            DELETE FROM local_catch_photographs
-            WHERE catch_id = $catchId
-              AND user_id = $userId;
+            DELETE FROM localcatchphotographs
+            WHERE catchid = $catchId
+              AND userid = $userId;
             """;
         deleteCommand.Parameters.AddWithValue("$catchId", catchId.ToString("D"));
         deleteCommand.Parameters.AddWithValue("$userId", userId.ToString("D"));
@@ -206,10 +206,10 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
             insertCommand.Transaction = transaction;
             insertCommand.CommandText =
                 """
-                INSERT INTO local_catch_photographs (
-                    id, catch_id, user_id, sort_order, local_file_path, content_type, created_at)
+                INSERT INTO localcatchphotographs (
+                    id, catchid, userid, sortorder, localfilepath, contenttype, createdon)
                 VALUES (
-                    $id, $catchId, $userId, $sortOrder, $localFilePath, $contentType, $createdAt);
+                    $id, $catchId, $userId, $sortOrder, $localFilePath, $contentType, $createdOn);
                 """;
             insertCommand.Parameters.AddWithValue("$id", photograph.Id.ToString("D"));
             insertCommand.Parameters.AddWithValue("$catchId", photograph.CatchId.ToString("D"));
@@ -217,7 +217,7 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
             insertCommand.Parameters.AddWithValue("$sortOrder", photograph.SortOrder);
             insertCommand.Parameters.AddWithValue("$localFilePath", (object?)photograph.LocalFilePath ?? DBNull.Value);
             insertCommand.Parameters.AddWithValue("$contentType", (object?)photograph.ContentType ?? DBNull.Value);
-            insertCommand.Parameters.AddWithValue("$createdAt", SqliteDateTime.Format(photograph.CreatedAt));
+            insertCommand.Parameters.AddWithValue("$createdOn", SqliteDateTime.Format(photograph.CreatedOn));
             await insertCommand.ExecuteNonQueryAsync(cancellationToken);
         }
     }
@@ -230,7 +230,7 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         await _database.EnsureInitializedAsync(cancellationToken);
         await using var connection = await _connectionFactory.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = CatchSelectSql + " WHERE c.id = $id AND c.user_id = $userId LIMIT 1;";
+        command.CommandText = CatchSelectSql + " WHERE c.id = $id AND c.userid = $userId LIMIT 1;";
         command.Parameters.AddWithValue("$id", catchId.ToString("D"));
         command.Parameters.AddWithValue("$userId", userId.ToString("D"));
         var catches = await ReadCatchesAsync(connection, command, cancellationToken);
@@ -244,7 +244,7 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         await _database.EnsureInitializedAsync(cancellationToken);
         await using var connection = await _connectionFactory.OpenAsync(cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = CatchSelectSql + " WHERE c.user_id = $userId ORDER BY c.caught_on DESC, c.id ASC;";
+        command.CommandText = CatchSelectSql + " WHERE c.userid = $userId ORDER BY c.caughton DESC, c.id ASC;";
         command.Parameters.AddWithValue("$userId", userId.ToString("D"));
         return await ReadCatchesAsync(connection, command, cancellationToken);
     }
@@ -260,8 +260,8 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         command.Parameters.AddWithValue("$recordedByUserId", catchRecord.RecordedByUserId.ToString("D"));
         command.Parameters.AddWithValue("$caughtOn", SqliteDateTime.Format(catchRecord.CaughtOn));
         command.Parameters.AddWithValue("$speciesName", (object?)catchRecord.SpeciesName ?? DBNull.Value);
-        command.Parameters.AddWithValue("$weightGrams", (object?)catchRecord.WeightGrams ?? DBNull.Value);
-        command.Parameters.AddWithValue("$lengthMillimetres", (object?)catchRecord.LengthMillimetres ?? DBNull.Value);
+        command.Parameters.AddWithValue("$weight", (object?)catchRecord.Weight ?? DBNull.Value);
+        command.Parameters.AddWithValue("$length", (object?)catchRecord.Length ?? DBNull.Value);
         command.Parameters.AddWithValue("$method", (object?)catchRecord.Method ?? DBNull.Value);
         command.Parameters.AddWithValue("$baitOrLure", (object?)catchRecord.BaitOrLure ?? DBNull.Value);
         command.Parameters.AddWithValue("$notes", (object?)catchRecord.Notes ?? DBNull.Value);
@@ -285,19 +285,19 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
             (object?)catchRecord.Location?.ConsentVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$revision", catchRecord.Revision);
         command.Parameters.AddWithValue("$lifecycle", catchRecord.Lifecycle.ToString());
-        command.Parameters.AddWithValue("$createdAt", SqliteDateTime.Format(catchRecord.CreatedAt));
-        command.Parameters.AddWithValue("$updatedAt", SqliteDateTime.Format(catchRecord.UpdatedAt));
+        command.Parameters.AddWithValue("$createdOn", SqliteDateTime.Format(catchRecord.CreatedOn));
+        command.Parameters.AddWithValue("$updatedOn", SqliteDateTime.Format(catchRecord.UpdatedOn));
     }
 
     private const string CatchSelectSql =
         """
         SELECT
-            c.id, c.user_id, c.trip_id, c.caught_by_user_id, c.recorded_by_user_id, c.caught_on,
-            c.species_name, c.weight_grams, c.length_millimetres, c.method, c.bait_or_lure, c.notes,
-            c.place_name, c.latitude, c.longitude, c.location_accuracy_metres, c.location_captured_on,
-            c.location_source, c.location_visibility, c.location_consent_version, c.revision,
-            c.lifecycle, c.created_at, c.updated_at
-        FROM local_catches c
+            c.id, c.userid, c.tripid, c.caughtbyuserid, c.recordedbyuserid, c.caughton,
+            c.speciesname, c.weight, c.length, c.method, c.baitorlure, c.notes,
+            c.placename, c.latitude, c.longitude, c.locationaccuracymetres, c.locationcapturedon,
+            c.locationsource, c.locationvisibility, c.locationconsentversion, c.revision,
+            c.lifecycle, c.createdon, c.updatedon
+        FROM localcatches c
         """;
 
     private static async Task<IReadOnlyList<LocalCatchRecordModel>> ReadCatchesAsync(
@@ -331,8 +331,8 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
                 RecordedByUserId = catchRecord.RecordedByUserId,
                 CaughtOn = catchRecord.CaughtOn,
                 SpeciesName = catchRecord.SpeciesName,
-                WeightGrams = catchRecord.WeightGrams,
-                LengthMillimetres = catchRecord.LengthMillimetres,
+                Weight = catchRecord.Weight,
+                Length = catchRecord.Length,
                 Method = catchRecord.Method,
                 BaitOrLure = catchRecord.BaitOrLure,
                 Notes = catchRecord.Notes,
@@ -340,8 +340,8 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
                 Location = catchRecord.Location,
                 Revision = catchRecord.Revision,
                 Lifecycle = catchRecord.Lifecycle,
-                CreatedAt = catchRecord.CreatedAt,
-                UpdatedAt = catchRecord.UpdatedAt,
+                CreatedOn = catchRecord.CreatedOn,
+                UpdatedOn = catchRecord.UpdatedOn,
                 Photographs = photographs
             });
         }
@@ -375,8 +375,8 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
             RecordedByUserId = Guid.Parse(reader.GetString(4)),
             CaughtOn = SqliteDateTime.Parse(reader.GetString(5)),
             SpeciesName = reader.IsDBNull(6) ? null : reader.GetString(6),
-            WeightGrams = reader.IsDBNull(7) ? null : reader.GetDouble(7),
-            LengthMillimetres = reader.IsDBNull(8) ? null : reader.GetDouble(8),
+            Weight = reader.IsDBNull(7) ? null : reader.GetDouble(7),
+            Length = reader.IsDBNull(8) ? null : reader.GetDouble(8),
             Method = reader.IsDBNull(9) ? null : reader.GetString(9),
             BaitOrLure = reader.IsDBNull(10) ? null : reader.GetString(10),
             Notes = reader.IsDBNull(11) ? null : reader.GetString(11),
@@ -384,8 +384,8 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
             Location = location,
             Revision = reader.GetInt64(20),
             Lifecycle = Enum.Parse<LocalCatchLifecycleEnum>(reader.GetString(21)),
-            CreatedAt = SqliteDateTime.Parse(reader.GetString(22)),
-            UpdatedAt = SqliteDateTime.Parse(reader.GetString(23)),
+            CreatedOn = SqliteDateTime.Parse(reader.GetString(22)),
+            UpdatedOn = SqliteDateTime.Parse(reader.GetString(23)),
             Photographs = Array.Empty<LocalCatchPhotographModel>()
         };
     }
@@ -399,11 +399,11 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
         await using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT id, catch_id, user_id, sort_order, local_file_path, content_type, created_at
-            FROM local_catch_photographs
-            WHERE catch_id = $catchId
-              AND user_id = $userId
-            ORDER BY sort_order ASC, id ASC;
+            SELECT id, catchid, userid, sortorder, localfilepath, contenttype, createdon
+            FROM localcatchphotographs
+            WHERE catchid = $catchId
+              AND userid = $userId
+            ORDER BY sortorder ASC, id ASC;
             """;
         command.Parameters.AddWithValue("$catchId", catchId.ToString("D"));
         command.Parameters.AddWithValue("$userId", userId.ToString("D"));
@@ -419,7 +419,7 @@ public sealed class SqliteLocalCatchStore : ILocalCatchStore
                 SortOrder = reader.GetInt32(3),
                 LocalFilePath = reader.IsDBNull(4) ? null : reader.GetString(4),
                 ContentType = reader.IsDBNull(5) ? null : reader.GetString(5),
-                CreatedAt = SqliteDateTime.Parse(reader.GetString(6))
+                CreatedOn = SqliteDateTime.Parse(reader.GetString(6))
             });
         }
 

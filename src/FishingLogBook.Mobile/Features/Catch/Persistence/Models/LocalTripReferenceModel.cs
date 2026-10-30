@@ -8,5 +8,5 @@ public sealed class LocalTripReferenceModel
 
     public string? Title { get; init; }
 
-    public required DateTimeOffset UpdatedAt { get; init; }
+    public required DateTimeOffset UpdatedOn { get; init; }
 }

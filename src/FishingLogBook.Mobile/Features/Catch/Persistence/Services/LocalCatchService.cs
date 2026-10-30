@@ -154,7 +154,7 @@ public sealed class LocalCatchService : ILocalCatchService
             recordedByUserId,
             args,
             revision,
-            existing?.CreatedAt ?? now,
+            existing?.CreatedOn ?? now,
             now);
 
         await _catchStore.UpsertCatchAsync(connection, transaction, catchRecord, cancellationToken);
@@ -208,7 +208,7 @@ public sealed class LocalCatchService : ILocalCatchService
                 Id = tripId,
                 UserId = userId,
                 Title = args.TripTitle,
-                UpdatedAt = now
+                UpdatedOn = now
             },
             cancellationToken);
     }
@@ -231,7 +231,7 @@ public sealed class LocalCatchService : ILocalCatchService
                 SortOrder = photograph.SortOrder,
                 LocalFilePath = photograph.LocalFilePath,
                 ContentType = photograph.ContentType,
-                CreatedAt = updatedAt
+                CreatedOn = updatedAt
             })
             .ToArray();
 
@@ -244,8 +244,8 @@ public sealed class LocalCatchService : ILocalCatchService
             RecordedByUserId = recordedByUserId,
             CaughtOn = args.CaughtOn,
             SpeciesName = args.SpeciesName,
-            WeightGrams = args.WeightGrams,
-            LengthMillimetres = args.LengthMillimetres,
+            Weight = args.Weight,
+            Length = args.Length,
             Method = args.Method,
             BaitOrLure = args.BaitOrLure,
             Notes = args.Notes,
@@ -253,8 +253,8 @@ public sealed class LocalCatchService : ILocalCatchService
             Location = args.Location,
             Revision = revision,
             Lifecycle = args.Lifecycle,
-            CreatedAt = createdAt,
-            UpdatedAt = updatedAt,
+            CreatedOn = createdAt,
+            UpdatedOn = updatedAt,
             Photographs = photographs
         };
     }
@@ -273,8 +273,8 @@ public sealed class LocalCatchService : ILocalCatchService
                 catchRecord.RecordedByUserId,
                 catchRecord.CaughtOn,
                 catchRecord.SpeciesName,
-                catchRecord.WeightGrams,
-                catchRecord.LengthMillimetres,
+                catchRecord.Weight,
+                catchRecord.Length,
                 catchRecord.Method,
                 catchRecord.BaitOrLure,
                 catchRecord.Notes,
@@ -293,7 +293,7 @@ public sealed class LocalCatchService : ILocalCatchService
             PayloadJson = payloadJson,
             Status = OutboxStatusEnum.Pending,
             AttemptCount = 0,
-            CreatedAt = now,
+            CreatedOn = now,
             AvailableAt = now
         };
     }
@@ -306,8 +306,8 @@ public sealed class LocalCatchService : ILocalCatchService
         Guid RecordedByUserId,
         DateTimeOffset CaughtOn,
         string? SpeciesName,
-        double? WeightGrams,
-        double? LengthMillimetres,
+        double? Weight,
+        double? Length,
         string? Method,
         string? BaitOrLure,
         string? Notes,

@@ -12,27 +12,31 @@ dependency small on `net10.0` (including the unit-test host TFM), and avoid EF
 Core on device. Migrations are versioned embedded `.sql` scripts applied by
 `SqliteMigrator`.
 
+Identifier naming follows the same project rules as PostgreSQL: lowercase, no
+underscores (see `.claude/rules/database.md`). Mirrored catch columns use the
+same names and units as the server (`weight` kilograms, `length` centimetres,
+`createdon`, …). Local-only columns/tables are allowed when needed.
+
 ## Schema overview
 
 | Table | Role |
 |-------|------|
-| `schema_info` | Single-row applied migration version |
-| `local_trips` | Minimal trip stubs referenced by catches |
-| `local_catches` | Account-scoped catch metadata + revision + lifecycle |
-| `local_catch_photographs` | Photo metadata rows (`ON DELETE CASCADE` from catch) |
-| `outbox_operations` | Generic pending sync intents (Catch, Trip, …) |
+| `schemainfo` | Single-row applied migration version |
+| `localtrips` | Minimal trip stubs referenced by catches |
+| `localcatches` | Account-scoped catch metadata + revision + lifecycle |
+| `localcatchphotographs` | Photo metadata rows (`ON DELETE CASCADE` from catch) |
+| `outboxoperations` | Generic pending sync intents (Catch, Trip, …) |
 
-Canonical measurements are stored as `weight_grams` and `length_millimetres`
-(`REAL NULL`). GUIDs are `TEXT`; timestamps are ISO-8601 `TEXT`.
+GUIDs are `TEXT`; timestamps are ISO-8601 `TEXT`.
 
 Pending outbox rows coalesce via a partial unique index on
-`(user_id, aggregate_type, aggregate_id, operation_type) WHERE status = 'Pending'`.
+`(userid, aggregatetype, aggregateid, operationtype) WHERE status = 'Pending'`.
 
 ## Atomic save + outbox
 
 `ILocalCatchService.SaveAsync` opens one SQLite transaction that:
 
-1. Upserts an optional `local_trips` stub when `trip_id` is set
+1. Upserts an optional `localtrips` stub when `tripid` is set
 2. Upserts the catch and replaces photograph rows
 3. Upserts a pending `UpsertCatchMetadata` outbox operation (coalesce on conflict)
 
@@ -41,7 +45,7 @@ transaction failure rolls both back. The service never calls the API.
 
 ## Account isolation
 
-Every read and write is scoped by the signed-in `user_id` from
+Every read and write is scoped by the signed-in `userid` from
 `IAccountSessionCoordinator`. Account A cannot read or mutate account B’s rows.
 Logout must **not** delete local catch or pending outbox data in this PR;
 pending work remains until a later sync/cleanup design.

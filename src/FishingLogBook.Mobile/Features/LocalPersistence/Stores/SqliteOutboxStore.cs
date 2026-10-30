@@ -36,12 +36,12 @@ public sealed class SqliteOutboxStore : IOutboxStore
         existingCommand.Transaction = transaction;
         existingCommand.CommandText =
             """
-            SELECT id, attempt_count
-            FROM outbox_operations
-            WHERE user_id = $userId
-              AND aggregate_type = $aggregateType
-              AND aggregate_id = $aggregateId
-              AND operation_type = $operationType
+            SELECT id, attemptcount
+            FROM outboxoperations
+            WHERE userid = $userId
+              AND aggregatetype = $aggregateType
+              AND aggregateid = $aggregateId
+              AND operationtype = $operationType
               AND status = 'Pending'
             LIMIT 1;
             """;
@@ -67,13 +67,13 @@ public sealed class SqliteOutboxStore : IOutboxStore
             insertCommand.Transaction = transaction;
             insertCommand.CommandText =
                 """
-                INSERT INTO outbox_operations (
-                    id, user_id, aggregate_type, aggregate_id, operation_type,
-                    payload_json, status, attempt_count, created_at, available_at,
-                    last_attempt_at, last_error)
+                INSERT INTO outboxoperations (
+                    id, userid, aggregatetype, aggregateid, operationtype,
+                    payloadjson, status, attemptcount, createdon, availableat,
+                    lastattemptat, lasterror)
                 VALUES (
                     $id, $userId, $aggregateType, $aggregateId, $operationType,
-                    $payloadJson, 'Pending', $attemptCount, $createdAt, $availableAt,
+                    $payloadJson, 'Pending', $attemptCount, $createdOn, $availableAt,
                     $lastAttemptAt, $lastError);
                 """;
             insertCommand.Parameters.AddWithValue("$id", operation.Id.ToString("D"));
@@ -83,7 +83,7 @@ public sealed class SqliteOutboxStore : IOutboxStore
             insertCommand.Parameters.AddWithValue("$operationType", operation.OperationType.ToString());
             insertCommand.Parameters.AddWithValue("$payloadJson", operation.PayloadJson);
             insertCommand.Parameters.AddWithValue("$attemptCount", operation.AttemptCount);
-            insertCommand.Parameters.AddWithValue("$createdAt", SqliteDateTime.Format(operation.CreatedAt));
+            insertCommand.Parameters.AddWithValue("$createdOn", SqliteDateTime.Format(operation.CreatedOn));
             insertCommand.Parameters.AddWithValue("$availableAt", SqliteDateTime.Format(operation.AvailableAt));
             insertCommand.Parameters.AddWithValue(
                 "$lastAttemptAt",
@@ -99,14 +99,14 @@ public sealed class SqliteOutboxStore : IOutboxStore
         updateCommand.Transaction = transaction;
         updateCommand.CommandText =
             """
-            UPDATE outbox_operations
-            SET payload_json = $payloadJson,
-                available_at = $availableAt,
-                last_attempt_at = $lastAttemptAt,
-                last_error = $lastError,
-                attempt_count = $attemptCount
+            UPDATE outboxoperations
+            SET payloadjson = $payloadJson,
+                availableat = $availableAt,
+                lastattemptat = $lastAttemptAt,
+                lasterror = $lastError,
+                attemptcount = $attemptCount
             WHERE id = $id
-              AND user_id = $userId
+              AND userid = $userId
               AND status = 'Pending';
             """;
         updateCommand.Parameters.AddWithValue("$payloadJson", operation.PayloadJson);
@@ -136,12 +136,12 @@ public sealed class SqliteOutboxStore : IOutboxStore
         await using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT id, user_id, aggregate_type, aggregate_id, operation_type, payload_json,
-                   status, attempt_count, created_at, available_at, last_attempt_at, last_error
-            FROM outbox_operations
-            WHERE user_id = $userId
+            SELECT id, userid, aggregatetype, aggregateid, operationtype, payloadjson,
+                   status, attemptcount, createdon, availableat, lastattemptat, lasterror
+            FROM outboxoperations
+            WHERE userid = $userId
               AND status = 'Pending'
-            ORDER BY created_at ASC, id ASC;
+            ORDER BY createdon ASC, id ASC;
             """;
         command.Parameters.AddWithValue("$userId", userId.ToString("D"));
         return await ReadAllAsync(command, cancellationToken);
@@ -158,14 +158,14 @@ public sealed class SqliteOutboxStore : IOutboxStore
         await using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT id, user_id, aggregate_type, aggregate_id, operation_type, payload_json,
-                   status, attempt_count, created_at, available_at, last_attempt_at, last_error
-            FROM outbox_operations
-            WHERE user_id = $userId
-              AND aggregate_type = $aggregateType
-              AND aggregate_id = $aggregateId
+            SELECT id, userid, aggregatetype, aggregateid, operationtype, payloadjson,
+                   status, attemptcount, createdon, availableat, lastattemptat, lasterror
+            FROM outboxoperations
+            WHERE userid = $userId
+              AND aggregatetype = $aggregateType
+              AND aggregateid = $aggregateId
               AND status = 'Pending'
-            ORDER BY created_at ASC, id ASC;
+            ORDER BY createdon ASC, id ASC;
             """;
         command.Parameters.AddWithValue("$userId", userId.ToString("D"));
         command.Parameters.AddWithValue("$aggregateType", aggregateType.ToString());
@@ -191,7 +191,7 @@ public sealed class SqliteOutboxStore : IOutboxStore
                 PayloadJson = reader.GetString(5),
                 Status = Enum.Parse<OutboxStatusEnum>(reader.GetString(6)),
                 AttemptCount = reader.GetInt32(7),
-                CreatedAt = SqliteDateTime.Parse(reader.GetString(8)),
+                CreatedOn = SqliteDateTime.Parse(reader.GetString(8)),
                 AvailableAt = SqliteDateTime.Parse(reader.GetString(9)),
                 LastAttemptAt = reader.IsDBNull(10) ? null : SqliteDateTime.Parse(reader.GetString(10)),
                 LastError = reader.IsDBNull(11) ? null : reader.GetString(11)

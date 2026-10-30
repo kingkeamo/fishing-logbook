@@ -20,7 +20,7 @@ public sealed class OutboxOperationModel
 
     public required int AttemptCount { get; init; }
 
-    public required DateTimeOffset CreatedAt { get; init; }
+    public required DateTimeOffset CreatedOn { get; init; }
 
     public required DateTimeOffset AvailableAt { get; init; }
 

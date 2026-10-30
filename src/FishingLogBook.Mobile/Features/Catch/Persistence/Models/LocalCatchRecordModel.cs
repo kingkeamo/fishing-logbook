@@ -18,9 +18,11 @@ public sealed class LocalCatchRecordModel
 
     public string? SpeciesName { get; init; }
 
-    public double? WeightGrams { get; init; }
+    /// <summary>Canonical weight in kilograms (matches server <c>weight</c>).</summary>
+    public double? Weight { get; init; }
 
-    public double? LengthMillimetres { get; init; }
+    /// <summary>Canonical length in centimetres (matches server <c>length</c>).</summary>
+    public double? Length { get; init; }
 
     public string? Method { get; init; }
 
@@ -36,9 +38,9 @@ public sealed class LocalCatchRecordModel
 
     public required LocalCatchLifecycleEnum Lifecycle { get; init; }
 
-    public required DateTimeOffset CreatedAt { get; init; }
+    public required DateTimeOffset CreatedOn { get; init; }
 
-    public required DateTimeOffset UpdatedAt { get; init; }
+    public required DateTimeOffset UpdatedOn { get; init; }
 
     public required IReadOnlyList<LocalCatchPhotographModel> Photographs { get; init; }
 }

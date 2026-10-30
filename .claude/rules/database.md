@@ -5,6 +5,9 @@ paths:
   - "src/FishingLogBook.Db.Migrations.App/**/*.cs"
   - "src/FishingLogBook.Infrastructure/Persistence/**/*.cs"
   - "src/FishingLogBook.Application/Contracts/**/*.cs"
+  - "src/FishingLogBook.Mobile/Features/LocalPersistence/**/*.sql"
+  - "src/FishingLogBook.Mobile/Features/LocalPersistence/**/*.cs"
+  - "src/FishingLogBook.Mobile/Features/Catch/Persistence/**/*.cs"
 ---
 
 # Database & Persistence Conventions
@@ -15,6 +18,7 @@ paths:
 |---------|------|
 | Migrations | **DbUp** (embedded SQL scripts) |
 | Runtime access | **Dapper** + **Npgsql** (PostgreSQL) |
+| Mobile local store | **Microsoft.Data.Sqlite** + embedded SQL migrations (MAUI) |
 | **Not used** | Entity Framework, FluentMigrator, `DbContext` |
 
 ## Identifier naming (mandatory)
@@ -34,6 +38,11 @@ paths:
   SQL and manual SQL must work without quoting database identifiers.
 - C# types and properties remain PascalCase. Dapper SQL aliases or explicit persistence
   mappings bridge database names to C# names where Dapper cannot bind them directly.
+- **Native mobile SQLite** (MAUI local persistence and outbox) uses the **same** identifier
+  naming rules as PostgreSQL. Prefer server column names and units for mirrored catch
+  fields (`weight` kilograms, `length` centimetres, `createdon`, …). Local-only columns
+  and tables are allowed (`userid` ownership, `revision`, `lifecycle`, `outboxoperations`,
+  …) but must still be lowercase with no underscores.
 
 ## DbUp migrations — two dedicated projects
 

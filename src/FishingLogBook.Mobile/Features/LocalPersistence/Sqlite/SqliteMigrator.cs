@@ -73,14 +73,14 @@ public sealed class SqliteMigrator : ISqliteMigrator
                 versionCommand.Transaction = transaction;
                 versionCommand.CommandText =
                     """
-                    UPDATE schema_info SET version = $version;
+                    UPDATE schemainfo SET version = $version;
                     """;
                 versionCommand.Parameters.AddWithValue("$version", migration.Version);
                 var updated = await versionCommand.ExecuteNonQueryAsync(cancellationToken);
                 if (updated != 1)
                 {
                     throw new InvalidOperationException(
-                        $"Migration {migration.Version} did not update schema_info.");
+                        $"Migration {migration.Version} did not update schemainfo.");
                 }
             }
 
@@ -117,7 +117,7 @@ public sealed class SqliteMigrator : ISqliteMigrator
             """
             SELECT 1
             FROM sqlite_master
-            WHERE type = 'table' AND name = 'schema_info'
+            WHERE type = 'table' AND name = 'schemainfo'
             LIMIT 1;
             """;
         var exists = await existsCommand.ExecuteScalarAsync(cancellationToken);
@@ -127,7 +127,7 @@ public sealed class SqliteMigrator : ISqliteMigrator
         }
 
         await using var versionCommand = connection.CreateCommand();
-        versionCommand.CommandText = "SELECT version FROM schema_info LIMIT 1;";
+        versionCommand.CommandText = "SELECT version FROM schemainfo LIMIT 1;";
         var value = await versionCommand.ExecuteScalarAsync(cancellationToken);
         return value is long version
             ? (int)version

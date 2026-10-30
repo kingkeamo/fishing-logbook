@@ -1,80 +1,80 @@
-CREATE TABLE schema_info (
+CREATE TABLE schemainfo (
     version INTEGER NOT NULL
 );
 
-INSERT INTO schema_info (version) VALUES (0);
+INSERT INTO schemainfo (version) VALUES (0);
 
-CREATE TABLE local_trips (
+CREATE TABLE localtrips (
     id TEXT NOT NULL PRIMARY KEY,
-    user_id TEXT NOT NULL,
+    userid TEXT NOT NULL,
     title TEXT NULL,
-    updated_at TEXT NOT NULL
+    updatedon TEXT NOT NULL
 );
 
-CREATE INDEX ix_local_trips_user_id ON local_trips (user_id);
+CREATE INDEX ixlocaltripsuserid ON localtrips (userid);
 
-CREATE TABLE local_catches (
+CREATE TABLE localcatches (
     id TEXT NOT NULL PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    trip_id TEXT NULL,
-    caught_by_user_id TEXT NOT NULL,
-    recorded_by_user_id TEXT NOT NULL,
-    caught_on TEXT NOT NULL,
-    species_name TEXT NULL,
-    weight_grams REAL NULL,
-    length_millimetres REAL NULL,
+    userid TEXT NOT NULL,
+    tripid TEXT NULL,
+    caughtbyuserid TEXT NOT NULL,
+    recordedbyuserid TEXT NOT NULL,
+    caughton TEXT NOT NULL,
+    speciesname TEXT NULL,
+    weight REAL NULL,
+    length REAL NULL,
     method TEXT NULL,
-    bait_or_lure TEXT NULL,
+    baitorlure TEXT NULL,
     notes TEXT NULL,
-    place_name TEXT NULL,
+    placename TEXT NULL,
     latitude REAL NULL,
     longitude REAL NULL,
-    location_accuracy_metres REAL NULL,
-    location_captured_on TEXT NULL,
-    location_source TEXT NULL,
-    location_visibility TEXT NULL,
-    location_consent_version TEXT NULL,
+    locationaccuracymetres REAL NULL,
+    locationcapturedon TEXT NULL,
+    locationsource TEXT NULL,
+    locationvisibility TEXT NULL,
+    locationconsentversion TEXT NULL,
     revision INTEGER NOT NULL,
     lifecycle TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    FOREIGN KEY (trip_id) REFERENCES local_trips (id)
+    createdon TEXT NOT NULL,
+    updatedon TEXT NOT NULL,
+    FOREIGN KEY (tripid) REFERENCES localtrips (id)
 );
 
-CREATE INDEX ix_local_catches_user_id ON local_catches (user_id);
+CREATE INDEX ixlocalcatchesuserid ON localcatches (userid);
 
-CREATE TABLE local_catch_photographs (
+CREATE TABLE localcatchphotographs (
     id TEXT NOT NULL PRIMARY KEY,
-    catch_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
-    sort_order INTEGER NOT NULL,
-    local_file_path TEXT NULL,
-    content_type TEXT NULL,
-    created_at TEXT NOT NULL,
-    FOREIGN KEY (catch_id) REFERENCES local_catches (id) ON DELETE CASCADE
+    catchid TEXT NOT NULL,
+    userid TEXT NOT NULL,
+    sortorder INTEGER NOT NULL,
+    localfilepath TEXT NULL,
+    contenttype TEXT NULL,
+    createdon TEXT NOT NULL,
+    FOREIGN KEY (catchid) REFERENCES localcatches (id) ON DELETE CASCADE
 );
 
-CREATE INDEX ix_local_catch_photographs_user_id ON local_catch_photographs (user_id);
-CREATE INDEX ix_local_catch_photographs_catch_id ON local_catch_photographs (catch_id);
+CREATE INDEX ixlocalcatchphotographsuserid ON localcatchphotographs (userid);
+CREATE INDEX ixlocalcatchphotographscatchid ON localcatchphotographs (catchid);
 
-CREATE TABLE outbox_operations (
+CREATE TABLE outboxoperations (
     id TEXT NOT NULL PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    aggregate_type TEXT NOT NULL,
-    aggregate_id TEXT NOT NULL,
-    operation_type TEXT NOT NULL,
-    payload_json TEXT NOT NULL,
+    userid TEXT NOT NULL,
+    aggregatetype TEXT NOT NULL,
+    aggregateid TEXT NOT NULL,
+    operationtype TEXT NOT NULL,
+    payloadjson TEXT NOT NULL,
     status TEXT NOT NULL,
-    attempt_count INTEGER NOT NULL,
-    created_at TEXT NOT NULL,
-    available_at TEXT NOT NULL,
-    last_attempt_at TEXT NULL,
-    last_error TEXT NULL
+    attemptcount INTEGER NOT NULL,
+    createdon TEXT NOT NULL,
+    availableat TEXT NOT NULL,
+    lastattemptat TEXT NULL,
+    lasterror TEXT NULL
 );
 
-CREATE INDEX ix_outbox_operations_user_id ON outbox_operations (user_id);
-CREATE INDEX ix_outbox_operations_status ON outbox_operations (status);
+CREATE INDEX ixoutboxoperationsuserid ON outboxoperations (userid);
+CREATE INDEX ixoutboxoperationsstatus ON outboxoperations (status);
 
-CREATE UNIQUE INDEX ux_outbox_pending_coalesce
-    ON outbox_operations (user_id, aggregate_type, aggregate_id, operation_type)
+CREATE UNIQUE INDEX uxoutboxpendingcoalesce
+    ON outboxoperations (userid, aggregatetype, aggregateid, operationtype)
     WHERE status = 'Pending';

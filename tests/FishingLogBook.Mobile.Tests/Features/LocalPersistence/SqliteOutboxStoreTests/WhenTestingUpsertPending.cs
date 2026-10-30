@@ -30,7 +30,7 @@ public sealed class WhenTestingUpsertPending : BaseSqliteOutboxStoreTest
                         PayloadJson = "{\"revision\":1}",
                         Status = OutboxStatusEnum.Pending,
                         AttemptCount = 0,
-                        CreatedAt = DateTimeOffset.UtcNow,
+                        CreatedOn = DateTimeOffset.UtcNow,
                         AvailableAt = DateTimeOffset.UtcNow
                     },
                     ct);
@@ -52,7 +52,7 @@ public sealed class WhenTestingUpsertPending : BaseSqliteOutboxStoreTest
                         PayloadJson = "{\"revision\":2}",
                         Status = OutboxStatusEnum.Pending,
                         AttemptCount = 0,
-                        CreatedAt = DateTimeOffset.UtcNow,
+                        CreatedOn = DateTimeOffset.UtcNow,
                         AvailableAt = DateTimeOffset.UtcNow
                     },
                     ct);
@@ -92,7 +92,7 @@ public sealed class WhenTestingUpsertPending : BaseSqliteOutboxStoreTest
                         PayloadJson = "{}",
                         Status = OutboxStatusEnum.Pending,
                         AttemptCount = 0,
-                        CreatedAt = DateTimeOffset.UtcNow,
+                        CreatedOn = DateTimeOffset.UtcNow,
                         AvailableAt = DateTimeOffset.UtcNow
                     },
                     ct);

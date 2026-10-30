@@ -1,7 +1,7 @@
-CREATE TABLE schema_info (
+CREATE TABLE schemainfo (
     version INTEGER NOT NULL
 );
 
-INSERT INTO schema_info (version) VALUES (0);
+INSERT INTO schemainfo (version) VALUES (0);
 
-CREATE TABLE definitely_broken (
+THIS IS NOT VALID SQL;

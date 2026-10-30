@@ -14,5 +14,5 @@ public sealed class LocalCatchPhotographModel
 
     public string? ContentType { get; init; }
 
-    public required DateTimeOffset CreatedAt { get; init; }
+    public required DateTimeOffset CreatedOn { get; init; }
 }

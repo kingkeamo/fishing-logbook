@@ -73,7 +73,7 @@ public abstract class BaseLocalCatchServiceTest : IDisposable
     protected static LocalCatchSaveArgs CreateSaveArgs(
         Guid? catchId = null,
         string? speciesName = "Brown trout",
-        double? weightGrams = 1200,
+        double? weight = 1.2,
         Guid? tripId = null,
         string? tripTitle = null,
         LocalCatchLifecycleEnum lifecycle = LocalCatchLifecycleEnum.Saved)
@@ -85,8 +85,8 @@ public abstract class BaseLocalCatchServiceTest : IDisposable
             TripTitle = tripTitle,
             CaughtOn = DateTimeOffset.Parse("2026-05-01T12:00:00Z"),
             SpeciesName = speciesName,
-            WeightGrams = weightGrams,
-            LengthMillimetres = 420,
+            Weight = weight,
+            Length = 42,
             Method = "Fly",
             BaitOrLure = "Dry fly",
             Notes = "Evening rise",

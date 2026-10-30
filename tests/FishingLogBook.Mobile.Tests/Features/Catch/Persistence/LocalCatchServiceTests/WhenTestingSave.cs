@@ -27,8 +27,8 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
         saved.Revision.Should().Be(1);
         loaded.Should().NotBeNull();
         loaded!.SpeciesName.Should().Be("Brown trout");
-        loaded.WeightGrams.Should().Be(1200);
-        loaded.LengthMillimetres.Should().Be(420);
+        loaded.Weight.Should().Be(1.2);
+        loaded.Length.Should().Be(42);
         loaded.Photographs.Should().HaveCount(1);
         loaded.Revision.Should().Be(1);
     }
@@ -56,8 +56,8 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
                         CaughtOn = DateTimeOffset.UtcNow,
                         Revision = 1,
                         Lifecycle = LocalCatchLifecycleEnum.Saved,
-                        CreatedAt = DateTimeOffset.UtcNow,
-                        UpdatedAt = DateTimeOffset.UtcNow,
+                        CreatedOn = DateTimeOffset.UtcNow,
+                        UpdatedOn = DateTimeOffset.UtcNow,
                         Photographs = []
                     },
                     ct);
@@ -74,7 +74,7 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
                         PayloadJson = "{}",
                         Status = OutboxStatusEnum.Pending,
                         AttemptCount = 0,
-                        CreatedAt = DateTimeOffset.UtcNow,
+                        CreatedOn = DateTimeOffset.UtcNow,
                         AvailableAt = DateTimeOffset.UtcNow
                     },
                     ct);
@@ -148,10 +148,10 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
 
         // Act
         var second = await Sut.SaveAsync(
-            CreateSaveArgs(catchId: catchId, speciesName: "Second", weightGrams: 1300),
+            CreateSaveArgs(catchId: catchId, speciesName: "Second", weight: 1.3),
             CancellationToken.None);
         var third = await Sut.SaveAsync(
-            CreateSaveArgs(catchId: catchId, speciesName: "Third", weightGrams: 1400),
+            CreateSaveArgs(catchId: catchId, speciesName: "Third", weight: 1.4),
             CancellationToken.None);
         var loaded = await Sut.GetAsync(catchId, CancellationToken.None);
         var pending = await OutboxStore.ListPendingForAggregateAsync(
@@ -231,7 +231,7 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
         loaded!.TripId.Should().Be(tripId);
         await using var connection = await ConnectionFactory.OpenAsync(CancellationToken.None);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT title FROM local_trips WHERE id = $id AND user_id = $userId;";
+        command.CommandText = "SELECT title FROM localtrips WHERE id = $id AND userid = $userId;";
         command.Parameters.AddWithValue("$id", tripId.ToString("D"));
         command.Parameters.AddWithValue("$userId", OwnerUserId.ToString("D"));
         var title = (string?)await command.ExecuteScalarAsync();
@@ -248,8 +248,8 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
             Id = Guid.NewGuid(),
             CaughtOn = DateTimeOffset.Parse("2026-05-01T12:00:00Z"),
             SpeciesName = "Brown trout",
-            WeightGrams = 1200,
-            LengthMillimetres = 420,
+            Weight = 1.2,
+            Length = 42,
             Lifecycle = LocalCatchLifecycleEnum.Saved,
             CaughtByUserId = anglerUserId,
             RecordedByUserId = OwnerUserId,
@@ -340,8 +340,8 @@ public sealed class WhenTestingSave : BaseLocalCatchServiceTest
                         SpeciesName = "Should roll back",
                         Revision = 2,
                         Lifecycle = LocalCatchLifecycleEnum.Saved,
-                        CreatedAt = DateTimeOffset.UtcNow,
-                        UpdatedAt = DateTimeOffset.UtcNow,
+                        CreatedOn = DateTimeOffset.UtcNow,
+                        UpdatedOn = DateTimeOffset.UtcNow,
                         Photographs = []
                     },
                     ct);
