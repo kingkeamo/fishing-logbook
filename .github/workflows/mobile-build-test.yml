@@ -23,6 +23,19 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.300'
+
+      # Run net10.0 presentation tests before any MAUI/Android build. On windows-latest,
+      # testhost has hung indefinitely at start after building FishingLogBook.Mobile.slnx
+      # (multi-TFM Android) once Microsoft.Data.Sqlite native load is in the suite.
+      - name: Test mobile presentation
+        timeout-minutes: 10
+        run: >-
+          dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj
+          -f net10.0
+          --verbosity normal
+          --blame-hang
+          --blame-hang-timeout 2m
+
       - uses: actions/setup-java@v4
         with:
           distribution: microsoft
@@ -39,13 +52,6 @@ jobs:
         run: >-
           dotnet build FishingLogBook.Mobile.slnx
           "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME"
-      - name: Test mobile presentation
-        # Rebuild net10.0 explicitly: --no-build after the multi-TFM Android solution
-        # build has hung at testhost start on windows-latest. Avoid ClearAllPools races
-        # by not relying on leftover android build outputs for the test host.
-        run: >-
-          dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj
-          -f net10.0 --verbosity minimal
       - name: Build trimmed ARM64 release APK
         run: >-
           dotnet build src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj

@@ -10,6 +10,7 @@ using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.Offline.Stores.SqliteCatchStoreTests;
 
+[Collection(FishingLogBook.Mobile.Tests.Common.Offline.SqliteTestCollection.Name)]
 public abstract class BaseSqliteCatchStoreTest : IDisposable
 {
     protected static readonly Guid OwnerUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");

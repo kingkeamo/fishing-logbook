@@ -27,7 +27,8 @@ public sealed class SqliteConnectionFactory : ISqliteConnectionFactory
         {
             DataSource = _databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
-            Cache = SqliteCacheMode.Default
+            Cache = SqliteCacheMode.Default,
+            Pooling = false
         }.ToString());
 
         await connection.OpenAsync(cancellationToken);
