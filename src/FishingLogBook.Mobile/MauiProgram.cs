@@ -47,7 +47,6 @@ using FishingLogBook.Mobile.Features.Startup.Pages;
 using FishingLogBook.Mobile.Features.Startup.ViewModels;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Mobile.Interactions;
-using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Adapters;
 using FishingLogBook.Mobile.Native.Browsers;
