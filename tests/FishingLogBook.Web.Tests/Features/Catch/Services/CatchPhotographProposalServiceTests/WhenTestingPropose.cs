@@ -1,6 +1,6 @@
 using AwesomeAssertions;
-using FishingLogBook.Web.Features.Catch.Models;
-using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Shared.Catches.Models;
+using FishingLogBook.Shared.Photographs.Models;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Services.CatchPhotographProposalServiceTests;
 

@@ -6,5 +6,5 @@ public interface IRouteNavigator
 {
     string CurrentPath { get; }
     bool CanGoBack { get; }
-    Task GoToAsync(string path, CatchPresentationModel? item, CancellationToken cancellationToken);
+    Task GoToAsync(string path, CatchPresentationModel? item, Guid? catchEditId, CancellationToken cancellationToken);
 }

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Measurements.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Measurements.Popups.MeasurementEditorPopup"
+               x:TypeArguments="x:Boolean" x:DataType="vm:MeasurementEditorViewModel"
+               Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
+  <Border x:Name="Sheet" StrokeThickness="0" Padding="0" HorizontalOptions="Fill" VerticalOptions="End"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="0" SafeAreaEdges="Container" VerticalOptions="End">
+      <Grid Padding="20,8,8,0" ColumnDefinitions="*,48" RowDefinitions="Auto,48">
+        <BoxView Grid.ColumnSpan="2" WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center"
+                 Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+        <Label Grid.Row="1" Text="{Binding Title}" Style="{StaticResource Heading}" FontSize="20" VerticalOptions="Center"
+               SemanticProperties.HeadingLevel="Level1" AutomationId="MeasurementEditorTitle" />
+        <Button Grid.Row="1" Grid.Column="1" Text="×" Clicked="OnDismiss" Style="{StaticResource SecondaryButton}" Padding="0"
+                SemanticProperties.Description="{Binding Text[Cancel]}" AutomationId="MeasurementEditorClose" />
+      </Grid>
+      <VerticalStackLayout Padding="20,0,20,0">
+        <controls:MeasurementEditorView x:Name="Editor" />
+      </VerticalStackLayout>
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Padding="20,8,20,16">
+        <Button Text="{Binding Text[MeasureClear]}" Style="{StaticResource DestructiveButton}" Clicked="OnClear"
+                AutomationId="MeasurementEditorClear" />
+        <Button Grid.Column="1" Text="{Binding Text[MeasureApply]}" Clicked="OnApply"
+                AutomationId="MeasurementEditorApply" />
+      </Grid>
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

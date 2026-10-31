@@ -6,11 +6,14 @@ paths:
   - "tests/FishingLogBook.Infrastructure.Tests/**/*.cs"
   - "tests/FishingLogBook.Db.Migrations.Tests/**/*.cs"
   - "tests/FishingLogBook.Api.Tests/**/*.cs"
+  - "tests/FishingLogBook.Mobile.Tests/**/*.cs"
 ---
 
 # C# Testing Conventions (Unit & Integration)
 
 Blazor / bUnit tests are in **`testing-blazor.md`**.
+Native MAUI device verification is in **`maui.md`** — green Mobile unit tests are
+not emulator or device proof.
 
 ## Issue test requirements (mandatory)
 
@@ -21,7 +24,7 @@ For every GitHub issue:
 1. Review every Acceptance Criterion.
 2. Add automated tests for each criterion where technically practical.
 3. Prefer behavioural tests over implementation-detail tests.
-4. Follow this file and **`testing-blazor.md`**.
+4. Follow this file and **`testing-blazor.md`**. Mobile work also follows **`maui.md`**.
 5. Use the testing libraries already selected by the solution.
 6. Do not introduce a new testing framework without a specific reason.
 7. Do not add meaningless tests purely to increase coverage.
@@ -54,6 +57,7 @@ different project's test project.
 | `FishingLogBook.Infrastructure.Tests` | Unit tests at normal SUT/feature paths; live-infrastructure tests under `Repositories/` (Testcontainers in CI) | Infrastructure, Tests.Common |
 | `FishingLogBook.Db.Migrations.Tests` | Migration ordering (`FilenameOnlyScriptComparer`) and engine helpers | Db.Migrations, Tests.Common |
 | `FishingLogBook.Api.Tests` | API endpoints via `WebApplicationFactory<Program>` (repositories mocked — no live DB in CI) | Api, Shared, Application, Tests.Common |
+| `FishingLogBook.Mobile.Tests` | Native MAUI ViewModels, stores, adapters and services (`net10.0`) | Mobile, Shared, Tests.Common |
 
 `Domain`, `DependencyInjection`, and `Db.Migrations.App` have no dedicated test project yet
 (POCOs / wiring / console host). Add one as `FishingLogBook.<Project>.Tests` when they gain
@@ -721,7 +725,9 @@ This is the safety net for “all tests passed but the app dies on first request
 
 Aim for **100% line and branch coverage** of the handler, validator, or endpoint under
 test. Do not write filler tests purely to raise a number, and do not widen production
-visibility or use reflection just to reach a branch.
+visibility or use reflection just to reach a branch. Mobile ViewModels are not
+handlers; test real state transitions per **`maui.md`**. Do not treat this coverage
+target as a substitute for Android emulator or device checks.
 
 ## AI feature definition of done (mandatory)
 
@@ -735,6 +741,7 @@ project in the same task**.
 | `FishingLogBook.Infrastructure` | `FishingLogBook.Infrastructure.Tests` |
 | `FishingLogBook.Shared` | `FishingLogBook.Shared.Tests` |
 | `FishingLogBook.Web` | `FishingLogBook.Web.Tests` — see **`testing-blazor.md`** |
+| `FishingLogBook.Mobile` | `FishingLogBook.Mobile.Tests` — see **`maui.md`** for device verification |
 
 Before marking complete: run targeted `dotnet test` for every test project you changed,
 then complete **`self-review.md`** (green tests do not skip that step).

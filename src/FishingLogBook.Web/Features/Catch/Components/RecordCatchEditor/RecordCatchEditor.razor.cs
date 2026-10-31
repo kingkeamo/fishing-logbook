@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Catches.Models;
+using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Browser.Location;
@@ -7,7 +9,6 @@ using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Photographs.Models;
 using FishingLogBook.Web.Features.Profile.Models;

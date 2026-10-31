@@ -131,7 +131,8 @@ public sealed class PhotographCollectionEditorService(
                 SortOrder = items.Count,
                 PreviewPath = prepared.File.AbsolutePath,
                 RelativeFilePath = prepared.File.RelativeFilePath,
-                ContentType = prepared.File.ContentType
+                ContentType = prepared.File.ContentType,
+                Metadata = prepared.Metadata
             });
         }
 

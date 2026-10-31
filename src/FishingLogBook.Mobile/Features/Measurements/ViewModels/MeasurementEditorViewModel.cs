@@ -20,6 +20,7 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
     private int _pounds;
     private int _ounces;
     private bool _hasInvalidInput;
+    private bool _suppressEntryCommit;
     private bool _disposed;
 
     public MeasurementEditorViewModel(
@@ -40,6 +41,8 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
         SynchroniseInputs();
         _text.PropertyChanged += OnCultureChanged;
     }
+
+    public UiTextService Text => _text;
 
     public MeasurementKindEnum Kind { get; }
     public bool IsWeight => Kind == MeasurementKindEnum.Weight;
@@ -157,6 +160,7 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
 
     public void SetSliderValue(decimal displayValue)
     {
+        _suppressEntryCommit = true;
         var step = SliderStep;
         var snapped = Math.Round(displayValue / step, MidpointRounding.AwayFromZero) * step;
         SetDisplayValue(Math.Clamp(snapped, 0m, SliderMaximum));
@@ -171,6 +175,7 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
     {
         if (string.IsNullOrWhiteSpace(value))
         {
+            Clear();
             return;
         }
 
@@ -197,26 +202,38 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
         SetImperialWeight();
     }
 
-    public void Increase()
+    public void Increase(
+        string? pendingExactText = null,
+        string? pendingPoundsText = null,
+        string? pendingOuncesText = null)
     {
+        CommitPending(pendingExactText, pendingPoundsText, pendingOuncesText);
         if (IsImperialWeight)
         {
             SetImperialOunces((_pounds * OuncesPerPound) + _ounces + 1);
+            _suppressEntryCommit = true;
             return;
         }
 
         SetDisplayValue((DisplayValue ?? 0m) + FineStep);
+        _suppressEntryCommit = true;
     }
 
-    public void Decrease()
+    public void Decrease(
+        string? pendingExactText = null,
+        string? pendingPoundsText = null,
+        string? pendingOuncesText = null)
     {
+        CommitPending(pendingExactText, pendingPoundsText, pendingOuncesText);
         if (IsImperialWeight)
         {
             SetImperialOunces(Math.Max(0, (_pounds * OuncesPerPound) + _ounces - 1));
+            _suppressEntryCommit = true;
             return;
         }
 
         SetDisplayValue(Math.Max(0m, (DisplayValue ?? 0m) - FineStep));
+        _suppressEntryCommit = true;
     }
 
     public void Clear()
@@ -224,6 +241,7 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
         _canonicalValue = null;
         _hasInvalidInput = false;
         ValidationMessage = null;
+        _suppressEntryCommit = true;
         SynchroniseInputs();
         Notify();
     }
@@ -233,6 +251,65 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
         Validate();
         Notify();
         return IsValid ? _canonicalValue : null;
+    }
+
+    public void MarkEntryEdited()
+    {
+        _suppressEntryCommit = false;
+    }
+
+    public MeasurementEditorApplyResult TryApply(
+        string? pendingExactText = null,
+        string? pendingPoundsText = null,
+        string? pendingOuncesText = null)
+    {
+        CommitInputUnlessSuperseded(pendingExactText, pendingPoundsText, pendingOuncesText);
+        Apply();
+        if (!IsValid)
+        {
+            return MeasurementEditorApplyResult.Invalid(ValidationMessage ?? _text["MeasureInvalid"]);
+        }
+
+        return MeasurementEditorApplyResult.Applied(_canonicalValue);
+    }
+
+    public void CommitPending(
+        string? pendingExactText = null,
+        string? pendingPoundsText = null,
+        string? pendingOuncesText = null)
+    {
+        if (IsImperialWeight)
+        {
+            if (int.TryParse(pendingPoundsText, out var pounds))
+            {
+                SetPounds(pounds);
+            }
+
+            if (int.TryParse(pendingOuncesText, out var ounces))
+            {
+                SetOunces(ounces);
+            }
+
+            return;
+        }
+
+        if (pendingExactText is not null)
+        {
+            SetExactText(pendingExactText);
+        }
+    }
+
+    public void CommitInputUnlessSuperseded(
+        string? pendingExactText = null,
+        string? pendingPoundsText = null,
+        string? pendingOuncesText = null)
+    {
+        if (_suppressEntryCommit)
+        {
+            return;
+        }
+
+        CommitPending(pendingExactText, pendingPoundsText, pendingOuncesText);
     }
 
     private void SetImperialOunces(int totalOunces)

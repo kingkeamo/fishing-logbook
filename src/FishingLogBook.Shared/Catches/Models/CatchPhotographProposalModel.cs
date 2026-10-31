@@ -1,4 +1,4 @@
-namespace FishingLogBook.Web.Features.Catch.Models;
+namespace FishingLogBook.Shared.Catches.Models;
 
 public sealed record CatchPhotographProposalModel(
     DateTimeOffset? CaughtOn,

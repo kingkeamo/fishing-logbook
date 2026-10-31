@@ -1,7 +1,10 @@
 using System.ComponentModel;
 using System.Globalization;
+using FishingLogBook.Mobile.Features.Authentication.Coordinators;
+using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Models;
-using FishingLogBook.Mobile.Features.Catch.Services;
+using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
+using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Presentation;
@@ -21,28 +24,35 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
         CatchSpeciesEnum.Other
     ];
 
-    private readonly IReadOnlyList<CatchPresentationModel> _samples;
+    private readonly ICatchStore _catchStore;
+    private readonly IAccountSessionCoordinator _sessionCoordinator;
+    private readonly CatchPresentationMapper _mapper;
     private readonly IAccountUnitsService _units;
     private readonly IMeasurementService _measurement;
     private readonly TimeProvider _clock;
-    private ContentStateEnum _state;
+    private IReadOnlyList<CatchPresentationModel> _source = [];
+    private ContentStateEnum _state = ContentStateEnum.Loading;
     private string _searchTerm = string.Empty;
     private CatchFilterModel _filters = CatchFilterModel.None;
 
     public CatchListViewModel(
         UiTextService text,
-        SampleCatchProvider samples,
+        ICatchStore catchStore,
+        IAccountSessionCoordinator sessionCoordinator,
+        CatchPresentationMapper mapper,
         IAccountUnitsService units,
         IMeasurementService measurement,
         TimeProvider clock)
     {
         Text = text;
-        _samples = samples.Catches;
+        _catchStore = catchStore;
+        _sessionCoordinator = sessionCoordinator;
+        _mapper = mapper;
         _units = units;
         _measurement = measurement;
         _clock = clock;
         Text.PropertyChanged += OnCultureChanged;
-        Refresh();
+        State = new ContentStateModel(_state, Text);
     }
 
     public UiTextService Text { get; }
@@ -66,15 +76,40 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    public void LoadJournalEntries(IReadOnlyList<CatchPresentationModel> entries)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        _source = entries;
+        SetState(entries.Count == 0 ? ContentStateEnum.Empty : ContentStateEnum.Ready);
+    }
+
     public async Task LoadUnitsAsync(CancellationToken cancellationToken)
     {
+        await RefreshFromStoreAsync(cancellationToken);
         var units = await _units.GetAsync(cancellationToken);
-        foreach (var item in _samples)
+        foreach (var item in _source)
         {
             item.SetUnits(_measurement, units.WeightUnit, units.LengthUnit);
         }
 
         Refresh();
+    }
+
+    public async Task RefreshFromStoreAsync(CancellationToken cancellationToken)
+    {
+        if (_sessionCoordinator.Capture() is null)
+        {
+            _source = [];
+            SetState(ContentStateEnum.Empty);
+            return;
+        }
+
+        var records = await _catchStore.ListAsync(cancellationToken);
+        _source = records
+            .Where(record => record.Lifecycle == LocalCatchLifecycleEnum.Saved)
+            .Select(record => _mapper.Map(record, Text))
+            .ToArray();
+        SetState(_source.Count == 0 ? ContentStateEnum.Empty : ContentStateEnum.Ready);
     }
 
     public void SetSearch(string? value)
@@ -103,7 +138,7 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     public CatchFilterDraftModel CreateFilterDraft()
     {
         var options = SpeciesOrder
-            .Select(species => new SpeciesOptionModel(species, Text["Species" + species], _samples.Count(item => item.SpeciesIdentifier == species), _filters.Species.Contains(species)))
+            .Select(species => new SpeciesOptionModel(species, Text["Species" + species], _source.Count(item => item.SpeciesIdentifier == species), _filters.Species.Contains(species)))
             .ToArray();
         return new CatchFilterDraftModel(Text, _filters, options);
     }
@@ -138,9 +173,9 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
             return;
         }
 
-        foreach (var sample in _samples)
+        foreach (var item in _source)
         {
-            sample.RefreshLocalizedText();
+            item.RefreshLocalizedText();
         }
 
         Refresh();
@@ -184,7 +219,7 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     private void Refresh()
     {
         State = new ContentStateModel(_state, Text);
-        Catches = !HasContent ? [] : _samples.Where(Matches).OrderByDescending(item => item.RecordedAt).ToArray();
+        Catches = !HasContent ? [] : _source.Where(Matches).OrderByDescending(item => item.RecordedAt).ToArray();
         Groups = Catches.GroupBy(item => item.Day).Select(group => new CatchGroupModel(group.Key, group, Text)).ToArray();
         foreach (var property in new[]
                  {

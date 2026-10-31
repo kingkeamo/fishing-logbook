@@ -190,6 +190,11 @@ It is not a full authenticated Blazor host. Production Web authentication is
 Cognito/OIDC. Do not add test-only authentication, compile symbols, dual-host hacks,
 or RCL extraction to a product feature ticket in order to force Playwright coverage.
 
+Native MAUI (`FishingLogBook.Mobile`) is not a browser host. Follow **`maui.md`**:
+ViewModel tests do not prove bindings, focus, keyboard, popups, photo pickers or
+navigation. Report each Android emulator/device check as passed, failed, or not
+run. Do not claim device validation from `dotnet test` alone.
+
 If browser coverage is deliberately omitted, the self-review report must state:
 
 - the missing E2E scenario and exact risk it would have covered

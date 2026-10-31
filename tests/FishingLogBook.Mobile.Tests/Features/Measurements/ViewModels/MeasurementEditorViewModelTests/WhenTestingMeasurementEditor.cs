@@ -54,6 +54,45 @@ public class WhenTestingMeasurementEditor
         sut.Ounces.Should().Be(4);
     }
 
+    [Theory]
+    [InlineData(1.0, 1, 0)]
+    [InlineData(1.25, 1, 4)]
+    [InlineData(1.5, 1, 8)]
+    [InlineData(1.75, 1, 12)]
+    [InlineData(2.0, 2, 0)]
+    public void ItShouldConvertImperialSliderStopsIntoPoundsAndOunces(double displayPounds, int pounds, int ounces)
+    {
+        // Arrange
+        var sut = Create(MeasurementKindEnum.Weight, imperial: true);
+
+        // Act
+        sut.SetSliderValue((decimal)displayPounds);
+
+        // Assert
+        sut.Pounds.Should().Be(pounds);
+        sut.Ounces.Should().Be(ounces);
+        sut.DisplayText.Should().Be($"{pounds} lb {ounces} oz");
+    }
+
+    [Fact]
+    public void ItShouldKeepPoundsAndOuncesInSyncAcrossImperialSliderDrags()
+    {
+        // Arrange
+        var sut = Create(MeasurementKindEnum.Weight, imperial: true);
+
+        // Act — mimic a drag that passes quarter-pound stops without re-reading entry text
+        sut.SetSliderValue(0.25m);
+        sut.SetSliderValue(0.75m);
+        sut.SetSliderValue(1.25m);
+        sut.SetSliderValue(2.5m);
+
+        // Assert
+        sut.Pounds.Should().Be(2);
+        sut.Ounces.Should().Be(8);
+        sut.SliderValue.Should().Be(2.5m);
+        sut.DisplayText.Should().Be("2 lb 8 oz");
+    }
+
     [Fact]
     public void ItShouldSnapLengthSliderToHalfInches()
     {
@@ -236,6 +275,21 @@ public class WhenTestingMeasurementEditor
         applied.Should().Be(45m);
         sut.CanonicalValue.Should().BeNull();
         sut.ExactText.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ItShouldClearWhenExactTextIsBlank()
+    {
+        // Arrange
+        var sut = Create(MeasurementKindEnum.Length, 45m);
+
+        // Act
+        sut.SetExactText("   ");
+
+        // Assert
+        sut.CanonicalValue.Should().BeNull();
+        sut.ExactText.Should().BeEmpty();
+        sut.IsValid.Should().BeTrue();
     }
 
     [Fact]

@@ -5,12 +5,12 @@
              xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
              x:Class="FishingLogBook.Mobile.Native.Controls.MeasurementEditorView"
              x:DataType="vm:MeasurementEditorViewModel">
-  <VerticalStackLayout Spacing="{StaticResource SpaceMedium}">
+  <VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
       <VerticalStackLayout x:Name="Ranges" Grid.Column="1" Spacing="2" VerticalOptions="Center" SemanticProperties.Description="{Binding RangeGroupLabel}" />
       <Border Grid.Column="0" StrokeThickness="0" Padding="8" BackgroundColor="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}">
-        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
-        <controls:MeasurementVisualView x:Name="MeasureVisual" Kind="{Binding Kind}" Fraction="{Binding FractionValue}" HeightRequest="192"
+        <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+        <controls:MeasurementVisualView x:Name="MeasureVisual" Kind="{Binding Kind}" Fraction="{Binding FractionValue}" HeightRequest="140"
                                         AccentColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
                                         SurfaceColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}"
                                         SemanticProperties.Description="{Binding CurrentDescription}"
@@ -21,16 +21,16 @@
     <Grid x:Name="ImperialEntries" ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding IsImperialWeight}">
       <VerticalStackLayout Grid.Column="0">
         <Label Text="{Binding PoundsLabel}" Style="{StaticResource TileCaption}" />
-        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="PoundsEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnPoundsCommitted" Completed="OnPoundsCommitted" SemanticProperties.Description="{Binding PoundsLabel}" AutomationId="MeasurementPounds" /></Border>
+        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="PoundsEntry" Keyboard="Numeric" HeightRequest="48" TextChanged="OnPoundsTextChanged" Unfocused="OnPoundsCommitted" Completed="OnPoundsCommitted" SemanticProperties.Description="{Binding PoundsLabel}" AutomationId="MeasurementPounds" /></Border>
       </VerticalStackLayout>
       <VerticalStackLayout Grid.Column="1">
         <Label Text="{Binding OuncesLabel}" Style="{StaticResource TileCaption}" />
-        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="OuncesEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnOuncesCommitted" Completed="OnOuncesCommitted" SemanticProperties.Description="{Binding OuncesLabel}" AutomationId="MeasurementOunces" /></Border>
+        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="OuncesEntry" Keyboard="Numeric" HeightRequest="48" TextChanged="OnOuncesTextChanged" Unfocused="OnOuncesCommitted" Completed="OnOuncesCommitted" SemanticProperties.Description="{Binding OuncesLabel}" AutomationId="MeasurementOunces" /></Border>
       </VerticalStackLayout>
     </Grid>
     <VerticalStackLayout IsVisible="{Binding IsSingleValue}">
       <Label Text="{Binding ExactLabel}" Style="{StaticResource TileCaption}" />
-      <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="ExactEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnExactCommitted" Completed="OnExactCommitted" SemanticProperties.Description="{Binding ExactLabel}" AutomationId="MeasurementExact" /></Border>
+      <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="ExactEntry" Keyboard="Numeric" HeightRequest="48" TextChanged="OnExactTextChanged" Unfocused="OnExactCommitted" Completed="OnExactCommitted" SemanticProperties.Description="{Binding ExactLabel}" AutomationId="MeasurementExact" /></Border>
     </VerticalStackLayout>
     <VerticalStackLayout Spacing="0">
       <Label Text="{Binding SliderHint}" Style="{StaticResource TileCaption}" />

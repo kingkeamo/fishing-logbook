@@ -13,7 +13,7 @@ public class WhenTestingGoBack : BaseNavigationServiceTest
         // Act
         await Sut.GoBackAsync();
         // Assert
-        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<CancellationToken>());
+        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -24,6 +24,6 @@ public class WhenTestingGoBack : BaseNavigationServiceTest
         // Act
         await Sut.GoBackAsync();
         // Assert
-        await MockNavigator.Received(1).GoToAsync("..", null, CancellationToken.None);
+        await MockNavigator.Received(1).GoToAsync("..", null, null, CancellationToken.None);
     }
 }

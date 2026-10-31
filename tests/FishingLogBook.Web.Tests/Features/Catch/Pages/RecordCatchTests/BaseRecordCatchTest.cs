@@ -12,6 +12,7 @@ using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Pages.RecordCatch;
 using FishingLogBook.Web.Features.Catch.Services;
+using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Shared.Photographs.Services;
 using FishingLogBook.Web.Features.Photographs.Models;

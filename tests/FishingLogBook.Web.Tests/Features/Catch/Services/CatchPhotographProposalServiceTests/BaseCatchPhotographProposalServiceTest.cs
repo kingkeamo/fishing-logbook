@@ -1,7 +1,7 @@
-using FishingLogBook.Web.Features.Catch.Models;
-using FishingLogBook.Web.Features.Catch.Services;
-using FishingLogBook.Web.Features.Photographs.Enums;
-using FishingLogBook.Web.Features.Photographs.Models;
+using FishingLogBook.Shared.Catches.Models;
+using FishingLogBook.Shared.Catches.Services;
+using FishingLogBook.Shared.Photographs.Enums;
+using FishingLogBook.Shared.Photographs.Models;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Services.CatchPhotographProposalServiceTests;
 

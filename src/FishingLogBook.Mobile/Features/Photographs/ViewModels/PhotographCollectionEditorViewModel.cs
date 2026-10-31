@@ -13,6 +13,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
     private readonly UiTextService _text;
     private Guid _userId;
     private int _maximumCount = 10;
+    private int _minimumCount;
     private bool _isBusy;
     private string? _statusKey;
 
@@ -27,6 +28,8 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public event EventHandler? ItemsChanged;
 
     public ObservableCollection<PhotographEditorItemModel> Items { get; }
 
@@ -63,6 +66,26 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         }
     }
 
+    public int MinimumCount
+    {
+        get => _minimumCount;
+        set
+        {
+            if (_minimumCount == value)
+            {
+                return;
+            }
+
+            _minimumCount = Math.Max(0, value);
+            Notify(nameof(MinimumCount));
+            Notify(nameof(CanRemove));
+        }
+    }
+
+    public bool CanRemove => Items.Count > MinimumCount;
+
+    public bool HasItems => Items.Count > 0;
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -94,6 +117,9 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
         ClearStatus();
         Notify(nameof(CanAddMore));
+        Notify(nameof(CanRemove));
+        Notify(nameof(HasItems));
+        ItemsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public async Task TakePhotoAsync(CancellationToken cancellationToken)
@@ -112,6 +138,11 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
     public void Remove(Guid photographId)
     {
+        if (!CanRemove)
+        {
+            return;
+        }
+
         var result = _editor.Remove(Items.ToArray(), photographId);
         Apply(result);
     }
@@ -150,8 +181,13 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         }
     }
 
-    private void Apply(PhotographEditorActionResultModel result)
+    private void Apply(PhotographEditorActionResultModel? result)
     {
+        if (result is null)
+        {
+            return;
+        }
+
         if (result.Outcome == PhotographPreparationOutcomeEnum.Prepared)
         {
             SetItems(result.Items);

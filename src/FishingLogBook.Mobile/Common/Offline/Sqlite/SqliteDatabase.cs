@@ -7,7 +7,7 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
 {
     private readonly ISqliteConnectionFactory _connectionFactory;
     private readonly ISqliteMigrator _migrator;
-    private readonly IReadOnlyList<ILocalDatabaseInitializedObserver> _initializedObservers;
+    private readonly Func<IEnumerable<ILocalDatabaseInitializedObserver>> _initializedObservers;
     private readonly ILogger<SqliteDatabase> _logger;
     private readonly SemaphoreSlim _writeGate = new(1, 1);
     private readonly object _initLock = new();
@@ -20,14 +20,34 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
         ISqliteMigrator migrator,
         ILogger<SqliteDatabase> logger,
         IEnumerable<ILocalDatabaseInitializedObserver>? initializedObservers = null)
+        : this(
+            connectionFactory,
+            migrator,
+            logger,
+            initializedObservers is null
+                ? null
+                : () => initializedObservers)
+    {
+    }
+
+    public SqliteDatabase(
+        ISqliteConnectionFactory connectionFactory,
+        ISqliteMigrator migrator,
+        ILogger<SqliteDatabase> logger,
+        Func<IEnumerable<ILocalDatabaseInitializedObserver>>? initializedObservers)
     {
         ArgumentNullException.ThrowIfNull(connectionFactory);
         ArgumentNullException.ThrowIfNull(migrator);
         ArgumentNullException.ThrowIfNull(logger);
         _connectionFactory = connectionFactory;
         _migrator = migrator;
-        _initializedObservers = initializedObservers?.ToArray() ?? Array.Empty<ILocalDatabaseInitializedObserver>();
+        _initializedObservers = initializedObservers ?? NoInitializedObservers;
         _logger = logger;
+    }
+
+    private static IEnumerable<ILocalDatabaseInitializedObserver> NoInitializedObservers()
+    {
+        return Array.Empty<ILocalDatabaseInitializedObserver>();
     }
 
     public async Task EnsureInitializedAsync(CancellationToken cancellationToken)
@@ -124,11 +144,6 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
 
     private async Task NotifyInitializedObserversOnceAsync(CancellationToken cancellationToken)
     {
-        if (_initializedObservers.Count == 0)
-        {
-            return;
-        }
-
         if (Interlocked.CompareExchange(ref _observersNotified, 1, 0) != 0)
         {
             return;
@@ -136,7 +151,8 @@ public sealed class SqliteDatabase : ISqliteDatabase, IDisposable
 
         try
         {
-            foreach (var observer in _initializedObservers)
+            var observers = _initializedObservers().ToArray();
+            foreach (var observer in observers)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await observer.OnDatabaseInitializedAsync(cancellationToken);

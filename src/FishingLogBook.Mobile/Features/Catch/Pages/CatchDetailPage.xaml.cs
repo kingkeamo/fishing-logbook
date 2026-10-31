@@ -28,7 +28,19 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
             return;
         }
 
-        var action = await DisplayActionSheetAsync(item.Text["MoreActions"], item.Text["Cancel"], item.Text["Remove"], item.Text["Share"]);
+        var action = await DisplayActionSheetAsync(
+            item.Text["MoreActions"],
+            item.Text["Cancel"],
+            null,
+            item.Text["EditCatch"],
+            item.Text["Remove"],
+            item.Text["Share"]);
+        if (action == item.Text["EditCatch"])
+        {
+            await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit, catchEditId: item.Id);
+            return;
+        }
+
         if (action == item.Text["Share"])
         {
             await _interactions.NotifyAsync(NotificationKindEnum.Info, item.Text["ActionUnavailable"]);

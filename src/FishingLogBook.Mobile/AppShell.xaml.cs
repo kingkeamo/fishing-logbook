@@ -76,14 +76,17 @@ public partial class AppShell : Shell
             await interactions.ShowModalAsync(text["About"], text["AboutBody"]);
         };
         Items.Add(about);
-#if DEBUG
         var showcase = new MenuItem { IconImageSource = "icon_flask.png" };
         showcase.SetBinding(MenuItem.TextProperty, new Binding("[Showcase]", source: text));
-        showcase.Clicked += async (_, _) => await navigation.NavigateAsync(MobileRouteEnum.Showcase);
+        showcase.Clicked += async (_, _) =>
+        {
+            FlyoutIsPresented = false;
+            await navigation.NavigateAsync(MobileRouteEnum.Showcase);
+        };
         Items.Add(showcase);
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Showcase), typeof(ShowcasePage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.MeasurementShowcase), typeof(MeasurementShowcasePage));
-#endif
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchEdit), typeof(CatchEditPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Profile), typeof(ProfilePage));

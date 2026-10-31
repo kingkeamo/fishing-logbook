@@ -20,9 +20,11 @@ using FishingLogBook.Mobile.Features.Photographs.Providers;
 using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Features.Photographs.ViewModels;
+using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Common.Offline.Stores;
@@ -45,7 +47,6 @@ using FishingLogBook.Mobile.Features.Startup.Pages;
 using FishingLogBook.Mobile.Features.Startup.ViewModels;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Mobile.Interactions;
-using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Adapters;
 using FishingLogBook.Mobile.Native.Browsers;
@@ -145,9 +146,11 @@ public static partial class MauiProgram
             services.GetRequiredService<ISqliteConnectionFactory>(),
             services.GetRequiredService<ISqliteMigrator>(),
             services.GetRequiredService<ILogger<SqliteDatabase>>(),
-            services.GetServices<ILocalDatabaseInitializedObserver>()));
+            () => services.GetServices<ILocalDatabaseInitializedObserver>()));
         builder.Services.AddSingleton<IOutboxStore, SqliteOutboxStore>();
         builder.Services.AddSingleton<ICatchStore, SqliteCatchStore>();
+        builder.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
+        builder.Services.AddSingleton<CatchPresentationMapper>();
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
         builder.Services.AddSingleton<IOfflinePreparationService, OfflinePreparationService>();
         builder.Services.AddSingleton<IAccountUnitsService, AccountUnitsService>();
@@ -202,6 +205,8 @@ public static partial class MauiProgram
             .AddHttpClient(AuthenticationHttpClientConstants.Anonymous)
             .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create);
         builder.Services.AddSingleton<CatchListViewModel>();
+        builder.Services.AddTransient<CatchEditViewModel>();
+        builder.Services.AddTransient<CatchEditPage>();
         builder.Services.AddSingleton<CatchSummaryPage>();
         builder.Services.AddSingleton<SettingsPage>();
         builder.Services.AddTransient<CatchDetailPage>();

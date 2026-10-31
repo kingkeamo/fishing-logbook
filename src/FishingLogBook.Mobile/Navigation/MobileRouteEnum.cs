@@ -10,5 +10,6 @@ public enum MobileRouteEnum
     PhotoPreview = 5,
     Showcase = 6,
     MeasurementShowcase = 7,
-    Profile = 8
+    Profile = 8,
+    CatchEdit = 9
 }

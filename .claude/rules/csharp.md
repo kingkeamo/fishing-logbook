@@ -22,6 +22,7 @@ paths:
 | `FishingLogBook.Db.Migrations.App` | Console migration runner — see **`database.md`**. |
 | `FishingLogBook.Api` | ASP.NET Core minimal API host; thin endpoint mappings. |
 | `FishingLogBook.Web` | Blazor WebAssembly PWA — **feature-first**. See **`blazor.md`**. |
+| `FishingLogBook.Mobile` | Native .NET 10 MAUI host — **feature-first**. See **`maui.md`**. |
 
 **Dependency direction (do not violate):**
 
@@ -35,10 +36,13 @@ Db.Migrations        -> (nothing; standalone, embeds SQL)
 Db.Migrations.App    -> Db.Migrations
 Api                  -> Application, DependencyInjection, Shared
 Web                  -> Shared only
+Mobile               -> Shared, and optionally Client; never Application or Infrastructure
 ```
 
 The Blazor WebAssembly project must **never** reference `Application` or `Infrastructure`.
 Do not expose server-side implementation assemblies to the WebAssembly client.
+`FishingLogBook.Mobile` follows the same client boundary. Native architecture,
+XAML/MVVM, and device verification are in **`maui.md`**.
 
 **Do not introduce:** Entity Framework / `DbContext`, FluentMigrator, Wolverine, MediatR
 13+ / Lucky Penny, or a second mediator. Persistence is Dapper + DbUp. Application work
@@ -139,6 +143,13 @@ Summary of naming that applies to Web C#:
 
 Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 
+## Mobile production C# (`FishingLogBook.Mobile`)
+
+Folder placement, XAML/MVVM, native controls, offline Save, photographs, and
+device verification are in **`maui.md`**. Follow this file for general C# style
+(comments, braces, complexity, naming). Do **not** apply Application/CQRS,
+`IMediator`, or server repository rules to Mobile.
+
 ## Domain layer (`FishingLogBook.Domain`)
 
 - POCO entities only. No dependencies on other projects, no infrastructure concerns.
@@ -216,6 +227,6 @@ Shared API DTOs stay in `FishingLogBook.Shared`. Do not move them into Web.
 ## Before writing a new class
 
 For Web types, first decide the owning feature, architectural role, folder, and name
-(see **`blazor.md`**). For server-side types, read at least **5 existing classes of the
-same type** (endpoint mapping, command/query file, repository, contract) before adding a
-new one, and match the established pattern.
+(see **`blazor.md`**). For Mobile types, see **`maui.md`**. For server-side types, read
+at least **5 existing classes of the same type** (endpoint mapping, command/query file,
+repository, contract) before adding a new one, and match the established pattern.

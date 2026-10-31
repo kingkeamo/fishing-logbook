@@ -6,7 +6,11 @@ public sealed class NavigationService(IRouteNavigator navigator)
 {
     private readonly SemaphoreSlim _transition = new(1, 1);
 
-    public async Task NavigateAsync(MobileRouteEnum route, CatchPresentationModel? item = null, CancellationToken cancellationToken = default)
+    public async Task NavigateAsync(
+        MobileRouteEnum route,
+        CatchPresentationModel? item = null,
+        Guid? catchEditId = null,
+        CancellationToken cancellationToken = default)
     {
         var path = RouteConstants.GetPath(route);
         if (route is MobileRouteEnum.CatchDetail or MobileRouteEnum.PhotoPreview && item is null)
@@ -19,18 +23,18 @@ public sealed class NavigationService(IRouteNavigator navigator)
             return;
         }
 
-        await TransitionAsync(path, item, cancellationToken);
+        await TransitionAsync(path, item, catchEditId, cancellationToken);
     }
 
     public async Task GoBackAsync(CancellationToken cancellationToken = default)
     {
         if (navigator.CanGoBack)
         {
-            await TransitionAsync("..", null, cancellationToken);
+            await TransitionAsync("..", null, null, cancellationToken);
         }
     }
 
-    private async Task TransitionAsync(string path, CatchPresentationModel? item, CancellationToken cancellationToken)
+    private async Task TransitionAsync(string path, CatchPresentationModel? item, Guid? catchEditId, CancellationToken cancellationToken)
     {
         if (!await _transition.WaitAsync(0, cancellationToken))
         {
@@ -44,7 +48,7 @@ public sealed class NavigationService(IRouteNavigator navigator)
                 return;
             }
 
-            await navigator.GoToAsync(path, item, cancellationToken);
+            await navigator.GoToAsync(path, item, catchEditId, cancellationToken);
         }
         finally
         {
