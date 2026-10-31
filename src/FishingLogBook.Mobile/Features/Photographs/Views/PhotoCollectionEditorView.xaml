@@ -1,46 +1,38 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Photographs.ViewModels"
-             xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Models"
-             x:Class="FishingLogBook.Mobile.Features.Photographs.Views.PhotoCollectionEditorView"
-             x:DataType="vm:PhotographCollectionEditorViewModel">
-  <VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
-    <Label Text="{Binding Text[Photos]}" Style="{StaticResource TileCaption}" />
-    <CollectionView ItemsSource="{Binding Items}" SelectionMode="None" IsVisible="{Binding HasItems}">
-      <CollectionView.ItemsLayout>
-        <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
-      </CollectionView.ItemsLayout>
-      <CollectionView.ItemTemplate>
-        <DataTemplate x:DataType="models:PhotographEditorItemModel">
-          <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" Padding="4">
-            <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
-            <Grid ColumnDefinitions="104,Auto" ColumnSpacing="4">
-              <Image Source="{Binding PreviewPath}" Aspect="AspectFill" HeightRequest="104" WidthRequest="104" />
-              <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
-                <Button Text="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=Text[PhotoMoveEarlier]}"
-                        Style="{StaticResource SecondaryButton}" Padding="10,6" MinimumHeightRequest="40"
-                        Clicked="OnMoveEarlier" CommandParameter="{Binding Id}" />
-                <Button Text="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=Text[PhotoMoveLater]}"
-                        Style="{StaticResource SecondaryButton}" Padding="10,6" MinimumHeightRequest="40"
-                        Clicked="OnMoveLater" CommandParameter="{Binding Id}" />
-                <Button Text="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=Text[DeletePhoto]}"
-                        Style="{StaticResource SecondaryButton}" Padding="10,6" MinimumHeightRequest="40"
-                        IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type vm:PhotographCollectionEditorViewModel}}, Path=CanRemove}"
-                        Clicked="OnRemove" CommandParameter="{Binding Id}" />
-              </VerticalStackLayout>
-            </Grid>
-          </Border>
-        </DataTemplate>
-      </CollectionView.ItemTemplate>
-    </CollectionView>
-    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-      <Button Grid.Column="0" Text="{Binding Text[PhotoTakePicture]}" Style="{StaticResource SecondaryButton}"
-              Padding="12,8" IsEnabled="{Binding CanAddMore}" Clicked="OnTakePhoto" AutomationId="PhotoTakePicture" />
-      <Button Grid.Column="1" Text="{Binding Text[PhotoChooseGallery]}" Style="{StaticResource SecondaryButton}"
-              Padding="12,8" IsEnabled="{Binding CanAddMore}" Clicked="OnChooseGallery" AutomationId="PhotoChooseGallery" />
-    </Grid>
-    <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}"
-           TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
-  </VerticalStackLayout>
+             xmlns:views="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Views"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="FishingLogBook.Mobile.Features.Photographs.Views.PhotoCollectionEditorView" x:Name="Root">
+  <toolkit:Expander BindingContext="{Binding ViewModel, Source={x:Reference Root}, x:DataType=views:PhotoCollectionEditorView}"
+                    x:DataType="vm:PhotographCollectionEditorViewModel" IsExpanded="True" x:Name="PhotoPanel">
+    <toolkit:Expander.Header>
+      <Grid ColumnDefinitions="*,48" MinimumHeightRequest="48" AutomationId="PhotoSectionToggle">
+        <Label Text="{Binding Text[Photos]}" Style="{StaticResource TileCaption}" VerticalOptions="Center" />
+        <Label Grid.Column="1" Text="⌃" HorizontalOptions="Center" VerticalOptions="Center" FontSize="24">
+          <Label.Triggers>
+            <DataTrigger TargetType="Label" Binding="{Binding IsExpanded, Source={x:Reference PhotoPanel}, x:DataType=toolkit:Expander}" Value="False">
+              <Setter Property="Text" Value="⌄" />
+            </DataTrigger>
+          </Label.Triggers>
+        </Label>
+      </Grid>
+    </toolkit:Expander.Header>
+    <toolkit:Expander.Content>
+      <VerticalStackLayout Spacing="12">
+    <views:PhotoCarouselView PhotoPath="{Binding CurrentPhotograph.PreviewPath}" PositionText="{Binding PositionText}"
+                             Text="{Binding Text}" HasMultiplePhotographs="{Binding HasMultiplePhotographs}"
+                             IsVisible="{Binding HasItems}" IsEditable="True" CanRemove="{Binding CanRemove}"
+                             PreviousRequested="OnPrevious" NextRequested="OnNext" RemoveRequested="OnRemoveCurrent" />
+    <views:PhotoDetailsView CapturedOnText="{Binding CapturedOnText}" LocationText="{Binding LocationText}"
+                           Text="{Binding Text}" IsVisible="{Binding HasItems}" CanUseDetails="{Binding CanUseDetails}"
+                           IsChosen="{Binding IsCurrentDetailsApplied}" UseDetailsRequested="OnUseDetails"
+                           ShowUseDetails="{Binding ShowUseDetails, Source={x:Reference Root}, x:DataType=views:PhotoCollectionEditorView}" />
+    <views:PhotoPickerView Text="{Binding Text}" CanAddMore="{Binding CanAddMore}" IsBusy="{Binding IsBusy}"
+                          HasStatus="{Binding HasStatus}" StatusText="{Binding StatusText}"
+                          TakePhotoRequested="OnTakePhoto" ChooseGalleryRequested="OnChooseGallery" />
+      </VerticalStackLayout>
+    </toolkit:Expander.Content>
+  </toolkit:Expander>
 </ContentView>

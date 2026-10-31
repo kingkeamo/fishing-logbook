@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
  xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:photos="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Views"
  x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchDetailPage" x:DataType="models:CatchPresentationModel"
  Title="{Binding Text[Detail]}" Shell.NavBarIsVisible="False" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
  <Grid RowDefinitions="56,*">
@@ -16,14 +17,9 @@
    </Grid>
   </Grid>
   <ScrollView Grid.Row="1"><VerticalStackLayout Padding="16,4,16,24" Spacing="16" MaximumWidthRequest="720">
-   <Border Style="{StaticResource Card}" Padding="0" IsVisible="{Binding HasPhoto}"><Grid HeightRequest="240">
-    <Image Source="{Binding PreviewAsset}" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
-    <Button Style="{StaticResource CardAction}" SemanticProperties.Description="{Binding Text[Preview]}" Clicked="OnPreview" AutomationId="OpenPhoto" />
-    <Border IsVisible="{Binding HasMultiplePhotos}" InputTransparent="True" StrokeThickness="0" BackgroundColor="#99102A43" Padding="10,4" HorizontalOptions="End" VerticalOptions="End" Margin="12">
-     <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
-     <Label Text="{Binding PhotoCounter}" TextColor="White" FontSize="13" FontAttributes="Bold" FontAutoScalingEnabled="False" />
-    </Border>
-   </Grid></Border>
+   <photos:PhotoCarouselView IsVisible="{Binding HasPhoto}" PhotoPath="{Binding SelectedPhoto}" PositionText="{Binding PhotoPosition}"
+                             Text="{Binding Text}" PhotoHint="{Binding Text[EditCatch]}" HasMultiplePhotographs="{Binding HasMultiplePhotos}"
+                             PhotoTapped="OnEditCatch" PreviousRequested="OnPreviousPhoto" NextRequested="OnNextPhoto" />
    <Border Style="{StaticResource Card}" IsVisible="{Binding HasNoPhoto}" Padding="16"><Label Text="{Binding Text[NoPhoto]}" Style="{StaticResource SecondaryText}" /></Border>
    <VerticalStackLayout Spacing="2">
     <Label Text="{Binding Species}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level2" AutomationId="CatchSpecies" />
@@ -35,7 +31,7 @@
     <controls:InfoTile Grid.Row="1" Icon="icon_scale.png" Caption="{Binding Text[Weight]}" Value="{Binding Weight}" />
     <controls:InfoTile Grid.Row="1" Grid.Column="1" Icon="icon_ruler.png" Caption="{Binding Text[Length]}" Value="{Binding Length}" />
    </Grid>
-   <Label Text="{Binding Text[NoBait]}" Style="{StaticResource SecondaryText}" />
+   <Label Text="{Binding BaitOrLure}" Style="{StaticResource SecondaryText}" />
    <BoxView Style="{StaticResource Divider}" />
    <VerticalStackLayout Spacing="6" IsVisible="{Binding HasNotes}">
     <Label Text="{Binding Text[Notes]}" Style="{StaticResource SectionTitle}" />
@@ -43,11 +39,18 @@
    </VerticalStackLayout>
    <VerticalStackLayout Spacing="8" IsVisible="{Binding HasPhoto}">
     <Label Text="{Binding Text[Photos]}" Style="{StaticResource SectionTitle}" />
-    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never"><HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Photos}">
-     <BindableLayout.ItemTemplate><DataTemplate x:DataType="x:String">
-      <Border StrokeThickness="0" Padding="0" WidthRequest="72" HeightRequest="72">
+    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never"><HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Thumbnails}">
+     <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:CatchPhotoThumbnailModel">
+      <Border StrokeThickness="3" Stroke="Transparent" Padding="0" WidthRequest="72" HeightRequest="72"
+              SemanticProperties.Description="{Binding Description}" AutomationId="PhotoThumbnail">
+       <Border.Triggers>
+        <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+         <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}" />
+        </DataTrigger>
+       </Border.Triggers>
+       <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnThumbnailTapped" /></Border.GestureRecognizers>
        <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
-       <Image Source="{Binding .}" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
+       <Image Source="{Binding Path}" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
       </Border>
      </DataTemplate></BindableLayout.ItemTemplate>
     </HorizontalStackLayout></ScrollView>

@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Photographs.Models;
+
 namespace FishingLogBook.Mobile.Features.Catch.Offline.Models;
 
 public sealed class LocalCatchPhotographModel
@@ -15,4 +17,6 @@ public sealed class LocalCatchPhotographModel
     public string? ContentType { get; init; }
 
     public required DateTimeOffset CreatedOn { get; init; }
+
+    public PhotographMetadataModel Metadata { get; init; } = PhotographMetadataModel.Empty;
 }

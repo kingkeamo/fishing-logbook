@@ -7,7 +7,7 @@ using FishingLogBook.Mobile.Localization;
 
 namespace FishingLogBook.Mobile.Features.Photographs.ViewModels;
 
-public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
+public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly IPhotographCollectionEditorService _editor;
     private readonly UiTextService _text;
@@ -16,6 +16,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
     private int _minimumCount;
     private bool _isBusy;
     private string? _statusKey;
+    private Guid? _activePhotographId;
 
     public PhotographCollectionEditorViewModel(
         IPhotographCollectionEditorService editor,
@@ -25,11 +26,81 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         _text = text;
         Items = new ObservableCollection<PhotographEditorItemModel>();
         _maximumCount = editor.DefaultMaximumCount;
+        _text.PropertyChanged += OnCultureChanged;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public event EventHandler? ItemsChanged;
+
+    public event EventHandler? UseDetailsRequested;
+
+    public Guid? AppliedPhotographId { get; private set; }
+
+    public PhotographEditorItemModel? CurrentPhotograph => Items.FirstOrDefault(item => item.Id == _activePhotographId);
+
+    public bool HasMultiplePhotographs => Items.Count > 1;
+
+    public string PositionText => string.Format(Text.Culture, Text["PhotoPosition"],
+        CurrentPhotograph is { } current ? Items.IndexOf(current) + 1 : 0, Items.Count);
+
+    public string CapturedOnText => CurrentPhotograph?.Metadata.CapturedOn is { } capturedOn
+        ? TimeZoneInfo.ConvertTime(capturedOn, TimeZoneInfo.Local).ToString("g", Text.Culture)
+        : Text["PhotoCapturedOnUnknown"];
+
+    public string LocationText => Text[CurrentPhotograph?.Metadata.HasCoordinates == true
+        ? "PhotoLocationAvailable" : "PhotoLocationUnavailable"];
+
+    public bool CanUseDetails => !IsBusy && CurrentPhotograph is { } current
+        && (current.Metadata.CapturedOn.HasValue || current.Metadata.HasCoordinates);
+
+    public bool IsCurrentDetailsApplied => AppliedPhotographId is not null && AppliedPhotographId == _activePhotographId;
+
+    public void SelectPhotograph(Guid photographId)
+    {
+        if (!Items.Any(item => item.Id == photographId))
+        {
+            return;
+        }
+
+        _activePhotographId = photographId;
+        NotifySelection();
+    }
+
+    public void NextPhotograph()
+    {
+        MoveSelection(1);
+    }
+
+    public void PreviousPhotograph()
+    {
+        MoveSelection(-1);
+    }
+
+    public void RemoveCurrentPhotograph()
+    {
+        if (CurrentPhotograph is { } current)
+        {
+            Remove(current.Id);
+        }
+    }
+
+    public void UseCurrentDetails()
+    {
+        if (!CanUseDetails)
+        {
+            return;
+        }
+
+        AppliedPhotographId = _activePhotographId;
+        NotifySelection();
+        UseDetailsRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void Dispose()
+    {
+        _text.PropertyChanged -= OnCultureChanged;
+    }
 
     public ObservableCollection<PhotographEditorItemModel> Items { get; }
 
@@ -98,6 +169,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
             _isBusy = value;
             Notify(nameof(IsBusy));
+            Notify(nameof(CanUseDetails));
         }
     }
 
@@ -109,6 +181,16 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
     public void SetItems(IReadOnlyList<PhotographEditorItemModel> items)
     {
+        var previousIds = Items.Select(item => item.Id).ToHashSet();
+        var added = items.LastOrDefault(item => !previousIds.Contains(item.Id));
+        _activePhotographId = added?.Id
+            ?? items.FirstOrDefault(item => item.Id == _activePhotographId)?.Id
+            ?? items.OrderBy(item => item.SortOrder).FirstOrDefault()?.Id;
+        if (!items.Any(item => item.Id == AppliedPhotographId))
+        {
+            AppliedPhotographId = null;
+        }
+
         Items.Clear();
         foreach (var item in items.OrderBy(value => value.SortOrder))
         {
@@ -119,6 +201,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         Notify(nameof(CanAddMore));
         Notify(nameof(CanRemove));
         Notify(nameof(HasItems));
+        NotifySelection();
         ItemsChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -194,6 +277,11 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
             return;
         }
 
+        if (!Items.Select(item => item.Id).SequenceEqual(result.Items.Select(item => item.Id)))
+        {
+            SetItems(result.Items);
+        }
+
         SetStatus(result.Outcome);
     }
 
@@ -221,5 +309,34 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
     private void Notify(string name)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    private void MoveSelection(int direction)
+    {
+        if (Items.Count <= 1 || CurrentPhotograph is not { } current)
+        {
+            return;
+        }
+
+        SelectPhotograph(Items[(Items.IndexOf(current) + direction + Items.Count) % Items.Count].Id);
+    }
+
+    private void OnCultureChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(UiTextService.Culture))
+        {
+            NotifySelection();
+            Notify(nameof(StatusText));
+        }
+    }
+
+    private void NotifySelection()
+    {
+        foreach (var name in new[] { nameof(CurrentPhotograph), nameof(HasMultiplePhotographs),
+            nameof(PositionText), nameof(CapturedOnText), nameof(LocationText), nameof(CanUseDetails),
+            nameof(AppliedPhotographId), nameof(IsCurrentDetailsApplied) })
+        {
+            Notify(name);
+        }
     }
 }

@@ -218,6 +218,8 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
     public async Task ItShouldBindAnExistingCatchLocationWeightAndBait()
     {
         // Arrange
+        var notifications = new List<string?>();
+        Sut.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
         var catchId = Guid.Parse("99999999-9999-9999-9999-999999999999");
         MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
             CreateRecord(
@@ -245,6 +247,8 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
         Sut.IsEditingSavedCatch.Should().BeTrue();
         Sut.Notes.Should().Be("bank");
         Sut.BaitOrLure.Should().Be("nymph");
+        notifications.Should().Contain(nameof(Sut.Notes));
+        notifications.Should().Contain(nameof(Sut.BaitOrLure));
         Sut.WeightSummary.Should().Contain("2.2");
         Sut.LengthSummary.Should().Contain("45");
         Sut.HasLocation.Should().BeTrue();

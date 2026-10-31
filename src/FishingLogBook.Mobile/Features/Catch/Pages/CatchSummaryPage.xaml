@@ -90,6 +90,7 @@
          <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
           <Label Text="{Binding Species}" Style="{StaticResource Subheading}" FontSize="16" LineBreakMode="TailTruncation" />
           <Label Text="{Binding Time}" Style="{StaticResource SecondaryText}" FontSize="13" />
+          <Label Text="{Binding SaveStatus}" IsVisible="{Binding HasSaveStatus}" Style="{StaticResource SecondaryText}" FontSize="13" />
           <HorizontalStackLayout Spacing="4">
            <controls:IconView Source="icon_pin.png" Tone="Link" WidthRequest="14" HeightRequest="14" VerticalOptions="Center" />
            <Label Text="{Binding Place}" Style="{StaticResource LinkText}" FontSize="13" LineBreakMode="TailTruncation" />

@@ -1,6 +1,11 @@
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Extensions;
+using FishingLogBook.Mobile.Features.Catch.Enums;
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Mobile.Features.Catch.Popups;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Navigation;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace FishingLogBook.Mobile.Features.Catch.Pages;
 
@@ -8,6 +13,7 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
 {
     private readonly NavigationService _navigation;
     private readonly InteractionService _interactions;
+    private bool _showingActions;
 
     public CatchDetailPage(NavigationService navigation, InteractionService interactions)
     {
@@ -23,31 +29,47 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
 
     private async void OnMore(object? sender, EventArgs args)
     {
-        if (BindingContext is not CatchPresentationModel item)
+        if (_showingActions || BindingContext is not CatchPresentationModel item)
         {
             return;
         }
 
-        var action = await DisplayActionSheetAsync(
-            item.Text["MoreActions"],
-            item.Text["Cancel"],
-            null,
-            item.Text["EditCatch"],
-            item.Text["Remove"],
-            item.Text["Share"]);
-        if (action == item.Text["EditCatch"])
+        _showingActions = true;
+        CatchDetailActionEnum action;
+        try
         {
-            await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit, catchEditId: item.Id);
+            var result = await this.ShowPopupAsync<CatchDetailActionEnum>(new CatchActionsPopup(item),
+                new PopupOptions
+                {
+                    PageOverlayColor = Color.FromArgb("#99102A43"),
+                    Shape = new RoundRectangle(),
+                    Shadow = null
+                });
+            action = result.Result;
+        }
+        finally
+        {
+            _showingActions = false;
+        }
+
+        await HandleActionAsync(action, item);
+    }
+
+    private async Task HandleActionAsync(CatchDetailActionEnum action, CatchPresentationModel item)
+    {
+        if (action == CatchDetailActionEnum.Edit)
+        {
+            await OpenEditorAsync();
             return;
         }
 
-        if (action == item.Text["Share"])
+        if (action == CatchDetailActionEnum.Share)
         {
             await _interactions.NotifyAsync(NotificationKindEnum.Info, item.Text["ActionUnavailable"]);
             return;
         }
 
-        if (action != item.Text["Remove"])
+        if (action != CatchDetailActionEnum.Remove)
         {
             return;
         }
@@ -63,15 +85,39 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
     {
         if (query.TryGetValue(RouteConstants.CatchParameter, out var value) && value is CatchPresentationModel item)
         {
+            item.ResetPhotoSelection();
             BindingContext = item;
         }
     }
 
-    private async void OnPreview(object? sender, EventArgs args)
+    private async void OnEditCatch(object? sender, EventArgs args)
+    {
+        await OpenEditorAsync();
+    }
+
+    private void OnThumbnailTapped(object? sender, TappedEventArgs args)
+    {
+        if (BindingContext is CatchPresentationModel item && (sender as BindableObject)?.BindingContext is CatchPhotoThumbnailModel thumbnail)
+        {
+            item.SelectPhoto(thumbnail.Index);
+        }
+    }
+
+    private void OnPreviousPhoto(object? sender, EventArgs args)
+    {
+        (BindingContext as CatchPresentationModel)?.PreviousPhoto();
+    }
+
+    private void OnNextPhoto(object? sender, EventArgs args)
+    {
+        (BindingContext as CatchPresentationModel)?.NextPhoto();
+    }
+
+    private async Task OpenEditorAsync()
     {
         if (BindingContext is CatchPresentationModel item)
         {
-            await _navigation.NavigateAsync(MobileRouteEnum.PhotoPreview, item);
+            await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit, catchEditId: item.Id);
         }
     }
 }

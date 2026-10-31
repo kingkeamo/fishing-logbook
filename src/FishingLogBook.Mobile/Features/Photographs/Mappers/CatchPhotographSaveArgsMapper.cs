@@ -15,7 +15,8 @@ public sealed class CatchPhotographSaveArgsMapper : ICatchPhotographSaveArgsMapp
                 Id = item.Id,
                 SortOrder = item.SortOrder,
                 LocalFilePath = item.RelativeFilePath,
-                ContentType = item.ContentType
+                ContentType = item.ContentType,
+                Metadata = item.Metadata
             })
             .ToArray();
     }

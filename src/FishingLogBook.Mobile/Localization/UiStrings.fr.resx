@@ -353,4 +353,12 @@
   <data name="CatchSaving" xml:space="preserve"><value>Enregistrement…</value></data>
   <data name="EmptyJournalTitle" xml:space="preserve"><value>Aucune prise pour l'instant</value></data>
   <data name="EmptyJournalBody" xml:space="preserve"><value>Enregistrez votre première prise pour commencer votre carnet hors ligne.</value></data>
+  <data name="PhotoPosition" xml:space="preserve"><value>Photo {0} sur {1}</value></data>
+  <data name="PhotoPrevious" xml:space="preserve"><value>Photo précédente</value></data>
+  <data name="PhotoNext" xml:space="preserve"><value>Photo suivante</value></data>
+  <data name="PhotoCapturedOnUnknown" xml:space="preserve"><value>Date de la photo inconnue</value></data>
+  <data name="PhotoLocationAvailable" xml:space="preserve"><value>Localisation de la photo disponible</value></data>
+  <data name="PhotoLocationUnavailable" xml:space="preserve"><value>Aucune localisation pour cette photo</value></data>
+  <data name="PhotoUseDetails" xml:space="preserve"><value>Utiliser les détails de cette photo</value></data>
+  <data name="PhotoDetailsApplied" xml:space="preserve"><value>Détails de cette photo sélectionnés</value></data>
 </root>

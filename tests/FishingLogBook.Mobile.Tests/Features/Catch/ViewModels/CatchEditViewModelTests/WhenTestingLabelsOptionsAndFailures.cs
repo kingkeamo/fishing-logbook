@@ -578,7 +578,7 @@ public sealed class WhenTestingLabelsOptionsAndFailures : BaseCatchEditViewModel
         methodOptions.Should().BeEmpty();
         speciesOptions.Should().BeEmpty();
         Sut.StatusText.Should().BeEmpty();
-        Sut.ValidationText.Should().BeEmpty();
+        Sut.ValidationText.Should().Be(Text["CatchSaveRequiresPhoto"]);
         Sut.CreateMethodPicker().Options.Should().BeEmpty();
         Sut.CreateSpeciesPicker().Options.Should().BeEmpty();
         Sut.ApplyMethodPicker(new CataloguePickerResultModel(new HashSet<Guid> { Guid.NewGuid() }));

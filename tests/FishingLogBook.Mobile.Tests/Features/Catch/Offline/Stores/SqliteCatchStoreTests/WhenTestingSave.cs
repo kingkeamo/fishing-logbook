@@ -1,12 +1,172 @@
+using System.Globalization;
 using AwesomeAssertions;
-using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Common.Offline.Enums;
+using FishingLogBook.Mobile.Features.Catch.Mappers;
+using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
+using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Features.Onboarding.Services;
+using FishingLogBook.Mobile.Features.Photographs.Mappers;
+using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Photographs.Services;
+using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
+using FishingLogBook.Mobile.Features.Photographs.ViewModels;
+using FishingLogBook.Mobile.Features.Profile.Models;
+using FishingLogBook.Mobile.Features.Profile.Services;
+using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Shared.Catches.Services;
+using FishingLogBook.Shared.Measurements;
+using FishingLogBook.Shared.Photographs.Models;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.Offline.Stores.SqliteCatchStoreTests;
 
 public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
 {
+    [Fact]
+    public async Task ItShouldRetainChosenPhotoLocationWhenSavedPhotosDisagreeAfterReload()
+    {
+        // Arrange
+        var text = new UiTextService(CultureInfo.GetCultureInfo("en-GB"));
+        var files = Substitute.For<IPhotographFileStore>();
+        var units = Substitute.For<IAccountUnitsService>();
+        units.GetAsync(Arg.Any<CancellationToken>()).Returns(MeasurementUnitsModel.Default);
+        using var editor = CreateEditor(Sut, text, files, units);
+        await editor.InitializeAsync(null, CancellationToken.None);
+        var first = new PhotographEditorItemModel
+        {
+            Id = Guid.NewGuid(),
+            SortOrder = 0,
+            PreviewPath = "first.jpg",
+            RelativeFilePath = "first.jpg",
+            ContentType = "image/jpeg",
+            Metadata = new PhotographMetadataModel(DateTimeOffset.UtcNow.AddDays(-2), 53.3, -6.2)
+        };
+        var second = new PhotographEditorItemModel
+        {
+            Id = Guid.NewGuid(),
+            SortOrder = 1,
+            PreviewPath = "second.jpg",
+            RelativeFilePath = "second.jpg",
+            ContentType = "image/jpeg",
+            Metadata = new PhotographMetadataModel(DateTimeOffset.UtcNow.AddDays(-1), 54.5, -8.1)
+        };
+        editor.Photographs.SetItems([first, second]);
+        editor.Photographs.SelectPhotograph(first.Id);
+        editor.Photographs.UseCurrentDetails();
+        (await editor.SaveAsync(CancellationToken.None)).Should().BeTrue();
+        var reopened = RecreateStoreAgainstSameDatabase();
+        var saved = (await reopened.ListAsync(CancellationToken.None)).Single();
+
+        // Act
+        using var edit = CreateEditor(reopened, text, files, units);
+        await edit.InitializeAsync(saved.Id, CancellationToken.None);
+        edit.Notes = "Preserve chosen location";
+        var updated = await edit.SaveAsync(CancellationToken.None);
+        var loaded = await RecreateStoreAgainstSameDatabase().GetAsync(saved.Id, CancellationToken.None);
+
+        // Assert
+        updated.Should().BeTrue();
+        loaded!.Location.Should().NotBeNull();
+        loaded.Location!.Latitude.Should().Be(53.3);
+        loaded.Location.Longitude.Should().Be(-6.2);
+        loaded.Location.Visibility.Should().Be("Private");
+        loaded.CaughtOn.Should().Be(first.Metadata.CapturedOn!.Value);
+        loaded.Photographs.Should().HaveCount(2);
+        files.Received(1).GetAbsolutePath(OwnerUserId, "first.jpg");
+        files.Received(1).GetAbsolutePath(OwnerUserId, "second.jpg");
+    }
+
+    [Fact]
+    public async Task ItShouldSaveReloadListAndExplicitlyEditThroughTheRealLocalStore()
+    {
+        // Arrange
+        var text = new UiTextService(CultureInfo.GetCultureInfo("en-GB"));
+        var files = Substitute.For<IPhotographFileStore>();
+        var units = Substitute.For<IAccountUnitsService>();
+        units.GetAsync(Arg.Any<CancellationToken>()).Returns(MeasurementUnitsModel.Default);
+        var photoId = Guid.NewGuid();
+        var relativePath = $"{OwnerUserId:N}/{photoId:N}.jpg";
+        var absolutePath = Path.Combine(Path.GetTempPath(), relativePath);
+        files.GetAbsolutePath(OwnerUserId, relativePath).Returns(absolutePath);
+        var metadata = new PhotographMetadataModel(DateTimeOffset.UtcNow.AddMinutes(-10), 53.3, -6.2);
+        using var editor = CreateEditor(Sut, text, files, units);
+        await editor.InitializeAsync(null, CancellationToken.None);
+        editor.Notes = "Before save";
+        editor.Photographs.SetItems(
+        [
+            new PhotographEditorItemModel
+            {
+                Id = photoId,
+                SortOrder = 0,
+                PreviewPath = absolutePath,
+                RelativeFilePath = relativePath,
+                ContentType = "image/jpeg",
+                Metadata = metadata
+            }
+        ]);
+
+        // Act
+        var saved = await editor.SaveAsync(CancellationToken.None);
+        await editor.OnDisappearingAsync(CancellationToken.None);
+        var reopened = RecreateStoreAgainstSameDatabase();
+        var record = (await reopened.ListAsync(CancellationToken.None)).Single();
+        var list = new CatchListViewModel(text, reopened, MockSessionCoordinator,
+            new CatchPresentationMapper(files), units, new MeasurementService(), TimeProvider.System);
+        await list.RefreshFromStoreAsync(CancellationToken.None);
+        using var edit = CreateEditor(reopened, text, files, units);
+        await edit.InitializeAsync(record.Id, CancellationToken.None);
+        edit.Notes = "Discard this edit";
+        await edit.OnDisappearingAsync(CancellationToken.None);
+        var discarded = await reopened.GetAsync(record.Id, CancellationToken.None);
+        edit.Notes = "Explicitly saved edit";
+        var edited = await edit.SaveAsync(CancellationToken.None);
+        var afterRestart = await RecreateStoreAgainstSameDatabase().GetAsync(record.Id, CancellationToken.None);
+        var pending = await OutboxStore.ListPendingForAggregateAsync(
+            OwnerUserId, OutboxAggregateTypeEnum.Catch, record.Id, CancellationToken.None);
+        using var draft = CreateEditor(reopened, text, files, units);
+        await draft.InitializeAsync(null, CancellationToken.None);
+        draft.Notes = "Unfinished new catch";
+        await draft.OnDisappearingAsync(CancellationToken.None);
+        using var restoredDraft = CreateEditor(RecreateStoreAgainstSameDatabase(), text, files, units);
+        await restoredDraft.InitializeAsync(null, CancellationToken.None);
+
+        // Assert
+        saved.Should().BeTrue();
+        edited.Should().BeTrue();
+        record.Lifecycle.Should().Be(LocalCatchLifecycleEnum.Saved);
+        list.Catches.Should().ContainSingle();
+        list.Catches.Single().SaveStatus.Should().Be(text["CatchSavedLocally"]);
+        discarded!.Notes.Should().Be("Before save");
+        discarded.Revision.Should().Be(1);
+        afterRestart!.Notes.Should().Be("Explicitly saved edit");
+        afterRestart.Lifecycle.Should().Be(LocalCatchLifecycleEnum.Saved);
+        afterRestart.Revision.Should().Be(2);
+        afterRestart.Photographs.Single().LocalFilePath.Should().Be(relativePath);
+        afterRestart.Photographs.Single().Metadata.Should().Be(metadata);
+        edit.Photographs.Items.Single().PreviewPath.Should().Be(absolutePath);
+        pending.Should().ContainSingle();
+        restoredDraft.DraftRestored.Should().BeTrue();
+        restoredDraft.Notes.Should().Be("Unfinished new catch");
+        (await reopened.GetAsync(record.Id, CancellationToken.None))!.Revision.Should().Be(2);
+        await list.RefreshFromStoreAsync(CancellationToken.None);
+        list.Catches.Should().ContainSingle();
+        (await CreateStoreForUser(OtherUserId).ListAsync(CancellationToken.None)).Should().BeEmpty();
+        (await CreateStoreForUser(OtherUserId).GetAsync(record.Id, CancellationToken.None)).Should().BeNull();
+        files.Received(3).GetAbsolutePath(OwnerUserId, relativePath);
+    }
+
+    private CatchEditViewModel CreateEditor(
+        ICatchStore store, UiTextService text, IPhotographFileStore files, IAccountUnitsService units)
+    {
+        return new CatchEditViewModel(store, MockSessionCoordinator,
+            Substitute.For<IAnglerPreferencesService>(), new CatchPhotographProposalService(),
+            new CatchPhotographSaveArgsMapper(), files, Substitute.For<IDeviceLocationService>(),
+            new MeasurementService(), units,
+            new PhotographCollectionEditorViewModel(Substitute.For<IPhotographCollectionEditorService>(), text),
+            TimeProvider.System, text);
+    }
+
     [Fact]
     public async Task ItShouldPersistTheCatchAcrossANewConnection()
     {
