@@ -73,6 +73,7 @@ public sealed class OutboxSyncCoordinator : IOutboxSyncCoordinator, IDisposable
             _started = true;
             _lifecycle.StateChanged += OnLifecycleStateChanged;
             _notifier.WorkEnqueued += OnWorkEnqueued;
+            _session.SessionActivated += OnSessionActivated;
         }
     }
 
@@ -127,6 +128,7 @@ public sealed class OutboxSyncCoordinator : IOutboxSyncCoordinator, IDisposable
             _disposed = true;
             _lifecycle.StateChanged -= OnLifecycleStateChanged;
             _notifier.WorkEnqueued -= OnWorkEnqueued;
+            _session.SessionActivated -= OnSessionActivated;
             _runCancellation?.Cancel();
             DisposeTimerLocked();
         }
@@ -352,6 +354,11 @@ public sealed class OutboxSyncCoordinator : IOutboxSyncCoordinator, IDisposable
         {
             Pause();
         }
+    }
+
+    private void OnSessionActivated(object? sender, EventArgs args)
+    {
+        Request(OutboxSyncTriggerEnum.SessionOnline);
     }
 
     private void OnWorkEnqueued(object? sender, EventArgs args)

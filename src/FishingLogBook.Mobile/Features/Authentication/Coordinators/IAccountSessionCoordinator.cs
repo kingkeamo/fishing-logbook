@@ -4,6 +4,8 @@ namespace FishingLogBook.Mobile.Features.Authentication.Coordinators;
 
 public interface IAccountSessionCoordinator
 {
+    event EventHandler? SessionActivated;
+
     AccountSessionLeaseModel? Capture();
     bool IsCurrent(AccountSessionLeaseModel lease);
     Task TransitionAsync(Guid? userId, CancellationToken cancellationToken);

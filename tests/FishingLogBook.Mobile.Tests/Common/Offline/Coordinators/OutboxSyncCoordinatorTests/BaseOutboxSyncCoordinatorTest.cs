@@ -1,3 +1,4 @@
+using System.Globalization;
 using FishingLogBook.Mobile.Common.Offline.Coordinators;
 using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Common.Offline.Models;
@@ -11,7 +12,6 @@ using FishingLogBook.Mobile.Features.Profile.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using System.Globalization;
 
 namespace FishingLogBook.Mobile.Tests.Common.Offline.Coordinators.OutboxSyncCoordinatorTests;
 

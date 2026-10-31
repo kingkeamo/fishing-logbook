@@ -119,4 +119,32 @@ public sealed class WhenTestingStart : BaseOutboxSyncCoordinatorTest
         row.AttemptCount.Should().Be(0);
         row.LeaseOwner.Should().BeNull();
     }
+
+    [Fact]
+    public void ItShouldRunOnceWhenTheAccountSessionIsActivated()
+    {
+        // Arrange
+        MockSession.Capture().Returns((AccountSessionLeaseModel?)null);
+        Sut.Start();
+
+        // Act
+        MockSession.SessionActivated += Raise.Event();
+
+        // Assert
+        MockSession.Received(1).Capture();
+    }
+
+    [Fact]
+    public void ItShouldNotRunWhenTheAccountSessionIsActivatedAfterDisposal()
+    {
+        // Arrange
+        Sut.Start();
+        Sut.Dispose();
+
+        // Act
+        MockSession.SessionActivated += Raise.Event();
+
+        // Assert
+        MockSession.DidNotReceive().Capture();
+    }
 }

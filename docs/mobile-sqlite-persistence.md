@@ -1,7 +1,7 @@
 # Mobile SQLite persistence (PR 1 / #269)
 
 Local-first Catch metadata and a generic transactional outbox for the native MAUI
-app. No UI, photo capture, or remote sync in this foundation.
+app. No UI, photo capture, or remote sync in this foundation. Remote synchronisation, leases and per-photograph sync state were added in #272; see [mobile-catch-sync.md](mobile-catch-sync.md).
 
 ## Provider
 

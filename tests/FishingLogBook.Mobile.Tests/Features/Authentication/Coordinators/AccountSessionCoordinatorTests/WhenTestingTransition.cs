@@ -175,4 +175,66 @@ public class WhenTestingTransition : BaseAccountSessionCoordinatorTest
         await transition;
         Sut.IsCurrent(lease).Should().BeFalse();
     }
+
+    [Fact]
+    public async Task ItShouldRaiseSessionActivatedWhenAnAccountBecomesActive()
+    {
+        // Arrange
+        var activations = 0;
+        Sut.SessionActivated += (_, _) => activations++;
+
+        // Act
+        await Sut.TransitionAsync(Guid.NewGuid(), CancellationToken.None);
+
+        // Assert
+        activations.Should().Be(1);
+        Sut.Capture().Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldNotRaiseSessionActivatedAgainForTheAccountThatIsAlreadyActive()
+    {
+        // Arrange
+        var owner = Guid.NewGuid();
+        await Sut.TransitionAsync(owner, CancellationToken.None);
+        var activations = 0;
+        Sut.SessionActivated += (_, _) => activations++;
+
+        // Act
+        await Sut.TransitionAsync(owner, CancellationToken.None);
+
+        // Assert
+        activations.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ItShouldNotRaiseSessionActivatedWhenTheAccountSignsOut()
+    {
+        // Arrange
+        await Sut.TransitionAsync(Guid.NewGuid(), CancellationToken.None);
+        var activations = 0;
+        Sut.SessionActivated += (_, _) => activations++;
+
+        // Act
+        await Sut.TransitionAsync(null, CancellationToken.None);
+
+        // Assert
+        activations.Should().Be(0);
+        Sut.Capture().Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldRaiseSessionActivatedForTheNewAccountWhenTheAccountSwitches()
+    {
+        // Arrange
+        await Sut.TransitionAsync(Guid.NewGuid(), CancellationToken.None);
+        var activations = 0;
+        Sut.SessionActivated += (_, _) => activations++;
+
+        // Act
+        await Sut.TransitionAsync(Guid.NewGuid(), CancellationToken.None);
+
+        // Assert
+        activations.Should().Be(1);
+    }
 }

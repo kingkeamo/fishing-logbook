@@ -83,9 +83,37 @@ current revision complete without a request.
 
 ## Triggers (no polling)
 
-Session lifecycle reaching `Online` (startup, connectivity returning, token usable again),
-app returning to the foreground, work being enqueued by a local save while online, an
-explicit retry, and a single timer for the next scheduled retry. Backgrounding pauses the run.
+Session lifecycle reaching `Online` (connectivity returning, token usable again), the
+account session becoming active (`IAccountSessionCoordinator.SessionActivated`, which is
+what starts the first run after startup because the lifecycle can reach `Online` before the
+account lease exists), app returning to the foreground, work being enqueued by a local save
+while online, an explicit retry, and a single timer for the next scheduled retry.
+Backgrounding or leaving `Online` pauses the run. Device-offline failures release the
+operation without counting an attempt.
+
+## Ordering and coalescing details
+
+- Claim order runs every non-upload operation before `UploadCatchPhotograph`, then oldest
+  first. Together with "photograph operations only exist after the metadata succeeded" this
+  gives the server-required ordering, and the metadata re-upsert that follows a missing
+  remote catch runs before the photograph is retried.
+- Coalescing an already-`Pending` operation updates its payload and `availableat` but keeps
+  its `attemptcount` and `lasterror`. Losing `lasterror` made a repeated 404 loop instead of
+  becoming terminal; this is covered by a store-level regression test.
+- Operations of an account other than the signed-in one are never claimed (observed on the
+  emulator: a Draft owned by another account stayed `Pending`).
+
+## Known limitations
+
+- The server has no concurrency token; two devices editing one catch is last-write-wins.
+- `TripId` is sent as stored. Trips are not synchronised here (#273), so a catch pointing at
+  a trip that does not exist on the server is rejected as invalid and becomes `Failed`.
+- Removing a photograph that was uploaded deletes its remote object through the existing
+  DELETE endpoint before the next upsert; if that DELETE keeps failing the catch update is
+  held back (retried with backoff, then `Dead`, then manual retry).
+- A failure while persisting an outcome (for example a SQLite error) leaves the operation
+  `InProgress` until its lease expires (5 minutes) or the next run reclaims it.
+- Synchronisation is foreground only. It does not run while the app is backgrounded.
 
 ## Status presentation
 

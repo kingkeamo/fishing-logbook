@@ -4,6 +4,8 @@ namespace FishingLogBook.Mobile.Features.Authentication.Coordinators;
 
 public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDisposable
 {
+    public event EventHandler? SessionActivated;
+
     private readonly object _stateLock = new();
     private readonly SemaphoreSlim _commitGate = new(1, 1);
     private CancellationTokenSource? _sessionCancellation;
@@ -49,14 +51,20 @@ public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDis
             _sessionCancellation?.Cancel();
         }
 
+        var applied = false;
         await _commitGate.WaitAsync(CancellationToken.None);
         try
         {
-            ApplyTransition(transition, userId);
+            applied = ApplyTransition(transition, userId);
         }
         finally
         {
             _commitGate.Release();
+        }
+
+        if (applied && userId.HasValue)
+        {
+            SessionActivated?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -98,14 +106,14 @@ public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDis
         _commitGate.Dispose();
     }
 
-    private void ApplyTransition(long transition, Guid? userId)
+    private bool ApplyTransition(long transition, Guid? userId)
     {
         CancellationTokenSource? previousCancellation;
         lock (_stateLock)
         {
             if (transition != _requestedTransition)
             {
-                return;
+                return false;
             }
 
             previousCancellation = _sessionCancellation;
@@ -117,6 +125,7 @@ public sealed class AccountSessionCoordinator : IAccountSessionCoordinator, IDis
 
         previousCancellation?.Cancel();
         previousCancellation?.Dispose();
+        return true;
     }
 
     private bool IsActiveOwnerLocked(Guid? userId)

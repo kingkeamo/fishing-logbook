@@ -1,11 +1,11 @@
 using System.Globalization;
 using AwesomeAssertions;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
-using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Photographs.Offline.Stores;
