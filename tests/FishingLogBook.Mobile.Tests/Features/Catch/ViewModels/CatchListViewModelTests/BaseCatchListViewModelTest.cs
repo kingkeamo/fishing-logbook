@@ -1,7 +1,9 @@
 using System.Globalization;
+using FishingLogBook.Mobile.Api.Models;
 using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.Services;
@@ -11,6 +13,7 @@ using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Measurements;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -29,6 +32,8 @@ public abstract class BaseCatchListViewModelTest
     protected IAccountSessionCoordinator MockSessionCoordinator { get; } = Substitute.For<IAccountSessionCoordinator>();
     protected ICatchSyncStatusStore MockSyncStatusStore { get; } = Substitute.For<ICatchSyncStatusStore>();
     protected IOutboxChangeNotifier MockNotifier { get; } = Substitute.For<IOutboxChangeNotifier>();
+    protected ICatchRemoteClient MockRemoteClient { get; } = Substitute.For<ICatchRemoteClient>();
+    protected IConnectivityService MockConnectivity { get; } = Substitute.For<IConnectivityService>();
     protected CatchListViewModel Sut { get; }
 
     protected BaseCatchListViewModelTest()
@@ -36,6 +41,9 @@ public abstract class BaseCatchListViewModelTest
         MockUnits.GetAsync(Arg.Any<CancellationToken>()).Returns(MeasurementUnitsModel.Default);
         MockSessionCoordinator.Capture().Returns(new AccountSessionLeaseModel(OwnerUserId, 1, CancellationToken.None));
         MockCatchStore.ListAsync(Arg.Any<CancellationToken>()).Returns([]);
+        MockSessionCoordinator.IsCurrent(Arg.Any<AccountSessionLeaseModel>()).Returns(true);
+        MockConnectivity.IsOnline.Returns(true);
+        MockRemoteClient.ListAsync(Arg.Any<CancellationToken>()).Returns(ApiResultModel<List<CatchViewDto>>.Succeeded([]));
         var photographFileStore = Substitute.For<IPhotographFileStore>();
         Sut = CreateSut(Clock);
         Sut.LoadJournalEntries(new SampleCatchProvider(Text, Clock).Catches);
@@ -44,17 +52,18 @@ public abstract class BaseCatchListViewModelTest
     protected CatchListViewModel CreateSut(TimeProvider clock)
     {
         var mapper = new CatchPresentationMapper(Substitute.For<IPhotographFileStore>());
+        var history = new CatchHistoryService(MockCatchStore, MockSyncStatusStore, MockRemoteClient, MockConnectivity, MockSessionCoordinator, mapper);
         var sut = new CatchListViewModel(
             Text,
-            MockCatchStore,
+            history,
             MockSyncStatusStore,
             MockNotifier,
             NullLogger<CatchListViewModel>.Instance,
             MockSessionCoordinator,
-            mapper,
             MockUnits,
             new MeasurementService(),
-            clock);
+            clock,
+            MockConnectivity);
         sut.LoadJournalEntries(new SampleCatchProvider(Text, Clock).Catches);
         return sut;
     }

@@ -57,7 +57,7 @@ public sealed class WhenTestingMigrate : BaseSqliteMigratorTest
         await using var connection = await ConnectionFactory.OpenAsync(CancellationToken.None);
         await using var versionCommand = connection.CreateCommand();
         versionCommand.CommandText = "SELECT version FROM schemainfo;";
-        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(3);
+        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(4);
 
         await using var tableCommand = connection.CreateCommand();
         tableCommand.CommandText =
@@ -65,9 +65,9 @@ public sealed class WhenTestingMigrate : BaseSqliteMigratorTest
             SELECT COUNT(*)
             FROM sqlite_master
             WHERE type = 'table'
-              AND name IN ('localcatches', 'localcatchphotographs', 'localtrips', 'outboxoperations', 'localcatchsyncs', 'localphotographsyncs');
+              AND name IN ('localcatches', 'localcatchphotographs', 'localtrips', 'outboxoperations', 'localcatchsyncs', 'localphotographsyncs', 'localpendingfiledeletions');
             """;
-        Convert.ToInt32(await tableCommand.ExecuteScalarAsync()).Should().Be(6);
+        Convert.ToInt32(await tableCommand.ExecuteScalarAsync()).Should().Be(7);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class WhenTestingMigrate : BaseSqliteMigratorTest
         await using var connection = await ConnectionFactory.OpenAsync(CancellationToken.None);
         await using var versionCommand = connection.CreateCommand();
         versionCommand.CommandText = "SELECT version FROM schemainfo;";
-        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(3);
+        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(4);
     }
 
     [Fact]

@@ -15,6 +15,82 @@ namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchEditViewMod
 public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
 {
     [Fact]
+    public async Task ItShouldShowProgressAndIgnoreRepeatedLocationTapsUntilCaptureCompletes()
+    {
+        // Arrange
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        var capture = new TaskCompletionSource<DeviceLocationCaptureModel>(TaskCreationOptions.RunContinuationsAsynchronously);
+        MockLocation.CaptureCurrentAsync(Arg.Any<CancellationToken>()).Returns(capture.Task);
+        var changes = new List<string?>();
+        Sut.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
+        // Act
+        var first = Sut.CaptureLocationAsync(CancellationToken.None);
+        await Sut.CaptureLocationAsync(CancellationToken.None);
+        // Assert
+        Sut.IsCapturingLocation.Should().BeTrue();
+        Sut.CanCaptureLocation.Should().BeFalse();
+        Sut.CanSave.Should().BeFalse();
+        Sut.LocationStatusText.Should().Be(Text["CatchLocationCapturing"]);
+        Sut.HasLocationError.Should().BeFalse();
+        await MockLocation.Received(1).CaptureCurrentAsync(Arg.Any<CancellationToken>());
+        // Act
+        capture.SetResult(DeviceLocationCaptureModel.FromCoordinates(53.3, -6.2, 10, Now));
+        await first;
+        // Assert
+        Sut.IsCapturingLocation.Should().BeFalse();
+        Sut.CanCaptureLocation.Should().BeTrue();
+        Sut.HasLocation.Should().BeTrue();
+        Sut.HasLocationStatus.Should().BeFalse();
+        Sut.LocationStatusText.Should().BeEmpty();
+        Sut.HasLocationError.Should().BeFalse();
+        Sut.LocationActionText.Should().Be(Text["CatchUpdateLocation"]);
+        changes.Should().Contain(nameof(Sut.IsCapturingLocation)).And.Contain(nameof(Sut.CanCaptureLocation))
+            .And.Contain(nameof(Sut.LocationStatusText)).And.Contain(nameof(Sut.HasLocationError));
+    }
+
+    [Theory]
+    [InlineData(LocationCaptureOutcomeEnum.Denied, "CatchLocationPermissionDenied")]
+    [InlineData(LocationCaptureOutcomeEnum.PermanentlyDenied, "CatchLocationPermissionBlocked")]
+    [InlineData(LocationCaptureOutcomeEnum.Timeout, "CatchLocationTimedOut")]
+    [InlineData(LocationCaptureOutcomeEnum.Unavailable, "CatchLocationCaptureFailed")]
+    public async Task ItShouldShowAnInlineFailureAndAllowRetry(LocationCaptureOutcomeEnum outcome, string resourceKey)
+    {
+        // Arrange
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        MockLocation.CaptureCurrentAsync(Arg.Any<CancellationToken>()).Returns(DeviceLocationCaptureModel.WithoutCoordinates(outcome));
+        // Act
+        await Sut.CaptureLocationAsync(CancellationToken.None);
+        // Assert
+        Sut.HasLocationStatus.Should().BeTrue();
+        Sut.LocationStatusText.Should().Be(Text[resourceKey]);
+        Sut.HasLocationError.Should().BeTrue();
+        Sut.HasStatus.Should().BeFalse();
+        Sut.StatusText.Should().BeEmpty();
+        Sut.CanCaptureLocation.Should().BeTrue();
+        Sut.IsCapturingLocation.Should().BeFalse();
+        await MockLocation.Received(1).CaptureCurrentAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldClearAPreviousFailureAfterASuccessfulRetry()
+    {
+        // Arrange
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        MockLocation.CaptureCurrentAsync(Arg.Any<CancellationToken>()).Returns(
+            DeviceLocationCaptureModel.WithoutCoordinates(LocationCaptureOutcomeEnum.Timeout),
+            DeviceLocationCaptureModel.FromCoordinates(53.3, -6.2, 10, Now));
+        await Sut.CaptureLocationAsync(CancellationToken.None);
+        // Act
+        await Sut.CaptureLocationAsync(CancellationToken.None);
+        // Assert
+        Sut.HasStatus.Should().BeFalse();
+        Sut.HasLocationStatus.Should().BeFalse();
+        Sut.LocationStatusText.Should().BeEmpty();
+        Sut.HasLocationError.Should().BeFalse();
+        await MockLocation.Received(2).CaptureCurrentAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldStoreDeviceLocationAsPrivateWithConsentVersionOne()
     {
         // Arrange
@@ -124,8 +200,10 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         // Assert
         Sut.HasLocation.Should().BeFalse();
         Sut.Notes.Should().Be("Still here");
-        Sut.HasStatus.Should().BeTrue();
-        Sut.StatusText.Should().Be(Text["CatchLocationCaptureFailed"]);
+        Sut.HasStatus.Should().BeFalse();
+        Sut.StatusText.Should().BeEmpty();
+        Sut.HasLocationError.Should().BeTrue();
+        Sut.LocationStatusText.Should().Be(Text["CatchLocationPermissionDenied"]);
     }
 
     [Fact]

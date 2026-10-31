@@ -35,6 +35,7 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
         }
 
         _initialized = true;
+        Unloaded += OnUnloaded;
         await _viewModel.InitializeAsync(_catchId, CancellationToken.None);
     }
 
@@ -42,6 +43,12 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
     {
         base.OnDisappearing();
         await _viewModel.OnDisappearingAsync(CancellationToken.None);
+    }
+
+    private void OnUnloaded(object? sender, EventArgs args)
+    {
+        Unloaded -= OnUnloaded;
+        _viewModel.Dispose();
     }
 
     private async void OnBack(object? sender, EventArgs args)

@@ -14,7 +14,10 @@ public sealed class CatchPresentationModel(
     IReadOnlyList<string>? photos = null,
     SampleCatchTextModel? sampleText = null,
     bool savedLocally = false,
-    CatchSyncStatusModel? syncStatus = null) : INotifyPropertyChanged
+    CatchSyncStatusModel? syncStatus = null,
+    bool isRemote = false,
+    bool isDraft = false,
+    CatchLocationExposureDto? remoteLocation = null) : INotifyPropertyChanged
 {
     private static readonly IMeasurementService DefaultMeasurement = new MeasurementService();
     private IReadOnlyList<CatchPhotoThumbnailModel>? _thumbnails;
@@ -38,12 +41,16 @@ public sealed class CatchPresentationModel(
     public string Measurements => string.Join(" · ", new[] { catchDto.Weight.HasValue ? Weight : null, catchDto.Length.HasValue ? Length : null }.Where(value => value is not null));
     public string CardDescription => string.Join(", ", new[] { OpenDescription, HasMethod ? Method : null, HasMeasurements ? Measurements : null, HasSaveStatus ? SaveStatus : null }.Where(value => value is not null));
     public bool HasSaveStatus => savedLocally;
-    public string SaveStatus => savedLocally ? DescribeSaveStatus() : string.Empty;
+    public bool IsRemote => isRemote;
+    public bool IsDraft => isDraft;
+    public string SaveStatus => isDraft ? Text["CatchDraftStatus"] : savedLocally ? DescribeSaveStatus() : string.Empty;
     public CatchSyncStateEnum SyncState => _syncStatus?.State ?? CatchSyncStateEnum.WaitingToSync;
     public bool CanRetrySync => _syncStatus?.CanRetry == true;
     public string Weight => FormatWeight();
     public string Length => FormatLength();
-    public string Place => LocalizedOrRecorded(sampleText?.PlaceKey, catchDto.PlaceName);
+    public string Place => sampleText?.PlaceKey is { } placeKey ? Text[placeKey]
+        : !string.IsNullOrWhiteSpace(catchDto.PlaceName) ? catchDto.PlaceName
+        : DescribeLocation();
     public string Notes => LocalizedOrRecorded(sampleText?.NotesKey, catchDto.Notes);
     public string BaitOrLure => string.IsNullOrWhiteSpace(catchDto.BaitOrLure) ? Text["NoBait"] : catchDto.BaitOrLure;
     public IReadOnlyList<string> Photos { get; } = photos ?? [];
@@ -56,7 +63,7 @@ public sealed class CatchPresentationModel(
     public bool HasMultiplePhotos => Photos.Count > 1;
     public string PhotoPosition => DescribePhoto(HasPhoto ? SelectedPhotoIndex : -1);
     public bool HasNotes => sampleText?.NotesKey is not null || !string.IsNullOrWhiteSpace(catchDto.Notes);
-    public CatchSpeciesEnum SpeciesIdentifier => sampleText?.Species ?? CatchSpeciesEnum.Other;
+    public CatchSpeciesEnum SpeciesIdentifier => sampleText?.Species ?? ParseSpecies(catchDto.SpeciesName);
     public bool HasNoPhoto => !HasPhoto;
     public string OpenDescription => string.Format(Text.Culture, Text["OpenCatchDescription"], Species, CaughtOn);
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -172,6 +179,31 @@ public sealed class CatchPresentationModel(
         return Enum.TryParse(method, false, out CatchMethodEnum parsed) && parsed != CatchMethodEnum.All
             ? parsed
             : CatchMethodEnum.All;
+    }
+
+    private static CatchSpeciesEnum ParseSpecies(string? species)
+    {
+        return Enum.TryParse(species?.Replace(" ", string.Empty), true, out CatchSpeciesEnum parsed) && Enum.IsDefined(parsed)
+            ? parsed
+            : CatchSpeciesEnum.Other;
+    }
+
+    private string DescribeLocation()
+    {
+        if (catchDto.Location is { } local)
+        {
+            return Text["CatchLocationSaved" + local.Visibility];
+        }
+
+        return remoteLocation?.Mode switch
+        {
+            LocationDefaults.ExposureExact => Text["CatchLocationSaved" + remoteLocation.Visibility],
+            LocationDefaults.ExposureApproximate => Text["CatchLocationSavedApproximate"],
+            LocationDefaults.ExposureFishingVenue => string.IsNullOrWhiteSpace(remoteLocation.FishingVenueName)
+                ? Text["CatchLocationSavedFishingVenueOnly"] : remoteLocation.FishingVenueName,
+            LocationDefaults.ExposureNone => Text["CatchLocationHidden"],
+            _ => Text["NotRecorded"]
+        };
     }
 
     private string DisplayOrMissing(string? value)

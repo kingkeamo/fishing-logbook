@@ -2,6 +2,7 @@ namespace FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 
 public interface IPhotographFileStore
 {
+    string? GetRelativePath(Guid userId, Guid photographId, string contentType);
     string GetAbsolutePath(Guid userId, string relativeFilePath);
 
     string GetAccountDirectory(Guid userId);
@@ -14,4 +15,6 @@ public interface IPhotographFileStore
         CancellationToken cancellationToken);
 
     bool TryResolveRelativePath(Guid userId, string relativeFilePath, out string absolutePath);
+
+    bool TryDelete(Guid userId, string relativeFilePath);
 }

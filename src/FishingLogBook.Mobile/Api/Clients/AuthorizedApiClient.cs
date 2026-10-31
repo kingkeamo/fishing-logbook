@@ -27,10 +27,13 @@ public sealed class AuthorizedApiClient
         _logger = logger;
     }
 
-    public async Task<ApiResultModel<T>> GetAsync<T>(string path, CancellationToken cancellationToken)
+    public async Task<ApiResultModel<T>> GetAsync<T>(
+        string path,
+        CancellationToken cancellationToken,
+        bool distinguishNotFound = false)
         where T : class
     {
-        return await SendAsync<T>(new HttpRequestMessage(HttpMethod.Get, path), cancellationToken);
+        return await SendAsync<T>(new HttpRequestMessage(HttpMethod.Get, path), cancellationToken, distinguishNotFound);
     }
 
     public async Task<ApiResultModel<TResponse>> PutAsync<TRequest, TResponse>(

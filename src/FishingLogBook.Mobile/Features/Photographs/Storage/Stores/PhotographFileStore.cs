@@ -28,6 +28,12 @@ public sealed class PhotographFileStore(
         return directory;
     }
 
+    public string? GetRelativePath(Guid userId, Guid photographId, string contentType)
+    {
+        var extension = ExtensionFor(contentType);
+        return extension is null ? null : $"{userId:N}/{photographId:N}{extension}";
+    }
+
     public async Task<string?> SaveAsync(
         Guid userId,
         Guid photographId,
@@ -37,13 +43,12 @@ public sealed class PhotographFileStore(
     {
         ArgumentNullException.ThrowIfNull(bytes);
         cancellationToken.ThrowIfCancellationRequested();
-        var extension = ExtensionFor(contentType);
-        if (extension is null)
+        var relativePath = GetRelativePath(userId, photographId, contentType);
+        if (relativePath is null)
         {
             return null;
         }
 
-        var relativePath = $"{userId:N}/{photographId:N}{extension}";
         var durablePath = GetAbsolutePath(userId, relativePath);
         var directory = Path.GetDirectoryName(durablePath);
         if (directory is not null)
@@ -127,6 +132,29 @@ public sealed class PhotographFileStore(
         }
 
         return null;
+    }
+
+    public bool TryDelete(Guid userId, string relativeFilePath)
+    {
+        if (!TryResolveRelativePath(userId, relativeFilePath, out var absolutePath))
+        {
+            return true;
+        }
+
+        try
+        {
+            if (fileSystem.FileExists(absolutePath))
+            {
+                fileSystem.DeleteFile(absolutePath);
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Durable photograph delete failed for user {UserId}.", userId);
+            return false;
+        }
     }
 
     private static string NormalizeRelativePath(string relativeFilePath)

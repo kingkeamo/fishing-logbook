@@ -1,10 +1,13 @@
 using System.Globalization;
 using AwesomeAssertions;
+using FishingLogBook.Mobile.Api.Models;
 using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Common.Offline.Services;
+using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Onboarding.Services;
 using FishingLogBook.Mobile.Features.Photographs.Mappers;
@@ -16,6 +19,7 @@ using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Catches.Services;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Measurements;
 using FishingLogBook.Shared.Photographs.Models;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -113,9 +117,15 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
         await editor.OnDisappearingAsync(CancellationToken.None);
         var reopened = RecreateStoreAgainstSameDatabase();
         var record = (await reopened.ListAsync(CancellationToken.None)).Single();
-        var list = new CatchListViewModel(text, reopened, Substitute.For<ICatchSyncStatusStore>(), MockNotifier,
+        var statusStore = Substitute.For<ICatchSyncStatusStore>();
+        var remote = Substitute.For<ICatchRemoteClient>();
+        remote.ListAsync(Arg.Any<CancellationToken>()).Returns(ApiResultModel<List<CatchViewDto>>.Succeeded([]));
+        var connectivity = Substitute.For<IConnectivityService>();
+        connectivity.IsOnline.Returns(true);
+        var history = new CatchHistoryService(reopened, statusStore, remote, connectivity, MockSessionCoordinator, new CatchPresentationMapper(files));
+        var list = new CatchListViewModel(text, history, statusStore, MockNotifier,
             NullLogger<CatchListViewModel>.Instance, MockSessionCoordinator,
-            new CatchPresentationMapper(files), units, new MeasurementService(), TimeProvider.System);
+            units, new MeasurementService(), TimeProvider.System, connectivity);
         await list.RefreshFromStoreAsync(CancellationToken.None);
         using var edit = CreateEditor(reopened, text, files, units);
         await edit.InitializeAsync(record.Id, CancellationToken.None);
@@ -138,8 +148,8 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
         saved.Should().BeTrue();
         edited.Should().BeTrue();
         record.Lifecycle.Should().Be(LocalCatchLifecycleEnum.Saved);
-        list.Catches.Should().ContainSingle();
-        list.Catches.Single().SaveStatus.Should().Be(text["CatchSavedLocally"]);
+        list.Catches.Where(item => !item.IsDraft).Should().ContainSingle();
+        list.Catches.Single(item => !item.IsDraft).SaveStatus.Should().Be(text["CatchSavedLocally"]);
         discarded!.Notes.Should().Be("Before save");
         discarded.Revision.Should().Be(1);
         afterRestart!.Notes.Should().Be("Explicitly saved edit");
@@ -153,7 +163,7 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
         restoredDraft.Notes.Should().Be("Unfinished new catch");
         (await reopened.GetAsync(record.Id, CancellationToken.None))!.Revision.Should().Be(2);
         await list.RefreshFromStoreAsync(CancellationToken.None);
-        list.Catches.Should().ContainSingle();
+        list.Catches.Where(item => !item.IsDraft).Should().ContainSingle();
         (await CreateStoreForUser(OtherUserId).ListAsync(CancellationToken.None)).Should().BeEmpty();
         (await CreateStoreForUser(OtherUserId).GetAsync(record.Id, CancellationToken.None)).Should().BeNull();
         files.Received(3).GetAbsolutePath(OwnerUserId, relativePath);
@@ -167,7 +177,7 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
             new CatchPhotographSaveArgsMapper(), files, Substitute.For<IDeviceLocationService>(),
             new MeasurementService(), units,
             new PhotographCollectionEditorViewModel(Substitute.For<IPhotographCollectionEditorService>(), text),
-            TimeProvider.System, text);
+            TimeProvider.System, text, Substitute.For<ICatchWorkingCopyService>(), new ActiveCatchEditRegistry());
     }
 
     [Fact]

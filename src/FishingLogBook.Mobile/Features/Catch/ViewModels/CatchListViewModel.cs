@@ -2,10 +2,13 @@ using System.ComponentModel;
 using System.Globalization;
 using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
+using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Mobile.Features.Catch.Enums;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Presentation;
@@ -26,13 +29,13 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
         CatchSpeciesEnum.Other
     ];
 
-    private readonly ICatchStore _catchStore;
+    private readonly ICatchHistoryService _history;
     private readonly ICatchSyncStatusStore _syncStatusStore;
     private readonly IOutboxChangeNotifier _notifier;
     private readonly ILogger<CatchListViewModel> _logger;
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private readonly SynchronizationContext? _uiContext = SynchronizationContext.Current;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
-    private readonly CatchPresentationMapper _mapper;
     private readonly IAccountUnitsService _units;
     private readonly IMeasurementService _measurement;
     private readonly TimeProvider _clock;
@@ -40,31 +43,35 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     private ContentStateEnum _state = ContentStateEnum.Loading;
     private string _searchTerm = string.Empty;
     private CatchFilterModel _filters = CatchFilterModel.None;
+    private AccountSessionLeaseModel? _ownerLease;
 
     public CatchListViewModel(
         UiTextService text,
-        ICatchStore catchStore,
+        ICatchHistoryService history,
         ICatchSyncStatusStore syncStatusStore,
         IOutboxChangeNotifier notifier,
         ILogger<CatchListViewModel> logger,
         IAccountSessionCoordinator sessionCoordinator,
-        CatchPresentationMapper mapper,
         IAccountUnitsService units,
         IMeasurementService measurement,
-        TimeProvider clock)
+        TimeProvider clock,
+        IConnectivityService connectivity)
     {
         Text = text;
-        _catchStore = catchStore;
+        _history = history;
         _syncStatusStore = syncStatusStore;
         _notifier = notifier;
         _logger = logger;
         _sessionCoordinator = sessionCoordinator;
-        _mapper = mapper;
         _units = units;
         _measurement = measurement;
         _clock = clock;
         Text.PropertyChanged += OnCultureChanged;
         _notifier.StateChanged += OnSyncStateChanged;
+        _notifier.CatchesChanged += OnCatchesChanged;
+        _notifier.SyncRunCompleted += OnCatchesChanged;
+        _sessionCoordinator.SessionActivated += OnCatchesChanged;
+        connectivity.ConnectivityChanged += OnCatchesChanged;
         State = new ContentStateModel(_state, Text);
     }
 
@@ -85,6 +92,15 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     public bool IsEmptyJournal => _state == ContentStateEnum.Empty;
     public string ResultCount => FormatCount(Catches.Count);
     public ContentStateModel State { get; private set; } = null!;
+    public RemoteCatchStateEnum RemoteState { get; private set; } = RemoteCatchStateEnum.Loaded;
+    public string RemoteNotice => RemoteState switch
+    {
+        RemoteCatchStateEnum.Offline => Text["CatchRemoteOffline"],
+        RemoteCatchStateEnum.Unavailable => Text["CatchRemoteUnavailable"],
+        RemoteCatchStateEnum.SessionExpired => Text["CatchRemoteSessionExpired"],
+        _ => string.Empty
+    };
+    public bool HasRemoteNotice => HasContent && RemoteNotice.Length > 0;
     public bool HasContent => _state == ContentStateEnum.Ready;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -110,21 +126,25 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
     public async Task RefreshFromStoreAsync(CancellationToken cancellationToken)
     {
-        var lease = _sessionCoordinator.Capture();
-        if (lease is null)
+        if (_ownerLease is null || !_sessionCoordinator.IsCurrent(_ownerLease))
         {
             _source = [];
-            SetState(ContentStateEnum.Empty);
-            return;
+            SetState(ContentStateEnum.Loading);
         }
 
-        var records = await _catchStore.ListAsync(cancellationToken);
-        var statuses = await _syncStatusStore.ListAsync(lease.UserId, cancellationToken);
-        _source = records
-            .Where(record => record.Lifecycle == LocalCatchLifecycleEnum.Saved)
-            .Select(record => _mapper.Map(record, Text, statuses.GetValueOrDefault(record.Id)))
-            .ToArray();
-        SetState(_source.Count == 0 ? ContentStateEnum.Empty : ContentStateEnum.Ready);
+        await _refreshGate.WaitAsync(cancellationToken);
+        try
+        {
+            _ownerLease = _sessionCoordinator.Capture();
+            var history = await _history.LoadAsync(Text, cancellationToken);
+            RemoteState = history.Remote;
+            _source = history.Items;
+            SetState(ResolveState(history));
+        }
+        finally
+        {
+            _refreshGate.Release();
+        }
     }
 
     public async Task RefreshSyncStatusAsync(CancellationToken cancellationToken)
@@ -199,6 +219,44 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
         _state = state;
         Refresh();
+    }
+
+    private static ContentStateEnum ResolveState(CatchHistoryModel history)
+    {
+        if (history.Items.Count > 0)
+        {
+            return ContentStateEnum.Ready;
+        }
+
+        return history.Remote switch
+        {
+            RemoteCatchStateEnum.Offline => ContentStateEnum.Offline,
+            RemoteCatchStateEnum.Unavailable or RemoteCatchStateEnum.SessionExpired => ContentStateEnum.Error,
+            _ => ContentStateEnum.Empty
+        };
+    }
+
+    private void OnCatchesChanged(object? sender, EventArgs args)
+    {
+        if (_uiContext is null)
+        {
+            ObserveCatchesRefresh();
+            return;
+        }
+
+        _uiContext.Post(_ => ObserveCatchesRefresh(), null);
+    }
+
+    private async void ObserveCatchesRefresh()
+    {
+        try
+        {
+            await LoadUnitsAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Catch list could not be refreshed.");
+        }
     }
 
     private void OnSyncStateChanged(object? sender, EventArgs args)
@@ -276,14 +334,17 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
     private void Refresh()
     {
-        State = new ContentStateModel(_state, Text);
+        var remoteText = RemoteState != RemoteCatchStateEnum.Loaded && _state is ContentStateEnum.Error or ContentStateEnum.Offline
+            ? "CatchRemote" + RemoteState
+            : null;
+        State = new ContentStateModel(_state, Text, remoteText);
         Catches = !HasContent ? [] : _source.Where(Matches).OrderByDescending(item => item.RecordedAt).ToArray();
         Groups = Catches.GroupBy(item => item.Day).Select(group => new CatchGroupModel(group.Key, group, Text)).ToArray();
         foreach (var property in new[]
                  {
                      nameof(Catches), nameof(Groups), nameof(SearchTerm), nameof(Filters), nameof(SelectedMethod), nameof(AllSelected),
                      nameof(SpinningSelected), nameof(FlySelected), nameof(LureSelected), nameof(HasFilters), nameof(HasAdvancedFilters),
-                     nameof(ActiveFilterCount), nameof(HasNoMatches), nameof(IsEmptyJournal), nameof(ResultCount), nameof(State), nameof(HasContent)
+                     nameof(ActiveFilterCount), nameof(HasNoMatches), nameof(IsEmptyJournal), nameof(ResultCount), nameof(State), nameof(HasContent), nameof(RemoteState), nameof(RemoteNotice), nameof(HasRemoteNotice)
                  })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));

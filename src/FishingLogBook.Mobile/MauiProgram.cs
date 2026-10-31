@@ -164,6 +164,14 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IOutboxOperationSynchroniser, CatchPhotographSynchroniser>();
         builder.Services.AddSingleton<IOutboxSyncCoordinator, OutboxSyncCoordinator>();
         builder.Services.AddSingleton<ICatchSyncRetryService, CatchSyncRetryService>();
+        builder.Services.AddTransient<ICatchRemoteClient, CatchRemoteClient>();
+        builder.Services.AddSingleton<IPhotographDownloadClient, PhotographDownloadClient>();
+        builder.Services.AddSingleton<ILocalCatchCleanupStore, SqliteLocalCatchCleanupStore>();
+        builder.Services.AddSingleton<ICatchWorkingCopyStore, SqliteCatchWorkingCopyStore>();
+        builder.Services.AddSingleton<IActiveCatchEditRegistry, ActiveCatchEditRegistry>();
+        builder.Services.AddSingleton<ICatchHistoryService, CatchHistoryService>();
+        builder.Services.AddSingleton<ICatchWorkingCopyService, CatchWorkingCopyService>();
+        builder.Services.AddSingleton<ILocalCatchCleanupService, LocalCatchCleanupService>();
         builder.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
         builder.Services.AddSingleton<CatchPresentationMapper>();
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();
