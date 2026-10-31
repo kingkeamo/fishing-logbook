@@ -45,6 +45,8 @@ the **shared dev API**. Local state was read with `sqlite3` through `run-as`.
 | New catch with three photographs (two JPEG, one PNG) recorded offline | Passed; three durable photograph rows, one `Pending` operation, nothing sent |
 | Upload interrupted by cutting the network mid-flight | Passed; details stayed synced, list read "Details synced · 0 of 3 photos uploaded. Sync needs attention." |
 | Recovery after reconnecting | Passed; all three `Recorded`, metadata operation ran once |
+| Server state, read independently through the Web application signed in as the same account | Passed; exactly one of each of the three catches, with the offline edit's notes, 3, 2 and 2 photographs all rendering from object storage, and no duplicates ([screenshot](evidence/272/web-catches-for-e2e-account.png)) |
+| Server state, read through the app's own `GET /api/catches` with a temporary uncommitted probe | Passed; three catches owned by the account, every photograph with a download URL (the server only issues one when the object exists) |
 | Persisted status and manual retry | Passed with a **simulated** failure: one photograph operation was set to `Failed` in the local database, the detail page showed the partial status and Retry sync, tapping it completed the upload and the status became "Synced." |
 
 Screenshots: [list synced](evidence/272/list-synced.png),
@@ -55,11 +57,6 @@ Screenshots: [list synced](evidence/272/list-synced.png),
 
 ### Not verified
 
-- **Server state was not read independently.** `flyctl` was not authenticated and no API or
-  Web credentials were used, so "exactly one catch and all photographs exist on the server"
-  and the Web view are inferred from the server's 2xx responses recorded as local state
-  (`syncedrevision`, `Recorded` with object keys), not observed. This still needs a check in
-  the Web application with the test account.
 - **Offline cold restart**: an offline launch asks for the device credential, which was not
   available, so kill-and-restart while offline was not run on the device. Durability across
   restarts is covered by the SQLite tests and the #271 device evidence; restart recovery of
@@ -71,7 +68,9 @@ Screenshots: [list synced](evidence/272/list-synced.png),
 
 ## Self review
 
-- Issue/AC: all five criteria covered above; one criterion's server-side half is unverified.
+- Issue/AC: all five criteria covered above, including the server-side result read through
+  the Web application. A Web check as the wrong account initially showed an empty list: the
+  emulator was signed in as `+e2e` and the Web page as `+e2e2`, which are separate users.
 - Architecture: coordinator is generic and account-scoped, handlers are small, no sync logic
   in views or view models; UI reads persisted state and calls only a retry service.
 - Security/privacy: ownership comes from the trusted session lease; only the signed-in
