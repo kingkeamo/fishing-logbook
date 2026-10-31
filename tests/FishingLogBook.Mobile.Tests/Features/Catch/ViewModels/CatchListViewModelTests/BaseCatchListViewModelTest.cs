@@ -27,6 +27,8 @@ public abstract class BaseCatchListViewModelTest
     protected IAccountUnitsService MockUnits { get; } = Substitute.For<IAccountUnitsService>();
     protected ICatchStore MockCatchStore { get; } = Substitute.For<ICatchStore>();
     protected IAccountSessionCoordinator MockSessionCoordinator { get; } = Substitute.For<IAccountSessionCoordinator>();
+    protected ICatchSyncStatusStore MockSyncStatusStore { get; } = Substitute.For<ICatchSyncStatusStore>();
+    protected IOutboxChangeNotifier MockNotifier { get; } = Substitute.For<IOutboxChangeNotifier>();
     protected CatchListViewModel Sut { get; }
 
     protected BaseCatchListViewModelTest()
@@ -45,8 +47,8 @@ public abstract class BaseCatchListViewModelTest
         var sut = new CatchListViewModel(
             Text,
             MockCatchStore,
-            Substitute.For<ICatchSyncStatusStore>(),
-            Substitute.For<IOutboxChangeNotifier>(),
+            MockSyncStatusStore,
+            MockNotifier,
             NullLogger<CatchListViewModel>.Instance,
             MockSessionCoordinator,
             mapper,

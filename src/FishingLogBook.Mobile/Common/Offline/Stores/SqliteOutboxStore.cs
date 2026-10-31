@@ -103,7 +103,7 @@ public sealed class SqliteOutboxStore : IOutboxStore
             SET payloadjson = $payloadJson,
                 availableat = $availableAt,
                 lastattemptat = $lastAttemptAt,
-                lasterror = $lastError,
+                lasterror = COALESCE($lastError, lasterror),
                 attemptcount = $attemptCount
             WHERE id = $id
               AND userid = $userId
