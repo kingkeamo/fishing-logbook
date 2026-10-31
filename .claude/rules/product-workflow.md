@@ -41,7 +41,7 @@ When asked to implement a GitHub issue:
 3. Read every Requirements, Architecture and BUILD section referenced by the issue.
 4. Read the applicable `.claude` rules in full (at least **`self-review.md`** plus the stack rules for the files you will change).
 5. Do not expand scope beyond the issue.
-6. Convert each Acceptance Criterion into one or more automated tests where practical. User-facing journeys must be assessed for whether Playwright coverage is warranted per **`self-review.md`**. Do not contaminate production architecture to force browser tests onto a product ticket.
+6. Convert each Acceptance Criterion into one or more automated tests where practical. User-facing Web journeys must be assessed for whether Playwright coverage is warranted per **`self-review.md`**. Native MAUI journeys follow **`maui.md`** (emulator/device evidence; do not add Playwright to Mobile). Do not contaminate production architecture to force browser tests onto a product ticket.
 7. Implement only what is required to satisfy the Acceptance Criteria.
 8. Existing tests must continue to pass.
 9. All new user-visible text must use localisation resources.

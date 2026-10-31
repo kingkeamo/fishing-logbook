@@ -14,10 +14,11 @@ Always read these workflow rules:
 Read the applicable technical rules based on the files being changed:
 
 - C# and application code: `csharp.md`, `cqrs.md`, `exception-logging.md`
+- Native MAUI / Mobile: `maui.md` (plus `csharp.md` style and `testing-csharp.md`)
 - Database and persistence: `database.md`
 - Blazor/web code: `blazor.md`
 - Terraform/infrastructure: `terraform.md`
-- Tests: `testing-csharp.md` and/or `testing-blazor.md`
+- Tests: `testing-csharp.md` and/or `testing-blazor.md`; Mobile tests also follow `maui.md`
 
 Resolve all paths above relative to `.claude/rules/`. Never expose, copy, log,
 or commit credentials. Treat local settings, environment files, tokens, and
