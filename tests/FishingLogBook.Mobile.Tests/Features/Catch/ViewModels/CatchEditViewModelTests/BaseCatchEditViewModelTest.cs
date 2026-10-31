@@ -29,6 +29,7 @@ public abstract class BaseCatchEditViewModelTest
     protected IAnglerPreferencesService MockPreferences { get; } = Substitute.For<IAnglerPreferencesService>();
     protected IAccountUnitsService MockUnits { get; } = Substitute.For<IAccountUnitsService>();
     protected IDeviceLocationService MockLocation { get; } = Substitute.For<IDeviceLocationService>();
+    protected IPhotographCollectionEditorService MockPhotographEditor { get; } = Substitute.For<IPhotographCollectionEditorService>();
     protected CatchEditViewModel Sut { get; }
 
     protected BaseCatchEditViewModelTest()
@@ -37,10 +38,12 @@ public abstract class BaseCatchEditViewModelTest
         MockUnits.GetAsync(Arg.Any<CancellationToken>()).Returns(MeasurementUnitsModel.Default);
         MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns((FishingLogBook.Mobile.Features.Profile.Models.AnglerPreferencesModel?)null);
         MockCatchStore.ListAsync(Arg.Any<CancellationToken>()).Returns([]);
-        var photographEditor = new PhotographCollectionEditorViewModel(
-            Substitute.For<IPhotographCollectionEditorService>(),
-            Text);
-        Sut = new CatchEditViewModel(
+        Sut = CreateSut();
+    }
+
+    protected CatchEditViewModel CreateSut(IMeasurementService? measurement = null)
+    {
+        return new CatchEditViewModel(
             MockCatchStore,
             MockSessionCoordinator,
             MockPreferences,
@@ -48,9 +51,9 @@ public abstract class BaseCatchEditViewModelTest
             new CatchPhotographSaveArgsMapper(),
             Substitute.For<IPhotographFileStore>(),
             MockLocation,
-            new MeasurementService(),
+            measurement ?? new MeasurementService(),
             MockUnits,
-            photographEditor,
+            new PhotographCollectionEditorViewModel(MockPhotographEditor, Text),
             new FixedTimeProvider(Now),
             Text);
     }

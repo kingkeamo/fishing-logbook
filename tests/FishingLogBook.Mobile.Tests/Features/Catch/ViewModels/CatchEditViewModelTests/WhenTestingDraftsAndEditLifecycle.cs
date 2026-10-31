@@ -2,7 +2,9 @@ using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.Tests.Support;
+using FishingLogBook.Shared.Dtos;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchEditViewModelTests;
@@ -103,6 +105,135 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
     }
 
     [Fact]
+    public async Task ItShouldTreatAnEmptyCatchIdAsANewCatch()
+    {
+        // Arrange
+        MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(TestAnglerPreferences.Create());
+
+        // Act
+        await Sut.InitializeAsync(Guid.Empty, CancellationToken.None);
+
+        // Assert
+        Sut.IsEditingSavedCatch.Should().BeFalse();
+        Sut.PageTitle.Should().Be(Text["RecordCatch"]);
+        await MockCatchStore.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldBindAnExistingCatchLocationWeightAndBait()
+    {
+        // Arrange
+        var catchId = Guid.Parse("99999999-9999-9999-9999-999999999999");
+        MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(
+                LocalCatchLifecycleEnum.Saved,
+                catchId,
+                notes: "bank",
+                photographId: Guid.NewGuid(),
+                bait: "nymph",
+                weight: 2.2,
+                length: 45,
+                location: new LocalCatchLocationModel
+                {
+                    Latitude = 53.4,
+                    Longitude = -6.2,
+                    Source = LocationDefaults.PhotoMetadata,
+                    Visibility = LocationDefaults.Private,
+                    ConsentVersion = LocationDefaults.ConsentVersion,
+                    CapturedOn = Now
+                }));
+
+        // Act
+        await Sut.InitializeAsync(catchId, CancellationToken.None);
+
+        // Assert
+        Sut.IsEditingSavedCatch.Should().BeTrue();
+        Sut.Notes.Should().Be("bank");
+        Sut.BaitOrLure.Should().Be("nymph");
+        Sut.WeightSummary.Should().Contain("2.2");
+        Sut.LengthSummary.Should().Contain("45");
+        Sut.HasLocation.Should().BeTrue();
+        Sut.LocationCaption.Should().Contain("53.4");
+    }
+
+    [Fact]
+    public async Task ItShouldRemoveAPhotoFromANewCatch()
+    {
+        // Arrange
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        var photoId = Guid.NewGuid();
+        Sut.Photographs.SetItems(
+        [
+            new PhotographEditorItemModel
+            {
+                Id = photoId,
+                SortOrder = 0,
+                PreviewPath = "a.jpg",
+                RelativeFilePath = "a.jpg",
+                ContentType = "image/jpeg"
+            }
+        ]);
+        Sut.CanRemovePhoto.Should().BeTrue();
+        MockPhotographEditor.Remove(Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(), photoId)
+            .Returns(PhotographEditorActionResultModel.Updated([]));
+
+        // Act
+        Sut.RemovePhoto(photoId);
+
+        // Assert
+        Sut.Photographs.Items.Should().BeEmpty();
+        Sut.ShowCaughtOn.Should().BeFalse();
+        Sut.CanSave.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldNotFlushAfterTheCatchIsSaved()
+    {
+        // Arrange
+        MockCatchStore.SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call => LocalCatchSaveResultModel.Saved(call.Arg<LocalCatchSaveArgs>().Id, 1));
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        Sut.Photographs.SetItems(
+        [
+            new PhotographEditorItemModel
+            {
+                Id = Guid.NewGuid(),
+                SortOrder = 0,
+                PreviewPath = "a.jpg",
+                RelativeFilePath = "a.jpg",
+                ContentType = "image/jpeg"
+            }
+        ]);
+        (await Sut.SaveAsync(CancellationToken.None)).Should().BeTrue();
+        MockCatchStore.ClearReceivedCalls();
+
+        // Act
+        await Sut.OnDisappearingAsync(CancellationToken.None);
+
+        // Assert
+        await MockCatchStore.DidNotReceive().SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotFlushAnInvalidSavedCatchOnDisappear()
+    {
+        // Arrange
+        var catchId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var photoId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, catchId, photographId: photoId));
+        await Sut.InitializeAsync(catchId, CancellationToken.None);
+        Sut.Notes = new string('n', 2001);
+        MockCatchStore.ClearReceivedCalls();
+
+        // Act
+        await Sut.OnDisappearingAsync(CancellationToken.None);
+
+        // Assert
+        await MockCatchStore.DidNotReceive().SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldApplyPreferredMethodAndSpeciesDefaults()
     {
         // Arrange
@@ -120,7 +251,11 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
         LocalCatchLifecycleEnum lifecycle,
         Guid id,
         string? notes = null,
-        Guid? photographId = null)
+        Guid? photographId = null,
+        string? bait = null,
+        double? weight = null,
+        double? length = null,
+        LocalCatchLocationModel? location = null)
     {
         var photographs = photographId is null
             ? Array.Empty<LocalCatchPhotographModel>()
@@ -147,6 +282,10 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
             CaughtOn = Now,
             SpeciesName = "Brown trout",
             Method = "Fly",
+            BaitOrLure = bait,
+            Weight = weight,
+            Length = length,
+            Location = location,
             Notes = notes,
             Revision = 1,
             Lifecycle = lifecycle,

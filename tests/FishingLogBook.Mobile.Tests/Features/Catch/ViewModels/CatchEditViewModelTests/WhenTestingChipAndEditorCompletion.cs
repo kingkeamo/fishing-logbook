@@ -1,7 +1,12 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
+using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Tests.Support;
+using FishingLogBook.Shared.Dtos;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchEditViewModelTests;
@@ -148,5 +153,130 @@ public sealed class WhenTestingChipAndEditorCompletion : BaseCatchEditViewModelT
 
         // Assert
         needsPicker.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldApplyTheDefaultSpeciesWhenTheMethodChangesAndSpeciesIsNotExplicit()
+    {
+        // Arrange
+        MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(TestAnglerPreferences.Create());
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        Sut.IsSpeciesSelected("Salmon").Should().BeTrue();
+
+        // Act
+        Sut.SelectMethod("Spinning");
+
+        // Assert
+        Sut.IsMethodSelected("Spinning").Should().BeTrue();
+        Sut.IsSpeciesSelected("Salmon").Should().BeFalse();
+        Sut.SpeciesOptions.Should().NotContain(option => option.IsSelected);
+    }
+
+    [Fact]
+    public async Task ItShouldKeepAnExplicitSpeciesWhenTheMethodChanges()
+    {
+        // Arrange
+        MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(TestAnglerPreferences.Create());
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        Sut.ChooseSpecies(CatchChipOptionModel.FromValue("Brown Trout"));
+
+        // Act
+        Sut.SelectMethod("Spinning");
+
+        // Assert
+        Sut.IsSpeciesSelected("Brown Trout").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ItShouldIgnoreSelectingTheSameMethodAgain()
+    {
+        // Arrange
+        MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(TestAnglerPreferences.Create());
+        await Sut.InitializeAsync(null, CancellationToken.None);
+
+        // Act
+        Sut.SelectMethod("Fly");
+
+        // Assert
+        Sut.IsMethodSelected("Fly").Should().BeTrue();
+        Sut.IsSpeciesSelected("Salmon").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ItShouldClearTheDefaultSpeciesWhenTheMethodNameIsEmpty()
+    {
+        // Arrange
+        MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(TestAnglerPreferences.Create());
+        await Sut.InitializeAsync(null, CancellationToken.None);
+
+        // Act
+        Sut.SelectMethod(string.Empty);
+
+        // Assert
+        Sut.IsMethodSelected("Fly").Should().BeFalse();
+        Sut.IsSpeciesSelected("Salmon").Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldSelectAMethodByPreferenceCode()
+    {
+        // Arrange
+        MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(
+            new AnglerPreferencesModel(
+                TestAnglerPreferences.Catalogue(),
+                new FishingPreferencesDto(
+                [
+                    new FishingMethodPreferenceDto(
+                        TestAnglerPreferences.FlyId,
+                        "fly-code",
+                        "Fly",
+                        true,
+                        [
+                            new FishingSpeciesPreferenceDto(
+                                TestAnglerPreferences.SalmonId,
+                                "Salmon",
+                                "Salmon",
+                                true)
+                        ])
+                ]),
+                TestAnglerPreferences.Locations()));
+        await Sut.InitializeAsync(null, CancellationToken.None);
+
+        // Act
+        Sut.SelectMethod("fly-code");
+
+        // Assert
+        Sut.IsMethodSelected("fly-code").Should().BeTrue();
+        Sut.IsSpeciesSelected("Salmon").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ItShouldIgnoreSpeciesSelectionAfterSave()
+    {
+        // Arrange
+        MockCatchStore.SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call => LocalCatchSaveResultModel.Saved(call.Arg<LocalCatchSaveArgs>().Id, 1));
+        MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(TestAnglerPreferences.Create());
+        await Sut.InitializeAsync(null, CancellationToken.None);
+        Sut.Photographs.SetItems(
+        [
+            new PhotographEditorItemModel
+            {
+                Id = Guid.NewGuid(),
+                SortOrder = 0,
+                PreviewPath = "a.jpg",
+                RelativeFilePath = "a.jpg",
+                ContentType = "image/jpeg"
+            }
+        ]);
+        (await Sut.SaveAsync(CancellationToken.None)).Should().BeTrue();
+
+        // Act
+        Sut.SelectSpecies("Brown Trout");
+        Sut.SelectMethod("Spinning");
+
+        // Assert
+        Sut.IsSpeciesSelected("Salmon").Should().BeTrue();
+        Sut.IsMethodSelected("Fly").Should().BeTrue();
     }
 }
