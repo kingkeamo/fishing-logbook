@@ -7,28 +7,27 @@
                x:Class="FishingLogBook.Mobile.Features.Measurements.Popups.MeasurementEditorPopup"
                x:TypeArguments="x:Boolean" x:DataType="vm:MeasurementEditorViewModel"
                Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
-  <Border x:Name="Sheet" StrokeThickness="0" Padding="0" HorizontalOptions="Fill"
+  <Border x:Name="Sheet" StrokeThickness="0" Padding="0" HorizontalOptions="Fill" VerticalOptions="End"
           BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
     <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
-    <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="Container">
-      <Grid Padding="20,8,8,4" ColumnDefinitions="*,48" RowDefinitions="Auto,48">
+    <VerticalStackLayout Spacing="0" SafeAreaEdges="Container" VerticalOptions="End">
+      <Grid Padding="20,8,8,0" ColumnDefinitions="*,48" RowDefinitions="Auto,48">
         <BoxView Grid.ColumnSpan="2" WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center"
                  Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
         <Label Grid.Row="1" Text="{Binding Title}" Style="{StaticResource Heading}" FontSize="20" VerticalOptions="Center"
                SemanticProperties.HeadingLevel="Level1" AutomationId="MeasurementEditorTitle" />
-        <Button Grid.Row="1" Grid.Column="1" Text="×" Clicked="OnCancel" Style="{StaticResource SecondaryButton}" Padding="0"
+        <Button Grid.Row="1" Grid.Column="1" Text="×" Clicked="OnDismiss" Style="{StaticResource SecondaryButton}" Padding="0"
                 SemanticProperties.Description="{Binding Text[Cancel]}" AutomationId="MeasurementEditorClose" />
       </Grid>
-      <ScrollView Grid.Row="1">
-        <VerticalStackLayout Padding="20,4,20,8">
-          <controls:MeasurementEditorView x:Name="Editor" />
-        </VerticalStackLayout>
-      </ScrollView>
-      <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12" Padding="20,8,20,16">
-        <Button Text="{Binding Text[Cancel]}" Clicked="OnCancel" Style="{StaticResource SecondaryButton}"
-                AutomationId="MeasurementEditorCancel" />
-        <Button Grid.Column="1" Text="{Binding Text[Done]}" Clicked="OnDone" AutomationId="MeasurementEditorDone" />
+      <VerticalStackLayout Padding="20,0,20,0">
+        <controls:MeasurementEditorView x:Name="Editor" />
+      </VerticalStackLayout>
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Padding="20,8,20,16">
+        <Button Text="{Binding Text[MeasureClear]}" Style="{StaticResource DestructiveButton}" Clicked="OnClear"
+                AutomationId="MeasurementEditorClear" />
+        <Button Grid.Column="1" Text="{Binding Text[MeasureApply]}" Clicked="OnApply"
+                AutomationId="MeasurementEditorApply" />
       </Grid>
-    </Grid>
+    </VerticalStackLayout>
   </Border>
 </toolkit:Popup>

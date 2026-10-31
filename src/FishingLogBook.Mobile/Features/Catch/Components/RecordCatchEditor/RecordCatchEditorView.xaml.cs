@@ -29,18 +29,10 @@ public partial class RecordCatchEditorView : ContentView
             return;
         }
 
-        if (string.Equals(option.Code, CatchEditViewModel.MoreOptionCode, StringComparison.Ordinal))
+        if (Editor.ChooseMethod(option))
         {
-            var result = await ShowPickerAsync(Editor.CreateMethodPicker());
-            if (result is not null)
-            {
-                Editor.ApplyMethodPicker(result);
-            }
-
-            return;
+            Editor.CompleteMethodPicker(await ShowPickerAsync(Editor.CreateMethodPicker()));
         }
-
-        Editor.SelectMethod(option.Name);
     }
 
     private async void OnSpeciesChip(object? sender, EventArgs args)
@@ -50,18 +42,10 @@ public partial class RecordCatchEditorView : ContentView
             return;
         }
 
-        if (string.Equals(option.Code, CatchEditViewModel.MoreOptionCode, StringComparison.Ordinal))
+        if (Editor.ChooseSpecies(option))
         {
-            var result = await ShowPickerAsync(Editor.CreateSpeciesPicker());
-            if (result is not null)
-            {
-                Editor.ApplySpeciesPicker(result);
-            }
-
-            return;
+            Editor.CompleteSpeciesPicker(await ShowPickerAsync(Editor.CreateSpeciesPicker()));
         }
-
-        Editor.SelectSpecies(option.Name);
     }
 
     private async void OnCaptureLocation(object? sender, EventArgs args)
@@ -76,12 +60,12 @@ public partial class RecordCatchEditorView : ContentView
 
     private async void OnEditWeight(object? sender, EventArgs args)
     {
-        await EditMeasurementAsync(Editor?.CreateWeightEditor(), editor => Editor?.ApplyWeightEditor(editor));
+        await EditMeasurementAsync(Editor?.CreateWeightEditor(), (applied, editor) => Editor?.CompleteWeightEdit(applied, editor));
     }
 
     private async void OnEditLength(object? sender, EventArgs args)
     {
-        await EditMeasurementAsync(Editor?.CreateLengthEditor(), editor => Editor?.ApplyLengthEditor(editor));
+        await EditMeasurementAsync(Editor?.CreateLengthEditor(), (applied, editor) => Editor?.CompleteLengthEdit(applied, editor));
     }
 
     private async void OnSave(object? sender, EventArgs args)
@@ -99,18 +83,15 @@ public partial class RecordCatchEditorView : ContentView
 
     private async Task EditMeasurementAsync(
         MeasurementEditorViewModel? editor,
-        Action<MeasurementEditorViewModel>? apply)
+        Action<bool, MeasurementEditorViewModel> complete)
     {
         var page = FindPage();
-        if (page is null || editor is null || apply is null)
+        if (page is null || editor is null)
         {
             return;
         }
 
-        if (await MeasurementEditorPopup.ShowAsync(page, editor))
-        {
-            apply(editor);
-        }
+        complete(await MeasurementEditorPopup.ShowAsync(page, editor), editor);
     }
 
     private async Task<CataloguePickerResultModel?> ShowPickerAsync(CataloguePickerViewModel picker)

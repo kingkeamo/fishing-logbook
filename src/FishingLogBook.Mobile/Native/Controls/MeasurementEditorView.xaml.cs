@@ -63,6 +63,15 @@ public partial class MeasurementEditorView : ContentView
         }
     }
 
+    protected override void OnBindingContextChanged()
+    {
+        base.OnBindingContextChanged();
+        if (ViewModel is not null && !ReferenceEquals(BindingContext, ViewModel))
+        {
+            BindingContext = ViewModel;
+        }
+    }
+
     private static void OnReduceMotionChanged(BindableObject bindable, object oldValue, object newValue)
     {
         ((MeasurementEditorView)bindable).MeasureVisual.ReduceMotion = (bool)newValue;
@@ -71,6 +80,19 @@ public partial class MeasurementEditorView : ContentView
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
         Refresh();
+    }
+
+    public string PendingExactText => ExactEntry.Text ?? string.Empty;
+
+    public string PendingPoundsText => PoundsEntry.Text ?? string.Empty;
+
+    public string PendingOuncesText => OuncesEntry.Text ?? string.Empty;
+
+    public void ResignFocus()
+    {
+        ExactEntry.Unfocus();
+        PoundsEntry.Unfocus();
+        OuncesEntry.Unfocus();
     }
 
     private void OnThemeChanged(object? sender, AppThemeChangedEventArgs args)
@@ -100,20 +122,41 @@ public partial class MeasurementEditorView : ContentView
         }
 
         _syncing = true;
-        ValueSlider.Maximum = (double)vm.SliderMaximum;
-        ValueSlider.Value = (double)vm.SliderValue;
-        SetEntryText(ExactEntry, vm.ExactText);
-        SetEntryText(PoundsEntry, vm.Pounds.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        SetEntryText(OuncesEntry, vm.Ounces.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        ResignFocus();
+        var maximum = (double)vm.SliderMaximum;
+        var sliderValue = (double)vm.SliderValue;
+        if (Math.Abs(ValueSlider.Maximum - maximum) > 0.0001)
+        {
+            ValueSlider.Maximum = maximum;
+        }
+
+        // Avoid rewriting the thumb during an in-progress drag (prevents feedback loops on Android).
+        if (Math.Abs(ValueSlider.Value - sliderValue) > 0.0001)
+        {
+            ValueSlider.Value = sliderValue;
+        }
+
+        // Force sync from the view-model so Clear / ± / slider update even while an Entry still has focus.
+        SetEntryText(ExactEntry, vm.ExactText, force: true);
+        SetEntryText(PoundsEntry, vm.Pounds.ToString(System.Globalization.CultureInfo.InvariantCulture), force: true);
+        SetEntryText(OuncesEntry, vm.Ounces.ToString(System.Globalization.CultureInfo.InvariantCulture), force: true);
         RebuildRanges(vm);
         _syncing = false;
     }
 
-    private static void SetEntryText(Entry entry, string text)
+    private static void SetEntryText(Entry entry, string text, bool force)
     {
-        if (!entry.IsFocused && entry.Text != text)
+        var next = text ?? string.Empty;
+        if (!force && entry.IsFocused)
         {
-            entry.Text = text;
+            return;
+        }
+
+        entry.Text = next;
+        if (force)
+        {
+            // Android can keep a stale native EditText after PropertyChanged; push the handler again.
+            entry.Handler?.UpdateValue(nameof(Entry.Text));
         }
     }
 
@@ -218,41 +261,60 @@ public partial class MeasurementEditorView : ContentView
 
     private void OnSliderChanged(object? sender, ValueChangedEventArgs args)
     {
-        if (!_syncing)
+        if (_syncing)
         {
-            ViewModel?.SetSliderValue((decimal)args.NewValue);
+            return;
         }
+
+        ViewModel?.SetSliderValue((decimal)args.NewValue);
     }
 
     private void OnDecrease(object? sender, EventArgs args)
     {
-        ViewModel?.Decrease();
+        var exact = PendingExactText;
+        var pounds = PendingPoundsText;
+        var ounces = PendingOuncesText;
+        ResignFocus();
+        ViewModel?.Decrease(exact, pounds, ounces);
     }
 
     private void OnIncrease(object? sender, EventArgs args)
     {
-        ViewModel?.Increase();
+        var exact = PendingExactText;
+        var pounds = PendingPoundsText;
+        var ounces = PendingOuncesText;
+        ResignFocus();
+        ViewModel?.Increase(exact, pounds, ounces);
     }
 
     private void OnExactCommitted(object? sender, EventArgs args)
     {
-        ViewModel?.SetExactText(ExactEntry.Text);
+        if (_syncing)
+        {
+            return;
+        }
+
+        ViewModel?.CommitInputUnlessSuperseded(ExactEntry.Text, null, null);
     }
 
     private void OnPoundsCommitted(object? sender, EventArgs args)
     {
-        if (ViewModel is { } vm && int.TryParse(PoundsEntry.Text, out var pounds))
+        if (_syncing)
         {
-            vm.SetPounds(pounds);
+            return;
         }
+
+        ViewModel?.CommitInputUnlessSuperseded(null, PoundsEntry.Text, OuncesEntry.Text);
     }
 
     private void OnOuncesCommitted(object? sender, EventArgs args)
     {
-        if (ViewModel is { } vm && int.TryParse(OuncesEntry.Text, out var ounces))
+        if (_syncing)
         {
-            vm.SetOunces(ounces);
+            return;
         }
+
+        ViewModel?.CommitInputUnlessSuperseded(null, PoundsEntry.Text, OuncesEntry.Text);
     }
 
     private sealed class FishGlyphDrawable(Color body, Color eye) : IDrawable

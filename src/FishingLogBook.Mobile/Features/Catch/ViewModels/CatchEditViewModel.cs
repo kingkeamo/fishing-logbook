@@ -372,6 +372,72 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         SelectSpecies(chosen.Name);
     }
 
+    public bool ChooseMethod(CatchChipOptionModel? option)
+    {
+        return ChooseChip(option, SelectMethod);
+    }
+
+    public bool ChooseSpecies(CatchChipOptionModel? option)
+    {
+        return ChooseChip(option, SelectSpecies);
+    }
+
+    public void CompleteMethodPicker(CataloguePickerResultModel? result)
+    {
+        if (result is null)
+        {
+            return;
+        }
+
+        ApplyMethodPicker(result);
+    }
+
+    public void CompleteSpeciesPicker(CataloguePickerResultModel? result)
+    {
+        if (result is null)
+        {
+            return;
+        }
+
+        ApplySpeciesPicker(result);
+    }
+
+    public void CompleteWeightEdit(bool applied, MeasurementEditorViewModel editor)
+    {
+        if (!applied)
+        {
+            return;
+        }
+
+        ApplyWeightEditor(editor);
+    }
+
+    public void CompleteLengthEdit(bool applied, MeasurementEditorViewModel editor)
+    {
+        if (!applied)
+        {
+            return;
+        }
+
+        ApplyLengthEditor(editor);
+    }
+
+    private bool ChooseChip(CatchChipOptionModel? option, Action<string> select)
+    {
+        if (option is null)
+        {
+            return false;
+        }
+
+        if (string.Equals(option.Code, MoreOptionCode, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        select(option.Name);
+        return false;
+    }
+
     public bool CanRemovePhoto => !IsEditingSavedCatch || Photographs.Items.Count > 1;
 
     public async Task InitializeAsync(Guid? existingCatchId, CancellationToken cancellationToken)
