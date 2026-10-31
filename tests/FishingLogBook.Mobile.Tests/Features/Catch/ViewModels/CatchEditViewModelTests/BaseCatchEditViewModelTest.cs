@@ -2,6 +2,7 @@ using System.Globalization;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Onboarding.Services;
 using FishingLogBook.Mobile.Features.Photographs.Mappers;
@@ -57,6 +58,8 @@ public abstract class BaseCatchEditViewModelTest
             MockUnits,
             new PhotographCollectionEditorViewModel(MockPhotographEditor, Text),
             clock ?? new FixedTimeProvider(Now),
-            Text);
+            Text,
+            Substitute.For<ICatchWorkingCopyService>(),
+            new ActiveCatchEditRegistry());
     }
 }

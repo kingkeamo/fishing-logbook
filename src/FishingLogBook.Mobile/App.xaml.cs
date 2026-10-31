@@ -3,6 +3,7 @@ using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Onboarding.Pages;
 using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Mobile.Features.Startup.Pages;
@@ -16,6 +17,7 @@ public partial class App : Application
     private readonly IAuthenticationService _authenticationService;
     private readonly ISessionLifecycleCoordinator _sessionLifecycle;
     private readonly IOutboxSyncCoordinator _syncCoordinator;
+    private readonly ILocalCatchCleanupService _cleanup;
     private Window? _window;
 
     public App(
@@ -23,6 +25,7 @@ public partial class App : Application
         IAuthenticationService authenticationService,
         ISessionLifecycleCoordinator sessionLifecycle,
         IOutboxSyncCoordinator syncCoordinator,
+        ILocalCatchCleanupService cleanup,
         IServiceProvider services)
     {
         InitializeComponent();
@@ -30,6 +33,7 @@ public partial class App : Application
         _authenticationService = authenticationService;
         _sessionLifecycle = sessionLifecycle;
         _syncCoordinator = syncCoordinator;
+        _cleanup = cleanup;
         _services = services;
         _authenticationService.SessionChanged += OnSessionChanged;
         _sessionLifecycle.StateChanged += OnLifecycleStateChanged;
@@ -41,6 +45,7 @@ public partial class App : Application
         _window = new Window(_services.GetRequiredService<StartupPage>());
         _sessionLifecycle.Start();
         _syncCoordinator.Start();
+        _cleanup.Start();
         _window.Resumed += OnResumed;
         _window.Stopped += OnStopped;
         _window.Destroying += OnDestroying;

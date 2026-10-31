@@ -62,6 +62,12 @@
      </Grid>
     </Grid>
     <CollectionView Grid.Row="3" ItemsSource="{Binding Groups}" IsGrouped="True" SelectionMode="None" AutomationId="CatchList">
+     <CollectionView.Header><Border Style="{StaticResource Card}" IsVisible="{Binding HasRemoteNotice}" Padding="12" Margin="0,8,0,0">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+       <Label Text="{Binding RemoteNotice}" Style="{StaticResource SecondaryText}" VerticalOptions="Center" AutomationId="CatchRemoteNotice" />
+       <Button Grid.Column="1" Text="{Binding Text[CatchRemoteRetry]}" Style="{StaticResource SecondaryButton}" Clicked="OnRetry" AutomationId="CatchRemoteRetry" />
+      </Grid>
+     </Border></CollectionView.Header>
      <CollectionView.GroupHeaderTemplate><DataTemplate x:DataType="models:CatchGroupModel">
       <Grid ColumnDefinitions="*,Auto" Padding="0,14,0,8">
        <Label Text="{Binding Header}" Style="{StaticResource SectionTitle}" FontSize="14" />

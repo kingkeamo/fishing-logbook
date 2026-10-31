@@ -14,4 +14,6 @@ public interface IPhotographFileStore
         CancellationToken cancellationToken);
 
     bool TryResolveRelativePath(Guid userId, string relativeFilePath, out string absolutePath);
+
+    bool TryDelete(Guid userId, string relativeFilePath);
 }

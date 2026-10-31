@@ -325,7 +325,15 @@
   <data name="EditCatch" xml:space="preserve"><value>Modifier la prise</value></data>
   <data name="CaughtOnLabel" xml:space="preserve"><value>Prise le</value></data>
   <data name="CatchBaitOrLure" xml:space="preserve"><value>Appât ou leurre</value></data>
-  <data name="CatchSavedLocally" xml:space="preserve"><value>EnregistrÃ©e localement sur cet appareil.</value></data>
+  <data name="CatchSavedLocally" xml:space="preserve"><value>EnregistrÃÂ©e localement sur cet appareil.</value></data>
+  <data name="CatchDraftStatus" xml:space="preserve"><value>Brouillon. Pas encore enregistré.</value></data>
+  <data name="CatchRemoteOffline" xml:space="preserve"><value>Vous êtes hors ligne. Seules les prises stockées sur cet appareil sont affichées.</value></data>
+  <data name="CatchRemoteUnavailable" xml:space="preserve"><value>Impossible de joindre le serveur. Seules les prises stockées sur cet appareil sont affichées.</value></data>
+  <data name="CatchRemoteSessionExpired" xml:space="preserve"><value>Reconnectez-vous pour charger vos prises enregistrées. Seules les prises stockées sur cet appareil sont affichées.</value></data>
+  <data name="CatchRemoteRetry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="CatchEditNeedsConnection" xml:space="preserve"><value>Connectez-vous à Internet pour modifier une prise enregistrée.</value></data>
+  <data name="CatchEditNotSupported" xml:space="preserve"><value>Cette prise a été enregistrée par quelqu’un d’autre et ne peut pas encore être modifiée ici.</value></data>
+  <data name="CatchEditPhotosUnavailable" xml:space="preserve"><value>Impossible de charger les photos de cette prise. Réessayez avec une meilleure connexion.</value></data>
   <data name="CatchSyncWaiting" xml:space="preserve"><value>En attente de synchronisation.</value></data>
   <data name="CatchSyncSynchronising" xml:space="preserve"><value>Synchronisation en cours…</value></data>
   <data name="CatchSyncSynced" xml:space="preserve"><value>Synchronisée.</value></data>

@@ -37,7 +37,7 @@ public sealed class WhenTestingMigrateFromSchemaVersionTwo : BaseSqliteMigratorT
 
         // Assert
         await using var connection = await ConnectionFactory.OpenAsync(CancellationToken.None);
-        (await ScalarAsync(connection, "SELECT version FROM schemainfo;")).Should().Be(3);
+        (await ScalarAsync(connection, "SELECT version FROM schemainfo;")).Should().Be(4);
 
         await using var row = connection.CreateCommand();
         row.CommandText =

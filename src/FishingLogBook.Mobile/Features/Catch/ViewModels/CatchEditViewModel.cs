@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
+using FishingLogBook.Mobile.Features.Catch.Enums;
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
@@ -32,6 +34,10 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     private static readonly TimeSpan DraftDebounce = TimeSpan.FromMilliseconds(1500);
 
     private readonly ICatchStore _catchStore;
+    private readonly ICatchWorkingCopyService _workingCopy;
+    private readonly IActiveCatchEditRegistry _activeEdits;
+    private IDisposable? _activeEdit;
+    private bool _editBlocked;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly IAnglerPreferencesService _preferences;
     private readonly ICatchPhotographProposalService _proposalService;
@@ -82,9 +88,13 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         IAccountUnitsService units,
         PhotographCollectionEditorViewModel photographs,
         TimeProvider clock,
-        UiTextService text)
+        UiTextService text,
+        ICatchWorkingCopyService workingCopy,
+        IActiveCatchEditRegistry activeEdits)
     {
         _catchStore = catchStore;
+        _workingCopy = workingCopy;
+        _activeEdits = activeEdits;
         _sessionCoordinator = sessionCoordinator;
         _preferences = preferences;
         _proposalService = proposalService;
@@ -153,7 +163,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public bool IsCatalogueUnavailable =>
         _preferencesModel is null || _preferencesModel.Catalogue.Methods.Count == 0;
 
-    public bool CanInteract => !IsLoading && !NotSignedIn && !IsSaved;
+    public bool CanInteract => !IsLoading && !NotSignedIn && !IsSaved && !_editBlocked;
 
     public bool CanSave =>
         CanInteract
@@ -443,6 +453,9 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task InitializeAsync(Guid? existingCatchId, CancellationToken cancellationToken)
     {
+        _editBlocked = false;
+        _activeEdit?.Dispose();
+        _activeEdit = null;
         IsLoading = true;
         _validationKey = null;
         _statusKey = null;
@@ -592,6 +605,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         }
 
         _disposed = true;
+        _activeEdit?.Dispose();
         Photographs.ItemsChanged -= OnPhotographsChanged;
         Photographs.UseDetailsRequested -= OnUsePhotographDetails;
         Photographs.Dispose();
@@ -624,18 +638,46 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     private async Task LoadExistingAsync(Guid catchId, CancellationToken cancellationToken)
     {
+        _activeEdit?.Dispose();
+        _activeEdit = _activeEdits.Acquire(catchId);
         var record = await _catchStore.GetAsync(catchId, cancellationToken);
         if (record is null)
         {
-            _validationKey = "CatchEditNotFound";
-            NotifyValidation();
-            return;
+            var outcome = await _workingCopy.EnsureAsync(catchId, cancellationToken);
+            record = outcome == WorkingCopyOutcomeEnum.Ready
+                ? await _catchStore.GetAsync(catchId, cancellationToken)
+                : null;
+            if (record is null)
+            {
+                BlockEdit(BlockedKey(outcome));
+                return;
+            }
         }
 
         IsEditingSavedCatch = record.Lifecycle == LocalCatchLifecycleEnum.Saved;
         Photographs.MinimumCount = IsEditingSavedCatch ? 1 : 0;
         _catchId = record.Id;
         await BindRecordAsync(record, cancellationToken);
+    }
+
+    private void BlockEdit(string validationKey)
+    {
+        _editBlocked = true;
+        _validationKey = validationKey;
+        _activeEdit?.Dispose();
+        _activeEdit = null;
+        NotifyValidation();
+    }
+
+    private static string BlockedKey(WorkingCopyOutcomeEnum outcome)
+    {
+        return outcome switch
+        {
+            WorkingCopyOutcomeEnum.NeedsConnection => "CatchEditNeedsConnection",
+            WorkingCopyOutcomeEnum.NotEditable => "CatchEditNotSupported",
+            WorkingCopyOutcomeEnum.PhotosUnavailable => "CatchEditPhotosUnavailable",
+            _ => "CatchEditNotFound"
+        };
     }
 
     private async Task BindRecordAsync(LocalCatchRecordModel record, CancellationToken cancellationToken)
@@ -864,7 +906,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     private void ScheduleDraftSave()
     {
-        if (_validationKey != "CatchEditNotFound")
+        if (!_editBlocked)
         {
             _validationKey = null;
         }

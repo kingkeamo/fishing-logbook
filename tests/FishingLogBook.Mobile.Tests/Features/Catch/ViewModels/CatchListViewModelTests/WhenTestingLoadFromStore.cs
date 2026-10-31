@@ -20,7 +20,7 @@ public class WhenTestingLoadFromStore : BaseCatchListViewModelTest
     }
 
     [Fact]
-    public async Task ItShouldExcludeDraftCatchesFromTheJournal()
+    public async Task ItShouldShowLocalDraftsWithADraftStatus()
     {
         // Arrange
         var draft = CreateRecord(LocalCatchLifecycleEnum.Draft);
@@ -28,8 +28,10 @@ public class WhenTestingLoadFromStore : BaseCatchListViewModelTest
         // Act
         await Sut.LoadUnitsAsync(CancellationToken.None);
         // Assert
-        Sut.IsEmptyJournal.Should().BeTrue();
-        Sut.Catches.Should().BeEmpty();
+        Sut.IsEmptyJournal.Should().BeFalse();
+        var item = Sut.Catches.Should().ContainSingle().Subject;
+        item.IsDraft.Should().BeTrue();
+        item.SaveStatus.Should().Be(Text["CatchDraftStatus"]);
     }
 
     [Fact]

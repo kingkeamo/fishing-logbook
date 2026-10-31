@@ -14,7 +14,9 @@ public sealed class CatchPresentationModel(
     IReadOnlyList<string>? photos = null,
     SampleCatchTextModel? sampleText = null,
     bool savedLocally = false,
-    CatchSyncStatusModel? syncStatus = null) : INotifyPropertyChanged
+    CatchSyncStatusModel? syncStatus = null,
+    bool isRemote = false,
+    bool isDraft = false) : INotifyPropertyChanged
 {
     private static readonly IMeasurementService DefaultMeasurement = new MeasurementService();
     private IReadOnlyList<CatchPhotoThumbnailModel>? _thumbnails;
@@ -38,7 +40,9 @@ public sealed class CatchPresentationModel(
     public string Measurements => string.Join(" · ", new[] { catchDto.Weight.HasValue ? Weight : null, catchDto.Length.HasValue ? Length : null }.Where(value => value is not null));
     public string CardDescription => string.Join(", ", new[] { OpenDescription, HasMethod ? Method : null, HasMeasurements ? Measurements : null, HasSaveStatus ? SaveStatus : null }.Where(value => value is not null));
     public bool HasSaveStatus => savedLocally;
-    public string SaveStatus => savedLocally ? DescribeSaveStatus() : string.Empty;
+    public bool IsRemote => isRemote;
+    public bool IsDraft => isDraft;
+    public string SaveStatus => isDraft ? Text["CatchDraftStatus"] : savedLocally ? DescribeSaveStatus() : string.Empty;
     public CatchSyncStateEnum SyncState => _syncStatus?.State ?? CatchSyncStateEnum.WaitingToSync;
     public bool CanRetrySync => _syncStatus?.CanRetry == true;
     public string Weight => FormatWeight();

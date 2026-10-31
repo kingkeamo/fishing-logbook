@@ -129,6 +129,29 @@ public sealed class PhotographFileStore(
         return null;
     }
 
+    public bool TryDelete(Guid userId, string relativeFilePath)
+    {
+        if (!TryResolveRelativePath(userId, relativeFilePath, out var absolutePath))
+        {
+            return true;
+        }
+
+        try
+        {
+            if (fileSystem.FileExists(absolutePath))
+            {
+                fileSystem.DeleteFile(absolutePath);
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Durable photograph delete failed for user {UserId}.", userId);
+            return false;
+        }
+    }
+
     private static string NormalizeRelativePath(string relativeFilePath)
     {
         return relativeFilePath.Replace('\\', '/');

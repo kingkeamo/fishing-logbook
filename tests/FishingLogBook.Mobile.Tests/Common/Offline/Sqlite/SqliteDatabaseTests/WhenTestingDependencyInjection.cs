@@ -54,6 +54,9 @@ public sealed class WhenTestingDependencyInjection : IDisposable
         services.AddSingleton(Substitute.For<ICatchSyncStatusStore>());
         services.AddSingleton(Microsoft.Extensions.Logging.Abstractions.NullLogger<CatchListViewModel>.Instance);
         services.AddSingleton<ICatchStore, SqliteCatchStore>();
+        services.AddSingleton(Substitute.For<FishingLogBook.Mobile.Features.Catch.Clients.ICatchRemoteClient>());
+        services.AddSingleton(Substitute.For<FishingLogBook.Mobile.Features.Profile.Services.IConnectivityService>());
+        services.AddSingleton<FishingLogBook.Mobile.Features.Catch.Services.ICatchHistoryService, FishingLogBook.Mobile.Features.Catch.Services.CatchHistoryService>();
         services.AddSingleton(new UiTextService(CultureInfo.GetCultureInfo("en-GB")));
         services.AddSingleton(Substitute.For<IPhotographFileStore>());
         services.AddSingleton<CatchPresentationMapper>();

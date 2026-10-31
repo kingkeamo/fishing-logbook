@@ -76,9 +76,9 @@ public partial class CatchSummaryPage : ContentPage
         await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit);
     }
 
-    private void OnRetry(object? sender, EventArgs args)
+    private async void OnRetry(object? sender, EventArgs args)
     {
-        _viewModel.SetState(ContentStateEnum.Ready);
+        await _viewModel.LoadUnitsAsync(CancellationToken.None);
     }
 
     private async void OnOpenCatch(object? sender, EventArgs args)

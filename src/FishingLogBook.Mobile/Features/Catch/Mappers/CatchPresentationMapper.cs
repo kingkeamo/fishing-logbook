@@ -1,4 +1,5 @@
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Localization;
@@ -45,6 +46,36 @@ public sealed class CatchPresentationMapper(IPhotographFileStore photographFileS
                     record.Location.Visibility,
                     record.Location.ConsentVersion)
         };
-        return new CatchPresentationModel(dto, text, photos, savedLocally: true, syncStatus: syncStatus);
+        return new CatchPresentationModel(
+            dto,
+            text,
+            photos,
+            savedLocally: true,
+            syncStatus: syncStatus,
+            isDraft: record.Lifecycle == LocalCatchLifecycleEnum.Draft);
+    }
+
+    public CatchPresentationModel MapRemote(CatchViewDto view, UiTextService text)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        ArgumentNullException.ThrowIfNull(text);
+        var photos = view.Photographs
+            .Where(photograph => !string.IsNullOrWhiteSpace(photograph.Url))
+            .Select(photograph => photograph.Url!)
+            .ToArray();
+        var dto = new CatchDto(view.Id, view.CaughtOn, [])
+        {
+            CaughtByUserId = view.CaughtByUserId,
+            RecordedByUserId = view.RecordedByUserId,
+            TripId = view.TripId,
+            SpeciesName = view.SpeciesName,
+            Weight = view.Weight,
+            Length = view.Length,
+            Method = view.Method,
+            BaitOrLure = view.BaitOrLure,
+            Notes = view.Notes,
+            PlaceName = view.PlaceName
+        };
+        return new CatchPresentationModel(dto, text, photos, isRemote: true);
     }
 }

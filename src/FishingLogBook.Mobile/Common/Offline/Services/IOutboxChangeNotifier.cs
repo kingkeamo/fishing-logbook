@@ -6,7 +6,15 @@ public interface IOutboxChangeNotifier
 
     event EventHandler? StateChanged;
 
+    event EventHandler? SyncRunCompleted;
+
+    event EventHandler? CatchesChanged;
+
     void NotifyWorkEnqueued();
 
     void NotifyStateChanged();
+
+    void NotifySyncRunCompleted();
+
+    void NotifyCatchesChanged();
 }

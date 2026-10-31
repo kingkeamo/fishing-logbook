@@ -205,6 +205,7 @@ public sealed class OutboxSyncCoordinator : IOutboxSyncCoordinator, IDisposable
         {
             await ScheduleNextAttemptAsync(lease);
             _notifier.NotifyStateChanged();
+            _notifier.NotifySyncRunCompleted();
         }
     }
 
