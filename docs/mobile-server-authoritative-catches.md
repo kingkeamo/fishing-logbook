@@ -85,6 +85,6 @@ delete is recovered from the queue on the next run, with no network needed.
 
 The native detail/list mapper now describes an existing private/public/approximate/venue location even when no place name was entered; it respects the server's exposure mode and does not publish precise coordinates in list summaries. The editor preserves place name, source, accuracy, consent and visibility, and adding another photo does not overwrite a saved location. Explicit device capture or use-photo-details remains the way to replace it.
 
-The location row uses the existing pin icon, a wrapping caption and a right-aligned action. Capture shows progress, prevents repeated requests, and reports success, permission denial or timeout beside the action. Captured coordinates become durable only on explicit Save for an existing catch. New-catch draft behaviour remains unchanged.
+The location row uses the existing pin icon, a wrapping caption and a right-aligned action. Capture shows progress, prevents repeated requests, and reports permission denial or timeout beside the action. Success updates the existing caption and action without another confirmation label. Captured coordinates become durable only on explicit Save for an existing catch. New-catch draft behaviour remains unchanged.
 
 Permission declarations are present in both the source Android manifest and generated build. The tested emulator had foreground precise and approximate permission already granted; that state correctly does not show another permission prompt. No physical device was connected.

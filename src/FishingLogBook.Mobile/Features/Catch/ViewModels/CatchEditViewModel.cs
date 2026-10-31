@@ -308,7 +308,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public bool IsCapturingLocation { get; private set; }
     public bool CanCaptureLocation => CanInteract && !IsSaving && !IsCapturingLocation;
     public bool HasLocationStatus => IsCapturingLocation || _locationStatusKey is not null;
-    public bool HasLocationError => !IsCapturingLocation && _locationStatusKey is not null && _locationStatusKey != "CatchLocationCaptured";
+    public bool HasLocationError => !IsCapturingLocation && _locationStatusKey is not null;
     public string LocationStatusText => IsCapturingLocation ? _text["CatchLocationCapturing"]
         : _locationStatusKey is null ? string.Empty : _text[_locationStatusKey];
     public string LocationActionText => IsCapturingLocation ? _text["CatchLocationCapturing"] :
@@ -599,7 +599,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             Visibility = LocationDefaults.Private,
             ConsentVersion = LocationDefaults.ConsentVersion
         };
-        _locationStatusKey = "CatchLocationCaptured";
+        _locationStatusKey = null;
         NotifyLocation();
         ScheduleDraftSave();
     }

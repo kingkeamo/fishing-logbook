@@ -40,7 +40,8 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         Sut.IsCapturingLocation.Should().BeFalse();
         Sut.CanCaptureLocation.Should().BeTrue();
         Sut.HasLocation.Should().BeTrue();
-        Sut.LocationStatusText.Should().Be(Text["CatchLocationCaptured"]);
+        Sut.HasLocationStatus.Should().BeFalse();
+        Sut.LocationStatusText.Should().BeEmpty();
         Sut.HasLocationError.Should().BeFalse();
         Sut.LocationActionText.Should().Be(Text["CatchUpdateLocation"]);
         changes.Should().Contain(nameof(Sut.IsCapturingLocation)).And.Contain(nameof(Sut.CanCaptureLocation))
@@ -83,7 +84,8 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         await Sut.CaptureLocationAsync(CancellationToken.None);
         // Assert
         Sut.HasStatus.Should().BeFalse();
-        Sut.LocationStatusText.Should().Be(Text["CatchLocationCaptured"]);
+        Sut.HasLocationStatus.Should().BeFalse();
+        Sut.LocationStatusText.Should().BeEmpty();
         Sut.HasLocationError.Should().BeFalse();
         await MockLocation.Received(2).CaptureCurrentAsync(Arg.Any<CancellationToken>());
     }

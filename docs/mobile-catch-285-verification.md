@@ -94,7 +94,8 @@ Remaining deliberate gaps:
 The same location failure was being assigned to both the location status and the form-wide
 status, and the inline label inherited muted body text. Location capture now updates only its
 own status. Its derived error state drives the existing light/dark danger colours; progress
-and success retain their normal styling. Form save status remains independent.
+retains its normal styling. Successful capture updates the existing location row and hides the
+status label. Form save status remains independent.
 
 Final Mobile validation: 1,301 passed; Android build: zero warnings/errors; scoped formatting
 verification and `git diff --check` passed. Tests cover each failure without a duplicate form
@@ -110,3 +111,19 @@ night mode restored to off after the check. No catch edit was saved during this 
 Self review: targeted behaviour, MAUI ownership/bindings, existing theme/localisation conventions,
 accessibility text and regression tests passed. Persistence, API and infrastructure are unchanged
 by this correction; the wider #285 validation gaps above remain unchanged.
+
+## Single privacy caption after capture
+
+Removed the additional successful-capture message and its unused EN/FR resources. After capture,
+privacy appears only in the existing pin/caption row, with the Update location action; progress
+and red failures still use the inline status when needed. No save or privacy policy changed.
+
+Final validation: 1,301 Mobile tests passed, Android build had zero warnings/errors, scoped
+formatting verification and `git diff --check` passed. Emulator-5554 received a synthetic test
+fix; UI inspection confirmed exactly one privacy caption, zero extra status labels and the
+Update location action. The temporary test providers were removed afterwards. No catch was
+saved during this presentation check, and coordinates were excluded from the evidence.
+
+Self review: requested copy/visibility behaviour, MVVM notifications, EN/FR resource consistency,
+failure/retry preservation and native rendering passed. API, persistence and infrastructure
+were unchanged; the previously documented wider #285 validation gaps remain.

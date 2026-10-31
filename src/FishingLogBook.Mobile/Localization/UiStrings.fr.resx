@@ -389,7 +389,6 @@
   <data name="CatchLocationHidden" xml:space="preserve"><value>Lieu non partagé</value></data>
   <data name="CatchLocationCoordinatesCaption" xml:space="preserve"><value>{0} · {1:F4}, {2:F4}</value></data>
   <data name="CatchLocationCapturing" xml:space="preserve"><value>Recherche de votre position…</value></data>
-  <data name="CatchLocationCaptured" xml:space="preserve"><value>Position capturée en privé. Enregistrez la prise pour la conserver.</value></data>
   <data name="CatchLocationPermissionDenied" xml:space="preserve"><value>L’accès à la position a été refusé. Autorisez-le puis réessayez.</value></data>
   <data name="CatchLocationPermissionBlocked" xml:space="preserve"><value>L’accès à la position est bloqué. Activez-le dans les paramètres Android de l’application puis réessayez.</value></data>
   <data name="CatchLocationTimedOut" xml:space="preserve"><value>Aucune position obtenue à temps. Vérifiez que la localisation est activée puis réessayez.</value></data>
