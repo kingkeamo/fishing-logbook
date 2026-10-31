@@ -181,8 +181,13 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         }
     }
 
-    private void Apply(PhotographEditorActionResultModel result)
+    private void Apply(PhotographEditorActionResultModel? result)
     {
+        if (result is null)
+        {
+            return;
+        }
+
         if (result.Outcome == PhotographPreparationOutcomeEnum.Prepared)
         {
             SetItems(result.Items);
