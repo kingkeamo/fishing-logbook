@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Views"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="FishingLogBook.Mobile.Features.Photographs.Views.PhotoCarouselView" x:Name="Root">
+  <VerticalStackLayout BindingContext="{x:Reference Root}" x:DataType="views:PhotoCarouselView" Spacing="8">
+    <Border StrokeThickness="0" Padding="0" BackgroundColor="{AppThemeBinding Light={StaticResource Canvas}, Dark={StaticResource DarkSurface}}">
+      <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+      <Image Source="{Binding PhotoPath}" Aspect="AspectFit" HeightRequest="240"
+             SemanticProperties.Description="{Binding PositionText}" AutomationId="PhotoCurrentPreview">
+        <Image.GestureRecognizers>
+          <SwipeGestureRecognizer Direction="Left" Swiped="OnNextRequested" />
+          <SwipeGestureRecognizer Direction="Right" Swiped="OnPreviousRequested" />
+        </Image.GestureRecognizers>
+      </Image>
+    </Border>
+    <Grid ColumnDefinitions="48,*,48,48" ColumnSpacing="4">
+      <Button Text="‹" Padding="0" FontSize="24" IsVisible="{Binding HasMultiplePhotographs}" Style="{StaticResource SecondaryButton}"
+              SemanticProperties.Description="{Binding Text[PhotoPrevious]}" Clicked="OnPreviousRequested" AutomationId="PhotoPrevious" />
+      <Label Grid.Column="1" Text="{Binding PositionText}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="Center" VerticalOptions="Center" AutomationId="PhotoPosition" />
+      <Button Grid.Column="2" Text="›" Padding="0" FontSize="24" IsVisible="{Binding HasMultiplePhotographs}" Style="{StaticResource SecondaryButton}"
+              SemanticProperties.Description="{Binding Text[PhotoNext]}" Clicked="OnNextRequested" AutomationId="PhotoNext" />
+      <ImageButton Grid.Column="3" Source="icon_trash.png" Padding="12" BackgroundColor="Transparent" MinimumHeightRequest="48"
+                   IsVisible="{Binding IsEditable}" IsEnabled="{Binding CanRemove}"
+                   SemanticProperties.Description="{Binding Text[DeletePhoto]}" Clicked="OnRemoveRequested" AutomationId="PhotoRemove">
+        <ImageButton.Behaviors>
+          <toolkit:IconTintColorBehavior TintColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+        </ImageButton.Behaviors>
+      </ImageButton>
+    </Grid>
+  </VerticalStackLayout>
+</ContentView>

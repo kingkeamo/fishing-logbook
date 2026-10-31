@@ -9,6 +9,26 @@ namespace FishingLogBook.Mobile.Tests.Features.Photographs.ViewModels.Photograph
 public sealed class WhenTestingChooseFromGallery : BasePhotographCollectionEditorViewModelTest
 {
     [Fact]
+    public async Task ItShouldRetainSuccessfullyPreparedPhotosAndShowAPartialSelectionError()
+    {
+        // Arrange
+        var added = Photo();
+        MockEditor.ChooseFromGalleryAsync(OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(), 10, Arg.Any<CancellationToken>())
+            .Returns(PhotographEditorActionResultModel.Unchanged([added], PhotographPreparationOutcomeEnum.UnsupportedContentType));
+
+        // Act
+        await Sut.ChooseFromGalleryAsync(CancellationToken.None);
+
+        // Assert
+        Sut.Items.Should().ContainSingle().Which.Should().BeSameAs(added);
+        Sut.CurrentPhotograph.Should().BeSameAs(added);
+        Sut.StatusText.Should().Be(Text["PhotoUnsupportedFormat"]);
+        await MockEditor.Received(1).ChooseFromGalleryAsync(OwnerUserId,
+            Arg.Is<IReadOnlyList<PhotographEditorItemModel>>(items => items.Count == 0), 10, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldNotCallTheEditorWhenTheUserIdIsMissing()
     {
         // Arrange

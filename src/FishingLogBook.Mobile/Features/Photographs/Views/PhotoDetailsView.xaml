@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Views"
+             x:Class="FishingLogBook.Mobile.Features.Photographs.Views.PhotoDetailsView" x:Name="Root">
+  <VerticalStackLayout BindingContext="{x:Reference Root}" x:DataType="views:PhotoDetailsView" Spacing="8">
+    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+      <Label Text="{Binding Text[CaughtOnLabel]}" Style="{StaticResource TileCaption}" />
+      <Label Grid.Column="1" Text="{Binding CapturedOnText}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="End" AutomationId="PhotoCapturedOn" />
+      <Label Grid.Row="1" Text="{Binding Text[Location]}" Style="{StaticResource TileCaption}" />
+      <Label Grid.Row="1" Grid.Column="1" Text="{Binding LocationText}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="End" AutomationId="PhotoLocation" />
+    </Grid>
+    <Button Text="{Binding Text[PhotoUseDetails]}" IsVisible="{Binding ShowUseDetails}" IsEnabled="{Binding CanUseDetails}"
+            Style="{StaticResource SecondaryButton}" LineBreakMode="WordWrap" Clicked="OnUseDetailsRequested" AutomationId="PhotoUseDetails">
+      <Button.Triggers>
+        <DataTrigger TargetType="Button" Binding="{Binding IsChosen}" Value="True">
+          <Setter Property="Text" Value="{Binding Text[PhotoDetailsApplied]}" />
+          <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}" />
+          <Setter Property="TextColor" Value="{StaticResource Paper}" />
+        </DataTrigger>
+      </Button.Triggers>
+    </Button>
+  </VerticalStackLayout>
+</ContentView>

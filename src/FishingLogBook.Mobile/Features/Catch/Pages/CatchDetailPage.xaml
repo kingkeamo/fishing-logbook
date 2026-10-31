@@ -18,7 +18,7 @@
   <ScrollView Grid.Row="1"><VerticalStackLayout Padding="16,4,16,24" Spacing="16" MaximumWidthRequest="720">
    <Border Style="{StaticResource Card}" Padding="0" IsVisible="{Binding HasPhoto}"><Grid HeightRequest="240">
     <Image Source="{Binding PreviewAsset}" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
-    <Button Style="{StaticResource CardAction}" SemanticProperties.Description="{Binding Text[Preview]}" Clicked="OnPreview" AutomationId="OpenPhoto" />
+    <Button Style="{StaticResource CardAction}" SemanticProperties.Description="{Binding Text[EditCatch]}" Clicked="OnEditCatch" AutomationId="EditCatchFromPhoto" />
     <Border IsVisible="{Binding HasMultiplePhotos}" InputTransparent="True" StrokeThickness="0" BackgroundColor="#99102A43" Padding="10,4" HorizontalOptions="End" VerticalOptions="End" Margin="12">
      <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
      <Label Text="{Binding PhotoCounter}" TextColor="White" FontSize="13" FontAttributes="Bold" FontAutoScalingEnabled="False" />
@@ -35,7 +35,7 @@
     <controls:InfoTile Grid.Row="1" Icon="icon_scale.png" Caption="{Binding Text[Weight]}" Value="{Binding Weight}" />
     <controls:InfoTile Grid.Row="1" Grid.Column="1" Icon="icon_ruler.png" Caption="{Binding Text[Length]}" Value="{Binding Length}" />
    </Grid>
-   <Label Text="{Binding Text[NoBait]}" Style="{StaticResource SecondaryText}" />
+   <Label Text="{Binding BaitOrLure}" Style="{StaticResource SecondaryText}" />
    <BoxView Style="{StaticResource Divider}" />
    <VerticalStackLayout Spacing="6" IsVisible="{Binding HasNotes}">
     <Label Text="{Binding Text[Notes]}" Style="{StaticResource SectionTitle}" />
@@ -45,7 +45,10 @@
     <Label Text="{Binding Text[Photos]}" Style="{StaticResource SectionTitle}" />
     <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never"><HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding Photos}">
      <BindableLayout.ItemTemplate><DataTemplate x:DataType="x:String">
-      <Border StrokeThickness="0" Padding="0" WidthRequest="72" HeightRequest="72">
+      <Border StrokeThickness="0" Padding="0" WidthRequest="72" HeightRequest="72"
+              SemanticProperties.Description="{Binding Source={RelativeSource AncestorType={x:Type models:CatchPresentationModel}}, Path=Text[EditCatch]}"
+              AutomationId="EditCatchFromThumbnail">
+       <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnEditCatch" /></Border.GestureRecognizers>
        <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
        <Image Source="{Binding .}" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
       </Border>

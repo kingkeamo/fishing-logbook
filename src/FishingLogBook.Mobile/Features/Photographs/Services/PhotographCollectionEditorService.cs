@@ -105,6 +105,7 @@ public sealed class PhotographCollectionEditorService(
         CancellationToken cancellationToken)
     {
         var items = currentItems.ToList();
+        PhotographPreparationOutcomeEnum? failure = null;
         foreach (var file in files)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -122,7 +123,8 @@ public sealed class PhotographCollectionEditorService(
                 cancellationToken);
             if (prepared.Outcome != PhotographPreparationOutcomeEnum.Prepared || prepared.File is null)
             {
-                return PhotographEditorActionResultModel.Unchanged(items, prepared.Outcome);
+                failure = prepared.Outcome;
+                continue;
             }
 
             items.Add(new PhotographEditorItemModel
@@ -136,7 +138,9 @@ public sealed class PhotographCollectionEditorService(
             });
         }
 
-        return PhotographEditorActionResultModel.Updated(Renumber(items));
+        return failure is { } outcome
+            ? PhotographEditorActionResultModel.Unchanged(Renumber(items), outcome)
+            : PhotographEditorActionResultModel.Updated(Renumber(items));
     }
 
     private static PhotographEditorActionResultModel Move(
@@ -175,7 +179,8 @@ public sealed class PhotographCollectionEditorService(
                 SortOrder = index,
                 PreviewPath = item.PreviewPath,
                 RelativeFilePath = item.RelativeFilePath,
-                ContentType = item.ContentType
+                ContentType = item.ContentType,
+                Metadata = item.Metadata
             })
             .ToArray();
     }

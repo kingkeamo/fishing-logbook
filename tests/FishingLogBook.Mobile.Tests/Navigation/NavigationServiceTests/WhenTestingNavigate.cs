@@ -6,6 +6,19 @@ namespace FishingLogBook.Mobile.Tests.Navigation.NavigationServiceTests;
 
 public class WhenTestingNavigate : BaseNavigationServiceTest
 {
+    [Fact]
+    public async Task ItShouldOpenTheExistingCatchEditorWithTheSelectedCatchId()
+    {
+        // Arrange
+        var catchId = Catch.Id;
+
+        // Act
+        await Sut.NavigateAsync(MobileRouteEnum.CatchEdit, catchEditId: catchId);
+
+        // Assert
+        await MockNavigator.Received(1).GoToAsync("catch-edit", null, catchId, CancellationToken.None);
+    }
+
     [Theory]
     [InlineData(MobileRouteEnum.CatchDetail)]
     [InlineData(MobileRouteEnum.PhotoPreview)]

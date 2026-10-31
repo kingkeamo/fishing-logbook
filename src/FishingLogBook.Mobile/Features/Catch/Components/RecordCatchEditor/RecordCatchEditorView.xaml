@@ -5,6 +5,7 @@
              xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
              xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
              xmlns:photoViews="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Views"
+             xmlns:shared="clr-namespace:FishingLogBook.Shared.Constants;assembly=FishingLogBook.Shared"
              x:Class="FishingLogBook.Mobile.Features.Catch.Components.RecordCatchEditor.RecordCatchEditorView"
              x:DataType="vm:CatchEditViewModel">
   <VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
@@ -43,7 +44,7 @@
         </FlexLayout>
       </VerticalStackLayout>
 
-      <photoViews:PhotoCollectionEditorView ViewModel="{Binding Photographs}" MaximumCount="10" />
+      <photoViews:PhotoCollectionEditorView ViewModel="{Binding Photographs}" MaximumCount="10" ShowUseDetails="True" />
       <Label Text="{Binding PhotoConflictText}" IsVisible="{Binding ShowPhotoConflict}"
              TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
       <Label Text="{Binding Text[CatchPhotoDateConflict]}" IsVisible="{Binding ShowDateConflict}"
@@ -79,6 +80,28 @@
       </Grid>
 
       <VerticalStackLayout Spacing="4">
+        <Label Text="{Binding Text[CatchBaitOrLure]}" Style="{StaticResource TileCaption}" />
+        <Border Style="{StaticResource InputField}">
+          <Entry Text="{Binding BaitOrLure}" Style="{StaticResource FieldEntry}"
+                 MaxLength="{x:Static shared:CatchDetailConstants.MaxBaitOrLureLength}"
+                 SemanticProperties.Description="{Binding Text[CatchBaitOrLure]}"
+                 AutomationId="RecordCatchBaitOrLure" />
+        </Border>
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="4">
+        <Label Text="{Binding Text[Notes]}" Style="{StaticResource TileCaption}" />
+        <Border Style="{StaticResource InputField}">
+          <Editor Text="{Binding Notes}" AutoSize="TextChanges" MinimumHeightRequest="96"
+                  MaxLength="{x:Static shared:CatchDetailConstants.MaxNotesLength}"
+                  BackgroundColor="Transparent"
+                  TextColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Paper}}"
+                  SemanticProperties.Description="{Binding Text[Notes]}"
+                  AutomationId="RecordCatchNotes" />
+        </Border>
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="4">
         <Label Text="{Binding LocationCaption}" Style="{StaticResource SecondaryText}" FontSize="13"
                AutomationId="RecordCatchLocationCaption" />
         <Button Text="{Binding LocationActionText}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start"
@@ -100,8 +123,6 @@
         </FlexLayout>
       </VerticalStackLayout>
 
-      <Label Text="{Binding Text[CatchTripDeferredNote]}" IsVisible="{Binding ShowTripDeferredNote}"
-             Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="RecordCatchTripDeferred" />
     </VerticalStackLayout>
 
     <Label Text="{Binding ValidationText}" IsVisible="{Binding HasValidation}"

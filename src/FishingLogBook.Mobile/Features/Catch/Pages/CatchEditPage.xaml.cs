@@ -51,6 +51,6 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
 
     private async void OnSaveSucceeded(object? sender, EventArgs args)
     {
-        await _navigation.GoBackAsync();
+        await _navigation.NavigateAsync(MobileRouteEnum.Catches);
     }
 }

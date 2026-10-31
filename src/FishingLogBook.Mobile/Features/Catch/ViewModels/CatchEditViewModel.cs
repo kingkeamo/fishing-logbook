@@ -98,6 +98,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         _text = text;
         _caughtOnLocal = ToLocalWallClock(_clock.GetUtcNow());
         Photographs.ItemsChanged += OnPhotographsChanged;
+        Photographs.UseDetailsRequested += OnUsePhotographDetails;
         _text.PropertyChanged += OnCultureChanged;
     }
 
@@ -165,11 +166,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public string StatusText => _statusKey is null ? string.Empty : _text[_statusKey];
 
-    public bool HasValidation => _validationKey is not null;
+    public bool HasValidation => !string.IsNullOrEmpty(ValidationKey);
 
-    public string ValidationText => _validationKey is null ? string.Empty : _text[_validationKey];
+    public string ValidationText => HasValidation ? _text[ValidationKey] : string.Empty;
 
-    public string ValidationKey => _validationKey ?? string.Empty;
+    public string ValidationKey => _validationKey ?? ResolveValidationKey() ?? string.Empty;
 
     public bool DateConflict =>
         _proposal.HasConflictingDates && !_caughtOnResolvedByAngler;
@@ -592,6 +593,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
         _disposed = true;
         Photographs.ItemsChanged -= OnPhotographsChanged;
+        Photographs.UseDetailsRequested -= OnUsePhotographDetails;
+        Photographs.Dispose();
         _text.PropertyChanged -= OnCultureChanged;
         _draftDebounce?.Cancel();
         _draftDebounce?.Dispose();
@@ -663,11 +666,14 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
                     SortOrder = photograph.SortOrder,
                     PreviewPath = preview,
                     RelativeFilePath = relative,
-                    ContentType = photograph.ContentType ?? "image/jpeg"
+                    ContentType = photograph.ContentType ?? "image/jpeg",
+                    Metadata = photograph.Metadata
                 };
             })
             .ToArray();
         Photographs.SetItems(items);
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BaitOrLure)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Notes)));
         NotifyChipState();
         NotifyMeasurements();
         NotifyLocation();
@@ -769,6 +775,29 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowCaughtOn)));
     }
 
+    private async void OnUsePhotographDetails(object? sender, EventArgs args)
+    {
+        if (!CanInteract || Photographs.CurrentPhotograph is not { } photograph)
+        {
+            return;
+        }
+
+        if (photograph.Metadata.CapturedOn is { } capturedOn)
+        {
+            _caughtOnLocal = ToLocalWallClock(capturedOn);
+            _caughtOnResolvedByAngler = true;
+            NotifyCaughtOn();
+        }
+
+        if (photograph.Metadata.HasCoordinates)
+        {
+            _deviceLocationChosen = false;
+        }
+
+        await ApplyPhotoMetadataAsync();
+        ScheduleDraftSave();
+    }
+
     private async Task ApplyPhotoMetadataAsync()
     {
         if (Photographs.Items.Count == 0)
@@ -778,8 +807,9 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             return;
         }
 
+        var applied = Photographs.Items.FirstOrDefault(item => item.Id == Photographs.AppliedPhotographId);
         _proposal = _proposalService.Propose(
-            Photographs.Items.Select(item => item.Metadata).ToArray(),
+            applied is null ? Photographs.Items.Select(item => item.Metadata).ToArray() : [applied.Metadata],
             _clock.GetUtcNow());
         if (!_caughtOnResolvedByAngler && _proposal.CaughtOn is { } proposed)
         {
@@ -787,7 +817,10 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             NotifyCaughtOn();
         }
 
-        ApplyProposalLocation();
+        if (!IsLoading)
+        {
+            ApplyProposalLocation();
+        }
         NotifyConflictState();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSave)));
         await Task.CompletedTask;
@@ -831,6 +864,12 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     private void ScheduleDraftSave()
     {
+        if (_validationKey != "CatchEditNotFound")
+        {
+            _validationKey = null;
+        }
+
+        NotifyValidation();
         // Saved-catch edits must not be written as Draft (would demote the journal row).
         if (!CanInteract || IsSaved || IsEditingSavedCatch)
         {
@@ -895,7 +934,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             }
 
             var lease = _sessionCoordinator.Capture();
-            if (lease is null)
+            if (lease is null || lease.UserId != Photographs.UserId)
             {
                 NotSignedIn = true;
                 return false;
@@ -968,6 +1007,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             return "CatchPhotoDateConflict";
         }
 
+        if (!CatchDetailConstants.IsCaughtOnValid(ToUtcInstant(_caughtOnLocal), _clock.GetUtcNow()))
+        {
+            return "CatchCaughtOnInvalid";
+        }
+
         if (!CatchDetailConstants.IsWeightValid(_weightKg))
         {
             return "CatchWeightInvalid";
@@ -978,15 +1022,20 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             return "CatchLengthInvalid";
         }
 
-        if (!CatchDetailConstants.IsOptionalTextValid(_selectedSpecies, CatchDetailConstants.MaxSpeciesNameLength)
-            || !CatchDetailConstants.IsOptionalTextValid(_selectedMethod, CatchDetailConstants.MaxMethodLength)
-            || !CatchDetailConstants.IsOptionalTextValid(_baitOrLure, CatchDetailConstants.MaxBaitOrLureLength)
-            || !CatchDetailConstants.IsOptionalTextValid(_notes, CatchDetailConstants.MaxNotesLength))
+        if (!IsTextValid())
         {
             return "CatchTextTooLong";
         }
 
         return null;
+    }
+
+    private bool IsTextValid()
+    {
+        return CatchDetailConstants.IsOptionalTextValid(_selectedSpecies, CatchDetailConstants.MaxSpeciesNameLength)
+            && CatchDetailConstants.IsOptionalTextValid(_selectedMethod, CatchDetailConstants.MaxMethodLength)
+            && CatchDetailConstants.IsOptionalTextValid(_baitOrLure, CatchDetailConstants.MaxBaitOrLureLength)
+            && CatchDetailConstants.IsOptionalTextValid(_notes, CatchDetailConstants.MaxNotesLength);
     }
 
     private string RemoveDescription(string name)

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Views"
+             x:Class="FishingLogBook.Mobile.Features.Photographs.Views.PhotoPickerView" x:Name="Root">
+  <VerticalStackLayout BindingContext="{x:Reference Root}" x:DataType="views:PhotoPickerView" Spacing="8">
+    <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsEnabled="{Binding CanAddMore}">
+      <Grid.Triggers><DataTrigger TargetType="Grid" Binding="{Binding IsBusy}" Value="True"><Setter Property="IsEnabled" Value="False" /></DataTrigger></Grid.Triggers>
+      <Button Text="{Binding Text[PhotoTakePicture]}" Style="{StaticResource PrimaryButton}" Padding="12,8" LineBreakMode="WordWrap"
+              Clicked="OnTakePhotoRequested" AutomationId="PhotoTakePicture" />
+      <Button Grid.Column="1" Text="{Binding Text[PhotoChooseGallery]}" Style="{StaticResource SecondaryButton}" Padding="12,8" LineBreakMode="WordWrap"
+              Clicked="OnChooseGalleryRequested" AutomationId="PhotoChooseGallery" />
+    </Grid>
+    <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+    <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}"
+           TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="PhotoStatus" />
+  </VerticalStackLayout>
+</ContentView>

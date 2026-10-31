@@ -7,6 +7,23 @@ namespace FishingLogBook.Mobile.Tests.Features.Catch.Models.CatchPresentationMod
 
 public class WhenTestingConstructor : BaseCatchPresentationModelTest
 {
+    [Theory]
+    [InlineData("en-GB")]
+    [InlineData("fr-FR")]
+    public void ItShouldShowRecordedBaitAndLocaliseOnlyTheMissingValue(string culture)
+    {
+        // Arrange
+        var text = CreateText(culture);
+
+        // Act
+        var recorded = new CatchPresentationModel(Catch with { BaitOrLure = "Copper nymph" }, text);
+        var missing = new CatchPresentationModel(Catch, text);
+
+        // Assert
+        recorded.BaitOrLure.Should().Be("Copper nymph");
+        missing.BaitOrLure.Should().Be(text["NoBait"]);
+    }
+
     [Fact]
     public void ItShouldRefreshARetainedSampleWithoutTranslatingUserContent()
     {

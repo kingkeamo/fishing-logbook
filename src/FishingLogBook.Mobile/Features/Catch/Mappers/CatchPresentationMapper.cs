@@ -42,6 +42,6 @@ public sealed class CatchPresentationMapper(IPhotographFileStore photographFileS
                     record.Location.Visibility,
                     record.Location.ConsentVersion)
         };
-        return new CatchPresentationModel(dto, text, photos);
+        return new CatchPresentationModel(dto, text, photos, savedLocally: true);
     }
 }

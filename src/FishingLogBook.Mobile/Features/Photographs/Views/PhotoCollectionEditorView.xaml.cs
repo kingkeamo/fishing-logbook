@@ -4,6 +4,14 @@ namespace FishingLogBook.Mobile.Features.Photographs.Views;
 
 public partial class PhotoCollectionEditorView : ContentView
 {
+    public static readonly BindableProperty ShowUseDetailsProperty = BindableProperty.Create(
+        nameof(ShowUseDetails), typeof(bool), typeof(PhotoCollectionEditorView), false);
+
+    public bool ShowUseDetails
+    {
+        get => (bool)GetValue(ShowUseDetailsProperty);
+        set => SetValue(ShowUseDetailsProperty, value);
+    }
     public static readonly BindableProperty ViewModelProperty = BindableProperty.Create(
         nameof(ViewModel),
         typeof(PhotographCollectionEditorViewModel),
@@ -38,15 +46,9 @@ public partial class PhotoCollectionEditorView : ContentView
     private static void OnViewModelChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var view = (PhotoCollectionEditorView)bindable;
-        view.BindingContext = newValue;
-    }
-
-    protected override void OnBindingContextChanged()
-    {
-        base.OnBindingContextChanged();
-        if (ViewModel is not null && !ReferenceEquals(BindingContext, ViewModel))
+        if (newValue is PhotographCollectionEditorViewModel editor)
         {
-            BindingContext = ViewModel;
+            editor.MaximumCount = view.MaximumCount;
         }
     }
 
@@ -78,33 +80,23 @@ public partial class PhotoCollectionEditorView : ContentView
         await ViewModel.ChooseFromGalleryAsync(CancellationToken.None);
     }
 
-    private void OnRemove(object? sender, EventArgs e)
+    private void OnRemoveCurrent(object? sender, EventArgs e)
     {
-        if (ViewModel is null || sender is not Button button || button.CommandParameter is not Guid id)
-        {
-            return;
-        }
-
-        ViewModel.Remove(id);
+        ViewModel?.RemoveCurrentPhotograph();
     }
 
-    private void OnMoveEarlier(object? sender, EventArgs e)
+    private void OnPrevious(object? sender, EventArgs e)
     {
-        if (ViewModel is null || sender is not Button button || button.CommandParameter is not Guid id)
-        {
-            return;
-        }
-
-        ViewModel.MoveEarlier(id);
+        ViewModel?.PreviousPhotograph();
     }
 
-    private void OnMoveLater(object? sender, EventArgs e)
+    private void OnNext(object? sender, EventArgs e)
     {
-        if (ViewModel is null || sender is not Button button || button.CommandParameter is not Guid id)
-        {
-            return;
-        }
+        ViewModel?.NextPhotograph();
+    }
 
-        ViewModel.MoveLater(id);
+    private void OnUseDetails(object? sender, EventArgs e)
+    {
+        ViewModel?.UseCurrentDetails();
     }
 }

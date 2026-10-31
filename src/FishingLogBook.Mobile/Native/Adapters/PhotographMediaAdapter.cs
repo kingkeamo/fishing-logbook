@@ -2,11 +2,13 @@ using System.Diagnostics.CodeAnalysis;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
 using FishingLogBook.Mobile.IO.Adapters;
+using FishingLogBook.Mobile.Localization;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Native.Adapters;
 
 [ExcludeFromCodeCoverage]
-public sealed class PhotographMediaAdapter : IPhotographMediaAdapter
+public sealed class PhotographMediaAdapter(UiTextService text, ILogger<PhotographMediaAdapter> logger) : IPhotographMediaAdapter
 {
     public Task<PhotographPermissionStatusEnum> GetCameraStatusAsync(CancellationToken cancellationToken)
     {
@@ -34,15 +36,15 @@ public sealed class PhotographMediaAdapter : IPhotographMediaAdapter
 
     public async Task<PhotographPickResultModel> CapturePhotoAsync(CancellationToken cancellationToken)
     {
-        var permission = await EnsureCameraAsync(cancellationToken);
-        if (permission != PhotographPermissionStatusEnum.Granted)
-        {
-            return MapPickFailure(permission);
-        }
-
         try
         {
-            var result = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = "Capture" });
+            var permission = await EnsureCameraAsync(cancellationToken);
+            if (permission != PhotographPermissionStatusEnum.Granted)
+            {
+                return MapPickFailure(permission);
+            }
+
+            var result = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = text["PhotoTakePicture"] });
             return await ToPickResultAsync(result, cancellationToken);
         }
         catch (FeatureNotSupportedException)
@@ -53,21 +55,30 @@ public sealed class PhotographMediaAdapter : IPhotographMediaAdapter
         {
             return PhotographPickResultModel.PermissionDenied;
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return PhotographPickResultModel.Cancelled;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Camera capture failed.");
+            return PhotographPickResultModel.Unavailable;
+        }
     }
 
     public async Task<PhotographPickResultModel> PickPhotosAsync(int maximumCount, CancellationToken cancellationToken)
     {
-        var permission = await EnsurePhotosAsync(cancellationToken);
-        if (permission != PhotographPermissionStatusEnum.Granted)
-        {
-            return MapPickFailure(permission);
-        }
-
         try
         {
+            var permission = await EnsurePhotosAsync(cancellationToken);
+            if (permission != PhotographPermissionStatusEnum.Granted)
+            {
+                return MapPickFailure(permission);
+            }
+
             var results = await FilePicker.Default.PickMultipleAsync(new PickOptions
             {
-                PickerTitle = "Photos",
+                PickerTitle = text["PhotoChooseGallery"],
                 FileTypes = FilePickerFileType.Images
             });
             if (results is null)
@@ -97,6 +108,15 @@ public sealed class PhotographMediaAdapter : IPhotographMediaAdapter
         {
             return PhotographPickResultModel.PermissionDenied;
         }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return PhotographPickResultModel.Cancelled;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Gallery selection failed.");
+            return PhotographPickResultModel.Unavailable;
+        }
     }
 
     private static async Task<PhotographPickResultModel> ToPickResultAsync(
@@ -119,15 +139,10 @@ public sealed class PhotographMediaAdapter : IPhotographMediaAdapter
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var path = result.FullPath;
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            var cachePath = Path.Combine(FileSystem.CacheDirectory, $"{Guid.NewGuid():N}{Path.GetExtension(result.FileName)}");
-            await using var source = await result.OpenReadAsync();
-            await using var destination = File.Create(cachePath);
-            await source.CopyToAsync(destination, cancellationToken);
-            path = cachePath;
-        }
+        var path = Path.Combine(FileSystem.CacheDirectory, $"{Guid.NewGuid():N}{Path.GetExtension(result.FileName)}");
+        await using var source = await result.OpenReadAsync();
+        await using var destination = File.Create(path);
+        await source.CopyToAsync(destination, cancellationToken);
 
         return new PhotographPickedFileModel
         {

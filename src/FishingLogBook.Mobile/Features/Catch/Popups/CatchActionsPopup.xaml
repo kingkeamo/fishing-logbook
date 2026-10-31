@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
+               xmlns:enums="clr-namespace:FishingLogBook.Mobile.Features.Catch.Enums"
+               x:Class="FishingLogBook.Mobile.Features.Catch.Popups.CatchActionsPopup"
+               x:TypeArguments="enums:CatchDetailActionEnum" x:DataType="models:CatchPresentationModel"
+               Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20,8,20,20"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
+      <BoxView WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center"
+               Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+      <Label Text="{Binding Text[MoreActions]}" Style="{StaticResource Heading}" FontSize="20" Margin="0,8,0,4"
+             SemanticProperties.HeadingLevel="Level1" />
+      <Button Text="{Binding Text[EditCatch]}" Style="{StaticResource PrimaryButton}" Clicked="OnAction"
+              CommandParameter="{x:Static enums:CatchDetailActionEnum.Edit}" AutomationId="CatchActionEdit" />
+      <Button Text="{Binding Text[Remove]}" Style="{StaticResource DestructiveButton}" Clicked="OnAction"
+              CommandParameter="{x:Static enums:CatchDetailActionEnum.Remove}" AutomationId="CatchActionRemove" />
+      <Button Text="{Binding Text[Share]}" Style="{StaticResource SecondaryButton}" Clicked="OnAction"
+              CommandParameter="{x:Static enums:CatchDetailActionEnum.Share}" AutomationId="CatchActionShare" />
+      <Button Text="{Binding Text[Cancel]}" Style="{StaticResource SecondaryButton}" Clicked="OnCancel"
+              AutomationId="CatchActionsCancel" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

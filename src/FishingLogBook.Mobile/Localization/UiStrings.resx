@@ -353,4 +353,12 @@
   <data name="CatchSaving" xml:space="preserve"><value>Saving…</value></data>
   <data name="EmptyJournalTitle" xml:space="preserve"><value>No catches yet</value></data>
   <data name="EmptyJournalBody" xml:space="preserve"><value>Record your first catch to start your offline journal.</value></data>
+  <data name="PhotoPosition" xml:space="preserve"><value>Photo {0} of {1}</value></data>
+  <data name="PhotoPrevious" xml:space="preserve"><value>Previous photo</value></data>
+  <data name="PhotoNext" xml:space="preserve"><value>Next photo</value></data>
+  <data name="PhotoCapturedOnUnknown" xml:space="preserve"><value>Unknown photo date</value></data>
+  <data name="PhotoLocationAvailable" xml:space="preserve"><value>Photo location available</value></data>
+  <data name="PhotoLocationUnavailable" xml:space="preserve"><value>No photo location available</value></data>
+  <data name="PhotoUseDetails" xml:space="preserve"><value>Use this photo’s details</value></data>
+  <data name="PhotoDetailsApplied" xml:space="preserve"><value>Using this photo’s details</value></data>
 </root>

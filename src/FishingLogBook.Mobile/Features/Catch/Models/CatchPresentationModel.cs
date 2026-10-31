@@ -10,7 +10,8 @@ public sealed class CatchPresentationModel(
     CatchDto catchDto,
     UiTextService text,
     IReadOnlyList<string>? photos = null,
-    SampleCatchTextModel? sampleText = null) : INotifyPropertyChanged
+    SampleCatchTextModel? sampleText = null,
+    bool savedLocally = false) : INotifyPropertyChanged
 {
     private static readonly IMeasurementService DefaultMeasurement = new MeasurementService();
     private IMeasurementService _measurement = DefaultMeasurement;
@@ -30,11 +31,14 @@ public sealed class CatchPresentationModel(
     public bool HasMethod => sampleText?.MethodKey is not null || !string.IsNullOrWhiteSpace(catchDto.Method);
     public bool HasMeasurements => catchDto.Weight.HasValue || catchDto.Length.HasValue;
     public string Measurements => string.Join(" · ", new[] { catchDto.Weight.HasValue ? Weight : null, catchDto.Length.HasValue ? Length : null }.Where(value => value is not null));
-    public string CardDescription => string.Join(", ", new[] { OpenDescription, HasMethod ? Method : null, HasMeasurements ? Measurements : null }.Where(value => value is not null));
+    public string CardDescription => string.Join(", ", new[] { OpenDescription, HasMethod ? Method : null, HasMeasurements ? Measurements : null, HasSaveStatus ? SaveStatus : null }.Where(value => value is not null));
+    public bool HasSaveStatus => savedLocally;
+    public string SaveStatus => savedLocally ? Text["CatchSavedLocally"] : string.Empty;
     public string Weight => FormatWeight();
     public string Length => FormatLength();
     public string Place => LocalizedOrRecorded(sampleText?.PlaceKey, catchDto.PlaceName);
     public string Notes => LocalizedOrRecorded(sampleText?.NotesKey, catchDto.Notes);
+    public string BaitOrLure => string.IsNullOrWhiteSpace(catchDto.BaitOrLure) ? Text["NoBait"] : catchDto.BaitOrLure;
     public IReadOnlyList<string> Photos { get; } = photos ?? [];
     public string? PreviewAsset => Photos.Count > 0 ? Photos[0] : null;
     public int PhotoCount => Photos.Count;
@@ -58,7 +62,7 @@ public sealed class CatchPresentationModel(
 
     public void RefreshLocalizedText()
     {
-        foreach (var property in new[] { nameof(Species), nameof(CaughtOn), nameof(ShortDate), nameof(Time), nameof(Method), nameof(Measurements), nameof(CardDescription), nameof(Weight), nameof(Length), nameof(Place), nameof(Notes), nameof(OpenDescription) })
+        foreach (var property in new[] { nameof(Species), nameof(CaughtOn), nameof(ShortDate), nameof(Time), nameof(Method), nameof(Measurements), nameof(CardDescription), nameof(Weight), nameof(Length), nameof(Place), nameof(Notes), nameof(BaitOrLure), nameof(SaveStatus), nameof(OpenDescription) })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }

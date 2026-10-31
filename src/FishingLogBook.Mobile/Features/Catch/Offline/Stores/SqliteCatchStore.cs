@@ -7,6 +7,7 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
+using FishingLogBook.Shared.Photographs.Models;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 
@@ -323,9 +324,9 @@ public sealed class SqliteCatchStore : ICatchStore
             insertCommand.CommandText =
                 """
                 INSERT INTO localcatchphotographs (
-                    id, catchid, userid, sortorder, localfilepath, contenttype, createdon)
+                    id, catchid, userid, sortorder, localfilepath, contenttype, createdon, metadatajson)
                 VALUES (
-                    $id, $catchId, $userId, $sortOrder, $localFilePath, $contentType, $createdOn);
+                    $id, $catchId, $userId, $sortOrder, $localFilePath, $contentType, $createdOn, $metadataJson);
                 """;
             insertCommand.Parameters.AddWithValue("$id", photograph.Id.ToString("D"));
             insertCommand.Parameters.AddWithValue("$catchId", photograph.CatchId.ToString("D"));
@@ -334,6 +335,7 @@ public sealed class SqliteCatchStore : ICatchStore
             insertCommand.Parameters.AddWithValue("$localFilePath", (object?)photograph.LocalFilePath ?? DBNull.Value);
             insertCommand.Parameters.AddWithValue("$contentType", (object?)photograph.ContentType ?? DBNull.Value);
             insertCommand.Parameters.AddWithValue("$createdOn", SqliteDateTime.Format(photograph.CreatedOn));
+            insertCommand.Parameters.AddWithValue("$metadataJson", JsonSerializer.Serialize(photograph.Metadata, PayloadSerializerOptions));
             await insertCommand.ExecuteNonQueryAsync(cancellationToken);
         }
     }
@@ -450,7 +452,8 @@ public sealed class SqliteCatchStore : ICatchStore
                 SortOrder = photograph.SortOrder,
                 LocalFilePath = photograph.LocalFilePath,
                 ContentType = photograph.ContentType,
-                CreatedOn = updatedOn
+                CreatedOn = updatedOn,
+                Metadata = photograph.Metadata
             })
             .ToArray();
 
@@ -711,7 +714,7 @@ public sealed class SqliteCatchStore : ICatchStore
         await using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT id, catchid, userid, sortorder, localfilepath, contenttype, createdon
+            SELECT id, catchid, userid, sortorder, localfilepath, contenttype, createdon, metadatajson
             FROM localcatchphotographs
             WHERE catchid = $catchId
               AND userid = $userId
@@ -731,7 +734,11 @@ public sealed class SqliteCatchStore : ICatchStore
                 SortOrder = reader.GetInt32(3),
                 LocalFilePath = reader.IsDBNull(4) ? null : reader.GetString(4),
                 ContentType = reader.IsDBNull(5) ? null : reader.GetString(5),
-                CreatedOn = SqliteDateTime.Parse(reader.GetString(6))
+                CreatedOn = SqliteDateTime.Parse(reader.GetString(6)),
+                Metadata = reader.IsDBNull(7)
+                    ? PhotographMetadataModel.Empty
+                    : JsonSerializer.Deserialize<PhotographMetadataModel>(reader.GetString(7), PayloadSerializerOptions)
+                        ?? PhotographMetadataModel.Empty
             });
         }
 
