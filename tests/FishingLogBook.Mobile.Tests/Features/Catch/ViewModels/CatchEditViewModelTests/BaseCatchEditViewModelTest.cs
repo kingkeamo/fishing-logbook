@@ -41,7 +41,9 @@ public abstract class BaseCatchEditViewModelTest
         Sut = CreateSut();
     }
 
-    protected CatchEditViewModel CreateSut(IMeasurementService? measurement = null)
+    protected CatchEditViewModel CreateSut(
+        IMeasurementService? measurement = null,
+        TimeProvider? clock = null)
     {
         return new CatchEditViewModel(
             MockCatchStore,
@@ -54,7 +56,7 @@ public abstract class BaseCatchEditViewModelTest
             measurement ?? new MeasurementService(),
             MockUnits,
             new PhotographCollectionEditorViewModel(MockPhotographEditor, Text),
-            new FixedTimeProvider(Now),
+            clock ?? new FixedTimeProvider(Now),
             Text);
     }
 }

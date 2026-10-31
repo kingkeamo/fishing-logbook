@@ -96,7 +96,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         Photographs = photographs;
         _clock = clock;
         _text = text;
-        _caughtOnLocal = _clock.GetUtcNow().UtcDateTime;
+        _caughtOnLocal = ToLocalWallClock(_clock.GetUtcNow());
         Photographs.ItemsChanged += OnPhotographsChanged;
         _text.PropertyChanged += OnCultureChanged;
     }
@@ -563,19 +563,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public async Task OnDisappearingAsync(CancellationToken cancellationToken)
     {
         _draftDebounce?.Cancel();
-        if (!CanInteract || IsSaved)
+        if (!CanInteract || IsSaved || IsEditingSavedCatch)
         {
-            return;
-        }
-
-        if (IsEditingSavedCatch)
-        {
-            // Flush valid edits as Saved so navigate-away / modal opens never demote lifecycle.
-            if (ResolveValidationKey() is null)
-            {
-                await PersistAsync(LocalCatchLifecycleEnum.Saved, cancellationToken, markUiSaved: false);
-            }
-
             return;
         }
 
@@ -658,7 +647,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         _lengthCm = record.Length is null ? null : (decimal)record.Length;
         _location = record.Location;
         _deviceLocationChosen = record.Location?.Source == LocationDefaults.DeviceGps;
-        _caughtOnLocal = record.CaughtOn.UtcDateTime;
+        _caughtOnLocal = ToLocalWallClock(record.CaughtOn);
         _caughtOnResolvedByAngler = true;
         var items = record.Photographs
             .OrderBy(photograph => photograph.SortOrder)
@@ -794,7 +783,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             _clock.GetUtcNow());
         if (!_caughtOnResolvedByAngler && _proposal.CaughtOn is { } proposed)
         {
-            _caughtOnLocal = proposed.UtcDateTime;
+            _caughtOnLocal = ToLocalWallClock(proposed);
             NotifyCaughtOn();
         }
 
@@ -912,7 +901,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
                 return false;
             }
 
-            var caughtOn = new DateTimeOffset(DateTime.SpecifyKind(_caughtOnLocal, DateTimeKind.Utc));
+            var caughtOn = ToUtcInstant(_caughtOnLocal);
             if (lifecycle == LocalCatchLifecycleEnum.Saved
                 && !CatchDetailConstants.IsCaughtOnValid(caughtOn, _clock.GetUtcNow()))
             {
@@ -1058,6 +1047,18 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CatalogueMethodNames)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CatalogueSpeciesNames)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AnglerOptions)));
+    }
+
+    private DateTime ToLocalWallClock(DateTimeOffset instant)
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(instant.UtcDateTime, _clock.LocalTimeZone);
+    }
+
+    private DateTimeOffset ToUtcInstant(DateTime localWallClock)
+    {
+        var unspecified = DateTime.SpecifyKind(localWallClock, DateTimeKind.Unspecified);
+        var offset = _clock.LocalTimeZone.GetUtcOffset(unspecified);
+        return new DateTimeOffset(unspecified, offset).ToUniversalTime();
     }
 
     private void NotifyCaughtOn()

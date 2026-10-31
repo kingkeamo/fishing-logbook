@@ -37,7 +37,6 @@ public partial class MeasurementEditorPopup : Popup<bool>
 
     private async void OnApply(object? sender, EventArgs args)
     {
-        Editor.ResignFocus();
         var result = _viewModel.TryApply(
             Editor.PendingExactText,
             Editor.PendingPoundsText,

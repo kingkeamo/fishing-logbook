@@ -56,11 +56,76 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
     }
 
     [Fact]
-    public async Task ItShouldNotWriteDraftLifecycleWhenLeavingASavedCatchEdit()
+    public async Task ItShouldNotPersistASavedCatchWhenLeavingWithoutSave()
     {
         // Arrange
         var catchId = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var photoId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+        MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, catchId, photographId: photoId, notes: "Original"));
+        await Sut.InitializeAsync(catchId, CancellationToken.None);
+        Sut.Notes = "Edited notes";
+        MockCatchStore.ClearReceivedCalls();
+
+        // Act
+        await Sut.OnDisappearingAsync(CancellationToken.None);
+
+        // Assert
+        Sut.Notes.Should().Be("Edited notes");
+        Sut.IsSaved.Should().BeFalse();
+        Sut.IsEditingSavedCatch.Should().BeTrue();
+        Sut.Photographs.MinimumCount.Should().Be(1);
+        await MockCatchStore.DidNotReceive().SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotPersistASavedCatchWhenAPopupClosesThePage()
+    {
+        // Arrange
+        var catchId = Guid.Parse("33333333-3333-3333-3333-333333333334");
+        var photoId = Guid.Parse("44444444-4444-4444-4444-444444444445");
+        MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, catchId, photographId: photoId, notes: "Original"));
+        await Sut.InitializeAsync(catchId, CancellationToken.None);
+        Sut.Notes = "Edited during popup";
+        MockCatchStore.ClearReceivedCalls();
+
+        // Act
+        await Sut.OnDisappearingAsync(CancellationToken.None);
+        await Sut.OnDisappearingAsync(CancellationToken.None);
+
+        // Assert
+        Sut.Notes.Should().Be("Edited during popup");
+        Sut.IsEditingSavedCatch.Should().BeTrue();
+        await MockCatchStore.DidNotReceive().SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotDemoteASavedCatchToDraftWhenFieldsChange()
+    {
+        // Arrange
+        var catchId = Guid.Parse("33333333-3333-3333-3333-333333333335");
+        var photoId = Guid.Parse("44444444-4444-4444-4444-444444444446");
+        MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, catchId, photographId: photoId, notes: "Original"));
+        await Sut.InitializeAsync(catchId, CancellationToken.None);
+        MockCatchStore.ClearReceivedCalls();
+
+        // Act
+        Sut.Notes = "Would have been a draft";
+        Sut.BaitOrLure = "nymph";
+
+        // Assert
+        Sut.IsEditingSavedCatch.Should().BeTrue();
+        await MockCatchStore.DidNotReceive().SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPersistEditedNotesOnlyWhenTheAnglerSaves()
+    {
+        // Arrange
+        var catchId = Guid.Parse("33333333-3333-3333-3333-333333333336");
+        var photoId = Guid.Parse("44444444-4444-4444-4444-444444444447");
         MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
             CreateRecord(LocalCatchLifecycleEnum.Saved, catchId, photographId: photoId, notes: "Original"));
         await Sut.InitializeAsync(catchId, CancellationToken.None);
@@ -74,14 +139,44 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
             });
 
         // Act
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().BeTrue();
+        savedArgs.Should().NotBeNull();
+        savedArgs!.Id.Should().Be(catchId);
+        savedArgs.Lifecycle.Should().Be(LocalCatchLifecycleEnum.Saved);
+        savedArgs.Notes.Should().Be("Edited notes");
+        Sut.IsSaved.Should().BeTrue();
+        await MockCatchStore.Received(1).SaveAsync(
+            Arg.Is<LocalCatchSaveArgs>(args =>
+                args.Id == catchId
+                && args.Lifecycle == LocalCatchLifecycleEnum.Saved
+                && args.Notes == "Edited notes"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotWriteADraftAfterASuccessfulSave()
+    {
+        // Arrange
+        var catchId = Guid.Parse("33333333-3333-3333-3333-333333333337");
+        var photoId = Guid.Parse("44444444-4444-4444-4444-444444444448");
+        MockCatchStore.GetAsync(catchId, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, catchId, photographId: photoId, notes: "Original"));
+        MockCatchStore.SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call => LocalCatchSaveResultModel.Saved(call.Arg<LocalCatchSaveArgs>().Id, 2));
+        await Sut.InitializeAsync(catchId, CancellationToken.None);
+        Sut.Notes = "Committed notes";
+        (await Sut.SaveAsync(CancellationToken.None)).Should().BeTrue();
+        MockCatchStore.ClearReceivedCalls();
+
+        // Act
         await Sut.OnDisappearingAsync(CancellationToken.None);
 
         // Assert
-        savedArgs.Should().NotBeNull();
-        savedArgs!.Lifecycle.Should().Be(LocalCatchLifecycleEnum.Saved);
-        savedArgs.Notes.Should().Be("Edited notes");
-        Sut.IsSaved.Should().BeFalse();
-        Sut.Photographs.MinimumCount.Should().Be(1);
+        Sut.IsSaved.Should().BeTrue();
+        await MockCatchStore.DidNotReceive().SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
