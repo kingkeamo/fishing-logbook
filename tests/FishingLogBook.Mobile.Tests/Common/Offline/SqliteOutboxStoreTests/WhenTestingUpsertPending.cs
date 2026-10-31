@@ -202,4 +202,49 @@ public sealed class WhenTestingUpsertPending : BaseSqliteOutboxStoreTest
         otherPending.Should().BeEmpty();
         ownerPending.Should().HaveCount(1);
     }
+
+    [Fact]
+    public async Task ItShouldKeepTheLastErrorAndAttemptCountOfAPendingOperationWhenItIsCoalesced()
+    {
+        // Arrange
+        var aggregateId = Guid.NewGuid();
+        var first = DateTimeOffset.Parse("2026-06-01T12:00:00Z");
+        var second = first.AddMinutes(5);
+        await Database.EnsureInitializedAsync(CancellationToken.None);
+        await UpsertAsync(aggregateId, "{\"revision\":1}", attemptCount: 2, lastError: "NotFound", availableAt: first.AddMinutes(30));
+
+        // Act
+        await UpsertAsync(aggregateId, "{\"revision\":2}", attemptCount: 0, lastError: null, availableAt: second);
+
+        // Assert
+        var pending = (await Sut.ListPendingForAggregateAsync(UserId, OutboxAggregateTypeEnum.Catch, aggregateId, CancellationToken.None)).Single();
+        pending.PayloadJson.Should().Be("{\"revision\":2}");
+        pending.AvailableAt.Should().Be(second);
+        pending.LastError.Should().Be("NotFound");
+        pending.AttemptCount.Should().Be(2);
+    }
+
+    private Task UpsertAsync(Guid aggregateId, string payload, int attemptCount, string? lastError, DateTimeOffset availableAt)
+    {
+        return Database.ExecuteInTransactionAsync(
+            (connection, transaction, ct) => Sut.UpsertPendingAsync(
+                connection,
+                transaction,
+                new OutboxOperationModel
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = UserId,
+                    AggregateType = OutboxAggregateTypeEnum.Catch,
+                    AggregateId = aggregateId,
+                    OperationType = OutboxOperationTypeEnum.UpsertCatchMetadata,
+                    PayloadJson = payload,
+                    Status = OutboxStatusEnum.Pending,
+                    AttemptCount = attemptCount,
+                    LastError = lastError,
+                    CreatedOn = DateTimeOffset.UtcNow,
+                    AvailableAt = availableAt
+                },
+                ct),
+            CancellationToken.None);
+    }
 }

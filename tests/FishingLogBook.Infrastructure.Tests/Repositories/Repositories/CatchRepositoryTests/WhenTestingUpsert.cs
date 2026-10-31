@@ -612,6 +612,90 @@ public class WhenTestingUpsert : BaseCatchRepositoryTest
     }
 
     [Fact]
+    public async Task ItShouldNotCreateASecondCatchOrDuplicatePhotographsWhenTheSameCatchIsUpsertedTwice()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var catchId = Guid.NewGuid();
+        var firstPhoto = Guid.NewGuid();
+        var secondPhoto = Guid.NewGuid();
+        var catchRecord = NewCatch(
+            userId,
+            catchId,
+            new CatchPhotograph
+            {
+                Id = firstPhoto,
+                CatchId = catchId,
+                ContentType = PhotographContentTypeConstants.Jpeg
+            },
+            new CatchPhotograph
+            {
+                Id = secondPhoto,
+                CatchId = catchId,
+                ContentType = PhotographContentTypeConstants.Png
+            });
+
+        // Act
+        var first = await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+        var second = await Sut.UpsertAsync(catchRecord, CancellationToken.None);
+
+        // Assert
+        first.IsSuccess.Should().BeTrue();
+        second.IsSuccess.Should().BeTrue();
+        second.Value.Should().BeEquivalentTo(first.Value);
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var catchCount = await connection.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM catches WHERE id = @Id;",
+            new { Id = catchId });
+        var photographIds = (await connection.QueryAsync<Guid>(
+            "SELECT id FROM catchphotographs WHERE catchid = @Id;",
+            new { Id = catchId })).ToList();
+        catchCount.Should().Be(1);
+        photographIds.Should().HaveCount(2);
+        photographIds.Should().BeEquivalentTo([firstPhoto, secondPhoto]);
+    }
+
+    [Fact]
+    public async Task ItShouldReplaceThePhotographRowsWhenTheUpsertedPhotographSetChanges()
+    {
+        // Arrange
+        var userId = await CreateUserAsync();
+        var catchId = Guid.NewGuid();
+        var photoA = Guid.NewGuid();
+        var photoB = Guid.NewGuid();
+        var photoC = Guid.NewGuid();
+        CatchPhotograph Photo(Guid id) => new()
+        {
+            Id = id,
+            CatchId = catchId,
+            ContentType = PhotographContentTypeConstants.Jpeg
+        };
+
+        // Act
+        var first = await Sut.UpsertAsync(
+            NewCatch(userId, catchId, Photo(photoA), Photo(photoB)),
+            CancellationToken.None);
+        var second = await Sut.UpsertAsync(
+            NewCatch(userId, catchId, Photo(photoB), Photo(photoC)),
+            CancellationToken.None);
+
+        // Assert
+        first.IsSuccess.Should().BeTrue();
+        second.IsSuccess.Should().BeTrue();
+        second.Value.Id.Should().Be(first.Value.Id);
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        var catchCount = await connection.ExecuteScalarAsync<long>(
+            "SELECT COUNT(*) FROM catches WHERE id = @Id;",
+            new { Id = catchId });
+        var photographIds = (await connection.QueryAsync<Guid>(
+            "SELECT id FROM catchphotographs WHERE catchid = @Id;",
+            new { Id = catchId })).ToList();
+        catchCount.Should().Be(1);
+        photographIds.Should().BeEquivalentTo([photoB, photoC]);
+        photographIds.Should().NotContain(photoA);
+    }
+
+    [Fact]
     public async Task ItShouldRejectANonPositiveWeight()
     {
         // Arrange

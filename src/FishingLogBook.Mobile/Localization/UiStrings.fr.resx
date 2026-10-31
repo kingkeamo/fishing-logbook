@@ -325,7 +325,14 @@
   <data name="EditCatch" xml:space="preserve"><value>Modifier la prise</value></data>
   <data name="CaughtOnLabel" xml:space="preserve"><value>Prise le</value></data>
   <data name="CatchBaitOrLure" xml:space="preserve"><value>Appât ou leurre</value></data>
-  <data name="CatchSavedLocally" xml:space="preserve"><value>Enregistrée localement sur cet appareil.</value></data>
+  <data name="CatchSavedLocally" xml:space="preserve"><value>EnregistrÃ©e localement sur cet appareil.</value></data>
+  <data name="CatchSyncWaiting" xml:space="preserve"><value>En attente de synchronisation.</value></data>
+  <data name="CatchSyncSynchronising" xml:space="preserve"><value>Synchronisation en cours…</value></data>
+  <data name="CatchSyncSynced" xml:space="preserve"><value>Synchronisée.</value></data>
+  <data name="CatchSyncNeedsAttention" xml:space="preserve"><value>La synchronisation nécessite votre attention.</value></data>
+  <data name="CatchSyncActionRequired" xml:space="preserve"><value>Synchronisation impossible. Vérifiez la prise, puis réessayez.</value></data>
+  <data name="CatchSyncPhotosProgress" xml:space="preserve"><value>Détails synchronisés · photos envoyées : {0} sur {1}.</value></data>
+  <data name="CatchSyncRetry" xml:space="preserve"><value>Réessayer la synchronisation</value></data>
   <data name="CatchSaveFailed" xml:space="preserve"><value>Impossible d'enregistrer cette prise. Réessayez.</value></data>
   <data name="CatchSaveNotSignedIn" xml:space="preserve"><value>Connectez-vous pour enregistrer des prises sur cet appareil.</value></data>
   <data name="CatchNotSignedIn" xml:space="preserve"><value>Connectez-vous pour enregistrer ou modifier des prises.</value></data>

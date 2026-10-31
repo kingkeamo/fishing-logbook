@@ -3,6 +3,7 @@ using CommunityToolkit.Maui.Extensions;
 using FishingLogBook.Mobile.Features.Catch.Enums;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.Popups;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Navigation;
 using Microsoft.Maui.Controls.Shapes;
@@ -13,12 +14,14 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
 {
     private readonly NavigationService _navigation;
     private readonly InteractionService _interactions;
+    private readonly ICatchSyncRetryService _syncRetry;
     private bool _showingActions;
 
-    public CatchDetailPage(NavigationService navigation, InteractionService interactions)
+    public CatchDetailPage(NavigationService navigation, InteractionService interactions, ICatchSyncRetryService syncRetry)
     {
         _navigation = navigation;
         _interactions = interactions;
+        _syncRetry = syncRetry;
         InitializeComponent();
     }
 
@@ -93,6 +96,14 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
     private async void OnEditCatch(object? sender, EventArgs args)
     {
         await OpenEditorAsync();
+    }
+
+    private async void OnRetrySync(object? sender, EventArgs args)
+    {
+        if (BindingContext is CatchPresentationModel item)
+        {
+            await _syncRetry.RetryAsync(item.Id, CancellationToken.None);
+        }
     }
 
     private void OnThumbnailTapped(object? sender, TappedEventArgs args)

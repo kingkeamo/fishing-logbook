@@ -27,4 +27,8 @@ public sealed class OutboxOperationModel
     public DateTimeOffset? LastAttemptAt { get; init; }
 
     public string? LastError { get; init; }
+
+    public string? LeaseOwner { get; init; }
+
+    public DateTimeOffset? LeaseExpiresAt { get; init; }
 }

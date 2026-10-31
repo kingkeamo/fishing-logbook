@@ -36,7 +36,7 @@ public sealed class WhenTestingCatchDetailPresentation
             .Descendants().Select(element => (string?)element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2009/xaml")));
 
         // Assert
-        buttons.Should().BeEmpty();
+        buttons.Select(button => (string?)button.Attribute("AutomationId")).Should().Equal("CatchSyncRetry");
         styleKeys.Should().NotContain("CardAction");
     }
 
@@ -113,6 +113,26 @@ public sealed class WhenTestingCatchDetailPresentation
         controls.Should().OnlyContain(control => !control.Ancestors().Contains(image) && !control.Descendants().Any(element => element.Name.LocalName == "TapGestureRecognizer"));
         controls.Select(control => control.Attribute("Clicked")?.Value).Where(handler => handler is not null)
             .Should().Equal("OnPreviousRequested", "OnNextRequested");
+    }
+
+    [Fact]
+    public void ItShouldShowTheStoredSyncStatusAndOfferRetryOnlyWhenItCanBeRetried()
+    {
+        // Arrange
+        var page = XDocument.Load(Path.Combine(MobileRoot, "Features", "Catch", "Pages", "CatchDetailPage.xaml"));
+        var code = File.ReadAllText(Path.Combine(MobileRoot, "Features", "Catch", "Pages", "CatchDetailPage.xaml.cs"));
+
+        // Act
+        var status = page.Descendants().Single(element => (string?)element.Attribute("AutomationId") == "CatchSyncStatus");
+        var retry = page.Descendants().Single(element => (string?)element.Attribute("AutomationId") == "CatchSyncRetry");
+
+        // Assert
+        status.Attribute("Text")!.Value.Should().Be("{Binding SaveStatus}");
+        status.Parent!.Attribute("IsVisible")!.Value.Should().Be("{Binding HasSaveStatus}");
+        retry.Attribute("IsVisible")!.Value.Should().Be("{Binding CanRetrySync}");
+        retry.Attribute("Clicked")!.Value.Should().Be("OnRetrySync");
+        retry.Attribute("Text")!.Value.Should().Be("{Binding Text[CatchSyncRetry]}");
+        MethodBody(code, "OnRetrySync").Should().Contain("_syncRetry.RetryAsync(item.Id").And.NotContain("OpenEditorAsync");
     }
 
     [Fact]

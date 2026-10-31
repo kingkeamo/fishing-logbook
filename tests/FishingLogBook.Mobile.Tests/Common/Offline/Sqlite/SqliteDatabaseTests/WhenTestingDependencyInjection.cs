@@ -1,5 +1,6 @@
 using System.Globalization;
 using AwesomeAssertions;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
@@ -49,6 +50,9 @@ public sealed class WhenTestingDependencyInjection : IDisposable
         services.AddSingleton(session);
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IOutboxStore, SqliteOutboxStore>();
+        services.AddSingleton<IOutboxChangeNotifier, OutboxChangeNotifier>();
+        services.AddSingleton(Substitute.For<ICatchSyncStatusStore>());
+        services.AddSingleton(Microsoft.Extensions.Logging.Abstractions.NullLogger<CatchListViewModel>.Instance);
         services.AddSingleton<ICatchStore, SqliteCatchStore>();
         services.AddSingleton(new UiTextService(CultureInfo.GetCultureInfo("en-GB")));
         services.AddSingleton(Substitute.For<IPhotographFileStore>());

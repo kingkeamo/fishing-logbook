@@ -8,5 +8,6 @@ public enum ApiOutcomeEnum
     Forbidden = 3,
     Unavailable = 4,
     ServerError = 5,
-    InvalidResponse = 6
+    InvalidResponse = 6,
+    NotFound = 7
 }

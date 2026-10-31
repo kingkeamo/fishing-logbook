@@ -1,16 +1,18 @@
 using System.Globalization;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
-using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Measurements;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchListViewModelTests;
@@ -25,6 +27,8 @@ public abstract class BaseCatchListViewModelTest
     protected IAccountUnitsService MockUnits { get; } = Substitute.For<IAccountUnitsService>();
     protected ICatchStore MockCatchStore { get; } = Substitute.For<ICatchStore>();
     protected IAccountSessionCoordinator MockSessionCoordinator { get; } = Substitute.For<IAccountSessionCoordinator>();
+    protected ICatchSyncStatusStore MockSyncStatusStore { get; } = Substitute.For<ICatchSyncStatusStore>();
+    protected IOutboxChangeNotifier MockNotifier { get; } = Substitute.For<IOutboxChangeNotifier>();
     protected CatchListViewModel Sut { get; }
 
     protected BaseCatchListViewModelTest()
@@ -43,6 +47,9 @@ public abstract class BaseCatchListViewModelTest
         var sut = new CatchListViewModel(
             Text,
             MockCatchStore,
+            MockSyncStatusStore,
+            MockNotifier,
+            NullLogger<CatchListViewModel>.Instance,
             MockSessionCoordinator,
             mapper,
             MockUnits,

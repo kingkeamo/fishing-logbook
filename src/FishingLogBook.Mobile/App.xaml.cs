@@ -1,3 +1,5 @@
+using FishingLogBook.Mobile.Common.Offline.Coordinators;
+using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
@@ -13,18 +15,21 @@ public partial class App : Application
     private readonly PreferenceService _preferences;
     private readonly IAuthenticationService _authenticationService;
     private readonly ISessionLifecycleCoordinator _sessionLifecycle;
+    private readonly IOutboxSyncCoordinator _syncCoordinator;
     private Window? _window;
 
     public App(
         PreferenceService preferences,
         IAuthenticationService authenticationService,
         ISessionLifecycleCoordinator sessionLifecycle,
+        IOutboxSyncCoordinator syncCoordinator,
         IServiceProvider services)
     {
         InitializeComponent();
         _preferences = preferences;
         _authenticationService = authenticationService;
         _sessionLifecycle = sessionLifecycle;
+        _syncCoordinator = syncCoordinator;
         _services = services;
         _authenticationService.SessionChanged += OnSessionChanged;
         _sessionLifecycle.StateChanged += OnLifecycleStateChanged;
@@ -35,6 +40,7 @@ public partial class App : Application
         _preferences.Initialize();
         _window = new Window(_services.GetRequiredService<StartupPage>());
         _sessionLifecycle.Start();
+        _syncCoordinator.Start();
         _window.Resumed += OnResumed;
         _window.Stopped += OnStopped;
         _window.Destroying += OnDestroying;
@@ -46,6 +52,7 @@ public partial class App : Application
         try
         {
             await _sessionLifecycle.ForegroundAsync(CancellationToken.None);
+            _syncCoordinator.Request(OutboxSyncTriggerEnum.Foreground);
         }
         catch (OperationCanceledException)
         {
@@ -54,11 +61,13 @@ public partial class App : Application
 
     private void OnStopped(object? sender, EventArgs args)
     {
+        _syncCoordinator.Pause();
         _sessionLifecycle.Background();
     }
 
     private void OnDestroying(object? sender, EventArgs args)
     {
+        _syncCoordinator.Pause();
         _sessionLifecycle.Background();
     }
 

@@ -25,6 +25,11 @@
     <Label Text="{Binding Species}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level2" AutomationId="CatchSpecies" />
     <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" />
    </VerticalStackLayout>
+   <VerticalStackLayout Spacing="8" IsVisible="{Binding HasSaveStatus}">
+    <Label Text="{Binding SaveStatus}" Style="{StaticResource SecondaryText}" AutomationId="CatchSyncStatus" />
+    <Button Text="{Binding Text[CatchSyncRetry]}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding CanRetrySync}" HorizontalOptions="Start"
+            SemanticProperties.Description="{Binding Text[CatchSyncRetry]}" Clicked="OnRetrySync" AutomationId="CatchSyncRetry" />
+   </VerticalStackLayout>
    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
     <controls:InfoTile Icon="icon_pin.png" Caption="{Binding Text[Location]}" Value="{Binding Place}" />
     <controls:InfoTile Grid.Column="1" Icon="icon_hook.png" Caption="{Binding Text[FishingMethod]}" Value="{Binding Method}" />

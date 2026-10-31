@@ -55,16 +55,64 @@ public sealed class AuthorizedApiClient
         return await SendAsync<TResponse>(request, cancellationToken);
     }
 
+    public async Task<ApiResultModel<TResponse>> PostAsync<TRequest, TResponse>(
+        string path,
+        TRequest value,
+        CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path)
+        {
+            Content = JsonContent.Create(value)
+        };
+        return await SendAsync<TResponse>(request, cancellationToken, distinguishNotFound: true);
+    }
+
+    public async Task<ApiResultModel<NoContentModel>> PostNoContentAsync<TRequest>(
+        string path,
+        TRequest value,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path)
+        {
+            Content = JsonContent.Create(value)
+        };
+        return await SendAsync(request, cancellationToken, distinguishNotFound: true, ReadNoContent);
+    }
+
+    public async Task<ApiResultModel<NoContentModel>> DeleteAsync(string path, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, path);
+        return await SendAsync(request, cancellationToken, distinguishNotFound: true, ReadNoContent);
+    }
+
+    private Task<ApiResultModel<T>> SendAsync<T>(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken,
+        bool distinguishNotFound = false)
+        where T : class
+    {
+        return SendAsync(request, cancellationToken, distinguishNotFound, ReadJsonAsync<T>);
+    }
+
     private async Task<ApiResultModel<T>> SendAsync<T>(
         HttpRequestMessage request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool distinguishNotFound,
+        Func<HttpResponseMessage, CancellationToken, Task<ApiResultModel<T>>> readSuccess)
         where T : class
     {
         var lease = _sessionCoordinator.Capture();
         try
         {
             using var response = await _httpClient.SendAsync(request, cancellationToken);
-            return await ReadAsync<T>(response, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Authenticated API request returned {StatusCode}.", (int)response.StatusCode);
+                return ApiResultModel<T>.Failed(MapFailureStatus(response.StatusCode, distinguishNotFound));
+            }
+
+            return await readSuccess(response, cancellationToken);
         }
         catch (UnauthorizedAccessException)
         {
@@ -86,18 +134,11 @@ public sealed class AuthorizedApiClient
         }
     }
 
-    private async Task<ApiResultModel<T>> ReadAsync<T>(
+    private async Task<ApiResultModel<T>> ReadJsonAsync<T>(
         HttpResponseMessage response,
         CancellationToken cancellationToken)
         where T : class
     {
-        if (!response.IsSuccessStatusCode)
-        {
-            var outcome = MapFailureStatus(response.StatusCode);
-            _logger.LogWarning("Authenticated API request returned {StatusCode}.", (int)response.StatusCode);
-            return ApiResultModel<T>.Failed(outcome);
-        }
-
         try
         {
             var value = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
@@ -112,13 +153,21 @@ public sealed class AuthorizedApiClient
         }
     }
 
-    private static ApiOutcomeEnum MapFailureStatus(HttpStatusCode statusCode)
+    private static Task<ApiResultModel<NoContentModel>> ReadNoContent(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        return Task.FromResult(ApiResultModel<NoContentModel>.Succeeded(NoContentModel.Instance));
+    }
+
+    private static ApiOutcomeEnum MapFailureStatus(HttpStatusCode statusCode, bool distinguishNotFound)
     {
         return statusCode switch
         {
             HttpStatusCode.BadRequest => ApiOutcomeEnum.ValidationFailed,
             HttpStatusCode.Unauthorized => ApiOutcomeEnum.SessionExpired,
             HttpStatusCode.Forbidden => ApiOutcomeEnum.Forbidden,
+            HttpStatusCode.NotFound when distinguishNotFound => ApiOutcomeEnum.NotFound,
             HttpStatusCode.RequestTimeout => ApiOutcomeEnum.Unavailable,
             _ when (int)statusCode >= 500 => ApiOutcomeEnum.ServerError,
             _ => ApiOutcomeEnum.InvalidResponse
