@@ -147,7 +147,7 @@ public static partial class MauiProgram
             services.GetRequiredService<ISqliteConnectionFactory>(),
             services.GetRequiredService<ISqliteMigrator>(),
             services.GetRequiredService<ILogger<SqliteDatabase>>(),
-            services.GetServices<ILocalDatabaseInitializedObserver>()));
+            () => services.GetServices<ILocalDatabaseInitializedObserver>()));
         builder.Services.AddSingleton<IOutboxStore, SqliteOutboxStore>();
         builder.Services.AddSingleton<ICatchStore, SqliteCatchStore>();
         builder.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
