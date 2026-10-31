@@ -14,6 +14,7 @@ public sealed class CatchPresentationModel(
     bool savedLocally = false) : INotifyPropertyChanged
 {
     private static readonly IMeasurementService DefaultMeasurement = new MeasurementService();
+    private IReadOnlyList<CatchPhotoThumbnailModel>? _thumbnails;
     private IMeasurementService _measurement = DefaultMeasurement;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
@@ -40,11 +41,14 @@ public sealed class CatchPresentationModel(
     public string Notes => LocalizedOrRecorded(sampleText?.NotesKey, catchDto.Notes);
     public string BaitOrLure => string.IsNullOrWhiteSpace(catchDto.BaitOrLure) ? Text["NoBait"] : catchDto.BaitOrLure;
     public IReadOnlyList<string> Photos { get; } = photos ?? [];
+    public IReadOnlyList<CatchPhotoThumbnailModel> Thumbnails => _thumbnails ??= Photos.Select((path, index) => new CatchPhotoThumbnailModel(index, path, index == SelectedPhotoIndex, DescribePhoto)).ToArray();
+    public int SelectedPhotoIndex { get; private set; }
+    public string? SelectedPhoto => HasPhoto ? Photos[SelectedPhotoIndex] : null;
     public string? PreviewAsset => Photos.Count > 0 ? Photos[0] : null;
     public int PhotoCount => Photos.Count;
     public bool HasPhoto => Photos.Count > 0;
     public bool HasMultiplePhotos => Photos.Count > 1;
-    public string PhotoCounter => $"1/{Photos.Count}";
+    public string PhotoPosition => DescribePhoto(HasPhoto ? SelectedPhotoIndex : -1);
     public bool HasNotes => sampleText?.NotesKey is not null || !string.IsNullOrWhiteSpace(catchDto.Notes);
     public CatchSpeciesEnum SpeciesIdentifier => sampleText?.Species ?? CatchSpeciesEnum.Other;
     public bool HasNoPhoto => !HasPhoto;
@@ -60,12 +64,59 @@ public sealed class CatchPresentationModel(
         RefreshLocalizedText();
     }
 
-    public void RefreshLocalizedText()
+    public void SelectPhoto(int index)
     {
-        foreach (var property in new[] { nameof(Species), nameof(CaughtOn), nameof(ShortDate), nameof(Time), nameof(Method), nameof(Measurements), nameof(CardDescription), nameof(Weight), nameof(Length), nameof(Place), nameof(Notes), nameof(BaitOrLure), nameof(SaveStatus), nameof(OpenDescription) })
+        if (index < 0 || index >= Photos.Count || index == SelectedPhotoIndex)
+        {
+            return;
+        }
+
+        Thumbnails[SelectedPhotoIndex].IsSelected = false;
+        SelectedPhotoIndex = index;
+        Thumbnails[index].IsSelected = true;
+        foreach (var property in new[] { nameof(SelectedPhotoIndex), nameof(SelectedPhoto), nameof(PhotoPosition) })
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
+    }
+
+    public void NextPhoto()
+    {
+        if (HasMultiplePhotos)
+        {
+            SelectPhoto((SelectedPhotoIndex + 1) % Photos.Count);
+        }
+    }
+
+    public void PreviousPhoto()
+    {
+        if (HasMultiplePhotos)
+        {
+            SelectPhoto((SelectedPhotoIndex - 1 + Photos.Count) % Photos.Count);
+        }
+    }
+
+    public void ResetPhotoSelection()
+    {
+        SelectPhoto(0);
+    }
+
+    public void RefreshLocalizedText()
+    {
+        foreach (var property in new[] { nameof(Species), nameof(CaughtOn), nameof(ShortDate), nameof(Time), nameof(Method), nameof(Measurements), nameof(CardDescription), nameof(Weight), nameof(Length), nameof(Place), nameof(Notes), nameof(BaitOrLure), nameof(SaveStatus), nameof(OpenDescription), nameof(PhotoPosition) })
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+        }
+
+        foreach (var thumbnail in Thumbnails)
+        {
+            thumbnail.RefreshDescription();
+        }
+    }
+
+    private string DescribePhoto(int index)
+    {
+        return string.Format(Text.Culture, Text["PhotoPosition"], index + 1, Photos.Count);
     }
 
     private string LocalizedOrRecorded(string? resourceKey, string? recordedValue)

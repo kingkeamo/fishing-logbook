@@ -85,6 +85,7 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
     {
         if (query.TryGetValue(RouteConstants.CatchParameter, out var value) && value is CatchPresentationModel item)
         {
+            item.ResetPhotoSelection();
             BindingContext = item;
         }
     }
@@ -92,6 +93,24 @@ public partial class CatchDetailPage : ContentPage, IQueryAttributable
     private async void OnEditCatch(object? sender, EventArgs args)
     {
         await OpenEditorAsync();
+    }
+
+    private void OnThumbnailTapped(object? sender, TappedEventArgs args)
+    {
+        if (BindingContext is CatchPresentationModel item && (sender as BindableObject)?.BindingContext is CatchPhotoThumbnailModel thumbnail)
+        {
+            item.SelectPhoto(thumbnail.Index);
+        }
+    }
+
+    private void OnPreviousPhoto(object? sender, EventArgs args)
+    {
+        (BindingContext as CatchPresentationModel)?.PreviousPhoto();
+    }
+
+    private void OnNextPhoto(object? sender, EventArgs args)
+    {
+        (BindingContext as CatchPresentationModel)?.NextPhoto();
     }
 
     private async Task OpenEditorAsync()

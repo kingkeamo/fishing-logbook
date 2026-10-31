@@ -27,8 +27,12 @@ Date: 31 October 2026. Dependency PR #280 was confirmed merged before creating
   preview, arrows/swipes, counter, remove, metadata, chosen-details action, and
   expandable section. Browsing does not reorder or save photos. Existing ordering
   service actions remain tested and available to consumers.
-- Catch actions use an app-themed bottom sheet. Tapping the main detail photo or
-  a thumbnail opens the same existing-catch editor as the menu's Edit action.
+- Catch actions use an app-themed bottom sheet. Tapping the main detail photo
+  opens the same existing-catch editor as the menu's Edit action. Thumbnails,
+  previous/next controls and swipes only change the selected photo.
+- The Catch detail page reuses `PhotoCarouselView` read-only. `CatchPresentationModel`
+  owns one selected photo index (first photo on every open); thumbnails highlight
+  the selected photo. Previous/next wrap, matching Web and the photo editor.
 
 ## Android evidence
 
@@ -65,27 +69,62 @@ Screenshots: [photo editor](evidence/271/photo-editor.png),
 | Leave edit without Save | Passed; saved revision, fields, and photo references unchanged |
 | Independent new-catch draft restoration | Passed; draft notes restored without overwriting the saved catch |
 | Durable photos and metadata after removing gallery source files | Passed; previews and EXIF date survived process restart and reload |
-| Themed actions menu, cancel, menu Edit, photo/thumbnail edit entry | Passed |
+| Themed actions menu, cancel, menu Edit | Passed |
 
 The initial saved catch retained revision 13 while a separate draft was restored
 and then saved as a second catch at revision 10. There were three persisted photo
 rows across those catches. These revision numbers include earlier draft autosaves;
 they are not API sync versions. No remote Catch synchronisation was implemented.
 
+### Catch detail photo interactions
+
+Follow-up to the checks above. Same emulator (`emulator-5554`, Android 16/API 36,
+1080x2400), Debug APK built from this branch and installed over the previous build,
+signed-in account with two saved catches that each have two photographs. Hit targets
+were read from the Android accessibility hierarchy (`uiautomator dump`) and each
+interaction was followed by a fresh dump to confirm which page was showing.
+Screenshot: [photo 2 selected](evidence/271/catch-detail-photo-selected.png).
+
+Hit targets (px): main photo `ImageView` [42,221][1038,851]; Previous
+[42,872][168,998]; counter label [179,911][765,960]; Next [776,872][902,998];
+thumbnails [42,2026][231,2190] and [252,2026][441,2190]. No element overlays the
+photo; the previous full-size `CardAction` button was removed. The only native
+Edit entry points are the main photo and the menu's Edit action.
+
+| Check | Result |
+| --- | --- |
+| Opens on Photo 1 of 2, first thumbnail highlighted | Passed |
+| Tap counter text, species heading, info tile, gap under the photo, notes area | Passed; stayed on the detail page each time |
+| Tap thumbnail 2, then thumbnail 1 | Passed; main photo, counter and highlight followed; no navigation |
+| Next, Next, Previous, Previous | Passed; 2 of 2, wrapped to 1 of 2, wrapped to 2 of 2, 1 of 2; no navigation |
+| Swipe left, swipe right, swipe left on the main photo | Passed; 2 of 2, 1 of 2, 2 of 2; no navigation |
+| Tap the centre of the main photo | Passed; opened the Catch editor, system Back returned to the detail page |
+| Tap the letterbox bars inside the photo frame | Opens Edit (the frame is the Image control); see gaps |
+| Menu Edit | Passed; opened the Catch editor |
+| Leave to the list and reopen the same catch after viewing photo 2 | Passed; reopened on Photo 1 of 2 |
+| Single-photo catch hides previous/next | Not run; both saved catches have two photos and no data was edited to create one |
+| Dark theme and French on the detail page | Not run on device; French copy covered by unit tests |
+| TalkBack | Not run |
+
 ## Automated validation
 
-- Mobile tests: 899 passed, including selected-photo navigation, no-op guards,
+- Mobile tests: 926 passed, including selected-photo navigation, no-op guards,
+  detail-page photo selection/next/previous/wrap/single-photo/reset behaviour,
+  XAML wiring that keeps Edit off thumbnails and carousel controls,
   metadata application, localisation, protected removal, cancellation/permission
   outcomes, partial selection, explicit Save, draft isolation, account isolation,
   notification regressions, real SQLite reload/edit/outbox semantics, and migration
   upgrade compatibility.
 - Full solution build: passed with no warnings/errors; Android APK included.
-- Full solution tests: 4,009 passed across seven projects.
+- Full solution tests: 4,036 passed across seven projects.
 - JavaScript tests: 409 passed.
-- Browser regression tests: 159 passed, seven existing skips. One earlier run
-  timed out opening the unchanged offline-shell landing page; the isolated retry
-  and subsequent full run passed. No Web production code was changed.
-- Formatting and diff whitespace checks: passed for changed C# and the final diff.
+- Browser regression tests: 159 passed, seven existing skips on the final full run.
+  Two earlier full runs each had one different offline-shell test time out waiting
+  for the unchanged public landing page (158 passed); the isolated retry and the
+  following full run passed. No Web production code was changed.
+- Formatting: `dotnet format` run on the solution. It also reordered `using`
+  directives in seven files this change does not touch (including two Web
+  files); those were reverted to keep the diff scoped, so that drift remains.
 
 ViewModel tests do not prove native rendering. The Android checks above supply
 that evidence. The Web Playwright suite cannot exercise native MAUI; no browser
@@ -117,6 +156,24 @@ Findings discovered during self-review and fixed: invalidated photo binding,
 discarded metadata, stuck validation, missing text fields/reload notifications,
 saved-location mutation on load, stale-account saving, stale return destination,
 partial-picker loss, dark delete-icon contrast, and narrow menu sizing.
+
+Detail photo follow-up self-review. Findings fixed: an Edit overlay button spanning
+the photo card, thumbnails that opened Edit, no carousel state or navigation on the
+detail page, and a now-unused `PhotoCounter` property (removed; the visible counter
+is `PhotoPosition`). Two outdated assertions that required thumbnail-to-Edit were
+replaced by tests that forbid it.
+
+Photo ordering (reported, not changed): the editor offers no reordering control.
+The per-photo Earlier/Later buttons were replaced by the carousel when the editor
+was recomposed to match Web, and this PR's description records that carousel arrows
+browse rather than reorder. `MoveEarlier`/`MoveLater` remain in the ViewModel and
+service with tests, so stored order is preserved but cannot be changed from the UI.
+Whether users need reordering is a product decision for a separate ticket.
+
+Detail page observations: tapping the letterbox bars inside the 240dp photo frame
+opens Edit, because the frame is a single Image control; a catch with one photo still
+shows the "Photo 1 of 1" label (previous/next are hidden) because the carousel always
+shows its position text, whereas Web hides the count for a single photo.
 
 Remaining deliberate gaps: independent remote sync/uploads (#272), trip association
 and provenance (#273), and physical-device/iOS/release performance verification.

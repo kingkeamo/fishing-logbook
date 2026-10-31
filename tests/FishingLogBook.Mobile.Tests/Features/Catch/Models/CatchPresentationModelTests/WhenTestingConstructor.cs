@@ -72,9 +72,9 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
     }
 
     [Theory]
-    [InlineData("en-GB", "2.4 kg", "Sunday, 14 June 2026 07:30")]
-    [InlineData("fr-FR", "2,4 kg", "dimanche 14 juin 2026 07:30")]
-    public void ItShouldFormatMeasurementsAndRecordedTimeInSelectedCulture(string culture, string weight, string date)
+    [InlineData("en-GB", "2.4 kg", "Sunday, 14 June 2026 07:30", "Photo 1 of 2")]
+    [InlineData("fr-FR", "2,4 kg", "dimanche 14 juin 2026 07:30", "Photo 1 sur 2")]
+    public void ItShouldFormatMeasurementsAndRecordedTimeInSelectedCulture(string culture, string weight, string date, string position)
     {
         // Arrange
         var dto = Catch with { SpeciesName = "Perch", Method = "Fly", Weight = 2.4m, Length = 48m, PlaceName = "Lake", Notes = "Released" };
@@ -95,7 +95,7 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
         sut.PreviewAsset.Should().Be("brand_mark.png");
         sut.PhotoCount.Should().Be(2);
         sut.HasMultiplePhotos.Should().BeTrue();
-        sut.PhotoCounter.Should().Be("1/2");
+        sut.PhotoPosition.Should().Be(position);
         sut.HasNoPhoto.Should().BeFalse();
         sut.OpenDescription.Should().Contain("Perch").And.Contain(date);
     }
@@ -143,7 +143,7 @@ public class WhenTestingConstructor : BaseCatchPresentationModelTest
     }
 
     [Fact]
-    public void ItShouldNotShowAPhotoCounterBadgeForASinglePhoto()
+    public void ItShouldNotOfferPhotoNavigationForASinglePhoto()
     {
         // Arrange
         // Act

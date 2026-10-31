@@ -8,8 +8,9 @@
     <Border StrokeThickness="0" Padding="0" BackgroundColor="{AppThemeBinding Light={StaticResource Canvas}, Dark={StaticResource DarkSurface}}">
       <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
       <Image Source="{Binding PhotoPath}" Aspect="AspectFit" HeightRequest="240"
-             SemanticProperties.Description="{Binding PositionText}" AutomationId="PhotoCurrentPreview">
+             SemanticProperties.Description="{Binding PositionText}" SemanticProperties.Hint="{Binding PhotoHint}" AutomationId="PhotoCurrentPreview">
         <Image.GestureRecognizers>
+          <TapGestureRecognizer Tapped="OnPhotoTapped" />
           <SwipeGestureRecognizer Direction="Left" Swiped="OnNextRequested" />
           <SwipeGestureRecognizer Direction="Right" Swiped="OnPreviousRequested" />
         </Image.GestureRecognizers>

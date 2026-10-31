@@ -22,6 +22,15 @@ public partial class PhotoCarouselView : ContentView
         set => SetValue(PositionTextProperty, value);
     }
 
+    public static readonly BindableProperty PhotoHintProperty = BindableProperty.Create(
+        nameof(PhotoHint), typeof(string), typeof(PhotoCarouselView), null);
+
+    public string? PhotoHint
+    {
+        get => (string?)GetValue(PhotoHintProperty);
+        set => SetValue(PhotoHintProperty, value);
+    }
+
     public static readonly BindableProperty HasMultiplePhotographsProperty = BindableProperty.Create(
         nameof(HasMultiplePhotographs), typeof(bool), typeof(PhotoCarouselView), false);
 
@@ -61,6 +70,13 @@ public partial class PhotoCarouselView : ContentView
     public PhotoCarouselView()
     {
         InitializeComponent();
+    }
+
+    public event EventHandler? PhotoTapped;
+
+    private void OnPhotoTapped(object? sender, EventArgs args)
+    {
+        PhotoTapped?.Invoke(this, EventArgs.Empty);
     }
 
     public event EventHandler? PreviousRequested;

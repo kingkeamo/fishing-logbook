@@ -6,13 +6,19 @@ not host Razor or a WebView.
 
 | View | Inputs | Events |
 | --- | --- | --- |
-| `PhotoCarouselView` | Photo path, position text, multiple-photo flag, editable/removal flags, localisation | Previous, next, remove |
+| `PhotoCarouselView` | Photo path, position text, photo hint, multiple-photo flag, editable/removal flags, localisation | Photo tapped, previous, next, remove |
 | `PhotoDetailsView` | Formatted date, location availability, apply availability, chosen state, optional apply action, localisation | Use details |
 | `PhotoPickerView` | Capacity, busy state, status, localisation | Camera, gallery |
 
 These views can be used independently. They have no Catch dependency, persistence,
 permissions, or API calls. Read-only consumers leave `IsEditable` and
 `ShowUseDetails` false. The parent supplies state and handles events.
+
+The Catch detail page is the read-only consumer: it binds the carousel to
+`CatchPresentationModel` (selected photo, position text, multiple-photo flag) and
+handles `PhotoTapped` by opening the editor. `PhotoTapped` is raised only by the
+main image; previous, next and the position label are separate controls outside
+it and never raise it.
 
 `PhotoCollectionEditorView` composes the three views inside an expandable section.
 Its `ViewModel` binding retains the caller's binding context; only its contents
