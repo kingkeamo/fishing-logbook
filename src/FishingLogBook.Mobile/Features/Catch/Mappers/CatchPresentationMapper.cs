@@ -8,7 +8,10 @@ namespace FishingLogBook.Mobile.Features.Catch.Mappers;
 
 public sealed class CatchPresentationMapper(IPhotographFileStore photographFileStore)
 {
-    public CatchPresentationModel Map(LocalCatchRecordModel record, UiTextService text)
+    public CatchPresentationModel Map(
+        LocalCatchRecordModel record,
+        UiTextService text,
+        CatchSyncStatusModel? syncStatus = null)
     {
         ArgumentNullException.ThrowIfNull(record);
         ArgumentNullException.ThrowIfNull(text);
@@ -42,6 +45,6 @@ public sealed class CatchPresentationMapper(IPhotographFileStore photographFileS
                     record.Location.Visibility,
                     record.Location.ConsentVersion)
         };
-        return new CatchPresentationModel(dto, text, photos, savedLocally: true);
+        return new CatchPresentationModel(dto, text, photos, savedLocally: true, syncStatus: syncStatus);
     }
 }

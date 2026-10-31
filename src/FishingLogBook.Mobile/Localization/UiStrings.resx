@@ -326,6 +326,13 @@
   <data name="CaughtOnLabel" xml:space="preserve"><value>Caught on</value></data>
   <data name="CatchBaitOrLure" xml:space="preserve"><value>Bait or lure</value></data>
   <data name="CatchSavedLocally" xml:space="preserve"><value>Saved locally on this device.</value></data>
+  <data name="CatchSyncWaiting" xml:space="preserve"><value>Waiting to sync.</value></data>
+  <data name="CatchSyncSynchronising" xml:space="preserve"><value>Syncing…</value></data>
+  <data name="CatchSyncSynced" xml:space="preserve"><value>Synced.</value></data>
+  <data name="CatchSyncNeedsAttention" xml:space="preserve"><value>Sync needs attention.</value></data>
+  <data name="CatchSyncActionRequired" xml:space="preserve"><value>Couldn’t sync. Check the catch details, then retry.</value></data>
+  <data name="CatchSyncPhotosProgress" xml:space="preserve"><value>Details synced · {0} of {1} photos uploaded.</value></data>
+  <data name="CatchSyncRetry" xml:space="preserve"><value>Retry sync</value></data>
   <data name="CatchSaveFailed" xml:space="preserve"><value>Could not save this catch. Try again.</value></data>
   <data name="CatchSaveNotSignedIn" xml:space="preserve"><value>Sign in to save catches on this device.</value></data>
   <data name="CatchNotSignedIn" xml:space="preserve"><value>Sign in to record or edit catches.</value></data>

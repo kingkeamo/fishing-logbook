@@ -10,5 +10,10 @@ public interface ICatchStore
 
     Task<LocalCatchRecordModel?> GetAsync(Guid catchId, CancellationToken cancellationToken);
 
+    Task<LocalCatchRecordModel?> GetForOwnerAsync(
+        Guid userId,
+        Guid catchId,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlyList<LocalCatchRecordModel>> ListAsync(CancellationToken cancellationToken);
 }

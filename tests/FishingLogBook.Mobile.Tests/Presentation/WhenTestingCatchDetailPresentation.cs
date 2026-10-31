@@ -36,7 +36,7 @@ public sealed class WhenTestingCatchDetailPresentation
             .Descendants().Select(element => (string?)element.Attribute(XName.Get("Key", "http://schemas.microsoft.com/winfx/2009/xaml")));
 
         // Assert
-        buttons.Should().BeEmpty();
+        buttons.Select(button => (string?)button.Attribute("AutomationId")).Should().Equal("CatchSyncRetry");
         styleKeys.Should().NotContain("CardAction");
     }
 

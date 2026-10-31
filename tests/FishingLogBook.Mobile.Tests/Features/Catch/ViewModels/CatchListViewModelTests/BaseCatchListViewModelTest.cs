@@ -1,4 +1,5 @@
 using System.Globalization;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
@@ -11,6 +12,7 @@ using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Measurements;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchListViewModelTests;
@@ -43,6 +45,9 @@ public abstract class BaseCatchListViewModelTest
         var sut = new CatchListViewModel(
             Text,
             MockCatchStore,
+            Substitute.For<ICatchSyncStatusStore>(),
+            Substitute.For<IOutboxChangeNotifier>(),
+            NullLogger<CatchListViewModel>.Instance,
             MockSessionCoordinator,
             mapper,
             MockUnits,

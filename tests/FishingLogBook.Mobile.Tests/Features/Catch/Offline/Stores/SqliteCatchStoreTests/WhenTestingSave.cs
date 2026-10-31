@@ -1,6 +1,7 @@
 using System.Globalization;
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Common.Offline.Enums;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
@@ -17,6 +18,7 @@ using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Shared.Measurements;
 using FishingLogBook.Shared.Photographs.Models;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.Offline.Stores.SqliteCatchStoreTests;
@@ -111,7 +113,8 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
         await editor.OnDisappearingAsync(CancellationToken.None);
         var reopened = RecreateStoreAgainstSameDatabase();
         var record = (await reopened.ListAsync(CancellationToken.None)).Single();
-        var list = new CatchListViewModel(text, reopened, MockSessionCoordinator,
+        var list = new CatchListViewModel(text, reopened, Substitute.For<ICatchSyncStatusStore>(), MockNotifier,
+            NullLogger<CatchListViewModel>.Instance, MockSessionCoordinator,
             new CatchPresentationMapper(files), units, new MeasurementService(), TimeProvider.System);
         await list.RefreshFromStoreAsync(CancellationToken.None);
         using var edit = CreateEditor(reopened, text, files, units);

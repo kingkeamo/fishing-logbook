@@ -137,7 +137,8 @@ public sealed class SqliteOutboxStore : IOutboxStore
         command.CommandText =
             """
             SELECT id, userid, aggregatetype, aggregateid, operationtype, payloadjson,
-                   status, attemptcount, createdon, availableat, lastattemptat, lasterror
+                   status, attemptcount, createdon, availableat, lastattemptat, lasterror,
+                   leaseowner, leaseexpiresat
             FROM outboxoperations
             WHERE userid = $userId
               AND status = 'Pending'
@@ -159,7 +160,8 @@ public sealed class SqliteOutboxStore : IOutboxStore
         command.CommandText =
             """
             SELECT id, userid, aggregatetype, aggregateid, operationtype, payloadjson,
-                   status, attemptcount, createdon, availableat, lastattemptat, lasterror
+                   status, attemptcount, createdon, availableat, lastattemptat, lasterror,
+                   leaseowner, leaseexpiresat
             FROM outboxoperations
             WHERE userid = $userId
               AND aggregatetype = $aggregateType
@@ -171,6 +173,333 @@ public sealed class SqliteOutboxStore : IOutboxStore
         command.Parameters.AddWithValue("$aggregateType", aggregateType.ToString());
         command.Parameters.AddWithValue("$aggregateId", aggregateId.ToString("D"));
         return await ReadAllAsync(command, cancellationToken);
+    }
+
+    public async Task<int> RecoverExpiredLeasesAsync(
+        Guid userId,
+        string currentOwner,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(currentOwner);
+        var recovered = 0;
+        await _database.ExecuteInTransactionAsync(
+            async (connection, transaction, token) =>
+            {
+                recovered += await ExecuteAsync(
+                    connection,
+                    transaction,
+                    $"""
+                    UPDATE outboxoperations
+                    SET status = 'Completed', leaseowner = NULL, leaseexpiresat = NULL, lasterror = 'Superseded'
+                    WHERE {ExpiredLeaseSql} AND {PendingSiblingSql};
+                    """,
+                    token,
+                    ("$userId", userId.ToString("D")),
+                    ("$owner", currentOwner),
+                    ("$now", SqliteDateTime.Format(now)));
+                recovered += await ExecuteAsync(
+                    connection,
+                    transaction,
+                    $"""
+                    UPDATE outboxoperations
+                    SET status = 'Pending', leaseowner = NULL, leaseexpiresat = NULL, lasterror = 'LeaseExpired'
+                    WHERE {ExpiredLeaseSql};
+                    """,
+                    token,
+                    ("$userId", userId.ToString("D")),
+                    ("$owner", currentOwner),
+                    ("$now", SqliteDateTime.Format(now)));
+            },
+            cancellationToken);
+        return recovered;
+    }
+
+    public async Task<OutboxOperationModel?> ClaimNextAsync(
+        Guid userId,
+        string owner,
+        DateTimeOffset now,
+        TimeSpan leaseDuration,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+        OutboxOperationModel? claimed = null;
+        await _database.ExecuteInTransactionAsync(
+            async (connection, transaction, token) =>
+            {
+                await using var select = connection.CreateCommand();
+                select.Transaction = transaction;
+                select.CommandText =
+                    """
+                    SELECT id
+                    FROM outboxoperations
+                    WHERE userid = $userId
+                      AND status = 'Pending'
+                      AND availableat <= $now
+                    ORDER BY CASE operationtype WHEN 'UploadCatchPhotograph' THEN 1 ELSE 0 END ASC, createdon ASC, id ASC
+                    LIMIT 1;
+                    """;
+                select.Parameters.AddWithValue("$userId", userId.ToString("D"));
+                select.Parameters.AddWithValue("$now", SqliteDateTime.Format(now));
+                if (await select.ExecuteScalarAsync(token) is not string id)
+                {
+                    return;
+                }
+
+                var updated = await ExecuteAsync(
+                    connection,
+                    transaction,
+                    """
+                    UPDATE outboxoperations
+                    SET status = 'InProgress', leaseowner = $owner, leaseexpiresat = $expires,
+                        lastattemptat = $now, attemptcount = attemptcount + 1
+                    WHERE id = $id AND userid = $userId AND status = 'Pending';
+                    """,
+                    token,
+                    ("$id", id),
+                    ("$userId", userId.ToString("D")),
+                    ("$owner", owner),
+                    ("$expires", SqliteDateTime.Format(now.Add(leaseDuration))),
+                    ("$now", SqliteDateTime.Format(now)));
+                if (updated != 1)
+                {
+                    return;
+                }
+
+                await using var read = connection.CreateCommand();
+                read.Transaction = transaction;
+                read.CommandText =
+                    """
+                    SELECT id, userid, aggregatetype, aggregateid, operationtype, payloadjson,
+                           status, attemptcount, createdon, availableat, lastattemptat, lasterror,
+                           leaseowner, leaseexpiresat
+                    FROM outboxoperations
+                    WHERE id = $id;
+                    """;
+                read.Parameters.AddWithValue("$id", id);
+                claimed = (await ReadAllAsync(read, token)).Single();
+            },
+            cancellationToken);
+        return claimed;
+    }
+
+    public async Task CompleteAsync(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        OutboxOperationModel claimed,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+        ArgumentNullException.ThrowIfNull(transaction);
+        ArgumentNullException.ThrowIfNull(claimed);
+        var updated = await ExecuteAsync(
+            connection,
+            transaction,
+            """
+            UPDATE outboxoperations
+            SET status = 'Completed', leaseowner = NULL, leaseexpiresat = NULL,
+                lasterror = NULL, lastattemptat = $now
+            WHERE id = $id AND userid = $userId AND status = 'InProgress' AND leaseowner = $owner;
+            """,
+            cancellationToken,
+            ("$id", claimed.Id.ToString("D")),
+            ("$userId", claimed.UserId.ToString("D")),
+            ("$owner", claimed.LeaseOwner ?? string.Empty),
+            ("$now", SqliteDateTime.Format(now)));
+        if (updated != 1)
+        {
+            throw new InvalidOperationException("The outbox operation lease was lost before completion.");
+        }
+    }
+
+    public Task ReleaseAsync(OutboxOperationModel claimed, CancellationToken cancellationToken)
+    {
+        return FinishUnsuccessfulAsync(claimed, OutboxStatusEnum.Pending, null, null, -1, cancellationToken);
+    }
+
+    public Task ScheduleRetryAsync(
+        OutboxOperationModel claimed,
+        DateTimeOffset availableAt,
+        string errorCode,
+        CancellationToken cancellationToken)
+    {
+        return FinishUnsuccessfulAsync(claimed, OutboxStatusEnum.Pending, availableAt, errorCode, 0, cancellationToken);
+    }
+
+    public Task MarkTerminalAsync(
+        OutboxOperationModel claimed,
+        OutboxStatusEnum status,
+        string errorCode,
+        CancellationToken cancellationToken)
+    {
+        if (status is not (OutboxStatusEnum.Failed or OutboxStatusEnum.Dead))
+        {
+            throw new ArgumentOutOfRangeException(nameof(status));
+        }
+
+        return FinishUnsuccessfulAsync(claimed, status, null, errorCode, 0, cancellationToken);
+    }
+
+    public async Task<int> ResetForRetryAsync(
+        Guid userId,
+        Guid catchId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var reset = 0;
+        await _database.ExecuteInTransactionAsync(
+            async (connection, transaction, token) =>
+            {
+                var parameters = new (string, object)[]
+                {
+                    ("$userId", userId.ToString("D")),
+                    ("$catchId", catchId.ToString("D")),
+                    ("$now", SqliteDateTime.Format(now))
+                };
+                reset += await ExecuteAsync(
+                    connection,
+                    transaction,
+                    $"""
+                    UPDATE outboxoperations
+                    SET availableat = $now, attemptcount = 0, lasterror = NULL
+                    WHERE userid = $userId AND status = 'Pending' AND {RelatedToCatchSql};
+                    """,
+                    token,
+                    parameters);
+                reset += await ExecuteAsync(
+                    connection,
+                    transaction,
+                    $"""
+                    UPDATE outboxoperations
+                    SET status = 'Pending', availableat = $now, attemptcount = 0, lasterror = NULL
+                    WHERE userid = $userId AND status IN ('Failed', 'Dead') AND {RelatedToCatchSql}
+                      AND id = (SELECT l.id FROM outboxoperations l
+                                WHERE l.userid = outboxoperations.userid
+                                  AND l.aggregatetype = outboxoperations.aggregatetype
+                                  AND l.aggregateid = outboxoperations.aggregateid
+                                  AND l.operationtype = outboxoperations.operationtype
+                                ORDER BY l.createdon DESC, l.id DESC LIMIT 1);
+                    """,
+                    token,
+                    parameters);
+            },
+            cancellationToken);
+        return reset;
+    }
+
+    public async Task<DateTimeOffset?> GetNextDueAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        await _database.EnsureInitializedAsync(cancellationToken);
+        await using var connection = await _connectionFactory.OpenAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT MIN(availableat)
+            FROM outboxoperations
+            WHERE userid = $userId AND status = 'Pending';
+            """;
+        command.Parameters.AddWithValue("$userId", userId.ToString("D"));
+        return await command.ExecuteScalarAsync(cancellationToken) is string value
+            ? SqliteDateTime.Parse(value)
+            : null;
+    }
+
+    private const string ExpiredLeaseSql =
+        """
+        status = 'InProgress' AND userid = $userId
+        AND (leaseowner IS NULL OR leaseowner <> $owner OR leaseexpiresat IS NULL OR leaseexpiresat <= $now)
+        """;
+
+    private const string PendingSiblingSql =
+        """
+        EXISTS (SELECT 1 FROM outboxoperations p
+                WHERE p.userid = outboxoperations.userid
+                  AND p.aggregatetype = outboxoperations.aggregatetype
+                  AND p.aggregateid = outboxoperations.aggregateid
+                  AND p.operationtype = outboxoperations.operationtype
+                  AND p.status = 'Pending')
+        """;
+
+    private const string RelatedToCatchSql =
+        """
+        ((aggregatetype = 'Catch' AND aggregateid = $catchId)
+         OR (aggregatetype = 'CatchPhotograph' AND aggregateid IN
+              (SELECT photographid FROM localphotographsyncs WHERE catchid = $catchId AND userid = $userId)))
+        """;
+
+    private async Task FinishUnsuccessfulAsync(
+        OutboxOperationModel claimed,
+        OutboxStatusEnum target,
+        DateTimeOffset? availableAt,
+        string? errorCode,
+        int attemptDelta,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(claimed);
+        await _database.ExecuteInTransactionAsync(
+            async (connection, transaction, token) =>
+            {
+                var identity = new (string, object)[]
+                {
+                    ("$id", claimed.Id.ToString("D")),
+                    ("$userId", claimed.UserId.ToString("D")),
+                    ("$owner", claimed.LeaseOwner ?? string.Empty)
+                };
+                var superseded = await ExecuteAsync(
+                    connection,
+                    transaction,
+                    $"""
+                    UPDATE outboxoperations
+                    SET status = 'Completed', leaseowner = NULL, leaseexpiresat = NULL, lasterror = 'Superseded'
+                    WHERE id = $id AND userid = $userId AND status = 'InProgress' AND leaseowner = $owner
+                      AND {PendingSiblingSql};
+                    """,
+                    token,
+                    identity);
+                if (superseded == 1)
+                {
+                    return;
+                }
+
+                await ExecuteAsync(
+                    connection,
+                    transaction,
+                    """
+                    UPDATE outboxoperations
+                    SET status = $status, availableat = COALESCE($availableAt, availableat),
+                        lasterror = $errorCode, attemptcount = MAX(0, attemptcount + $attemptDelta),
+                        leaseowner = NULL, leaseexpiresat = NULL
+                    WHERE id = $id AND userid = $userId AND status = 'InProgress' AND leaseowner = $owner;
+                    """,
+                    token,
+                    identity.Concat(new (string, object)[]
+                    {
+                        ("$status", target.ToString()),
+                        ("$availableAt", availableAt is null ? DBNull.Value : SqliteDateTime.Format(availableAt.Value)),
+                        ("$errorCode", (object?)errorCode ?? DBNull.Value),
+                        ("$attemptDelta", attemptDelta)
+                    }).ToArray());
+            },
+            cancellationToken);
+    }
+
+    private static async Task<int> ExecuteAsync(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string sql,
+        CancellationToken cancellationToken,
+        params (string Name, object Value)[] parameters)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value);
+        }
+
+        return await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private static async Task<IReadOnlyList<OutboxOperationModel>> ReadAllAsync(
@@ -194,7 +523,9 @@ public sealed class SqliteOutboxStore : IOutboxStore
                 CreatedOn = SqliteDateTime.Parse(reader.GetString(8)),
                 AvailableAt = SqliteDateTime.Parse(reader.GetString(9)),
                 LastAttemptAt = reader.IsDBNull(10) ? null : SqliteDateTime.Parse(reader.GetString(10)),
-                LastError = reader.IsDBNull(11) ? null : reader.GetString(11)
+                LastError = reader.IsDBNull(11) ? null : reader.GetString(11),
+                LeaseOwner = reader.IsDBNull(12) ? null : reader.GetString(12),
+                LeaseExpiresAt = reader.IsDBNull(13) ? null : SqliteDateTime.Parse(reader.GetString(13))
             });
         }
 

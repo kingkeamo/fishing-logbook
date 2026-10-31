@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
+using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
@@ -11,10 +13,12 @@ public sealed class CatchPresentationModel(
     UiTextService text,
     IReadOnlyList<string>? photos = null,
     SampleCatchTextModel? sampleText = null,
-    bool savedLocally = false) : INotifyPropertyChanged
+    bool savedLocally = false,
+    CatchSyncStatusModel? syncStatus = null) : INotifyPropertyChanged
 {
     private static readonly IMeasurementService DefaultMeasurement = new MeasurementService();
     private IReadOnlyList<CatchPhotoThumbnailModel>? _thumbnails;
+    private CatchSyncStatusModel? _syncStatus = syncStatus;
     private IMeasurementService _measurement = DefaultMeasurement;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
     private LengthUnitEnum _lengthUnit = LengthUnitEnum.Cm;
@@ -34,7 +38,9 @@ public sealed class CatchPresentationModel(
     public string Measurements => string.Join(" · ", new[] { catchDto.Weight.HasValue ? Weight : null, catchDto.Length.HasValue ? Length : null }.Where(value => value is not null));
     public string CardDescription => string.Join(", ", new[] { OpenDescription, HasMethod ? Method : null, HasMeasurements ? Measurements : null, HasSaveStatus ? SaveStatus : null }.Where(value => value is not null));
     public bool HasSaveStatus => savedLocally;
-    public string SaveStatus => savedLocally ? Text["CatchSavedLocally"] : string.Empty;
+    public string SaveStatus => savedLocally ? DescribeSaveStatus() : string.Empty;
+    public CatchSyncStateEnum SyncState => _syncStatus?.State ?? CatchSyncStateEnum.WaitingToSync;
+    public bool CanRetrySync => _syncStatus?.CanRetry == true;
     public string Weight => FormatWeight();
     public string Length => FormatLength();
     public string Place => LocalizedOrRecorded(sampleText?.PlaceKey, catchDto.PlaceName);
@@ -62,6 +68,15 @@ public sealed class CatchPresentationModel(
         _weightUnit = weightUnit;
         _lengthUnit = lengthUnit;
         RefreshLocalizedText();
+    }
+
+    public void ApplySyncStatus(CatchSyncStatusModel? status)
+    {
+        _syncStatus = status;
+        foreach (var property in new[] { nameof(SaveStatus), nameof(CardDescription), nameof(SyncState), nameof(CanRetrySync) })
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+        }
     }
 
     public void SelectPhoto(int index)
@@ -112,6 +127,34 @@ public sealed class CatchPresentationModel(
         {
             thumbnail.RefreshDescription();
         }
+    }
+
+    private string DescribeSaveStatus()
+    {
+        if (_syncStatus is not { } status)
+        {
+            return Text["CatchSavedLocally"];
+        }
+
+        var parts = new List<string>();
+        if (status.MetadataSynced && status.PhotographsRecorded < status.PhotographCount)
+        {
+            parts.Add(string.Format(Text.Culture, Text["CatchSyncPhotosProgress"], status.PhotographsRecorded, status.PhotographCount));
+        }
+        else if (status.State == CatchSyncStateEnum.WaitingToSync)
+        {
+            parts.Add(Text["CatchSavedLocally"]);
+        }
+
+        parts.Add(Text[status.State switch
+        {
+            CatchSyncStateEnum.Synced => "CatchSyncSynced",
+            CatchSyncStateEnum.Synchronising => "CatchSyncSynchronising",
+            CatchSyncStateEnum.NeedsAttention => "CatchSyncNeedsAttention",
+            CatchSyncStateEnum.ActionRequired => "CatchSyncActionRequired",
+            _ => "CatchSyncWaiting"
+        }]);
+        return string.Join(" ", parts);
     }
 
     private string DescribePhoto(int index)

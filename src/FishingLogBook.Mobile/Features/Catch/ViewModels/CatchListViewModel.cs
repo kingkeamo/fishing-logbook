@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Models;
@@ -9,6 +10,7 @@ using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Presentation;
 using FishingLogBook.Shared.Measurements;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Features.Catch.ViewModels;
 
@@ -25,6 +27,10 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     ];
 
     private readonly ICatchStore _catchStore;
+    private readonly ICatchSyncStatusStore _syncStatusStore;
+    private readonly IOutboxChangeNotifier _notifier;
+    private readonly ILogger<CatchListViewModel> _logger;
+    private readonly SynchronizationContext? _uiContext = SynchronizationContext.Current;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly CatchPresentationMapper _mapper;
     private readonly IAccountUnitsService _units;
@@ -38,6 +44,9 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     public CatchListViewModel(
         UiTextService text,
         ICatchStore catchStore,
+        ICatchSyncStatusStore syncStatusStore,
+        IOutboxChangeNotifier notifier,
+        ILogger<CatchListViewModel> logger,
         IAccountSessionCoordinator sessionCoordinator,
         CatchPresentationMapper mapper,
         IAccountUnitsService units,
@@ -46,12 +55,16 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     {
         Text = text;
         _catchStore = catchStore;
+        _syncStatusStore = syncStatusStore;
+        _notifier = notifier;
+        _logger = logger;
         _sessionCoordinator = sessionCoordinator;
         _mapper = mapper;
         _units = units;
         _measurement = measurement;
         _clock = clock;
         Text.PropertyChanged += OnCultureChanged;
+        _notifier.StateChanged += OnSyncStateChanged;
         State = new ContentStateModel(_state, Text);
     }
 
@@ -97,7 +110,8 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
     public async Task RefreshFromStoreAsync(CancellationToken cancellationToken)
     {
-        if (_sessionCoordinator.Capture() is null)
+        var lease = _sessionCoordinator.Capture();
+        if (lease is null)
         {
             _source = [];
             SetState(ContentStateEnum.Empty);
@@ -105,11 +119,32 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
         }
 
         var records = await _catchStore.ListAsync(cancellationToken);
+        var statuses = await _syncStatusStore.ListAsync(lease.UserId, cancellationToken);
         _source = records
             .Where(record => record.Lifecycle == LocalCatchLifecycleEnum.Saved)
-            .Select(record => _mapper.Map(record, Text))
+            .Select(record => _mapper.Map(record, Text, statuses.GetValueOrDefault(record.Id)))
             .ToArray();
         SetState(_source.Count == 0 ? ContentStateEnum.Empty : ContentStateEnum.Ready);
+    }
+
+    public async Task RefreshSyncStatusAsync(CancellationToken cancellationToken)
+    {
+        var lease = _sessionCoordinator.Capture();
+        if (lease is null)
+        {
+            return;
+        }
+
+        var statuses = await _syncStatusStore.ListAsync(lease.UserId, cancellationToken);
+        if (!_sessionCoordinator.IsCurrent(lease))
+        {
+            return;
+        }
+
+        foreach (var item in _source)
+        {
+            item.ApplySyncStatus(statuses.GetValueOrDefault(item.Id));
+        }
     }
 
     public void SetSearch(string? value)
@@ -164,6 +199,29 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
         _state = state;
         Refresh();
+    }
+
+    private void OnSyncStateChanged(object? sender, EventArgs args)
+    {
+        if (_uiContext is null)
+        {
+            ObserveSyncRefresh();
+            return;
+        }
+
+        _uiContext.Post(_ => ObserveSyncRefresh(), null);
+    }
+
+    private async void ObserveSyncRefresh()
+    {
+        try
+        {
+            await RefreshSyncStatusAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Catch sync status could not be refreshed.");
+        }
     }
 
     private void OnCultureChanged(object? sender, PropertyChangedEventArgs args)

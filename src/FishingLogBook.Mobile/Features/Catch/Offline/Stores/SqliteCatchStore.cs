@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Common.Offline.Models;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
@@ -21,6 +22,7 @@ public sealed class SqliteCatchStore : ICatchStore
     private readonly ISqliteConnectionFactory _connectionFactory;
     private readonly ISqliteDatabase _database;
     private readonly IOutboxStore _outboxStore;
+    private readonly IOutboxChangeNotifier _notifier;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<SqliteCatchStore> _logger;
 
@@ -29,6 +31,7 @@ public sealed class SqliteCatchStore : ICatchStore
         ISqliteConnectionFactory connectionFactory,
         ISqliteDatabase database,
         IOutboxStore outboxStore,
+        IOutboxChangeNotifier notifier,
         TimeProvider timeProvider,
         ILogger<SqliteCatchStore> logger)
     {
@@ -36,12 +39,14 @@ public sealed class SqliteCatchStore : ICatchStore
         ArgumentNullException.ThrowIfNull(connectionFactory);
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(outboxStore);
+        ArgumentNullException.ThrowIfNull(notifier);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(logger);
         _sessionCoordinator = sessionCoordinator;
         _connectionFactory = connectionFactory;
         _database = database;
         _outboxStore = outboxStore;
+        _notifier = notifier;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -90,6 +95,11 @@ public sealed class SqliteCatchStore : ICatchStore
         {
             _logger.LogError(exception, "Failed to save local catch {CatchId}.", args.Id);
             return LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.StorageFailed);
+        }
+
+        if (result is { Outcome: LocalCatchSaveOutcomeEnum.Success } && args.Lifecycle == LocalCatchLifecycleEnum.Saved)
+        {
+            _notifier.NotifyWorkEnqueued();
         }
 
         return result ?? LocalCatchSaveResultModel.Failed(LocalCatchSaveOutcomeEnum.StorageFailed);

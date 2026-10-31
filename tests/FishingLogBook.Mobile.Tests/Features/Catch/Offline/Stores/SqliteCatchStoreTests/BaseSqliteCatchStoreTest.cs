@@ -1,4 +1,5 @@
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
@@ -18,6 +19,7 @@ public abstract class BaseSqliteCatchStoreTest : IDisposable
     protected readonly string DatabasePath;
     protected readonly IAccountSessionCoordinator MockSessionCoordinator =
         Substitute.For<IAccountSessionCoordinator>();
+    protected readonly IOutboxChangeNotifier MockNotifier = Substitute.For<IOutboxChangeNotifier>();
     protected readonly SqliteConnectionFactory ConnectionFactory;
     protected readonly SqliteMigrator Migrator;
     protected readonly SqliteDatabase Database;
@@ -47,6 +49,7 @@ public abstract class BaseSqliteCatchStoreTest : IDisposable
             ConnectionFactory,
             Database,
             OutboxStore,
+            MockNotifier,
             TimeProvider.System,
             NullLogger<SqliteCatchStore>.Instance);
     }
@@ -62,6 +65,7 @@ public abstract class BaseSqliteCatchStoreTest : IDisposable
             ConnectionFactory,
             Database,
             OutboxStore,
+            MockNotifier,
             TimeProvider.System,
             NullLogger<SqliteCatchStore>.Instance);
     }
@@ -112,6 +116,7 @@ public abstract class BaseSqliteCatchStoreTest : IDisposable
             factory,
             database,
             outboxStore,
+            MockNotifier,
             TimeProvider.System,
             NullLogger<SqliteCatchStore>.Instance);
     }
