@@ -8,20 +8,21 @@
              x:DataType="vm:CatchEditViewModel"
              Title="{Binding PageTitle}"
              Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False"
              BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
-  <Grid RowDefinitions="56,*">
+  <Grid RowDefinitions="48,*">
     <Grid ColumnDefinitions="48,*,48" Padding="4,0">
       <Grid SemanticProperties.Description="{Binding Text[Back]}" AutomationId="CatchEditBack">
-        <controls:IconView Source="icon_chevron.png" Tone="Default" Rotation="180" WidthRequest="22" HeightRequest="22" />
+        <controls:IconView Source="icon_chevron.png" Tone="Default" Rotation="180" WidthRequest="20" HeightRequest="20" />
         <Grid.GestureRecognizers>
           <TapGestureRecognizer Tapped="OnBack" />
         </Grid.GestureRecognizers>
       </Grid>
-      <Label Grid.Column="1" Text="{Binding PageTitle}" Style="{StaticResource Heading}" FontSize="18"
+      <Label Grid.Column="1" Text="{Binding PageTitle}" Style="{StaticResource Heading}" FontSize="17"
              HorizontalOptions="Center" VerticalOptions="Center" />
     </Grid>
     <ScrollView Grid.Row="1">
-      <VerticalStackLayout Padding="16,4,16,32" Spacing="16" MaximumWidthRequest="720">
+      <VerticalStackLayout Padding="16,8,16,24" Spacing="{StaticResource SpaceSmall}" MaximumWidthRequest="720">
         <editor:RecordCatchEditorView BindingContext="{Binding}" SaveSucceeded="OnSaveSucceeded" />
       </VerticalStackLayout>
     </ScrollView>

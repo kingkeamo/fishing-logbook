@@ -41,6 +41,15 @@ public partial class PhotoCollectionEditorView : ContentView
         view.BindingContext = newValue;
     }
 
+    protected override void OnBindingContextChanged()
+    {
+        base.OnBindingContextChanged();
+        if (ViewModel is not null && !ReferenceEquals(BindingContext, ViewModel))
+        {
+            BindingContext = ViewModel;
+        }
+    }
+
     private static void OnMaximumCountChanged(BindableObject bindable, object oldValue, object newValue)
     {
         if (bindable is PhotoCollectionEditorView view && view.ViewModel is not null)

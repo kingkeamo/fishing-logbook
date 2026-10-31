@@ -7,133 +7,111 @@
              xmlns:photoViews="clr-namespace:FishingLogBook.Mobile.Features.Photographs.Views"
              x:Class="FishingLogBook.Mobile.Features.Catch.Components.RecordCatchEditor.RecordCatchEditorView"
              x:DataType="vm:CatchEditViewModel">
-  <Border Style="{StaticResource Card}" Padding="16" Shadow="{x:Null}">
-    <VerticalStackLayout Spacing="16">
-      <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
-      <Label Text="{Binding Text[CatchNotSignedIn]}" IsVisible="{Binding NotSignedIn}" Style="{StaticResource SecondaryText}" />
-      <Label Text="{Binding Text[CatchDraftRestored]}" IsVisible="{Binding ShowDraftRestored}" Style="{StaticResource SecondaryText}" />
-      <Label Text="{Binding Text[CatchCatalogueUnavailable]}" IsVisible="{Binding IsCatalogueUnavailable}" Style="{StaticResource SecondaryText}"
-             AutomationId="RecordCatchCatalogueUnavailable" />
+  <VerticalStackLayout Spacing="{StaticResource SpaceSmall}">
+    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+    <Label Text="{Binding Text[CatchNotSignedIn]}" IsVisible="{Binding NotSignedIn}" Style="{StaticResource SecondaryText}" />
+    <Label Text="{Binding Text[CatchDraftRestored]}" IsVisible="{Binding ShowDraftRestored}" Style="{StaticResource SecondaryText}" />
+    <Label Text="{Binding Text[CatchCatalogueUnavailable]}" IsVisible="{Binding IsCatalogueUnavailable}" Style="{StaticResource SecondaryText}"
+           AutomationId="RecordCatchCatalogueUnavailable" />
 
-      <VerticalStackLayout Spacing="16" IsVisible="{Binding CanInteract}">
-        <VerticalStackLayout Spacing="8">
-          <Label Text="{Binding Text[FishingMethod]}" Style="{StaticResource TileCaption}" />
-          <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
-                      BindableLayout.ItemsSource="{Binding MethodChipRow}"
-                      AutomationId="RecordCatchMethodChips">
-            <BindableLayout.ItemTemplate>
-              <DataTemplate x:DataType="models:CatchChipOptionModel">
-                <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}"
-                                   CommandParameter="{Binding}" Tapped="OnMethodChip" />
-              </DataTemplate>
-            </BindableLayout.ItemTemplate>
-          </FlexLayout>
-        </VerticalStackLayout>
-
-        <VerticalStackLayout Spacing="8">
-          <Label Text="{Binding Text[FilterSpecies]}" Style="{StaticResource TileCaption}" />
-          <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
-                      BindableLayout.ItemsSource="{Binding SpeciesChipRow}"
-                      AutomationId="RecordCatchSpeciesChips">
-            <BindableLayout.ItemTemplate>
-              <DataTemplate x:DataType="models:CatchChipOptionModel">
-                <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}"
-                                   CommandParameter="{Binding}" Tapped="OnSpeciesChip" />
-              </DataTemplate>
-            </BindableLayout.ItemTemplate>
-          </FlexLayout>
-        </VerticalStackLayout>
-
-        <photoViews:PhotoCollectionEditorView ViewModel="{Binding Photographs}" MaximumCount="10" />
-        <Label Text="{Binding PhotoConflictText}" IsVisible="{Binding ShowPhotoConflict}"
-               TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
-        <Label Text="{Binding Text[CatchPhotoDateConflict]}" IsVisible="{Binding ShowDateConflict}"
-               TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
-
-        <VerticalStackLayout Spacing="8" IsVisible="{Binding ShowCaughtOn}">
-          <Label Text="{Binding Text[CaughtOnLabel]}" Style="{StaticResource TileCaption}" />
-          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-            <DatePicker Date="{Binding CaughtOnLocal}" Format="d" AutomationId="RecordCatchCaughtOnDate" />
-            <TimePicker Grid.Column="1" Time="{Binding CaughtOnTime}" AutomationId="RecordCatchCaughtOnTime" />
-          </Grid>
-        </VerticalStackLayout>
-
-        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-          <Border Style="{StaticResource Card}" Padding="16,12" Shadow="{x:Null}" AutomationId="RecordCatchWeight">
-            <Border.GestureRecognizers>
-              <TapGestureRecognizer Tapped="OnEditWeight" />
-            </Border.GestureRecognizers>
-            <VerticalStackLayout Spacing="2">
-              <Label Text="{Binding Text[MeasureWeight]}" Style="{StaticResource TileCaption}" />
-              <Label Text="{Binding WeightSummary}" Style="{StaticResource BodyText}" />
-            </VerticalStackLayout>
-          </Border>
-          <Border Grid.Column="1" Style="{StaticResource Card}" Padding="16,12" Shadow="{x:Null}" AutomationId="RecordCatchLength">
-            <Border.GestureRecognizers>
-              <TapGestureRecognizer Tapped="OnEditLength" />
-            </Border.GestureRecognizers>
-            <VerticalStackLayout Spacing="2">
-              <Label Text="{Binding Text[MeasureLength]}" Style="{StaticResource TileCaption}" />
-              <Label Text="{Binding LengthSummary}" Style="{StaticResource BodyText}" />
-            </VerticalStackLayout>
-          </Border>
-        </Grid>
-
-        <VerticalStackLayout Spacing="8">
-          <Label Text="{Binding LocationCaption}" Style="{StaticResource SecondaryText}" AutomationId="RecordCatchLocationCaption" />
-          <Button Text="{Binding LocationActionText}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start"
-                  IsVisible="{Binding ShowLocationAction}" Clicked="OnCaptureLocation"
-                  AutomationId="RecordCatchLocationAction" />
-        </VerticalStackLayout>
-
-        <VerticalStackLayout Spacing="8" IsVisible="{Binding ShowAnglerSection}">
-          <Label Text="{Binding Text[CatchAnglerLabel]}" Style="{StaticResource TileCaption}" />
-          <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
-                      BindableLayout.ItemsSource="{Binding AnglerOptions}"
-                      AutomationId="RecordCatchAnglerChips">
-            <BindableLayout.ItemTemplate>
-              <DataTemplate x:DataType="models:CatchChipOptionModel">
-                <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}"
-                                   CommandParameter="{Binding Code}" />
-              </DataTemplate>
-            </BindableLayout.ItemTemplate>
-          </FlexLayout>
-        </VerticalStackLayout>
-
-        <Label Text="{Binding Text[CatchTripDeferredNote]}" IsVisible="{Binding ShowTripDeferredNote}"
-               Style="{StaticResource SecondaryText}" AutomationId="RecordCatchTripDeferred" />
-
-        <controls:ExpansionPanelView Title="{Binding Text[CatchAdditionalDetails]}" IsExpanded="False"
-                                     ExpandHint="{Binding Text[SectionExpand]}" CollapseHint="{Binding Text[SectionCollapse]}"
-                                     AutomationId="RecordCatchAdditionalDetails">
-          <VerticalStackLayout Spacing="12">
-            <VerticalStackLayout Spacing="4">
-              <Label Text="{Binding Text[CatchBaitOrLure]}" Style="{StaticResource Eyebrow}" />
-              <Border Style="{StaticResource InputField}">
-                <Entry Text="{Binding BaitOrLure}" MaxLength="100" Style="{StaticResource FieldEntry}"
-                       AutomationId="RecordCatchBait" />
-              </Border>
-            </VerticalStackLayout>
-            <VerticalStackLayout Spacing="4">
-              <Label Text="{Binding Text[Notes]}" Style="{StaticResource Eyebrow}" />
-              <Border Style="{StaticResource InputField}">
-                <Editor Text="{Binding Notes}" MaxLength="2000" AutoSize="TextChanges" MinimumHeightRequest="80"
-                        AutomationId="RecordCatchNotes" />
-              </Border>
-            </VerticalStackLayout>
-          </VerticalStackLayout>
-        </controls:ExpansionPanelView>
+    <VerticalStackLayout Spacing="{StaticResource SpaceSmall}" IsVisible="{Binding CanInteract}">
+      <VerticalStackLayout Spacing="4">
+        <Label Text="{Binding Text[FishingMethod]}" Style="{StaticResource TileCaption}" />
+        <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
+                    BindableLayout.ItemsSource="{Binding MethodChipRow}"
+                    AutomationId="RecordCatchMethodChips">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="models:CatchChipOptionModel">
+              <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}"
+                                 CommandParameter="{Binding}" Tapped="OnMethodChip" />
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </FlexLayout>
       </VerticalStackLayout>
 
-      <Label Text="{Binding ValidationText}" IsVisible="{Binding HasValidation}"
-             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}"
-             AutomationId="RecordCatchValidation" />
-      <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Style="{StaticResource SecondaryText}"
-             AutomationId="RecordCatchStatus" />
+      <VerticalStackLayout Spacing="4">
+        <Label Text="{Binding Text[FilterSpecies]}" Style="{StaticResource TileCaption}" />
+        <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
+                    BindableLayout.ItemsSource="{Binding SpeciesChipRow}"
+                    AutomationId="RecordCatchSpeciesChips">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="models:CatchChipOptionModel">
+              <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}"
+                                 CommandParameter="{Binding}" Tapped="OnSpeciesChip" />
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </FlexLayout>
+      </VerticalStackLayout>
 
-      <Button Text="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}"
-              IsEnabled="{Binding CanSave}" Clicked="OnSave" HorizontalOptions="Fill"
-              AutomationId="RecordCatchSave" />
+      <photoViews:PhotoCollectionEditorView ViewModel="{Binding Photographs}" MaximumCount="10" />
+      <Label Text="{Binding PhotoConflictText}" IsVisible="{Binding ShowPhotoConflict}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+      <Label Text="{Binding Text[CatchPhotoDateConflict]}" IsVisible="{Binding ShowDateConflict}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+
+      <VerticalStackLayout Spacing="4" IsVisible="{Binding ShowCaughtOn}">
+        <Label Text="{Binding Text[CaughtOnLabel]}" Style="{StaticResource TileCaption}" />
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+          <DatePicker Date="{Binding CaughtOnLocal}" Format="d" AutomationId="RecordCatchCaughtOnDate" />
+          <TimePicker Grid.Column="1" Time="{Binding CaughtOnTime}" AutomationId="RecordCatchCaughtOnTime" />
+        </Grid>
+      </VerticalStackLayout>
+
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+        <Border Style="{StaticResource Card}" Padding="12,10" Shadow="{x:Null}" AutomationId="RecordCatchWeight">
+          <Border.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnEditWeight" />
+          </Border.GestureRecognizers>
+          <VerticalStackLayout Spacing="2">
+            <Label Text="{Binding Text[MeasureWeight]}" Style="{StaticResource TileCaption}" />
+            <Label Text="{Binding WeightSummary}" Style="{StaticResource BodyText}" FontAttributes="Bold" />
+          </VerticalStackLayout>
+        </Border>
+        <Border Grid.Column="1" Style="{StaticResource Card}" Padding="12,10" Shadow="{x:Null}" AutomationId="RecordCatchLength">
+          <Border.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnEditLength" />
+          </Border.GestureRecognizers>
+          <VerticalStackLayout Spacing="2">
+            <Label Text="{Binding Text[MeasureLength]}" Style="{StaticResource TileCaption}" />
+            <Label Text="{Binding LengthSummary}" Style="{StaticResource BodyText}" FontAttributes="Bold" />
+          </VerticalStackLayout>
+        </Border>
+      </Grid>
+
+      <VerticalStackLayout Spacing="4">
+        <Label Text="{Binding LocationCaption}" Style="{StaticResource SecondaryText}" FontSize="13"
+               AutomationId="RecordCatchLocationCaption" />
+        <Button Text="{Binding LocationActionText}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start"
+                Padding="14,8" IsVisible="{Binding ShowLocationAction}" Clicked="OnCaptureLocation"
+                AutomationId="RecordCatchLocationAction" />
+      </VerticalStackLayout>
+
+      <VerticalStackLayout Spacing="4" IsVisible="{Binding ShowAnglerSection}">
+        <Label Text="{Binding Text[CatchAnglerLabel]}" Style="{StaticResource TileCaption}" />
+        <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
+                    BindableLayout.ItemsSource="{Binding AnglerOptions}"
+                    AutomationId="RecordCatchAnglerChips">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="models:CatchChipOptionModel">
+              <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}"
+                                 CommandParameter="{Binding Code}" />
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </FlexLayout>
+      </VerticalStackLayout>
+
+      <Label Text="{Binding Text[CatchTripDeferredNote]}" IsVisible="{Binding ShowTripDeferredNote}"
+             Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="RecordCatchTripDeferred" />
     </VerticalStackLayout>
-  </Border>
+
+    <Label Text="{Binding ValidationText}" IsVisible="{Binding HasValidation}"
+           TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}"
+           AutomationId="RecordCatchValidation" />
+    <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Style="{StaticResource SecondaryText}"
+           AutomationId="RecordCatchStatus" />
+
+    <Button Text="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}"
+            IsEnabled="{Binding CanSave}" Clicked="OnSave" HorizontalOptions="Fill"
+            AutomationId="RecordCatchSave" />
+  </VerticalStackLayout>
 </ContentView>

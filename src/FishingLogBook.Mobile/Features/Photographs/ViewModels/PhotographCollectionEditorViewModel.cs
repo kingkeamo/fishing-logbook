@@ -84,6 +84,8 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
     public bool CanRemove => Items.Count > MinimumCount;
 
+    public bool HasItems => Items.Count > 0;
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -116,6 +118,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         ClearStatus();
         Notify(nameof(CanAddMore));
         Notify(nameof(CanRemove));
+        Notify(nameof(HasItems));
         ItemsChanged?.Invoke(this, EventArgs.Empty);
     }
 

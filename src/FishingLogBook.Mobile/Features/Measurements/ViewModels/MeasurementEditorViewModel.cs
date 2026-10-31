@@ -41,6 +41,8 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
         _text.PropertyChanged += OnCultureChanged;
     }
 
+    public UiTextService Text => _text;
+
     public MeasurementKindEnum Kind { get; }
     public bool IsWeight => Kind == MeasurementKindEnum.Weight;
     public bool IsImperialWeight => IsWeight && _weightUnit == WeightUnitEnum.Lb;

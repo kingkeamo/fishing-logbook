@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using CommunityToolkit.Maui.Extensions;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Features.Measurements.Popups;
 using FishingLogBook.Mobile.Features.Measurements.ViewModels;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Popups;
@@ -75,30 +76,12 @@ public partial class RecordCatchEditorView : ContentView
 
     private async void OnEditWeight(object? sender, EventArgs args)
     {
-        if (Editor is null)
-        {
-            return;
-        }
-
-        var editor = Editor.CreateWeightEditor();
-        if (await ShowMeasurementEditorAsync(editor))
-        {
-            Editor.ApplyWeightEditor(editor);
-        }
+        await EditMeasurementAsync(Editor?.CreateWeightEditor(), editor => Editor?.ApplyWeightEditor(editor));
     }
 
     private async void OnEditLength(object? sender, EventArgs args)
     {
-        if (Editor is null)
-        {
-            return;
-        }
-
-        var editor = Editor.CreateLengthEditor();
-        if (await ShowMeasurementEditorAsync(editor))
-        {
-            Editor.ApplyLengthEditor(editor);
-        }
+        await EditMeasurementAsync(Editor?.CreateLengthEditor(), editor => Editor?.ApplyLengthEditor(editor));
     }
 
     private async void OnSave(object? sender, EventArgs args)
@@ -114,6 +97,22 @@ public partial class RecordCatchEditorView : ContentView
         }
     }
 
+    private async Task EditMeasurementAsync(
+        MeasurementEditorViewModel? editor,
+        Action<MeasurementEditorViewModel>? apply)
+    {
+        var page = FindPage();
+        if (page is null || editor is null || apply is null)
+        {
+            return;
+        }
+
+        if (await MeasurementEditorPopup.ShowAsync(page, editor))
+        {
+            apply(editor);
+        }
+    }
+
     private async Task<CataloguePickerResultModel?> ShowPickerAsync(CataloguePickerViewModel picker)
     {
         var page = FindPage();
@@ -126,43 +125,6 @@ public partial class RecordCatchEditorView : ContentView
             new CataloguePickerPopup(picker),
             new PopupOptions { CanBeDismissedByTappingOutsideOfPopup = true });
         return result.WasDismissedByTappingOutsideOfPopup ? null : result.Result;
-    }
-
-    private async Task<bool> ShowMeasurementEditorAsync(MeasurementEditorViewModel editor)
-    {
-        var page = FindPage();
-        if (page is null || Editor is null)
-        {
-            return false;
-        }
-
-        var tcs = new TaskCompletionSource<bool>();
-        var done = new Button
-        {
-            Text = Editor.Text["Done"],
-            Style = (Style)Application.Current!.Resources["PrimaryButton"]
-        };
-        done.Clicked += async (_, _) =>
-        {
-            tcs.TrySetResult(true);
-            await page.Navigation.PopModalAsync();
-        };
-        var modal = new ContentPage
-        {
-            Title = editor.Title,
-            Padding = new Thickness(16),
-            Content = new VerticalStackLayout
-            {
-                Spacing = 16,
-                Children =
-                {
-                    new MeasurementEditorView { ViewModel = editor },
-                    done
-                }
-            }
-        };
-        await page.Navigation.PushModalAsync(modal);
-        return await tcs.Task;
     }
 
     private Page? FindPage()
