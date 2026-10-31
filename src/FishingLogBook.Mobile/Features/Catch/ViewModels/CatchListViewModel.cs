@@ -2,12 +2,13 @@ using System.ComponentModel;
 using System.Globalization;
 using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
+using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Enums;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
-using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Presentation;
@@ -42,6 +43,7 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
     private ContentStateEnum _state = ContentStateEnum.Loading;
     private string _searchTerm = string.Empty;
     private CatchFilterModel _filters = CatchFilterModel.None;
+    private AccountSessionLeaseModel? _ownerLease;
 
     public CatchListViewModel(
         UiTextService text,
@@ -52,7 +54,8 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
         IAccountSessionCoordinator sessionCoordinator,
         IAccountUnitsService units,
         IMeasurementService measurement,
-        TimeProvider clock)
+        TimeProvider clock,
+        IConnectivityService connectivity)
     {
         Text = text;
         _history = history;
@@ -66,6 +69,9 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
         Text.PropertyChanged += OnCultureChanged;
         _notifier.StateChanged += OnSyncStateChanged;
         _notifier.CatchesChanged += OnCatchesChanged;
+        _notifier.SyncRunCompleted += OnCatchesChanged;
+        _sessionCoordinator.SessionActivated += OnCatchesChanged;
+        connectivity.ConnectivityChanged += OnCatchesChanged;
         State = new ContentStateModel(_state, Text);
     }
 
@@ -120,9 +126,16 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
     public async Task RefreshFromStoreAsync(CancellationToken cancellationToken)
     {
+        if (_ownerLease is null || !_sessionCoordinator.IsCurrent(_ownerLease))
+        {
+            _source = [];
+            SetState(ContentStateEnum.Loading);
+        }
+
         await _refreshGate.WaitAsync(cancellationToken);
         try
         {
+            _ownerLease = _sessionCoordinator.Capture();
             var history = await _history.LoadAsync(Text, cancellationToken);
             RemoteState = history.Remote;
             _source = history.Items;
@@ -321,7 +334,10 @@ public sealed class CatchListViewModel : INotifyPropertyChanged
 
     private void Refresh()
     {
-        State = new ContentStateModel(_state, Text);
+        var remoteText = RemoteState != RemoteCatchStateEnum.Loaded && _state is ContentStateEnum.Error or ContentStateEnum.Offline
+            ? "CatchRemote" + RemoteState
+            : null;
+        State = new ContentStateModel(_state, Text, remoteText);
         Catches = !HasContent ? [] : _source.Where(Matches).OrderByDescending(item => item.RecordedAt).ToArray();
         Groups = Catches.GroupBy(item => item.Day).Select(group => new CatchGroupModel(group.Key, group, Text)).ToArray();
         foreach (var property in new[]

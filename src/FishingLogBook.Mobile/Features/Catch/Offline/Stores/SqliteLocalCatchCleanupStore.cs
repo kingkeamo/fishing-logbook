@@ -145,30 +145,37 @@ public sealed class SqliteLocalCatchCleanupStore : ILocalCatchCleanupStore
         return rows;
     }
 
-    public async Task<bool> IsFileReferencedAsync(Guid userId, string relativePath, CancellationToken cancellationToken)
-    {
-        await _database.EnsureInitializedAsync(cancellationToken);
-        await using var connection = await _connectionFactory.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM localcatchphotographs WHERE userid = $userId AND localfilepath = $path;";
-        command.Parameters.AddWithValue("$userId", userId.ToString("D"));
-        command.Parameters.AddWithValue("$path", relativePath);
-        return Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken)) > 0;
-    }
-
-    public Task CompleteFileDeletionAsync(Guid id, CancellationToken cancellationToken)
+    public Task QueueFileDeletionAsync(Guid userId, string relativePath, DateTimeOffset now, CancellationToken cancellationToken)
     {
         return _database.ExecuteInTransactionAsync(
             async (connection, transaction, token) =>
             {
-                await ExecuteAsync(
-                    connection,
-                    transaction,
-                    "DELETE FROM localpendingfiledeletions WHERE id = $id;",
-                    token,
-                    ("$id", id.ToString("D")));
-            },
-            cancellationToken);
+                await ExecuteAsync(connection, transaction,
+                    "INSERT INTO localpendingfiledeletions (id, userid, relativepath, createdon) VALUES ($id, $userId, $path, $now);",
+                    token, ("$id", Guid.NewGuid().ToString("D")), ("$userId", userId.ToString("D")),
+                    ("$path", relativePath), ("$now", SqliteDateTime.Format(now)));
+            }, cancellationToken);
+    }
+
+    public Task TryDeleteFileAsync(Guid userId, Guid id, string relativePath, Func<bool> delete, CancellationToken cancellationToken)
+    {
+        return _database.ExecuteInTransactionAsync(
+            async (connection, transaction, token) =>
+            {
+                await using var check = connection.CreateCommand();
+                check.Transaction = transaction;
+                check.CommandText = "SELECT COUNT(*) FROM localcatchphotographs WHERE userid = $userId AND localfilepath = $path;";
+                check.Parameters.AddWithValue("$userId", userId.ToString("D"));
+                check.Parameters.AddWithValue("$path", relativePath);
+                if (Convert.ToInt32(await check.ExecuteScalarAsync(token)) == 0 && !delete())
+                {
+                    return;
+                }
+
+                await ExecuteAsync(connection, transaction,
+                    "DELETE FROM localpendingfiledeletions WHERE id = $id AND userid = $userId AND relativepath = $path;",
+                    token, ("$id", id.ToString("D")), ("$userId", userId.ToString("D")), ("$path", relativePath));
+            }, cancellationToken);
     }
 
     private static async Task<LocalCatchCleanupCandidateModel> ReadCandidateAsync(

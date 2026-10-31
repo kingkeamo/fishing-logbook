@@ -346,6 +346,80 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
         Sut.SpeciesOptions.Should().Contain(option => option.Name == "Salmon" && option.IsSelected);
     }
 
+    [Fact]
+    public async Task ItShouldPreserveTheStoredPlaceWhenSavingAnExistingCatch()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        MockCatchStore.GetAsync(id, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, id, photographId: Guid.NewGuid(), placeName: "Lough Corrib"));
+        MockCatchStore.SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call => LocalCatchSaveResultModel.Saved(call.Arg<LocalCatchSaveArgs>().Id, 2));
+        await Sut.InitializeAsync(id, CancellationToken.None);
+        Sut.Notes = "New notes";
+        // Act
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+        // Assert
+        saved.Should().BeTrue();
+        await MockCatchStore.Received(1).SaveAsync(Arg.Is<LocalCatchSaveArgs>(args =>
+            args.Id == id && args.PlaceName == "Lough Corrib" && args.Notes == "New notes"), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPreserveSavedPhotoLocationAndPublicVisibilityWhenAnotherPhotoIsAdded()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var location = new LocalCatchLocationModel
+        {
+            Latitude = 53.3,
+            Longitude = -6.2,
+            AccuracyMetres = 15,
+            CapturedOn = Now.AddDays(-1),
+            Source = LocationDefaults.PhotoMetadata,
+            Visibility = LocationDefaults.Public,
+            ConsentVersion = LocationDefaults.ConsentVersion
+        };
+        MockCatchStore.GetAsync(id, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, id, photographId: Guid.NewGuid(), location: location));
+        MockCatchStore.SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>())
+            .Returns(call => LocalCatchSaveResultModel.Saved(call.Arg<LocalCatchSaveArgs>().Id, 2));
+        await Sut.InitializeAsync(id, CancellationToken.None);
+        var added = new PhotographEditorItemModel
+        {
+            Id = Guid.NewGuid(),
+            SortOrder = 1,
+            PreviewPath = "new.jpg",
+            RelativeFilePath = "new.jpg",
+            ContentType = "image/jpeg",
+            Metadata = new FishingLogBook.Shared.Photographs.Models.PhotographMetadataModel(Now.AddDays(-2), 54.5, -8.1)
+        };
+        // Act
+        Sut.Photographs.SetItems([.. Sut.Photographs.Items, added]);
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+        // Assert
+        saved.Should().BeTrue();
+        Sut.LocationCaption.Should().Contain(Text["CatchLocationSavedPublic"]);
+        await MockCatchStore.Received(1).SaveAsync(Arg.Is<LocalCatchSaveArgs>(args => args.Location == location), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldDisableSaveForAnUnsupportedExistingTripCatch()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        MockCatchStore.GetAsync(id, Arg.Any<CancellationToken>()).Returns(
+            CreateRecord(LocalCatchLifecycleEnum.Saved, id, photographId: Guid.NewGuid(), tripId: Guid.NewGuid()));
+        // Act
+        await Sut.InitializeAsync(id, CancellationToken.None);
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+        // Assert
+        saved.Should().BeFalse();
+        Sut.CanSave.Should().BeFalse();
+        Sut.ValidationText.Should().Be(Text["CatchEditNotSupported"]);
+        await MockCatchStore.DidNotReceive().SaveAsync(Arg.Any<LocalCatchSaveArgs>(), Arg.Any<CancellationToken>());
+    }
+
     private static LocalCatchRecordModel CreateRecord(
         LocalCatchLifecycleEnum lifecycle,
         Guid id,
@@ -354,7 +428,9 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
         string? bait = null,
         double? weight = null,
         double? length = null,
-        LocalCatchLocationModel? location = null)
+        LocalCatchLocationModel? location = null,
+        string? placeName = null,
+        Guid? tripId = null)
     {
         var photographs = photographId is null
             ? Array.Empty<LocalCatchPhotographModel>()
@@ -375,6 +451,8 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
         return new LocalCatchRecordModel
         {
             Id = id,
+            TripId = tripId,
+            PlaceName = placeName,
             UserId = OwnerUserId,
             CaughtByUserId = OwnerUserId,
             RecordedByUserId = OwnerUserId,

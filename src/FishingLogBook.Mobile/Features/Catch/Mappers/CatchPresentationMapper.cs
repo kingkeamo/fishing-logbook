@@ -76,6 +76,6 @@ public sealed class CatchPresentationMapper(IPhotographFileStore photographFileS
             Notes = view.Notes,
             PlaceName = view.PlaceName
         };
-        return new CatchPresentationModel(dto, text, photos, isRemote: true);
+        return new CatchPresentationModel(dto, text, photos, isRemote: true, remoteLocation: view.Location);
     }
 }

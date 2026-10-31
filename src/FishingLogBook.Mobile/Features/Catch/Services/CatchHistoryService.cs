@@ -37,16 +37,14 @@ public sealed class CatchHistoryService(
             return CatchHistoryModel.None;
         }
 
-        var remoteById = remote.ToDictionary(item => item.Id);
         var items = new List<CatchPresentationModel>();
         var localIds = new HashSet<Guid>();
         foreach (var record in local)
         {
             statuses.TryGetValue(record.Id, out var status);
-            var confirmedOnServer = record.Lifecycle == LocalCatchLifecycleEnum.Saved
-                && status?.State == CatchSyncStateEnum.Synced
-                && remoteById.ContainsKey(record.Id);
-            if (confirmedOnServer)
+            var confirmed = record.Lifecycle == LocalCatchLifecycleEnum.Saved
+                && status?.State == CatchSyncStateEnum.Synced;
+            if (confirmed)
             {
                 continue;
             }

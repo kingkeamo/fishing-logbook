@@ -2,10 +2,10 @@ using System.ComponentModel;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Catch.Enums;
 using FishingLogBook.Mobile.Features.Catch.Models;
-using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Measurements.Models;
 using FishingLogBook.Mobile.Features.Measurements.ViewModels;
 using FishingLogBook.Mobile.Features.Onboarding.Models;
@@ -37,6 +37,9 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     private readonly ICatchWorkingCopyService _workingCopy;
     private readonly IActiveCatchEditRegistry _activeEdits;
     private IDisposable? _activeEdit;
+    private string? _placeName;
+    private string? _locationStatusKey;
+    private CancellationTokenSource? _locationCaptureCancellation;
     private bool _editBlocked;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly IAnglerPreferencesService _preferences;
@@ -68,7 +71,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     private bool _caughtOnResolvedByAngler;
     private CatchPhotographProposalModel _proposal = CatchPhotographProposalModel.Empty;
     private LocalCatchLocationModel? _location;
-    private bool _deviceLocationChosen;
+    private bool _locationChosenByAngler;
     private decimal? _weightKg;
     private decimal? _lengthCm;
     private WeightUnitEnum _weightUnit = WeightUnitEnum.Kg;
@@ -121,25 +124,25 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public bool IsLoading
     {
         get => _isLoading;
-        private set => Set(ref _isLoading, value, nameof(IsLoading), nameof(CanInteract));
+        private set => Set(ref _isLoading, value, nameof(IsLoading), nameof(CanInteract), nameof(CanCaptureLocation));
     }
 
     public bool IsSaving
     {
         get => _isSaving;
-        private set => Set(ref _isSaving, value, nameof(IsSaving), nameof(CanSave), nameof(CanInteract), nameof(SaveButtonText));
+        private set => Set(ref _isSaving, value, nameof(IsSaving), nameof(CanSave), nameof(CanInteract), nameof(CanCaptureLocation), nameof(SaveButtonText));
     }
 
     public bool IsSaved
     {
         get => _isSaved;
-        private set => Set(ref _isSaved, value, nameof(IsSaved), nameof(CanSave), nameof(CanInteract));
+        private set => Set(ref _isSaved, value, nameof(IsSaved), nameof(CanSave), nameof(CanInteract), nameof(CanCaptureLocation));
     }
 
     public bool NotSignedIn
     {
         get => _notSignedIn;
-        private set => Set(ref _notSignedIn, value, nameof(NotSignedIn), nameof(CanInteract));
+        private set => Set(ref _notSignedIn, value, nameof(NotSignedIn), nameof(CanInteract), nameof(CanCaptureLocation));
     }
 
     public bool DraftRestored
@@ -168,6 +171,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public bool CanSave =>
         CanInteract
         && !IsSaving
+        && !IsCapturingLocation
         && Photographs.Items.Count > 0
         && !DateConflict
         && !HasValidation;
@@ -267,7 +271,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public string LocationCaption =>
         _location is null
             ? _text["CatchLocationNotRecorded"]
-            : string.Format(_text.Culture, _text["CatchLocationPrivateCaption"], _location.Latitude, _location.Longitude);
+            : string.Format(_text.Culture, _text["CatchLocationCoordinatesCaption"],
+                _text["CatchLocationSaved" + _location.Visibility], _location.Latitude, _location.Longitude);
 
     public bool HasLocation => _location is not null;
 
@@ -300,10 +305,15 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public bool ShowTripDeferredNote => CanInteract;
 
-    public string LocationActionText =>
+    public bool IsCapturingLocation { get; private set; }
+    public bool CanCaptureLocation => CanInteract && !IsSaving && !IsCapturingLocation;
+    public bool HasLocationStatus => IsCapturingLocation || _locationStatusKey is not null;
+    public string LocationStatusText => IsCapturingLocation ? _text["CatchLocationCapturing"]
+        : _locationStatusKey is null ? string.Empty : _text[_locationStatusKey];
+    public string LocationActionText => IsCapturingLocation ? _text["CatchLocationCapturing"] :
         string.Equals(_statusKey, "CatchLocationCaptureFailed", StringComparison.Ordinal)
             ? _text["CatchLocationTryAgain"]
-            : _text["CatchCaptureLocation"];
+            : _text[HasLocation ? "CatchUpdateLocation" : "CatchCaptureLocation"];
 
     public bool ShowLocationAction => CanInteract;
 
@@ -454,6 +464,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public async Task InitializeAsync(Guid? existingCatchId, CancellationToken cancellationToken)
     {
         _editBlocked = false;
+        _placeName = null;
         _activeEdit?.Dispose();
         _activeEdit = null;
         IsLoading = true;
@@ -529,23 +540,56 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task CaptureLocationAsync(CancellationToken cancellationToken)
     {
-        if (!CanInteract)
+        if (!CanCaptureLocation || _sessionCoordinator.Capture() is not { } lease)
         {
             return;
         }
 
-        var capture = await _locationService.CaptureCurrentAsync(cancellationToken);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease.CancellationToken);
+        _locationCaptureCancellation = linked;
+        IsCapturingLocation = true;
+        _locationStatusKey = null;
+        NotifyLocation();
+        try
+        {
+            var capture = await _locationService.CaptureCurrentAsync(linked.Token);
+            if (!_disposed && _sessionCoordinator.Capture()?.UserId == lease.UserId)
+            {
+                ApplyCapturedLocation(capture);
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            _locationStatusKey = "CatchLocationCaptureFailed";
+        }
+        finally
+        {
+            _locationCaptureCancellation = null;
+            IsCapturingLocation = false;
+            NotifyLocation();
+            NotifyStatus();
+        }
+    }
+
+    private void ApplyCapturedLocation(Onboarding.Models.DeviceLocationCaptureModel capture)
+    {
         if (capture.Outcome != Onboarding.Enums.LocationCaptureOutcomeEnum.Captured
             || capture.Latitude is null
             || capture.Longitude is null
             || capture.CapturedOn is null)
         {
             _statusKey = "CatchLocationCaptureFailed";
-            NotifyStatus();
+            _locationStatusKey = capture.Outcome switch
+            {
+                Onboarding.Enums.LocationCaptureOutcomeEnum.Denied => "CatchLocationPermissionDenied",
+                Onboarding.Enums.LocationCaptureOutcomeEnum.PermanentlyDenied => "CatchLocationPermissionBlocked",
+                Onboarding.Enums.LocationCaptureOutcomeEnum.Timeout => "CatchLocationTimedOut",
+                _ => "CatchLocationCaptureFailed"
+            };
             return;
         }
 
-        _deviceLocationChosen = true;
+        _locationChosenByAngler = true;
         _location = new LocalCatchLocationModel
         {
             Latitude = capture.Latitude.Value,
@@ -557,12 +601,18 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             ConsentVersion = LocationDefaults.ConsentVersion
         };
         _statusKey = null;
+        _locationStatusKey = "CatchLocationCaptured";
         NotifyLocation();
         ScheduleDraftSave();
     }
 
     public async Task<bool> SaveAsync(CancellationToken cancellationToken)
     {
+        if (_editBlocked)
+        {
+            return false;
+        }
+
         _draftDebounce?.Cancel();
         if (!CanSave)
         {
@@ -605,6 +655,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         }
 
         _disposed = true;
+        _locationCaptureCancellation?.Cancel();
         _activeEdit?.Dispose();
         Photographs.ItemsChanged -= OnPhotographsChanged;
         Photographs.UseDetailsRequested -= OnUsePhotographDetails;
@@ -639,7 +690,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     private async Task LoadExistingAsync(Guid catchId, CancellationToken cancellationToken)
     {
         _activeEdit?.Dispose();
-        _activeEdit = _activeEdits.Acquire(catchId);
+        _activeEdit = await _activeEdits.AcquireAsync(catchId, cancellationToken);
         var record = await _catchStore.GetAsync(catchId, cancellationToken);
         if (record is null)
         {
@@ -655,6 +706,13 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         }
 
         IsEditingSavedCatch = record.Lifecycle == LocalCatchLifecycleEnum.Saved;
+        var owner = _sessionCoordinator.Capture()?.UserId;
+        if (record.TripId is not null || record.CaughtByUserId != owner || record.RecordedByUserId != owner)
+        {
+            BlockEdit("CatchEditNotSupported");
+            return;
+        }
+
         Photographs.MinimumCount = IsEditingSavedCatch ? 1 : 0;
         _catchId = record.Id;
         await BindRecordAsync(record, cancellationToken);
@@ -688,10 +746,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         _speciesIsExplicit = !string.IsNullOrWhiteSpace(record.SpeciesName);
         _baitOrLure = record.BaitOrLure ?? string.Empty;
         _notes = record.Notes ?? string.Empty;
+        _placeName = record.PlaceName;
         _weightKg = record.Weight is null ? null : (decimal)record.Weight;
         _lengthCm = record.Length is null ? null : (decimal)record.Length;
         _location = record.Location;
-        _deviceLocationChosen = record.Location?.Source == LocationDefaults.DeviceGps;
+        _locationChosenByAngler = record.Location is not null;
         _caughtOnLocal = ToLocalWallClock(record.CaughtOn);
         _caughtOnResolvedByAngler = true;
         var items = record.Photographs
@@ -833,10 +892,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
         if (photograph.Metadata.HasCoordinates)
         {
-            _deviceLocationChosen = false;
+            _locationChosenByAngler = false;
         }
 
         await ApplyPhotoMetadataAsync();
+        _locationChosenByAngler = photograph.Metadata.HasCoordinates || _locationChosenByAngler;
         ScheduleDraftSave();
     }
 
@@ -870,7 +930,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     private void ApplyProposalLocation()
     {
-        if (_deviceLocationChosen && _location?.Source == LocationDefaults.DeviceGps)
+        if (_locationChosenByAngler)
         {
             return;
         }
@@ -1001,7 +1061,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
                 Method = TrimToNull(_selectedMethod),
                 BaitOrLure = TrimToNull(_baitOrLure),
                 Notes = TrimToNull(_notes),
-                PlaceName = null,
+                PlaceName = _placeName,
                 Location = _location,
                 Lifecycle = lifecycle,
                 CaughtByUserId = lease.UserId,
@@ -1170,6 +1230,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     private void NotifyLocation()
     {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCapturingLocation)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanCaptureLocation)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocationStatus)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocationStatusText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSave)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocation)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocationCaption)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocationActionText)));

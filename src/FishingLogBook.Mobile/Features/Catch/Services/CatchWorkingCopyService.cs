@@ -23,11 +23,14 @@ public sealed class CatchWorkingCopyService(
     ICatchWorkingCopyStore workingCopyStore,
     IConnectivityService connectivity,
     IAccountSessionCoordinator sessionCoordinator,
+    IActiveCatchEditRegistry activeEdits,
+    ILocalCatchCleanupStore cleanupStore,
     TimeProvider timeProvider,
     ILogger<CatchWorkingCopyService> logger) : ICatchWorkingCopyService
 {
     public async Task<WorkingCopyOutcomeEnum> EnsureAsync(Guid catchId, CancellationToken cancellationToken)
     {
+        using var edit = await activeEdits.AcquireAsync(catchId, cancellationToken);
         var lease = sessionCoordinator.Capture();
         if (lease is null)
         {
@@ -36,7 +39,7 @@ public sealed class CatchWorkingCopyService(
 
         if (await catchStore.GetAsync(catchId, cancellationToken) is not null)
         {
-            return WorkingCopyOutcomeEnum.Ready;
+            return sessionCoordinator.IsCurrent(lease) ? WorkingCopyOutcomeEnum.Ready : WorkingCopyOutcomeEnum.SessionExpired;
         }
 
         if (!connectivity.IsOnline)
@@ -56,15 +59,37 @@ public sealed class CatchWorkingCopyService(
         }
 
         var view = remote.Value!;
-        if (view.RecordedByUserId != lease.UserId)
+        if (view.RecordedByUserId != lease.UserId || view.CaughtByUserId != lease.UserId || view.TripId is not null)
         {
             return WorkingCopyOutcomeEnum.NotEditable;
         }
 
-        var photographs = await DownloadAsync(lease.UserId, view, cancellationToken);
-        return photographs is null
-            ? WorkingCopyOutcomeEnum.PhotosUnavailable
-            : await CreateAsync(view, photographs, lease, cancellationToken);
+        return await HydrateAsync(view, lease, cancellationToken);
+    }
+
+    private async Task<WorkingCopyOutcomeEnum> HydrateAsync(CatchViewDto view, AccountSessionLeaseModel lease, CancellationToken cancellationToken)
+    {
+        if (view.Photographs.Count == 0)
+        {
+            return WorkingCopyOutcomeEnum.PhotosUnavailable;
+        }
+
+        try
+        {
+            var photographs = await DownloadAsync(lease.UserId, view, cancellationToken);
+            return photographs is null
+                ? WorkingCopyOutcomeEnum.PhotosUnavailable
+                : await CreateAsync(view, photographs, lease, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Failed to hydrate catch {CatchId}.", view.Id);
+            return WorkingCopyOutcomeEnum.PhotosUnavailable;
+        }
     }
 
     private async Task<WorkingCopyOutcomeEnum> CreateAsync(
@@ -78,7 +103,7 @@ public sealed class CatchWorkingCopyService(
         {
             if (!sessionCoordinator.IsCurrent(lease))
             {
-                await RollbackAsync(lease.UserId, view.Id, photographs);
+                await RollbackAsync(lease.UserId, photographs);
                 return WorkingCopyOutcomeEnum.SessionExpired;
             }
 
@@ -86,7 +111,7 @@ public sealed class CatchWorkingCopyService(
             var created = await workingCopyStore.TryCreateAsync(record, now, cancellationToken);
             if (!created && await catchStore.GetAsync(view.Id, cancellationToken) is null)
             {
-                await RollbackAsync(lease.UserId, view.Id, photographs);
+                await RollbackAsync(lease.UserId, photographs);
                 return WorkingCopyOutcomeEnum.PhotosUnavailable;
             }
 
@@ -94,13 +119,13 @@ public sealed class CatchWorkingCopyService(
         }
         catch (OperationCanceledException)
         {
-            await RollbackAsync(lease.UserId, view.Id, photographs);
+            await RollbackAsync(lease.UserId, photographs);
             throw;
         }
         catch (Exception exception)
         {
             logger.LogError(exception, "Failed to create the working copy of catch {CatchId}.", view.Id);
-            await RollbackAsync(lease.UserId, view.Id, photographs);
+            await RollbackAsync(lease.UserId, photographs);
             return WorkingCopyOutcomeEnum.PhotosUnavailable;
         }
     }
@@ -118,11 +143,11 @@ public sealed class CatchWorkingCopyService(
                 ? null
                 : await downloadClient.DownloadAsync(photograph.Url, cancellationToken);
             var relativePath = download?.Outcome == PhotographDownloadOutcomeEnum.Downloaded
-                ? await fileStore.SaveAsync(userId, photograph.Id, photograph.ContentType, download.Bytes!, cancellationToken)
+                ? await SaveTrackedAsync(userId, photograph.ContentType, download.Bytes!, cancellationToken)
                 : null;
             if (relativePath is null)
             {
-                await RollbackAsync(userId, view.Id, saved);
+                await RollbackAsync(userId, saved);
                 return null;
             }
 
@@ -141,16 +166,28 @@ public sealed class CatchWorkingCopyService(
         return saved;
     }
 
-    private async Task RollbackAsync(Guid userId, Guid catchId, IReadOnlyList<LocalCatchPhotographModel> photographs)
+    private async Task<string?> SaveTrackedAsync(Guid userId, string contentType, byte[] bytes, CancellationToken cancellationToken)
     {
-        if (await catchStore.GetAsync(catchId, CancellationToken.None) is not null)
+        var storageId = Guid.NewGuid();
+        var path = fileStore.GetRelativePath(userId, storageId, contentType);
+        if (path is null)
         {
-            return;
+            return null;
         }
 
-        foreach (var path in photographs.Select(photograph => photograph.LocalFilePath).OfType<string>())
+        await cleanupStore.QueueFileDeletionAsync(userId, path, timeProvider.GetUtcNow(), cancellationToken);
+        return await fileStore.SaveAsync(userId, storageId, contentType, bytes, cancellationToken);
+    }
+
+    private async Task RollbackAsync(Guid userId, IReadOnlyList<LocalCatchPhotographModel> photographs)
+    {
+        var paths = photographs.Select(photograph => photograph.LocalFilePath).OfType<string>().ToHashSet();
+        foreach (var (id, path) in await cleanupStore.ListPendingFileDeletionsAsync(userId, CancellationToken.None))
         {
-            fileStore.TryDelete(userId, path);
+            if (paths.Contains(path))
+            {
+                await cleanupStore.TryDeleteFileAsync(userId, id, path, () => fileStore.TryDelete(userId, path), CancellationToken.None);
+            }
         }
     }
 

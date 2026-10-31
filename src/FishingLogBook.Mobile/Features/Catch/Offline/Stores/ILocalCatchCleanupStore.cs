@@ -17,10 +17,7 @@ public interface ILocalCatchCleanupStore
         Guid userId,
         CancellationToken cancellationToken);
 
-    Task<bool> IsFileReferencedAsync(
-        Guid userId,
-        string relativePath,
-        CancellationToken cancellationToken);
+    Task QueueFileDeletionAsync(Guid userId, string relativePath, DateTimeOffset now, CancellationToken cancellationToken);
 
-    Task CompleteFileDeletionAsync(Guid id, CancellationToken cancellationToken);
+    Task TryDeleteFileAsync(Guid userId, Guid id, string relativePath, Func<bool> delete, CancellationToken cancellationToken);
 }

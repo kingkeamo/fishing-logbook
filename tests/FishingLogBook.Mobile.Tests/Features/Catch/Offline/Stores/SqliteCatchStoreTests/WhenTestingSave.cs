@@ -1,14 +1,13 @@
 using System.Globalization;
 using AwesomeAssertions;
-using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Api.Models;
-using FishingLogBook.Mobile.Features.Catch.Clients;
-using FishingLogBook.Mobile.Features.Catch.Services;
-using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Common.Offline.Services;
+using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
 using FishingLogBook.Mobile.Features.Onboarding.Services;
 using FishingLogBook.Mobile.Features.Photographs.Mappers;
@@ -20,6 +19,7 @@ using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Catches.Services;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Measurements;
 using FishingLogBook.Shared.Photographs.Models;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -125,7 +125,7 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
         var history = new CatchHistoryService(reopened, statusStore, remote, connectivity, MockSessionCoordinator, new CatchPresentationMapper(files));
         var list = new CatchListViewModel(text, history, statusStore, MockNotifier,
             NullLogger<CatchListViewModel>.Instance, MockSessionCoordinator,
-            units, new MeasurementService(), TimeProvider.System);
+            units, new MeasurementService(), TimeProvider.System, connectivity);
         await list.RefreshFromStoreAsync(CancellationToken.None);
         using var edit = CreateEditor(reopened, text, files, units);
         await edit.InitializeAsync(record.Id, CancellationToken.None);

@@ -1,0 +1,32 @@
+[
+  {
+    "catchId": "66285fdf-4733-4be4-86ff-0dd8ab22840d",
+    "photographCount": 3,
+    "durablePhotographs": 3,
+    "offlineEditConfirmed": false,
+    "isCatchingUser": true,
+    "locationPresent": true,
+    "locationVisibility": "Private",
+    "locationSource": "DeviceGps"
+  },
+  {
+    "catchId": "7509bdb7-00fe-4cfc-a57a-2319f713babc",
+    "photographCount": 2,
+    "durablePhotographs": 2,
+    "offlineEditConfirmed": false,
+    "isCatchingUser": true,
+    "locationPresent": false,
+    "locationVisibility": null,
+    "locationSource": null
+  },
+  {
+    "catchId": "ae44bca5-939c-49f5-bcdd-50a23b8f6027",
+    "photographCount": 2,
+    "durablePhotographs": 2,
+    "offlineEditConfirmed": true,
+    "isCatchingUser": true,
+    "locationPresent": true,
+    "locationVisibility": "Private",
+    "locationSource": "DeviceGps"
+  }
+]

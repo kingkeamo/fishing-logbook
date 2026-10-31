@@ -36,6 +36,9 @@ public sealed class SqliteCatchWorkingCopyStore : ICatchWorkingCopyStore
                 foreach (var photograph in record.Photographs)
                 {
                     await InsertPhotographAsync(connection, transaction, photograph, token);
+                    await ExecuteAsync(connection, transaction,
+                        "DELETE FROM localpendingfiledeletions WHERE userid = $userId AND relativepath = $path;",
+                        token, ("$userId", record.UserId.ToString("D")), ("$path", (object?)photograph.LocalFilePath ?? DBNull.Value));
                     await ExecuteAsync(
                         connection,
                         transaction,

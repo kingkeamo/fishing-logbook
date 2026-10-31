@@ -102,11 +102,20 @@
       </VerticalStackLayout>
 
       <VerticalStackLayout Spacing="4">
-        <Label Text="{Binding LocationCaption}" Style="{StaticResource SecondaryText}" FontSize="13"
-               AutomationId="RecordCatchLocationCaption" />
-        <Button Text="{Binding LocationActionText}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start"
-                Padding="14,8" IsVisible="{Binding ShowLocationAction}" Clicked="OnCaptureLocation"
-                AutomationId="RecordCatchLocationAction" />
+        <Grid ColumnDefinitions="24,*,Auto" ColumnSpacing="8" MinimumHeightRequest="48">
+          <controls:IconView Source="icon_pin.png" Tone="Muted" WidthRequest="22" HeightRequest="22"
+                             VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" />
+          <Label Grid.Column="1" Text="{Binding LocationCaption}" Style="{StaticResource SecondaryText}" FontSize="13"
+                 VerticalOptions="Center" LineBreakMode="WordWrap" AutomationId="RecordCatchLocationCaption" />
+          <Button Grid.Column="2" Text="{Binding LocationActionText}" Style="{StaticResource SecondaryButton}" HorizontalOptions="End"
+                  VerticalOptions="Center" MaximumWidthRequest="176" MinimumHeightRequest="48" Padding="12,8"
+                  IsVisible="{Binding ShowLocationAction}" IsEnabled="{Binding CanCaptureLocation}" Clicked="OnCaptureLocation"
+                  AutomationId="RecordCatchLocationAction" />
+        </Grid>
+        <ActivityIndicator IsRunning="{Binding IsCapturingLocation}" IsVisible="{Binding IsCapturingLocation}"
+                           Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+        <Label Text="{Binding LocationStatusText}" IsVisible="{Binding HasLocationStatus}" Style="{StaticResource SecondaryText}"
+               SemanticProperties.Description="{Binding LocationStatusText}" AutomationId="RecordCatchLocationStatus" />
       </VerticalStackLayout>
 
       <VerticalStackLayout Spacing="4" IsVisible="{Binding ShowAnglerSection}">

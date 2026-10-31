@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Catch.Models;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Shared.Measurements;
 
@@ -7,6 +8,51 @@ namespace FishingLogBook.Mobile.Tests.Features.Catch.Models.CatchPresentationMod
 
 public class WhenTestingConstructor : BaseCatchPresentationModelTest
 {
+    [Theory]
+    [InlineData("en-GB", LocationDefaults.Private)]
+    [InlineData("fr-FR", LocationDefaults.Public)]
+    [InlineData("en-GB", LocationDefaults.Approximate)]
+    [InlineData("fr-FR", LocationDefaults.FishingVenueOnly)]
+    public void ItShouldDescribeASavedLocationWithoutRequiringAPlaceNameOrExposingCoordinates(string culture, string visibility)
+    {
+        // Arrange
+        var text = CreateText(culture);
+        var location = new CatchLocationDto(53.3, -6.2, 12, Catch.CaughtOn, LocationDefaults.DeviceGps, visibility, LocationDefaults.ConsentVersion);
+        // Act
+        var local = new CatchPresentationModel(Catch with { Location = location }, text);
+        var remote = new CatchPresentationModel(Catch, text, remoteLocation: new CatchLocationExposureDto
+        {
+            Mode = LocationDefaults.ExposureExact,
+            Visibility = visibility,
+            Latitude = 53.3,
+            Longitude = -6.2
+        });
+        // Assert
+        local.Place.Should().Be(text["CatchLocationSaved" + visibility]);
+        remote.Place.Should().Be(local.Place);
+        local.Place.Should().NotContain("53.3");
+    }
+
+    [Theory]
+    [InlineData(LocationDefaults.ExposureNone, "CatchLocationHidden")]
+    [InlineData(LocationDefaults.ExposureApproximate, "CatchLocationSavedApproximate")]
+    public void ItShouldRespectTheServersLocationExposure(string mode, string key)
+    {
+        // Arrange
+        var text = CreateText("en-GB");
+        // Act
+        var item = new CatchPresentationModel(Catch, text, remoteLocation: new CatchLocationExposureDto
+        {
+            Mode = mode,
+            Visibility = LocationDefaults.Private,
+            Latitude = 53.3,
+            Longitude = -6.2
+        });
+        // Assert
+        item.Place.Should().Be(text[key]);
+        item.Place.Should().NotContain("53.3");
+    }
+
     [Theory]
     [InlineData("en-GB")]
     [InlineData("fr-FR")]

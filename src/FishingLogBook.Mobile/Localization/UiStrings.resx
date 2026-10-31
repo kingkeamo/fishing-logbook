@@ -332,7 +332,7 @@
   <data name="CatchRemoteSessionExpired" xml:space="preserve"><value>Sign in again to load your saved catches. Showing only catches stored on this device.</value></data>
   <data name="CatchRemoteRetry" xml:space="preserve"><value>Try again</value></data>
   <data name="CatchEditNeedsConnection" xml:space="preserve"><value>Connect to the internet to edit a saved catch.</value></data>
-  <data name="CatchEditNotSupported" xml:space="preserve"><value>This catch was recorded by someone else and can’t be edited here yet.</value></data>
+  <data name="CatchEditNotSupported" xml:space="preserve"><value>This catch’s trip or angler details aren’t supported by the native editor yet. Edit it on the Web.</value></data>
   <data name="CatchEditPhotosUnavailable" xml:space="preserve"><value>Couldn’t load this catch’s photographs. Try again when you have a better connection.</value></data>
   <data name="CatchSyncWaiting" xml:space="preserve"><value>Waiting to sync.</value></data>
   <data name="CatchSyncSynchronising" xml:space="preserve"><value>Syncing…</value></data>
@@ -358,7 +358,7 @@
   <data name="CatchCaptureLocation" xml:space="preserve"><value>Use current location</value></data>
   <data name="CatchLocationNotRecorded" xml:space="preserve"><value>No location recorded</value></data>
   <data name="CatchLocationPrivateCaption" xml:space="preserve"><value>Private location · {0:F4}, {1:F4}</value></data>
-  <data name="CatchLocationCaptureFailed" xml:space="preserve"><value>Location could not be captured.</value></data>
+  <data name="CatchLocationCaptureFailed" xml:space="preserve"><value>Location could not be captured. Check device location and permission settings, then try again.</value></data>
   <data name="CatchLocationTryAgain" xml:space="preserve"><value>Try location again</value></data>
   <data name="CatchAnglerLabel" xml:space="preserve"><value>Angler</value></data>
   <data name="CatchAnglerMe" xml:space="preserve"><value>Me</value></data>
@@ -376,4 +376,22 @@
   <data name="PhotoLocationUnavailable" xml:space="preserve"><value>No photo location available</value></data>
   <data name="PhotoUseDetails" xml:space="preserve"><value>Use this photo’s details</value></data>
   <data name="PhotoDetailsApplied" xml:space="preserve"><value>Using this photo’s details</value></data>
+  <data name="CatchRemoteOfflineTitle" xml:space="preserve"><value>You’re offline</value></data>
+  <data name="CatchRemoteOfflineBody" xml:space="preserve"><value>Server history is unavailable offline. Drafts and catches waiting to sync remain on this device.</value></data>
+  <data name="CatchRemoteUnavailableTitle" xml:space="preserve"><value>Catch history unavailable</value></data>
+  <data name="CatchRemoteUnavailableBody" xml:space="preserve"><value>Couldn’t reach the server. Your catch history has not been loaded. Try again when the service is available.</value></data>
+  <data name="CatchRemoteSessionExpiredTitle" xml:space="preserve"><value>Sign in required</value></data>
+  <data name="CatchRemoteSessionExpiredBody" xml:space="preserve"><value>Sign in again to load your server catch history. Drafts and catches waiting to sync remain on this device.</value></data>
+  <data name="CatchLocationSavedPrivate" xml:space="preserve"><value>Private location</value></data>
+  <data name="CatchLocationSavedApproximate" xml:space="preserve"><value>Approximate location</value></data>
+  <data name="CatchLocationSavedFishingVenueOnly" xml:space="preserve"><value>Fishing venue location</value></data>
+  <data name="CatchLocationSavedPublic" xml:space="preserve"><value>Public location</value></data>
+  <data name="CatchLocationHidden" xml:space="preserve"><value>Location not shared</value></data>
+  <data name="CatchLocationCoordinatesCaption" xml:space="preserve"><value>{0} · {1:F4}, {2:F4}</value></data>
+  <data name="CatchLocationCapturing" xml:space="preserve"><value>Getting your location…</value></data>
+  <data name="CatchLocationCaptured" xml:space="preserve"><value>Location captured privately. Save the catch to keep it.</value></data>
+  <data name="CatchLocationPermissionDenied" xml:space="preserve"><value>Location permission was denied. Allow location access and try again.</value></data>
+  <data name="CatchLocationPermissionBlocked" xml:space="preserve"><value>Location access is blocked. Enable it in Android app settings and try again.</value></data>
+  <data name="CatchLocationTimedOut" xml:space="preserve"><value>No location fix arrived in time. Check that device location is enabled, then try again.</value></data>
+  <data name="CatchUpdateLocation" xml:space="preserve"><value>Update location</value></data>
 </root>

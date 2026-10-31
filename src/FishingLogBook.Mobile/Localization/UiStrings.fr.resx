@@ -332,7 +332,7 @@
   <data name="CatchRemoteSessionExpired" xml:space="preserve"><value>Reconnectez-vous pour charger vos prises enregistrées. Seules les prises stockées sur cet appareil sont affichées.</value></data>
   <data name="CatchRemoteRetry" xml:space="preserve"><value>Réessayer</value></data>
   <data name="CatchEditNeedsConnection" xml:space="preserve"><value>Connectez-vous à Internet pour modifier une prise enregistrée.</value></data>
-  <data name="CatchEditNotSupported" xml:space="preserve"><value>Cette prise a été enregistrée par quelqu’un d’autre et ne peut pas encore être modifiée ici.</value></data>
+  <data name="CatchEditNotSupported" xml:space="preserve"><value>Les informations de sortie ou de pêcheur de cette prise ne sont pas encore prises en charge par l’éditeur natif. Modifiez-la sur le Web.</value></data>
   <data name="CatchEditPhotosUnavailable" xml:space="preserve"><value>Impossible de charger les photos de cette prise. Réessayez avec une meilleure connexion.</value></data>
   <data name="CatchSyncWaiting" xml:space="preserve"><value>En attente de synchronisation.</value></data>
   <data name="CatchSyncSynchronising" xml:space="preserve"><value>Synchronisation en cours…</value></data>
@@ -358,7 +358,7 @@
   <data name="CatchCaptureLocation" xml:space="preserve"><value>Utiliser la position actuelle</value></data>
   <data name="CatchLocationNotRecorded" xml:space="preserve"><value>Aucun lieu enregistré</value></data>
   <data name="CatchLocationPrivateCaption" xml:space="preserve"><value>Lieu privé · {0:F4}, {1:F4}</value></data>
-  <data name="CatchLocationCaptureFailed" xml:space="preserve"><value>Impossible d'obtenir la position.</value></data>
+  <data name="CatchLocationCaptureFailed" xml:space="preserve"><value>Impossible d’obtenir la position. Vérifiez la localisation et les autorisations de l’appareil puis réessayez.</value></data>
   <data name="CatchLocationTryAgain" xml:space="preserve"><value>Réessayer la position</value></data>
   <data name="CatchAnglerLabel" xml:space="preserve"><value>Pêcheur</value></data>
   <data name="CatchAnglerMe" xml:space="preserve"><value>Moi</value></data>
@@ -376,4 +376,22 @@
   <data name="PhotoLocationUnavailable" xml:space="preserve"><value>Aucune localisation pour cette photo</value></data>
   <data name="PhotoUseDetails" xml:space="preserve"><value>Utiliser les détails de cette photo</value></data>
   <data name="PhotoDetailsApplied" xml:space="preserve"><value>Détails de cette photo sélectionnés</value></data>
+  <data name="CatchRemoteOfflineTitle" xml:space="preserve"><value>Vous êtes hors ligne</value></data>
+  <data name="CatchRemoteOfflineBody" xml:space="preserve"><value>L’historique du serveur est indisponible hors ligne. Les brouillons et les prises en attente de synchronisation restent sur cet appareil.</value></data>
+  <data name="CatchRemoteUnavailableTitle" xml:space="preserve"><value>Historique des prises indisponible</value></data>
+  <data name="CatchRemoteUnavailableBody" xml:space="preserve"><value>Impossible de joindre le serveur. Votre historique n’a pas été chargé. Réessayez lorsque le service sera disponible.</value></data>
+  <data name="CatchRemoteSessionExpiredTitle" xml:space="preserve"><value>Connexion requise</value></data>
+  <data name="CatchRemoteSessionExpiredBody" xml:space="preserve"><value>Reconnectez-vous pour charger l’historique du serveur. Les brouillons et les prises en attente de synchronisation restent sur cet appareil.</value></data>
+  <data name="CatchLocationSavedPrivate" xml:space="preserve"><value>Lieu privé</value></data>
+  <data name="CatchLocationSavedApproximate" xml:space="preserve"><value>Lieu approximatif</value></data>
+  <data name="CatchLocationSavedFishingVenueOnly" xml:space="preserve"><value>Lieu du site de pêche</value></data>
+  <data name="CatchLocationSavedPublic" xml:space="preserve"><value>Lieu public</value></data>
+  <data name="CatchLocationHidden" xml:space="preserve"><value>Lieu non partagé</value></data>
+  <data name="CatchLocationCoordinatesCaption" xml:space="preserve"><value>{0} · {1:F4}, {2:F4}</value></data>
+  <data name="CatchLocationCapturing" xml:space="preserve"><value>Recherche de votre position…</value></data>
+  <data name="CatchLocationCaptured" xml:space="preserve"><value>Position capturée en privé. Enregistrez la prise pour la conserver.</value></data>
+  <data name="CatchLocationPermissionDenied" xml:space="preserve"><value>L’accès à la position a été refusé. Autorisez-le puis réessayez.</value></data>
+  <data name="CatchLocationPermissionBlocked" xml:space="preserve"><value>L’accès à la position est bloqué. Activez-le dans les paramètres Android de l’application puis réessayez.</value></data>
+  <data name="CatchLocationTimedOut" xml:space="preserve"><value>Aucune position obtenue à temps. Vérifiez que la localisation est activée puis réessayez.</value></data>
+  <data name="CatchUpdateLocation" xml:space="preserve"><value>Actualiser le lieu</value></data>
 </root>

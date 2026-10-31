@@ -1,10 +1,9 @@
 using System.Globalization;
 using FishingLogBook.Mobile.Api.Models;
-using FishingLogBook.Mobile.Features.Catch.Clients;
-using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.Services;
@@ -14,6 +13,7 @@ using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
+using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Measurements;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -62,7 +62,8 @@ public abstract class BaseCatchListViewModelTest
             MockSessionCoordinator,
             MockUnits,
             new MeasurementService(),
-            clock);
+            clock,
+            MockConnectivity);
         sut.LoadJournalEntries(new SampleCatchProvider(Text, Clock).Catches);
         return sut;
     }
