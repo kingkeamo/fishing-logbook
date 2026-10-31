@@ -101,6 +101,44 @@ public sealed class WhenTestingPendingInputAndApply
     }
 
     [Fact]
+    public void ItShouldNotLetTryApplyCommitStaleEntryTextAfterTheSliderOwnsTheValue()
+    {
+        // Arrange
+        var sut = Create(MeasurementKindEnum.Weight, imperial: true);
+        sut.CommitPending(pendingPoundsText: "7", pendingOuncesText: "0");
+        sut.SetSliderValue(2.25m);
+
+        // Act
+        sut.CommitInputUnlessSuperseded(pendingPoundsText: "7", pendingOuncesText: "0");
+        var result = sut.TryApply(pendingPoundsText: "7", pendingOuncesText: "0");
+
+        // Assert
+        result.Succeeded.Should().BeTrue();
+        sut.Pounds.Should().Be(2);
+        sut.Ounces.Should().Be(4);
+        sut.DisplayText.Should().Be("2 lb 4 oz");
+        result.CanonicalValue.Should().BeApproximately(1.021m, 0.01m);
+    }
+
+    [Fact]
+    public void ItShouldApplyTypedEntryTextAfterTheSliderWhenTheUserEditsAgain()
+    {
+        // Arrange
+        var sut = Create(MeasurementKindEnum.Length);
+        sut.SetExactText("7");
+        sut.SetSliderValue(12m);
+        sut.MarkEntryEdited();
+
+        // Act
+        var result = sut.TryApply(pendingExactText: "18");
+
+        // Assert
+        result.Succeeded.Should().BeTrue();
+        result.CanonicalValue.Should().Be(18m);
+        sut.ExactText.Should().Be("18");
+    }
+
+    [Fact]
     public void ItShouldIgnoreFocusLossAfterTheSliderOwnsTheValue()
     {
         // Arrange

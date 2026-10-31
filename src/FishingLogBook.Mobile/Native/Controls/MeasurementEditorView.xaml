@@ -21,16 +21,16 @@
     <Grid x:Name="ImperialEntries" ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding IsImperialWeight}">
       <VerticalStackLayout Grid.Column="0">
         <Label Text="{Binding PoundsLabel}" Style="{StaticResource TileCaption}" />
-        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="PoundsEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnPoundsCommitted" Completed="OnPoundsCommitted" SemanticProperties.Description="{Binding PoundsLabel}" AutomationId="MeasurementPounds" /></Border>
+        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="PoundsEntry" Keyboard="Numeric" HeightRequest="48" TextChanged="OnPoundsTextChanged" Unfocused="OnPoundsCommitted" Completed="OnPoundsCommitted" SemanticProperties.Description="{Binding PoundsLabel}" AutomationId="MeasurementPounds" /></Border>
       </VerticalStackLayout>
       <VerticalStackLayout Grid.Column="1">
         <Label Text="{Binding OuncesLabel}" Style="{StaticResource TileCaption}" />
-        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="OuncesEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnOuncesCommitted" Completed="OnOuncesCommitted" SemanticProperties.Description="{Binding OuncesLabel}" AutomationId="MeasurementOunces" /></Border>
+        <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="OuncesEntry" Keyboard="Numeric" HeightRequest="48" TextChanged="OnOuncesTextChanged" Unfocused="OnOuncesCommitted" Completed="OnOuncesCommitted" SemanticProperties.Description="{Binding OuncesLabel}" AutomationId="MeasurementOunces" /></Border>
       </VerticalStackLayout>
     </Grid>
     <VerticalStackLayout IsVisible="{Binding IsSingleValue}">
       <Label Text="{Binding ExactLabel}" Style="{StaticResource TileCaption}" />
-      <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="ExactEntry" Keyboard="Numeric" HeightRequest="48" Unfocused="OnExactCommitted" Completed="OnExactCommitted" SemanticProperties.Description="{Binding ExactLabel}" AutomationId="MeasurementExact" /></Border>
+      <Border StrokeThickness="1" Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" StrokeShape="RoundRectangle 12" Padding="12,0"><Entry x:Name="ExactEntry" Keyboard="Numeric" HeightRequest="48" TextChanged="OnExactTextChanged" Unfocused="OnExactCommitted" Completed="OnExactCommitted" SemanticProperties.Description="{Binding ExactLabel}" AutomationId="MeasurementExact" /></Border>
     </VerticalStackLayout>
     <VerticalStackLayout Spacing="0">
       <Label Text="{Binding SliderHint}" Style="{StaticResource TileCaption}" />

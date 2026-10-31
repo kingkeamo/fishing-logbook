@@ -253,12 +253,17 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
         return IsValid ? _canonicalValue : null;
     }
 
+    public void MarkEntryEdited()
+    {
+        _suppressEntryCommit = false;
+    }
+
     public MeasurementEditorApplyResult TryApply(
         string? pendingExactText = null,
         string? pendingPoundsText = null,
         string? pendingOuncesText = null)
     {
-        CommitPending(pendingExactText, pendingPoundsText, pendingOuncesText);
+        CommitInputUnlessSuperseded(pendingExactText, pendingPoundsText, pendingOuncesText);
         Apply();
         if (!IsValid)
         {
@@ -301,7 +306,6 @@ public sealed class MeasurementEditorViewModel : INotifyPropertyChanged, IDispos
     {
         if (_suppressEntryCommit)
         {
-            _suppressEntryCommit = false;
             return;
         }
 

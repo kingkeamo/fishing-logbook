@@ -287,6 +287,36 @@ public partial class MeasurementEditorView : ContentView
         ViewModel?.Increase(exact, pounds, ounces);
     }
 
+    private void OnExactTextChanged(object? sender, TextChangedEventArgs args)
+    {
+        if (_syncing)
+        {
+            return;
+        }
+
+        ViewModel?.MarkEntryEdited();
+    }
+
+    private void OnPoundsTextChanged(object? sender, TextChangedEventArgs args)
+    {
+        if (_syncing)
+        {
+            return;
+        }
+
+        ViewModel?.MarkEntryEdited();
+    }
+
+    private void OnOuncesTextChanged(object? sender, TextChangedEventArgs args)
+    {
+        if (_syncing)
+        {
+            return;
+        }
+
+        ViewModel?.MarkEntryEdited();
+    }
+
     private void OnExactCommitted(object? sender, EventArgs args)
     {
         if (_syncing)
