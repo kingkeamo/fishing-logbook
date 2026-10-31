@@ -344,6 +344,13 @@
   <data name="CatchLocationNotRecorded" xml:space="preserve"><value>Aucun lieu enregistré</value></data>
   <data name="CatchLocationPrivateCaption" xml:space="preserve"><value>Lieu privé · {0:F4}, {1:F4}</value></data>
   <data name="CatchLocationCaptureFailed" xml:space="preserve"><value>Impossible d'obtenir la position.</value></data>
+  <data name="CatchLocationTryAgain" xml:space="preserve"><value>Réessayer la position</value></data>
+  <data name="CatchAnglerLabel" xml:space="preserve"><value>Pêcheur</value></data>
+  <data name="CatchAnglerMe" xml:space="preserve"><value>Moi</value></data>
+  <data name="CatchTripDeferredNote" xml:space="preserve"><value>L'association aux sorties n'est pas encore disponible en natif (voir #273).</value></data>
+  <data name="CatchAdditionalDetails" xml:space="preserve"><value>Détails supplémentaires</value></data>
+  <data name="CatchCatalogueUnavailable" xml:space="preserve"><value>Catalogue indisponible. Les puces méthode et espèce peuvent être limitées.</value></data>
+  <data name="CatchSaving" xml:space="preserve"><value>Enregistrement…</value></data>
   <data name="EmptyJournalTitle" xml:space="preserve"><value>Aucune prise pour l'instant</value></data>
   <data name="EmptyJournalBody" xml:space="preserve"><value>Enregistrez votre première prise pour commencer votre carnet hors ligne.</value></data>
 </root>

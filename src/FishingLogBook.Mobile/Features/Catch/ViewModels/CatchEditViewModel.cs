@@ -14,6 +14,7 @@ using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Features.Photographs.ViewModels;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
+using FishingLogBook.Mobile.Features.Profile.ViewModels;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Catches.Models;
 using FishingLogBook.Shared.Catches.Services;
@@ -27,6 +28,7 @@ namespace FishingLogBook.Mobile.Features.Catch.ViewModels;
 public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 {
     private const int MaxChipOptions = 6;
+    public const string MoreOptionCode = "__more__";
     private static readonly TimeSpan DraftDebounce = TimeSpan.FromMilliseconds(1500);
 
     private readonly ICatchStore _catchStore;
@@ -114,7 +116,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public bool IsSaving
     {
         get => _isSaving;
-        private set => Set(ref _isSaving, value, nameof(IsSaving), nameof(CanSave), nameof(CanInteract));
+        private set => Set(ref _isSaving, value, nameof(IsSaving), nameof(CanSave), nameof(CanInteract), nameof(SaveButtonText));
     }
 
     public bool IsSaved
@@ -144,6 +146,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     }
 
     public string PageTitle => _text[IsEditingSavedCatch ? "EditCatch" : "RecordCatch"];
+
+    public string SaveButtonText => _text[IsSaving ? "CatchSaving" : "Save"];
+
+    public bool IsCatalogueUnavailable =>
+        _preferencesModel is null || _preferencesModel.Catalogue.Methods.Count == 0;
 
     public bool CanInteract => !IsLoading && !NotSignedIn && !IsSaved;
 
@@ -261,6 +268,34 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public IReadOnlyList<CatchChipOptionModel> SpeciesOptions => BuildSpeciesOptions();
 
+    public IReadOnlyList<CatchChipOptionModel> MethodChipRow =>
+        BuildMethodOptions().Append(new CatchChipOptionModel(MoreOptionCode, _text["More"])).ToArray();
+
+    public IReadOnlyList<CatchChipOptionModel> SpeciesChipRow =>
+        BuildSpeciesOptions().Append(new CatchChipOptionModel(MoreOptionCode, _text["More"])).ToArray();
+
+    public IReadOnlyList<string> CatalogueMethodNames =>
+        _preferencesModel?.Catalogue.Methods.Select(method => method.Name).ToArray() ?? [];
+
+    public IReadOnlyList<string> CatalogueSpeciesNames =>
+        _preferencesModel?.Catalogue.AllSpecies.Select(species => species.Name).ToArray() ?? [];
+
+    public bool ShowCaughtOn => Photographs.Items.Count > 0;
+
+    public bool ShowAnglerSection => CanInteract;
+
+    public IReadOnlyList<CatchChipOptionModel> AnglerOptions =>
+        [new CatchChipOptionModel("me", _text["CatchAnglerMe"], IsSelected: true)];
+
+    public bool ShowTripDeferredNote => CanInteract;
+
+    public string LocationActionText =>
+        string.Equals(_statusKey, "CatchLocationCaptureFailed", StringComparison.Ordinal)
+            ? _text["CatchLocationTryAgain"]
+            : _text["CatchCaptureLocation"];
+
+    public bool ShowLocationAction => CanInteract;
+
     public MeasurementEditorViewModel CreateWeightEditor()
     {
         return new MeasurementEditorViewModel(_measurement, _text, MeasurementKindEnum.Weight, _weightKg, _weightUnit, _lengthUnit);
@@ -283,6 +318,58 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         _lengthCm = editor.CanonicalValue;
         NotifyMeasurements();
         ScheduleDraftSave();
+    }
+
+    public CataloguePickerViewModel CreateMethodPicker()
+    {
+        var catalogue = _preferencesModel?.Catalogue.Methods ?? [];
+        return new CataloguePickerViewModel(
+            _text,
+            _text["FishingMethod"],
+            catalogue.Select(method => new CataloguePickerOptionModel(
+                method.Id,
+                method.Name,
+                RemoveDescription(method.Name),
+                string.Equals(method.Name, _selectedMethod, StringComparison.OrdinalIgnoreCase))).ToArray(),
+            allowMultiple: false);
+    }
+
+    public CataloguePickerViewModel CreateSpeciesPicker()
+    {
+        var catalogue = _preferencesModel?.Catalogue.AllSpecies ?? [];
+        return new CataloguePickerViewModel(
+            _text,
+            _text["FilterSpecies"],
+            catalogue.Select(species => new CataloguePickerOptionModel(
+                species.Id,
+                species.Name,
+                RemoveDescription(species.Name),
+                string.Equals(species.Name, _selectedSpecies, StringComparison.OrdinalIgnoreCase))).ToArray(),
+            allowMultiple: false);
+    }
+
+    public void ApplyMethodPicker(CataloguePickerResultModel result)
+    {
+        var chosen = (_preferencesModel?.Catalogue.Methods ?? [])
+            .FirstOrDefault(method => result.SelectedIds.Contains(method.Id));
+        if (chosen is null)
+        {
+            return;
+        }
+
+        SelectMethod(chosen.Name);
+    }
+
+    public void ApplySpeciesPicker(CataloguePickerResultModel result)
+    {
+        var chosen = (_preferencesModel?.Catalogue.AllSpecies ?? [])
+            .FirstOrDefault(species => result.SelectedIds.Contains(species.Id));
+        if (chosen is null)
+        {
+            return;
+        }
+
+        SelectSpecies(chosen.Name);
     }
 
     public bool CanRemovePhoto => !IsEditingSavedCatch || Photographs.Items.Count > 1;
@@ -319,6 +406,12 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         finally
         {
             IsLoading = false;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCatalogueUnavailable)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowAnglerSection)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowTripDeferredNote)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowCaughtOn)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowLocationAction)));
+            NotifyChipState();
         }
     }
 
@@ -618,6 +711,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         ScheduleDraftSave();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSave)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanRemovePhoto)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowCaughtOn)));
     }
 
     private async Task ApplyPhotoMetadataAsync()
@@ -840,6 +934,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         return null;
     }
 
+    private string RemoveDescription(string name)
+    {
+        return string.Format(_text.Culture, _text["ProfileRemoveItem"], name);
+    }
+
     private static string? TrimToNull(string? value)
     {
         var trimmed = value?.Trim();
@@ -850,19 +949,23 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     {
         if (canonical is null)
         {
-            return _text["NotRecorded"];
+            return _text["MeasureNotRecorded"];
         }
 
         if (weight)
         {
             var display = _measurement.ToDisplayWeight(canonical, _weightUnit);
             var unit = _text[_weightUnit == WeightUnitEnum.Lb ? "MeasureUnitLb" : "MeasureUnitKg"];
-            return display is null ? _text["NotRecorded"] : $"{display.Value.ToString("0.##", _text.Culture)} {unit}";
+            return display is null
+                ? _text["MeasureNotRecorded"]
+                : $"{display.Value.ToString("0.##", _text.Culture)} {unit}";
         }
 
         var length = _measurement.ToDisplayLength(canonical, _lengthUnit);
         var lengthUnit = _text[_lengthUnit == LengthUnitEnum.In ? "MeasureUnitIn" : "MeasureUnitCm"];
-        return length is null ? _text["NotRecorded"] : $"{length.Value.ToString("0.##", _text.Culture)} {lengthUnit}";
+        return length is null
+            ? _text["MeasureNotRecorded"]
+            : $"{length.Value.ToString("0.##", _text.Culture)} {lengthUnit}";
     }
 
     private void OnCultureChanged(object? sender, PropertyChangedEventArgs args)
@@ -884,6 +987,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MethodOptions)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpeciesOptions)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MethodChipRow)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpeciesChipRow)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CatalogueMethodNames)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CatalogueSpeciesNames)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AnglerOptions)));
     }
 
     private void NotifyCaughtOn()
@@ -906,6 +1014,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocation)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocationCaption)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocationActionText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowLocationAction)));
     }
 
     private void NotifyMeasurements()
@@ -918,6 +1028,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasStatus)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocationActionText)));
     }
 
     private void NotifyValidation()

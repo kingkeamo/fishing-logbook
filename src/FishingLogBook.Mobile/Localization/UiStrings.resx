@@ -344,6 +344,13 @@
   <data name="CatchLocationNotRecorded" xml:space="preserve"><value>No location recorded</value></data>
   <data name="CatchLocationPrivateCaption" xml:space="preserve"><value>Private location · {0:F4}, {1:F4}</value></data>
   <data name="CatchLocationCaptureFailed" xml:space="preserve"><value>Location could not be captured.</value></data>
+  <data name="CatchLocationTryAgain" xml:space="preserve"><value>Try location again</value></data>
+  <data name="CatchAnglerLabel" xml:space="preserve"><value>Angler</value></data>
+  <data name="CatchAnglerMe" xml:space="preserve"><value>Me</value></data>
+  <data name="CatchTripDeferredNote" xml:space="preserve"><value>Trip association is not available yet on native (see #273).</value></data>
+  <data name="CatchAdditionalDetails" xml:space="preserve"><value>Additional details</value></data>
+  <data name="CatchCatalogueUnavailable" xml:space="preserve"><value>Catalogue unavailable. Method and species chips may be limited.</value></data>
+  <data name="CatchSaving" xml:space="preserve"><value>Saving…</value></data>
   <data name="EmptyJournalTitle" xml:space="preserve"><value>No catches yet</value></data>
   <data name="EmptyJournalBody" xml:space="preserve"><value>Record your first catch to start your offline journal.</value></data>
 </root>

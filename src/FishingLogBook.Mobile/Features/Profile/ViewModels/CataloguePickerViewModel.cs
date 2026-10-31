@@ -10,12 +10,18 @@ public sealed class CataloguePickerViewModel : INotifyPropertyChanged
     public const int InitialOptionLimit = 20;
 
     private readonly IReadOnlyList<CataloguePickerOptionModel> _allOptions;
+    private readonly bool _allowMultiple;
     private string _search = string.Empty;
 
-    public CataloguePickerViewModel(UiTextService text, string title, IReadOnlyList<CataloguePickerOptionModel> options)
+    public CataloguePickerViewModel(
+        UiTextService text,
+        string title,
+        IReadOnlyList<CataloguePickerOptionModel> options,
+        bool allowMultiple = true)
     {
         Text = text;
         Title = title;
+        _allowMultiple = allowMultiple;
         _allOptions = options;
         Options = [];
         foreach (var option in options)
@@ -28,11 +34,13 @@ public sealed class CataloguePickerViewModel : INotifyPropertyChanged
 
     public UiTextService Text { get; }
     public string Title { get; }
+    public bool AllowMultiple => _allowMultiple;
     public ObservableCollection<CataloguePickerOptionModel> Options { get; }
     public IReadOnlyList<CataloguePickerOptionModel> SelectedOptions => _allOptions.Where(option => option.IsSelected).ToArray();
     public bool HasNoSelection => !_allOptions.Any(option => option.IsSelected);
     public bool HasNoMatches => Options.Count == 0;
-    public bool IsLimited => string.IsNullOrWhiteSpace(_search) && _allOptions.Count > InitialOptionLimit;
+    public bool IsLimited =>
+        _allowMultiple && string.IsNullOrWhiteSpace(_search) && _allOptions.Count > InitialOptionLimit;
     public string LimitMessage => string.Format(Text.Culture, Text["PickerShowingLimited"], Options.Count, _allOptions.Count);
 
     public string Search
@@ -56,7 +64,27 @@ public sealed class CataloguePickerViewModel : INotifyPropertyChanged
 
     public void Toggle(CataloguePickerOptionModel option)
     {
-        option.IsSelected = !option.IsSelected;
+        if (_allowMultiple)
+        {
+            option.IsSelected = !option.IsSelected;
+            return;
+        }
+
+        if (option.IsSelected)
+        {
+            option.IsSelected = false;
+            return;
+        }
+
+        foreach (var other in _allOptions)
+        {
+            if (other.IsSelected && !ReferenceEquals(other, option))
+            {
+                other.IsSelected = false;
+            }
+        }
+
+        option.IsSelected = true;
     }
 
     public CataloguePickerResultModel ToResult()
@@ -68,7 +96,7 @@ public sealed class CataloguePickerViewModel : INotifyPropertyChanged
     {
         var term = _search.Trim();
         var visible = term.Length == 0
-            ? _allOptions.Take(InitialOptionLimit)
+            ? (_allowMultiple ? _allOptions.Take(InitialOptionLimit) : _allOptions)
             : _allOptions.Where(option => option.Name.Contains(term, StringComparison.CurrentCultureIgnoreCase));
         Options.Clear();
         foreach (var option in visible)
