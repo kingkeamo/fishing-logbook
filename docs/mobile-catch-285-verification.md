@@ -88,3 +88,25 @@ Remaining deliberate gaps:
   recovery protocol covers tracked cleanup and working-copy preparation, not indiscriminate
   deletion of unknown files from earlier builds.
 - Existing unpaginated API and one-hour photo URL lifetime remain unchanged.
+
+## Location error presentation correction
+
+The same location failure was being assigned to both the location status and the form-wide
+status, and the inline label inherited muted body text. Location capture now updates only its
+own status. Its derived error state drives the existing light/dark danger colours; progress
+and success retain their normal styling. Form save status remains independent.
+
+Final Mobile validation: 1,301 passed; Android build: zero warnings/errors; scoped formatting
+verification and `git diff --check` passed. Tests cover each failure without a duplicate form
+status, non-error progress/success, retry, and error-state change notifications.
+
+On emulator-5554, resetting location permission displayed the native Android permission prompt.
+A denied-permission case then showed exactly one error node beside the location action, with
+no duplicate above Save. Actual rendering was inspected in
+[light mode](evidence/285/location-error-light.png) and
+[dark mode](evidence/285/location-error-dark.png). Permissions were restored to granted and
+night mode restored to off after the check. No catch edit was saved during this presentation test.
+
+Self review: targeted behaviour, MAUI ownership/bindings, existing theme/localisation conventions,
+accessibility text and regression tests passed. Persistence, API and infrastructure are unchanged
+by this correction; the wider #285 validation gaps above remain unchanged.

@@ -31,6 +31,7 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         Sut.CanCaptureLocation.Should().BeFalse();
         Sut.CanSave.Should().BeFalse();
         Sut.LocationStatusText.Should().Be(Text["CatchLocationCapturing"]);
+        Sut.HasLocationError.Should().BeFalse();
         await MockLocation.Received(1).CaptureCurrentAsync(Arg.Any<CancellationToken>());
         // Act
         capture.SetResult(DeviceLocationCaptureModel.FromCoordinates(53.3, -6.2, 10, Now));
@@ -40,8 +41,10 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         Sut.CanCaptureLocation.Should().BeTrue();
         Sut.HasLocation.Should().BeTrue();
         Sut.LocationStatusText.Should().Be(Text["CatchLocationCaptured"]);
+        Sut.HasLocationError.Should().BeFalse();
         Sut.LocationActionText.Should().Be(Text["CatchUpdateLocation"]);
-        changes.Should().Contain(nameof(Sut.IsCapturingLocation)).And.Contain(nameof(Sut.CanCaptureLocation)).And.Contain(nameof(Sut.LocationStatusText));
+        changes.Should().Contain(nameof(Sut.IsCapturingLocation)).And.Contain(nameof(Sut.CanCaptureLocation))
+            .And.Contain(nameof(Sut.LocationStatusText)).And.Contain(nameof(Sut.HasLocationError));
     }
 
     [Theory]
@@ -59,6 +62,9 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         // Assert
         Sut.HasLocationStatus.Should().BeTrue();
         Sut.LocationStatusText.Should().Be(Text[resourceKey]);
+        Sut.HasLocationError.Should().BeTrue();
+        Sut.HasStatus.Should().BeFalse();
+        Sut.StatusText.Should().BeEmpty();
         Sut.CanCaptureLocation.Should().BeTrue();
         Sut.IsCapturingLocation.Should().BeFalse();
         await MockLocation.Received(1).CaptureCurrentAsync(Arg.Any<CancellationToken>());
@@ -78,6 +84,7 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         // Assert
         Sut.HasStatus.Should().BeFalse();
         Sut.LocationStatusText.Should().Be(Text["CatchLocationCaptured"]);
+        Sut.HasLocationError.Should().BeFalse();
         await MockLocation.Received(2).CaptureCurrentAsync(Arg.Any<CancellationToken>());
     }
 
@@ -191,8 +198,10 @@ public class WhenTestingLocationAndMeasurements : BaseCatchEditViewModelTest
         // Assert
         Sut.HasLocation.Should().BeFalse();
         Sut.Notes.Should().Be("Still here");
-        Sut.HasStatus.Should().BeTrue();
-        Sut.StatusText.Should().Be(Text["CatchLocationCaptureFailed"]);
+        Sut.HasStatus.Should().BeFalse();
+        Sut.StatusText.Should().BeEmpty();
+        Sut.HasLocationError.Should().BeTrue();
+        Sut.LocationStatusText.Should().Be(Text["CatchLocationPermissionDenied"]);
     }
 
     [Fact]

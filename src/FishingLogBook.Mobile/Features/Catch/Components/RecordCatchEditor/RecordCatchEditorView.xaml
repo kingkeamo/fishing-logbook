@@ -115,7 +115,13 @@
         <ActivityIndicator IsRunning="{Binding IsCapturingLocation}" IsVisible="{Binding IsCapturingLocation}"
                            Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
         <Label Text="{Binding LocationStatusText}" IsVisible="{Binding HasLocationStatus}" Style="{StaticResource SecondaryText}"
-               SemanticProperties.Description="{Binding LocationStatusText}" AutomationId="RecordCatchLocationStatus" />
+               SemanticProperties.Description="{Binding LocationStatusText}" AutomationId="RecordCatchLocationStatus">
+          <Label.Triggers>
+            <DataTrigger TargetType="Label" Binding="{Binding HasLocationError}" Value="True">
+              <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+            </DataTrigger>
+          </Label.Triggers>
+        </Label>
       </VerticalStackLayout>
 
       <VerticalStackLayout Spacing="4" IsVisible="{Binding ShowAnglerSection}">

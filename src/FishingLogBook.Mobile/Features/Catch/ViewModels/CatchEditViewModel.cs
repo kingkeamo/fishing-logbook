@@ -308,10 +308,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public bool IsCapturingLocation { get; private set; }
     public bool CanCaptureLocation => CanInteract && !IsSaving && !IsCapturingLocation;
     public bool HasLocationStatus => IsCapturingLocation || _locationStatusKey is not null;
+    public bool HasLocationError => !IsCapturingLocation && _locationStatusKey is not null && _locationStatusKey != "CatchLocationCaptured";
     public string LocationStatusText => IsCapturingLocation ? _text["CatchLocationCapturing"]
         : _locationStatusKey is null ? string.Empty : _text[_locationStatusKey];
     public string LocationActionText => IsCapturingLocation ? _text["CatchLocationCapturing"] :
-        string.Equals(_statusKey, "CatchLocationCaptureFailed", StringComparison.Ordinal)
+        HasLocationError
             ? _text["CatchLocationTryAgain"]
             : _text[HasLocation ? "CatchUpdateLocation" : "CatchCaptureLocation"];
 
@@ -567,7 +568,6 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             _locationCaptureCancellation = null;
             IsCapturingLocation = false;
             NotifyLocation();
-            NotifyStatus();
         }
     }
 
@@ -578,7 +578,6 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             || capture.Longitude is null
             || capture.CapturedOn is null)
         {
-            _statusKey = "CatchLocationCaptureFailed";
             _locationStatusKey = capture.Outcome switch
             {
                 Onboarding.Enums.LocationCaptureOutcomeEnum.Denied => "CatchLocationPermissionDenied",
@@ -600,7 +599,6 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             Visibility = LocationDefaults.Private,
             ConsentVersion = LocationDefaults.ConsentVersion
         };
-        _statusKey = null;
         _locationStatusKey = "CatchLocationCaptured";
         NotifyLocation();
         ScheduleDraftSave();
@@ -1233,6 +1231,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCapturingLocation)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanCaptureLocation)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocationStatus)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocationError)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocationStatusText)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSave)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocation)));
