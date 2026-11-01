@@ -49,19 +49,28 @@ public class WhenTestingAndroidIdentity
     {
         // Arrange
         var project = File.ReadAllText(Path.Combine(MobileRoot, "FishingLogBook.Mobile.csproj"));
-        var authFiles = Directory.GetFiles(Path.Combine(MobileRoot, "Configuration"), "mobileauth.*.json");
+        var authFiles = Directory.GetFiles(Path.Combine(MobileRoot, "Configuration"), "mobileauth.*.json")
+            .Select(Path.GetFileName)
+            .OrderBy(name => name)
+            .ToList();
         var development = File.ReadAllText(Path.Combine(MobileRoot, "Configuration", "mobileauth.Development.json"));
+        var local = File.ReadAllText(Path.Combine(MobileRoot, "Configuration", "mobileauth.Local.json"));
         // Act
         var localhostHits = new[] { "localhost", "127.0.0.1", "10.0.2.2", "http://" }
             .Where(token => development.Contains(token, StringComparison.OrdinalIgnoreCase))
             .ToList();
         // Assert
+        project.Should().Contain("<MobileEnvironment Condition=\"'$(MobileEnvironment)' == '' And '$(TargetFramework)' == 'net10.0-android' And '$(Configuration)' == 'Debug'\">Local</MobileEnvironment>");
         project.Should().Contain("<MobileEnvironment Condition=\"'$(MobileEnvironment)' == ''\">Development</MobileEnvironment>");
-        authFiles.Select(Path.GetFileName).Should().Equal("mobileauth.Development.json");
+        authFiles.Should().Equal("mobileauth.Development.json", "mobileauth.Local.json");
         development.Should().Contain("https://fishing-logbook-dev-api.fly.dev");
         development.Should().Contain("https://fishing-logbook-dev.pages.dev/native/oauth2redirect");
         development.Should().Contain("https://fishing-logbook-dev.pages.dev/native/signedout");
         localhostHits.Should().BeEmpty();
+        local.Should().Contain("https://10.0.2.2:7256");
+        local.Should().Contain("https://fishing-logbook-dev-api.fly.dev");
+        local.Should().Contain("513lhdbas693dqq2bs58v1ri8h");
+        local.Should().NotContain("localhost");
     }
 
     [Fact]
@@ -77,6 +86,10 @@ public class WhenTestingAndroidIdentity
             .ToList();
         // Assert
         permissions.Should().Contain("android.permission.INTERNET");
+        File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "Android", "AndroidManifest.xml"))
+            .Should().Contain("android:networkSecurityConfig=\"@xml/network_security_config\"");
+        File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "Android", "Resources", "xml", "network_security_config.xml"))
+            .Should().Contain("10.0.2.2");
     }
 
     private static string FindRepositoryRoot()

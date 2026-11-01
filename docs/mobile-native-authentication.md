@@ -33,8 +33,12 @@ not register that provider. Authentication messages never include token values.
 ## Configuration
 
 Development configuration is embedded from
-`Configuration/mobileauth.Development.json`. Select a different environment at build time
-with `MobileEnvironment`; that environment must provide its own reviewed configuration
+`Configuration/mobileauth.Development.json`. Android Debug builds default to
+`Configuration/mobileauth.Local.json`, which calls the machine API at
+`https://10.0.2.2:7256` and keeps Dev Cognito plus the Dev JWT audience. Debug Android
+trusts the ASP.NET HTTPS development certificate only for that loopback host. Release and
+Play builds stay on Development. Override with `-p:MobileEnvironment=Development` to
+point an emulator at Fly. That environment must provide its own reviewed configuration
 file. Cognito client IDs and endpoint URLs are public configuration. Client secrets and
 tokens must never be added to these files.
 
@@ -48,11 +52,13 @@ The current development values are:
 - iOS < 17.4 only: `com.fishinglogbook.mobile.demo://oauth2redirect` and
   `com.fishinglogbook.mobile.demo://signedout`
 
-Configuration validation rejects non-HTTPS authorities and API endpoints, empty or
-malformed client IDs, HTTPS callbacks with a non-default port, user info, query, fragment
-or a path other than `/native/oauth2redirect` and `/native/signedout`, sign-in and sign-out
-callbacks on different hosts, foreign callback schemes and API scopes belonging to another
-resource.
+Configuration validation rejects non-HTTPS authorities and non-local API endpoints, empty
+or malformed client IDs, HTTPS callbacks with a non-default port, user info, query,
+fragment or a path other than `/native/oauth2redirect` and `/native/signedout`, sign-in
+and sign-out callbacks on different hosts, foreign callback schemes and API scopes
+belonging to another resource. Loopback HTTP (`localhost`, `127.0.0.1`, `10.0.2.2`) is
+allowed only as `ApiBaseUrl` so an emulator can reach a local API while the OAuth
+audience stays on the Development resource.
 
 ## Browser callback and storage
 

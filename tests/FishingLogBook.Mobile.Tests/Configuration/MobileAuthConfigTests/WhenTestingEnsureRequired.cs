@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Configuration;
 
@@ -79,6 +80,35 @@ public class WhenTestingEnsureRequired
     }
 
     [Fact]
+    public void ItShouldAcceptTheCommittedLocalEmulatorConfiguration()
+    {
+        // Arrange
+        var path = Path.Combine(FindRepositoryRoot(), "src", "FishingLogBook.Mobile", "Configuration", "mobileauth.Local.json");
+        var config = JsonSerializer.Deserialize<MobileAuthConfig>(File.ReadAllText(path));
+        // Act
+        var action = config!.EnsureRequired;
+        // Assert
+        config.ApiBaseUrl.Should().Be("https://10.0.2.2:7256");
+        config.ApiResource.Should().Be("https://fishing-logbook-dev-api.fly.dev");
+        action.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData("https://10.0.2.2:7256")]
+    [InlineData("http://10.0.2.2:5110")]
+    [InlineData("http://localhost:5110")]
+    [InlineData("http://127.0.0.1:5110")]
+    public void ItShouldAllowALoopbackApiBaseWithTheDevelopmentAudience(string apiBaseUrl)
+    {
+        // Arrange
+        var config = CreateValidConfig() with { ApiBaseUrl = apiBaseUrl };
+        var action = config.EnsureRequired;
+        // Act
+        // Assert
+        action.Should().NotThrow();
+    }
+
+    [Fact]
     public void ItShouldSelectTheSchemeCallbacksForPlatformsWithoutVerifiedHttpsCallbacks()
     {
         // Arrange
@@ -106,5 +136,18 @@ public class WhenTestingEnsureRequired
             SchemeRedirectUri = "com.fishinglogbook.mobile.demo://oauth2redirect",
             SchemeLogoutRedirectUri = "com.fishinglogbook.mobile.demo://signedout"
         };
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null &&
+               !File.Exists(Path.Combine(directory.FullName, "src", "FishingLogBook.Mobile", "FishingLogBook.Mobile.csproj")))
+        {
+            directory = directory.Parent;
+        }
+
+        directory.Should().NotBeNull();
+        return directory!.FullName;
     }
 }

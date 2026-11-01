@@ -8,6 +8,12 @@ public sealed record MobileAuthConfig
     private const string ApplicationScheme = "com.fishinglogbook.mobile.demo";
     private const string AppLinkCallbackPath = "/native/oauth2redirect";
     private const string AppLinkSignedOutPath = "/native/signedout";
+    private static readonly HashSet<string> LocalApiHosts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "localhost",
+        "127.0.0.1",
+        "10.0.2.2"
+    };
 
     public required string Authority { get; init; }
     public required string ClientId { get; init; }
@@ -44,7 +50,7 @@ public sealed record MobileAuthConfig
     {
         var authority = RequireHttpsOrigin(Authority, nameof(Authority), allowPath: true);
         RequireHttpsOrigin(HostedUiDomain, nameof(HostedUiDomain), allowPath: false);
-        var apiBase = RequireHttpsOrigin(ApiBaseUrl, nameof(ApiBaseUrl), allowPath: true);
+        var apiBase = RequireApiBaseUrl(ApiBaseUrl);
         var apiResource = RequireHttpsOrigin(ApiResource, nameof(ApiResource), allowPath: true);
         var redirect = RequireAppLinkRedirect(RedirectUri, nameof(RedirectUri), AppLinkCallbackPath);
         var logoutRedirect = RequireAppLinkRedirect(LogoutRedirectUri, nameof(LogoutRedirectUri), AppLinkSignedOutPath);
@@ -56,7 +62,8 @@ public sealed record MobileAuthConfig
             throw new InvalidOperationException($"{nameof(ClientId)} must be a non-empty Cognito public client ID.");
         }
 
-        if (!string.Equals(apiBase.GetLeftPart(UriPartial.Path).TrimEnd('/'), apiResource.GetLeftPart(UriPartial.Path).TrimEnd('/'), StringComparison.Ordinal))
+        if (!IsLocalApiHost(apiBase.Host) &&
+            !string.Equals(apiBase.GetLeftPart(UriPartial.Path).TrimEnd('/'), apiResource.GetLeftPart(UriPartial.Path).TrimEnd('/'), StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"{nameof(ApiResource)} must match {nameof(ApiBaseUrl)}.");
         }
@@ -75,6 +82,32 @@ public sealed record MobileAuthConfig
         {
             throw new InvalidOperationException("The Cognito authority is invalid.");
         }
+    }
+
+    private static bool IsLocalApiHost(string host) => LocalApiHosts.Contains(host);
+
+    private static Uri RequireApiBaseUrl(string value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+            !string.IsNullOrEmpty(uri.UserInfo) ||
+            !string.IsNullOrEmpty(uri.Query) ||
+            !string.IsNullOrEmpty(uri.Fragment) ||
+            uri.AbsolutePath != "/")
+        {
+            throw new InvalidOperationException($"{nameof(ApiBaseUrl)} must be a valid API origin.");
+        }
+
+        if (uri.Scheme == Uri.UriSchemeHttps)
+        {
+            return uri;
+        }
+
+        if (uri.Scheme == Uri.UriSchemeHttp && IsLocalApiHost(uri.Host))
+        {
+            return uri;
+        }
+
+        throw new InvalidOperationException($"{nameof(ApiBaseUrl)} must be a valid HTTPS endpoint.");
     }
 
     private static Uri RequireHttpsOrigin(string value, string name, bool allowPath)
