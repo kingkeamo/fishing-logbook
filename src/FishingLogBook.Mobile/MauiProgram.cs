@@ -196,6 +196,9 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<ICatchHistoryService, CatchHistoryService>();
         builder.Services.AddSingleton<ICatchWorkingCopyService, CatchWorkingCopyService>();
         builder.Services.AddSingleton<ILocalCatchCleanupService, LocalCatchCleanupService>();
+        builder.Services.AddSingleton<ILocalTripCleanupStore, SqliteLocalTripCleanupStore>();
+        builder.Services.AddSingleton<IActiveTripEditRegistry, ActiveTripEditRegistry>();
+        builder.Services.AddSingleton<ILocalTripCleanupService, LocalTripCleanupService>();
         builder.Services.AddSingleton<ICatchPhotographProposalService, CatchPhotographProposalService>();
         builder.Services.AddSingleton<CatchPresentationMapper>();
         builder.Services.AddSingleton<IAnglerPreferencesService, AnglerPreferencesService>();

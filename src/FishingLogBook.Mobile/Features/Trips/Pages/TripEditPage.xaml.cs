@@ -1,4 +1,5 @@
 using FishingLogBook.Mobile.Features.Trips.Modals;
+using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Navigation;
 
@@ -9,13 +10,21 @@ public partial class TripEditPage : ContentPage, IQueryAttributable
 {
     private readonly TripEditViewModel _viewModel;
     private readonly NavigationService _navigation;
+    private readonly IActiveTripEditRegistry _edits;
     private Guid _tripId;
     private bool _initialized;
+    private IDisposable? _edit;
 
-    public TripEditPage(TripEditViewModel viewModel, NavigationService navigation, ITripModalService modals, TripParticipantsViewModel participants)
+    public TripEditPage(
+        TripEditViewModel viewModel,
+        NavigationService navigation,
+        ITripModalService modals,
+        TripParticipantsViewModel participants,
+        IActiveTripEditRegistry edits)
     {
         _viewModel = viewModel;
         _navigation = navigation;
+        _edits = edits;
         InitializeComponent();
         BindingContext = viewModel;
         Editor.ParticipantsSection.ViewModel = participants;
@@ -46,9 +55,17 @@ public partial class TripEditPage : ContentPage, IQueryAttributable
         if (_tripId != Guid.Empty && !_initialized)
         {
             _initialized = true;
+            _edit = await _edits.AcquireAsync(_tripId, CancellationToken.None);
             await _viewModel.LoadAsync(_tripId, CancellationToken.None);
             await Editor.ParticipantsSection.LoadAsync(_tripId);
         }
+    }
+
+    protected override void OnDisappearing()
+    {
+        _edit?.Dispose();
+        _edit = null;
+        base.OnDisappearing();
     }
 
     private async void OnBack(object? sender, EventArgs args)

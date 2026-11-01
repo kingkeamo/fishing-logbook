@@ -7,6 +7,7 @@ using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Onboarding.Pages;
 using FishingLogBook.Mobile.Features.Settings.Services;
 using FishingLogBook.Mobile.Features.Startup.Pages;
+using FishingLogBook.Mobile.Features.Trips.Services;
 
 namespace FishingLogBook.Mobile;
 
@@ -18,6 +19,7 @@ public partial class App : Application
     private readonly ISessionLifecycleCoordinator _sessionLifecycle;
     private readonly IOutboxSyncCoordinator _syncCoordinator;
     private readonly ILocalCatchCleanupService _cleanup;
+    private readonly ILocalTripCleanupService _tripCleanup;
     private Window? _window;
 
     public App(
@@ -26,6 +28,7 @@ public partial class App : Application
         ISessionLifecycleCoordinator sessionLifecycle,
         IOutboxSyncCoordinator syncCoordinator,
         ILocalCatchCleanupService cleanup,
+        ILocalTripCleanupService tripCleanup,
         IServiceProvider services)
     {
         InitializeComponent();
@@ -34,6 +37,7 @@ public partial class App : Application
         _sessionLifecycle = sessionLifecycle;
         _syncCoordinator = syncCoordinator;
         _cleanup = cleanup;
+        _tripCleanup = tripCleanup;
         _services = services;
         _authenticationService.SessionChanged += OnSessionChanged;
         _sessionLifecycle.StateChanged += OnLifecycleStateChanged;
@@ -46,6 +50,7 @@ public partial class App : Application
         _sessionLifecycle.Start();
         _syncCoordinator.Start();
         _cleanup.Start();
+        _tripCleanup.Start();
         _window.Resumed += OnResumed;
         _window.Stopped += OnStopped;
         _window.Destroying += OnDestroying;
