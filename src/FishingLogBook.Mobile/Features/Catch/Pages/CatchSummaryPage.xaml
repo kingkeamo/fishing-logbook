@@ -3,6 +3,7 @@
  xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
  xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models" xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Catch.ViewModels"
  xmlns:banner="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.ActiveTripBanner" xmlns:trip="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripAction"
+ xmlns:profile="clr-namespace:FishingLogBook.Mobile.Features.Profile.Views"
  xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Features.Catch.Pages.CatchSummaryPage"
  x:DataType="vm:CatchListViewModel" Title="{Binding Text[Catches]}" Shell.NavBarIsVisible="False" SafeAreaEdges="None">
  <ContentPage.Behaviors>
@@ -17,10 +18,7 @@
     <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnOpenMenu" /></Grid.GestureRecognizers>
    </Grid>
    <controls:IconView Grid.Column="1" Source="brand_horizontal.png" Tone="Inverse" HeightRequest="44" HorizontalOptions="Start" VerticalOptions="Center" />
-   <Border Grid.Column="2" WidthRequest="40" HeightRequest="40" StrokeThickness="2" Stroke="White" BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}" SemanticProperties.Description="{Binding Text[Profile]}">
-    <Border.StrokeShape><Ellipse /></Border.StrokeShape>
-    <Label Text="E" TextColor="White" FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" FontAutoScalingEnabled="False" />
-   </Border>
+   <profile:HeaderProfileView x:Name="HeaderProfile" Grid.Column="2" />
   </Grid>
   <Border Grid.Row="1" Margin="0,-28,0,0" StrokeThickness="0" Padding="16,16,16,0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
