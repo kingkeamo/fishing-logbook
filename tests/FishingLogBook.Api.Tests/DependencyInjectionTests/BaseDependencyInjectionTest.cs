@@ -44,15 +44,16 @@ public class BaseDependencyInjectionTest : IClassFixture<DependencyInjectionApiF
             return false;
         }
 
-        if (type.IsPrimitive ||
-            type == typeof(string) ||
-            type == typeof(decimal) ||
-            type == typeof(Guid) ||
-            type == typeof(DateTime) ||
-            type == typeof(DateTimeOffset) ||
-            type == typeof(DateOnly) ||
-            type == typeof(TimeOnly) ||
-            type.IsEnum)
+        var valueType = Nullable.GetUnderlyingType(type) ?? type;
+        if (valueType.IsPrimitive ||
+            valueType == typeof(string) ||
+            valueType == typeof(decimal) ||
+            valueType == typeof(Guid) ||
+            valueType == typeof(DateTime) ||
+            valueType == typeof(DateTimeOffset) ||
+            valueType == typeof(DateOnly) ||
+            valueType == typeof(TimeOnly) ||
+            valueType.IsEnum)
         {
             return false;
         }

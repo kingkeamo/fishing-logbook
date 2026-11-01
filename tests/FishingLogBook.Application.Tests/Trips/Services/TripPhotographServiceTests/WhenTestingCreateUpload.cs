@@ -82,6 +82,27 @@ public class WhenTestingCreateUpload : BaseTripPhotographServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(TripStatusEnum.Planned)]
+    [InlineData(TripStatusEnum.Cancelled)]
+    public async Task ItShouldNotIssueAnUploadUrlForATripThatHasNotStartedOrWasCancelled(TripStatusEnum status)
+    {
+        // Arrange
+        GivenTrip(CurrentUserId, status);
+
+        // Act
+        var result = await Sut.CreateUploadAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNotOpenError>();
+        await MockObjectStorage.DidNotReceive().CreateUploadUrlAsync(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<TimeSpan>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private static CreateTripPhotographUploadArgs Args()
     {
         return new CreateTripPhotographUploadArgs

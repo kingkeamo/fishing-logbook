@@ -297,6 +297,25 @@ public class WhenTestingAssociate : BaseTripCatchServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(TripStatusEnum.Planned)]
+    [InlineData(TripStatusEnum.Cancelled)]
+    public async Task ItShouldNotAssociateCatchesWithATripThatHasNotStartedOrWasCancelled(TripStatusEnum status)
+    {
+        // Arrange
+        GivenTrip(CurrentUserId, status);
+
+        // Act
+        var result = await Sut.AssociateAsync(Args(CatchId), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNotOpenError>();
+        await MockCatchRepository.DidNotReceive().GetByIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private static AssociateTripCatchesArgs Args(params Guid[] catchIds)
     {
         return new AssociateTripCatchesArgs

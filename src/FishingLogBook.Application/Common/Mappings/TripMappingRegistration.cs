@@ -62,7 +62,8 @@ public sealed class TripMappingRegistration : IRegister
             {
                 OwnerUserId = source.OwnerUserId,
                 Title = source.Title,
-                PlaceName = source.PlaceName
+                PlaceName = source.PlaceName,
+                PlannedStartOn = source.PlannedStartOn
             });
 
         config.NewConfig<TripSummary, TripSummaryDto>()
@@ -74,6 +75,7 @@ public sealed class TripMappingRegistration : IRegister
             {
                 Title = source.Title,
                 PlaceName = source.PlaceName,
+                PlannedStartOn = source.PlannedStartOn,
                 CatchCount = source.CatchCount,
                 PhotographCount = source.PhotographCount,
                 NoteCount = source.NoteCount,
@@ -111,6 +113,7 @@ public sealed class TripMappingRegistration : IRegister
             {
                 Title = source.Title,
                 PlaceName = source.PlaceName,
+                PlannedStartOn = source.PlannedStartOn,
                 CreatedOn = source.CreatedOn,
                 UpdatedOn = source.UpdatedOn
             });

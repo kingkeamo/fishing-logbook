@@ -235,6 +235,8 @@ public class WhenTestingSchema
             "cktripsendedafterstarted",
             "cktripslocationcoherent",
             "cktripslocationvisibilityallowed",
+            "cktripsplannedhasnoend",
+            "cktripsplannedhasplannedstart",
             "cktripsstatusallowed",
             "ckuserfishinglocationpreferencesname"
         ];

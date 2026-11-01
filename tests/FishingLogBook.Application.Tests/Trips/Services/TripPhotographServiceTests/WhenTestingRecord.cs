@@ -160,6 +160,25 @@ public class WhenTestingRecord : BaseTripPhotographServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(TripStatusEnum.Planned)]
+    [InlineData(TripStatusEnum.Cancelled)]
+    public async Task ItShouldRefuseAPhotographForATripThatHasNotStartedOrWasCancelled(TripStatusEnum status)
+    {
+        // Arrange
+        GivenTrip(CurrentUserId, status);
+
+        // Act
+        var result = await Sut.RecordAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNotOpenError>();
+        await MockTripPhotographRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripPhotograph>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private static RecordTripPhotographArgs Args(
         string? objectKey = null,
         DateTimeOffset? capturedOn = null)

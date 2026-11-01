@@ -40,18 +40,7 @@ public sealed class TripService : ITripService
             return Result.Fail<TripDto>(new TripLocationInvalidError());
         }
 
-        var trip = new Trip
-        {
-            Id = args.Trip.Id,
-            OwnerUserId = args.UserId,
-            Title = TrimToNull(args.Trip.Title),
-            PlaceName = TrimToNull(args.Trip.PlaceName),
-            Status = status,
-            StartedOn = args.Trip.StartedOn,
-            EndedOn = args.Trip.EndedOn,
-            Location = location
-        };
-
+        var trip = BuildTrip(args, status, location);
         if (!trip.HasCoherentLifecycle())
         {
             return Result.Fail<TripDto>(new TripLifecycleInvalidError());
@@ -63,13 +52,10 @@ public sealed class TripService : ITripService
             return Result.Fail<TripDto>(existing.Errors);
         }
 
-        if (existing.Value is not null)
+        var allowed = await CheckTransitionAsync(trip, existing.Value, cancellationToken);
+        if (allowed.IsFailed)
         {
-            var access = await _tripAccessService.RequireOwnerAsync(trip.Id, cancellationToken);
-            if (access.IsFailed)
-            {
-                return Result.Fail<TripDto>(access.Errors);
-            }
+            return Result.Fail<TripDto>(allowed.Errors);
         }
 
         var saved = await _tripRepository.UpsertAsync(trip, cancellationToken);
@@ -101,6 +87,46 @@ public sealed class TripService : ITripService
             })
         ];
         return Result.Ok(summaries);
+    }
+
+    private async Task<Result> CheckTransitionAsync(
+        Trip trip,
+        Trip? existing,
+        CancellationToken cancellationToken)
+    {
+        if (existing is null)
+        {
+            return Trip.CanBeCreatedAs(trip.Status)
+                ? Result.Ok()
+                : Result.Fail(new TripTransitionInvalidError());
+        }
+
+        var access = await _tripAccessService.RequireOwnerAsync(trip.Id, cancellationToken);
+        if (access.IsFailed)
+        {
+            return access.ToResult();
+        }
+
+        return existing.CanBecome(trip.Status)
+            ? Result.Ok()
+            : Result.Fail(new TripTransitionInvalidError());
+    }
+
+    private static Trip BuildTrip(UpsertTripArgs args, TripStatusEnum status, TripLocation? location)
+    {
+        var hasPlannedLifecycle = TripConstants.HasPlannedLifecycle(args.Trip.Status);
+        return new Trip
+        {
+            Id = args.Trip.Id,
+            OwnerUserId = args.UserId,
+            Title = TrimToNull(args.Trip.Title),
+            PlaceName = TrimToNull(args.Trip.PlaceName),
+            Status = status,
+            StartedOn = hasPlannedLifecycle ? args.Trip.PlannedStartOn ?? default : args.Trip.StartedOn,
+            PlannedStartOn = args.Trip.PlannedStartOn,
+            EndedOn = args.Trip.EndedOn,
+            Location = location
+        };
     }
 
     private static TripLocation? ToLocation(TripLocationDto? location)

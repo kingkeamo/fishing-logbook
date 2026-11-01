@@ -134,6 +134,29 @@ public class WhenTestingUpsertWithATrip : BaseCatchServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(TripStatusEnum.Planned)]
+    [InlineData(TripStatusEnum.Cancelled)]
+    public async Task ItShouldRejectACatchForATripThatHasNotStartedOrWasCancelled(TripStatusEnum status)
+    {
+        // Arrange
+        var args = Args(tripId: TripId);
+        GivenAccess(TripAccess.Resolve(
+            Trip(args.UserId, status),
+            args.UserId,
+            participant: null));
+
+        // Act
+        var result = await Sut.UpsertAsync(args, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<CatchTripInvalidError>();
+        await MockCatchRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<Catch>(),
+            Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task ItShouldAcceptACatchFromAnAcceptedParticipantOfASharedTrip()
     {

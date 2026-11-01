@@ -9,6 +9,8 @@ public sealed record TripDto(
 {
     public Guid OwnerUserId { get; init; }
 
+    public DateTimeOffset? PlannedStartOn { get; init; }
+
     public string? Title { get; init; }
 
     public string? PlaceName { get; init; }

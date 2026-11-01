@@ -21,6 +21,7 @@ public abstract class BaseTripRepositoryTest
     protected readonly RecordingLogger<TripRepository> Logger = new();
     protected readonly UserIdentityRepository Users;
     protected readonly CatchRepository Catches;
+    protected readonly TripParticipantRepository Participants;
     protected readonly TripNoteRepository Notes;
     protected readonly TripPhotographRepository Photographs;
     protected readonly NpgsqlConnectionFactory ConnectionFactory;
@@ -33,6 +34,10 @@ public abstract class BaseTripRepositoryTest
         Catches = new CatchRepository(
             ConnectionFactory,
             NullLogger<CatchRepository>.Instance,
+            TestMapper.Create());
+        Participants = new TripParticipantRepository(
+            ConnectionFactory,
+            NullLogger<TripParticipantRepository>.Instance,
             TestMapper.Create());
         Notes = new TripNoteRepository(ConnectionFactory, NullLogger<TripNoteRepository>.Instance);
         Photographs = new TripPhotographRepository(
@@ -124,7 +129,8 @@ public abstract class BaseTripRepositoryTest
         DateTimeOffset? endedOn = null,
         string? title = null,
         string? placeName = null,
-        TripLocation? location = null)
+        TripLocation? location = null,
+        DateTimeOffset? plannedStartOn = null)
     {
         return new Trip
         {
@@ -133,7 +139,8 @@ public abstract class BaseTripRepositoryTest
             Title = title,
             PlaceName = placeName,
             Status = status,
-            StartedOn = startedOn ?? StartedOn,
+            StartedOn = startedOn ?? plannedStartOn ?? StartedOn,
+            PlannedStartOn = plannedStartOn,
             EndedOn = endedOn,
             Location = location
         };

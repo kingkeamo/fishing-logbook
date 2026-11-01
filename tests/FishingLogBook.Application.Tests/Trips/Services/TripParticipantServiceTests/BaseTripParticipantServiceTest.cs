@@ -38,6 +38,8 @@ public class BaseTripParticipantServiceTest
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockProfileRepository.UserExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok(true));
+        MockTripRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(Trip(OtherUserId)));
         MockTripParticipantRepository
             .FindAsync(Arg.Any<FindTripParticipantArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<TripParticipant?>(null));

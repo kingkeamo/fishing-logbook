@@ -32,8 +32,8 @@ public class WhenTestingValidate : BaseUpsertTripCommandValidatorTest
     }
 
     [Theory]
-    [InlineData("Planned")]
-    [InlineData("Cancelled")]
+    [InlineData("Abandoned")]
+    [InlineData("Paused")]
     [InlineData("active")]
     [InlineData("")]
     public void ItShouldRejectAnUnsupportedStatus(string status)
@@ -295,5 +295,98 @@ public class WhenTestingValidate : BaseUpsertTripCommandValidatorTest
 
         // Assert
         result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory]
+    [InlineData(TripConstants.Planned, 10)]
+    [InlineData(TripConstants.Planned, -10)]
+    [InlineData(TripConstants.Cancelled, 10)]
+    public void ItShouldAcceptAPlannedOrCancelledTripWhetherItsPlannedStartIsFutureOrPast(string status, int daysFromNow)
+    {
+        // Arrange
+        var plannedStartOn = DateTimeOffset.UtcNow.AddDays(daysFromNow);
+        var command = Command(status: status, startedOn: plannedStartOn, plannedStartOn: plannedStartOn);
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory]
+    [InlineData(TripConstants.Planned)]
+    [InlineData(TripConstants.Cancelled)]
+    public void ItShouldRequireAPlannedStartOnAPlannedOrCancelledTrip(string status)
+    {
+        // Arrange
+        var command = Command(status: status, startedOn: DateTimeOffset.UtcNow.AddDays(2));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(item => item.Trip.PlannedStartOn);
+    }
+
+    [Fact]
+    public void ItShouldRejectADefaultPlannedStart()
+    {
+        // Arrange
+        var command = Command(status: TripConstants.Planned, plannedStartOn: default(DateTimeOffset));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(item => item.Trip.PlannedStartOn);
+    }
+
+    [Theory]
+    [InlineData(TripConstants.Planned)]
+    [InlineData(TripConstants.Cancelled)]
+    public void ItShouldRejectAnEndTimeOnAPlannedOrCancelledTrip(string status)
+    {
+        // Arrange
+        var plannedStartOn = DateTimeOffset.UtcNow.AddDays(2);
+        var command = Command(status: status, startedOn: plannedStartOn, plannedStartOn: plannedStartOn, endedOn: plannedStartOn.AddHours(2));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(item => item.Trip.EndedOn);
+    }
+
+    [Fact]
+    public void ItShouldAcceptAnActivationThatCarriesTheActualAndPlannedStart()
+    {
+        // Arrange
+        var command = Command(
+            status: TripConstants.Active,
+            startedOn: DateTimeOffset.UtcNow.AddMinutes(-10),
+            plannedStartOn: DateTimeOffset.UtcNow.AddHours(-1));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void ItShouldStillRejectAnActiveTripThatStartsInTheFutureEvenWithAPlannedStart()
+    {
+        // Arrange
+        var command = Command(
+            status: TripConstants.Active,
+            startedOn: DateTimeOffset.UtcNow.AddDays(1),
+            plannedStartOn: DateTimeOffset.UtcNow.AddDays(1));
+
+        // Act
+        var result = Sut.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(item => item.Trip.StartedOn);
     }
 }

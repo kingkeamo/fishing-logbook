@@ -12,6 +12,8 @@ public sealed class TripSummary
 
     public DateTimeOffset StartedOn { get; init; }
 
+    public DateTimeOffset? PlannedStartOn { get; init; }
+
     public DateTimeOffset? EndedOn { get; init; }
 
     public string? Title { get; init; }

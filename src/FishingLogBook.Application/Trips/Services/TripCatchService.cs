@@ -31,7 +31,7 @@ public sealed class TripCatchService : ITripCatchService
         AssociateTripCatchesArgs args,
         CancellationToken cancellationToken)
     {
-        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        var access = await _tripAccessService.RequireOpenContributorAsync(args.TripId, cancellationToken);
         if (access.IsFailed)
         {
             return Result.Fail<TripCatchAssociationDto>(access.Errors);

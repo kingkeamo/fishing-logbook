@@ -54,7 +54,7 @@ public sealed class TripPhotographService : ITripPhotographService
         CreateTripPhotographUploadArgs args,
         CancellationToken cancellationToken)
     {
-        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        var access = await _tripAccessService.RequireOpenContributorAsync(args.TripId, cancellationToken);
         if (access.IsFailed)
         {
             return Result.Fail<PhotographUploadDto>(access.Errors);
@@ -75,7 +75,7 @@ public sealed class TripPhotographService : ITripPhotographService
         RecordTripPhotographArgs args,
         CancellationToken cancellationToken)
     {
-        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        var access = await _tripAccessService.RequireOpenContributorAsync(args.TripId, cancellationToken);
         if (access.IsFailed)
         {
             return Result.Fail<TripPhotographDto>(access.Errors);

@@ -25,6 +25,8 @@ public static class TripAccessStub
     {
         accessService.RequireContributorAsync(tripId, Arg.Any<CancellationToken>())
             .Returns(Result.Fail<TripAccess>(new TripNotFoundError()));
+        accessService.RequireOpenContributorAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<TripAccess>(new TripNotFoundError()));
         accessService.RequireOwnerAsync(tripId, Arg.Any<CancellationToken>())
             .Returns(Result.Fail<TripAccess>(new TripNotFoundError()));
         accessService.ResolveAsync(tripId, Arg.Any<CancellationToken>())
@@ -47,6 +49,18 @@ public static class TripAccessStub
         };
     }
 
+    private static Result<TripAccess> OpenContributor(Trip trip, TripAccess access)
+    {
+        if (!access.CanContribute)
+        {
+            return Result.Fail<TripAccess>(new TripNotFoundError());
+        }
+
+        return trip.AcceptsContributions
+            ? Result.Ok(access)
+            : Result.Fail<TripAccess>(new TripNotOpenError());
+    }
+
     private static void Configure(ITripAccessService accessService, Trip trip, TripAccess access)
     {
         accessService.ResolveAsync(trip.Id, Arg.Any<CancellationToken>())
@@ -57,6 +71,8 @@ public static class TripAccessStub
             .Returns(access.CanContribute
                 ? Result.Ok(access)
                 : Result.Fail<TripAccess>(new TripNotFoundError()));
+        accessService.RequireOpenContributorAsync(trip.Id, Arg.Any<CancellationToken>())
+            .Returns(OpenContributor(trip, access));
         accessService.RequireOwnerAsync(trip.Id, Arg.Any<CancellationToken>())
             .Returns(access.CanManageTrip
                 ? Result.Ok(access)

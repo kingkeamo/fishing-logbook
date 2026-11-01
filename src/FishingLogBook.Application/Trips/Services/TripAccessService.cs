@@ -83,6 +83,21 @@ public sealed class TripAccessService : ITripAccessService
             : Result.Fail<TripAccess>(new TripNotFoundError());
     }
 
+    public async Task<Result<TripAccess>> RequireOpenContributorAsync(
+        Guid tripId,
+        CancellationToken cancellationToken)
+    {
+        var access = await RequireContributorAsync(tripId, cancellationToken);
+        if (access.IsFailed)
+        {
+            return access;
+        }
+
+        return access.Value.Trip.AcceptsContributions
+            ? access
+            : Result.Fail<TripAccess>(new TripNotOpenError());
+    }
+
     public async Task<Result<TripAccess>> RequireOwnerAsync(
         Guid tripId,
         CancellationToken cancellationToken)

@@ -43,7 +43,8 @@ public class BaseTripServiceTest
         DateTimeOffset? endedOn = null,
         string? title = null,
         string? placeName = null,
-        TripLocationDto? location = null)
+        TripLocationDto? location = null,
+        DateTimeOffset? plannedStartOn = null)
     {
         return new UpsertTripArgs
         {
@@ -56,7 +57,8 @@ public class BaseTripServiceTest
                 location)
             {
                 Title = title,
-                PlaceName = placeName
+                PlaceName = placeName,
+                PlannedStartOn = plannedStartOn
             }
         };
     }
@@ -83,7 +85,8 @@ public class BaseTripServiceTest
         DateTimeOffset? endedOn = null,
         string? title = null,
         string? placeName = null,
-        TripLocation? location = null)
+        TripLocation? location = null,
+        DateTimeOffset? plannedStartOn = null)
     {
         return new Trip
         {
@@ -93,6 +96,7 @@ public class BaseTripServiceTest
             PlaceName = placeName,
             Status = status,
             StartedOn = StartedOn,
+            PlannedStartOn = plannedStartOn,
             EndedOn = endedOn,
             Location = location,
             CreatedOn = StartedOn,
@@ -110,6 +114,7 @@ public class BaseTripServiceTest
             PlaceName = trip.PlaceName,
             Status = trip.Status,
             StartedOn = trip.StartedOn,
+            PlannedStartOn = trip.PlannedStartOn,
             EndedOn = trip.EndedOn,
             Location = trip.Location,
             CreatedOn = StartedOn,
