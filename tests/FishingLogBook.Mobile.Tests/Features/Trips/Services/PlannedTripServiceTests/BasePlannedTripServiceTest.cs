@@ -12,7 +12,7 @@ public abstract class BasePlannedTripServiceTest : BaseTripServiceTest
 {
     protected static readonly Guid FriendUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    protected readonly PlannedTripService Sut;
+    protected new readonly PlannedTripService Sut;
 
     protected BasePlannedTripServiceTest()
     {

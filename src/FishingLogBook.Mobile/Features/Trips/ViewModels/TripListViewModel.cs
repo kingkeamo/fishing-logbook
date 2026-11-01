@@ -117,7 +117,7 @@ public sealed class TripListViewModel : INotifyPropertyChanged
         {
             return await _start.StartAsync(cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             _actionFailedKey = "TripPlannedStartFailed";
             Notify(nameof(HasActionFailure), nameof(ActionFailureText));
@@ -203,19 +203,23 @@ public sealed class TripListViewModel : INotifyPropertyChanged
             Count(trip.CatchCount, "TripCatchesNone", "TripCatchesOne", "TripCatchesMany"),
             Count(trip.PhotographCount, "TripListPhotographsNone", "TripListPhotographsOne", "TripListPhotographsMany"),
             Count(trip.NoteCount, "TripListNotesNone", "TripListNotesOne", "TripListNotesMany"),
-            plannedLifecycle ? Text["TripPlanOpen"] : active ? Text["TripUpdate"] : Text["TripViewTrip"],
+            plannedLifecycle ? Text["TripPlanOpen"] : active && trip.Role == TripParticipantConstants.Owner ? Text["TripUpdate"] : Text["TripViewTrip"],
             Text["TripActiveLabel"],
             Text["TripSharedLabel"],
             Text["CatchSyncWaiting"],
             plannedLifecycle,
-            trip.Status == TripConstants.Cancelled ? Text["TripCancelled"] : Text["TripPlanned"]);
+            trip.Status == TripConstants.Cancelled ? Text["TripCancelled"] : Text["TripPlanned"],
+            trip.Role == TripParticipantConstants.Owner);
     }
 
     public MobileRouteEnum RouteFor(Guid tripId)
     {
-        return Trips.FirstOrDefault(trip => trip.Id == tripId) is { HasPlannedLifecycle: true }
-            ? MobileRouteEnum.TripPlan
-            : MobileRouteEnum.TripDetail;
+        return Trips.FirstOrDefault(trip => trip.Id == tripId) switch
+        {
+            { HasPlannedLifecycle: true } => MobileRouteEnum.TripPlan,
+            { IsActive: true, CanUpdate: true } => MobileRouteEnum.TripEdit,
+            _ => MobileRouteEnum.TripDetail
+        };
     }
 
     private string Count(int count, string none, string one, string many)

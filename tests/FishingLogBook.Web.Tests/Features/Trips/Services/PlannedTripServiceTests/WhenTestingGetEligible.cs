@@ -11,6 +11,56 @@ public class WhenTestingGetEligible : BasePlannedTripServiceTest
 {
     private static readonly Guid OtherTripId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
+    [Theory]
+    [InlineData(FishingLogBook.Web.Common.SyncStatus.Synchronised)]
+    [InlineData(FishingLogBook.Web.Common.SyncStatus.SavedLocally)]
+    public async Task ItShouldExcludePreviouslySyncedPlansMissingFromTheAuthoritativeOnlineList(FishingLogBook.Web.Common.SyncStatus status)
+    {
+        // Arrange
+        MockTripStore.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
+            .Returns([PlannedTrip(Now) with { SyncStatus = status, SyncedAt = Now.AddHours(-1) }]);
+
+        // Act
+        var result = await Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        result.Should().BeEmpty();
+        await MockTripClient.Received(1).GetPlannedAsync(null, Arg.Any<CancellationToken>());
+        await MockTripStore.DidNotReceive().SaveAsync(Arg.Any<TripModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldPreserveOfflineEditsAndOfferAnUnsyncedNewPlan()
+    {
+        // Arrange
+        var plan = PlannedTrip(Now) with { SyncStatus = FishingLogBook.Web.Common.SyncStatus.SavedLocally, Title = "Offline edit" };
+        MockTripStore.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>()).Returns([plan]);
+
+        // Act
+        var result = await Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        result.Should().ContainSingle(option => option.TripId == TripId && option.Title == "Offline edit");
+        await MockTripStore.DidNotReceive().SaveAsync(Arg.Any<TripModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotOfferAServerPlanAlreadyActivatedLocallyWhileWaitingForSync()
+    {
+        // Arrange
+        MockTripStore.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>()).Returns([
+            PlannedTrip(Now) with { Status = TripConstants.Active, SyncStatus = FishingLogBook.Web.Common.SyncStatus.SavedLocally }]);
+        MockTripClient.GetPlannedAsync(null, Arg.Any<CancellationToken>()).Returns([
+            new PlannedTripOptionDto(TripId, Now, OwnerUserId, "Me")]);
+
+        // Act
+        var result = await Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        result.Should().BeEmpty();
+        await MockTripClient.Received(1).GetPlannedAsync(null, Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task ItShouldReturnNothingWithoutAViewer()
     {
@@ -42,7 +92,7 @@ public class WhenTestingGetEligible : BasePlannedTripServiceTest
     }
 
     [Fact]
-    public async Task ItShouldFallBackToLocalTripsAndLogWhenTheServerFails()
+    public async Task ItShouldRejectAnOnlineLookupAndLogWhenTheServerFails()
     {
         // Arrange
         var failure = new HttpRequestException("down");
@@ -51,10 +101,10 @@ public class WhenTestingGetEligible : BasePlannedTripServiceTest
             .Returns([PlannedTrip(Now)]);
 
         // Act
-        var result = await Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);
+        var act = () => Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        result.Should().ContainSingle(option => option.TripId == TripId);
+        await act.Should().ThrowAsync<InvalidOperationException>();
         await MockLogging.Received(1).LogErrorAsync(
             "reading the planned trips",
             failure,
@@ -62,7 +112,7 @@ public class WhenTestingGetEligible : BasePlannedTripServiceTest
     }
 
     [Fact]
-    public async Task ItShouldReturnNothingWhenBothSourcesFail()
+    public async Task ItShouldRejectALocalStorageFailureInsteadOfReportingNoPlans()
     {
         // Arrange
         MockTripClient.GetPlannedAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>())
@@ -71,14 +121,11 @@ public class WhenTestingGetEligible : BasePlannedTripServiceTest
             .ThrowsAsync(new InvalidOperationException("store"));
 
         // Act
-        var result = await Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);
+        var act = () => Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);
 
         // Assert
-        result.Should().BeEmpty();
-        await MockLogging.Received(2).LogErrorAsync(
-            Arg.Any<string>(),
-            Arg.Any<Exception>(),
-            Arg.Any<CancellationToken>());
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        await MockTripClient.DidNotReceive().GetPlannedAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -109,7 +156,7 @@ public class WhenTestingGetEligible : BasePlannedTripServiceTest
         // Arrange
         var plannedStart = Now.AddDays(days).AddMinutes(extraMinutes);
         MockTripStore.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns([PlannedTrip(plannedStart)]);
+            .Returns([PlannedTrip(plannedStart) with { SyncStatus = FishingLogBook.Web.Common.SyncStatus.SavedLocally }]);
         MockTripClient.GetPlannedAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>())
             .Returns([new PlannedTripOptionDto(OtherTripId, plannedStart, GuestUserId, "Sam")]);
 
@@ -156,7 +203,7 @@ public class WhenTestingGetEligible : BasePlannedTripServiceTest
         var duplicate = new PlannedTripOptionDto(TripId, Now.AddHours(8), OwnerUserId, "Me");
         MockTripClient.GetPlannedAsync(null, Arg.Any<CancellationToken>()).Returns([duplicate, serverOnly]);
         MockTripStore.GetAllAsync(OwnerUserId, Arg.Any<CancellationToken>())
-            .Returns([PlannedTrip(Now.AddHours(8)), PlannedTrip(Now.AddHours(1), tripId: Guid.NewGuid())]);
+            .Returns([PlannedTrip(Now.AddHours(8)), PlannedTrip(Now.AddHours(1), tripId: Guid.NewGuid()) with { SyncStatus = FishingLogBook.Web.Common.SyncStatus.SavedLocally }]);
 
         // Act
         var result = await Sut.GetEligibleAsync(OwnerUserId, CancellationToken.None);

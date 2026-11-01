@@ -1,6 +1,7 @@
 @namespace FishingLogBook.Web.Features.Trips.Components.PlannedTripEditor
 @using FishingLogBook.Shared.Constants
 @using FishingLogBook.Web.Features.Trips.Components.TripLocationPicker
+@using FishingLogBook.Web.Features.Trips.Components.TripParticipants
 
 <MudPaper Elevation="0" Class="planned-trip-editor pa-4" id="planned-trip-editor">
     <MudStack Spacing="3" AlignItems="AlignItems.Stretch">
@@ -27,6 +28,11 @@
                       id="planned-trip-title" />
 
         <TripLocationPicker PlaceName="@_placeName" PlaceNameChanged="OnPlaceNameChanged" Disabled="!CanEdit" />
+
+        @if (_trip is not null)
+        {
+            <TripParticipants @key="_trip.Id" TripId="_trip.Id" Enabled="CanInvite" AllowManagement="@(_trip.IsPlanned && CanEdit)" />
+        }
 
         <MudTextField T="string"
                       Value="_whenLocal"
@@ -61,21 +67,6 @@
 
         @if (_trip is { IsPlanned: true } && CanEdit)
         {
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Primary"
-                       StartIcon="@Icons.Material.Filled.PersonAdd"
-                       Disabled="@(_isBusy || !CanInvite)"
-                       OnClick="InviteAsync"
-                       id="planned-trip-invite">
-                @Loc["Trip_InviteAngler"]
-            </MudButton>
-            @if (!CanInvite)
-            {
-                <MudText Typo="Typo.caption" Class="mud-text-secondary" id="planned-trip-invite-hint">
-                    @Loc["Trip_PlanInviteHint"]
-                </MudText>
-            }
-
             <MudButton Variant="Variant.Text"
                        Color="Color.Error"
                        Disabled="_isBusy"

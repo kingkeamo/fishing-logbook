@@ -48,11 +48,12 @@ public partial class TripPhotographs : ComponentBase, IDisposable
 
     private IReadOnlyList<PhotographCarouselItemModel> CarouselPhotographs =>
         [.. _photographs
-            .Where(photograph => photograph.Bytes is { Length: > 0 })
+            .Where(photograph => photograph.Bytes is { Length: > 0 } || photograph.RemoteUrl is not null)
             .Select(photograph => new PhotographCarouselItemModel(
                 photograph.Id,
                 photograph.ContentType,
-                photograph.Bytes!))];
+                photograph.Bytes,
+                photograph.RemoteUrl))];
 
     protected override async Task OnInitializedAsync()
     {
@@ -74,6 +75,10 @@ public partial class TripPhotographs : ComponentBase, IDisposable
                 if (bytes is { Length: > 0 })
                 {
                     _photographs.Add(photograph with { Bytes = bytes });
+                }
+                else if (photograph.RemoteUrl is not null)
+                {
+                    _photographs.Add(photograph);
                 }
             }
             catch (OperationCanceledException) when (_cancellationTokenSource.IsCancellationRequested)

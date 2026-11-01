@@ -217,19 +217,6 @@ public partial class PlannedTripEditor : ComponentBase, IDisposable
         }
     }
 
-    private async Task InviteAsync()
-    {
-        if (_trip is null)
-        {
-            return;
-        }
-
-        await ModalService
-            .ShowAsync<TripParticipantsModal, TripParticipantsModalModel, TripParticipantsModalResult>(
-                new TripParticipantsModalModel(_trip.Id),
-                CancellationToken.None);
-    }
-
     private async Task CloseAsync()
     {
         await OnClosed.InvokeAsync();

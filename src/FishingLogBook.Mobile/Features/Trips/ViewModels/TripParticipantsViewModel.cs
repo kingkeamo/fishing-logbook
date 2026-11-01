@@ -33,6 +33,8 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
     private bool _isLoaded;
     private bool _isBusy;
     private int _loadVersion;
+    private bool _allowManagement = true;
+    private bool _isInviting;
 
     public TripParticipantsViewModel(
         ITripParticipantClient participants,
@@ -64,7 +66,60 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
 
     public bool IsLoaded => _isLoaded;
 
-    public bool CanInvite => _isLoaded && _role == TripParticipantConstants.Owner;
+    public bool AllowManagement
+    {
+        get => _allowManagement;
+        set
+        {
+            if (_allowManagement == value)
+            {
+                return;
+            }
+            _allowManagement = value;
+            if (!value)
+            {
+                for (var index = 0; index < Participants.Count; index++)
+                {
+                    Participants[index] = Participants[index] with { CanRemove = false };
+                }
+            }
+            Notify();
+        }
+    }
+
+    public bool CanInvite => _isLoaded && AllowManagement && _role == TripParticipantConstants.Owner;
+
+    public bool CanRetry => HasMessage && _tripId != Guid.Empty;
+
+    public bool ShowInviteAction => CanInvite && !_isInviting;
+
+    public bool ShowInviteSearch => CanInvite && _isInviting;
+
+    public void BeginInvite()
+    {
+        if (CanInvite && !_isBusy)
+        {
+            _isInviting = true;
+            Notify();
+        }
+    }
+
+    public void EndInvite()
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+        _isInviting = false;
+        SearchResults.Clear();
+        _searchText = string.Empty;
+        Notify();
+    }
+
+    public Task RetryAsync(CancellationToken cancellationToken)
+    {
+        return LoadAsync(_tripId, cancellationToken);
+    }
 
     public bool ShowOwnerOnlyNote => _isLoaded && !CanInvite && Participants.Count > 0;
 
@@ -98,6 +153,7 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         _isBusy = false;
         _role = null;
         _searchText = string.Empty;
+        _isInviting = false;
         Participants.Clear();
         SearchResults.Clear();
         _isLoading = true;
@@ -105,6 +161,11 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         Notify();
         try
         {
+            if (tripId == Guid.Empty)
+            {
+                _messageKey = "TripPlanInviteHint";
+                return;
+            }
             if (!_connectivity.IsOnline)
             {
                 _messageKey = "TripParticipantsLoadFailed";
@@ -192,6 +253,11 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         {
             SearchResults.Clear();
             SearchText = string.Empty;
+            if (_messageKey is null)
+            {
+                _isInviting = false;
+                Notify();
+            }
         }
     }
 
@@ -247,6 +313,13 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
                 Changed = true;
             }
         }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            if (version == _loadVersion)
+            {
+                _messageKey = failureKey;
+            }
+        }
         finally
         {
             if (version == _loadVersion)
@@ -272,7 +345,7 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
                     TripParticipantConstants.Declined => Text["TripParticipantDeclined"],
                     _ => Text["TripParticipantAccepted"]
                 },
-                dto.Role == TripParticipantConstants.Owner && !participant.IsOwner));
+                AllowManagement && dto.Role == TripParticipantConstants.Owner && !participant.IsOwner));
         }
 
         Notify();

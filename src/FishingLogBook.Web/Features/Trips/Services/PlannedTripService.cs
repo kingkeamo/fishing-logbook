@@ -109,12 +109,22 @@ public sealed class PlannedTripService : IPlannedTripService
         }
 
         var now = _timeProvider.GetUtcNow();
-        var local = await ReadLocalAsync(viewerUserId, now, cancellationToken);
-        var server = await ReadServerAsync(now, cancellationToken);
+        var records = await _tripStore.GetAllAsync(viewerUserId, cancellationToken);
+        var online = await _network.IsOnlineAsync(cancellationToken);
+        var local = records.Where(trip => trip.IsPlanned && trip.IsOwnedBy(viewerUserId)
+            && trip.PlannedStartOn is { } planned
+            && TripConstants.IsWithinPlannedWindow(planned, now, TripConstants.DefaultPlannedWindowDays));
+        var server = online ? await ReadServerAsync(now, cancellationToken) : [];
         var serverIds = server.Select(option => option.TripId).ToHashSet();
+        var suppressed = records.Where(trip => trip.SyncStatus != SyncStatus.Synchronised && !trip.IsPlanned)
+            .Select(trip => trip.Id).ToHashSet();
         return
         [
-            .. server.Concat(local.Where(option => !serverIds.Contains(option.TripId)))
+            .. server.Where(option => !suppressed.Contains(option.TripId)).Concat(local
+                .Where(trip => !serverIds.Contains(trip.Id)
+                    && (!online || (trip.Origin == TripOriginEnum.Local && trip.SyncedAt is null && trip.SyncStatus != SyncStatus.Synchronised)))
+                .Select(trip => new PlannedTripOptionModel(trip.Id, trip.PlannedStartOn!.Value, trip.OwnerUserId, null, true)
+                { Title = trip.Title, PlaceName = trip.PlaceName }))
                 .OrderBy(option => option.PlannedStartOn)
                 .ThenBy(option => option.TripId)
         ];
@@ -172,55 +182,12 @@ public sealed class PlannedTripService : IPlannedTripService
             cancellationToken);
     }
 
-    private async Task<IReadOnlyList<PlannedTripOptionModel>> ReadLocalAsync(
-        Guid viewerUserId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var trips = await _tripStore.GetAllAsync(viewerUserId, cancellationToken);
-            return
-            [
-                .. trips
-                    .Where(trip => trip.IsPlanned
-                        && trip.IsOwnedBy(viewerUserId)
-                        && trip.PlannedStartOn is { } plannedStartOn
-                        && TripConstants.IsWithinPlannedWindow(plannedStartOn, now, TripConstants.DefaultPlannedWindowDays))
-                    .Select(trip => new PlannedTripOptionModel(
-                        trip.Id,
-                        trip.PlannedStartOn!.Value,
-                        trip.OwnerUserId,
-                        OrganiserName: null,
-                        IsOrganiser: true)
-                    {
-                        Title = trip.Title,
-                        PlaceName = trip.PlaceName
-                    })
-            ];
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            await _logging.LogErrorAsync("reading the local planned trips", exception, CancellationToken.None);
-            return [];
-        }
-    }
-
     private async Task<IReadOnlyList<PlannedTripOptionModel>> ReadServerAsync(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         try
         {
-            if (!await _network.IsOnlineAsync(cancellationToken))
-            {
-                return [];
-            }
-
             var options = await _tripClient.GetPlannedAsync(windowDays: null, cancellationToken);
             return
             [
@@ -239,7 +206,7 @@ public sealed class PlannedTripService : IPlannedTripService
         catch (Exception exception)
         {
             await _logging.LogErrorAsync("reading the planned trips", exception, CancellationToken.None);
-            return [];
+            throw new InvalidOperationException("Planned trip lookup failed.", exception);
         }
     }
 

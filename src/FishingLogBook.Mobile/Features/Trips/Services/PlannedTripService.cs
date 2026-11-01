@@ -57,13 +57,18 @@ public sealed class PlannedTripService(ITripStore store, ITripClient client, ITr
     {
         var lease = RequireLease();
         var now = time.GetUtcNow();
-        var local = (await store.ListAsync(lease.UserId, cancellationToken))
+        var records = await store.ListAsync(lease.UserId, cancellationToken);
+        var local = records
             .Where(trip => trip is { IsPlanned: true, CanManage: true } && IsEligible(trip.Detail.Trip.PlannedStartOn, now))
-            .Select(ToOption)
             .ToArray();
         var (server, failed) = await ReadServerAsync(now, cancellationToken);
         var serverIds = server.Select(option => option.TripId).ToHashSet();
-        IReadOnlyList<PlannedTripOptionModel> merged = [.. server.Concat(local.Where(option => !serverIds.Contains(option.TripId)))
+        var suppressed = records.Where(trip => trip.HasPendingMetadata && !trip.IsPlanned)
+            .Select(trip => trip.Detail.Trip.Id).ToHashSet();
+        var offline = !connectivity.IsOnline;
+        IReadOnlyList<PlannedTripOptionModel> merged = [.. server.Where(option => !suppressed.Contains(option.TripId))
+            .Concat(local.Where(trip => !serverIds.Contains(trip.Detail.Trip.Id)
+                && (offline || failed || (!trip.IsServerOrigin && trip.SyncedRevision == 0))).Select(ToOption))
             .OrderBy(option => option.PlannedStartOn).ThenBy(option => option.TripId)];
         return failed ? PlannedTripLookupModel.Unavailable(merged) : PlannedTripLookupModel.Succeeded(merged);
     }
@@ -125,7 +130,16 @@ public sealed class PlannedTripService(ITripStore store, ITripClient client, ITr
             return ([], false);
         }
 
-        var response = await client.ListPlannedAsync(null, cancellationToken);
+        FishingLogBook.Mobile.Api.Models.ApiResultModel<List<PlannedTripOptionDto>> response;
+        try
+        {
+            response = await client.ListPlannedAsync(null, cancellationToken);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TimeoutException
+            || exception is OperationCanceledException && !cancellationToken.IsCancellationRequested)
+        {
+            return ([], true);
+        }
         if (!response.IsSuccess)
         {
             return ([], true);

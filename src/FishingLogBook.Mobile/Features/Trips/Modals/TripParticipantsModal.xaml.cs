@@ -16,27 +16,6 @@ public partial class TripParticipantsModal : Popup<bool>
         WidthRequest = Math.Min(480, (DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density) - 40);
     }
 
-    private async void OnSearch(object? sender, EventArgs args)
-    {
-        await _viewModel.SearchAsync(CancellationToken.None);
-    }
-
-    private async void OnInvite(object? sender, EventArgs args)
-    {
-        if (sender is Button { CommandParameter: Guid userId })
-        {
-            await _viewModel.InviteAsync(userId, CancellationToken.None);
-        }
-    }
-
-    private async void OnRemove(object? sender, EventArgs args)
-    {
-        if (sender is Button { CommandParameter: Guid userId })
-        {
-            await _viewModel.ConfirmAndRemoveAsync(userId, CancellationToken.None);
-        }
-    }
-
     private async void OnDone(object? sender, EventArgs args)
     {
         if (_closing)

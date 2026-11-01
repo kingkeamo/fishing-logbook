@@ -38,7 +38,8 @@ public class BaseTripEditorTest
         IModalService? modalService = null,
         IAnglerPreferencesProvider? anglerPreferences = null,
         ITripNoteStore? noteStore = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        ITripParticipantClient? participants = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -53,6 +54,12 @@ public class BaseTripEditorTest
         context.Services.AddSingleton(Substitute.For<ITripNoteWriteService>());
         context.Services.AddSingleton(Substitute.For<ITripPhotographStore>());
         context.Services.AddSingleton(Substitute.For<ITripClient>());
+        var participantClient = participants ?? Substitute.For<ITripParticipantClient>();
+        if (participants is null)
+        {
+            participantClient.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(new TripParticipantsDto(TripId, TripParticipantConstants.Owner));
+        }
+        context.Services.AddSingleton(participantClient);
         context.Services.AddSingleton(Substitute.For<IPhotographPreparationService>());
         context.Services.AddSingleton<IMeasurementService>(new MeasurementService());
         context.Services.AddSingleton<ITimeService>(TestTimeService.WithOffset(TimeSpan.Zero));

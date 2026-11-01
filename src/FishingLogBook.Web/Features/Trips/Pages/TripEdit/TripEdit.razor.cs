@@ -1,9 +1,12 @@
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Clients;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -25,6 +28,9 @@ public partial class TripEdit : ComponentBase, IDisposable
     private bool _isLoading = true;
     private bool _loadFailed;
     private Guid _viewerUserId;
+
+    [Inject]
+    private ITripClient TripClient { get; set; } = default!;
 
     [Parameter]
     public Guid TripId { get; set; }
@@ -83,6 +89,10 @@ public partial class TripEdit : ComponentBase, IDisposable
             var ownerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
             _viewerUserId = ownerUserId;
             _trip = await TripStore.GetAsync(ownerUserId, TripId, cancellationToken);
+            if (_trip is null)
+            {
+                _trip = await LoadRemoteOwnedTripAsync(ownerUserId, cancellationToken);
+            }
             if (_trip is { } plannedOrCancelled && (plannedOrCancelled.IsPlanned || plannedOrCancelled.IsCancelled))
             {
                 Navigation.NavigateTo($"/trips/{TripId:D}/plan", replace: true);
@@ -93,6 +103,8 @@ public partial class TripEdit : ComponentBase, IDisposable
             {
                 return;
             }
+
+            await RefreshPhotographUrlsAsync(cancellationToken);
 
             _display = await TripDisplay.DescribeAsync(_trip, cancellationToken);
             _catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
@@ -112,6 +124,56 @@ public partial class TripEdit : ComponentBase, IDisposable
         {
             _isLoading = false;
         }
+    }
+
+    private async Task RefreshPhotographUrlsAsync(CancellationToken cancellationToken)
+    {
+        if (_trip is null || _trip.Photographs.Count == 0 || _trip.Photographs.Any(photo => photo.RemoteUrl is not null))
+        {
+            return;
+        }
+        try
+        {
+            var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
+            if (detail is not null)
+            {
+                var photographs = detail.Photographs.ToDictionary(photo => photo.Id);
+                _trip = _trip with
+                {
+                    Photographs = [.. _trip.Photographs.Select(photo => photo with
+                {
+                    RemoteUrl = photographs.GetValueOrDefault(photo.Id)?.Url
+                })]
+                };
+            }
+        }
+        catch (HttpRequestException exception)
+        {
+            await Logging.LogErrorAsync("refreshing trip photograph previews", exception, CancellationToken.None);
+        }
+    }
+
+    private async Task<TripModel?> LoadRemoteOwnedTripAsync(Guid viewerUserId, CancellationToken cancellationToken)
+    {
+        var detail = await TripClient.GetDetailAsync(TripId, cancellationToken);
+        if (detail is null || detail.Trip.Id != TripId || detail.Trip.OwnerUserId != viewerUserId || detail.Role != TripParticipantConstants.Owner)
+        {
+            return null;
+        }
+        var trip = detail.Trip;
+        var local = new TripModel(trip.Id, trip.OwnerUserId, trip.Status, trip.StartedOn, trip.EndedOn,
+            trip.Title, trip.PlaceName,
+            trip.Location is null ? null : new TripLocationModel(trip.Location.Latitude, trip.Location.Longitude,
+                trip.Location.AccuracyMetres, trip.Location.CapturedOn, trip.Location.Source, trip.Location.Visibility, trip.Location.ConsentVersion),
+            SyncStatus.Synchronised, DateTimeOffset.UtcNow,
+            Photographs: [.. detail.Photographs.Select(photo => new TripPhotographModel(photo.Id, trip.Id,
+                photo.ContributedByUserId, photo.ContentType, photo.AddedOn, photo.CapturedOn, SyncStatus: SyncStatus.Synchronised)
+            { RemoteUrl = photo.Url })],
+            Notes: [.. detail.Notes.Select(note => new TripNoteModel(note.Id, trip.Id, note.CreatedByUserId,
+                note.Text, note.RecordedOn, SyncStatus.Synchronised))],
+            PlannedStartOn: trip.PlannedStartOn);
+        await TripStore.SaveAsync(local, cancellationToken);
+        return local;
     }
 
     private async Task<IReadOnlyList<CatchModel>> LoadCatchesAsync(

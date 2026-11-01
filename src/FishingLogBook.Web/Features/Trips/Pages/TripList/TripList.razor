@@ -196,10 +196,10 @@
                             <MudButton Variant="@(trip.IsActive ? Variant.Filled : Variant.Outlined)"
                                        Color="Color.Primary"
                                        FullWidth="true"
-                                       Href="@(trip.HasPlannedLifecycle ? $"/trips/{trip.Id:D}/plan" : $"/trips/{trip.Id:D}")"
+                                       Href="@(trip.HasPlannedLifecycle ? $"/trips/{trip.Id:D}/plan" : trip.IsActive && trip.CanUpdate ? $"/trips/{trip.Id:D}/edit" : $"/trips/{trip.Id:D}")"
                                        StartIcon="@FishingLogBookIcons.FishingTrip"
                                        id="@($"trip-list-view-{trip.Id:D}")">
-                                @(trip.HasPlannedLifecycle ? Loc["Trip_PlanOpen"] : trip.IsActive ? Loc["Trip_Update"] : Loc["Trip_ViewTrip"])
+                                @(trip.HasPlannedLifecycle ? Loc["Trip_PlanOpen"] : trip.IsActive && trip.CanUpdate ? Loc["Trip_Update"] : Loc["Trip_ViewTrip"])
                             </MudButton>
                         </MudStack>
                     </MudPaper>

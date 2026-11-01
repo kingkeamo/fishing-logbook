@@ -57,6 +57,9 @@ public class BasePlannedTripEditorTest
         context.Services.AddSingleton(Network);
         context.Services.AddSingleton(Modals);
         context.Services.AddSingleton(Logging);
+        var participantClient = NSubstitute.Substitute.For<FishingLogBook.Web.Features.Trips.Clients.ITripParticipantClient>();
+        participantClient.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(new FishingLogBook.Shared.Dtos.TripParticipantsDto(TripId, TripParticipantConstants.Owner));
+        context.Services.AddSingleton(participantClient);
         context.Services.AddSingleton(preferences);
         context.Services.AddSingleton<ITimeService>(TestTimeService.WithOffset(TimeSpan.Zero));
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();

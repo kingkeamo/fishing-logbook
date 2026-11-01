@@ -19,6 +19,98 @@ public class WhenTestingPlannedLifecycle : BaseTripRepositoryTest
     }
 
     [Fact]
+    public async Task ItShouldConvergeAfterAnOfflineOrganiserCompletesAPlanActivatedByAnAcceptedParticipant()
+    {
+        // Arrange
+        var owner = await CreateUserAsync();
+        var guest = await CreateUserAsync();
+        var plan = NewTrip(owner, status: TripStatusEnum.Planned, plannedStartOn: PlannedStartOn, title: "Original plan");
+        (await Sut.UpsertAsync(plan, CancellationToken.None)).IsSuccess.Should().BeTrue();
+        await using var connection = await ConnectionFactory.CreateOpenConnectionAsync(CancellationToken.None);
+        await connection.ExecuteAsync("""
+            INSERT INTO tripparticipants (id, tripid, userid, invitedbyuserid, status, invitedon, respondedon)
+            VALUES (gen_random_uuid(), @TripId, @UserId, @OwnerId, 'Accepted', now(), now());
+            """, new { TripId = plan.Id, UserId = guest, OwnerId = owner });
+        var participantStart = PlannedStartOn.AddHours(2);
+        var online = await Sut.ActivateAsync(plan.ActivatedAt(participantStart), CancellationToken.None);
+        online.IsSuccess.Should().BeTrue();
+        await AddNoteAsync(plan.Id, guest);
+        await AddPhotographAsync(plan.Id, guest);
+        var offlineStart = participantStart.AddMinutes(15);
+        var offlineCompleted = NewTrip(owner, plan.Id, TripStatusEnum.Completed, offlineStart,
+            participantStart.AddHours(4), "Offline title", "Offline place", plannedStartOn: PlannedStartOn.AddDays(1));
+
+        // Act
+        var completion = await Sut.UpsertAsync(offlineCompleted, CancellationToken.None);
+        var participantReplay = await Sut.UpsertAsync(plan.ActivatedAt(participantStart), CancellationToken.None);
+        var organiserRead = (await Sut.GetSummariesForUserAsync(new GetMyTripsArgs { UserId = owner }, CancellationToken.None)).Value;
+        var participantRead = (await Sut.GetSummariesForUserAsync(new GetMyTripsArgs { UserId = guest }, CancellationToken.None)).Value;
+
+        // Assert
+        completion.IsSuccess.Should().BeTrue();
+        participantReplay.IsSuccess.Should().BeTrue();
+        completion.Value.StartedOn.Should().Be(participantStart);
+        completion.Value.PlannedStartOn.Should().Be(PlannedStartOn);
+        participantReplay.Value.Status.Should().Be(TripStatusEnum.Completed);
+        participantReplay.Value.StartedOn.Should().Be(participantStart);
+        participantReplay.Value.EndedOn.Should().Be(participantStart.AddHours(4));
+        organiserRead.Should().ContainSingle();
+        participantRead.Should().ContainSingle();
+        participantRead[0].Should().BeEquivalentTo(organiserRead[0]);
+        participantRead[0].NoteCount.Should().Be(1);
+        participantRead[0].PhotographCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ItShouldUseLastAcceptedMetadataWhileKeepingAnActivatedPlansAuthoritativeLifecycle()
+    {
+        // Arrange
+        var owner = await CreateUserAsync();
+        var plan = NewTrip(owner, status: TripStatusEnum.Planned, plannedStartOn: PlannedStartOn,
+            title: "Server title", placeName: "Server place", location: PrivateLocation());
+        await Sut.UpsertAsync(plan, CancellationToken.None);
+        var actual = PlannedStartOn.AddHours(2);
+        await Sut.ActivateAsync(plan.ActivatedAt(actual), CancellationToken.None);
+        var offline = NewTrip(owner, plan.Id, TripStatusEnum.Completed, actual.AddMinutes(15), actual.AddHours(3),
+            "Offline title", "Offline place", PrivateLocation(54, -8), PlannedStartOn.AddDays(1));
+
+        // Act
+        var result = await Sut.UpsertAsync(offline, CancellationToken.None);
+        var stored = (await Sut.GetByIdAsync(plan.Id, CancellationToken.None)).Value!;
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        stored.Title.Should().Be("Offline title");
+        stored.PlaceName.Should().Be("Offline place");
+        stored.Location.Should().BeEquivalentTo(offline.Location);
+        stored.StartedOn.Should().Be(actual);
+        stored.PlannedStartOn.Should().Be(PlannedStartOn);
+        stored.Status.Should().Be(TripStatusEnum.Completed);
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAnOfflineEndBeforeTheAuthoritativeActualStartWithoutChangingTheTrip()
+    {
+        // Arrange
+        var owner = await CreateUserAsync();
+        var plan = NewTrip(owner, status: TripStatusEnum.Planned, plannedStartOn: PlannedStartOn);
+        await Sut.UpsertAsync(plan, CancellationToken.None);
+        var actual = PlannedStartOn.AddHours(2);
+        await Sut.ActivateAsync(plan.ActivatedAt(actual), CancellationToken.None);
+        var incoming = NewTrip(owner, plan.Id, TripStatusEnum.Completed, PlannedStartOn, PlannedStartOn.AddHours(1));
+
+        // Act
+        var result = await Sut.UpsertAsync(incoming, CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors.Should().ContainSingle(error => error is TripLifecycleInvalidError);
+        var stored = (await Sut.GetByIdAsync(plan.Id, CancellationToken.None)).Value!;
+        stored.Status.Should().Be(TripStatusEnum.Active);
+        stored.StartedOn.Should().Be(actual);
+    }
+
+    [Fact]
     public async Task ItShouldRejectAPlannedRowWithoutAPlannedStartInTheDatabase()
     {
         // Arrange

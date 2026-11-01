@@ -79,18 +79,37 @@ public sealed class TripMetadataSynchroniser(ITripStore store, ITripClient clien
         {
             return OutboxOperationResultModel.Terminal("TripUnavailable");
         }
+        if (server.Status == FishingLogBook.Shared.Constants.TripConstants.Planned)
+        {
+            return OutboxOperationResultModel.Retry("TripConflict");
+        }
+        var rebased = new TripDto(server.Id, server.Status, server.StartedOn, server.EndedOn, local.Detail.Trip.Location)
+        {
+            OwnerUserId = lease.UserId,
+            PlannedStartOn = server.PlannedStartOn,
+            Title = local.Detail.Trip.Title,
+            PlaceName = local.Detail.Trip.PlaceName
+        };
+        var saved = await client.UpsertAsync(rebased, cancellationToken);
+        if (!saved.IsSuccess)
+        {
+            return OutboxApiOutcomeMapper.ToFailure(saved.Outcome);
+        }
+        var accepted = saved.Value!;
+        if (accepted.Id != server.Id || accepted.OwnerUserId != lease.UserId)
+        {
+            return OutboxOperationResultModel.Retry("InvalidTripResponse");
+        }
         var confirmed = local with
         {
             Detail = local.Detail with
             {
                 Trip = local.Detail.Trip with
                 {
-                    Status = server.Status,
-                    StartedOn = server.StartedOn,
-                    PlannedStartOn = server.PlannedStartOn,
-                    EndedOn = server.EndedOn,
-                    Title = server.Title,
-                    PlaceName = server.PlaceName
+                    Status = accepted.Status,
+                    StartedOn = accepted.StartedOn,
+                    PlannedStartOn = accepted.PlannedStartOn,
+                    EndedOn = accepted.EndedOn
                 }
             }
         };

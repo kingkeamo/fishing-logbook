@@ -127,7 +127,7 @@ public class WhenTestingRender : BaseTripEditorTest
             .Add(component => component.Trip, ActiveTrip()));
 
         // Assert
-        cut.FindAll("#trip-editor-participants").Should().BeEmpty();
+        cut.FindAll("#trip-participants-section").Should().BeEmpty();
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class WhenTestingRender : BaseTripEditorTest
             .Add(component => component.ShowParticipants, true));
 
         // Assert
-        cut.Find("#trip-editor-participants").Should().NotBeNull();
+        cut.Find("#trip-participants-section").Should().NotBeNull();
     }
 
     [Fact]

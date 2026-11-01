@@ -1491,5 +1491,5 @@
   <data name="Trip_PlannedGuests" xml:space="preserve"><value>Avec {0}</value></data>
   <data name="Trip_PlannedGuestInvited" xml:space="preserve"><value>{0} (invité)</value></data>
   <data name="Trip_PlannedUntitled" xml:space="preserve"><value>Sortie planifiée</value></data>
-  <data name="Trip_PlannedStartFailed" xml:space="preserve"><value>La sortie planifiée n'a pas pu être démarrée.</value></data>
+  <data name="Trip_PlannedStartFailed" xml:space="preserve"><value>La sortie n'a pas pu être démarrée. Vérifiez votre connexion, puis réessayez de démarrer la pêche.</value></data>
 </root>

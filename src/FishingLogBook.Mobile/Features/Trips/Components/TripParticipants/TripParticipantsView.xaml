@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:shared="clr-namespace:FishingLogBook.Shared.Dtos;assembly=FishingLogBook.Shared"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.TripParticipants.TripParticipantsView" x:DataType="vm:TripParticipantsViewModel">
+ <VerticalStackLayout Spacing="6" AutomationId="TripParticipantsSection">
+  <Label Text="{Binding Text[TripParticipants]}" Style="{StaticResource TileCaption}" AutomationId="TripParticipantsHeading" SemanticProperties.HeadingLevel="Level2" />
+  <ActivityIndicator IsVisible="{Binding IsLoading}" IsRunning="{Binding IsLoading}" HorizontalOptions="Start" />
+  <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding Participants}" AutomationId="TripParticipantChips">
+   <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:TripParticipantItemModel">
+    <VerticalStackLayout Spacing="0" Margin="0,0,8,8">
+     <HorizontalStackLayout Spacing="0">
+      <controls:ChipView Text="{Binding Name}" MaximumWidthRequest="220" SemanticProperties.Description="{Binding Status}" />
+      <Button Text="&#x00D7;" IsVisible="{Binding CanRemove}" CommandParameter="{Binding UserId}" Clicked="OnRemove"
+             Style="{StaticResource SecondaryButton}" WidthRequest="48" MinimumHeightRequest="48" Padding="0"
+             SemanticProperties.Description="{Binding Source={RelativeSource AncestorType={x:Type vm:TripParticipantsViewModel}}, Path=Text[TripRemoveParticipant]}" AutomationId="TripParticipantChipRemove" />
+     </HorizontalStackLayout>
+     <Label Text="{Binding Status}" Style="{StaticResource SecondaryText}" FontSize="11" Margin="8,0,0,0" />
+    </VerticalStackLayout>
+   </DataTemplate></BindableLayout.ItemTemplate>
+  </FlexLayout>
+  <Label Text="{Binding MessageText}" IsVisible="{Binding HasMessage}" Style="{StaticResource SecondaryText}" AutomationId="TripParticipantsInlineMessage" />
+  <Button Text="{Binding Text[TripInviteAngler]}" IsVisible="{Binding ShowInviteAction}" Style="{StaticResource SecondaryButton}"
+          Clicked="OnBeginInvite" MinimumHeightRequest="48" AutomationId="TripParticipantsInlineInvite" />
+  <VerticalStackLayout Spacing="8" IsVisible="{Binding ShowInviteSearch}" AutomationId="TripInviteSearchSection">
+   <Label Text="{Binding Text[TripInviteSearchHelp]}" Style="{StaticResource SecondaryText}" FontSize="13" />
+   <Border Style="{StaticResource InputField}">
+    <Entry Text="{Binding SearchText, Mode=TwoWay}" Placeholder="{Binding Text[TripInviteSearchLabel]}" Style="{StaticResource FieldEntry}"
+           SemanticProperties.Description="{Binding Text[TripInviteSearchLabel]}" AutomationId="TripInviteSearch" />
+   </Border>
+   <Button Text="{Binding Text[Search]}" IsEnabled="{Binding CanSearch}" Style="{StaticResource SecondaryButton}"
+           Clicked="OnSearch" MinimumHeightRequest="48" AutomationId="TripInviteSearchButton" />
+   <VerticalStackLayout BindableLayout.ItemsSource="{Binding SearchResults}" Spacing="6">
+    <BindableLayout.ItemTemplate><DataTemplate x:DataType="shared:AnglerSummaryDto">
+     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" MinimumHeightRequest="48" AutomationId="TripInviteResult">
+      <VerticalStackLayout VerticalOptions="Center">
+       <Label Text="{Binding DisplayName}" Style="{StaticResource Subheading}" FontSize="15" />
+       <Label Text="{Binding HomeRegion}" Style="{StaticResource SecondaryText}" FontSize="12" />
+      </VerticalStackLayout>
+      <Button Grid.Column="1" Text="{Binding Source={RelativeSource AncestorType={x:Type vm:TripParticipantsViewModel}}, Path=Text[TripInvite]}"
+              CommandParameter="{Binding UserId}" Clicked="OnInvite" MinimumHeightRequest="48" AutomationId="TripInviteButton" />
+     </Grid>
+    </DataTemplate></BindableLayout.ItemTemplate>
+   </VerticalStackLayout>
+   <Button Text="{Binding Text[Cancel]}" Clicked="OnEndInvite" Style="{StaticResource SecondaryButton}" AutomationId="TripInviteCancel" />
+  </VerticalStackLayout>
+  <Button Text="{Binding Text[Retry]}" IsVisible="{Binding CanRetry}" Style="{StaticResource SecondaryButton}"
+          Clicked="OnRetry" MinimumHeightRequest="48" AutomationId="TripParticipantsInlineRetry" />
+ </VerticalStackLayout>
+</ContentView>

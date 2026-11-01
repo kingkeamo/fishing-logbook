@@ -10,6 +10,57 @@ public class WhenTestingPlannedSync : BaseTripSynchroniserTest
 {
     private static readonly DateTimeOffset PlannedStart = DateTimeOffset.Parse("2026-09-12T06:30:00Z");
 
+    [Fact]
+    public async Task ItShouldKeepOfflineWorkPendingWhenTheRebasedWriteFails()
+    {
+        // Arrange
+        var store = await CreateStoreAsync(CreateTrip(status: TripConstants.Planned, title: "Offline title") with { PlannedStartOn = PlannedStart });
+        MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>()).Returns<TripDto?>(
+            _ => throw new HttpRequestException("conflict", null, System.Net.HttpStatusCode.Conflict),
+            _ => throw new HttpRequestException("unavailable", null, System.Net.HttpStatusCode.ServiceUnavailable));
+        MockTripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>()).Returns(new TripDetailDto(
+            new TripViewDto(TripId, OwnerUserId, TripConstants.Active, StartedOn) { PlannedStartOn = PlannedStart }));
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        var stored = (await store.GetAsync(OwnerUserId, TripId, CancellationToken.None))!;
+        stored.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
+        stored.Title.Should().Be("Offline title");
+        await MockTripClient.Received(2).UpsertAsync(Arg.Is<TripDto>(sent => sent.Id == TripId), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRebaseOfflineMetadataOnTheAuthoritativeCompletedLifecycleAfterAConflict()
+    {
+        // Arrange
+        var plan = CreateTrip(status: TripConstants.Planned, startedOn: PlannedStart, title: "Offline title") with { PlannedStartOn = PlannedStart };
+        var store = await CreateStoreAsync(plan);
+        var actualStart = PlannedStart.AddMinutes(10);
+        var end = actualStart.AddHours(3);
+        MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>()).Returns(
+            _ => throw new HttpRequestException("conflict", null, System.Net.HttpStatusCode.Conflict),
+            call => call.Arg<TripDto>());
+        MockTripClient.GetDetailAsync(TripId, Arg.Any<CancellationToken>()).Returns(new TripDetailDto(
+            new TripViewDto(TripId, OwnerUserId, TripConstants.Completed, actualStart, end) { PlannedStartOn = PlannedStart }));
+        var sut = CreateSut(store);
+
+        // Act
+        await sut.SynchronisePendingAsync(OwnerUserId, CancellationToken.None);
+
+        // Assert
+        var stored = (await store.GetAsync(OwnerUserId, TripId, CancellationToken.None))!;
+        stored.Status.Should().Be(TripConstants.Completed);
+        stored.StartedOn.Should().Be(actualStart);
+        stored.EndedOn.Should().Be(end);
+        stored.Title.Should().Be("Offline title");
+        stored.SyncStatus.Should().Be(SyncStatus.Synchronised);
+        await MockTripClient.Received(1).UpsertAsync(Arg.Is<TripDto>(sent => sent.Status == TripConstants.Completed
+            && sent.StartedOn == actualStart && sent.Title == "Offline title"), Arg.Any<CancellationToken>());
+    }
+
     [Theory]
     [InlineData(TripConstants.Planned)]
     [InlineData(TripConstants.Cancelled)]
@@ -94,7 +145,7 @@ public class WhenTestingPlannedSync : BaseTripSynchroniserTest
             CreateTrip(status: TripConstants.Planned, startedOn: PlannedStart) with { PlannedStartOn = PlannedStart });
         var editedStart = PlannedStart.AddDays(1);
         MockTripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>())
-            .Returns(async call =>
+            .Returns<Task<TripDto?>>(async call =>
             {
                 await store.SaveAsync(
                     CreateTrip(status: TripConstants.Planned, startedOn: editedStart) with

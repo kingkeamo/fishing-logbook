@@ -3,6 +3,7 @@ using Bunit;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Common.Modals;
+using FishingLogBook.Web.Common.Modals.AnglerPicker;
 using FishingLogBook.Web.Features.Trips.Components.PlannedTripEditor;
 using FishingLogBook.Web.Features.Trips.Modals.TripParticipants;
 using FishingLogBook.Web.Features.Trips.Models;
@@ -110,7 +111,7 @@ public class WhenTestingCancelAndInvite : BasePlannedTripEditorTest
     }
 
     [Fact]
-    public async Task ItShouldOpenTheParticipantsModalForTheTripWhenInviting()
+    public async Task ItShouldOpenTheAnglerPickerFromTheReusableParticipantsSection()
     {
         // Arrange
         using var culture = TestCulture.Use(CultureNames.English);
@@ -119,14 +120,14 @@ public class WhenTestingCancelAndInvite : BasePlannedTripEditorTest
         var cut = context.Render<PlannedTripEditor>(parameters => parameters
             .Add(editor => editor.ViewerUserId, OwnerUserId)
             .Add(editor => editor.TripId, TripId));
-        cut.WaitForAssertion(() => cut.Find("#planned-trip-invite").HasAttribute("disabled").Should().BeFalse());
+        cut.WaitForAssertion(() => cut.Find("#trip-participants-invite").HasAttribute("disabled").Should().BeFalse());
 
         // Act
-        await cut.Find("#planned-trip-invite").ClickAsync();
+        await cut.Find("#trip-participants-invite").ClickAsync();
 
         // Assert
-        await Modals.Received(1).ShowAsync<TripParticipantsModal, TripParticipantsModalModel, TripParticipantsModalResult>(
-            Arg.Is<TripParticipantsModalModel>(model => model.TripId == TripId),
+        await Modals.Received(1).ShowAsync<AnglerPickerModal, AnglerPickerModalModel, AnglerPickerModalResult>(
+            Arg.Is<AnglerPickerModalModel>(model => model.ExcludedUserIds.Count == 0),
             Arg.Any<CancellationToken>());
     }
 

@@ -91,6 +91,11 @@ public partial class TripEditor : ComponentBase
         _placeName = placeName;
     }
 
+    private async Task OnParticipantsChanged(FishingLogBook.Shared.Dtos.TripParticipantsDto participants)
+    {
+        await OnContentChanged.InvokeAsync();
+    }
+
     private async Task SaveAsync()
     {
         if (_isSaving)
@@ -129,20 +134,6 @@ public partial class TripEditor : ComponentBase
     private async Task CancelAsync()
     {
         await OnClosed.InvokeAsync();
-    }
-
-    private async Task ShowParticipantsAsync()
-    {
-        var changed = await ModalService
-            .ShowAsync<TripParticipantsModal, TripParticipantsModalModel, TripParticipantsModalResult>(
-                new TripParticipantsModalModel(Trip.Id),
-                CancellationToken.None);
-        if (changed is null)
-        {
-            return;
-        }
-
-        await OnContentChanged.InvokeAsync();
     }
 
     private async Task RemoveCatchAsync(CatchModel associated)

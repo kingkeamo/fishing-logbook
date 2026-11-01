@@ -10,13 +10,15 @@ public partial class TripEditPage : ContentPage, IQueryAttributable
     private readonly TripEditViewModel _viewModel;
     private readonly NavigationService _navigation;
     private Guid _tripId;
+    private bool _initialized;
 
-    public TripEditPage(TripEditViewModel viewModel, NavigationService navigation, ITripModalService modals)
+    public TripEditPage(TripEditViewModel viewModel, NavigationService navigation, ITripModalService modals, TripParticipantsViewModel participants)
     {
         _viewModel = viewModel;
         _navigation = navigation;
         InitializeComponent();
         BindingContext = viewModel;
+        Editor.ParticipantsSection.ViewModel = participants;
         Editor.Modals = modals;
         Editor.Changed += async (_, _) => await _viewModel.ReloadAsync(CancellationToken.None);
         Editor.RecordCatchRequested += async (_, _) => await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit, tripId: _tripId);
@@ -41,9 +43,11 @@ public partial class TripEditPage : ContentPage, IQueryAttributable
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        if (_tripId != Guid.Empty)
+        if (_tripId != Guid.Empty && !_initialized)
         {
+            _initialized = true;
             await _viewModel.LoadAsync(_tripId, CancellationToken.None);
+            await Editor.ParticipantsSection.LoadAsync(_tripId);
         }
     }
 

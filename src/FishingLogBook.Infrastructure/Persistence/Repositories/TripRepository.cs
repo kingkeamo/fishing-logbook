@@ -331,9 +331,15 @@ public sealed class TripRepository : ITripRepository
             return Result.Fail<Trip>(new TripOwnershipConflictError());
         }
 
-        return existing.CanBecome(trip.Status)
-            ? Result.Ok(trip.ReconciledWith(existing))
-            : Result.Fail<Trip>(new TripTransitionInvalidError());
+        if (!existing.CanBecome(trip.Status))
+        {
+            return Result.Fail<Trip>(new TripTransitionInvalidError());
+        }
+
+        var reconciled = trip.ReconciledWith(existing);
+        return reconciled.HasCoherentLifecycle()
+            ? Result.Ok(reconciled)
+            : Result.Fail<Trip>(new TripLifecycleInvalidError());
     }
 
     private static async Task UpsertRowAsync(

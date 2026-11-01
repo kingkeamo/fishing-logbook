@@ -25,7 +25,7 @@ public class WhenTestingRender : BasePlannedTripEditorTest
         // Assert
         cut.Find("#planned-trip-editor-title").TextContent.Should().Contain("Plan a trip");
         cut.Find("#planned-trip-save").Should().NotBeNull();
-        cut.FindAll("#planned-trip-invite").Should().BeEmpty();
+        cut.FindAll("#trip-participants-invite").Should().BeEmpty();
         cut.FindAll("#planned-trip-cancel-trip").Should().BeEmpty();
         await TripStore.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
@@ -48,9 +48,9 @@ public class WhenTestingRender : BasePlannedTripEditorTest
         {
             cut.Find("#planned-trip-title").GetAttribute("value").Should().Be("Corrib");
             cut.Find("#planned-trip-when").GetAttribute("value").Should().Be("2026-09-12T06:30");
-            cut.Find("#planned-trip-invite").HasAttribute("disabled").Should().BeFalse();
+            cut.Find("#trip-participants-invite").HasAttribute("disabled").Should().BeFalse();
         });
-        cut.FindAll("#planned-trip-invite-hint").Should().BeEmpty();
+        cut.FindAll("#trip-participants-unavailable").Should().BeEmpty();
         cut.Find("#planned-trip-cancel-trip").Should().NotBeNull();
     }
 
@@ -69,8 +69,8 @@ public class WhenTestingRender : BasePlannedTripEditorTest
             .Add(editor => editor.TripId, TripId));
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#planned-trip-invite").HasAttribute("disabled").Should().BeTrue());
-        cut.Find("#planned-trip-invite-hint").Should().NotBeNull();
+        cut.WaitForAssertion(() => cut.FindAll("#trip-participants-invite").Should().BeEmpty());
+        cut.Find("#trip-participants-unavailable").Should().NotBeNull();
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class WhenTestingRender : BasePlannedTripEditorTest
             .Add(editor => editor.TripId, TripId));
 
         // Assert
-        cut.WaitForAssertion(() => cut.Find("#planned-trip-invite").HasAttribute("disabled").Should().BeTrue());
+        cut.WaitForAssertion(() => cut.FindAll("#trip-participants-invite").Should().BeEmpty());
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class WhenTestingRender : BasePlannedTripEditorTest
         cut.WaitForAssertion(() => cut.Find("#planned-trip-cancelled").Should().NotBeNull());
         cut.FindAll("#planned-trip-save").Should().BeEmpty();
         cut.FindAll("#planned-trip-cancel-trip").Should().BeEmpty();
-        cut.FindAll("#planned-trip-invite").Should().BeEmpty();
+        cut.FindAll("#trip-participants-invite").Should().BeEmpty();
     }
 
     [Fact]

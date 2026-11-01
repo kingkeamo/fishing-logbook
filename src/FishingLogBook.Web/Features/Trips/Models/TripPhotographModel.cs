@@ -14,6 +14,9 @@ public sealed record TripPhotographModel(
     SyncStatus SyncStatus = SyncStatus.SavedLocally,
     DateTimeOffset? SyncedAt = null)
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? RemoteUrl { get; init; }
+
     public DateTimeOffset OrderedOn
     {
         get

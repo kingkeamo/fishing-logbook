@@ -24,6 +24,7 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
     private Guid? _activeTripId;
     private bool _isLoaded;
     private bool _isBusy;
+    private bool _startFailed;
     private DateTimeOffset _refreshedOn = DateTimeOffset.MinValue;
 
     public ActiveTripBannerViewModel(
@@ -56,6 +57,10 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
     public bool ShowAction => CanStart;
 
     public string ActionText => Text["TripStartFishing"];
+
+    public bool HasError => _startFailed;
+
+    public string ErrorText => _startFailed ? Text["TripPlannedStartFailed"] : string.Empty;
 
     public async Task RefreshAsync(bool force, CancellationToken cancellationToken)
     {
@@ -118,6 +123,7 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
         }
 
         _isBusy = true;
+        _startFailed = false;
         Notify();
         try
         {
@@ -129,10 +135,11 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
 
             return started;
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             _isBusy = false;
             await RefreshAsync(force: true, cancellationToken);
+            _startFailed = true;
             return null;
         }
         finally

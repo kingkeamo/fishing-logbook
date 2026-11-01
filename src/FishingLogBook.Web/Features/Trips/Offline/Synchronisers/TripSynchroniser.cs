@@ -163,7 +163,11 @@ public sealed class TripSynchroniser : ITripSynchroniser
             cancellationToken);
 
         var sent = ToDto(trip);
-        var accepted = await _client.UpsertAsync(sent, cancellationToken);
+        var accepted = await UpsertOrReconcileAsync(ownerUserId, sent, cancellationToken);
+        if (accepted is null)
+        {
+            throw new InvalidOperationException("The trip response was empty.");
+        }
         var current = await _store.GetAsync(ownerUserId, trip.Id, cancellationToken);
         if (current is null)
         {
@@ -209,6 +213,35 @@ public sealed class TripSynchroniser : ITripSynchroniser
             exception: null,
             cancellationToken);
         return true;
+    }
+
+    private async Task<TripDto?> UpsertOrReconcileAsync(Guid ownerUserId, TripDto sent, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _client.UpsertAsync(sent, cancellationToken);
+        }
+        catch (HttpRequestException exception) when (exception.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            var detail = await _client.GetDetailAsync(sent.Id, cancellationToken);
+            if (detail is null || detail.Trip.Id != sent.Id || detail.Trip.OwnerUserId != ownerUserId)
+            {
+                throw;
+            }
+            if (detail.Trip.Status == TripConstants.Planned)
+            {
+                throw;
+            }
+
+            var server = detail.Trip;
+            return await _client.UpsertAsync(sent with
+            {
+                Status = server.Status,
+                StartedOn = server.StartedOn,
+                PlannedStartOn = server.PlannedStartOn,
+                EndedOn = server.EndedOn
+            }, cancellationToken);
+        }
     }
 
     private async Task MarkFailedAsync(

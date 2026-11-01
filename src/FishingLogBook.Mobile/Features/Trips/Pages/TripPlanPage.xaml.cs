@@ -1,4 +1,3 @@
-using FishingLogBook.Mobile.Features.Trips.Modals;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Navigation;
 
@@ -8,16 +7,16 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
 {
     private readonly TripPlanViewModel _viewModel;
     private readonly NavigationService _navigation;
-    private readonly ITripModalService _modals;
     private Guid? _tripId;
+    private bool _initialized;
 
-    public TripPlanPage(TripPlanViewModel viewModel, NavigationService navigation, ITripModalService modals)
+    public TripPlanPage(TripPlanViewModel viewModel, NavigationService navigation, TripParticipantsViewModel participants)
     {
         _viewModel = viewModel;
         _navigation = navigation;
-        _modals = modals;
         InitializeComponent();
         BindingContext = viewModel;
+        Participants.ViewModel = participants;
         Location.LocationSelected += (_, name) => _viewModel.SelectLocation(name);
     }
 
@@ -32,7 +31,14 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_initialized)
+        {
+            return;
+        }
+        _initialized = true;
         await _viewModel.LoadAsync(_tripId, CancellationToken.None);
+        Participants.ViewModel!.AllowManagement = _viewModel.CanCancelTrip;
+        await Participants.LoadAsync(_viewModel.TripId ?? Guid.Empty);
     }
 
     private async void OnBack(object? sender, EventArgs args)
@@ -56,11 +62,4 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
         }
     }
 
-    private async void OnInvite(object? sender, EventArgs args)
-    {
-        if (_viewModel.TripId is { } tripId)
-        {
-            await _modals.ShowParticipantsAsync(tripId);
-        }
-    }
 }

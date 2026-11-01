@@ -117,7 +117,12 @@ public sealed class Trip
             return Copy(Status, StartedOn, EndedOn, existing.PlannedStartOn ?? PlannedStartOn);
         }
 
-        var keepsActualStart = IsActive && existing.IsActive && existing.PlannedStartOn is not null;
+        if (existing.Status == TripStatusEnum.Completed && existing.PlannedStartOn is not null)
+        {
+            return Copy(TripStatusEnum.Completed, existing.StartedOn, existing.EndedOn, existing.PlannedStartOn);
+        }
+
+        var keepsActualStart = existing.IsActive && existing.PlannedStartOn is not null;
         return Copy(
             Status,
             keepsActualStart ? existing.StartedOn : StartedOn,

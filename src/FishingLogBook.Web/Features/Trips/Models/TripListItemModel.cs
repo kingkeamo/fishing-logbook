@@ -20,6 +20,8 @@ public sealed record TripListItemModel(
 
     public bool IsShared { get; init; }
 
+    public bool CanUpdate { get; init; } = true;
+
     public DateTimeOffset? PlannedStartOn { get; init; }
 
     public bool IsPlanned

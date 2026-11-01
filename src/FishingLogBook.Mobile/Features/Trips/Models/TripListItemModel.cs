@@ -16,7 +16,8 @@ public sealed record TripListItemModel(
     string SharedText,
     string PendingText,
     bool HasPlannedLifecycle = false,
-    string PlannedStatusText = "")
+    string PlannedStatusText = "",
+    bool CanUpdate = true)
 {
     public bool HasTitle => !string.IsNullOrWhiteSpace(Title);
 

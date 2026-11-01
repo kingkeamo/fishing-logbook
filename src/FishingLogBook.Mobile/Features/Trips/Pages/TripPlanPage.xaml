@@ -3,6 +3,7 @@
  xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
  xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
  xmlns:locationPicker="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripLocationPicker"
+ xmlns:participants="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripParticipants"
  x:Class="FishingLogBook.Mobile.Features.Trips.Pages.TripPlanPage"
  x:DataType="vm:TripPlanViewModel" Title="{Binding HeadingText}" Shell.NavBarIsVisible="False" Shell.TabBarIsVisible="False"
  BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
@@ -33,6 +34,7 @@
       </VerticalStackLayout>
       <locationPicker:TripLocationPickerView x:Name="Location" Options="{Binding LocationOptions}" PlaceName="{Binding EditPlace, Mode=TwoWay}"
         Heading="{Binding Text[TripFishingLocation]}" OtherText="{Binding Text[TripOtherLocation]}" ClearText="{Binding Text[TripClearLocation]}" />
+      <participants:TripParticipantsView x:Name="Participants" />
       <VerticalStackLayout Spacing="4">
        <Label Text="{Binding Text[TripPlanDate]}" Style="{StaticResource TileCaption}" />
        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
@@ -43,9 +45,6 @@
       <Label Text="{Binding MessageText}" IsVisible="{Binding HasMessage}"
              TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripPlanMessage" />
       <Button Text="{Binding Text[TripPlanSave]}" IsVisible="{Binding CanEdit}" IsEnabled="{Binding CanSave}" Clicked="OnSave" MinimumHeightRequest="48" AutomationId="TripPlanSave" />
-      <Button Text="{Binding Text[TripInviteAngler]}" IsVisible="{Binding CanCancelTrip}" IsEnabled="{Binding CanInvite}" Style="{StaticResource SecondaryButton}"
-              Clicked="OnInvite" MinimumHeightRequest="48" AutomationId="TripPlanInvite" />
-      <Label Text="{Binding Text[TripPlanInviteHint]}" IsVisible="{Binding ShowInviteHint}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="TripPlanInviteHint" />
       <Button Text="{Binding Text[TripPlanCancelTrip]}" IsVisible="{Binding CanCancelTrip}" Style="{StaticResource SecondaryButton}"
               Clicked="OnCancelTrip" MinimumHeightRequest="48" AutomationId="TripPlanCancelTrip" />
      </VerticalStackLayout>

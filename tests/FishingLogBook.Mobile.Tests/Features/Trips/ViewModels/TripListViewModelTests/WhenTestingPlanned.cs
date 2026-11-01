@@ -9,6 +9,23 @@ namespace FishingLogBook.Mobile.Tests.Features.Trips.ViewModels.TripListViewMode
 
 public sealed class WhenTestingPlanned : BaseTripListViewModelTest
 {
+    [Theory]
+    [InlineData(TripParticipantConstants.Owner, MobileRouteEnum.TripEdit, "Update trip")]
+    [InlineData(TripParticipantConstants.Participant, MobileRouteEnum.TripDetail, "View trip")]
+    public async Task ItShouldRouteTheActiveTripActionAccordingToTheViewersRole(string role, MobileRouteEnum expectedRoute, string expectedLabel)
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        ServeHistory(trips: Summary(id, TripConstants.Active) with { Role = role });
+
+        // Act
+        await Sut.LoadAsync(CancellationToken.None);
+
+        // Assert
+        Sut.RouteFor(id).Should().Be(expectedRoute);
+        Sut.Trips.Single().ActionText.Should().Be(expectedLabel);
+        await MockTrips.Received(1).LoadAsync(Arg.Any<CancellationToken>());
+    }
     [Fact]
     public async Task ItShouldRouteAnOrdinaryTripToItsDetail()
     {
@@ -91,7 +108,7 @@ public sealed class WhenTestingPlanned : BaseTripListViewModelTest
         // Assert
         id.Should().BeNull();
         Sut.HasActionFailure.Should().BeTrue();
-        Sut.ActionFailureText.Should().Be("The planned trip could not be started.");
+        Sut.ActionFailureText.Should().Be("The trip could not be started. Check your connection and try Start fishing again.");
         await MockTrips.Received(2).LoadAsync(Arg.Any<CancellationToken>());
     }
 }

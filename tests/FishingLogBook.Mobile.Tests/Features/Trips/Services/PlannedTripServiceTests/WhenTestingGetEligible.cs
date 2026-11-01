@@ -7,6 +7,46 @@ public sealed class WhenTestingGetEligible : BasePlannedTripServiceTest
 {
     private static readonly Guid ServerTripId = Guid.Parse("44444444-4444-4444-4444-444444444444");
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ItShouldNotOfferAPreviouslySyncedPlanMissingFromTheServerEvenWithOfflineEdits(bool editLocally)
+    {
+        // Arrange
+        var plan = await Sut.PlanAsync("Corrib", null, Now, CancellationToken.None);
+        await Database.ExecuteInTransactionAsync((connection, transaction, token) =>
+            TripStore.ConfirmAsync(connection, transaction, plan, token), CancellationToken.None);
+        if (editLocally)
+        {
+            plan = await TripStore.GetAsync(OwnerUserId, plan.Detail.Trip.Id, CancellationToken.None);
+            await Sut.UpdatePlanAsync(plan!, "Offline title", null, Now, CancellationToken.None);
+        }
+
+        // Act
+        var result = await Sut.GetEligibleAsync(CancellationToken.None);
+
+        // Assert
+        result.Failed.Should().BeFalse();
+        result.Options.Should().BeEmpty();
+        (await TripStore.GetAsync(OwnerUserId, plan!.Detail.Trip.Id, CancellationToken.None)).Should().NotBeNull();
+        await MockClient.Received(1).ListPlannedAsync(null, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReportAnOnlineTransportExceptionAsALookupFailure()
+    {
+        // Arrange
+        MockClient.ListPlannedAsync(null, Arg.Any<CancellationToken>())
+            .Returns<Task<FishingLogBook.Mobile.Api.Models.ApiResultModel<List<FishingLogBook.Shared.Dtos.PlannedTripOptionDto>>>>(_ => throw new HttpRequestException());
+
+        // Act
+        var result = await Sut.GetEligibleAsync(CancellationToken.None);
+
+        // Assert
+        result.Failed.Should().BeTrue();
+        await MockClient.Received(1).ListPlannedAsync(null, Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task ItShouldRejectWithoutASignedInAccount()
     {

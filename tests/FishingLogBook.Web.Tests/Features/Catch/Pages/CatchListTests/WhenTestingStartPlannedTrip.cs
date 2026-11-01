@@ -22,6 +22,27 @@ public class WhenTestingStartPlannedTrip : BaseCatchListTest
     private static readonly DateTimeOffset PlannedStart = DateTimeOffset.Parse("2026-09-12T06:30:00Z");
 
     [Fact]
+    public async Task ItShouldShowAnErrorAndNeverStartANewTripWhenEligibilityFails()
+    {
+        // Arrange
+        var activeTrip = ActiveTripService();
+        var planned = PlannedTrips();
+        planned.GetEligibleAsync(OwnerUserId, Arg.Any<CancellationToken>()).ThrowsAsync(new InvalidOperationException("lookup"));
+        var modals = Substitute.For<IModalService>();
+        await using var context = CreateContext(EmptyStore(), modalService: modals, plannedTrips: planned);
+        context.Services.AddSingleton(activeTrip);
+        var cut = context.Render<CatchList>();
+        cut.WaitForAssertion(() => cut.Find("#trip-start-link").Should().NotBeNull());
+
+        // Act
+        await cut.Find("#trip-start-link").ClickAsync();
+
+        // Assert
+        await activeTrip.DidNotReceive().StartAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await modals.Received(1).ShowMessageAsync(Arg.Is<MessageModalModel>(message => message.Severity == ModalSeverity.Error), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldStartANewTripWithoutAModalWhenNothingIsPlanned()
     {
         // Arrange
@@ -147,7 +168,7 @@ public class WhenTestingStartPlannedTrip : BaseCatchListTest
 
         // Assert
         await modals.Received(1).ShowMessageAsync(
-            Arg.Is<MessageModalModel>(model => model.Message == "The planned trip could not be started."
+            Arg.Is<MessageModalModel>(model => model.Message == "The trip could not be started. Check your connection and try Start fishing again."
                 && model.Severity == ModalSeverity.Error),
             Arg.Any<CancellationToken>());
         await logging.Received(1).LogErrorAsync("starting a planned trip", failure, Arg.Any<CancellationToken>());
