@@ -186,6 +186,7 @@ public sealed class AuthorizedApiClient
             HttpStatusCode.BadRequest => ApiOutcomeEnum.ValidationFailed,
             HttpStatusCode.Unauthorized => ApiOutcomeEnum.SessionExpired,
             HttpStatusCode.Forbidden => ApiOutcomeEnum.Forbidden,
+            HttpStatusCode.Conflict => ApiOutcomeEnum.Conflict,
             HttpStatusCode.NotFound when distinguishNotFound => ApiOutcomeEnum.NotFound,
             HttpStatusCode.RequestTimeout => ApiOutcomeEnum.Unavailable,
             _ when (int)statusCode >= 500 => ApiOutcomeEnum.ServerError,

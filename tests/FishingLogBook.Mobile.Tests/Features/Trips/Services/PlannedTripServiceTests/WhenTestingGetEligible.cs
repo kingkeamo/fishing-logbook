@@ -21,6 +21,52 @@ public sealed class WhenTestingGetEligible : BasePlannedTripServiceTest
     }
 
     [Fact]
+    public async Task ItShouldReportASuccessfulEmptyLookupAsNotFailed()
+    {
+        // Arrange
+        ServePlanned();
+
+        // Act
+        var lookup = await Sut.GetEligibleAsync(CancellationToken.None);
+
+        // Assert
+        lookup.Failed.Should().BeFalse();
+        lookup.Options.Should().BeEmpty();
+        await MockClient.Received(1).ListPlannedAsync(null, Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(FishingLogBook.Mobile.Api.Enums.ApiOutcomeEnum.Unavailable)]
+    [InlineData(FishingLogBook.Mobile.Api.Enums.ApiOutcomeEnum.ServerError)]
+    [InlineData(FishingLogBook.Mobile.Api.Enums.ApiOutcomeEnum.SessionExpired)]
+    public async Task ItShouldReportAFailedLookupWhenOnlineAndTheServerReadFails(FishingLogBook.Mobile.Api.Enums.ApiOutcomeEnum outcome)
+    {
+        // Arrange
+        MockClient.ListPlannedAsync(Arg.Any<int?>(), Arg.Any<CancellationToken>())
+            .Returns(FishingLogBook.Mobile.Api.Models.ApiResultModel<List<FishingLogBook.Shared.Dtos.PlannedTripOptionDto>>.Failed(outcome));
+
+        // Act
+        var lookup = await Sut.GetEligibleAsync(CancellationToken.None);
+
+        // Assert
+        lookup.Failed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ItShouldNotReportOfflineAsAFailedLookup()
+    {
+        // Arrange
+        MockConnectivity.IsOnline.Returns(false);
+
+        // Act
+        var lookup = await Sut.GetEligibleAsync(CancellationToken.None);
+
+        // Assert
+        lookup.Failed.Should().BeFalse();
+        lookup.Options.Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ItShouldNotCallTheServerWhenOfflineAndStillOfferLocalPlans()
     {
         // Arrange
@@ -28,7 +74,7 @@ public sealed class WhenTestingGetEligible : BasePlannedTripServiceTest
         var plan = await Sut.PlanAsync("Corrib", null, Now.AddHours(5), CancellationToken.None);
 
         // Act
-        var result = await Sut.GetEligibleAsync(CancellationToken.None);
+        var result = (await Sut.GetEligibleAsync(CancellationToken.None)).Options;
 
         // Assert
         result.Should().ContainSingle(option => option.TripId == plan.Detail.Trip.Id && option.IsOrganiser);
@@ -43,10 +89,11 @@ public sealed class WhenTestingGetEligible : BasePlannedTripServiceTest
         var plan = await Sut.PlanAsync("Corrib", null, Now, CancellationToken.None);
 
         // Act
-        var result = await Sut.GetEligibleAsync(CancellationToken.None);
+        var lookup = await Sut.GetEligibleAsync(CancellationToken.None);
 
         // Assert
-        result.Should().ContainSingle(option => option.TripId == plan.Detail.Trip.Id);
+        lookup.Failed.Should().BeTrue();
+        lookup.Options.Should().ContainSingle(option => option.TripId == plan.Detail.Trip.Id);
     }
 
     [Theory]
@@ -61,7 +108,7 @@ public sealed class WhenTestingGetEligible : BasePlannedTripServiceTest
         ServePlanned(ServerOption(ServerTripId, Now.AddHours(hours)));
 
         // Act
-        var result = await Sut.GetEligibleAsync(CancellationToken.None);
+        var result = (await Sut.GetEligibleAsync(CancellationToken.None)).Options;
 
         // Assert
         result.Count.Should().Be(expected ? 2 : 0);
@@ -75,11 +122,11 @@ public sealed class WhenTestingGetEligible : BasePlannedTripServiceTest
         await Sut.CancelPlanAsync(cancelled, CancellationToken.None);
         var activated = await Sut.PlanAsync("Activated", null, Now, CancellationToken.None);
         await Sut.ActivateAsync(
-            (await Sut.GetEligibleAsync(CancellationToken.None)).Single(option => option.TripId == activated.Detail.Trip.Id),
+            (await Sut.GetEligibleAsync(CancellationToken.None)).Options.Single(option => option.TripId == activated.Detail.Trip.Id),
             CancellationToken.None);
 
         // Act
-        var result = await Sut.GetEligibleAsync(CancellationToken.None);
+        var result = (await Sut.GetEligibleAsync(CancellationToken.None)).Options;
 
         // Assert
         result.Should().BeEmpty();
@@ -95,7 +142,7 @@ public sealed class WhenTestingGetEligible : BasePlannedTripServiceTest
             ServerOption(ServerTripId, Now.AddHours(2)));
 
         // Act
-        var result = await Sut.GetEligibleAsync(CancellationToken.None);
+        var result = (await Sut.GetEligibleAsync(CancellationToken.None)).Options;
 
         // Assert
         result.Select(option => option.TripId).Should().Equal(ServerTripId, later.Detail.Trip.Id);

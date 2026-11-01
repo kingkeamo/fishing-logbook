@@ -1,10 +1,12 @@
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Trips.Models;
+using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.Localization;
 
 namespace FishingLogBook.Mobile.Features.Trips.Services;
 
 public sealed class TripStartService(ITripService trips, IPlannedTripService plannedTrips, IPlannedTripChooser chooser,
-    IAnglerPreferencesService preferences) : ITripStartService
+    IAnglerPreferencesService preferences, InteractionService interactions, UiTextService text) : ITripStartService
 {
     public async Task<Guid?> StartAsync(CancellationToken cancellationToken)
     {
@@ -27,19 +29,18 @@ public sealed class TripStartService(ITripService trips, IPlannedTripService pla
 
     private async Task<PlannedTripChoiceModel> ChooseAsync(CancellationToken cancellationToken)
     {
-        var eligible = await ReadEligibleAsync(cancellationToken);
-        return eligible.Count == 0 ? PlannedTripChoiceModel.StartNew : await chooser.ChoosePlannedTripAsync(eligible);
-    }
+        var lookup = await plannedTrips.GetEligibleAsync(cancellationToken);
+        while (lookup.Failed)
+        {
+            if (!await interactions.ConfirmAsync(new DialogRequest(
+                    text["TripPlannedLookupFailedTitle"], text["TripPlannedLookupFailed"], text["Retry"], text["Cancel"]), cancellationToken))
+            {
+                return PlannedTripChoiceModel.Dismissed;
+            }
 
-    private async Task<IReadOnlyList<PlannedTripOptionModel>> ReadEligibleAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await plannedTrips.GetEligibleAsync(cancellationToken);
+            lookup = await plannedTrips.GetEligibleAsync(cancellationToken);
         }
-        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or IOException)
-        {
-            return [];
-        }
+
+        return lookup.Options.Count == 0 ? PlannedTripChoiceModel.StartNew : await chooser.ChoosePlannedTripAsync(lookup.Options);
     }
 }

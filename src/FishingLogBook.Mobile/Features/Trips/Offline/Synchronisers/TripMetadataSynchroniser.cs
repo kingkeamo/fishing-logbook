@@ -1,9 +1,11 @@
+using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Common.Offline.Mappers;
 using FishingLogBook.Mobile.Common.Offline.Models;
 using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Trips.Clients;
+using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Mobile.Features.Trips.Offline.Stores;
 using FishingLogBook.Shared.Dtos;
 
@@ -33,6 +35,10 @@ public sealed class TripMetadataSynchroniser(ITripStore store, ITripClient clien
             PlaceName = trip.PlaceName
         };
         var response = await client.UpsertAsync(sent, cancellationToken);
+        if (response.Outcome == ApiOutcomeEnum.Conflict)
+        {
+            return await ReconcileWithServerAsync(local, lease, cancellationToken);
+        }
         if (!response.IsSuccess)
         {
             return OutboxApiOutcomeMapper.ToFailure(response.Outcome);
@@ -52,6 +58,39 @@ public sealed class TripMetadataSynchroniser(ITripStore store, ITripClient clien
                     StartedOn = accepted.StartedOn,
                     PlannedStartOn = accepted.PlannedStartOn,
                     EndedOn = accepted.EndedOn
+                }
+            }
+        };
+        return OutboxOperationResultModel.Completed((connection, transaction, token) =>
+            store.ConfirmAsync(connection, transaction, confirmed, token));
+    }
+
+    private async Task<OutboxOperationResultModel> ReconcileWithServerAsync(LocalTripRecordModel local, AccountSessionLeaseModel lease, CancellationToken cancellationToken)
+    {
+        var response = await client.GetAsync(local.Detail.Trip.Id, cancellationToken);
+        if (!response.IsSuccess)
+        {
+            return response.Outcome == ApiOutcomeEnum.NotFound
+                ? OutboxOperationResultModel.Retry("TripConflict")
+                : OutboxApiOutcomeMapper.ToFailure(response.Outcome);
+        }
+        var server = response.Value!.Trip;
+        if (server.Id != local.Detail.Trip.Id || server.OwnerUserId != lease.UserId)
+        {
+            return OutboxOperationResultModel.Terminal("TripUnavailable");
+        }
+        var confirmed = local with
+        {
+            Detail = local.Detail with
+            {
+                Trip = local.Detail.Trip with
+                {
+                    Status = server.Status,
+                    StartedOn = server.StartedOn,
+                    PlannedStartOn = server.PlannedStartOn,
+                    EndedOn = server.EndedOn,
+                    Title = server.Title,
+                    PlaceName = server.PlaceName
                 }
             }
         };

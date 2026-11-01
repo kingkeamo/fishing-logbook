@@ -6,6 +6,7 @@ using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Constants;
@@ -35,8 +36,8 @@ public abstract class BaseTripListViewModelTest
         MockTrips.LoadAsync(Arg.Any<CancellationToken>()).Returns(new TripHistoryModel([], new HashSet<Guid>(), false));
         MockParticipants.ListInvitationsAsync(Arg.Any<CancellationToken>())
             .Returns(FishingLogBook.Mobile.Api.Models.ApiResultModel<List<TripInvitationDto>>.Succeeded([]));
-        MockPlanned.GetEligibleAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<PlannedTripOptionModel>());
-        Sut = new TripListViewModel(MockTrips, MockParticipants, new TripStartService(MockTrips, MockPlanned, MockChooser, MockPreferences), MockConnectivity, Text, new FixedTimeProvider(Now));
+        MockPlanned.GetEligibleAsync(Arg.Any<CancellationToken>()).Returns(PlannedTripLookupModel.Succeeded([]));
+        Sut = new TripListViewModel(MockTrips, MockParticipants, new TripStartService(MockTrips, MockPlanned, MockChooser, MockPreferences, new InteractionService(Substitute.For<IInteractionPresenter>(), Text), Text), MockConnectivity, Text, new FixedTimeProvider(Now));
     }
 
     protected static TripSummaryDto Summary(Guid id, string status = TripConstants.Active, string role = TripParticipantConstants.Owner,

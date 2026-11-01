@@ -9,5 +9,6 @@ public enum ApiOutcomeEnum
     Unavailable = 4,
     ServerError = 5,
     InvalidResponse = 6,
-    NotFound = 7
+    NotFound = 7,
+    Conflict = 8
 }

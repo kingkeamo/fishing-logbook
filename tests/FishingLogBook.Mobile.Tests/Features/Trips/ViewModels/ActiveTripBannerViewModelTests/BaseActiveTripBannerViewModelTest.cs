@@ -6,6 +6,7 @@ using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Navigation;
 using FishingLogBook.Mobile.Tests.Support;
@@ -33,8 +34,8 @@ public abstract class BaseActiveTripBannerViewModelTest
     protected BaseActiveTripBannerViewModelTest()
     {
         MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns((AnglerPreferencesModel?)null);
-        MockPlanned.GetEligibleAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<PlannedTripOptionModel>());
-        Sut = new ActiveTripBannerViewModel(MockTrips, new TripStartService(MockTrips, MockPlanned, MockChooser, MockPreferences), MockSession, new NavigationService(MockNavigator), Text, Clock);
+        MockPlanned.GetEligibleAsync(Arg.Any<CancellationToken>()).Returns(PlannedTripLookupModel.Succeeded([]));
+        Sut = new ActiveTripBannerViewModel(MockTrips, new TripStartService(MockTrips, MockPlanned, MockChooser, MockPreferences, new InteractionService(Substitute.For<IInteractionPresenter>(), Text), Text), MockSession, new NavigationService(MockNavigator), Text, Clock);
     }
 
     protected static TripSummaryDto Summary(Guid id, string status = TripConstants.Active, string role = TripParticipantConstants.Owner)

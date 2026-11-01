@@ -539,4 +539,6 @@
   <data name="TripPlannedGuestInvited" xml:space="preserve"><value>{0} (invited)</value></data>
   <data name="TripPlannedUntitled" xml:space="preserve"><value>Planned trip</value></data>
   <data name="TripPlannedStartFailed" xml:space="preserve"><value>The planned trip could not be started.</value></data>
+  <data name="TripPlannedLookupFailedTitle" xml:space="preserve"><value>Planned trips unavailable</value></data>
+  <data name="TripPlannedLookupFailed" xml:space="preserve"><value>We could not check for planned trips, so no trip was started. Try again?</value></data>
 </root>

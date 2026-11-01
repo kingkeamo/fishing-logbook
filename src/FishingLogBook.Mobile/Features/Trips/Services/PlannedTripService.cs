@@ -53,7 +53,7 @@ public sealed class PlannedTripService(ITripStore store, ITripClient client, ITr
         return await SaveAsync(lease, trip, trip.Detail.Trip with { Status = TripConstants.Cancelled }, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<PlannedTripOptionModel>> GetEligibleAsync(CancellationToken cancellationToken)
+    public async Task<PlannedTripLookupModel> GetEligibleAsync(CancellationToken cancellationToken)
     {
         var lease = RequireLease();
         var now = time.GetUtcNow();
@@ -61,10 +61,11 @@ public sealed class PlannedTripService(ITripStore store, ITripClient client, ITr
             .Where(trip => trip is { IsPlanned: true, CanManage: true } && IsEligible(trip.Detail.Trip.PlannedStartOn, now))
             .Select(ToOption)
             .ToArray();
-        var server = await ReadServerAsync(now, cancellationToken);
+        var (server, failed) = await ReadServerAsync(now, cancellationToken);
         var serverIds = server.Select(option => option.TripId).ToHashSet();
-        return [.. server.Concat(local.Where(option => !serverIds.Contains(option.TripId)))
+        IReadOnlyList<PlannedTripOptionModel> merged = [.. server.Concat(local.Where(option => !serverIds.Contains(option.TripId)))
             .OrderBy(option => option.PlannedStartOn).ThenBy(option => option.TripId)];
+        return failed ? PlannedTripLookupModel.Unavailable(merged) : PlannedTripLookupModel.Succeeded(merged);
     }
 
     public async Task<Guid> ActivateAsync(PlannedTripOptionModel option, CancellationToken cancellationToken)
@@ -117,20 +118,20 @@ public sealed class PlannedTripService(ITripStore store, ITripClient client, ITr
         return saved with { Revision = current.Revision + 1, SyncedRevision = current.SyncedRevision };
     }
 
-    private async Task<IReadOnlyList<PlannedTripOptionModel>> ReadServerAsync(DateTimeOffset now, CancellationToken cancellationToken)
+    private async Task<(IReadOnlyList<PlannedTripOptionModel> Options, bool Failed)> ReadServerAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
         if (!connectivity.IsOnline)
         {
-            return [];
+            return ([], false);
         }
 
         var response = await client.ListPlannedAsync(null, cancellationToken);
         if (!response.IsSuccess)
         {
-            return [];
+            return ([], true);
         }
 
-        return [.. response.Value!.Where(option => IsEligible(option.PlannedStartOn, now)).Select(ToOption)];
+        return ([.. response.Value!.Where(option => IsEligible(option.PlannedStartOn, now)).Select(ToOption)], false);
     }
 
     private static bool IsEligible(DateTimeOffset? plannedStartOn, DateTimeOffset now)
