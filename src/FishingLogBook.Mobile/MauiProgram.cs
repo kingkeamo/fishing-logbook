@@ -253,9 +253,7 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<TripListViewModel>();
         builder.Services.AddTransient<TripDetailViewModel>();
         builder.Services.AddTransient<TripEditViewModel>();
-        builder.Services.AddTransient<TripNoteEditorViewModel>();
-        builder.Services.AddTransient<TripCatchPickerViewModel>();
-        builder.Services.AddTransient<TripParticipantsViewModel>();
+        builder.Services.AddTripModalViewModels();
         builder.Services.AddTransient<ITripModalService, TripModalService>();
         builder.Services.AddSingleton<ITripPhotographService, TripPhotographService>();
         builder.Services.AddSingleton<ITripTimelineService, TripTimelineService>();
