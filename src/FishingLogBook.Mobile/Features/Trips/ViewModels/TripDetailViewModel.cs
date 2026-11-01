@@ -76,6 +76,8 @@ public sealed class TripDetailViewModel : INotifyPropertyChanged
 
     public LocalTripRecordModel? Trip => _trip;
 
+    public bool IsPlannedLifecycle => _trip is { HasPlannedLifecycle: true };
+
     public Guid? TripId => _trip?.Detail.Trip.Id;
 
     public bool IsLoading

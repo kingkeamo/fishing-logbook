@@ -217,6 +217,15 @@ public class WhenTestingInvitations : IClassFixture<SystemApiFactory>
 
     private void GivenInvitation(Guid tripId, Guid userId, TripParticipantStatusEnum status)
     {
+        _factory.TripRepository
+            .GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<Trip?>(new Trip
+            {
+                Id = tripId,
+                OwnerUserId = Guid.NewGuid(),
+                Status = TripStatusEnum.Active,
+                StartedOn = StartedOn
+            }));
         _factory.TripParticipantRepository
             .FindAsync(
                 Arg.Is<FindTripParticipantArgs>(args =>

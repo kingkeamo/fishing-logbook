@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Trips.Modals.StartPlannedTripModal"
+               x:TypeArguments="models:PlannedTripChoiceModel" x:DataType="vm:StartPlannedTripViewModel"
+               Padding="0" Margin="20" VerticalOptions="Center" HorizontalOptions="Center" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
+      <Label Text="{Binding Text[TripStartPlannedTitle]}" Style="{StaticResource Heading}" FontSize="20"
+             SemanticProperties.HeadingLevel="Level1" AutomationId="StartPlannedTripHeading" />
+      <Label Text="{Binding Text[TripStartPlannedMessage]}" Style="{StaticResource SecondaryText}" FontSize="13" />
+      <ScrollView MaximumHeightRequest="400">
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}" Spacing="10">
+          <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:StartPlannedTripItemModel">
+            <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}" AutomationId="StartPlannedTripItem">
+              <VerticalStackLayout Spacing="4">
+                <Label Text="{Binding NameText}" Style="{StaticResource Subheading}" FontSize="16" AutomationId="StartPlannedTripName" />
+                <Label Text="{Binding WhenText}" Style="{StaticResource SecondaryText}" FontSize="13" AutomationId="StartPlannedTripWhen" />
+                <Label Text="{Binding OrganiserText}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="StartPlannedTripOrganiser" />
+                <Label Text="{Binding GuestsText}" IsVisible="{Binding HasGuests}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="StartPlannedTripGuests" />
+                <Button Text="{Binding ActionText}" CommandParameter="{Binding TripId}" Clicked="OnSelect" MinimumHeightRequest="48" AutomationId="StartPlannedTripSelect" />
+              </VerticalStackLayout>
+            </Border>
+          </DataTemplate></BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+      </ScrollView>
+      <Button Text="{Binding Text[TripStartNewTrip]}" Style="{StaticResource SecondaryButton}" Clicked="OnStartNew" MinimumHeightRequest="48" AutomationId="StartPlannedTripNew" />
+      <Button Text="{Binding Text[Cancel]}" Style="{StaticResource SecondaryButton}" Clicked="OnDismiss" MinimumHeightRequest="48" AutomationId="StartPlannedTripDismiss" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

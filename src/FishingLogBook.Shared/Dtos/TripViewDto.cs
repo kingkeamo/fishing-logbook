@@ -8,6 +8,8 @@ public sealed record TripViewDto(
     DateTimeOffset? EndedOn = null,
     TripLocationDto? Location = null)
 {
+    public DateTimeOffset? PlannedStartOn { get; init; }
+
     public string? Title { get; init; }
 
     public string? PlaceName { get; init; }

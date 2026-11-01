@@ -42,7 +42,7 @@ public sealed class TripNoteService : ITripNoteService
             return Result.Fail<TripNoteDto>(new TripNoteInvalidError());
         }
 
-        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        var access = await _tripAccessService.RequireOpenContributorAsync(args.TripId, cancellationToken);
         if (access.IsFailed)
         {
             return Result.Fail<TripNoteDto>(access.Errors);

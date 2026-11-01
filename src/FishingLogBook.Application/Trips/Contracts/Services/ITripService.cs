@@ -8,6 +8,8 @@ public interface ITripService
 {
     Task<Result<TripDto>> UpsertAsync(UpsertTripArgs args, CancellationToken cancellationToken);
 
+    Task<Result<TripDto>> ActivateAsync(ActivateTripArgs args, CancellationToken cancellationToken);
+
     Task<Result<IReadOnlyList<TripSummaryDto>>> GetSummariesAsync(
         GetMyTripsArgs args,
         CancellationToken cancellationToken);

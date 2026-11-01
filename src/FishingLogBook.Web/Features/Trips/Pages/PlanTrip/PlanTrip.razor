@@ -1,0 +1,24 @@
+@page "/trips/plan"
+@page "/trips/{TripId:guid}/plan"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using FishingLogBook.Web.Features.Trips.Components.PlannedTripEditor
+
+<PageTitle>@Loc["Trip_PlanTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="plan-trip-page">
+    @if (_isLoading)
+    {
+        <MudProgressCircular Indeterminate="true"
+                             Color="Color.Primary"
+                             Class="align-self-center"
+                             id="plan-trip-loading" />
+    }
+    else
+    {
+        <PlannedTripEditor TripId="TripId"
+                           ViewerUserId="_viewerUserId"
+                           TripBaseHref="/trips"
+                           OnClosed="ReturnToTrips" />
+    }
+</MudContainer>

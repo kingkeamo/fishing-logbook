@@ -164,7 +164,12 @@ public sealed class SqliteLocalCatchCleanupStore : ILocalCatchCleanupStore
             {
                 await using var check = connection.CreateCommand();
                 check.Transaction = transaction;
-                check.CommandText = "SELECT COUNT(*) FROM localcatchphotographs WHERE userid = $userId AND localfilepath = $path;";
+                check.CommandText =
+                    """
+                    SELECT
+                        (SELECT COUNT(*) FROM localcatchphotographs WHERE userid = $userId AND localfilepath = $path) +
+                        (SELECT COUNT(*) FROM localtripcontributions WHERE userid = $userId AND localfilepath = $path);
+                    """;
                 check.Parameters.AddWithValue("$userId", userId.ToString("D"));
                 check.Parameters.AddWithValue("$path", relativePath);
                 if (Convert.ToInt32(await check.ExecuteScalarAsync(token)) == 0 && !delete())

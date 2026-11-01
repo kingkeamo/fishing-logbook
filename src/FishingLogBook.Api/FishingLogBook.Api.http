@@ -172,7 +172,19 @@ Authorization: Bearer <access-token>
 
 ###
 
+GET {{FishingLogBook.Api_HostAddress}}/api/trips/planned?windowDays=3
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
 GET {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000
+Accept: application/json
+Authorization: Bearer <access-token>
+
+###
+
+POST {{FishingLogBook.Api_HostAddress}}/api/trips/00000000-0000-0000-0000-000000000000/activate
 Accept: application/json
 Authorization: Bearer <access-token>
 

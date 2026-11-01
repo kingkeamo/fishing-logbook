@@ -8,6 +8,32 @@ namespace FishingLogBook.Mobile.Tests.Features.Trips.ViewModels.ActiveTripBanner
 
 public sealed class WhenTestingNavigation : BaseActiveTripBannerViewModelTest
 {
+    [Theory]
+    [InlineData("en-GB")]
+    [InlineData("fr-FR")]
+    public async Task ItShouldShowALocalizedActivationFailureAndAllowRetry(string culture)
+    {
+        // Arrange
+        Text.SetCulture(culture);
+        ServeTrips();
+        await Sut.RefreshAsync(true, CancellationToken.None);
+        MockPlanned.GetEligibleAsync(Arg.Any<CancellationToken>()).Returns(FishingLogBook.Mobile.Features.Trips.Models.PlannedTripLookupModel.Succeeded([
+            new FishingLogBook.Mobile.Features.Trips.Models.PlannedTripOptionModel(TripId, Now, ViewerId, null, true)]));
+        MockChooser.ChoosePlannedTripAsync(Arg.Any<IReadOnlyList<FishingLogBook.Mobile.Features.Trips.Models.PlannedTripOptionModel>>())
+            .Returns(new FishingLogBook.Mobile.Features.Trips.Models.PlannedTripChoiceModel(new FishingLogBook.Mobile.Features.Trips.Models.PlannedTripOptionModel(TripId, Now, ViewerId, null, true), false));
+        MockPlanned.ActivateAsync(Arg.Any<FishingLogBook.Mobile.Features.Trips.Models.PlannedTripOptionModel>(), Arg.Any<CancellationToken>())
+            .Returns<Task<Guid>>(_ => throw new InvalidOperationException());
+
+        // Act
+        await Sut.StartAndOpenAsync(CancellationToken.None);
+
+        // Assert
+        Sut.HasError.Should().BeTrue();
+        Sut.ErrorText.Should().Be(Text["TripPlannedStartFailed"]);
+        Sut.CanStart.Should().BeTrue();
+        await MockTrips.DidNotReceive().StartAsync(Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+    }
     [Fact]
     public async Task ItShouldNotNavigateWhenThereIsNoActiveTrip()
     {

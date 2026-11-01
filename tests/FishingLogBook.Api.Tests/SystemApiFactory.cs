@@ -138,6 +138,9 @@ public class SystemApiFactory : WebApplicationFactory<Program>
             .GetSummariesForUserAsync(Arg.Any<GetMyTripsArgs>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripSummary>>([]));
         TripRepository
+            .FindPlannedAsync(Arg.Any<FindPlannedTripsArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Ok<IReadOnlyList<Trip>>([]));
+        TripRepository
             .GetCatchSummariesByTripIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<IReadOnlyList<TripCatchSummary>>([]));
         TripNoteRepository

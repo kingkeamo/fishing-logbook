@@ -10,4 +10,6 @@ public interface ITripModalViewModelFactory
     TripCatchPickerViewModel CreateCatchPicker();
 
     TripParticipantsViewModel CreateParticipants();
+
+    StartPlannedTripViewModel CreateStartPlannedTrip();
 }

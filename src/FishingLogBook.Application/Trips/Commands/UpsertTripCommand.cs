@@ -62,16 +62,27 @@ public sealed class UpsertTripCommandValidator : AbstractValidator<UpsertTripCom
         RuleFor(command => command.Trip.Status)
             .Must(TripConstants.IsKnownStatus)
             .WithMessage("Trip status is not supported.");
-        RuleFor(command => command.Trip.StartedOn)
-            .NotEqual(default(DateTimeOffset))
-            .Must(startedOn => TripConstants.IsStartedOnValid(startedOn, DateTimeOffset.UtcNow))
-            .WithMessage("Trip start time cannot be in the future.");
-        RuleFor(command => command.Trip)
-            .Must(trip => TripConstants.IsEndedOnValid(trip.StartedOn, trip.EndedOn, DateTimeOffset.UtcNow))
-            .WithMessage("Trip end time must not be before the start or in the future.");
-        RuleFor(command => command.Trip)
-            .Must(trip => trip.Status != TripConstants.Active || trip.EndedOn is null)
-            .WithMessage("An active trip cannot have an end time.");
+        When(command => TripConstants.HasPlannedLifecycle(command.Trip.Status), () =>
+        {
+            RuleFor(command => command.Trip.PlannedStartOn)
+                .Must(TripConstants.IsPlannedStartOnValid)
+                .WithMessage("A planned trip needs a planned start time.");
+            RuleFor(command => command.Trip.EndedOn)
+                .Null()
+                .WithMessage("A planned trip cannot have an end time.");
+        }).Otherwise(() =>
+        {
+            RuleFor(command => command.Trip.StartedOn)
+                .NotEqual(default(DateTimeOffset))
+                .Must(startedOn => TripConstants.IsStartedOnValid(startedOn, DateTimeOffset.UtcNow))
+                .WithMessage("Trip start time cannot be in the future.");
+            RuleFor(command => command.Trip)
+                .Must(trip => TripConstants.IsEndedOnValid(trip.StartedOn, trip.EndedOn, DateTimeOffset.UtcNow))
+                .WithMessage("Trip end time must not be before the start or in the future.");
+            RuleFor(command => command.Trip)
+                .Must(trip => trip.Status != TripConstants.Active || trip.EndedOn is null)
+                .WithMessage("An active trip cannot have an end time.");
+        });
         RuleFor(command => command.Trip.Title)
             .MaximumLength(TripConstants.MaxTitleLength);
         RuleFor(command => command.Trip.PlaceName)

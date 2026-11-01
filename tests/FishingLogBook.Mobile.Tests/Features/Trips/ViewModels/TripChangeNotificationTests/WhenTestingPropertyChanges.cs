@@ -76,7 +76,7 @@ public sealed class WhenTestingPropertyChanges
         // Arrange
         var trips = Substitute.For<ITripService>();
         trips.LoadAsync(Arg.Any<CancellationToken>()).Returns(new TripHistoryModel([], new HashSet<Guid>(), false));
-        var sut = new ActiveTripBannerViewModel(trips, Substitute.For<IAnglerPreferencesService>(), Substitute.For<IAccountSessionCoordinator>(), new NavigationService(Substitute.For<IRouteNavigator>()), _text, new FixedTimeProvider(Now));
+        var sut = new ActiveTripBannerViewModel(trips, Substitute.For<ITripStartService>(), Substitute.For<IAccountSessionCoordinator>(), new NavigationService(Substitute.For<IRouteNavigator>()), _text, new FixedTimeProvider(Now));
         var changes = 0;
         sut.PropertyChanged += (_, _) => changes++;
         // Act
@@ -109,7 +109,7 @@ public sealed class WhenTestingPropertyChanges
         var session = Substitute.For<IAccountSessionCoordinator>();
         var trips = Substitute.For<ITripService>();
         trips.LoadAsync(Arg.Any<CancellationToken>()).Returns(new TripHistoryModel([], new HashSet<Guid>(), false));
-        var sut = new ActiveTripBannerViewModel(trips, Substitute.For<IAnglerPreferencesService>(), session, new NavigationService(Substitute.For<IRouteNavigator>()), _text, new FixedTimeProvider(Now));
+        var sut = new ActiveTripBannerViewModel(trips, Substitute.For<ITripStartService>(), session, new NavigationService(Substitute.For<IRouteNavigator>()), _text, new FixedTimeProvider(Now));
         // Act
         session.SessionActivated += Raise.Event();
         await Task.Delay(100);

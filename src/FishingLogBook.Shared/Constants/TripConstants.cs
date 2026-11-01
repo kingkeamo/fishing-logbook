@@ -12,6 +12,14 @@ public static class TripConstants
 
     public const string Completed = "Completed";
 
+    public const string Planned = "Planned";
+
+    public const string Cancelled = "Cancelled";
+
+    public const int DefaultPlannedWindowDays = 3;
+
+    public const int MaxPlannedWindowDays = 30;
+
     public static string? TrimPlaceName(string? placeName)
     {
         var trimmed = placeName?.Trim();
@@ -47,12 +55,33 @@ public static class TripConstants
 
     public static bool IsKnownStatus(string? status)
     {
-        return status is Active or Completed;
+        return status is Active or Completed or Planned or Cancelled;
     }
 
     public static bool IsStartedOnValid(DateTimeOffset startedOn, DateTimeOffset now)
     {
         return startedOn != default && startedOn <= now;
+    }
+
+    public static bool IsPlannedStartOnValid(DateTimeOffset? plannedStartOn)
+    {
+        return plannedStartOn is not null && plannedStartOn.Value != default;
+    }
+
+    public static bool HasPlannedLifecycle(string? status)
+    {
+        return status is Planned or Cancelled;
+    }
+
+    public static int NormalisePlannedWindowDays(int? windowDays)
+    {
+        return windowDays is >= 0 and <= MaxPlannedWindowDays ? windowDays.Value : DefaultPlannedWindowDays;
+    }
+
+    public static bool IsWithinPlannedWindow(DateTimeOffset plannedStartOn, DateTimeOffset now, int windowDays)
+    {
+        var window = TimeSpan.FromDays(windowDays);
+        return plannedStartOn >= now - window && plannedStartOn <= now + window;
     }
 
     public static bool IsEndedOnValid(DateTimeOffset startedOn, DateTimeOffset? endedOn, DateTimeOffset now)

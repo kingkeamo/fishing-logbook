@@ -1,5 +1,6 @@
 using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
+using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
 
@@ -10,7 +11,7 @@ namespace FishingLogBook.Mobile.Features.Trips.Modals;
 /// Every method returns true when something changed, so the owning screen only has to refresh. Each opening gets its
 /// own view-model from the factory. Confirming and removing belongs to <see cref="ITripRemovalService"/>.
 /// </summary>
-public sealed class TripModalService(ITripRemovalService removal, ITripModalViewModelFactory viewModels) : ITripModalService
+public sealed class TripModalService(ITripRemovalService removal, ITripModalViewModelFactory viewModels) : ITripModalService, IPlannedTripChooser
 {
     public async Task<bool> EditNoteAsync(LocalTripRecordModel trip, Guid? noteId)
     {
@@ -41,6 +42,14 @@ public sealed class TripModalService(ITripRemovalService removal, ITripModalView
         using var cancellation = new CancellationTokenSource();
         var changed = await ShowWhileLoadingAsync(new TripParticipantsModal(participants), participants.LoadAsync(tripId, cancellation.Token), cancellation);
         return changed || participants.Changed;
+    }
+
+    public async Task<PlannedTripChoiceModel> ChoosePlannedTripAsync(IReadOnlyList<PlannedTripOptionModel> options)
+    {
+        var chooser = viewModels.CreateStartPlannedTrip();
+        chooser.Initialize(options);
+        var result = await Shell.Current.ShowPopupAsync<PlannedTripChoiceModel>(new StartPlannedTripModal(chooser));
+        return result.WasDismissedByTappingOutsideOfPopup || result.Result is null ? PlannedTripChoiceModel.Dismissed : result.Result;
     }
 
     private static async Task<bool> ShowAsync(Popup<bool> popup)

@@ -1,3 +1,4 @@
+using FishingLogBook.Mobile.Features.Trips.Components.TripParticipants;
 using FishingLogBook.Mobile.Features.Trips.Modals;
 using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
@@ -26,6 +27,8 @@ public partial class TripEditorView : ContentView
     }
 
     public event EventHandler? Changed;
+
+    public TripParticipantsView ParticipantsSection => Participants;
 
     public event EventHandler? RecordCatchRequested;
 
@@ -57,14 +60,6 @@ public partial class TripEditorView : ContentView
     private void OnChanged(object? sender, EventArgs args)
     {
         Changed?.Invoke(this, EventArgs.Empty);
-    }
-
-    private async void OnParticipants(object? sender, EventArgs args)
-    {
-        if (_modals is not null && ViewModel?.TripId is { } tripId && await _modals.ShowParticipantsAsync(tripId))
-        {
-            Changed?.Invoke(this, EventArgs.Empty);
-        }
     }
 
     private async void OnRemoveCatch(object? sender, EventArgs args)

@@ -12,6 +12,14 @@
             <MudText Typo="Typo.body2" Class="mud-text-secondary">@Loc["Trip_ListSubtitle"]</MudText>
         </MudStack>
 
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Href="/trips/plan"
+                   StartIcon="@Icons.Material.Filled.EventAvailable"
+                   id="trip-list-plan">
+            @Loc["Trip_PlanTrip"]
+        </MudButton>
+
         @if (_invitations.Count > 0)
         {
             <MudStack Spacing="2" id="trip-invitations">
@@ -133,6 +141,17 @@
                                             @Loc["Trip_SharedLabel"]
                                         </MudChip>
                                     }
+                                    @if (trip.HasPlannedLifecycle)
+                                    {
+                                        <MudChip T="string"
+                                                 Size="Size.Small"
+                                                 Color="@(trip.IsPlanned ? Color.Info : Color.Default)"
+                                                 Variant="Variant.Outlined"
+                                                 Icon="@Icons.Material.Filled.EventAvailable"
+                                                 id="@($"trip-list-status-{trip.Id:D}")">
+                                            @(trip.IsPlanned ? Loc["Trip_Planned"] : Loc["Trip_Cancelled"])
+                                        </MudChip>
+                                    }
                                     @if (trip.IsActive)
                                     {
                                         <MudChip T="string"
@@ -147,6 +166,8 @@
                                 </MudStack>
                             </MudStack>
 
+                            @if (!trip.HasPlannedLifecycle)
+                            {
                             <MudStack Row="true" Spacing="4" Class="flex-wrap">
                                 <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
                                     <MudIcon Icon="@Icons.Material.Filled.Grade"
@@ -170,14 +191,15 @@
                                              id="@($"trip-list-notes-{trip.Id:D}")">@NoteLabel(trip)</MudText>
                                 </MudStack>
                             </MudStack>
+                            }
 
                             <MudButton Variant="@(trip.IsActive ? Variant.Filled : Variant.Outlined)"
                                        Color="Color.Primary"
                                        FullWidth="true"
-                                       Href="@($"/trips/{trip.Id:D}")"
+                                       Href="@(trip.HasPlannedLifecycle ? $"/trips/{trip.Id:D}/plan" : trip.IsActive && trip.CanUpdate ? $"/trips/{trip.Id:D}/edit" : $"/trips/{trip.Id:D}")"
                                        StartIcon="@FishingLogBookIcons.FishingTrip"
                                        id="@($"trip-list-view-{trip.Id:D}")">
-                                @(trip.IsActive ? Loc["Trip_Update"] : Loc["Trip_ViewTrip"])
+                                @(trip.HasPlannedLifecycle ? Loc["Trip_PlanOpen"] : trip.IsActive && trip.CanUpdate ? Loc["Trip_Update"] : Loc["Trip_ViewTrip"])
                             </MudButton>
                         </MudStack>
                     </MudPaper>

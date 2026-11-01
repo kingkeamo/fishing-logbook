@@ -13,5 +13,6 @@ public enum MobileRouteEnum
     Profile = 8,
     CatchEdit = 9,
     TripDetail = 10,
-    TripEdit = 11
+    TripEdit = 11,
+    TripPlan = 12
 }

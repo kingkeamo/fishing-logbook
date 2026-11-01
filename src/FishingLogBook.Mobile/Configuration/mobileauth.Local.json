@@ -1,0 +1,12 @@
+{
+  "Authority": "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_J4Kt9QB06",
+  "ClientId": "513lhdbas693dqq2bs58v1ri8h",
+  "HostedUiDomain": "https://fishing-logbook-dev.auth.eu-west-2.amazoncognito.com",
+  "ApiBaseUrl": "https://10.0.2.2:7256",
+  "ApiScope": "https://fishing-logbook-dev-api.fly.dev/access",
+  "ApiResource": "https://fishing-logbook-dev-api.fly.dev",
+  "RedirectUri": "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
+  "LogoutRedirectUri": "https://fishing-logbook-dev.pages.dev/native/signedout",
+  "SchemeRedirectUri": "com.fishinglogbook.mobile.demo://oauth2redirect",
+  "SchemeLogoutRedirectUri": "com.fishinglogbook.mobile.demo://signedout"
+}

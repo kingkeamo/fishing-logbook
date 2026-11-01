@@ -4,6 +4,7 @@
 @using FishingLogBook.Web.Features.Trips.Components.TripLocationPicker
 @using FishingLogBook.Web.Features.Trips.Components.TripNotes
 @using FishingLogBook.Web.Features.Trips.Components.TripPhotographs
+@using FishingLogBook.Web.Features.Trips.Components.TripParticipants
 
 <MudPaper Class="pa-3" Elevation="2" id="trip-editor">
     <MudStack Spacing="3">
@@ -17,15 +18,6 @@
                              id="trip-editor-summary">@SummaryLabel</MudText>
                 }
             </MudStack>
-            @if (ShowParticipants)
-            {
-                <MudIconButton Icon="@Icons.Material.Filled.Group"
-                               Size="Size.Small"
-                               aria-label="@Loc["Trip_Participants"]"
-                               title="@Loc["Trip_Participants"]"
-                               OnClick="ShowParticipantsAsync"
-                               id="trip-editor-participants" />
-            }
         </MudStack>
 
         <MudTextField @bind-Value="_title"
@@ -37,6 +29,11 @@
                       id="trip-editor-title" />
 
         <TripLocationPicker PlaceName="@_placeName" PlaceNameChanged="OnPlaceNameChanged" />
+
+        @if (ShowParticipants)
+        {
+            <TripParticipants @key="Trip.Id" TripId="Trip.Id" Changed="OnParticipantsChanged" />
+        }
 
         <MudDivider />
 

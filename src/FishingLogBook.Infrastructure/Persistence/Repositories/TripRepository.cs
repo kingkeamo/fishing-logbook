@@ -23,6 +23,7 @@ public sealed class TripRepository : ITripRepository
             placename,
             status,
             startedon,
+            plannedstarton,
             endedon,
             latitude,
             longitude,
@@ -77,6 +78,7 @@ public sealed class TripRepository : ITripRepository
                     t.owneruserid,
                     t.status,
                     t.startedon,
+                    t.plannedstarton,
                     t.endedon,
                     t.title,
                     t.placename,
@@ -114,6 +116,7 @@ public sealed class TripRepository : ITripRepository
                     OwnerUserId = row.OwnerUserId,
                     Status = ToStatus(row.Status),
                     StartedOn = row.StartedOn,
+                    PlannedStartOn = row.PlannedStartOn,
                     EndedOn = row.EndedOn,
                     Title = row.Title,
                     PlaceName = row.PlaceName,
@@ -180,19 +183,19 @@ public sealed class TripRepository : ITripRepository
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
             try
             {
-                var existing = await LoadAsync(connection, transaction, trip.Id, cancellationToken);
-                if (existing is not null && existing.OwnerUserId != trip.OwnerUserId)
+                var existing = await LoadAsync(connection, transaction, trip.Id, cancellationToken, forUpdate: true);
+                var prepared = Prepare(trip, existing);
+                if (prepared.IsFailed)
                 {
                     await transaction.RollbackAsync(cancellationToken);
-                    return Result.Fail<Trip>(new TripOwnershipConflictError());
+                    return Result.Fail<Trip>(prepared.Errors);
                 }
 
-                var demoted = await DemoteConflictingActiveAsync(
-                    connection,
-                    transaction,
-                    trip,
-                    cancellationToken);
-                await UpsertRowAsync(connection, transaction, demoted, cancellationToken);
+                var isActivation = existing is { IsPlanned: true } && prepared.Value.IsActive;
+                var toSave = isActivation
+                    ? prepared.Value
+                    : await DemoteConflictingActiveAsync(connection, transaction, prepared.Value, cancellationToken);
+                await UpsertRowAsync(connection, transaction, toSave, cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
                 var saved = await LoadAsync(connection, transaction: null, trip.Id, cancellationToken);
                 return saved is null
@@ -220,6 +223,125 @@ public sealed class TripRepository : ITripRepository
         }
     }
 
+    public async Task<Result<Trip>> ActivateAsync(Trip activated, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var existing = await LoadAsync(connection, transaction, activated.Id, cancellationToken, forUpdate: true);
+                if (existing is null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result.Fail<Trip>(new TripNotFoundError());
+                }
+
+                if (existing.WasActivatedFromPlan)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result.Ok(existing);
+                }
+
+                if (!existing.IsPlanned)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result.Fail<Trip>(new TripTransitionInvalidError());
+                }
+
+                await UpsertRowAsync(connection, transaction, existing.ActivatedAt(activated.StartedOn), cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                var saved = await LoadAsync(connection, transaction: null, activated.Id, cancellationToken);
+                return saved is null
+                    ? Result.Fail<Trip>(FailedMessage)
+                    : Result.Ok(saved);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
+        catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            _logger.LogWarning(
+                exception,
+                "An active trip already exists for the owner of trip {TripId}.",
+                activated.Id);
+            return Result.Fail<Trip>(new TripAlreadyActiveError());
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to activate the trip {TripId}.", activated.Id);
+            return Result.Fail<Trip>(FailedMessage);
+        }
+    }
+
+    public async Task<Result<IReadOnlyList<Trip>>> FindPlannedAsync(
+        FindPlannedTripsArgs args,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            const string sql = $"""
+                {SelectSql}
+                WHERE status = 'Planned'
+                  AND plannedstarton >= @From
+                  AND plannedstarton <= @To
+                  AND (
+                        owneruserid = @UserId
+                        OR EXISTS (
+                            SELECT 1
+                            FROM tripparticipants me
+                            WHERE me.tripid = trips.id
+                              AND me.userid = @UserId
+                              AND me.status = 'Accepted'
+                              AND me.removedon IS NULL
+                        )
+                  )
+                ORDER BY plannedstarton, id;
+                """;
+            var rows = await connection.QueryAsync<TripPersistenceRow>(new CommandDefinition(
+                sql,
+                new { args.UserId, From = args.From.ToUniversalTime(), To = args.To.ToUniversalTime() },
+                cancellationToken: cancellationToken));
+            IReadOnlyList<Trip> trips = [.. rows.Select(row => _mapper.Map<Trip>(row))];
+            return Result.Ok(trips);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to load the planned trips for user {UserId}.", args.UserId);
+            return Result.Fail<IReadOnlyList<Trip>>(FailedMessage);
+        }
+    }
+
+    private static Result<Trip> Prepare(Trip trip, Trip? existing)
+    {
+        if (existing is null)
+        {
+            return Trip.CanBeCreatedAs(trip.Status)
+                ? Result.Ok(trip)
+                : Result.Fail<Trip>(new TripTransitionInvalidError());
+        }
+
+        if (existing.OwnerUserId != trip.OwnerUserId)
+        {
+            return Result.Fail<Trip>(new TripOwnershipConflictError());
+        }
+
+        if (!existing.CanBecome(trip.Status))
+        {
+            return Result.Fail<Trip>(new TripTransitionInvalidError());
+        }
+
+        var reconciled = trip.ReconciledWith(existing);
+        return reconciled.HasCoherentLifecycle()
+            ? Result.Ok(reconciled)
+            : Result.Fail<Trip>(new TripLifecycleInvalidError());
+    }
+
     private static async Task UpsertRowAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
@@ -234,6 +356,7 @@ public sealed class TripRepository : ITripRepository
                 placename,
                 status,
                 startedon,
+                plannedstarton,
                 endedon,
                 latitude,
                 longitude,
@@ -251,6 +374,7 @@ public sealed class TripRepository : ITripRepository
                 @PlaceName,
                 @Status,
                 @StartedOn,
+                @PlannedStartOn,
                 @EndedOn,
                 @Latitude,
                 @Longitude,
@@ -266,6 +390,7 @@ public sealed class TripRepository : ITripRepository
                 placename = EXCLUDED.placename,
                 status = EXCLUDED.status,
                 startedon = EXCLUDED.startedon,
+                plannedstarton = EXCLUDED.plannedstarton,
                 endedon = EXCLUDED.endedon,
                 latitude = EXCLUDED.latitude,
                 longitude = EXCLUDED.longitude,
@@ -343,6 +468,7 @@ public sealed class TripRepository : ITripRepository
             PlaceName = trip.PlaceName,
             Status = trip.Status.ToString(),
             StartedOn = trip.StartedOn.ToUniversalTime(),
+            PlannedStartOn = trip.PlannedStartOn?.ToUniversalTime(),
             EndedOn = trip.EndedOn?.ToUniversalTime(),
             Latitude = trip.Location?.Latitude,
             Longitude = trip.Location?.Longitude,
@@ -358,14 +484,20 @@ public sealed class TripRepository : ITripRepository
         NpgsqlConnection connection,
         NpgsqlTransaction? transaction,
         Guid id,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool forUpdate = false)
     {
         const string sql = $"""
             {SelectSql}
             WHERE id = @Id;
             """;
+        const string lockedSql = $"""
+            {SelectSql}
+            WHERE id = @Id
+            FOR UPDATE;
+            """;
         var row = await connection.QuerySingleOrDefaultAsync<TripPersistenceRow>(new CommandDefinition(
-            sql,
+            forUpdate ? lockedSql : sql,
             new { Id = id },
             transaction,
             cancellationToken: cancellationToken));
@@ -388,6 +520,8 @@ public sealed class TripRepository : ITripRepository
         public string? Status { get; init; }
 
         public DateTimeOffset StartedOn { get; init; }
+
+        public DateTimeOffset? PlannedStartOn { get; init; }
 
         public DateTimeOffset? EndedOn { get; init; }
 
@@ -417,6 +551,8 @@ public sealed class TripRepository : ITripRepository
         public string Status { get; init; } = string.Empty;
 
         public DateTimeOffset StartedOn { get; init; }
+
+        public DateTimeOffset? PlannedStartOn { get; init; }
 
         public DateTimeOffset? EndedOn { get; init; }
 
@@ -452,6 +588,8 @@ public sealed class TripRepository : ITripRepository
         public string Status { get; init; } = string.Empty;
 
         public DateTimeOffset StartedOn { get; init; }
+
+        public DateTimeOffset? PlannedStartOn { get; init; }
 
         public DateTimeOffset? EndedOn { get; init; }
 

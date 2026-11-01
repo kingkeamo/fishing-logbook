@@ -20,6 +20,34 @@ public sealed record TripListItemModel(
 
     public bool IsShared { get; init; }
 
+    public bool CanUpdate { get; init; } = true;
+
+    public DateTimeOffset? PlannedStartOn { get; init; }
+
+    public bool IsPlanned
+    {
+        get
+        {
+            return Status == TripConstants.Planned;
+        }
+    }
+
+    public bool IsCancelled
+    {
+        get
+        {
+            return Status == TripConstants.Cancelled;
+        }
+    }
+
+    public bool HasPlannedLifecycle
+    {
+        get
+        {
+            return IsPlanned || IsCancelled;
+        }
+    }
+
     public bool IsActive
     {
         get

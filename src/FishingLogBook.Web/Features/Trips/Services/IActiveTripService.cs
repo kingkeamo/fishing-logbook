@@ -10,6 +10,8 @@ public interface IActiveTripService
 
     Task<TripModel> StartAsync(Guid ownerUserId, CancellationToken cancellationToken);
 
+    Task<TripModel> ActivatePlannedAsync(Guid ownerUserId, Guid tripId, CancellationToken cancellationToken);
+
     Task<TripModel> FinishAsync(TripModel trip, CancellationToken cancellationToken);
 
     Task<TripModel?> UpdateDetailsAsync(

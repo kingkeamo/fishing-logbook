@@ -27,7 +27,7 @@ public class WhenTestingRecord : BaseTripNoteServiceTest
         await MockTripNoteRepository.DidNotReceive().UpsertAsync(
             Arg.Any<TripNote>(),
             Arg.Any<CancellationToken>());
-        await MockTripAccessService.DidNotReceive().RequireContributorAsync(
+        await MockTripAccessService.DidNotReceive().RequireOpenContributorAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>());
     }
@@ -330,6 +330,25 @@ public class WhenTestingRecord : BaseTripNoteServiceTest
         result.IsSuccess.Should().BeTrue();
         await MockTripNoteRepository.Received(1).UpsertAsync(
             Arg.Is<TripNote>(note => note.RecordedOn == endedOn),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(TripStatusEnum.Planned)]
+    [InlineData(TripStatusEnum.Cancelled)]
+    public async Task ItShouldRefuseANoteForATripThatHasNotStartedOrWasCancelled(TripStatusEnum status)
+    {
+        // Arrange
+        GivenTrip(CurrentUserId, status);
+
+        // Act
+        var result = await Sut.RecordAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNotOpenError>();
+        await MockTripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
             Arg.Any<CancellationToken>());
     }
 

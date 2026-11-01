@@ -213,6 +213,7 @@ public class WhenTestingRender : BaseTripListTest
             $"trip-list-item-{RemoteTripId:D}",
             $"trip-list-item-{olderId:D}");
         cut.Find($"#trip-list-view-{LocalTripId:D}").TextContent.Should().Contain("Update trip");
+        cut.Find($"#trip-list-view-{LocalTripId:D}").GetAttribute("href").Should().Be($"/trips/{LocalTripId:D}/edit");
         cut.Find($"#trip-list-view-{RemoteTripId:D}").TextContent.Should().Contain("View trip");
     }
 

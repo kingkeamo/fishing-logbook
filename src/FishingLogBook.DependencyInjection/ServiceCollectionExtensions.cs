@@ -83,7 +83,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripAccessService, TripAccessService>();
         services.AddScoped<ITripParticipantService, TripParticipantService>();
         services.AddScoped<IAnglerLookupService, AnglerLookupService>();
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<ITripService, TripService>();
+        services.AddScoped<IPlannedTripService, PlannedTripService>();
         services.AddScoped<ITripDetailService, TripDetailService>();
         services.AddScoped<ITripPhotographService, TripPhotographService>();
         services.AddScoped<ITripNoteService, TripNoteService>();

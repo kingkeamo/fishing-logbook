@@ -1,6 +1,7 @@
 using Bunit;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Catch.Services;
@@ -26,7 +27,9 @@ public class BaseOfflineCatchListTest
     protected static BunitContext CreateContext(
         ICatchStore store,
         IAnglerPreferencesStore? preferences = null,
-        ILoggingService? logging = null)
+        ILoggingService? logging = null,
+        IPlannedTripService? plannedTrips = null,
+        IModalService? modalService = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -36,6 +39,8 @@ public class BaseOfflineCatchListTest
         context.Services.AddSingleton(preferences ?? EmptyPreferences());
         context.Services.AddSingleton(logging ?? QuietLogging());
         context.Services.AddSingleton(QuietActiveTripService());
+        context.Services.AddSingleton(plannedTrips ?? QuietPlannedTripService());
+        context.Services.AddSingleton(modalService ?? Substitute.For<IModalService>());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton<ICatchDateGroupingService, CatchDateGroupingService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
@@ -43,6 +48,14 @@ public class BaseOfflineCatchListTest
         owner.Unlock(new OfflineOwnerModel(OwnerUserId, 1));
         context.Services.AddSingleton<IOfflineOwnerContextService>(owner);
         return context;
+    }
+
+    protected static IPlannedTripService QuietPlannedTripService()
+    {
+        var service = Substitute.For<IPlannedTripService>();
+        service.GetEligibleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyList<PlannedTripOptionModel>)[]);
+        return service;
     }
 
     protected static IActiveTripService QuietActiveTripService()

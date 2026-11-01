@@ -7,4 +7,7 @@ public sealed record TripInvitationDto(
     string? Title,
     string? PlaceName,
     DateTimeOffset StartedOn,
-    DateTimeOffset InvitedOn);
+    DateTimeOffset InvitedOn)
+{
+    public DateTimeOffset? PlannedStartOn { get; init; }
+}

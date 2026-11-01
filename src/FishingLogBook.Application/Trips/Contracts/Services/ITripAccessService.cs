@@ -14,5 +14,7 @@ public interface ITripAccessService
 
     Task<Result<TripAccess>> RequireContributorAsync(Guid tripId, CancellationToken cancellationToken);
 
+    Task<Result<TripAccess>> RequireOpenContributorAsync(Guid tripId, CancellationToken cancellationToken);
+
     Task<Result<TripAccess>> RequireOwnerAsync(Guid tripId, CancellationToken cancellationToken);
 }

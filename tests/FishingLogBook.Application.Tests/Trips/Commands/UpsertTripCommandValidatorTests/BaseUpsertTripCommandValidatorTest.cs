@@ -20,7 +20,8 @@ public class BaseUpsertTripCommandValidatorTest
         DateTimeOffset? endedOn = null,
         string? title = null,
         string? placeName = null,
-        TripLocationDto? location = null)
+        TripLocationDto? location = null,
+        DateTimeOffset? plannedStartOn = null)
     {
         return new UpsertTripCommand
         {
@@ -33,7 +34,8 @@ public class BaseUpsertTripCommandValidatorTest
                 location)
             {
                 Title = title,
-                PlaceName = placeName
+                PlaceName = placeName,
+                PlannedStartOn = plannedStartOn
             }
         };
     }

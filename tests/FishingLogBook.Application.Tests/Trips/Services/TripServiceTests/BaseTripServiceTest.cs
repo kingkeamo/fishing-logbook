@@ -21,18 +21,20 @@ public class BaseTripServiceTest
 
     protected readonly ITripRepository MockTripRepository = Substitute.For<ITripRepository>();
     protected readonly ITripAccessService MockTripAccessService = Substitute.For<ITripAccessService>();
+    protected readonly TimeProvider MockTimeProvider = Substitute.For<TimeProvider>();
     protected readonly ICurrentUser MockCurrentUser = Substitute.For<ICurrentUser>();
     protected readonly TripService Sut;
 
     protected BaseTripServiceTest()
     {
+        MockTimeProvider.GetUtcNow().Returns(DateTimeOffset.Parse("2026-09-12T06:30:00Z"));
         MockCurrentUser.IsResolved.Returns(true);
         MockCurrentUser.UserId.Returns(CurrentUserId);
         MockTripRepository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(Result.Ok<Trip?>(null));
         MockTripRepository.UpsertAsync(Arg.Any<Trip>(), Arg.Any<CancellationToken>())
             .Returns(call => Result.Ok(Persisted(call.ArgAt<Trip>(0))));
-        Sut = new TripService(MockTripRepository, MockTripAccessService, TestMapper.Create());
+        Sut = new TripService(MockTripRepository, MockTripAccessService, TestMapper.Create(), MockTimeProvider);
     }
 
     protected static UpsertTripArgs UpsertArgs(
@@ -43,7 +45,8 @@ public class BaseTripServiceTest
         DateTimeOffset? endedOn = null,
         string? title = null,
         string? placeName = null,
-        TripLocationDto? location = null)
+        TripLocationDto? location = null,
+        DateTimeOffset? plannedStartOn = null)
     {
         return new UpsertTripArgs
         {
@@ -56,7 +59,8 @@ public class BaseTripServiceTest
                 location)
             {
                 Title = title,
-                PlaceName = placeName
+                PlaceName = placeName,
+                PlannedStartOn = plannedStartOn
             }
         };
     }
@@ -83,7 +87,8 @@ public class BaseTripServiceTest
         DateTimeOffset? endedOn = null,
         string? title = null,
         string? placeName = null,
-        TripLocation? location = null)
+        TripLocation? location = null,
+        DateTimeOffset? plannedStartOn = null)
     {
         return new Trip
         {
@@ -93,6 +98,7 @@ public class BaseTripServiceTest
             PlaceName = placeName,
             Status = status,
             StartedOn = StartedOn,
+            PlannedStartOn = plannedStartOn,
             EndedOn = endedOn,
             Location = location,
             CreatedOn = StartedOn,
@@ -110,6 +116,7 @@ public class BaseTripServiceTest
             PlaceName = trip.PlaceName,
             Status = trip.Status,
             StartedOn = trip.StartedOn,
+            PlannedStartOn = trip.PlannedStartOn,
             EndedOn = trip.EndedOn,
             Location = trip.Location,
             CreatedOn = StartedOn,

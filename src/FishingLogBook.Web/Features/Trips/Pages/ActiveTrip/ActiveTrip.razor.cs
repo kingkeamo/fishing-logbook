@@ -47,6 +47,9 @@ public partial class ActiveTrip : ComponentBase, IDisposable
     public Guid TripId { get; set; }
 
     [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
     private ITripStore TripStore { get; set; } = default!;
 
     [Inject]
@@ -250,6 +253,12 @@ public partial class ActiveTrip : ComponentBase, IDisposable
             var viewerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
             _viewerUserId = viewerUserId;
             _trip = await TripStore.GetAsync(viewerUserId, TripId, cancellationToken);
+            if (_trip is { } plannedOrCancelled && (plannedOrCancelled.IsPlanned || plannedOrCancelled.IsCancelled))
+            {
+                Navigation.NavigateTo($"/trips/{TripId:D}/plan", replace: true);
+                return;
+            }
+
             TripDetailDto? shared = null;
             if (_trip is { Status: TripConstants.Active })
             {

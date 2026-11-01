@@ -8,6 +8,8 @@ public interface ITripClient
     Task<ApiResultModel<List<TripSummaryDto>>> ListAsync(CancellationToken cancellationToken);
     Task<ApiResultModel<TripDetailDto>> GetAsync(Guid tripId, CancellationToken cancellationToken);
     Task<ApiResultModel<TripDto>> UpsertAsync(TripDto trip, CancellationToken cancellationToken);
+    Task<ApiResultModel<List<PlannedTripOptionDto>>> ListPlannedAsync(int? windowDays, CancellationToken cancellationToken);
+    Task<ApiResultModel<TripDto>> ActivateAsync(Guid tripId, CancellationToken cancellationToken);
     Task<ApiResultModel<TripNoteDto>> RecordNoteAsync(Guid tripId, RecordTripNoteDto note, CancellationToken cancellationToken);
     Task<ApiResultModel<NoContentModel>> DeleteNoteAsync(Guid tripId, Guid noteId, CancellationToken cancellationToken);
     Task<ApiResultModel<PhotographUploadDto>> CreatePhotographUploadAsync(Guid tripId, PhotographUploadRequestDto photograph, CancellationToken cancellationToken);

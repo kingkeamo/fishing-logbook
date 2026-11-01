@@ -1,0 +1,22 @@
+@page "/offline/trips/plan"
+@page "/offline/trips/{TripId:guid}/plan"
+@attribute [OfflineRoute]
+@layout OfflineLayout
+@using FishingLogBook.Web.Features.OfflineAccess
+@using FishingLogBook.Web.Features.Trips.Components.PlannedTripEditor
+
+<PageTitle>@Loc["Trip_PlanTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="offline-plan-trip-page">
+    @if (_accessLocked)
+    {
+        <MudAlert Severity="Severity.Info" id="offline-plan-trip-locked">@Loc["Trip_NotFound"]</MudAlert>
+    }
+    else
+    {
+        <PlannedTripEditor TripId="TripId"
+                           ViewerUserId="_viewerUserId"
+                           TripBaseHref="/offline/trips"
+                           OnClosed="ReturnToTrips" />
+    }
+</MudContainer>

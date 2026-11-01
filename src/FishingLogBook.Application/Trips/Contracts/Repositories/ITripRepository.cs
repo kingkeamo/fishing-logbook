@@ -16,5 +16,11 @@ public interface ITripRepository
         Guid tripId,
         CancellationToken cancellationToken);
 
+    Task<Result<IReadOnlyList<Trip>>> FindPlannedAsync(
+        FindPlannedTripsArgs args,
+        CancellationToken cancellationToken);
+
     Task<Result<Trip>> UpsertAsync(Trip trip, CancellationToken cancellationToken);
+
+    Task<Result<Trip>> ActivateAsync(Trip activated, CancellationToken cancellationToken);
 }

@@ -32,6 +32,7 @@
       </HorizontalStackLayout>
       <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnStart" /></Border.GestureRecognizers>
      </Border>
+     <Button Text="{Binding Text[TripPlanTrip]}" Style="{StaticResource SecondaryButton}" Clicked="OnPlan" MinimumHeightRequest="48" AutomationId="TripPlanNew" />
      <Border Style="{StaticResource Card}" IsVisible="{Binding HasNotice}" Padding="12" Shadow="{x:Null}">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
        <Label Text="{Binding NoticeText}" Style="{StaticResource SecondaryText}" VerticalOptions="Center" AutomationId="TripListNotice" />
@@ -73,11 +74,12 @@
           </VerticalStackLayout>
           <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="End">
            <Label Text="{Binding StatusText}" IsVisible="{Binding IsActive}" Style="{StaticResource LinkText}" FontSize="13" FontAttributes="Bold" AutomationId="TripListActive" />
+           <Label Text="{Binding PlannedStatusText}" IsVisible="{Binding HasPlannedLifecycle}" Style="{StaticResource LinkText}" FontSize="13" FontAttributes="Bold" AutomationId="TripListPlannedStatus" />
            <Label Text="{Binding SharedText}" IsVisible="{Binding IsShared}" Style="{StaticResource SecondaryText}" FontSize="13" />
            <Label Text="{Binding PendingText}" IsVisible="{Binding IsPending}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="TripListPending" />
           </VerticalStackLayout>
          </Grid>
-         <FlexLayout Wrap="Wrap" JustifyContent="Start">
+         <FlexLayout Wrap="Wrap" JustifyContent="Start" IsVisible="{Binding ShowStats}">
           <Label Text="{Binding CatchesText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
           <Label Text="{Binding PhotographsText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
           <Label Text="{Binding NotesText}" Style="{StaticResource SecondaryText}" FontSize="13" />

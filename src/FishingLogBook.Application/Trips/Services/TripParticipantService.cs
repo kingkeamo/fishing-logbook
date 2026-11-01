@@ -59,6 +59,11 @@ public sealed class TripParticipantService : ITripParticipantService
             return Result.Fail<TripParticipantsDto>(access.Errors);
         }
 
+        if (access.Value.Trip.IsCancelled)
+        {
+            return Result.Fail<TripParticipantsDto>(new TripNotOpenError());
+        }
+
         if (args.InvitedUserId == access.Value.Trip.OwnerUserId)
         {
             return Result.Fail<TripParticipantsDto>(new TripParticipantSelfInviteError());
@@ -155,6 +160,17 @@ public sealed class TripParticipantService : ITripParticipantService
             return Result.Fail(new TripInvitationNotFoundError());
         }
 
+        var trip = await _tripRepository.GetByIdAsync(args.TripId, cancellationToken);
+        if (trip.IsFailed)
+        {
+            return trip.ToResult();
+        }
+
+        if (trip.Value is null || trip.Value.IsCancelled)
+        {
+            return Result.Fail(new TripInvitationNotFoundError());
+        }
+
         if (!existing.Value.IsPending)
         {
             return Result.Fail(new TripParticipantAlreadyRespondedError());
@@ -210,7 +226,7 @@ public sealed class TripParticipantService : ITripParticipantService
             return Result.Fail<TripInvitationDto?>(trip.Errors);
         }
 
-        if (trip.Value is null)
+        if (trip.Value is null || trip.Value.IsCancelled)
         {
             return Result.Ok<TripInvitationDto?>(null);
         }
@@ -228,7 +244,10 @@ public sealed class TripParticipantService : ITripParticipantService
             trip.Value.Title,
             trip.Value.PlaceName,
             trip.Value.StartedOn,
-            participant.InvitedOn));
+            participant.InvitedOn)
+        {
+            PlannedStartOn = trip.Value.PlannedStartOn
+        });
     }
 
     private static Result<TripParticipant> ToInvitation(

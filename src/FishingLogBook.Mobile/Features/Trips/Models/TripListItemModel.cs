@@ -14,9 +14,14 @@ public sealed record TripListItemModel(
     string ActionText,
     string StatusText,
     string SharedText,
-    string PendingText)
+    string PendingText,
+    bool HasPlannedLifecycle = false,
+    string PlannedStatusText = "",
+    bool CanUpdate = true)
 {
     public bool HasTitle => !string.IsNullOrWhiteSpace(Title);
 
     public bool HasPlace => !string.IsNullOrWhiteSpace(Place);
+
+    public bool ShowStats => !HasPlannedLifecycle;
 }

@@ -23,6 +23,17 @@ public sealed class TripClient(AuthorizedApiClient apiClient) : ITripClient
         return apiClient.PostAsync<TripDto, TripDto>(TripsPath, trip, cancellationToken);
     }
 
+    public Task<ApiResultModel<List<PlannedTripOptionDto>>> ListPlannedAsync(int? windowDays, CancellationToken cancellationToken)
+    {
+        var path = windowDays is { } days ? $"{TripsPath}/planned?windowDays={days}" : $"{TripsPath}/planned";
+        return apiClient.GetAsync<List<PlannedTripOptionDto>>(path, cancellationToken);
+    }
+
+    public Task<ApiResultModel<TripDto>> ActivateAsync(Guid tripId, CancellationToken cancellationToken)
+    {
+        return apiClient.PostAsync<TripDto>($"{TripsPath}/{tripId:D}/activate", cancellationToken);
+    }
+
     public Task<ApiResultModel<TripNoteDto>> RecordNoteAsync(Guid tripId, RecordTripNoteDto note, CancellationToken cancellationToken)
     {
         return apiClient.PostAsync<RecordTripNoteDto, TripNoteDto>($"{TripsPath}/{tripId:D}/notes", note, cancellationToken);

@@ -166,7 +166,7 @@ public partial class TripList : ComponentBase, IDisposable
             }
 
             var catches = await LoadCatchesAsync(ownerUserId, cancellationToken);
-            var local = localTrips?.Select(trip => ToItem(trip, catches)).ToArray();
+            var local = localTrips?.Select(trip => ToItem(trip, catches, ownerUserId)).ToArray();
 
             _loadFailed = remote is null;
             _trips = Merge(local ?? [], remote?.Select(ToItem).ToArray() ?? []);
@@ -295,23 +295,27 @@ public partial class TripList : ComponentBase, IDisposable
         {
             Title = summary.Title,
             PlaceName = summary.PlaceName,
+            PlannedStartOn = summary.PlannedStartOn,
             CatchCount = summary.CatchCount,
             PhotographCount = summary.PhotographCount,
             NoteCount = summary.NoteCount,
-            IsShared = summary.IsShared || summary.Role != TripParticipantConstants.Owner
+            IsShared = summary.IsShared || summary.Role != TripParticipantConstants.Owner,
+            CanUpdate = summary.Role == TripParticipantConstants.Owner
         };
     }
 
-    private static TripListItemModel ToItem(TripModel trip, IReadOnlyList<CatchModel> catches)
+    private static TripListItemModel ToItem(TripModel trip, IReadOnlyList<CatchModel> catches, Guid viewerUserId)
     {
         return new TripListItemModel(trip.Id, trip.Status, trip.StartedOn, trip.EndedOn)
         {
             Title = trip.Title,
             PlaceName = trip.PlaceName,
+            PlannedStartOn = trip.PlannedStartOn,
             CatchCount = catches.Count(catchRecord => catchRecord.TripId == trip.Id),
             PhotographCount = trip.Photographs.Count,
             NoteCount = trip.Notes.Count,
-            IsShared = trip.ParticipantUserIds.Count > 0 || trip.Origin == TripOriginEnum.Server
+            IsShared = trip.ParticipantUserIds.Count > 0 || trip.Origin == TripOriginEnum.Server,
+            CanUpdate = trip.IsOwnedBy(viewerUserId)
         };
     }
 

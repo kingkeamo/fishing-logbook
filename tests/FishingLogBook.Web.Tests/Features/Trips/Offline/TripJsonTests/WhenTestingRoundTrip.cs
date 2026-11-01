@@ -89,6 +89,40 @@ public class WhenTestingRoundTrip
         restored.EndedOn.Should().Be(StartedOn.AddHours(6));
     }
 
+    [Theory]
+    [InlineData(TripConstants.Planned)]
+    [InlineData(TripConstants.Cancelled)]
+    [InlineData(TripConstants.Active)]
+    public void ItShouldRoundTripThePlannedStartSeparatelyFromTheActualStart(string status)
+    {
+        // Arrange
+        var plannedStart = StartedOn.AddDays(-2);
+        var trip = NewTrip() with { Status = status, PlannedStartOn = plannedStart };
+
+        // Act
+        var restored = TripJson.Deserialize(TripJson.Serialize(trip));
+
+        // Assert
+        restored.Should().Be(trip);
+        restored.PlannedStartOn.Should().Be(plannedStart);
+        restored.StartedOn.Should().Be(StartedOn);
+        restored.Status.Should().Be(status);
+    }
+
+    [Fact]
+    public void ItShouldReadAStoredTripWithoutAPlannedStartAsNotPlanned()
+    {
+        // Arrange
+        var trip = NewTrip();
+        var json = TripJson.Serialize(trip);
+
+        // Act
+        var restored = TripJson.Deserialize(json);
+
+        // Assert
+        restored.PlannedStartOn.Should().BeNull();
+    }
+
     [Fact]
     public void ItShouldRoundTripEveryLocationFieldIncludingProvenanceAndPrivacy()
     {

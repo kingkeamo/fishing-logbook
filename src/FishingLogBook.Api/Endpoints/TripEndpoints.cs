@@ -30,6 +30,26 @@ public static class TripEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapPost("/api/trips/{tripId:guid}/activate", ActivateAsync)
+            .WithName("ActivateTrip")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces<TripDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
+        endpoints.MapGet("/api/trips/planned", ListPlannedAsync)
+            .WithName("ListPlannedTrips")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces<IReadOnlyList<PlannedTripOptionDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         endpoints.MapGet("/api/trips/{tripId:guid}", GetAsync)
             .WithName("GetTrip")
             .WithTags("Trips")
@@ -138,6 +158,11 @@ public static class TripEndpoints
             return Results.NotFound();
         }
 
+        if (response.Error is TripNotOpenError)
+        {
+            return Results.BadRequest(response);
+        }
+
         if (response.IsFailure)
         {
             return Results.Problem(
@@ -182,7 +207,7 @@ public static class TripEndpoints
             return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
-        if (response.Error is TripNoteInvalidError or TripNoteOutsideTripError)
+        if (response.Error is TripNoteInvalidError or TripNoteOutsideTripError or TripNotOpenError)
         {
             return Results.BadRequest(response);
         }
@@ -275,6 +300,11 @@ public static class TripEndpoints
             return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
+        if (response.Error is TripNotOpenError)
+        {
+            return Results.BadRequest(response);
+        }
+
         if (response.IsFailure)
         {
             return Results.Problem(
@@ -319,7 +349,7 @@ public static class TripEndpoints
             return Results.Json(response, statusCode: StatusCodes.Status403Forbidden);
         }
 
-        if (response.Error is TripPhotographObjectKeyMismatchError)
+        if (response.Error is TripPhotographObjectKeyMismatchError or TripNotOpenError)
         {
             return Results.BadRequest(response);
         }
@@ -401,7 +431,7 @@ public static class TripEndpoints
             return Results.BadRequest(response);
         }
 
-        if (response.Error is TripAlreadyActiveError)
+        if (response.Error is TripAlreadyActiveError or TripTransitionInvalidError)
         {
             return Results.Json(response, statusCode: StatusCodes.Status409Conflict);
         }
@@ -436,6 +466,78 @@ public static class TripEndpoints
         var response = await mediator.Send(
             new GetMyTripsQuery { UserId = currentUser.UserId },
             cancellationToken);
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Trips);
+    }
+
+    private static async Task<IResult> ActivateAsync(
+        Guid tripId,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new ActivateTripCommand { TripId = tripId },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.Error is TripAlreadyActiveError or TripTransitionInvalidError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status409Conflict);
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Trip);
+    }
+
+    private static async Task<IResult> ListPlannedAsync(
+        int? windowDays,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new GetPlannedTripsQuery
+            {
+                UserId = currentUser.UserId,
+                WindowDays = windowDays
+            },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
         if (response.IsFailure)
         {
             return Results.Problem(

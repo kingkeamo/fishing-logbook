@@ -71,6 +71,15 @@ public sealed class AuthorizedApiClient
         return await SendAsync<TResponse>(request, cancellationToken, distinguishNotFound: true);
     }
 
+    public async Task<ApiResultModel<TResponse>> PostAsync<TResponse>(
+        string path,
+        CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        return await SendAsync<TResponse>(request, cancellationToken, distinguishNotFound: true);
+    }
+
     public async Task<ApiResultModel<NoContentModel>> PostNoContentAsync<TRequest>(
         string path,
         TRequest value,
@@ -177,6 +186,7 @@ public sealed class AuthorizedApiClient
             HttpStatusCode.BadRequest => ApiOutcomeEnum.ValidationFailed,
             HttpStatusCode.Unauthorized => ApiOutcomeEnum.SessionExpired,
             HttpStatusCode.Forbidden => ApiOutcomeEnum.Forbidden,
+            HttpStatusCode.Conflict => ApiOutcomeEnum.Conflict,
             HttpStatusCode.NotFound when distinguishNotFound => ApiOutcomeEnum.NotFound,
             HttpStatusCode.RequestTimeout => ApiOutcomeEnum.Unavailable,
             _ when (int)statusCode >= 500 => ApiOutcomeEnum.ServerError,

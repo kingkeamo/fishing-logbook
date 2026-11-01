@@ -119,7 +119,7 @@ public static class TripParticipantEndpoints
             return Results.Json(response, statusCode: StatusCodes.Status409Conflict);
         }
 
-        if (response.Error is TripParticipantSelfInviteError or TripParticipantUserNotFoundError)
+        if (response.Error is TripParticipantSelfInviteError or TripParticipantUserNotFoundError or TripNotOpenError)
         {
             return Results.BadRequest(response);
         }

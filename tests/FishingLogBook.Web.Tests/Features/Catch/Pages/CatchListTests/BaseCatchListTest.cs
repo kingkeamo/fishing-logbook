@@ -40,7 +40,8 @@ public class BaseCatchListTest
         IAnglerPreferencesProvider? anglerPreferences = null,
         ILoggingService? logging = null,
         ICatchClient? catchClient = null,
-        INetworkService? network = null)
+        INetworkService? network = null,
+        IPlannedTripService? plannedTrips = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -56,6 +57,7 @@ public class BaseCatchListTest
         context.Services.AddSingleton(catchClient ?? EmptyCatchClient());
         context.Services.AddSingleton(network ?? OnlineNetwork());
         context.Services.AddSingleton(QuietActiveTripService());
+        context.Services.AddSingleton(plannedTrips ?? QuietPlannedTripService());
         context.Services.AddSingleton<IMeasurementService, MeasurementService>();
         context.Services.AddSingleton<ICatchDateGroupingService, CatchDateGroupingService>();
         context.Services.AddTransient<MudBlazor.MudLocalizer, FishingLogBookMudLocalizer>();
@@ -96,6 +98,14 @@ public class BaseCatchListTest
                 weightUnit,
                 lengthUnit));
         return provider;
+    }
+
+    protected static IPlannedTripService QuietPlannedTripService()
+    {
+        var service = Substitute.For<IPlannedTripService>();
+        service.GetEligibleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyList<PlannedTripOptionModel>)[]);
+        return service;
     }
 
     protected static IActiveTripService QuietActiveTripService()

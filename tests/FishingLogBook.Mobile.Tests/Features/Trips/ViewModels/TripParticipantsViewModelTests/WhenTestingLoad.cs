@@ -10,6 +10,37 @@ namespace FishingLogBook.Mobile.Tests.Features.Trips.ViewModels.TripParticipants
 public sealed class WhenTestingLoad : BaseTripParticipantsViewModelTest
 {
     [Fact]
+    public async Task ItShouldExplainThatANewPlanMustBeSavedBeforeManagingParticipants()
+    {
+        // Arrange
+
+        // Act
+        await Sut.LoadAsync(Guid.Empty, CancellationToken.None);
+
+        // Assert
+        Sut.MessageText.Should().Be(Text["TripPlanInviteHint"]);
+        Sut.CanInvite.Should().BeFalse();
+        Sut.CanRetry.Should().BeFalse();
+        await MockParticipants.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldShowParticipantsWithoutManagementActionsOnAReadOnlyPlan()
+    {
+        // Arrange
+        Sut.AllowManagement = false;
+        ServeParticipants(Participants(TripParticipantConstants.Owner, Owner(), Friend()));
+
+        // Act
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+
+        // Assert
+        Sut.Participants.Should().HaveCount(2);
+        Sut.Participants.Should().OnlyContain(person => !person.CanRemove);
+        Sut.CanInvite.Should().BeFalse();
+        await MockParticipants.Received(1).GetAsync(TripId, Arg.Any<CancellationToken>());
+    }
+    [Fact]
     public async Task ItShouldExplainThatParticipantsNeedAConnectionWhenOffline()
     {
         // Arrange

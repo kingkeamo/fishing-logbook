@@ -26,6 +26,14 @@ public sealed class TripDisplayService : ITripDisplayService
             Elapsed(trip));
     }
 
+    public async Task<string?> DescribeInstantAsync(DateTimeOffset instant, CancellationToken cancellationToken)
+    {
+        var local = await ToLocalAsync(instant, cancellationToken);
+        return local is null
+            ? null
+            : $"{local.Value.ToString("d MMM yyyy", CultureInfo.CurrentCulture)} · {local.Value.ToString("t", CultureInfo.CurrentCulture)}";
+    }
+
     public TimeSpan? Elapsed(TripModel trip)
     {
         var until = trip.EndedOn ?? DateTimeOffset.UtcNow;

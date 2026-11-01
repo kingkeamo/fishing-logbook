@@ -16,6 +16,8 @@ public sealed class Trip
 
     public DateTimeOffset StartedOn { get; init; }
 
+    public DateTimeOffset? PlannedStartOn { get; init; }
+
     public DateTimeOffset? EndedOn { get; init; }
 
     public TripLocation? Location { get; init; }
@@ -32,6 +34,30 @@ public sealed class Trip
         }
     }
 
+    public bool IsPlanned
+    {
+        get
+        {
+            return Status == TripStatusEnum.Planned;
+        }
+    }
+
+    public bool IsCancelled
+    {
+        get
+        {
+            return Status == TripStatusEnum.Cancelled;
+        }
+    }
+
+    public bool AcceptsContributions
+    {
+        get
+        {
+            return Status is TripStatusEnum.Active or TripStatusEnum.Completed;
+        }
+    }
+
     public bool OutranksActive(Trip other)
     {
         if (StartedOn != other.StartedOn)
@@ -44,19 +70,64 @@ public sealed class Trip
 
     public Trip CompletedAt(DateTimeOffset endedOn)
     {
-        return new Trip
+        return Copy(
+            TripStatusEnum.Completed,
+            StartedOn,
+            endedOn < StartedOn ? StartedOn : endedOn,
+            PlannedStartOn);
+    }
+
+    public bool WasActivatedFromPlan
+    {
+        get
         {
-            Id = Id,
-            OwnerUserId = OwnerUserId,
-            Title = Title,
-            PlaceName = PlaceName,
-            Status = TripStatusEnum.Completed,
-            StartedOn = StartedOn,
-            EndedOn = endedOn < StartedOn ? StartedOn : endedOn,
-            Location = Location,
-            CreatedOn = CreatedOn,
-            UpdatedOn = UpdatedOn
+            return IsActive && PlannedStartOn is not null;
+        }
+    }
+
+    public Trip ActivatedAt(DateTimeOffset startedOn)
+    {
+        return Copy(TripStatusEnum.Active, startedOn, endedOn: null, PlannedStartOn);
+    }
+
+    public bool CanBecome(TripStatusEnum next)
+    {
+        return Status switch
+        {
+            TripStatusEnum.Planned => next is TripStatusEnum.Planned or TripStatusEnum.Active or TripStatusEnum.Cancelled,
+            TripStatusEnum.Cancelled => next == TripStatusEnum.Cancelled,
+            _ => next is TripStatusEnum.Active or TripStatusEnum.Completed
         };
+    }
+
+    public static bool CanBeCreatedAs(TripStatusEnum status)
+    {
+        return status != TripStatusEnum.Cancelled;
+    }
+
+    public Trip ReconciledWith(Trip existing)
+    {
+        if (IsPlanned)
+        {
+            return this;
+        }
+
+        if (IsCancelled)
+        {
+            return Copy(Status, StartedOn, EndedOn, existing.PlannedStartOn ?? PlannedStartOn);
+        }
+
+        if (existing.Status == TripStatusEnum.Completed && existing.PlannedStartOn is not null)
+        {
+            return Copy(TripStatusEnum.Completed, existing.StartedOn, existing.EndedOn, existing.PlannedStartOn);
+        }
+
+        var keepsActualStart = existing.IsActive && existing.PlannedStartOn is not null;
+        return Copy(
+            Status,
+            keepsActualStart ? existing.StartedOn : StartedOn,
+            EndedOn,
+            existing.PlannedStartOn);
     }
 
     public bool HasCoherentLifecycle()
@@ -66,11 +137,38 @@ public sealed class Trip
             return false;
         }
 
+        if (IsPlanned || IsCancelled)
+        {
+            return PlannedStartOn is not null && PlannedStartOn.Value != default && EndedOn is null;
+        }
+
         if (EndedOn is not null && EndedOn.Value < StartedOn)
         {
             return false;
         }
 
         return !IsActive || EndedOn is null;
+    }
+
+    private Trip Copy(
+        TripStatusEnum status,
+        DateTimeOffset startedOn,
+        DateTimeOffset? endedOn,
+        DateTimeOffset? plannedStartOn)
+    {
+        return new Trip
+        {
+            Id = Id,
+            OwnerUserId = OwnerUserId,
+            Title = Title,
+            PlaceName = PlaceName,
+            Status = status,
+            StartedOn = startedOn,
+            PlannedStartOn = plannedStartOn,
+            EndedOn = endedOn,
+            Location = Location,
+            CreatedOn = CreatedOn,
+            UpdatedOn = UpdatedOn
+        };
     }
 }

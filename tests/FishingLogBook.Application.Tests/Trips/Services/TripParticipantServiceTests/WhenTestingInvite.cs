@@ -175,6 +175,89 @@ public class WhenTestingInvite : BaseTripParticipantServiceTest
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ItShouldAllowInvitingAnAnglerToAPlannedTrip()
+    {
+        // Arrange
+        MockTripAccessService.GivenOwner(Trip(CurrentUserId, TripStatusEnum.Planned), CurrentUserId);
+
+        // Act
+        var result = await Sut.InviteAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await MockTripParticipantRepository.Received(1).UpsertAsync(
+            Arg.Is<TripParticipant>(participant =>
+                participant.TripId == TripId
+                && participant.UserId == InvitedUserId
+                && participant.Status == TripParticipantStatusEnum.Pending
+                && participant.InvitedByUserId == CurrentUserId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRefuseInvitingAnAnglerToACancelledTrip()
+    {
+        // Arrange
+        MockTripAccessService.GivenOwner(Trip(CurrentUserId, TripStatusEnum.Cancelled), CurrentUserId);
+
+        // Act
+        var result = await Sut.InviteAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripNotOpenError>();
+        await MockProfileRepository.DidNotReceive().UserExistsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await MockTripParticipantRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripParticipant>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(TripParticipantStatusEnum.Pending)]
+    [InlineData(TripParticipantStatusEnum.Accepted)]
+    public async Task ItShouldNotInviteSomeoneTwiceToAPlannedTrip(TripParticipantStatusEnum existing)
+    {
+        // Arrange
+        MockTripAccessService.GivenOwner(Trip(CurrentUserId, TripStatusEnum.Planned), CurrentUserId);
+        GivenExistingMembership(InvitedUserId, existing);
+
+        // Act
+        var result = await Sut.InviteAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsFailed.Should().BeTrue();
+        result.Errors[0].Should().BeOfType<TripParticipantAlreadyInvitedError>();
+        await MockTripParticipantRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripParticipant>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(TripParticipantStatusEnum.Declined, false)]
+    [InlineData(TripParticipantStatusEnum.Accepted, true)]
+    public async Task ItShouldReinviteSomeoneWhoDeclinedOrWasRevokedFromAPlannedTrip(
+        TripParticipantStatusEnum previous,
+        bool removed)
+    {
+        // Arrange
+        MockTripAccessService.GivenOwner(Trip(CurrentUserId, TripStatusEnum.Planned), CurrentUserId);
+        GivenExistingMembership(InvitedUserId, previous, removed ? StartedOn : null);
+
+        // Act
+        var result = await Sut.InviteAsync(Args(), CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        await MockTripParticipantRepository.Received(1).UpsertAsync(
+            Arg.Is<TripParticipant>(participant =>
+                participant.UserId == InvitedUserId
+                && participant.Status == TripParticipantStatusEnum.Pending
+                && participant.RespondedOn == null
+                && participant.RemovedOn == null),
+            Arg.Any<CancellationToken>());
+    }
+
     private static InviteTripParticipantArgs Args(Guid? invitedUserId = null)
     {
         return new InviteTripParticipantArgs

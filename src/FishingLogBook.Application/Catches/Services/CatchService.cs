@@ -395,7 +395,7 @@ public sealed class CatchService : ICatchService
             return Result.Fail<Guid?>(new CatchTripInvalidError());
         }
 
-        if (!access.Value.CanContribute)
+        if (!access.Value.CanContribute || !access.Value.Trip.AcceptsContributions)
         {
             return Result.Fail<Guid?>(new CatchTripInvalidError());
         }
