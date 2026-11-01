@@ -30,6 +30,17 @@ public static class TripEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
 
+        endpoints.MapPost("/api/trips/{tripId:guid}/activate", ActivateAsync)
+            .WithName("ActivateTrip")
+            .WithTags("Trips")
+            .RequireAuthorization()
+            .Produces<TripDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+
         endpoints.MapGet("/api/trips/planned", ListPlannedAsync)
             .WithName("ListPlannedTrips")
             .WithTags("Trips")
@@ -463,6 +474,45 @@ public static class TripEndpoints
         }
 
         return Results.Ok(response.Trips);
+    }
+
+    private static async Task<IResult> ActivateAsync(
+        Guid tripId,
+        IMediator mediator,
+        ICurrentUser currentUser,
+        CancellationToken cancellationToken)
+    {
+        if (!currentUser.IsResolved)
+        {
+            return Results.Unauthorized();
+        }
+
+        var response = await mediator.Send(
+            new ActivateTripCommand { TripId = tripId },
+            cancellationToken);
+        if (response.ValidationErrors is { Count: > 0 })
+        {
+            return Results.BadRequest(response);
+        }
+
+        if (response.Error is TripNotFoundError)
+        {
+            return Results.NotFound();
+        }
+
+        if (response.Error is TripAlreadyActiveError or TripTransitionInvalidError)
+        {
+            return Results.Json(response, statusCode: StatusCodes.Status409Conflict);
+        }
+
+        if (response.IsFailure)
+        {
+            return Results.Problem(
+                title: response.ErrorMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(response.Trip);
     }
 
     private static async Task<IResult> ListPlannedAsync(

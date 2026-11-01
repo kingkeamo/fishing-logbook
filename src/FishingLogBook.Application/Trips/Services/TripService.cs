@@ -16,15 +16,18 @@ public sealed class TripService : ITripService
     private readonly ITripRepository _tripRepository;
     private readonly ITripAccessService _tripAccessService;
     private readonly IMapper _mapper;
+    private readonly TimeProvider _timeProvider;
 
     public TripService(
         ITripRepository tripRepository,
         ITripAccessService tripAccessService,
-        IMapper mapper)
+        IMapper mapper,
+        TimeProvider timeProvider)
     {
         _tripRepository = tripRepository;
         _tripAccessService = tripAccessService;
         _mapper = mapper;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result<TripDto>> UpsertAsync(UpsertTripArgs args, CancellationToken cancellationToken)
@@ -65,6 +68,36 @@ public sealed class TripService : ITripService
         }
 
         return Result.Ok(_mapper.Map<TripDto>(saved.Value));
+    }
+
+    public async Task<Result<TripDto>> ActivateAsync(ActivateTripArgs args, CancellationToken cancellationToken)
+    {
+        var access = await _tripAccessService.RequireContributorAsync(args.TripId, cancellationToken);
+        if (access.IsFailed)
+        {
+            return Result.Fail<TripDto>(access.Errors);
+        }
+
+        var trip = access.Value.Trip;
+        if (trip.WasActivatedFromPlan)
+        {
+            return Result.Ok(_mapper.Map<TripDto>(trip));
+        }
+
+        if (!trip.IsPlanned)
+        {
+            return Result.Fail<TripDto>(new TripTransitionInvalidError());
+        }
+
+        var activated = await _tripRepository.ActivateAsync(
+            trip.ActivatedAt(_timeProvider.GetUtcNow()),
+            cancellationToken);
+        if (activated.IsFailed)
+        {
+            return Result.Fail<TripDto>(activated.Errors);
+        }
+
+        return Result.Ok(_mapper.Map<TripDto>(activated.Value));
     }
 
     public async Task<Result<IReadOnlyList<TripSummaryDto>>> GetSummariesAsync(

@@ -21,4 +21,6 @@ public interface ITripRepository
         CancellationToken cancellationToken);
 
     Task<Result<Trip>> UpsertAsync(Trip trip, CancellationToken cancellationToken);
+
+    Task<Result<Trip>> ActivateAsync(Trip activated, CancellationToken cancellationToken);
 }

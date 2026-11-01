@@ -38,7 +38,8 @@ internal static class TripJson
             [.. record.Photographs.Select(ToPhotograph)],
             [.. record.Notes.Select(ToNote)],
             record.ParticipantUserIds,
-            record.Origin);
+            record.Origin,
+            record.PlannedStartOn);
     }
 
     private static StoredTrip ToRecord(TripModel trip)
@@ -66,7 +67,8 @@ internal static class TripJson
             [.. (trip.Photographs ?? []).Select(ToStoredPhotograph)],
             [.. (trip.Notes ?? []).Select(ToStoredNote)],
             trip.ParticipantUserIds,
-            trip.Origin);
+            trip.Origin,
+            trip.PlannedStartOn);
     }
 
     public static string SerializeNote(TripNoteModel note)
@@ -177,7 +179,8 @@ internal static class TripJson
         IReadOnlyList<StoredTripPhotograph>? Photographs = null,
         IReadOnlyList<StoredTripNote>? Notes = null,
         IReadOnlyList<Guid>? ParticipantUserIds = null,
-        TripOriginEnum Origin = TripOriginEnum.Local)
+        TripOriginEnum Origin = TripOriginEnum.Local,
+        DateTimeOffset? PlannedStartOn = null)
     {
         public IReadOnlyList<StoredTripPhotograph> Photographs { get; init; } = Photographs ?? [];
 

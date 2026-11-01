@@ -77,6 +77,19 @@ public sealed class Trip
             PlannedStartOn);
     }
 
+    public bool WasActivatedFromPlan
+    {
+        get
+        {
+            return IsActive && PlannedStartOn is not null;
+        }
+    }
+
+    public Trip ActivatedAt(DateTimeOffset startedOn)
+    {
+        return Copy(TripStatusEnum.Active, startedOn, endedOn: null, PlannedStartOn);
+    }
+
     public bool CanBecome(TripStatusEnum next)
     {
         return Status switch

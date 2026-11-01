@@ -223,6 +223,61 @@ public sealed class TripRepository : ITripRepository
         }
     }
 
+    public async Task<Result<Trip>> ActivateAsync(Trip activated, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var existing = await LoadAsync(connection, transaction, activated.Id, cancellationToken, forUpdate: true);
+                if (existing is null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result.Fail<Trip>(new TripNotFoundError());
+                }
+
+                if (existing.WasActivatedFromPlan)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result.Ok(existing);
+                }
+
+                if (!existing.IsPlanned)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result.Fail<Trip>(new TripTransitionInvalidError());
+                }
+
+                await UpsertRowAsync(connection, transaction, existing.ActivatedAt(activated.StartedOn), cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                var saved = await LoadAsync(connection, transaction: null, activated.Id, cancellationToken);
+                return saved is null
+                    ? Result.Fail<Trip>(FailedMessage)
+                    : Result.Ok(saved);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
+        catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            _logger.LogWarning(
+                exception,
+                "An active trip already exists for the owner of trip {TripId}.",
+                activated.Id);
+            return Result.Fail<Trip>(new TripAlreadyActiveError());
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to activate the trip {TripId}.", activated.Id);
+            return Result.Fail<Trip>(FailedMessage);
+        }
+    }
+
     public async Task<Result<IReadOnlyList<Trip>>> FindPlannedAsync(
         FindPlannedTripsArgs args,
         CancellationToken cancellationToken)

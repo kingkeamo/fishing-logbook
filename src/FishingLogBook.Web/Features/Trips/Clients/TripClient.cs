@@ -32,6 +32,15 @@ public sealed class TripClient : ITripClient
         return trips ?? throw new HttpRequestException("Trips were missing.");
     }
 
+    public async Task<IReadOnlyList<PlannedTripOptionDto>> GetPlannedAsync(
+        int? windowDays,
+        CancellationToken cancellationToken)
+    {
+        var uri = windowDays is null ? "api/trips/planned" : $"api/trips/planned?windowDays={windowDays.Value}";
+        var trips = await _apiClient.GetFromJsonAsync<IReadOnlyList<PlannedTripOptionDto>>(uri, cancellationToken);
+        return trips ?? throw new HttpRequestException("Planned trips were missing.");
+    }
+
     public async Task<TripDetailDto?> GetDetailAsync(Guid tripId, CancellationToken cancellationToken)
     {
         using var response = await _apiClient.GetAsync($"api/trips/{tripId:D}", cancellationToken);

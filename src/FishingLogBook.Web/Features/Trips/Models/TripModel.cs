@@ -1,3 +1,4 @@
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Web.Common;
 using FishingLogBook.Web.Features.Trips.Enums;
 
@@ -17,7 +18,8 @@ public sealed record TripModel(
     IReadOnlyList<TripPhotographModel>? Photographs = null,
     IReadOnlyList<TripNoteModel>? Notes = null,
     IReadOnlyList<Guid>? ParticipantUserIds = null,
-    TripOriginEnum Origin = TripOriginEnum.Local)
+    TripOriginEnum Origin = TripOriginEnum.Local,
+    DateTimeOffset? PlannedStartOn = null)
 {
     public IReadOnlyList<TripPhotographModel> Photographs { get; init; } =
         Photographs is { Count: > 0 } ? Photographs : [];
@@ -27,6 +29,22 @@ public sealed record TripModel(
 
     public IReadOnlyList<Guid> ParticipantUserIds { get; init; } =
         ParticipantUserIds is { Count: > 0 } ? ParticipantUserIds : [];
+
+    public bool IsPlanned
+    {
+        get
+        {
+            return Status == TripConstants.Planned;
+        }
+    }
+
+    public bool IsCancelled
+    {
+        get
+        {
+            return Status == TripConstants.Cancelled;
+        }
+    }
 
     public bool IsOwnedBy(Guid userId)
     {

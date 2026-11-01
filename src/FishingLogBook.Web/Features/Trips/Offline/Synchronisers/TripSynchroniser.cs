@@ -258,6 +258,8 @@ public sealed class TripSynchroniser : ITripSynchroniser
         return current with
         {
             Status = accepted.Status,
+            StartedOn = accepted.StartedOn,
+            PlannedStartOn = accepted.PlannedStartOn,
             EndedOn = accepted.EndedOn
         };
     }
@@ -266,6 +268,7 @@ public sealed class TripSynchroniser : ITripSynchroniser
     {
         return current.Status == sent.Status
             && current.StartedOn == sent.StartedOn
+            && current.PlannedStartOn == sent.PlannedStartOn
             && current.EndedOn == sent.EndedOn
             && string.Equals(current.Title, sent.Title, StringComparison.Ordinal)
             && string.Equals(current.PlaceName, sent.PlaceName, StringComparison.Ordinal)
@@ -310,7 +313,8 @@ public sealed class TripSynchroniser : ITripSynchroniser
                     trip.Location.ConsentVersion))
         {
             Title = trip.Title,
-            PlaceName = trip.PlaceName
+            PlaceName = trip.PlaceName,
+            PlannedStartOn = trip.PlannedStartOn
         };
     }
 

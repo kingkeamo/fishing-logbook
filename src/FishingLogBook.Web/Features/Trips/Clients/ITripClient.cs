@@ -10,6 +10,8 @@ public interface ITripClient
 
     Task<TripDetailDto?> GetDetailAsync(Guid tripId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<PlannedTripOptionDto>> GetPlannedAsync(int? windowDays, CancellationToken cancellationToken);
+
     Task<PhotographUploadDto> CreatePhotographUploadAsync(
         Guid tripId,
         PhotographUploadRequestDto request,
