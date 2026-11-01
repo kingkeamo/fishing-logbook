@@ -16,6 +16,7 @@ public partial class TripEditorView : ContentView
     public TripEditorView()
     {
         InitializeComponent();
+        Location.LocationSelected += (_, name) => ViewModel?.SelectLocation(name);
         Notes.Changed += OnChanged;
         CatchActions.Changed += OnChanged;
         CatchActions.RecordRequested += (_, _) => RecordCatchRequested?.Invoke(this, EventArgs.Empty);

@@ -1,10 +1,9 @@
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Native.Controls;
-using FishingLogBook.Shared.Constants;
 
 namespace FishingLogBook.Mobile.Features.Trips.Components.TripLocationPicker;
 
-/// <summary>Saved-location chips, an other-location entry and clear. It only edits PlaceName, which the owner binds two-way.</summary>
+/// <summary>Saved-location chips, an other-location entry and clear. Typing and Clear edit PlaceName, which the owner binds two-way; a tapped saved location is raised as LocationSelected for the owner to apply.</summary>
 public partial class TripLocationPickerView : ContentView
 {
     public static readonly BindableProperty OptionsProperty = BindableProperty.Create(nameof(Options), typeof(IEnumerable<CatchChipOptionModel>), typeof(TripLocationPickerView), propertyChanged: OnChanged);
@@ -18,6 +17,8 @@ public partial class TripLocationPickerView : ContentView
     {
         InitializeComponent();
     }
+
+    public event EventHandler<string>? LocationSelected;
 
     public IEnumerable<CatchChipOptionModel>? Options
     {
@@ -64,7 +65,7 @@ public partial class TripLocationPickerView : ContentView
     {
         if (sender is ChipView { CommandParameter: string name })
         {
-            PlaceName = TripConstants.TrimPlaceName(name) ?? string.Empty;
+            LocationSelected?.Invoke(this, name);
         }
     }
 
