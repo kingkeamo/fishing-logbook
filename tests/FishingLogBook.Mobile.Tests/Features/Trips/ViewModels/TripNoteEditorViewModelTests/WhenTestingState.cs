@@ -53,7 +53,7 @@ public sealed class WhenTestingState : BaseTripNoteEditorViewModelTest
     public void ItShouldChangeTheDateAndKeepTheTime()
     {
         // Arrange
-        Sut.Initialize(Trip(), Note(Guid.NewGuid(), ViewerId, at: Now.AddHours(-1)));
+        InitializeEditing(Trip(), Note(Guid.NewGuid(), ViewerId, at: Now.AddHours(-1)));
         // Act
         Sut.NoteDate = new DateTime(2026, 10, 30, 8, 15, 0);
         // Assert

@@ -10,7 +10,7 @@ public sealed class WhenTestingInitialize : BaseTripNoteEditorViewModelTest
     public void ItShouldRejectATimeBeforeTheTripStarted()
     {
         // Arrange
-        Sut.Initialize(Trip(notes: [Note(NoteId, ViewerId, at: Recorded)]), Note(NoteId, ViewerId, at: Recorded));
+        InitializeEditing(Trip(), Note(NoteId, ViewerId, at: Recorded));
         // Act
         Sut.NoteTime = TimeSpan.FromHours(8);
         // Assert
@@ -23,7 +23,7 @@ public sealed class WhenTestingInitialize : BaseTripNoteEditorViewModelTest
     public void ItShouldRejectATimeInTheFutureOnAnActiveTrip()
     {
         // Arrange
-        Sut.Initialize(Trip(), Note(NoteId, ViewerId, at: Recorded));
+        InitializeEditing(Trip(), Note(NoteId, ViewerId, at: Recorded));
         // Act
         Sut.NoteTime = TimeSpan.FromHours(12).Add(TimeSpan.FromMinutes(1));
         // Assert
@@ -36,7 +36,7 @@ public sealed class WhenTestingInitialize : BaseTripNoteEditorViewModelTest
     {
         // Arrange
         var ended = Now.AddHours(-1);
-        Sut.Initialize(Trip(TripConstants.Completed, endedOn: ended), Note(NoteId, ViewerId, at: Now.AddHours(-2)));
+        InitializeEditing(Trip(TripConstants.Completed, endedOn: ended), Note(NoteId, ViewerId, at: Now.AddHours(-2)));
         // Act
         Sut.NoteTime = TimeSpan.FromHours(11).Add(TimeSpan.FromMinutes(1));
         // Assert
@@ -48,7 +48,7 @@ public sealed class WhenTestingInitialize : BaseTripNoteEditorViewModelTest
     public void ItShouldAcceptTheExactTripStartAndTheCurrentMinute()
     {
         // Arrange
-        Sut.Initialize(Trip(), Note(NoteId, ViewerId, at: Recorded));
+        InitializeEditing(Trip(), Note(NoteId, ViewerId, at: Recorded));
         // Act
         Sut.NoteTime = TimeSpan.FromHours(9);
         var atStart = Sut.HasWhenError;
@@ -75,7 +75,7 @@ public sealed class WhenTestingInitialize : BaseTripNoteEditorViewModelTest
     {
         // Arrange
         // Act
-        Sut.Initialize(Trip(), Note(NoteId, ViewerId, "Original", Recorded));
+        InitializeEditing(Trip(), Note(NoteId, ViewerId, "Original", Recorded));
         // Assert
         Sut.IsEditing.Should().BeTrue();
         Sut.NoteText.Should().Be("Original");

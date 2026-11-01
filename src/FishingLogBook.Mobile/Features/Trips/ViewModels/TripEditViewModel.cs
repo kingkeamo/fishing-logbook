@@ -133,6 +133,12 @@ public sealed class TripEditViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>Applies a tapped saved location the way a typed one is saved: trimmed, and blank or over-length becomes empty.</summary>
+    public void SelectLocation(string name)
+    {
+        EditPlace = TripConstants.TrimPlaceName(name) ?? string.Empty;
+    }
+
     public bool HasEditPlace => !string.IsNullOrWhiteSpace(_editPlace);
 
     public bool HasLocationOptions => LocationOptions.Count > 0;

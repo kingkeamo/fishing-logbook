@@ -178,6 +178,7 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<ITripService, TripService>();
         builder.Services.AddSingleton<ITripAssociationService, TripAssociationService>();
         builder.Services.AddSingleton<ITripCatchService, TripCatchService>();
+        builder.Services.AddSingleton<ITripRemovalService, TripRemovalService>();
         builder.Services.AddSingleton<IOutboxOperationSynchroniser, TripMetadataSynchroniser>();
         builder.Services.AddSingleton<IOutboxOperationSynchroniser>(services => CreateTripContributionSynchroniser(
             services, OutboxOperationTypeEnum.WriteTripNote));

@@ -25,6 +25,7 @@ public sealed class TripCatchPickerViewModel : INotifyPropertyChanged
     private bool _isLoading = true;
     private bool _isSaving;
     private string? _messageKey;
+    private int _loadVersion;
 
     public TripCatchPickerViewModel(
         ITripCatchService tripCatches,
@@ -66,6 +67,7 @@ public sealed class TripCatchPickerViewModel : INotifyPropertyChanged
 
     public async Task InitializeAsync(LocalTripRecordModel trip, CancellationToken cancellationToken)
     {
+        var version = ++_loadVersion;
         _trip = trip;
         _isLoading = true;
         _messageKey = null;
@@ -74,20 +76,32 @@ public sealed class TripCatchPickerViewModel : INotifyPropertyChanged
         try
         {
             _unitsModel = await _units.GetAsync(cancellationToken);
-            foreach (var candidate in await _tripCatches.GetEligibleAsync(trip, cancellationToken))
+            var eligible = await _tripCatches.GetEligibleAsync(trip, cancellationToken);
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
+            foreach (var candidate in eligible)
             {
                 Options.Add(new CatchChipOptionModel(candidate.Id.ToString("D"), Label(candidate)));
             }
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            Options.Clear();
-            _messageKey = "TripAddCatchesLoadFailed";
+            if (version == _loadVersion)
+            {
+                Options.Clear();
+                _messageKey = "TripAddCatchesLoadFailed";
+            }
         }
         finally
         {
-            _isLoading = false;
-            Notify();
+            if (version == _loadVersion)
+            {
+                _isLoading = false;
+                Notify();
+            }
         }
     }
 

@@ -1,10 +1,12 @@
 using System.Globalization;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
+using FishingLogBook.Shared.Dtos;
 using NSubstitute;
 using static FishingLogBook.Mobile.Tests.Features.Trips.TestSupport.TripTestData;
 
@@ -19,6 +21,11 @@ public abstract class BaseTripNoteEditorViewModelTest
     protected readonly ITripService MockTrips = Substitute.For<ITripService>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly TripNoteEditorViewModel Sut;
+
+    protected void InitializeEditing(LocalTripRecordModel trip, TripNoteDto note)
+    {
+        Sut.Initialize(trip with { Detail = trip.Detail with { Notes = [note] } }, note.Id);
+    }
 
     protected BaseTripNoteEditorViewModelTest()
     {

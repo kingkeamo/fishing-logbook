@@ -57,7 +57,7 @@ public sealed class WhenTestingSave : BaseTripNoteEditorViewModelTest
     public async Task ItShouldKeepTheOriginalInstantWhenOnlyTheTextChanges()
     {
         // Arrange
-        Sut.Initialize(Trip(), Note(NoteId, ViewerId, "Original", Recorded));
+        InitializeEditing(Trip(), Note(NoteId, ViewerId, "Original", Recorded));
         Sut.NoteText = "  Corrected  ";
         // Act
         var saved = await Sut.SaveAsync(CancellationToken.None);
@@ -75,7 +75,7 @@ public sealed class WhenTestingSave : BaseTripNoteEditorViewModelTest
     public async Task ItShouldSaveTheNewTimeWhenItIsChangedAndReuseTheNoteId()
     {
         // Arrange
-        Sut.Initialize(Trip(), Note(NoteId, ViewerId, "Original", Recorded));
+        InitializeEditing(Trip(), Note(NoteId, ViewerId, "Original", Recorded));
         Sut.NoteTime = TimeSpan.FromHours(10).Add(TimeSpan.FromMinutes(30));
         // Act
         var saved = await Sut.SaveAsync(CancellationToken.None);
