@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:local="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripPhotographs"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.TripPhotographs.TripPhotographsView" x:Name="Root" x:DataType="local:TripPhotographsView">
+ <VerticalStackLayout Spacing="8" AutomationId="TripPhotographs">
+  <VerticalStackLayout Spacing="8" IsVisible="{Binding ShowGallery, Source={x:Reference Root}}">
+   <Label Text="{Binding Heading, Source={x:Reference Root}}" Style="{StaticResource TileCaption}" />
+   <Label Text="{Binding EmptyText, Source={x:Reference Root}}" IsVisible="{Binding IsEmpty, Source={x:Reference Root}}" Style="{StaticResource SecondaryText}" FontSize="13" AutomationId="TripPhotographsEmpty" />
+   <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" IsVisible="{Binding HasPhotographs, Source={x:Reference Root}}">
+    <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Photographs, Source={x:Reference Root}}" Spacing="8">
+     <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:TripPhotographRowModel">
+      <Grid WidthRequest="120" HeightRequest="120" AutomationId="TripPhotograph">
+       <Border Padding="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Canvas}, Dark={StaticResource DarkSurface}}">
+        <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+        <Grid>
+         <Image Source="{Binding Source}" Aspect="AspectFill" IsVisible="{Binding HasSource}" />
+        </Grid>
+       </Border>
+       <Border IsVisible="{Binding CanRemove}" WidthRequest="40" HeightRequest="40" StrokeThickness="0" HorizontalOptions="End" VerticalOptions="Start" Margin="4"
+               BackgroundColor="#99102A43" SemanticProperties.Description="{Binding RemoveLabel}" AutomationId="TripPhotographRemove">
+        <Border.StrokeShape><Ellipse /></Border.StrokeShape>
+        <controls:IconView Source="icon_trash.png" Tone="Inverse" WidthRequest="20" HeightRequest="20" HorizontalOptions="Center" VerticalOptions="Center" />
+        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnRemove" /></Border.GestureRecognizers>
+       </Border>
+      </Grid>
+     </DataTemplate></BindableLayout.ItemTemplate>
+    </HorizontalStackLayout>
+   </ScrollView>
+  </VerticalStackLayout>
+  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+   <Button Text="{Binding TakeText, Source={x:Reference Root}}" Clicked="OnTake" MinimumHeightRequest="48" AutomationId="TripTakePhoto" />
+   <Button Grid.Column="1" Text="{Binding ChooseText, Source={x:Reference Root}}" Style="{StaticResource SecondaryButton}" Clicked="OnChoose" MinimumHeightRequest="48" AutomationId="TripChoosePhoto" />
+  </Grid>
+  <Label Text="{Binding Message, Source={x:Reference Root}}" IsVisible="{Binding HasMessage, Source={x:Reference Root}}"
+         TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripPhotographMessage" />
+ </VerticalStackLayout>
+</ContentView>

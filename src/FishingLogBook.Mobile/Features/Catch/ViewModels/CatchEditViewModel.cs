@@ -17,6 +17,7 @@ using FishingLogBook.Mobile.Features.Photographs.ViewModels;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Profile.ViewModels;
+using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Catches.Models;
 using FishingLogBook.Shared.Catches.Services;
@@ -93,7 +94,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         TimeProvider clock,
         UiTextService text,
         ICatchWorkingCopyService workingCopy,
-        IActiveCatchEditRegistry activeEdits)
+        IActiveCatchEditRegistry activeEdits,
+        TripAssociationViewModel trip)
     {
         _catchStore = catchStore;
         _workingCopy = workingCopy;
@@ -107,6 +109,9 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         _measurement = measurement;
         _units = units;
         Photographs = photographs;
+        Trip = trip;
+        Trip.PropertyChanged += OnTripChanged;
+        Trip.SelectionChanged += OnTripSelectionChanged;
         _clock = clock;
         _text = text;
         _caughtOnLocal = ToLocalWallClock(_clock.GetUtcNow());
@@ -120,6 +125,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
     public UiTextService Text => _text;
 
     public PhotographCollectionEditorViewModel Photographs { get; }
+
+    public TripAssociationViewModel Trip { get; }
 
     public bool IsLoading
     {
@@ -300,10 +307,8 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public bool ShowAnglerSection => CanInteract;
 
-    public IReadOnlyList<CatchChipOptionModel> AnglerOptions =>
-        [new CatchChipOptionModel("me", _text["CatchAnglerMe"], IsSelected: true)];
+    public IReadOnlyList<CatchChipOptionModel> AnglerOptions => Trip.AnglerOptions;
 
-    public bool ShowTripDeferredNote => CanInteract;
 
     public bool IsCapturingLocation { get; private set; }
     public bool CanCaptureLocation => CanInteract && !IsSaving && !IsCapturingLocation;
@@ -462,7 +467,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public bool CanRemovePhoto => !IsEditingSavedCatch || Photographs.Items.Count > 1;
 
-    public async Task InitializeAsync(Guid? existingCatchId, CancellationToken cancellationToken)
+    public async Task InitializeAsync(Guid? existingCatchId, CancellationToken cancellationToken, Guid? requestedTripId = null)
     {
         _editBlocked = false;
         _placeName = null;
@@ -493,14 +498,13 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
                 return;
             }
 
-            await InitializeNewAsync(lease.UserId, cancellationToken);
+            await InitializeNewAsync(lease.UserId, requestedTripId, cancellationToken);
         }
         finally
         {
             IsLoading = false;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCatalogueUnavailable)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowAnglerSection)));
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowTripDeferredNote)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowCaughtOn)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowLocationAction)));
             NotifyChipState();
@@ -664,7 +668,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         _saveGate.Dispose();
     }
 
-    private async Task InitializeNewAsync(Guid userId, CancellationToken cancellationToken)
+    private async Task InitializeNewAsync(Guid userId, Guid? requestedTripId, CancellationToken cancellationToken)
     {
         IsEditingSavedCatch = false;
         Photographs.MinimumCount = 0;
@@ -677,11 +681,21 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         if (draft is not null)
         {
             await BindRecordAsync(draft, cancellationToken);
+            if (requestedTripId is { } requested && requested != draft.TripId)
+            {
+                await Trip.InitializeNewAsync(userId, requested, cancellationToken);
+            }
+            else
+            {
+                await Trip.RestoreAsync(userId, draft.TripId, draft.CaughtByUserId, locked: false, cancellationToken);
+            }
+
             DraftRestored = true;
             return;
         }
 
         DraftRestored = false;
+        await Trip.InitializeNewAsync(userId, requestedTripId, cancellationToken);
         await ApplyPhotoMetadataAsync();
     }
 
@@ -705,7 +719,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
         IsEditingSavedCatch = record.Lifecycle == LocalCatchLifecycleEnum.Saved;
         var owner = _sessionCoordinator.Capture()?.UserId;
-        if (record.TripId is not null || record.CaughtByUserId != owner || record.RecordedByUserId != owner)
+        if (owner is not { } ownerId || record.CaughtByUserId != ownerId || record.RecordedByUserId != ownerId)
         {
             BlockEdit("CatchEditNotSupported");
             return;
@@ -714,6 +728,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         Photographs.MinimumCount = IsEditingSavedCatch ? 1 : 0;
         _catchId = record.Id;
         await BindRecordAsync(record, cancellationToken);
+        await Trip.RestoreAsync(ownerId, record.TripId, record.CaughtByUserId, locked: IsEditingSavedCatch, cancellationToken);
     }
 
     private void BlockEdit(string validationKey)
@@ -863,6 +878,19 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             .Select(species => new CatchChipOptionModel(species.Code, species.Name))
             .ToArray() ?? [];
         return CatchChipOptionModel.BuildShortlist(preferred, _selectedSpecies, MaxChipOptions);
+    }
+
+    private void OnTripChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AnglerOptions)));
+    }
+
+    private void OnTripSelectionChanged(object? sender, EventArgs args)
+    {
+        if (!IsEditingSavedCatch)
+        {
+            ScheduleDraftSave();
+        }
     }
 
     private async void OnPhotographsChanged(object? sender, EventArgs args)
@@ -1049,6 +1077,13 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
                 return false;
             }
 
+            if (lifecycle == LocalCatchLifecycleEnum.Saved && !await Trip.ConfirmAvailableAsync(cancellationToken))
+            {
+                _validationKey = "CatchTripUnavailable";
+                NotifyValidation();
+                return false;
+            }
+
             var args = new LocalCatchSaveArgs
             {
                 Id = _catchId,
@@ -1062,7 +1097,9 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
                 PlaceName = _placeName,
                 Location = _location,
                 Lifecycle = lifecycle,
-                CaughtByUserId = lease.UserId,
+                TripId = Trip.TripId,
+                TripTitle = Trip.TripTitle,
+                CaughtByUserId = Trip.CaughtByUserId,
                 RecordedByUserId = lease.UserId,
                 Photographs = _photographMapper.Map(Photographs.Items.ToArray())
             };

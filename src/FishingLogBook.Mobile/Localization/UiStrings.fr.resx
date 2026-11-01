@@ -362,7 +362,12 @@
   <data name="CatchLocationTryAgain" xml:space="preserve"><value>Réessayer la position</value></data>
   <data name="CatchAnglerLabel" xml:space="preserve"><value>Pêcheur</value></data>
   <data name="CatchAnglerMe" xml:space="preserve"><value>Moi</value></data>
-  <data name="CatchTripDeferredNote" xml:space="preserve"><value>L'association aux sorties n'est pas encore disponible en natif (voir #273).</value></data>
+  <data name="CatchTripRecordingIn" xml:space="preserve"><value>Sortie en cours</value></data>
+  <data name="CatchTripLeave" xml:space="preserve"><value>Retirer de cette sortie</value></data>
+  <data name="CatchTripRejoin" xml:space="preserve"><value>Ajouter à la sortie</value></data>
+  <data name="CatchTripNotPartOfTrip" xml:space="preserve"><value>Ne fait pas partie d'une sortie</value></data>
+  <data name="CatchTripUnavailable" xml:space="preserve"><value>Cette sortie n'est plus sur cet appareil. Choisissez « Retirer de cette sortie » pour enregistrer cette prise seule.</value></data>
+  <data name="CatchTripAnglerUnknown" xml:space="preserve"><value>Un autre pêcheur</value></data>
   <data name="CatchAdditionalDetails" xml:space="preserve"><value>Détails supplémentaires</value></data>
   <data name="CatchCatalogueUnavailable" xml:space="preserve"><value>Catalogue indisponible. Les puces méthode et espèce peuvent être limitées.</value></data>
   <data name="CatchSaving" xml:space="preserve"><value>Enregistrement…</value></data>
@@ -393,4 +398,117 @@
   <data name="CatchLocationPermissionBlocked" xml:space="preserve"><value>L’accès à la position est bloqué. Activez-le dans les paramètres Android de l’application puis réessayez.</value></data>
   <data name="CatchLocationTimedOut" xml:space="preserve"><value>Aucune position obtenue à temps. Vérifiez que la localisation est activée puis réessayez.</value></data>
   <data name="CatchUpdateLocation" xml:space="preserve"><value>Actualiser le lieu</value></data>
+  <data name="TripListTitle" xml:space="preserve"><value>Vos sorties</value></data>
+  <data name="TripListSubtitle" xml:space="preserve"><value>Toutes vos sorties, la plus récente en premier.</value></data>
+  <data name="TripListEmpty" xml:space="preserve"><value>Vous n&apos;avez pas encore commencé de sortie.</value></data>
+  <data name="TripListLoadFailed" xml:space="preserve"><value>Vos sorties n&apos;ont pas pu être chargées.</value></data>
+  <data name="TripViewTrip" xml:space="preserve"><value>Voir la sortie</value></data>
+  <data name="TripUpdate" xml:space="preserve"><value>Modifier la sortie</value></data>
+  <data name="TripSharedLabel" xml:space="preserve"><value>Partagée</value></data>
+  <data name="TripActiveLabel" xml:space="preserve"><value>Sortie en cours</value></data>
+  <data name="TripStatusFinished" xml:space="preserve"><value>Terminée</value></data>
+  <data name="TripCatchesNone" xml:space="preserve"><value>Aucune prise pour l&apos;instant</value></data>
+  <data name="TripCatchesOne" xml:space="preserve"><value>1 prise enregistrée</value></data>
+  <data name="TripCatchesMany" xml:space="preserve"><value>{0} prises enregistrées</value></data>
+  <data name="TripListPhotographsNone" xml:space="preserve"><value>Aucune photo</value></data>
+  <data name="TripListPhotographsOne" xml:space="preserve"><value>1 photo</value></data>
+  <data name="TripListPhotographsMany" xml:space="preserve"><value>{0} photos</value></data>
+  <data name="TripListNotesNone" xml:space="preserve"><value>Aucune note</value></data>
+  <data name="TripListNotesOne" xml:space="preserve"><value>1 note</value></data>
+  <data name="TripListNotesMany" xml:space="preserve"><value>{0} notes</value></data>
+  <data name="TripInvitations" xml:space="preserve"><value>Invitations aux sorties</value></data>
+  <data name="TripInvitationFrom" xml:space="preserve"><value>{0} vous a invité à participer à cette sortie.</value></data>
+  <data name="TripInvitationAccept" xml:space="preserve"><value>Accepter</value></data>
+  <data name="TripInvitationDecline" xml:space="preserve"><value>Refuser</value></data>
+  <data name="TripContributorUnknown" xml:space="preserve"><value>Un autre pêcheur</value></data>
+  <data name="TripStartFishing" xml:space="preserve"><value>Commencer la pêche</value></data>
+  <data name="TripStartedLabel" xml:space="preserve"><value>Commencée</value></data>
+  <data name="TripFinish" xml:space="preserve"><value>Terminer la sortie</value></data>
+  <data name="TripBackToLogbook" xml:space="preserve"><value>Retour au carnet</value></data>
+  <data name="TripLoadFailed" xml:space="preserve"><value>Cette sortie n&apos;a pas pu être chargée.</value></data>
+  <data name="TripNotFound" xml:space="preserve"><value>Cette sortie n&apos;est plus disponible.</value></data>
+  <data name="TripDurationHoursMinutes" xml:space="preserve"><value>{0} h {1} min</value></data>
+  <data name="TripDurationMinutes" xml:space="preserve"><value>{0} min</value></data>
+  <data name="TripTimelineLabel" xml:space="preserve"><value>Chronologie de la sortie</value></data>
+  <data name="TripTimelineEmpty" xml:space="preserve"><value>Rien ne s&apos;est encore passé pendant cette sortie.</value></data>
+  <data name="TripTimelineStarted" xml:space="preserve"><value>Début</value></data>
+  <data name="TripTimelineStartedDescription" xml:space="preserve"><value>Pêche commencée</value></data>
+  <data name="TripTimelineCatch" xml:space="preserve"><value>Prise</value></data>
+  <data name="TripTimelineCatchUnknownSpecies" xml:space="preserve"><value>Prise enregistrée</value></data>
+  <data name="TripTimelineRecordedBy" xml:space="preserve"><value>Enregistrée par {0}</value></data>
+  <data name="TripTimelinePhotograph" xml:space="preserve"><value>Photographie</value></data>
+  <data name="TripTimelinePhotographDescription" xml:space="preserve"><value>Photographie de sortie ajoutée</value></data>
+  <data name="TripTimelineNote" xml:space="preserve"><value>Note</value></data>
+  <data name="TripTimelineFinished" xml:space="preserve"><value>Terminée</value></data>
+  <data name="TripTimelineFinishedDescription" xml:space="preserve"><value>Pêche terminée</value></data>
+  <data name="TripNoteAdd" xml:space="preserve"><value>Ajouter une note</value></data>
+  <data name="TripNotePrompt" xml:space="preserve"><value>Que s&apos;est-il passé ?</value></data>
+  <data name="TripNotePlaceholder" xml:space="preserve"><value>Le niveau a baissé de trente centimètres</value></data>
+  <data name="TripNoteEdit" xml:space="preserve"><value>Modifier la note</value></data>
+  <data name="TripNoteRemove" xml:space="preserve"><value>Supprimer la note</value></data>
+  <data name="TripNoteRemoveTitle" xml:space="preserve"><value>Supprimer la note ?</value></data>
+  <data name="TripNoteRemoveMessage" xml:space="preserve"><value>Voulez-vous vraiment supprimer cette note ?</value></data>
+  <data name="TripNoteRemoveConfirm" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TripNoteAddFailed" xml:space="preserve"><value>Cette note n&apos;a pas pu être ajoutée</value></data>
+  <data name="TripNoteRemoveFailed" xml:space="preserve"><value>Cette note n&apos;a pas pu être supprimée. Réessayez une fois de retour en ligne.</value></data>
+  <data name="TripNoteBeforeTripStart" xml:space="preserve"><value>C&apos;est avant le début de la sortie à {0}. Choisissez une heure plus tardive.</value></data>
+  <data name="TripNoteAfterTripEnd" xml:space="preserve"><value>C&apos;est après la fin de la sortie à {0}. Choisissez une heure plus tôt.</value></data>
+  <data name="TripNoteAfterNow" xml:space="preserve"><value>C&apos;est dans le futur. Choisissez une heure jusqu&apos;à maintenant.</value></data>
+  <data name="TripNotesLabel" xml:space="preserve"><value>Notes de la sortie</value></data>
+  <data name="TripRecordCatch" xml:space="preserve"><value>Enregistrer une prise</value></data>
+  <data name="TripEditTitle" xml:space="preserve"><value>Modifier la sortie</value></data>
+  <data name="TripEditTripTitle" xml:space="preserve"><value>Titre de la sortie (facultatif)</value></data>
+  <data name="TripEditSave" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="TripEditSaveFailed" xml:space="preserve"><value>La sortie n&apos;a pas pu être enregistrée.</value></data>
+  <data name="TripFishingLocation" xml:space="preserve"><value>Lieu de pêche</value></data>
+  <data name="TripParticipants" xml:space="preserve"><value>Pêcheurs de cette sortie</value></data>
+  <data name="TripParticipantsLoadFailed" xml:space="preserve"><value>Impossible de charger les pêcheurs de cette sortie.</value></data>
+  <data name="TripParticipantsActionFailed" xml:space="preserve"><value>Cette modification n&apos;a pas pu être enregistrée. Réessayez.</value></data>
+  <data name="TripParticipantsOwnerOnly" xml:space="preserve"><value>Seul le pêcheur qui a lancé cette sortie peut inviter ou retirer des pêcheurs.</value></data>
+  <data name="TripParticipantOwner" xml:space="preserve"><value>A lancé cette sortie</value></data>
+  <data name="TripParticipantPending" xml:space="preserve"><value>Invitation en attente</value></data>
+  <data name="TripParticipantAccepted" xml:space="preserve"><value>Participe à cette sortie</value></data>
+  <data name="TripParticipantDeclined" xml:space="preserve"><value>Refusée</value></data>
+  <data name="TripInviteAngler" xml:space="preserve"><value>Inviter un pêcheur</value></data>
+  <data name="TripInvite" xml:space="preserve"><value>Inviter</value></data>
+  <data name="TripInviteSearchLabel" xml:space="preserve"><value>Rechercher par nom ou e-mail</value></data>
+  <data name="TripInviteSearchHelp" xml:space="preserve"><value>Recherchez les pêcheurs qui utilisent déjà FishingLogBook. Saisissez au moins trois caractères.</value></data>
+  <data name="TripInviteNoResults" xml:space="preserve"><value>Aucun pêcheur correspondant n&apos;a été trouvé.</value></data>
+  <data name="TripInviteSearchFailed" xml:space="preserve"><value>Impossible de rechercher des pêcheurs. Réessayez.</value></data>
+  <data name="TripInviteFailed" xml:space="preserve"><value>Ce pêcheur n&apos;a pas pu être invité. Il participe peut-être déjà à cette sortie.</value></data>
+  <data name="TripRemoveParticipant" xml:space="preserve"><value>Retirer le pêcheur</value></data>
+  <data name="TripRemoveParticipantTitle" xml:space="preserve"><value>Retirer ce pêcheur ?</value></data>
+  <data name="TripRemoveParticipantMessage" xml:space="preserve"><value>Il ne pourra plus contribuer à cette sortie. Ses prises, notes et photographies restent dans le journal.</value></data>
+  <data name="TripParticipantOnlyAction" xml:space="preserve"><value>Seul le pêcheur qui a lancé cette sortie peut faire cela.</value></data>
+  <data name="TripListOffline" xml:space="preserve"><value>Vous êtes hors ligne. Seules les sorties enregistrées sur cet appareil sont affichées.</value></data>
+  <data name="TripAddPhotograph" xml:space="preserve"><value>Ajouter une photo</value></data>
+  <data name="TripPhotographAddFailed" xml:space="preserve"><value>Cette photo n&apos;a pas pu être ajoutée</value></data>
+  <data name="TripNoteDate" xml:space="preserve"><value>Date de la note</value></data>
+  <data name="TripNoteTime" xml:space="preserve"><value>Heure de la note</value></data>
+  <data name="TripOtherLocation" xml:space="preserve"><value>Autre lieu</value></data>
+  <data name="TripClearLocation" xml:space="preserve"><value>Effacer le lieu</value></data>
+  <data name="TripCatchesLabel" xml:space="preserve"><value>Prises de la sortie</value></data>
+  <data name="TripEditCatchesNone" xml:space="preserve"><value>Aucune prise pour l'instant</value></data>
+  <data name="TripAddExistingCatch" xml:space="preserve"><value>Ajouter une prise</value></data>
+  <data name="TripAddCatchesTitle" xml:space="preserve"><value>Ajouter des prises</value></data>
+  <data name="TripAddCatchesSubtitle" xml:space="preserve"><value>Choisissez les prises à ajouter à cette sortie</value></data>
+  <data name="TripAddCatchesEmpty" xml:space="preserve"><value>Aucune prise à ajouter</value></data>
+  <data name="TripAddCatchesEmptyHint" xml:space="preserve"><value>Toutes les prises enregistrées pendant cette sortie y sont déjà associées.</value></data>
+  <data name="TripAddCatchesLoadFailed" xml:space="preserve"><value>Ces prises n'ont pas pu être lues. Réessayez dans un instant.</value></data>
+  <data name="TripAddCatchesRejected" xml:space="preserve"><value>Ces prises ne sont plus disponibles. La liste a été actualisée.</value></data>
+  <data name="TripAddCatchesFailed" xml:space="preserve"><value>Ces prises n'ont pas pu être ajoutées à la sortie.</value></data>
+  <data name="TripAddCatchesConfirmOne" xml:space="preserve"><value>Ajouter 1 prise</value></data>
+  <data name="TripAddCatchesConfirmMany" xml:space="preserve"><value>Ajouter {0} prises</value></data>
+  <data name="TripCatchRemoveTitle" xml:space="preserve"><value>Retirer la prise de la sortie ?</value></data>
+  <data name="TripCatchRemoveMessage" xml:space="preserve"><value>{0} restera dans votre carnet mais ne fera plus partie de cette sortie.</value></data>
+  <data name="TripCatchRemoveConfirm" xml:space="preserve"><value>Retirer</value></data>
+  <data name="TripCatchRemoveFromTripFor" xml:space="preserve"><value>Retirer {0} de cette sortie</value></data>
+  <data name="TripNoteEditShort" xml:space="preserve"><value>Modifier</value></data>
+  <data name="TripInProgress" xml:space="preserve"><value>Sortie de pêche en cours</value></data>
+  <data name="TripPhotographsLabel" xml:space="preserve"><value>Photos de la sortie</value></data>
+  <data name="TripPhotographsEmpty" xml:space="preserve"><value>Aucune photo de la journée pour l'instant</value></data>
+  <data name="TripPhotographRemoveFailed" xml:space="preserve"><value>Cette photo n'a pas pu être supprimée. Réessayez une fois de retour en ligne.</value></data>
+  <data name="TripEditSaveScope" xml:space="preserve"><value>Enregistrer s'applique au titre et au lieu de pêche. Les photos, notes et prises sont enregistrées au fur et à mesure.</value></data>
+  <data name="TripPhotographRemove" xml:space="preserve"><value>Retirer la photo</value></data>
+  <data name="TripNotesEmpty" xml:space="preserve"><value>Aucune note pour l'instant</value></data>
 </root>

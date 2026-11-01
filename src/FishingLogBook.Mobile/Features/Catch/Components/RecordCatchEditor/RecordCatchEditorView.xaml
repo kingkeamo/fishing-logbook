@@ -124,6 +124,25 @@
         </Label>
       </VerticalStackLayout>
 
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" MinimumHeightRequest="48" IsVisible="{Binding Trip.ShowAssociation}"
+            AutomationId="RecordCatchTripAssociation">
+        <VerticalStackLayout VerticalOptions="Center">
+          <Label Text="{Binding Text[CatchTripRecordingIn]}" Style="{StaticResource TileCaption}" />
+          <Label Text="{Binding Trip.TripName}" Style="{StaticResource SecondaryText}" LineBreakMode="WordWrap"
+                 AutomationId="RecordCatchTripName" />
+        </VerticalStackLayout>
+        <Button Grid.Column="1" Text="{Binding Text[CatchTripLeave]}" Style="{StaticResource SecondaryButton}"
+                MinimumHeightRequest="48" Padding="12,8" MaximumWidthRequest="176"
+                IsVisible="{Binding Trip.CanLeave}" Clicked="OnLeaveTrip" AutomationId="RecordCatchTripLeave" />
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" MinimumHeightRequest="48" IsVisible="{Binding Trip.ShowStandalone}"
+            AutomationId="RecordCatchTripStandalone">
+        <Label Text="{Binding Text[CatchTripNotPartOfTrip]}" Style="{StaticResource SecondaryText}" VerticalOptions="Center" />
+        <Button Grid.Column="1" Text="{Binding Text[CatchTripRejoin]}" Style="{StaticResource SecondaryButton}"
+                MinimumHeightRequest="48" Padding="12,8" MaximumWidthRequest="176"
+                IsVisible="{Binding Trip.CanRejoin}" Clicked="OnRejoinTrip" AutomationId="RecordCatchTripRejoin" />
+      </Grid>
+
       <VerticalStackLayout Spacing="4" IsVisible="{Binding ShowAnglerSection}">
         <Label Text="{Binding Text[CatchAnglerLabel]}" Style="{StaticResource TileCaption}" />
         <FlexLayout Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start"
@@ -132,7 +151,7 @@
           <BindableLayout.ItemTemplate>
             <DataTemplate x:DataType="models:CatchChipOptionModel">
               <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}"
-                                 CommandParameter="{Binding Code}" />
+                                 CommandParameter="{Binding Code}" Tapped="OnAnglerChip" />
             </DataTemplate>
           </BindableLayout.ItemTemplate>
         </FlexLayout>

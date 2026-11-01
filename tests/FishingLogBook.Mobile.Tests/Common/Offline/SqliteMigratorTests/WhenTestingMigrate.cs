@@ -57,7 +57,7 @@ public sealed class WhenTestingMigrate : BaseSqliteMigratorTest
         await using var connection = await ConnectionFactory.OpenAsync(CancellationToken.None);
         await using var versionCommand = connection.CreateCommand();
         versionCommand.CommandText = "SELECT version FROM schemainfo;";
-        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(4);
+        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(5);
 
         await using var tableCommand = connection.CreateCommand();
         tableCommand.CommandText =
@@ -84,7 +84,7 @@ public sealed class WhenTestingMigrate : BaseSqliteMigratorTest
         await using var connection = await ConnectionFactory.OpenAsync(CancellationToken.None);
         await using var versionCommand = connection.CreateCommand();
         versionCommand.CommandText = "SELECT version FROM schemainfo;";
-        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(4);
+        Convert.ToInt32(await versionCommand.ExecuteScalarAsync()).Should().Be(5);
     }
 
     [Fact]

@@ -45,7 +45,6 @@ public sealed class WhenTestingLabelsOptionsAndFailures : BaseCatchEditViewModel
         Sut.IsMethodSelected("Fly").Should().BeTrue();
         Sut.IsSpeciesSelected("Salmon").Should().BeTrue();
         Sut.ShowAnglerSection.Should().BeTrue();
-        Sut.ShowTripDeferredNote.Should().BeTrue();
         Sut.ShowLocationAction.Should().BeTrue();
         Sut.LocationActionText.Should().Be(Text["CatchCaptureLocation"]);
     }

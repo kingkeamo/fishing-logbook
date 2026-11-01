@@ -4,5 +4,7 @@ public enum OutboxAggregateTypeEnum
 {
     Catch = 0,
     Trip = 1,
-    CatchPhotograph = 2
+    CatchPhotograph = 2,
+    TripNote = 3,
+    TripPhotograph = 4
 }

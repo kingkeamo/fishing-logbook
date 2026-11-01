@@ -6,6 +6,7 @@ using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
+using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
@@ -177,7 +178,9 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
             new CatchPhotographSaveArgsMapper(), files, Substitute.For<IDeviceLocationService>(),
             new MeasurementService(), units,
             new PhotographCollectionEditorViewModel(Substitute.For<IPhotographCollectionEditorService>(), text),
-            TimeProvider.System, text, Substitute.For<ICatchWorkingCopyService>(), new ActiveCatchEditRegistry());
+            TimeProvider.System, text, Substitute.For<ICatchWorkingCopyService>(), new ActiveCatchEditRegistry(),
+            new FishingLogBook.Mobile.Features.Trips.ViewModels.TripAssociationViewModel(
+                Substitute.For<FishingLogBook.Mobile.Features.Trips.Services.ITripAssociationService>(), text));
     }
 
     [Fact]
@@ -414,6 +417,60 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
         command.Parameters.AddWithValue("$userId", OwnerUserId.ToString("D"));
         var title = (string?)await command.ExecuteScalarAsync();
         title.Should().Be("May evening");
+    }
+
+    [Fact]
+    public async Task ItShouldMoveASavedCatchIntoAndOutOfATripWhenResavedWithTheSamePhotographs()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+        var original = CreateSaveArgs();
+        await Sut.SaveAsync(original, CancellationToken.None);
+        var stored = await Sut.GetAsync(original.Id, CancellationToken.None);
+        LocalCatchSaveArgs Resave(Guid? trip, string? title)
+        {
+            return new LocalCatchSaveArgs
+            {
+                Id = stored!.Id,
+                TripId = trip,
+                TripTitle = title,
+                CaughtByUserId = stored.CaughtByUserId,
+                RecordedByUserId = stored.RecordedByUserId,
+                CaughtOn = stored.CaughtOn,
+                SpeciesName = stored.SpeciesName,
+                Weight = stored.Weight,
+                Length = stored.Length,
+                Method = stored.Method,
+                BaitOrLure = stored.BaitOrLure,
+                Notes = stored.Notes,
+                PlaceName = stored.PlaceName,
+                Location = stored.Location,
+                Lifecycle = LocalCatchLifecycleEnum.Saved,
+                Photographs = [.. stored.Photographs.Select(photograph => new LocalCatchPhotographSaveArgs
+                {
+                    Id = photograph.Id,
+                    SortOrder = photograph.SortOrder,
+                    LocalFilePath = photograph.LocalFilePath,
+                    ContentType = photograph.ContentType,
+                    Metadata = photograph.Metadata
+                })]
+            };
+        }
+
+        // Act
+        var joined = await Sut.SaveAsync(Resave(tripId, "May evening"), CancellationToken.None);
+        var inTrip = await Sut.GetAsync(original.Id, CancellationToken.None);
+        var left = await Sut.SaveAsync(Resave(null, null), CancellationToken.None);
+        var outOfTrip = await Sut.GetAsync(original.Id, CancellationToken.None);
+
+        // Assert
+        joined.Outcome.Should().Be(LocalCatchSaveOutcomeEnum.Success);
+        left.Outcome.Should().Be(LocalCatchSaveOutcomeEnum.Success);
+        inTrip!.TripId.Should().Be(tripId);
+        inTrip.Photographs.Should().HaveCount(1);
+        outOfTrip!.TripId.Should().BeNull();
+        outOfTrip.Photographs.Select(photograph => photograph.LocalFilePath).Should().Equal("photos/one.jpg");
+        outOfTrip.Revision.Should().Be(stored!.Revision + 2);
     }
 
     [Fact]

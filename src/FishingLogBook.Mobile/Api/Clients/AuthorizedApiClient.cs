@@ -83,6 +83,13 @@ public sealed class AuthorizedApiClient
         return await SendAsync(request, cancellationToken, distinguishNotFound: true, ReadNoContent);
     }
 
+    public async Task<ApiResultModel<T>> DeleteAsync<T>(string path, CancellationToken cancellationToken)
+        where T : class
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, path);
+        return await SendAsync<T>(request, cancellationToken, distinguishNotFound: true);
+    }
+
     public async Task<ApiResultModel<NoContentModel>> DeleteAsync(string path, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Delete, path);

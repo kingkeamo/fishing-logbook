@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models"
+ xmlns:catches="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripCatches"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:timeline="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripTimeline"
+ xmlns:photographs="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripPhotographs"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.ActiveTripView.ActiveTripView" x:DataType="models:ActiveTripModel">
+ <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}" AutomationId="ActiveTripCard">
+  <VerticalStackLayout Spacing="12">
+   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+    <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+     <Label Text="{Binding DateHeading}" Style="{StaticResource Heading}" FontSize="24" AutomationId="TripDate" />
+     <Label Text="{Binding TitleText}" IsVisible="{Binding HasTitle}" Style="{StaticResource SecondaryText}" FontSize="15" AutomationId="TripTitle" />
+    </VerticalStackLayout>
+    <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Start">
+     <Grid WidthRequest="48" HeightRequest="48" SemanticProperties.Description="{Binding Text[TripParticipants]}" AutomationId="TripParticipants">
+      <controls:IconView Source="icon_people.png" Tone="Muted" WidthRequest="24" HeightRequest="24" />
+      <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnParticipants" /></Grid.GestureRecognizers>
+     </Grid>
+     <Border Padding="10,0" HeightRequest="32" StrokeThickness="0" VerticalOptions="Center" BackgroundColor="{StaticResource PreferenceDefault}" AutomationId="TripStatus">
+      <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+      <Border.Triggers>
+       <DataTrigger TargetType="Border" Binding="{Binding IsCompleted}" Value="True">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+       </DataTrigger>
+      </Border.Triggers>
+      <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+       <controls:IconView Source="{Binding StatusIcon}" Tone="Inverse" WidthRequest="14" HeightRequest="14" VerticalOptions="Center" />
+       <Label Text="{Binding StatusText}" TextColor="White" FontSize="13" FontAttributes="Bold" VerticalOptions="Center" />
+      </HorizontalStackLayout>
+     </Border>
+    </HorizontalStackLayout>
+   </Grid>
+   <FlexLayout Wrap="Wrap" JustifyContent="Start" AutomationId="TripFacts">
+    <HorizontalStackLayout IsVisible="{Binding HasPlace}" Spacing="6" Margin="0,0,16,6">
+     <controls:IconView Source="icon_place.png" Tone="Default" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+     <Label Text="{Binding PlaceText}" Style="{StaticResource BodyText}" FontSize="14" VerticalOptions="Center" AutomationId="TripPlace" />
+    </HorizontalStackLayout>
+    <HorizontalStackLayout Spacing="6" Margin="0,0,16,6">
+     <controls:IconView Source="icon_clock.png" Tone="Default" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+     <Label Text="{Binding StartedText}" Style="{StaticResource BodyText}" FontSize="14" VerticalOptions="Center" AutomationId="TripStarted" />
+    </HorizontalStackLayout>
+    <HorizontalStackLayout Spacing="6" Margin="0,0,0,6">
+     <controls:IconView Source="icon_timer.png" Tone="Default" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+     <Label Text="{Binding ElapsedText}" Style="{StaticResource BodyText}" FontSize="14" VerticalOptions="Center" AutomationId="TripElapsed" />
+    </HorizontalStackLayout>
+   </FlexLayout>
+   <FlexLayout Wrap="Wrap" JustifyContent="Start" AutomationId="TripStats">
+    <HorizontalStackLayout Spacing="6" Margin="0,0,16,6">
+     <controls:IconView Source="icon_star.png" Tone="Accent" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+     <Label Text="{Binding CatchSummary}" Style="{StaticResource BodyText}" FontSize="14" VerticalOptions="Center" AutomationId="TripCatchCount" />
+    </HorizontalStackLayout>
+    <HorizontalStackLayout Spacing="6" Margin="0,0,16,6">
+     <controls:IconView Source="icon_camera.png" Tone="Default" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+     <Label Text="{Binding PhotographSummary}" Style="{StaticResource BodyText}" FontSize="14" VerticalOptions="Center" AutomationId="TripPhotographCount" />
+    </HorizontalStackLayout>
+    <HorizontalStackLayout Spacing="6" Margin="0,0,0,6">
+     <controls:IconView Source="icon_note.png" Tone="Default" WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+     <Label Text="{Binding NoteSummary}" Style="{StaticResource BodyText}" FontSize="14" VerticalOptions="Center" AutomationId="TripNoteCount" />
+    </HorizontalStackLayout>
+   </FlexLayout>
+   <timeline:TripTimelineView x:Name="Timeline" Trip="{Binding Trip}" Items="{Binding Timeline}" EditNoteLabel="{Binding Text[TripNoteEdit]}" DeleteNoteLabel="{Binding Text[TripNoteRemove]}" />
+   <photographs:TripPhotographsView x:Name="Photos" ShowGallery="False" IsVisible="{Binding ShowPhotographPicker}" TakeText="{Binding Text[PhotoTakePicture]}"
+     ChooseText="{Binding Text[PhotoChooseGallery]}" Message="{Binding MessageText}" />
+   <Label Text="{Binding MessageText}" IsVisible="{Binding HasMessage}"
+          TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripMessage" />
+   <catches:TripCatchesView x:Name="CatchActions" Trip="{Binding Trip}" ShowRecordAction="{Binding CanRecordCatch}" ShowAddAction="{Binding CanAddCatches}"
+     RecordText="{Binding Text[TripRecordCatch]}" AddText="{Binding Text[TripAddExistingCatch]}" />
+   <FlexLayout Wrap="Wrap" JustifyContent="Start" AutomationId="TripActions">
+    <Button Text="{Binding Text[TripAddPhotograph]}" IsVisible="{Binding CanAddPhotographs}" Clicked="OnToggleAddPhoto" Style="{StaticResource SecondaryButton}" FlexLayout.Basis="31%" FlexLayout.Grow="1"
+            Margin="0,0,8,8" MinimumHeightRequest="48" AutomationId="TripAddPhoto" />
+    <Button Text="{Binding Text[TripUpdate]}" IsVisible="{Binding CanManageTrip}" Clicked="OnUpdate" Style="{StaticResource SecondaryButton}" FlexLayout.Basis="31%" FlexLayout.Grow="1"
+            Margin="0,0,0,8" MinimumHeightRequest="48" AutomationId="TripUpdate" />
+    <Button Text="{Binding Text[TripFinish]}" IsVisible="{Binding CanManageTrip}" Clicked="OnFinish" Style="{StaticResource SecondaryButton}" FlexLayout.Basis="31%" FlexLayout.Grow="1"
+            TextColor="{StaticResource PreferenceDefault}" BorderColor="{StaticResource PreferenceDefault}" Margin="0,0,8,8" MinimumHeightRequest="48" AutomationId="TripFinish" />
+   </FlexLayout>
+   <Button Text="{Binding Text[TripBackToLogbook]}" IsVisible="{Binding ShowBackToLogbook}" Style="{StaticResource SecondaryButton}" Clicked="OnLogbook" MinimumHeightRequest="48" AutomationId="TripBackToLogbook" />
+  </VerticalStackLayout>
+ </Border>
+</ContentView>

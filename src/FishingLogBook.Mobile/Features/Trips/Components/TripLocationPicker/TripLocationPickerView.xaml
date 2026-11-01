@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:catchModels="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:local="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripLocationPicker"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.TripLocationPicker.TripLocationPickerView" x:Name="Root" x:DataType="local:TripLocationPickerView">
+ <VerticalStackLayout Spacing="6" AutomationId="TripLocationPicker">
+  <Label Text="{Binding Heading, Source={x:Reference Root}}" Style="{StaticResource TileCaption}" />
+  <FlexLayout BindableLayout.ItemsSource="{Binding Options, Source={x:Reference Root}}" Wrap="Wrap" IsVisible="{Binding HasOptions, Source={x:Reference Root}}" AutomationId="TripLocationChoices">
+   <BindableLayout.ItemTemplate><DataTemplate x:DataType="catchModels:CatchChipOptionModel">
+    <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}" CommandParameter="{Binding Code}" Tapped="OnChip" />
+   </DataTemplate></BindableLayout.ItemTemplate>
+  </FlexLayout>
+  <Border Style="{StaticResource InputField}">
+   <Entry Text="{Binding PlaceName, Source={x:Reference Root}, Mode=TwoWay}" Placeholder="{Binding OtherText, Source={x:Reference Root}}" MaxLength="160" Style="{StaticResource FieldEntry}"
+          SemanticProperties.Description="{Binding OtherText, Source={x:Reference Root}}" AutomationId="TripEditPlaceEntry" />
+  </Border>
+  <Button Text="{Binding ClearText, Source={x:Reference Root}}" IsVisible="{Binding HasPlace, Source={x:Reference Root}}" Style="{StaticResource SecondaryButton}"
+          HorizontalOptions="Start" Clicked="OnClear" MinimumHeightRequest="48" AutomationId="TripClearLocation" />
+ </VerticalStackLayout>
+</ContentView>

@@ -404,12 +404,12 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
     }
 
     [Fact]
-    public async Task ItShouldDisableSaveForAnUnsupportedExistingTripCatch()
+    public async Task ItShouldDisableSaveForAnotherAnglersExistingCatch()
     {
         // Arrange
         var id = Guid.NewGuid();
         MockCatchStore.GetAsync(id, Arg.Any<CancellationToken>()).Returns(
-            CreateRecord(LocalCatchLifecycleEnum.Saved, id, photographId: Guid.NewGuid(), tripId: Guid.NewGuid()));
+            CreateRecord(LocalCatchLifecycleEnum.Saved, id, photographId: Guid.NewGuid(), tripId: Guid.NewGuid(), caughtBy: Guid.NewGuid()));
         // Act
         await Sut.InitializeAsync(id, CancellationToken.None);
         var saved = await Sut.SaveAsync(CancellationToken.None);
@@ -430,7 +430,8 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
         double? length = null,
         LocalCatchLocationModel? location = null,
         string? placeName = null,
-        Guid? tripId = null)
+        Guid? tripId = null,
+        Guid? caughtBy = null)
     {
         var photographs = photographId is null
             ? Array.Empty<LocalCatchPhotographModel>()
@@ -454,7 +455,7 @@ public class WhenTestingDraftsAndEditLifecycle : BaseCatchEditViewModelTest
             TripId = tripId,
             PlaceName = placeName,
             UserId = OwnerUserId,
-            CaughtByUserId = OwnerUserId,
+            CaughtByUserId = caughtBy ?? OwnerUserId,
             RecordedByUserId = OwnerUserId,
             CaughtOn = Now,
             SpeciesName = "Brown trout",

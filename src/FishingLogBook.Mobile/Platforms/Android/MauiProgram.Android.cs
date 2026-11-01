@@ -1,6 +1,6 @@
 using Android.Content.Res;
-using FishingLogBook.Mobile.Configuration;
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
+using FishingLogBook.Mobile.Configuration;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;

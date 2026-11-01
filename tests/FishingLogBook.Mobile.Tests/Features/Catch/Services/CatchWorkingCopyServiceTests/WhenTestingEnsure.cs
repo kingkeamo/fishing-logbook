@@ -163,20 +163,33 @@ public sealed class WhenTestingEnsure : BaseSqliteCatchStoreTest
         await MockDownload.DidNotReceive().DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task ItShouldBlockUnsupportedTripOrOtherAnglerProvenanceBeforeDownloading(bool trip)
+    [Fact]
+    public async Task ItShouldBlockAnotherAnglersCatchBeforeDownloading()
     {
         // Arrange
-        var view = trip ? _view with { TripId = Guid.NewGuid() } : _view with { CaughtByUserId = OtherUserId };
-        MockRemote.GetAsync(_view.Id, Arg.Any<CancellationToken>()).Returns(ApiResultModel<CatchViewDto>.Succeeded(view));
+        MockRemote.GetAsync(_view.Id, Arg.Any<CancellationToken>()).Returns(ApiResultModel<CatchViewDto>.Succeeded(_view with { CaughtByUserId = OtherUserId }));
         // Act
         var result = await _service.EnsureAsync(_view.Id, CancellationToken.None);
         // Assert
         result.Should().Be(WorkingCopyOutcomeEnum.NotEditable);
         await MockDownload.DidNotReceive().DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         (await Sut.ListAsync(CancellationToken.None)).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldPreserveTheTripWhenHydratingTheOwnersTripCatch()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+        MockRemote.GetAsync(_view.Id, Arg.Any<CancellationToken>()).Returns(ApiResultModel<CatchViewDto>.Succeeded(_view with { TripId = tripId }));
+        // Act
+        var result = await _service.EnsureAsync(_view.Id, CancellationToken.None);
+        // Assert
+        result.Should().Be(WorkingCopyOutcomeEnum.Ready);
+        var record = (await Sut.GetAsync(_view.Id, CancellationToken.None))!;
+        record.TripId.Should().Be(tripId);
+        record.CaughtByUserId.Should().Be(OwnerUserId);
+        record.RecordedByUserId.Should().Be(OwnerUserId);
     }
 
     [Theory]

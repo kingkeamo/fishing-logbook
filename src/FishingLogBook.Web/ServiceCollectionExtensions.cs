@@ -1,4 +1,7 @@
 using FishingLogBook.Client.Resilience;
+using FishingLogBook.Shared.Catches.Services;
+using FishingLogBook.Shared.Photographs.Contracts;
+using FishingLogBook.Shared.Photographs.Services;
 using FishingLogBook.Web.Browser.Install;
 using FishingLogBook.Web.Browser.Location;
 using FishingLogBook.Web.Browser.Network;
@@ -26,9 +29,6 @@ using FishingLogBook.Web.Features.Locations.Clients;
 using FishingLogBook.Web.Features.OfflineAccess.Clients;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Onboarding.Services;
-using FishingLogBook.Shared.Catches.Services;
-using FishingLogBook.Shared.Photographs.Contracts;
-using FishingLogBook.Shared.Photographs.Services;
 using FishingLogBook.Web.Features.Photographs.Services;
 using FishingLogBook.Web.Features.Profile.Clients;
 using FishingLogBook.Web.Features.Profile.Offline;

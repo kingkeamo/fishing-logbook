@@ -48,6 +48,24 @@ public partial class RecordCatchEditorView : ContentView
         }
     }
 
+    private void OnAnglerChip(object? sender, EventArgs args)
+    {
+        if (sender is ChipView { CommandParameter: string code })
+        {
+            Editor?.Trip.SelectAngler(code);
+        }
+    }
+
+    private void OnLeaveTrip(object? sender, EventArgs args)
+    {
+        Editor?.Trip.Leave();
+    }
+
+    private void OnRejoinTrip(object? sender, EventArgs args)
+    {
+        Editor?.Trip.Rejoin();
+    }
+
     private async void OnCaptureLocation(object? sender, EventArgs args)
     {
         if (Editor is null)

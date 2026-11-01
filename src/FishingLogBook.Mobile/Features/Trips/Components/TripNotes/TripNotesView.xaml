@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:local="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripNotes"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.TripNotes.TripNotesView" x:Name="Root" x:DataType="local:TripNotesView">
+ <Grid>
+  <VerticalStackLayout Spacing="8" IsVisible="{Binding ShowList, Source={x:Reference Root}}" AutomationId="TripNotes">
+   <Label Text="{Binding Heading, Source={x:Reference Root}}" Style="{StaticResource TileCaption}" />
+   <Label Text="{Binding EmptyText, Source={x:Reference Root}}" IsVisible="{Binding IsEmpty, Source={x:Reference Root}}" Style="{StaticResource SecondaryText}" FontSize="13" AutomationId="TripNotesEmpty" />
+   <VerticalStackLayout BindableLayout.ItemsSource="{Binding Notes, Source={x:Reference Root}}" Spacing="6">
+    <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:TripNoteRowModel">
+     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4" MinimumHeightRequest="48" AutomationId="TripNoteRow">
+      <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+       <Label Text="{Binding TimeText}" Style="{StaticResource SecondaryText}" FontSize="12" />
+       <Label Text="{Binding Text}" Style="{StaticResource BodyText}" FontSize="14" />
+      </VerticalStackLayout>
+      <HorizontalStackLayout Grid.Column="1" IsVisible="{Binding CanChange}" Spacing="0">
+       <Grid WidthRequest="48" HeightRequest="48" AutomationId="TripNoteEdit" SemanticProperties.Description="{Binding Source={RelativeSource AncestorType={x:Type local:TripNotesView}}, Path=EditLabel}">
+        <controls:IconView Source="icon_edit.png" Tone="Default" WidthRequest="20" HeightRequest="20" />
+        <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnEdit" /></Grid.GestureRecognizers>
+       </Grid>
+       <Grid WidthRequest="48" HeightRequest="48" AutomationId="TripNoteDelete" SemanticProperties.Description="{Binding Source={RelativeSource AncestorType={x:Type local:TripNotesView}}, Path=DeleteLabel}">
+        <controls:IconView Source="icon_trash.png" Tone="Default" WidthRequest="20" HeightRequest="20" />
+        <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnDelete" /></Grid.GestureRecognizers>
+       </Grid>
+      </HorizontalStackLayout>
+     </Grid>
+    </DataTemplate></BindableLayout.ItemTemplate>
+   </VerticalStackLayout>
+   <Button Text="{Binding AddText, Source={x:Reference Root}}" Style="{StaticResource SecondaryButton}" HorizontalOptions="Start" MinimumHeightRequest="48"
+           IsVisible="{Binding CanAdd, Source={x:Reference Root}}" Clicked="OnAdd" AutomationId="TripNoteAdd" />
+  </VerticalStackLayout>
+  <Border IsVisible="{Binding ShowFloating, Source={x:Reference Root}}" WidthRequest="56" HeightRequest="56" StrokeThickness="0" HorizontalOptions="End" VerticalOptions="End"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}"
+          SemanticProperties.Description="{Binding AddText, Source={x:Reference Root}}" AutomationId="TripNoteFloating">
+   <Border.StrokeShape><Ellipse /></Border.StrokeShape>
+   <Border.Shadow><Shadow Brush="Black" Opacity="0.3" Radius="8" Offset="0,3" /></Border.Shadow>
+   <controls:IconView Source="icon_note_add.png" Tone="Inverse" WidthRequest="24" HeightRequest="24" HorizontalOptions="Center" VerticalOptions="Center" />
+   <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnAdd" /></Border.GestureRecognizers>
+  </Border>
+ </Grid>
+</ContentView>

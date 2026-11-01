@@ -777,4 +777,79 @@ public sealed class WhenTestingSynchronise : BaseCatchMetadataSynchroniserTest
         allRecorded.PhotographsRecorded.Should().Be(2);
         allRecorded.CanRetry.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task ItShouldNotAskAboutATripForACatchThatIsNotPartOfOne()
+    {
+        // Arrange
+        var catchId = await SaveCatchAsync(CreateSaveArgs(Guid.NewGuid()));
+
+        // Act
+        await RunAsync();
+
+        // Assert
+        ServerCatches.Should().ContainKey(catchId);
+        await MockTripDependency.DidNotReceive().CheckAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldWaitForALocallyCreatedTripBeforeSendingItsCatchAndNotCountItAsSynced()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+        var catchId = await SaveCatchAsync(CreateSaveArgs(Guid.NewGuid(), tripId: tripId));
+        MockTripDependency.CheckAsync(UserA, tripId, Arg.Any<CancellationToken>())
+            .Returns(FishingLogBook.Mobile.Common.Offline.Models.OutboxOperationResultModel.Retry("WaitingForTrip"));
+
+        // Act
+        await RunAsync();
+
+        // Assert
+        var operation = (await ReadMetadataOperationsAsync(catchId)).Single();
+        operation.Status.Should().Be(OutboxStatusEnum.Pending);
+        operation.LastError.Should().Be("WaitingForTrip");
+        ServerCatches.Should().BeEmpty();
+        (await ReadSyncedRevisionAsync(catchId)).Should().BeNull();
+        await MockTripDependency.Received(1).CheckAsync(UserA, tripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldFailTerminallyWithAnActionableCodeWhenTheTripIsNoLongerAvailable()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+        var catchId = await SaveCatchAsync(CreateSaveArgs(Guid.NewGuid(), tripId: tripId));
+        MockTripDependency.CheckAsync(UserA, tripId, Arg.Any<CancellationToken>())
+            .Returns(FishingLogBook.Mobile.Common.Offline.Models.OutboxOperationResultModel.Terminal("TripUnavailable"));
+
+        // Act
+        await RunAsync();
+        Clock.Advance(TimeSpan.FromHours(1));
+        await RunAsync();
+
+        // Assert
+        var operation = (await ReadMetadataOperationsAsync(catchId)).Single();
+        operation.Status.Should().Be(OutboxStatusEnum.Failed);
+        operation.LastError.Should().Be("TripUnavailable");
+        ServerCatches.Should().BeEmpty();
+        (await ReadStatusAsync(UserA, catchId)).State.Should().Be(CatchSyncStateEnum.ActionRequired);
+        await MockTripDependency.Received(1).CheckAsync(UserA, tripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldSendTheCatchWithItsTripOnceTheTripIsOnTheServer()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+        var catchId = await SaveCatchAsync(CreateSaveArgs(Guid.NewGuid(), tripId: tripId));
+        MockTripDependency.CheckAsync(UserA, tripId, Arg.Any<CancellationToken>())
+            .Returns((FishingLogBook.Mobile.Common.Offline.Models.OutboxOperationResultModel?)null);
+
+        // Act
+        await RunAsync();
+
+        // Assert
+        ServerCatches[catchId].TripId.Should().Be(tripId);
+        (await ReadSyncedRevisionAsync(catchId)).Should().NotBeNull();
+    }
 }

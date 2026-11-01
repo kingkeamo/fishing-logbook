@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Trips.Modals.TripNoteModal"
+               x:TypeArguments="x:Boolean" x:DataType="vm:TripNoteEditorViewModel"
+               Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20,8,20,20"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
+      <BoxView WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center"
+               Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+      <Label Text="{Binding Heading}" Style="{StaticResource Heading}" FontSize="20" Margin="0,8,0,0"
+             SemanticProperties.HeadingLevel="Level1" AutomationId="TripNoteHeading" />
+      <Border Style="{StaticResource InputField}">
+        <Editor Text="{Binding NoteText, Mode=TwoWay}" Placeholder="{Binding Text[TripNotePlaceholder]}" AutoSize="TextChanges" MinimumHeightRequest="96"
+                MaxLength="2000" SemanticProperties.Description="{Binding Text[TripNotePrompt]}" AutomationId="TripNoteEditor" />
+      </Border>
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+        <Border Style="{StaticResource InputField}">
+          <DatePicker Date="{Binding NoteDate, Mode=TwoWay}" MinimumDate="{Binding NoteDateMinimum}" MaximumDate="{Binding NoteDateMaximum}"
+                      SemanticProperties.Description="{Binding Text[TripNoteDate]}" AutomationId="TripNoteDate" />
+        </Border>
+        <Border Grid.Column="1" Style="{StaticResource InputField}">
+          <TimePicker Time="{Binding NoteTime, Mode=TwoWay}" SemanticProperties.Description="{Binding Text[TripNoteTime]}" AutomationId="TripNoteTime" />
+        </Border>
+      </Grid>
+      <Label Text="{Binding WhenText}" IsVisible="{Binding HasWhenError}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripNoteWhenError" />
+      <Label Text="{Binding FailureText}" IsVisible="{Binding SaveFailed}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripNoteFailed" />
+      <Button Text="{Binding SaveText}" IsEnabled="{Binding CanSave}" Style="{StaticResource PrimaryButton}" Clicked="OnSave" AutomationId="TripNoteSave" />
+      <Button Text="{Binding Text[Cancel]}" Style="{StaticResource SecondaryButton}" Clicked="OnCancel" AutomationId="TripNoteCancel" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

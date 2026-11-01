@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models" xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Features.Trips.Pages.TripsPage"
+ x:DataType="vm:TripListViewModel" Title="{Binding Text[Trips]}" Shell.NavBarIsVisible="False" SafeAreaEdges="None">
+ <ContentPage.Behaviors>
+  <toolkit:StatusBarBehavior StatusBarColor="#102A43" StatusBarStyle="LightContent" />
+ </ContentPage.Behaviors>
+ <Grid RowDefinitions="132,*">
+  <Image Source="header_lough_corrib.jpg" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
+  <BoxView Color="#8C102A43" />
+  <Grid SafeAreaEdges="Container" ColumnDefinitions="48,*" ColumnSpacing="8" Padding="8,8,16,0" VerticalOptions="Start">
+   <Grid WidthRequest="48" HeightRequest="48" SemanticProperties.Description="{Binding Text[OpenMenu]}" AutomationId="TripsOpenMenu">
+    <controls:IconView Source="icon_menu.png" Tone="Inverse" WidthRequest="24" HeightRequest="24" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnOpenMenu" /></Grid.GestureRecognizers>
+   </Grid>
+   <controls:IconView Grid.Column="1" Source="brand_horizontal.png" Tone="Inverse" HeightRequest="44" HorizontalOptions="Start" VerticalOptions="Center" />
+  </Grid>
+  <Border Grid.Row="1" Margin="0,-28,0,0" StrokeThickness="0" Padding="16,16,16,0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+   <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+   <ScrollView>
+    <VerticalStackLayout Spacing="12" MaximumWidthRequest="720" Padding="0,0,0,24">
+     <VerticalStackLayout Spacing="2">
+      <Label Text="{Binding Text[TripListTitle]}" Style="{StaticResource Heading}" AutomationId="TripListHeading" />
+      <Label Text="{Binding Text[TripListSubtitle]}" Style="{StaticResource SecondaryText}" />
+     </VerticalStackLayout>
+     <Border Style="{StaticResource ActionSurface}" IsVisible="{Binding CanStart}" SemanticProperties.Description="{Binding Text[TripStartFishing]}" AutomationId="TripStart">
+      <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
+       <controls:IconView Source="icon_plus.png" Tone="Inverse" WidthRequest="22" HeightRequest="22" />
+       <Label Text="{Binding Text[TripStartFishing]}" Style="{StaticResource ActionText}" VerticalOptions="Center" />
+      </HorizontalStackLayout>
+      <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnStart" /></Border.GestureRecognizers>
+     </Border>
+     <Border Style="{StaticResource Card}" IsVisible="{Binding HasNotice}" Padding="12" Shadow="{x:Null}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+       <Label Text="{Binding NoticeText}" Style="{StaticResource SecondaryText}" VerticalOptions="Center" AutomationId="TripListNotice" />
+       <Button Grid.Column="1" Text="{Binding Text[Retry]}" Style="{StaticResource SecondaryButton}" Clicked="OnRetry" AutomationId="TripListRetry" />
+      </Grid>
+     </Border>
+     <Label Text="{Binding ActionFailureText}" IsVisible="{Binding HasActionFailure}"
+            TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripListActionFailure" />
+     <VerticalStackLayout Spacing="8" IsVisible="{Binding HasInvitations}" AutomationId="TripInvitations">
+      <Label Text="{Binding Text[TripInvitations]}" Style="{StaticResource SectionTitle}" />
+      <VerticalStackLayout BindableLayout.ItemsSource="{Binding Invitations}" Spacing="8">
+       <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:TripInvitationItemModel">
+        <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}" AutomationId="TripInvitation">
+         <VerticalStackLayout Spacing="8">
+          <Label Text="{Binding FromText}" Style="{StaticResource Subheading}" FontSize="15" />
+          <Label Text="{Binding Summary}" Style="{StaticResource SecondaryText}" FontSize="13" />
+          <HorizontalStackLayout Spacing="8">
+           <Button Text="{Binding AcceptText}" CommandParameter="{Binding TripId}" Clicked="OnAccept" MinimumHeightRequest="48" AutomationId="TripInvitationAccept" />
+           <Button Text="{Binding DeclineText}" Style="{StaticResource SecondaryButton}" CommandParameter="{Binding TripId}" Clicked="OnDecline" MinimumHeightRequest="48" AutomationId="TripInvitationDecline" />
+          </HorizontalStackLayout>
+         </VerticalStackLayout>
+        </Border>
+       </DataTemplate></BindableLayout.ItemTemplate>
+      </VerticalStackLayout>
+     </VerticalStackLayout>
+     <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+     <Border Style="{StaticResource Card}" IsVisible="{Binding IsEmpty}" Padding="16" Shadow="{x:Null}">
+      <Label Text="{Binding Text[TripListEmpty]}" Style="{StaticResource Subheading}" HorizontalTextAlignment="Center" AutomationId="TripListEmpty" />
+     </Border>
+     <VerticalStackLayout BindableLayout.ItemsSource="{Binding Trips}" Spacing="10" AutomationId="TripList">
+      <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:TripListItemModel">
+       <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}">
+        <VerticalStackLayout Spacing="8">
+         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <VerticalStackLayout Spacing="2">
+           <Label Text="{Binding DateLabel}" Style="{StaticResource Subheading}" FontSize="16" AutomationId="TripListDate" />
+           <Label Text="{Binding Title}" IsVisible="{Binding HasTitle}" Style="{StaticResource Subheading}" FontSize="15" AutomationId="TripListTitleLabel" />
+           <Label Text="{Binding Place}" IsVisible="{Binding HasPlace}" Style="{StaticResource SecondaryText}" FontSize="13" />
+          </VerticalStackLayout>
+          <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="End">
+           <Label Text="{Binding StatusText}" IsVisible="{Binding IsActive}" Style="{StaticResource LinkText}" FontSize="13" FontAttributes="Bold" AutomationId="TripListActive" />
+           <Label Text="{Binding SharedText}" IsVisible="{Binding IsShared}" Style="{StaticResource SecondaryText}" FontSize="13" />
+           <Label Text="{Binding PendingText}" IsVisible="{Binding IsPending}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="TripListPending" />
+          </VerticalStackLayout>
+         </Grid>
+         <FlexLayout Wrap="Wrap" JustifyContent="Start">
+          <Label Text="{Binding CatchesText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
+          <Label Text="{Binding PhotographsText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
+          <Label Text="{Binding NotesText}" Style="{StaticResource SecondaryText}" FontSize="13" />
+         </FlexLayout>
+         <Button Text="{Binding ActionText}" Style="{StaticResource SecondaryButton}" CommandParameter="{Binding Id}" Clicked="OnOpenTrip"
+                 MinimumHeightRequest="48" AutomationId="TripOpen" />
+        </VerticalStackLayout>
+       </Border>
+      </DataTemplate></BindableLayout.ItemTemplate>
+     </VerticalStackLayout>
+    </VerticalStackLayout>
+   </ScrollView>
+  </Border>
+ </Grid>
+</ContentPage>

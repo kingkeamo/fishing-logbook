@@ -1,6 +1,11 @@
 using CommunityToolkit.Maui;
 using FishingLogBook.Client.Resilience;
 using FishingLogBook.Mobile.Api.Clients;
+using FishingLogBook.Mobile.Common.Offline.Coordinators;
+using FishingLogBook.Mobile.Common.Offline.Enums;
+using FishingLogBook.Mobile.Common.Offline.Services;
+using FishingLogBook.Mobile.Common.Offline.Sqlite;
+using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Configuration;
 using FishingLogBook.Mobile.Features.Authentication.Browsers;
 using FishingLogBook.Mobile.Features.Authentication.Clients;
@@ -13,32 +18,26 @@ using FishingLogBook.Mobile.Features.Authentication.Providers;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Authentication.Stores;
 using FishingLogBook.Mobile.Features.Authentication.ViewModels;
-using FishingLogBook.Mobile.Features.Catch.Pages;
-using FishingLogBook.Mobile.Features.Photographs.Mappers;
-using FishingLogBook.Mobile.Features.Photographs.Offline.Stores;
-using FishingLogBook.Mobile.Features.Photographs.Providers;
-using FishingLogBook.Mobile.Features.Photographs.Services;
-using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
-using FishingLogBook.Mobile.Features.Photographs.ViewModels;
+using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Catch.Offline.Synchronisers;
+using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
-using FishingLogBook.Shared.Catches.Services;
-using FishingLogBook.Mobile.Common.Offline.Sqlite;
-using FishingLogBook.Mobile.IO.Adapters;
-using FishingLogBook.Mobile.Common.Offline.Coordinators;
-using FishingLogBook.Mobile.Common.Offline.Services;
-using FishingLogBook.Mobile.Common.Offline.Stores;
-using FishingLogBook.Mobile.Features.Catch.Clients;
-using FishingLogBook.Mobile.Features.Catch.Offline.Synchronisers;
-using FishingLogBook.Mobile.Features.Photographs.Clients;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.OfflineAccess.Stores;
 using FishingLogBook.Mobile.Features.Onboarding.Pages;
 using FishingLogBook.Mobile.Features.Onboarding.Services;
 using FishingLogBook.Mobile.Features.Onboarding.ViewModels;
+using FishingLogBook.Mobile.Features.Photographs.Clients;
+using FishingLogBook.Mobile.Features.Photographs.Mappers;
+using FishingLogBook.Mobile.Features.Photographs.Offline.Stores;
+using FishingLogBook.Mobile.Features.Photographs.Providers;
+using FishingLogBook.Mobile.Features.Photographs.Services;
+using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
+using FishingLogBook.Mobile.Features.Photographs.ViewModels;
 using FishingLogBook.Mobile.Features.Profile.Clients;
 using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Profile.Services;
@@ -50,8 +49,16 @@ using FishingLogBook.Mobile.Features.Showcase.Pages;
 using FishingLogBook.Mobile.Features.Startup.Coordinators;
 using FishingLogBook.Mobile.Features.Startup.Pages;
 using FishingLogBook.Mobile.Features.Startup.ViewModels;
+using FishingLogBook.Mobile.Features.Trips.Clients;
+using FishingLogBook.Mobile.Features.Trips.Modals;
+using FishingLogBook.Mobile.Features.Trips.Offline.Stores;
+using FishingLogBook.Mobile.Features.Trips.Offline.Synchronisers;
+using FishingLogBook.Mobile.Features.Trips.Pages;
+using FishingLogBook.Mobile.Features.Trips.Services;
+using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Adapters;
 using FishingLogBook.Mobile.Native.Browsers;
@@ -60,6 +67,7 @@ using FishingLogBook.Mobile.Native.Services;
 using FishingLogBook.Mobile.Native.Stores;
 using FishingLogBook.Mobile.Navigation;
 using FishingLogBook.Mobile.Presentation;
+using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Shared.Measurements;
 using FishingLogBook.Shared.Photographs.Contracts;
 using FishingLogBook.Shared.Photographs.Services;
@@ -162,6 +170,19 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IPhotographUploadClient, PhotographUploadClient>();
         builder.Services.AddSingleton<IOutboxOperationSynchroniser, CatchMetadataSynchroniser>();
         builder.Services.AddSingleton<IOutboxOperationSynchroniser, CatchPhotographSynchroniser>();
+        builder.Services.AddSingleton<ITripStore, SqliteTripStore>();
+        builder.Services.AddTransient<ITripClient, TripClient>();
+        builder.Services.AddTransient<ITripParticipantClient, TripParticipantClient>();
+        builder.Services.AddTransient<IAnglerLookupClient, AnglerLookupClient>();
+        builder.Services.AddSingleton<ITripDependencyService, TripDependencyService>();
+        builder.Services.AddSingleton<ITripService, TripService>();
+        builder.Services.AddSingleton<ITripAssociationService, TripAssociationService>();
+        builder.Services.AddSingleton<ITripCatchService, TripCatchService>();
+        builder.Services.AddSingleton<IOutboxOperationSynchroniser, TripMetadataSynchroniser>();
+        builder.Services.AddSingleton<IOutboxOperationSynchroniser>(services => CreateTripContributionSynchroniser(
+            services, OutboxOperationTypeEnum.WriteTripNote));
+        builder.Services.AddSingleton<IOutboxOperationSynchroniser>(services => CreateTripContributionSynchroniser(
+            services, OutboxOperationTypeEnum.WriteTripPhotograph));
         builder.Services.AddSingleton<IOutboxSyncCoordinator, OutboxSyncCoordinator>();
         builder.Services.AddSingleton<ICatchSyncRetryService, CatchSyncRetryService>();
         builder.Services.AddTransient<ICatchRemoteClient, CatchRemoteClient>();
@@ -228,6 +249,20 @@ public static partial class MauiProgram
             .AddHttpClient(AuthenticationHttpClientConstants.Anonymous)
             .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create);
         builder.Services.AddSingleton<CatchListViewModel>();
+        builder.Services.AddSingleton<TripListViewModel>();
+        builder.Services.AddTransient<TripDetailViewModel>();
+        builder.Services.AddTransient<TripEditViewModel>();
+        builder.Services.AddTransient<TripNoteEditorViewModel>();
+        builder.Services.AddTransient<TripCatchPickerViewModel>();
+        builder.Services.AddTransient<TripParticipantsViewModel>();
+        builder.Services.AddTransient<ITripModalService, TripModalService>();
+        builder.Services.AddSingleton<ITripPhotographService, TripPhotographService>();
+        builder.Services.AddSingleton<ITripTimelineService, TripTimelineService>();
+        builder.Services.AddSingleton<TripsPage>();
+        builder.Services.AddTransient<TripDetailPage>();
+        builder.Services.AddTransient<TripEditPage>();
+        builder.Services.AddSingleton<ActiveTripBannerViewModel>();
+        builder.Services.AddTransient<TripAssociationViewModel>();
         builder.Services.AddTransient<CatchEditViewModel>();
         builder.Services.AddTransient<CatchEditPage>();
         builder.Services.AddSingleton<CatchSummaryPage>();
@@ -242,6 +277,20 @@ public static partial class MauiProgram
 #endif
         builder.Services.AddSingleton<AppShell>();
         return builder.Build();
+    }
+
+    private static TripContributionSynchroniser CreateTripContributionSynchroniser(
+        IServiceProvider services,
+        OutboxOperationTypeEnum operationType)
+    {
+        return new TripContributionSynchroniser(
+            operationType,
+            services.GetRequiredService<ITripStore>(),
+            services.GetRequiredService<ITripClient>(),
+            services.GetRequiredService<ITripDependencyService>(),
+            services.GetRequiredService<IPhotographFileStore>(),
+            services.GetRequiredService<IFileSystemAdapter>(),
+            services.GetRequiredService<IPhotographUploadClient>());
     }
 
     static partial void ConfigurePlatformHandlers();

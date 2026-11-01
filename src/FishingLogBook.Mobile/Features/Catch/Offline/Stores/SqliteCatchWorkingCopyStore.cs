@@ -32,6 +32,23 @@ public sealed class SqliteCatchWorkingCopyStore : ICatchWorkingCopyStore
                     return;
                 }
 
+                if (record.TripId is { } tripId)
+                {
+                    await ExecuteAsync(
+                        connection,
+                        transaction,
+                        """
+                        INSERT INTO localtrips (id, userid, title, updatedon)
+                        VALUES ($id, $userId, NULL, $now)
+                        ON CONFLICT(id) DO UPDATE SET updatedon = excluded.updatedon
+                        WHERE localtrips.userid = excluded.userid;
+                        """,
+                        token,
+                        ("$id", tripId.ToString("D")),
+                        ("$userId", record.UserId.ToString("D")),
+                        ("$now", SqliteDateTime.Format(now)));
+                }
+
                 await InsertCatchAsync(connection, transaction, record, token);
                 foreach (var photograph in record.Photographs)
                 {
