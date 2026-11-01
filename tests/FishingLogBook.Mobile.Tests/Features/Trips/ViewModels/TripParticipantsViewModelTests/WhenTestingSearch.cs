@@ -13,6 +13,7 @@ public sealed class WhenTestingSearch : BaseTripParticipantsViewModelTest
     public async Task ItShouldNotSearchForFewerThanThreeCharacters()
     {
         // Arrange
+        await LoadOwnedTripAsync();
         Sut.SearchText = " sa ";
         // Act
         await Sut.SearchAsync(CancellationToken.None);
@@ -27,6 +28,7 @@ public sealed class WhenTestingSearch : BaseTripParticipantsViewModelTest
     {
         // Arrange
         MockLookup.FindAsync("sam", Arg.Any<CancellationToken>()).Returns(ApiResultModel<List<AnglerSummaryDto>>.Failed(ApiOutcomeEnum.Unavailable));
+        await LoadOwnedTripAsync();
         Sut.SearchText = "sam";
         // Act
         await Sut.SearchAsync(CancellationToken.None);
@@ -41,6 +43,7 @@ public sealed class WhenTestingSearch : BaseTripParticipantsViewModelTest
     {
         // Arrange
         MockLookup.FindAsync("zzz", Arg.Any<CancellationToken>()).Returns(ApiResultModel<List<AnglerSummaryDto>>.Succeeded([]));
+        await LoadOwnedTripAsync();
         Sut.SearchText = "zzz";
         // Act
         await Sut.SearchAsync(CancellationToken.None);

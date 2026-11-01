@@ -5,6 +5,7 @@ using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Trips.Clients;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
@@ -25,13 +26,15 @@ public abstract class BaseTripParticipantsViewModelTest
     protected readonly IAnglerLookupClient MockLookup = Substitute.For<IAnglerLookupClient>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
+    protected readonly IInteractionPresenter MockPresenter = Substitute.For<IInteractionPresenter>();
     protected readonly TripParticipantsViewModel Sut;
 
     protected BaseTripParticipantsViewModelTest()
     {
         MockConnectivity.IsOnline.Returns(true);
         MockSession.Capture().Returns(new AccountSessionLeaseModel(ViewerId, 1, CancellationToken.None));
-        Sut = new TripParticipantsViewModel(MockParticipants, MockLookup, MockConnectivity, MockSession, Text);
+        MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(true);
+        Sut = new TripParticipantsViewModel(MockParticipants, MockLookup, MockConnectivity, MockSession, new InteractionService(MockPresenter, Text), Text);
     }
 
     protected static TripParticipantsDto Participants(string role, params TripParticipantDto[] participants)
@@ -42,6 +45,12 @@ public abstract class BaseTripParticipantsViewModelTest
     protected static TripParticipantDto Owner() => new(ViewerId, TripParticipantConstants.Accepted, "Me", null, Now) { IsOwner = true };
 
     protected static TripParticipantDto Friend(string status = TripParticipantConstants.Accepted) => new(FriendId, status, "Sam", null, Now);
+
+    protected async Task LoadOwnedTripAsync()
+    {
+        ServeParticipants(Participants(TripParticipantConstants.Owner, Owner()));
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+    }
 
     protected void ServeParticipants(TripParticipantsDto dto)
     {

@@ -8,6 +8,7 @@ using FishingLogBook.Mobile.Features.Trips.Clients;
 using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Navigation;
 using FishingLogBook.Mobile.Tests.Support;
@@ -60,7 +61,7 @@ public sealed class WhenTestingPropertyChanges
         // Arrange
         var connectivity = Substitute.For<IConnectivityService>();
         connectivity.IsOnline.Returns(false);
-        var sut = new TripParticipantsViewModel(Substitute.For<ITripParticipantClient>(), Substitute.For<IAnglerLookupClient>(), connectivity, Substitute.For<IAccountSessionCoordinator>(), _text);
+        var sut = new TripParticipantsViewModel(Substitute.For<ITripParticipantClient>(), Substitute.For<IAnglerLookupClient>(), connectivity, Substitute.For<IAccountSessionCoordinator>(), new InteractionService(Substitute.For<IInteractionPresenter>(), _text), _text);
         var changes = 0;
         sut.PropertyChanged += (_, _) => changes++;
         // Act
