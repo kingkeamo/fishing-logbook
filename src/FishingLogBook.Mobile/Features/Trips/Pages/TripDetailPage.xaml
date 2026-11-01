@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+  xmlns:activeTrip="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.ActiveTripView"
+ xmlns:notes="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripNotes"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Features.Trips.Pages.TripDetailPage"
+ x:DataType="vm:TripDetailViewModel" Title="{Binding Text[Trips]}" Shell.NavBarIsVisible="False" Shell.TabBarIsVisible="False"
+ BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+ <Grid RowDefinitions="48,*">
+  <Grid ColumnDefinitions="48,*,48" Padding="4,0">
+   <Grid SemanticProperties.Description="{Binding Text[Back]}" AutomationId="TripDetailBack">
+    <controls:IconView Source="icon_chevron.png" Tone="Default" Rotation="180" WidthRequest="20" HeightRequest="20" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnBack" /></Grid.GestureRecognizers>
+   </Grid>
+   <Label Grid.Column="1" Text="{Binding Text[Trips]}" Style="{StaticResource Heading}" FontSize="17" HorizontalOptions="Center" VerticalOptions="Center" />
+  </Grid>
+  <Grid Grid.Row="1">
+   <ScrollView>
+    <VerticalStackLayout Padding="16,8,16,96" Spacing="12" MaximumWidthRequest="720">
+     <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+     <Border Style="{StaticResource Card}" IsVisible="{Binding NotFound}" Padding="16" Shadow="{x:Null}">
+      <Label Text="{Binding Text[TripNotFound]}" Style="{StaticResource Subheading}" AutomationId="TripNotFound" />
+     </Border>
+     <activeTrip:ActiveTripView x:Name="ActiveTrip" Model="{Binding Active}" IsVisible="{Binding ShowContent}" />
+    </VerticalStackLayout>
+   </ScrollView>
+   <notes:TripNotesView x:Name="NoteTrigger" Trip="{Binding Trip}" ShowList="False" UseFloatingTrigger="True" CanAdd="{Binding CanAddNotes}" AddText="{Binding Text[TripNoteAdd]}"
+     HorizontalOptions="End" VerticalOptions="End" Margin="0,0,20,20" />
+  </Grid>
+ </Grid>
+</ContentPage>

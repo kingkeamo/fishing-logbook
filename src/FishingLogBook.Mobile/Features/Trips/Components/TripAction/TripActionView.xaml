@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.TripAction.TripActionView" x:DataType="vm:ActiveTripBannerViewModel"
+ IsVisible="{Binding ShowAction}">
+ <Border Style="{StaticResource Card}" Shadow="{x:Null}" MinimumHeightRequest="48" SemanticProperties.Description="{Binding ActionText}" AutomationId="TripAction">
+  <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
+   <controls:IconView Source="icon_boat.png" Tone="Accent" WidthRequest="22" HeightRequest="22" />
+   <Label Text="{Binding ActionText}" Style="{StaticResource LinkText}" FontAttributes="Bold" VerticalOptions="Center" />
+  </HorizontalStackLayout>
+  <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnTapped" /></Border.GestureRecognizers>
+ </Border>
+</ContentView>

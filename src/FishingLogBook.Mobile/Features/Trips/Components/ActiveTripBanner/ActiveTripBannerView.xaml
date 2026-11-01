@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.ActiveTripBanner.ActiveTripBannerView" x:DataType="vm:ActiveTripBannerViewModel"
+ IsVisible="{Binding HasActiveTrip}">
+ <Border StrokeThickness="0" Padding="12,4" BackgroundColor="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}"
+         SemanticProperties.Description="{Binding Text[TripInProgress]}" AutomationId="ActiveTripBanner">
+  <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+  <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6" MinimumHeightRequest="48">
+   <controls:IconView Source="icon_boat.png" Tone="Default" WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
+   <Label Grid.Column="1" Text="{Binding Text[TripInProgress]}" Style="{StaticResource BodyText}" FontSize="14" LineBreakMode="TailTruncation" VerticalOptions="Center" />
+   <Button Grid.Column="2" Text="{Binding Text[TripViewTrip]}" Style="{StaticResource SecondaryButton}" Clicked="OnView" MinimumHeightRequest="40" Padding="10,0" FontSize="12" AutomationId="ActiveTripBannerView" />
+   <Button Grid.Column="3" Text="{Binding Text[TripUpdate]}" Style="{StaticResource SecondaryButton}" Clicked="OnUpdate" MinimumHeightRequest="40" Padding="10,0" FontSize="12" AutomationId="ActiveTripBannerUpdate" />
+  </Grid>
+ </Border>
+</ContentView>

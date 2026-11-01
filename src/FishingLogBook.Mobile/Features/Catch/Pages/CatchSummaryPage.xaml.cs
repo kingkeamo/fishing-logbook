@@ -4,6 +4,7 @@ using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Native.Controls;
 using FishingLogBook.Mobile.Navigation;
@@ -16,20 +17,25 @@ public partial class CatchSummaryPage : ContentPage
     private readonly CatchListViewModel _viewModel;
     private readonly NavigationService _navigation;
     private readonly InteractionService _interactions;
+    private readonly ActiveTripBannerViewModel _trip;
 
-    public CatchSummaryPage(CatchListViewModel viewModel, NavigationService navigation, InteractionService interactions)
+    public CatchSummaryPage(CatchListViewModel viewModel, NavigationService navigation, InteractionService interactions, ActiveTripBannerViewModel trip)
     {
+        _trip = trip;
         _viewModel = viewModel;
         _navigation = navigation;
         _interactions = interactions;
         InitializeComponent();
         BindingContext = viewModel;
+        Banner.ViewModel = trip;
+        TripAction.ViewModel = trip;
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         await _viewModel.LoadUnitsAsync(CancellationToken.None);
+        await _trip.RefreshAsync(force: false, CancellationToken.None);
     }
 
     private void OnSearchChanged(object? sender, TextChangedEventArgs args)

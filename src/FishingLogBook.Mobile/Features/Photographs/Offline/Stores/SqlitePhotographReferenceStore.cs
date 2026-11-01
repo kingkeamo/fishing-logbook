@@ -21,6 +21,9 @@ public sealed class SqlitePhotographReferenceStore(
             WHERE userid = $userid
               AND localfilepath IS NOT NULL
               AND localfilepath <> ''
+            UNION
+            SELECT localfilepath FROM localtripcontributions
+            WHERE userid = $userid AND localfilepath IS NOT NULL AND localfilepath <> ''
             """;
         command.Parameters.AddWithValue("$userid", userId.ToString());
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

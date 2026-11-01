@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:catchModels="clr-namespace:FishingLogBook.Mobile.Features.Catch.Models"
+               xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Trips.Modals.TripCatchPickerModal"
+               x:TypeArguments="x:Boolean" x:DataType="vm:TripCatchPickerViewModel"
+               Padding="0" Margin="20" VerticalOptions="Center" HorizontalOptions="Center" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
+      <Label Text="{Binding Text[TripAddCatchesTitle]}" Style="{StaticResource Heading}" FontSize="20"
+             SemanticProperties.HeadingLevel="Level1" AutomationId="TripCatchPickerHeading" />
+      <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+      <VerticalStackLayout IsVisible="{Binding IsEmpty}" Spacing="4" AutomationId="TripCatchPickerEmpty">
+        <Label Text="{Binding Text[TripAddCatchesEmpty]}" Style="{StaticResource Subheading}" />
+        <Label Text="{Binding Text[TripAddCatchesEmptyHint]}" Style="{StaticResource SecondaryText}" FontSize="13" />
+      </VerticalStackLayout>
+      <Label Text="{Binding Text[TripAddCatchesSubtitle]}" IsVisible="{Binding ShowOptions}" Style="{StaticResource SecondaryText}" FontSize="13" />
+      <ScrollView MaximumHeightRequest="320" IsVisible="{Binding ShowOptions}">
+        <FlexLayout BindableLayout.ItemsSource="{Binding Options}" Wrap="Wrap" AutomationId="TripCatchPickerOptions">
+          <BindableLayout.ItemTemplate><DataTemplate x:DataType="catchModels:CatchChipOptionModel">
+            <controls:ChipView Margin="0,0,8,8" Text="{Binding Name}" IsSelected="{Binding IsSelected}" CommandParameter="{Binding Code}" Tapped="OnToggle" />
+          </DataTemplate></BindableLayout.ItemTemplate>
+        </FlexLayout>
+      </ScrollView>
+      <Label Text="{Binding MessageText}" IsVisible="{Binding HasMessage}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripCatchPickerMessage" />
+      <Button Text="{Binding ConfirmText}" IsVisible="{Binding ShowOptions}" IsEnabled="{Binding CanConfirm}" Style="{StaticResource PrimaryButton}" Clicked="OnConfirm" AutomationId="TripCatchPickerConfirm" />
+      <Button Text="{Binding Text[Cancel]}" Style="{StaticResource SecondaryButton}" Clicked="OnCancel" AutomationId="TripCatchPickerCancel" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

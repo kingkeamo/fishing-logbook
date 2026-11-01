@@ -11,6 +11,9 @@ using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Features.Photographs.ViewModels;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
+using FishingLogBook.Mobile.Features.Trips.Models;
+using FishingLogBook.Mobile.Features.Trips.Services;
+using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Catches.Services;
@@ -31,6 +34,7 @@ public abstract class BaseCatchEditViewModelTest
     protected IAccountUnitsService MockUnits { get; } = Substitute.For<IAccountUnitsService>();
     protected IDeviceLocationService MockLocation { get; } = Substitute.For<IDeviceLocationService>();
     protected IPhotographCollectionEditorService MockPhotographEditor { get; } = Substitute.For<IPhotographCollectionEditorService>();
+    protected ITripAssociationService MockTripAssociation { get; } = Substitute.For<ITripAssociationService>();
     protected CatchEditViewModel Sut { get; }
 
     protected BaseCatchEditViewModelTest()
@@ -39,6 +43,7 @@ public abstract class BaseCatchEditViewModelTest
         MockUnits.GetAsync(Arg.Any<CancellationToken>()).Returns(MeasurementUnitsModel.Default);
         MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns((FishingLogBook.Mobile.Features.Profile.Models.AnglerPreferencesModel?)null);
         MockCatchStore.ListAsync(Arg.Any<CancellationToken>()).Returns([]);
+        MockTripAssociation.IsAvailableAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(true);
         Sut = CreateSut();
     }
 
@@ -60,6 +65,7 @@ public abstract class BaseCatchEditViewModelTest
             clock ?? new FixedTimeProvider(Now),
             Text,
             Substitute.For<ICatchWorkingCopyService>(),
-            new ActiveCatchEditRegistry());
+            new ActiveCatchEditRegistry(),
+            new TripAssociationViewModel(MockTripAssociation, Text));
     }
 }

@@ -11,6 +11,7 @@ using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Offline.Enums;
 using FishingLogBook.Mobile.Features.Catch.Offline.Models;
 using FishingLogBook.Mobile.Features.Catch.Offline.Stores;
+using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Shared.Dtos;
 using Microsoft.Data.Sqlite;
 
@@ -25,19 +26,22 @@ public sealed class CatchMetadataSynchroniser : IOutboxOperationSynchroniser
     private readonly ICatchSyncStateStore _state;
     private readonly IOutboxStore _outbox;
     private readonly TimeProvider _time;
+    private readonly ITripDependencyService _tripDependency;
 
     public CatchMetadataSynchroniser(
         ICatchStore catchStore,
         ICatchSyncClient client,
         ICatchSyncStateStore state,
         IOutboxStore outbox,
-        TimeProvider time)
+        TimeProvider time,
+        ITripDependencyService tripDependency)
     {
         _catchStore = catchStore;
         _client = client;
         _state = state;
         _outbox = outbox;
         _time = time;
+        _tripDependency = tripDependency;
     }
 
     public OutboxOperationTypeEnum OperationType => OutboxOperationTypeEnum.UpsertCatchMetadata;
@@ -56,6 +60,15 @@ public sealed class CatchMetadataSynchroniser : IOutboxOperationSynchroniser
         if (local.Photographs.Any(photograph => string.IsNullOrWhiteSpace(photograph.ContentType)))
         {
             return OutboxOperationResultModel.Terminal(OutboxErrorCodeConstants.PhotographContentTypeMissing);
+        }
+
+        if (local.TripId is { } tripId)
+        {
+            var dependency = await _tripDependency.CheckAsync(lease.UserId, tripId, cancellationToken);
+            if (dependency is not null)
+            {
+                return dependency;
+            }
         }
 
         var removal = await RemoveDeletedPhotographsAsync(lease.UserId, local, cancellationToken);

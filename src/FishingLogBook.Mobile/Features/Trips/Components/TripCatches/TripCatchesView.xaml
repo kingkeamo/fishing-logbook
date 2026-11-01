@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:local="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripCatches"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.TripCatches.TripCatchesView" x:Name="Root" x:DataType="local:TripCatchesView">
+ <Grid ColumnDefinitions="*,*" ColumnSpacing="8" AutomationId="TripCatches">
+  <Button Text="{Binding RecordText, Source={x:Reference Root}}" IsVisible="{Binding ShowRecordAction, Source={x:Reference Root}}" Clicked="OnRecord"
+          MinimumHeightRequest="48" AutomationId="TripRecordCatch" />
+  <Button Grid.Column="1" Text="{Binding AddText, Source={x:Reference Root}}" IsVisible="{Binding ShowAddAction, Source={x:Reference Root}}" Style="{StaticResource SecondaryButton}"
+          Clicked="OnAdd" MinimumHeightRequest="48" AutomationId="TripAddExistingCatch" />
+ </Grid>
+</ContentView>

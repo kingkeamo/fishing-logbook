@@ -1,4 +1,5 @@
 using Bunit;
+using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Location;
@@ -6,7 +7,6 @@ using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
-using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;

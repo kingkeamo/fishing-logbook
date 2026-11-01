@@ -4,6 +4,7 @@ public static class RouteConstants
 {
     public const string CatchParameter = "catch";
     public const string CatchEditIdParameter = "catchEditId";
+    public const string TripIdParameter = "tripId";
     public static IReadOnlyList<MobileRouteEnum> Primary { get; } = Array.AsReadOnly(new[]
     {
         MobileRouteEnum.Catches, MobileRouteEnum.Trips, MobileRouteEnum.Explore, MobileRouteEnum.Settings
@@ -23,6 +24,8 @@ public static class RouteConstants
             MobileRouteEnum.MeasurementShowcase => "measurement-showcase",
             MobileRouteEnum.Profile => "profile",
             MobileRouteEnum.CatchEdit => "catch-edit",
+            MobileRouteEnum.TripDetail => "trip-detail",
+            MobileRouteEnum.TripEdit => "trip-edit",
             _ => throw new ArgumentOutOfRangeException(nameof(route))
         };
     }

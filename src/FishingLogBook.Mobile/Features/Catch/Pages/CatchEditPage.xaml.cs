@@ -8,6 +8,7 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
     private readonly CatchEditViewModel _viewModel;
     private readonly NavigationService _navigation;
     private Guid? _catchId;
+    private Guid? _tripId;
     private bool _initialized;
 
     public CatchEditPage(CatchEditViewModel viewModel, NavigationService navigation)
@@ -20,6 +21,11 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
+        if (query.TryGetValue(RouteConstants.TripIdParameter, out var trip) && trip is Guid tripId)
+        {
+            _tripId = tripId;
+        }
+
         if (query.TryGetValue(RouteConstants.CatchEditIdParameter, out var value) && value is Guid catchId)
         {
             _catchId = catchId;
@@ -36,7 +42,7 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
 
         _initialized = true;
         Unloaded += OnUnloaded;
-        await _viewModel.InitializeAsync(_catchId, CancellationToken.None);
+        await _viewModel.InitializeAsync(_catchId, CancellationToken.None, _tripId);
     }
 
     protected override async void OnDisappearing()
@@ -58,6 +64,12 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
 
     private async void OnSaveSucceeded(object? sender, EventArgs args)
     {
+        if (_tripId is not null)
+        {
+            await _navigation.GoBackAsync();
+            return;
+        }
+
         await _navigation.NavigateAsync(MobileRouteEnum.Catches);
     }
 }

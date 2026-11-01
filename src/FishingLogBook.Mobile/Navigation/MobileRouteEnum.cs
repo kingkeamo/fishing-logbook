@@ -11,5 +11,7 @@ public enum MobileRouteEnum
     Showcase = 6,
     MeasurementShowcase = 7,
     Profile = 8,
-    CatchEdit = 9
+    CatchEdit = 9,
+    TripDetail = 10,
+    TripEdit = 11
 }

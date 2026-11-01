@@ -116,7 +116,8 @@ public abstract class BaseCatchPhotographSynchroniserTest : IDisposable
         ConfigureServer();
         ConfigureObjectStorage();
 
-        MetadataSynchroniser = new CatchMetadataSynchroniser(CatchStore, MockCatchSyncClient, StateStore, OutboxStore, MockClock);
+        MetadataSynchroniser = new CatchMetadataSynchroniser(CatchStore, MockCatchSyncClient, StateStore, OutboxStore, MockClock,
+            Substitute.For<FishingLogBook.Mobile.Features.Trips.Services.ITripDependencyService>());
         Sut = new CatchPhotographSynchroniser(
             CatchStore,
             MockCatchSyncClient,

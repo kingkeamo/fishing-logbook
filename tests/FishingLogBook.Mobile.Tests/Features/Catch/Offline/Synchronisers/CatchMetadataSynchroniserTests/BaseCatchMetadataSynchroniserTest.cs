@@ -44,6 +44,8 @@ public abstract class BaseCatchMetadataSynchroniserTest : IDisposable
     protected readonly ISessionLifecycleCoordinator MockLifecycle = Substitute.For<ISessionLifecycleCoordinator>();
     protected readonly IOutboxChangeNotifier MockNotifier = Substitute.For<IOutboxChangeNotifier>();
     protected readonly ICatchSyncClient MockClient = Substitute.For<ICatchSyncClient>();
+    protected readonly FishingLogBook.Mobile.Features.Trips.Services.ITripDependencyService MockTripDependency =
+        Substitute.For<FishingLogBook.Mobile.Features.Trips.Services.ITripDependencyService>();
     protected readonly IOutboxOperationSynchroniser MockPhotographSynchroniser =
         Substitute.For<IOutboxOperationSynchroniser>();
 
@@ -96,7 +98,8 @@ public abstract class BaseCatchMetadataSynchroniserTest : IDisposable
             MockClient,
             SyncStateStore,
             OutboxStore,
-            Clock);
+            Clock,
+            MockTripDependency);
         Backoff = new OutboxBackoffPolicy(BaseDelay, TimeSpan.FromMinutes(15), MaximumAttempts, () => 0.5);
 
         MockPhotographSynchroniser.OperationType.Returns(OutboxOperationTypeEnum.UploadCatchPhotograph);
@@ -176,11 +179,13 @@ public abstract class BaseCatchMetadataSynchroniserTest : IDisposable
         Guid catchId,
         IReadOnlyList<LocalCatchPhotographSaveArgs>? photographs = null,
         string? notes = "Evening rise",
-        LocalCatchLifecycleEnum lifecycle = LocalCatchLifecycleEnum.Saved)
+        LocalCatchLifecycleEnum lifecycle = LocalCatchLifecycleEnum.Saved,
+        Guid? tripId = null)
     {
         return new LocalCatchSaveArgs
         {
             Id = catchId,
+            TripId = tripId,
             CaughtOn = DateTimeOffset.Parse("2026-05-01T12:00:00Z", CultureInfo.InvariantCulture),
             SpeciesName = "Brown trout",
             Weight = 1.2,

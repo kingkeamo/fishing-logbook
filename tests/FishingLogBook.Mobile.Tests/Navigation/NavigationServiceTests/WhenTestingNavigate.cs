@@ -16,7 +16,33 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
         await Sut.NavigateAsync(MobileRouteEnum.CatchEdit, catchEditId: catchId);
 
         // Assert
-        await MockNavigator.Received(1).GoToAsync("catch-edit", null, catchId, CancellationToken.None);
+        await MockNavigator.Received(1).GoToAsync("catch-edit", null, catchId, null, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ItShouldOpenTheTripDetailWithTheSelectedTripId()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+
+        // Act
+        await Sut.NavigateAsync(MobileRouteEnum.TripDetail, tripId: tripId);
+
+        // Assert
+        await MockNavigator.Received(1).GoToAsync("trip-detail", null, null, tripId, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ItShouldOpenTheCatchEditorForANewCatchInTheRequestedTrip()
+    {
+        // Arrange
+        var tripId = Guid.NewGuid();
+
+        // Act
+        await Sut.NavigateAsync(MobileRouteEnum.CatchEdit, tripId: tripId);
+
+        // Assert
+        await MockNavigator.Received(1).GoToAsync("catch-edit", null, null, tripId, CancellationToken.None);
     }
 
     [Theory]
@@ -30,7 +56,7 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
         var assertion = await action.Should().ThrowAsync<ArgumentException>();
         // Assert
         assertion.Which.ParamName.Should().Be("item");
-        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -42,7 +68,7 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
         var assertion = await action.Should().ThrowAsync<ArgumentOutOfRangeException>();
         // Assert
         assertion.Which.ParamName.Should().Be("route");
-        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -50,14 +76,14 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
     {
         // Arrange
         var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        MockNavigator.GoToAsync("catch-detail", Catch, null, CancellationToken.None).Returns(pending.Task);
+        MockNavigator.GoToAsync("catch-detail", Catch, null, null, CancellationToken.None).Returns(pending.Task);
         // Act
         var first = Sut.NavigateAsync(MobileRouteEnum.CatchDetail, Catch);
         await Sut.NavigateAsync(MobileRouteEnum.CatchDetail, Catch);
         pending.SetResult();
         await first;
         // Assert
-        await MockNavigator.Received(1).GoToAsync("catch-detail", Catch, null, CancellationToken.None);
+        await MockNavigator.Received(1).GoToAsync("catch-detail", Catch, null, null, CancellationToken.None);
     }
 
     [Fact]
@@ -68,20 +94,20 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
         // Act
         await Sut.NavigateAsync(MobileRouteEnum.CatchDetail, Catch);
         // Assert
-        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task ItShouldReleaseTheTransitionAfterFailure()
     {
         // Arrange
-        MockNavigator.GoToAsync("catch-detail", Catch, null, CancellationToken.None).Returns(Task.FromException(new InvalidOperationException("Transition failed")), Task.CompletedTask);
+        MockNavigator.GoToAsync("catch-detail", Catch, null, null, CancellationToken.None).Returns(Task.FromException(new InvalidOperationException("Transition failed")), Task.CompletedTask);
         var action = () => Sut.NavigateAsync(MobileRouteEnum.CatchDetail, Catch);
         // Act
         await action.Should().ThrowAsync<InvalidOperationException>();
         await Sut.NavigateAsync(MobileRouteEnum.CatchDetail, Catch);
         // Assert
-        await MockNavigator.Received(2).GoToAsync("catch-detail", Catch, null, CancellationToken.None);
+        await MockNavigator.Received(2).GoToAsync("catch-detail", Catch, null, null, CancellationToken.None);
     }
 
     [Fact]
@@ -93,7 +119,7 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
         // Act
         await action.Should().ThrowAsync<OperationCanceledException>();
         // Assert
-        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -106,7 +132,7 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
         // Act
         await Sut.NavigateAsync(MobileRouteEnum.PhotoPreview, item);
         // Assert
-        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        await MockNavigator.DidNotReceive().GoToAsync(Arg.Any<string>(), Arg.Any<FishingLogBook.Mobile.Features.Catch.Models.CatchPresentationModel>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -122,6 +148,6 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
         // Act
         await Sut.NavigateAsync(route, Catch, cancellationToken: cancellation.Token);
         // Assert
-        await MockNavigator.Received(1).GoToAsync(path, Catch, null, cancellation.Token);
+        await MockNavigator.Received(1).GoToAsync(path, Catch, null, null, cancellation.Token);
     }
 }

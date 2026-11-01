@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:local="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripTimeline"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Components.TripTimeline.TripTimelineView" x:Name="Root" x:DataType="local:TripTimelineView">
+ <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items, Source={x:Reference Root}}" Spacing="0" AutomationId="TripTimeline">
+  <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:TripTimelineRowModel">
+   <Grid ColumnDefinitions="36,*" ColumnSpacing="10" AutomationId="TripTimelineItem">
+    <Grid>
+     <BoxView IsVisible="{Binding NotLast}" WidthRequest="2" HorizontalOptions="Center" VerticalOptions="Fill" Margin="0,16,0,0"
+              Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+     <Border WidthRequest="32" HeightRequest="32" StrokeThickness="0" HorizontalOptions="Center" VerticalOptions="Start"
+             BackgroundColor="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}">
+      <Border.StrokeShape><Ellipse /></Border.StrokeShape>
+      <Border.Triggers>
+       <DataTrigger TargetType="Border" Binding="{Binding IsCatch}" Value="True">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}" />
+       </DataTrigger>
+       <DataTrigger TargetType="Border" Binding="{Binding IsMilestone}" Value="True">
+        <Setter Property="BackgroundColor" Value="{StaticResource PreferenceDefault}" />
+       </DataTrigger>
+      </Border.Triggers>
+      <controls:IconView Source="{Binding MarkerIcon}" Tone="Inverse" WidthRequest="16" HeightRequest="16" HorizontalOptions="Center" VerticalOptions="Center" />
+     </Border>
+    </Grid>
+    <VerticalStackLayout Grid.Column="1" Spacing="6" Padding="0,4,0,16">
+     <HorizontalStackLayout Spacing="8">
+      <Label Text="{Binding TimeText}" Style="{StaticResource SecondaryText}" FontSize="12" />
+      <Label Text="{Binding ContributorText}" IsVisible="{Binding HasContributor}" Style="{StaticResource SecondaryText}" FontSize="12" />
+     </HorizontalStackLayout>
+     <Label Text="{Binding Detail}" IsVisible="{Binding ShowDescription}" Style="{StaticResource Subheading}" FontSize="15" />
+     <Border IsVisible="{Binding ShowPhotograph}" Padding="0" StrokeThickness="0" HeightRequest="180">
+      <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+      <Image Source="{Binding PhotoSource}" Aspect="AspectFill" />
+     </Border>
+     <Grid IsVisible="{Binding IsCatch}" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+      <Border Padding="0" StrokeThickness="0" WidthRequest="88" HeightRequest="88" VerticalOptions="Start"
+              BackgroundColor="{AppThemeBinding Light={StaticResource Canvas}, Dark={StaticResource DarkSurface}}">
+       <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+       <Grid>
+        <Image Source="photo_missing.png" WidthRequest="28" HeightRequest="28" AutomationProperties.IsInAccessibleTree="False" />
+        <Image Source="{Binding PhotoSource}" IsVisible="{Binding HasPhoto}" Aspect="AspectFill" AutomationId="TripTimelineCatchPhoto" />
+       </Grid>
+      </Border>
+      <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+       <Label Text="{Binding Title}" Style="{StaticResource Subheading}" FontSize="15" AutomationId="TripTimelineCatchTitle" />
+       <Label Text="{Binding Detail}" IsVisible="{Binding HasDetail}" Style="{StaticResource SecondaryText}" FontSize="13" />
+       <Label Text="{Binding RecordedByText}" IsVisible="{Binding HasRecordedBy}" Style="{StaticResource SecondaryText}" FontSize="12" />
+       <Label Text="{Binding PendingText}" IsVisible="{Binding IsPending}" Style="{StaticResource SecondaryText}" FontSize="12" />
+      </VerticalStackLayout>
+      <Grid Grid.Column="2" WidthRequest="48" HeightRequest="48" IsVisible="{Binding CanOpenCatch}" VerticalOptions="Center"
+            SemanticProperties.Description="{Binding Title}" AutomationId="TripTimelineCatchOpen">
+       <controls:IconView Source="icon_chevron.png" Tone="Muted" WidthRequest="20" HeightRequest="20" />
+       <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnOpenCatch" /></Grid.GestureRecognizers>
+      </Grid>
+     </Grid>
+     <Grid IsVisible="{Binding IsNote}" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+      <Label Text="{Binding Detail}" Style="{StaticResource BodyText}" FontSize="14" VerticalOptions="Center" />
+      <HorizontalStackLayout Grid.Column="1" IsVisible="{Binding CanDelete}" Spacing="0">
+       <Grid WidthRequest="48" HeightRequest="48" AutomationId="TripNoteEdit"
+             SemanticProperties.Description="{Binding Source={RelativeSource AncestorType={x:Type local:TripTimelineView}}, Path=EditNoteLabel}">
+        <controls:IconView Source="icon_edit.png" Tone="Default" WidthRequest="20" HeightRequest="20" />
+        <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnEditNote" /></Grid.GestureRecognizers>
+       </Grid>
+       <Grid WidthRequest="48" HeightRequest="48" AutomationId="TripNoteDelete"
+             SemanticProperties.Description="{Binding Source={RelativeSource AncestorType={x:Type local:TripTimelineView}}, Path=DeleteNoteLabel}">
+        <controls:IconView Source="icon_trash.png" Tone="Default" WidthRequest="20" HeightRequest="20" />
+        <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnDeleteNote" /></Grid.GestureRecognizers>
+       </Grid>
+      </HorizontalStackLayout>
+     </Grid>
+    </VerticalStackLayout>
+   </Grid>
+  </DataTemplate></BindableLayout.ItemTemplate>
+ </VerticalStackLayout>
+</ContentView>

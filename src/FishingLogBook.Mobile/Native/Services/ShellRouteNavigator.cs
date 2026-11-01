@@ -8,7 +8,7 @@ public sealed class ShellRouteNavigator : IRouteNavigator
     public string CurrentPath => Shell.Current.CurrentState.Location.OriginalString;
     public bool CanGoBack => Shell.Current.Navigation.NavigationStack.Count > 1;
 
-    public async Task GoToAsync(string path, CatchPresentationModel? item, Guid? catchEditId, CancellationToken cancellationToken)
+    public async Task GoToAsync(string path, CatchPresentationModel? item, Guid? catchEditId, Guid? tripId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         await MainThread.InvokeOnMainThreadAsync(async () =>
@@ -22,6 +22,11 @@ public sealed class ShellRouteNavigator : IRouteNavigator
             if (catchEditId is { } id && id != Guid.Empty)
             {
                 parameters[RouteConstants.CatchEditIdParameter] = id;
+            }
+
+            if (tripId is { } trip && trip != Guid.Empty)
+            {
+                parameters[RouteConstants.TripIdParameter] = trip;
             }
 
             Shell.Current.FlyoutIsPresented = false;

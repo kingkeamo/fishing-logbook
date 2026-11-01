@@ -6,6 +6,7 @@ using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Settings.Pages;
 using FishingLogBook.Mobile.Features.Showcase.Pages;
+using FishingLogBook.Mobile.Features.Trips.Pages;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Pages;
@@ -22,6 +23,7 @@ public partial class AppShell : Shell
 
     public AppShell(
         CatchSummaryPage summary,
+        TripsPage trips,
         SettingsPage settings,
         UiTextService text,
         InteractionService interactions,
@@ -46,6 +48,7 @@ public partial class AppShell : Shell
             Page page = route switch
             {
                 MobileRouteEnum.Catches => summary,
+                MobileRouteEnum.Trips => trips,
                 MobileRouteEnum.Settings => settings,
                 _ => new PlannedPage(text, key)
             };
@@ -87,6 +90,8 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Showcase), typeof(ShowcasePage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.MeasurementShowcase), typeof(MeasurementShowcasePage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchEdit), typeof(CatchEditPage));
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.TripDetail), typeof(TripDetailPage));
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.TripEdit), typeof(TripEditPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Profile), typeof(ProfilePage));

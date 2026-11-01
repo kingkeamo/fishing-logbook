@@ -10,6 +10,7 @@ public sealed class NavigationService(IRouteNavigator navigator)
         MobileRouteEnum route,
         CatchPresentationModel? item = null,
         Guid? catchEditId = null,
+        Guid? tripId = null,
         CancellationToken cancellationToken = default)
     {
         var path = RouteConstants.GetPath(route);
@@ -23,18 +24,18 @@ public sealed class NavigationService(IRouteNavigator navigator)
             return;
         }
 
-        await TransitionAsync(path, item, catchEditId, cancellationToken);
+        await TransitionAsync(path, item, catchEditId, tripId, cancellationToken);
     }
 
     public async Task GoBackAsync(CancellationToken cancellationToken = default)
     {
         if (navigator.CanGoBack)
         {
-            await TransitionAsync("..", null, null, cancellationToken);
+            await TransitionAsync("..", null, null, null, cancellationToken);
         }
     }
 
-    private async Task TransitionAsync(string path, CatchPresentationModel? item, Guid? catchEditId, CancellationToken cancellationToken)
+    private async Task TransitionAsync(string path, CatchPresentationModel? item, Guid? catchEditId, Guid? tripId, CancellationToken cancellationToken)
     {
         if (!await _transition.WaitAsync(0, cancellationToken))
         {
@@ -48,7 +49,7 @@ public sealed class NavigationService(IRouteNavigator navigator)
                 return;
             }
 
-            await navigator.GoToAsync(path, item, catchEditId, cancellationToken);
+            await navigator.GoToAsync(path, item, catchEditId, tripId, cancellationToken);
         }
         finally
         {

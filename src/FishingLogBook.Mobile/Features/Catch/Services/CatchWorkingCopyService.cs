@@ -59,7 +59,7 @@ public sealed class CatchWorkingCopyService(
         }
 
         var view = remote.Value!;
-        if (view.RecordedByUserId != lease.UserId || view.CaughtByUserId != lease.UserId || view.TripId is not null)
+        if (view.RecordedByUserId != lease.UserId || view.CaughtByUserId != lease.UserId)
         {
             return WorkingCopyOutcomeEnum.NotEditable;
         }
