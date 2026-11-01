@@ -15,6 +15,11 @@ public sealed class TripModalViewModelFactory(IServiceProvider services) : ITrip
         return services.GetRequiredService<TripCatchPickerViewModel>();
     }
 
+    public StartPlannedTripViewModel CreateStartPlannedTrip()
+    {
+        return services.GetRequiredService<StartPlannedTripViewModel>();
+    }
+
     public TripParticipantsViewModel CreateParticipants()
     {
         return services.GetRequiredService<TripParticipantsViewModel>();

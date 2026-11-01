@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+ xmlns:locationPicker="clr-namespace:FishingLogBook.Mobile.Features.Trips.Components.TripLocationPicker"
+ x:Class="FishingLogBook.Mobile.Features.Trips.Pages.TripPlanPage"
+ x:DataType="vm:TripPlanViewModel" Title="{Binding HeadingText}" Shell.NavBarIsVisible="False" Shell.TabBarIsVisible="False"
+ BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+ <Grid RowDefinitions="48,*">
+  <Grid ColumnDefinitions="48,*,48" Padding="4,0">
+   <Grid SemanticProperties.Description="{Binding Text[Back]}" AutomationId="TripPlanBack">
+    <controls:IconView Source="icon_chevron.png" Tone="Default" Rotation="180" WidthRequest="20" HeightRequest="20" />
+    <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnBack" /></Grid.GestureRecognizers>
+   </Grid>
+   <Label Grid.Column="1" Text="{Binding HeadingText}" Style="{StaticResource Heading}" FontSize="17" HorizontalOptions="Center" VerticalOptions="Center" />
+  </Grid>
+  <ScrollView Grid.Row="1">
+   <VerticalStackLayout Padding="16,8,16,32" Spacing="12" MaximumWidthRequest="720">
+    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+    <Border Style="{StaticResource Card}" IsVisible="{Binding NotFound}" Padding="16" Shadow="{x:Null}">
+     <Label Text="{Binding Text[TripNotFound]}" Style="{StaticResource Subheading}" AutomationId="TripNotFound" />
+    </Border>
+    <Border Style="{StaticResource Card}" IsVisible="{Binding ShowContent}" Padding="12" Shadow="{x:Null}" AutomationId="TripPlan">
+     <VerticalStackLayout Spacing="12">
+      <Label Text="{Binding Text[TripPlanCancelledNotice]}" IsVisible="{Binding IsCancelled}" Style="{StaticResource SecondaryText}" AutomationId="TripPlanCancelled" />
+      <Label Text="{Binding Text[TripPlanReadOnly]}" IsVisible="{Binding IsReadOnly}" Style="{StaticResource SecondaryText}" AutomationId="TripPlanReadOnly" />
+      <VerticalStackLayout Spacing="4">
+       <Label Text="{Binding Text[TripEditTripTitle]}" Style="{StaticResource TileCaption}" />
+       <Border Style="{StaticResource InputField}">
+        <Entry Text="{Binding EditTitle, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" MaxLength="120" Style="{StaticResource FieldEntry}"
+               SemanticProperties.Description="{Binding Text[TripEditTripTitle]}" AutomationId="TripPlanTitleEntry" />
+       </Border>
+      </VerticalStackLayout>
+      <locationPicker:TripLocationPickerView x:Name="Location" Options="{Binding LocationOptions}" PlaceName="{Binding EditPlace, Mode=TwoWay}"
+        Heading="{Binding Text[TripFishingLocation]}" OtherText="{Binding Text[TripOtherLocation]}" ClearText="{Binding Text[TripClearLocation]}" />
+      <VerticalStackLayout Spacing="4">
+       <Label Text="{Binding Text[TripPlanDate]}" Style="{StaticResource TileCaption}" />
+       <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+        <DatePicker Date="{Binding PlannedDate, Mode=TwoWay}" Format="d" IsEnabled="{Binding CanEdit}" AutomationId="TripPlanDatePicker" />
+        <TimePicker Grid.Column="1" Time="{Binding PlannedTime, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" AutomationId="TripPlanTimePicker" />
+       </Grid>
+      </VerticalStackLayout>
+      <Label Text="{Binding MessageText}" IsVisible="{Binding HasMessage}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" AutomationId="TripPlanMessage" />
+      <Button Text="{Binding Text[TripPlanSave]}" IsVisible="{Binding CanEdit}" IsEnabled="{Binding CanSave}" Clicked="OnSave" MinimumHeightRequest="48" AutomationId="TripPlanSave" />
+      <Button Text="{Binding Text[TripInviteAngler]}" IsVisible="{Binding CanCancelTrip}" IsEnabled="{Binding CanInvite}" Style="{StaticResource SecondaryButton}"
+              Clicked="OnInvite" MinimumHeightRequest="48" AutomationId="TripPlanInvite" />
+      <Label Text="{Binding Text[TripPlanInviteHint]}" IsVisible="{Binding ShowInviteHint}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="TripPlanInviteHint" />
+      <Button Text="{Binding Text[TripPlanCancelTrip]}" IsVisible="{Binding CanCancelTrip}" Style="{StaticResource SecondaryButton}"
+              Clicked="OnCancelTrip" MinimumHeightRequest="48" AutomationId="TripPlanCancelTrip" />
+     </VerticalStackLayout>
+    </Border>
+   </VerticalStackLayout>
+  </ScrollView>
+ </Grid>
+</ContentPage>

@@ -17,7 +17,7 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(20);
 
     private readonly ITripService _trips;
-    private readonly IAnglerPreferencesService _preferences;
+    private readonly ITripStartService _start;
     private readonly NavigationService _navigation;
     private readonly TimeProvider _clock;
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -28,7 +28,7 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
 
     public ActiveTripBannerViewModel(
         ITripService trips,
-        IAnglerPreferencesService preferences,
+        ITripStartService start,
         IAccountSessionCoordinator session,
         NavigationService navigation,
         UiTextService text,
@@ -36,7 +36,7 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
     {
         _navigation = navigation;
         _trips = trips;
-        _preferences = preferences;
+        _start = start;
         _clock = clock;
         Text = text;
         text.PropertyChanged += (_, _) => Notify();
@@ -121,11 +121,13 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
         Notify();
         try
         {
-            var preferences = await _preferences.GetCachedAsync(cancellationToken);
-            var place = preferences?.Locations.Locations.FirstOrDefault(location => location.IsDefault)?.Name;
-            var trip = await _trips.StartAsync(null, place, cancellationToken);
-            _activeTripId = trip.Detail.Trip.Id;
-            return _activeTripId;
+            var started = await _start.StartAsync(cancellationToken);
+            if (started is not null)
+            {
+                _activeTripId = started;
+            }
+
+            return started;
         }
         catch (InvalidOperationException)
         {

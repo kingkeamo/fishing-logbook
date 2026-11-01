@@ -176,6 +176,8 @@ public static partial class MauiProgram
         builder.Services.AddTransient<IAnglerLookupClient, AnglerLookupClient>();
         builder.Services.AddSingleton<ITripDependencyService, TripDependencyService>();
         builder.Services.AddSingleton<ITripService, TripService>();
+        builder.Services.AddSingleton<IPlannedTripService, PlannedTripService>();
+        builder.Services.AddSingleton<ITripStartService, TripStartService>();
         builder.Services.AddSingleton<ITripAssociationService, TripAssociationService>();
         builder.Services.AddSingleton<ITripCatchService, TripCatchService>();
         builder.Services.AddSingleton<ITripRemovalService, TripRemovalService>();
@@ -253,13 +255,16 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<TripListViewModel>();
         builder.Services.AddTransient<TripDetailViewModel>();
         builder.Services.AddTransient<TripEditViewModel>();
+        builder.Services.AddTransient<TripPlanViewModel>();
         builder.Services.AddTripModalViewModels();
         builder.Services.AddTransient<ITripModalService, TripModalService>();
+        builder.Services.AddTransient<IPlannedTripChooser, TripModalService>();
         builder.Services.AddSingleton<ITripPhotographService, TripPhotographService>();
         builder.Services.AddSingleton<ITripTimelineService, TripTimelineService>();
         builder.Services.AddSingleton<TripsPage>();
         builder.Services.AddTransient<TripDetailPage>();
         builder.Services.AddTransient<TripEditPage>();
+        builder.Services.AddTransient<TripPlanPage>();
         builder.Services.AddSingleton<ActiveTripBannerViewModel>();
         builder.Services.AddTransient<TripAssociationViewModel>();
         builder.Services.AddTransient<CatchEditViewModel>();

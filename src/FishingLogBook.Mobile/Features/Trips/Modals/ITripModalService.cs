@@ -1,3 +1,4 @@
+using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 
 namespace FishingLogBook.Mobile.Features.Trips.Modals;
@@ -15,4 +16,5 @@ public interface ITripModalService
     Task<bool> RemoveCatchAsync(Guid catchId, string catchLabel);
 
     Task<bool> ShowParticipantsAsync(Guid tripId);
+
 }

@@ -92,6 +92,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchEdit), typeof(CatchEditPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.TripDetail), typeof(TripDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.TripEdit), typeof(TripEditPage));
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.TripPlan), typeof(TripPlanPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Profile), typeof(ProfilePage));

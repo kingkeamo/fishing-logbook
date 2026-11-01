@@ -511,4 +511,32 @@
   <data name="TripEditSaveScope" xml:space="preserve"><value>Save changes applies to the trip title and fishing location. Photos, notes and catches are saved as you add or remove them.</value></data>
   <data name="TripPhotographRemove" xml:space="preserve"><value>Remove photo</value></data>
   <data name="TripNotesEmpty" xml:space="preserve"><value>No notes yet</value></data>
+  <data name="TripPlanned" xml:space="preserve"><value>Planned</value></data>
+  <data name="TripCancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="TripPlanTrip" xml:space="preserve"><value>Plan a trip</value></data>
+  <data name="TripPlanTitle" xml:space="preserve"><value>Plan a trip</value></data>
+  <data name="TripPlanEditTitle" xml:space="preserve"><value>Planned trip</value></data>
+  <data name="TripPlannedFor" xml:space="preserve"><value>Planned for {0}</value></data>
+  <data name="TripPlanDate" xml:space="preserve"><value>Date</value></data>
+  <data name="TripPlanSave" xml:space="preserve"><value>Save plan</value></data>
+  <data name="TripPlanCancelTrip" xml:space="preserve"><value>Cancel this trip</value></data>
+  <data name="TripPlanCancelConfirmTitle" xml:space="preserve"><value>Cancel this planned trip?</value></data>
+  <data name="TripPlanCancelConfirmMessage" xml:space="preserve"><value>Invited anglers will no longer see it.</value></data>
+  <data name="TripPlanCancelConfirm" xml:space="preserve"><value>Cancel trip</value></data>
+  <data name="TripPlanKeep" xml:space="preserve"><value>Keep trip</value></data>
+  <data name="TripPlanSaveFailed" xml:space="preserve"><value>The plan could not be saved.</value></data>
+  <data name="TripPlanInviteHint" xml:space="preserve"><value>Invitations can be sent once the plan has synchronised.</value></data>
+  <data name="TripPlanReadOnly" xml:space="preserve"><value>Only the organiser can change this plan.</value></data>
+  <data name="TripPlanCancelledNotice" xml:space="preserve"><value>This trip was cancelled.</value></data>
+  <data name="TripPlanOpen" xml:space="preserve"><value>View plan</value></data>
+  <data name="TripStartPlannedTitle" xml:space="preserve"><value>Start a planned trip?</value></data>
+  <data name="TripStartPlannedMessage" xml:space="preserve"><value>These trips are planned for around now. Pick one, or start a new trip.</value></data>
+  <data name="TripStartThisTrip" xml:space="preserve"><value>Start this trip</value></data>
+  <data name="TripStartNewTrip" xml:space="preserve"><value>Start new trip</value></data>
+  <data name="TripPlannedOrganiser" xml:space="preserve"><value>Organised by {0}</value></data>
+  <data name="TripPlannedOrganiserYou" xml:space="preserve"><value>Organised by you</value></data>
+  <data name="TripPlannedGuests" xml:space="preserve"><value>With {0}</value></data>
+  <data name="TripPlannedGuestInvited" xml:space="preserve"><value>{0} (invited)</value></data>
+  <data name="TripPlannedUntitled" xml:space="preserve"><value>Planned trip</value></data>
+  <data name="TripPlannedStartFailed" xml:space="preserve"><value>The planned trip could not be started.</value></data>
 </root>

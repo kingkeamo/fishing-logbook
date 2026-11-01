@@ -28,6 +28,7 @@ public sealed class TripMetadataSynchroniser(ITripStore store, ITripClient clien
         var sent = new TripDto(trip.Id, trip.Status, trip.StartedOn, trip.EndedOn, trip.Location)
         {
             OwnerUserId = lease.UserId,
+            PlannedStartOn = trip.PlannedStartOn,
             Title = trip.Title,
             PlaceName = trip.PlaceName
         };
@@ -45,7 +46,13 @@ public sealed class TripMetadataSynchroniser(ITripStore store, ITripClient clien
         {
             Detail = local.Detail with
             {
-                Trip = trip with { Status = accepted.Status, EndedOn = accepted.EndedOn }
+                Trip = trip with
+                {
+                    Status = accepted.Status,
+                    StartedOn = accepted.StartedOn,
+                    PlannedStartOn = accepted.PlannedStartOn,
+                    EndedOn = accepted.EndedOn
+                }
             }
         };
         return OutboxOperationResultModel.Completed((connection, transaction, token) =>

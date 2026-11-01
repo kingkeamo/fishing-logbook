@@ -24,6 +24,8 @@ public abstract class BaseTripListViewModelTest
     protected readonly ITripService MockTrips = Substitute.For<ITripService>();
     protected readonly ITripParticipantClient MockParticipants = Substitute.For<ITripParticipantClient>();
     protected readonly IAnglerPreferencesService MockPreferences = Substitute.For<IAnglerPreferencesService>();
+    protected readonly IPlannedTripService MockPlanned = Substitute.For<IPlannedTripService>();
+    protected readonly IPlannedTripChooser MockChooser = Substitute.For<IPlannedTripChooser>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly TripListViewModel Sut;
 
@@ -33,7 +35,8 @@ public abstract class BaseTripListViewModelTest
         MockTrips.LoadAsync(Arg.Any<CancellationToken>()).Returns(new TripHistoryModel([], new HashSet<Guid>(), false));
         MockParticipants.ListInvitationsAsync(Arg.Any<CancellationToken>())
             .Returns(FishingLogBook.Mobile.Api.Models.ApiResultModel<List<TripInvitationDto>>.Succeeded([]));
-        Sut = new TripListViewModel(MockTrips, MockParticipants, MockPreferences, MockConnectivity, Text, new FixedTimeProvider(Now));
+        MockPlanned.GetEligibleAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<PlannedTripOptionModel>());
+        Sut = new TripListViewModel(MockTrips, MockParticipants, new TripStartService(MockTrips, MockPlanned, MockChooser, MockPreferences), MockConnectivity, Text, new FixedTimeProvider(Now));
     }
 
     protected static TripSummaryDto Summary(Guid id, string status = TripConstants.Active, string role = TripParticipantConstants.Owner,

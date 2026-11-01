@@ -61,6 +61,19 @@ public sealed class WhenTestingCreate
     }
 
     [Fact]
+    public void ItShouldHandOutAFreshStartPlannedTripViewModelOnEveryCall()
+    {
+        // Arrange
+        // Act
+        var first = _sut.CreateStartPlannedTrip();
+        var second = _sut.CreateStartPlannedTrip();
+        // Assert
+        first.Should().NotBeSameAs(second);
+        _services.Single(service => service.ServiceType == typeof(StartPlannedTripViewModel)).Lifetime
+            .Should().Be(ServiceLifetime.Transient);
+    }
+
+    [Fact]
     public void ItShouldHandOutANewViewModelOfEachKindOnEveryCall()
     {
         // Arrange

@@ -13,8 +13,12 @@ public sealed record LocalTripRecordModel
     public bool AccessRevoked { get; init; }
     public bool HasPendingMetadata => Revision > SyncedRevision;
     public bool IsActive => Detail.Trip.Status == TripConstants.Active;
-    public bool CanContribute => !AccessRevoked && Detail.Role is TripParticipantConstants.Owner or TripParticipantConstants.Participant;
-    public bool CanManage => CanContribute && Detail.Trip.OwnerUserId == UserId;
+    public bool IsPlanned => Detail.Trip.Status == TripConstants.Planned;
+    public bool IsCancelled => Detail.Trip.Status == TripConstants.Cancelled;
+    public bool HasPlannedLifecycle => IsPlanned || IsCancelled;
+    public bool HasAccess => !AccessRevoked && Detail.Role is TripParticipantConstants.Owner or TripParticipantConstants.Participant;
+    public bool CanContribute => HasAccess && !HasPlannedLifecycle;
+    public bool CanManage => HasAccess && Detail.Trip.OwnerUserId == UserId;
 
     public TripNoteDto? FindNote(Guid noteId)
     {

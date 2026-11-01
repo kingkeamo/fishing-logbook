@@ -44,8 +44,13 @@ public partial class TripsPage : ContentPage
     {
         if (sender is Button { CommandParameter: Guid tripId })
         {
-            await _navigation.NavigateAsync(MobileRouteEnum.TripDetail, tripId: tripId);
+            await _navigation.NavigateAsync(_viewModel.RouteFor(tripId), tripId: tripId);
         }
+    }
+
+    private async void OnPlan(object? sender, EventArgs args)
+    {
+        await _navigation.NavigateAsync(MobileRouteEnum.TripPlan);
     }
 
     private async void OnAccept(object? sender, EventArgs args)

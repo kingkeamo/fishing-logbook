@@ -11,6 +11,7 @@ public static class TripModalViewModelServiceCollectionExtensions
         services.AddTransient<TripNoteEditorViewModel>();
         services.AddTransient<TripCatchPickerViewModel>();
         services.AddTransient<TripParticipantsViewModel>();
+        services.AddTransient<StartPlannedTripViewModel>();
         services.AddSingleton<ITripModalViewModelFactory, TripModalViewModelFactory>();
         return services;
     }

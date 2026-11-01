@@ -23,6 +23,8 @@ public abstract class BaseActiveTripBannerViewModelTest
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
     protected readonly ITripService MockTrips = Substitute.For<ITripService>();
     protected readonly IAnglerPreferencesService MockPreferences = Substitute.For<IAnglerPreferencesService>();
+    protected readonly IPlannedTripService MockPlanned = Substitute.For<IPlannedTripService>();
+    protected readonly IPlannedTripChooser MockChooser = Substitute.For<IPlannedTripChooser>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly IRouteNavigator MockNavigator = Substitute.For<IRouteNavigator>();
     protected readonly MutableTimeProvider Clock = new(Now);
@@ -31,7 +33,8 @@ public abstract class BaseActiveTripBannerViewModelTest
     protected BaseActiveTripBannerViewModelTest()
     {
         MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns((AnglerPreferencesModel?)null);
-        Sut = new ActiveTripBannerViewModel(MockTrips, MockPreferences, MockSession, new NavigationService(MockNavigator), Text, Clock);
+        MockPlanned.GetEligibleAsync(Arg.Any<CancellationToken>()).Returns(Array.Empty<PlannedTripOptionModel>());
+        Sut = new ActiveTripBannerViewModel(MockTrips, new TripStartService(MockTrips, MockPlanned, MockChooser, MockPreferences), MockSession, new NavigationService(MockNavigator), Text, Clock);
     }
 
     protected static TripSummaryDto Summary(Guid id, string status = TripConstants.Active, string role = TripParticipantConstants.Owner)

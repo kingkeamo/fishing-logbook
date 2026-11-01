@@ -255,6 +255,7 @@ public sealed class TripService(ITripStore store, ITripClient client, IAccountSe
         return new TripSummaryDto(detail.Trip.Id, detail.Trip.Status, detail.Trip.StartedOn, detail.Trip.EndedOn)
         {
             OwnerUserId = detail.Trip.OwnerUserId,
+            PlannedStartOn = detail.Trip.PlannedStartOn,
             Role = detail.Role,
             Title = detail.Trip.Title,
             PlaceName = detail.Trip.PlaceName,

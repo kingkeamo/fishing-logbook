@@ -45,6 +45,10 @@ public partial class TripDetailPage : ContentPage, IQueryAttributable
         if (_tripId != Guid.Empty)
         {
             await _viewModel.LoadAsync(_tripId, CancellationToken.None);
+            if (_viewModel.IsPlannedLifecycle)
+            {
+                await _navigation.NavigateAsync(MobileRouteEnum.TripPlan, tripId: _tripId);
+            }
         }
     }
 

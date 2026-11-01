@@ -5,6 +5,7 @@ using FishingLogBook.Mobile.Features.Trips.Clients;
 using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Navigation;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 
@@ -18,7 +19,7 @@ public sealed class TripListViewModel : INotifyPropertyChanged
 {
     private readonly ITripService _trips;
     private readonly ITripParticipantClient _participants;
-    private readonly IAnglerPreferencesService _preferences;
+    private readonly ITripStartService _start;
     private readonly IConnectivityService _connectivity;
     private readonly TimeProvider _clock;
     private readonly SemaphoreSlim _loadGate = new(1, 1);
@@ -31,14 +32,14 @@ public sealed class TripListViewModel : INotifyPropertyChanged
     public TripListViewModel(
         ITripService trips,
         ITripParticipantClient participants,
-        IAnglerPreferencesService preferences,
+        ITripStartService start,
         IConnectivityService connectivity,
         UiTextService text,
         TimeProvider clock)
     {
         _trips = trips;
         _participants = participants;
-        _preferences = preferences;
+        _start = start;
         _connectivity = connectivity;
         _clock = clock;
         Text = text;
@@ -114,13 +115,12 @@ public sealed class TripListViewModel : INotifyPropertyChanged
         SetBusy(true);
         try
         {
-            var preferences = await _preferences.GetCachedAsync(cancellationToken);
-            var place = preferences?.Locations.Locations.FirstOrDefault(location => location.IsDefault)?.Name;
-            var trip = await _trips.StartAsync(null, place, cancellationToken);
-            return trip.Detail.Trip.Id;
+            return await _start.StartAsync(cancellationToken);
         }
         catch (InvalidOperationException)
         {
+            _actionFailedKey = "TripPlannedStartFailed";
+            Notify(nameof(HasActionFailure), nameof(ActionFailureText));
             await LoadAsync(cancellationToken);
             return null;
         }
@@ -191,9 +191,10 @@ public sealed class TripListViewModel : INotifyPropertyChanged
     private TripListItemModel ToItem(TripSummaryDto trip, bool pending)
     {
         var active = trip.Status == TripConstants.Active;
+        var plannedLifecycle = TripConstants.HasPlannedLifecycle(trip.Status);
         return new TripListItemModel(
             trip.Id,
-            TimeZoneInfo.ConvertTime(trip.StartedOn, _clock.LocalTimeZone).ToString("d MMM yyyy", Text.Culture),
+            TimeZoneInfo.ConvertTime(plannedLifecycle ? trip.PlannedStartOn ?? trip.StartedOn : trip.StartedOn, _clock.LocalTimeZone).ToString("d MMM yyyy", Text.Culture),
             trip.Title,
             trip.PlaceName,
             trip.Role == TripParticipantConstants.Participant,
@@ -202,10 +203,19 @@ public sealed class TripListViewModel : INotifyPropertyChanged
             Count(trip.CatchCount, "TripCatchesNone", "TripCatchesOne", "TripCatchesMany"),
             Count(trip.PhotographCount, "TripListPhotographsNone", "TripListPhotographsOne", "TripListPhotographsMany"),
             Count(trip.NoteCount, "TripListNotesNone", "TripListNotesOne", "TripListNotesMany"),
-            active ? Text["TripUpdate"] : Text["TripViewTrip"],
+            plannedLifecycle ? Text["TripPlanOpen"] : active ? Text["TripUpdate"] : Text["TripViewTrip"],
             Text["TripActiveLabel"],
             Text["TripSharedLabel"],
-            Text["CatchSyncWaiting"]);
+            Text["CatchSyncWaiting"],
+            plannedLifecycle,
+            trip.Status == TripConstants.Cancelled ? Text["TripCancelled"] : Text["TripPlanned"]);
+    }
+
+    public MobileRouteEnum RouteFor(Guid tripId)
+    {
+        return Trips.FirstOrDefault(trip => trip.Id == tripId) is { HasPlannedLifecycle: true }
+            ? MobileRouteEnum.TripPlan
+            : MobileRouteEnum.TripDetail;
     }
 
     private string Count(int count, string none, string one, string many)

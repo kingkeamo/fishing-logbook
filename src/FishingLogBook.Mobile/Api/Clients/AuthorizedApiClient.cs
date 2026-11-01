@@ -71,6 +71,15 @@ public sealed class AuthorizedApiClient
         return await SendAsync<TResponse>(request, cancellationToken, distinguishNotFound: true);
     }
 
+    public async Task<ApiResultModel<TResponse>> PostAsync<TResponse>(
+        string path,
+        CancellationToken cancellationToken)
+        where TResponse : class
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, path);
+        return await SendAsync<TResponse>(request, cancellationToken, distinguishNotFound: true);
+    }
+
     public async Task<ApiResultModel<NoContentModel>> PostNoContentAsync<TRequest>(
         string path,
         TRequest value,
