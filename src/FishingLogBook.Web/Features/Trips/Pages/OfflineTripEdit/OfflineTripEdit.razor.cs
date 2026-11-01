@@ -81,6 +81,12 @@ public partial class OfflineTripEdit : ComponentBase
                 ?? throw new InvalidOperationException("Offline access is locked.");
             _viewerUserId = owner.UserId;
             _trip = await TripStore.GetAsync(owner.UserId, TripId, CancellationToken.None);
+            if (_trip is { } plannedOrCancelled && (plannedOrCancelled.IsPlanned || plannedOrCancelled.IsCancelled))
+            {
+                Navigation.NavigateTo($"/offline/trips/{TripId:D}/plan", replace: true);
+                return;
+            }
+
             if (_trip is null)
             {
                 return;

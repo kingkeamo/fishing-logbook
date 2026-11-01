@@ -5,6 +5,7 @@ using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Features.Trips.Enums;
 using FishingLogBook.Web.Features.Trips.Models;
+using FishingLogBook.Web.Features.Trips.Offline;
 using FishingLogBook.Web.Features.Trips.Offline.Stores;
 
 namespace FishingLogBook.Web.Features.Trips.Services;
@@ -71,6 +72,34 @@ public sealed class ActiveTripService : IActiveTripService
         Remember(ownerUserId, trip);
         RaiseStateChanged();
         return trip;
+    }
+
+    public async Task<TripModel> ActivatePlannedAsync(
+        Guid ownerUserId,
+        Guid tripId,
+        CancellationToken cancellationToken)
+    {
+        var current = await _tripStore.GetAsync(ownerUserId, tripId, cancellationToken);
+        if (current is not { IsPlanned: true } || !current.IsOwnedBy(ownerUserId))
+        {
+            throw new InvalidOperationException("Only the organiser can start a planned trip.");
+        }
+
+        if (await GetActiveAsync(ownerUserId, cancellationToken) is not null)
+        {
+            throw new TripAlreadyActiveException();
+        }
+
+        var activated = current with
+        {
+            Status = TripConstants.Active,
+            StartedOn = DateTimeOffset.UtcNow,
+            SyncStatus = SyncStatus.SavedLocally
+        };
+        await _tripStore.SaveAsync(activated, cancellationToken);
+        Remember(ownerUserId, activated);
+        RaiseStateChanged();
+        return activated;
     }
 
     public async Task<TripModel> FinishAsync(TripModel trip, CancellationToken cancellationToken)

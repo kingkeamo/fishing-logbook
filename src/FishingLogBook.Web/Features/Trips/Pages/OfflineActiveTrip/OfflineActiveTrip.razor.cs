@@ -31,6 +31,9 @@ public partial class OfflineActiveTrip : ComponentBase
     public Guid TripId { get; set; }
 
     [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
     private ITripStore TripStore { get; set; } = default!;
 
     [Inject]
@@ -117,6 +120,12 @@ public partial class OfflineActiveTrip : ComponentBase
                 ?? throw new InvalidOperationException("Offline access is locked.");
             _viewerUserId = owner.UserId;
             _trip = await TripStore.GetAsync(owner.UserId, TripId, CancellationToken.None);
+            if (_trip is { } plannedOrCancelled && (plannedOrCancelled.IsPlanned || plannedOrCancelled.IsCancelled))
+            {
+                Navigation.NavigateTo($"/offline/trips/{TripId:D}/plan", replace: true);
+                return;
+            }
+
             if (_trip is not null)
             {
                 _display = await TripDisplay.DescribeAsync(_trip, CancellationToken.None);

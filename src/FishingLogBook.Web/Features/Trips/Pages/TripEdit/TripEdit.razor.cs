@@ -83,6 +83,12 @@ public partial class TripEdit : ComponentBase, IDisposable
             var ownerUserId = await LocalOwner.GetUserIdAsync(cancellationToken);
             _viewerUserId = ownerUserId;
             _trip = await TripStore.GetAsync(ownerUserId, TripId, cancellationToken);
+            if (_trip is { } plannedOrCancelled && (plannedOrCancelled.IsPlanned || plannedOrCancelled.IsCancelled))
+            {
+                Navigation.NavigateTo($"/trips/{TripId:D}/plan", replace: true);
+                return;
+            }
+
             if (_trip is null)
             {
                 return;

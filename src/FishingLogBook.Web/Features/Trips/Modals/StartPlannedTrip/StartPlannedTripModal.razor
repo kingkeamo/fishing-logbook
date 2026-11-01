@@ -1,0 +1,68 @@
+@namespace FishingLogBook.Web.Features.Trips.Modals.StartPlannedTrip
+
+<MudDialog id="start-planned-trip-modal">
+    <TitleContent>
+        <MudText Typo="Typo.h6" id="start-planned-trip-title">@Loc["Trip_StartPlannedTitle"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" AlignItems="AlignItems.Stretch">
+            <MudText Typo="Typo.body2" Class="mud-text-secondary" id="start-planned-trip-message">
+                @Loc["Trip_StartPlannedMessage"]
+            </MudText>
+            <MudStack Spacing="2" id="start-planned-trip-list">
+                @foreach (var trip in Model.Trips)
+                {
+                    <MudPaper Elevation="0"
+                              Outlined="true"
+                              Class="start-planned-trip pa-3"
+                              id="@($"start-planned-trip-{trip.TripId:D}")">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle1" id="@($"start-planned-trip-name-{trip.TripId:D}")">
+                                @TripName(trip)
+                            </MudText>
+                            <MudText Typo="Typo.body2" id="@($"start-planned-trip-when-{trip.TripId:D}")">
+                                @WhenLabel(trip)
+                            </MudText>
+                            <MudText Typo="Typo.caption"
+                                     Class="mud-text-secondary"
+                                     id="@($"start-planned-trip-organiser-{trip.TripId:D}")">
+                                @OrganiserLabel(trip)
+                            </MudText>
+                            @if (trip.Guests.Count > 0)
+                            {
+                                <MudText Typo="Typo.caption"
+                                         Class="mud-text-secondary"
+                                         id="@($"start-planned-trip-guests-{trip.TripId:D}")">
+                                    @GuestsLabel(trip)
+                                </MudText>
+                            }
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Disabled="_isBusy"
+                                       OnClick="@(() => Select(trip))"
+                                       id="@($"start-planned-trip-select-{trip.TripId:D}")">
+                                @Loc["Trip_StartThisTrip"]
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   Disabled="_isBusy"
+                   OnClick="Dismiss"
+                   id="start-planned-trip-dismiss">
+            @Loc["Modal_Close"]
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   Disabled="_isBusy"
+                   OnClick="StartNew"
+                   id="start-planned-trip-new">
+            @Loc["Trip_StartNewTrip"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

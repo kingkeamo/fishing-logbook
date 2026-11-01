@@ -1,0 +1,96 @@
+@namespace FishingLogBook.Web.Features.Trips.Components.PlannedTripEditor
+@using FishingLogBook.Shared.Constants
+@using FishingLogBook.Web.Features.Trips.Components.TripLocationPicker
+
+<MudPaper Elevation="0" Class="planned-trip-editor pa-4" id="planned-trip-editor">
+    <MudStack Spacing="3" AlignItems="AlignItems.Stretch">
+        <MudText Typo="Typo.h6" id="planned-trip-editor-title">
+            @(_trip is null ? Loc["Trip_PlanTitle"] : Loc["Trip_PlanEditTitle"])
+        </MudText>
+
+        @if (_trip is { IsCancelled: true })
+        {
+            <MudAlert Severity="Severity.Info" id="planned-trip-cancelled">@Loc["Trip_PlanCancelledNotice"]</MudAlert>
+        }
+        else if (!CanEdit)
+        {
+            <MudAlert Severity="Severity.Info" id="planned-trip-read-only">@Loc["Trip_PlanReadOnly"]</MudAlert>
+        }
+
+        <MudTextField T="string"
+                      @bind-Value="_title"
+                      Label="@Loc["Trip_EditTripTitle"]"
+                      MaxLength="TripConstants.MaxTitleLength"
+                      ReadOnly="!CanEdit"
+                      Immediate="true"
+                      Variant="Variant.Outlined"
+                      id="planned-trip-title" />
+
+        <TripLocationPicker PlaceName="@_placeName" PlaceNameChanged="OnPlaceNameChanged" Disabled="!CanEdit" />
+
+        <MudTextField T="string"
+                      Value="_whenLocal"
+                      ValueChanged="OnWhenChanged"
+                      Label="@Loc["Trip_PlanDate"]"
+                      InputType="InputType.DateTimeLocal"
+                      ReadOnly="!CanEdit"
+                      Immediate="true"
+                      Variant="Variant.Outlined"
+                      id="planned-trip-when" />
+
+        @if (_whenInvalid)
+        {
+            <MudAlert Severity="Severity.Error" id="planned-trip-when-invalid">@Loc["Trip_PlanWhenRequired"]</MudAlert>
+        }
+
+        @if (_saveFailed)
+        {
+            <MudAlert Severity="Severity.Error" id="planned-trip-save-failed">@Loc["Trip_PlanSaveFailed"]</MudAlert>
+        }
+
+        @if (CanEdit)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="_isBusy"
+                       OnClick="SaveAsync"
+                       id="planned-trip-save">
+                @Loc["Trip_PlanSave"]
+            </MudButton>
+        }
+
+        @if (_trip is { IsPlanned: true } && CanEdit)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       Disabled="@(_isBusy || !CanInvite)"
+                       OnClick="InviteAsync"
+                       id="planned-trip-invite">
+                @Loc["Trip_InviteAngler"]
+            </MudButton>
+            @if (!CanInvite)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary" id="planned-trip-invite-hint">
+                    @Loc["Trip_PlanInviteHint"]
+                </MudText>
+            }
+
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Error"
+                       Disabled="_isBusy"
+                       OnClick="CancelTripAsync"
+                       id="planned-trip-cancel-trip">
+                @Loc["Trip_PlanCancelTrip"]
+            </MudButton>
+        }
+
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Default"
+                   Disabled="_isBusy"
+                   OnClick="CloseAsync"
+                   id="planned-trip-back">
+            @Loc["Trip_PlanBack"]
+        </MudButton>
+    </MudStack>
+</MudPaper>

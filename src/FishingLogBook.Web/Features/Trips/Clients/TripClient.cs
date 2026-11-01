@@ -32,6 +32,13 @@ public sealed class TripClient : ITripClient
         return trips ?? throw new HttpRequestException("Trips were missing.");
     }
 
+    public async Task<TripDto?> ActivateAsync(Guid tripId, CancellationToken cancellationToken)
+    {
+        using var response = await _apiClient.PostAsync($"api/trips/{tripId:D}/activate", content: null, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<TripDto>(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<PlannedTripOptionDto>> GetPlannedAsync(
         int? windowDays,
         CancellationToken cancellationToken)

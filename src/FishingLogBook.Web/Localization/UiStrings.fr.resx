@@ -1460,4 +1460,36 @@
   <data name="Import_LocationPreview" xml:space="preserve"><value>Aper&#231;u du nom du lieu</value></data>
   <data name="Import_NoPlaceName" xml:space="preserve"><value>Aucun nom de lieu</value></data>
   <data name="Import_PlaceNameTooLong" xml:space="preserve"><value>Supprimez certains d&#233;tails pour raccourcir le nom du lieu.</value></data>
+  <data name="Trip_Planned" xml:space="preserve"><value>Prévue</value></data>
+  <data name="Trip_Cancelled" xml:space="preserve"><value>Annulée</value></data>
+  <data name="Trip_PlanTrip" xml:space="preserve"><value>Planifier une sortie</value></data>
+  <data name="Trip_PlanTitle" xml:space="preserve"><value>Planifier une sortie</value></data>
+  <data name="Trip_PlanEditTitle" xml:space="preserve"><value>Sortie planifiée</value></data>
+  <data name="Trip_PlannedFor" xml:space="preserve"><value>Prévue le {0}</value></data>
+  <data name="Trip_PlanDate" xml:space="preserve"><value>Date</value></data>
+  <data name="Trip_PlanTime" xml:space="preserve"><value>Heure</value></data>
+  <data name="Trip_PlanSave" xml:space="preserve"><value>Enregistrer la sortie</value></data>
+  <data name="Trip_PlanCancelTrip" xml:space="preserve"><value>Annuler cette sortie</value></data>
+  <data name="Trip_PlanCancelConfirmTitle" xml:space="preserve"><value>Annuler cette sortie planifiée ?</value></data>
+  <data name="Trip_PlanCancelConfirmMessage" xml:space="preserve"><value>Les pêcheurs invités ne la verront plus.</value></data>
+  <data name="Trip_PlanCancelConfirm" xml:space="preserve"><value>Annuler la sortie</value></data>
+  <data name="Trip_PlanKeep" xml:space="preserve"><value>Garder la sortie</value></data>
+  <data name="Trip_PlanSaveFailed" xml:space="preserve"><value>La sortie n'a pas pu être enregistrée.</value></data>
+  <data name="Trip_PlanInviteHint" xml:space="preserve"><value>Les invitations peuvent être envoyées une fois la sortie synchronisée.</value></data>
+  <data name="Trip_PlanReadOnly" xml:space="preserve"><value>Seul l'organisateur peut modifier cette sortie.</value></data>
+  <data name="Trip_PlanBack" xml:space="preserve"><value>Retour aux sorties</value></data>
+  <data name="Trip_PlanWhenRequired" xml:space="preserve"><value>Choisissez une date et une heure.</value></data>
+  <data name="Trip_PlanCancelledNotice" xml:space="preserve"><value>Cette sortie a été annulée.</value></data>
+  <data name="Trip_PlanOpen" xml:space="preserve"><value>Voir la sortie</value></data>
+  <data name="Trip_PlannedSection" xml:space="preserve"><value>Sorties planifiées</value></data>
+  <data name="Trip_StartPlannedTitle" xml:space="preserve"><value>Démarrer une sortie planifiée ?</value></data>
+  <data name="Trip_StartPlannedMessage" xml:space="preserve"><value>Ces sorties sont prévues pour maintenant. Choisissez-en une ou démarrez une nouvelle sortie.</value></data>
+  <data name="Trip_StartThisTrip" xml:space="preserve"><value>Démarrer cette sortie</value></data>
+  <data name="Trip_StartNewTrip" xml:space="preserve"><value>Nouvelle sortie</value></data>
+  <data name="Trip_PlannedOrganiser" xml:space="preserve"><value>Organisée par {0}</value></data>
+  <data name="Trip_PlannedOrganiserYou" xml:space="preserve"><value>Organisée par vous</value></data>
+  <data name="Trip_PlannedGuests" xml:space="preserve"><value>Avec {0}</value></data>
+  <data name="Trip_PlannedGuestInvited" xml:space="preserve"><value>{0} (invité)</value></data>
+  <data name="Trip_PlannedUntitled" xml:space="preserve"><value>Sortie planifiée</value></data>
+  <data name="Trip_PlannedStartFailed" xml:space="preserve"><value>La sortie planifiée n'a pas pu être démarrée.</value></data>
 </root>

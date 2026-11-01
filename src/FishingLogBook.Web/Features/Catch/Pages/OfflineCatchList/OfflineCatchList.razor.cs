@@ -1,10 +1,12 @@
 using FishingLogBook.Shared.Enums;
+using FishingLogBook.Web.Common.Modals;
 using FishingLogBook.Web.Features.Catch.Models;
 using FishingLogBook.Web.Features.Catch.Offline;
 using FishingLogBook.Web.Features.Catch.Offline.Stores;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
 using FishingLogBook.Web.Features.Profile.Offline.Stores;
+using FishingLogBook.Web.Features.Trips.Modals.StartPlannedTrip;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -30,6 +32,8 @@ public partial class OfflineCatchList : ComponentBase
     [Inject] private IOfflineOwnerContextService OfflineOwnerContext { get; set; } = default!;
     [Inject] private IAnglerPreferencesStore AnglerPreferencesStore { get; set; } = default!;
     [Inject] private IActiveTripService ActiveTrip { get; set; } = default!;
+    [Inject] private IPlannedTripService PlannedTrips { get; set; } = default!;
+    [Inject] private IModalService ModalService { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private ILoggingService Logging { get; set; } = default!;
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
@@ -109,6 +113,20 @@ public partial class OfflineCatchList : ComponentBase
         }
     }
 
+    private async Task<PlannedTripChoice> ChoosePlannedTripAsync()
+    {
+        var eligible = await PlannedTrips.GetEligibleAsync(_ownerUserId, CancellationToken.None);
+        if (eligible.Count == 0)
+        {
+            return PlannedTripChoice.StartNew;
+        }
+
+        var result = await ModalService.ShowAsync<StartPlannedTripModal, StartPlannedTripModalModel, StartPlannedTripModalResult>(
+            new StartPlannedTripModalModel(eligible),
+            CancellationToken.None);
+        return result is null ? PlannedTripChoice.Dismissed : new PlannedTripChoice(result.Selected, IsDismissed: false);
+    }
+
     private async Task StartFishingAsync()
     {
         if (_isStartingTrip || _activeTrip is not null || _ownerUserId == Guid.Empty)
@@ -119,7 +137,15 @@ public partial class OfflineCatchList : ComponentBase
         _isStartingTrip = true;
         try
         {
-            var started = await ActiveTrip.StartAsync(_ownerUserId, CancellationToken.None);
+            var choice = await ChoosePlannedTripAsync();
+            if (choice.IsDismissed)
+            {
+                return;
+            }
+
+            var started = choice.Selected is { } selected
+                ? await PlannedTrips.ActivateAsync(_ownerUserId, selected, CancellationToken.None)
+                : await ActiveTrip.StartAsync(_ownerUserId, CancellationToken.None);
             Navigation.NavigateTo($"/offline/trips/{started.Id:D}");
         }
         catch (TripAlreadyActiveException)
@@ -129,6 +155,13 @@ public partial class OfflineCatchList : ComponentBase
             {
                 Navigation.NavigateTo($"/offline/trips/{_activeTrip.Id:D}");
             }
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+        {
+            await Logging.LogErrorAsync("starting a planned offline trip", exception, CancellationToken.None);
+            await ModalService.ShowMessageAsync(
+                new MessageModalModel(Loc["Trip_StartPlannedTitle"], Loc["Trip_PlannedStartFailed"], Loc["Modal_Close"], ModalSeverity.Error),
+                CancellationToken.None);
         }
         catch (Exception exception)
         {

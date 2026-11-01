@@ -95,6 +95,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatchStore, IndexedDbCatchStore>();
         services.AddScoped<ITripStore, IndexedDbTripStore>();
         services.AddScoped<IActiveTripService, ActiveTripService>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IPlannedTripService, PlannedTripService>();
         services.AddScoped<ITripDisplayService, TripDisplayService>();
         services.AddScoped<ITripTimelineService, TripTimelineService>();
         services.AddScoped<ITripNoteWriteService, TripNoteWriteService>();

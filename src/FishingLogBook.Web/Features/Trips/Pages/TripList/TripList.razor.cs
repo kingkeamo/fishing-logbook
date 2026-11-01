@@ -295,6 +295,7 @@ public partial class TripList : ComponentBase, IDisposable
         {
             Title = summary.Title,
             PlaceName = summary.PlaceName,
+            PlannedStartOn = summary.PlannedStartOn,
             CatchCount = summary.CatchCount,
             PhotographCount = summary.PhotographCount,
             NoteCount = summary.NoteCount,
@@ -308,6 +309,7 @@ public partial class TripList : ComponentBase, IDisposable
         {
             Title = trip.Title,
             PlaceName = trip.PlaceName,
+            PlannedStartOn = trip.PlannedStartOn,
             CatchCount = catches.Count(catchRecord => catchRecord.TripId == trip.Id),
             PhotographCount = trip.Photographs.Count,
             NoteCount = trip.Notes.Count,

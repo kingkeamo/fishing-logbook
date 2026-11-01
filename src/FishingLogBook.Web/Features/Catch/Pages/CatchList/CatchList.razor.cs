@@ -15,6 +15,7 @@ using FishingLogBook.Web.Features.Catch.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
+using FishingLogBook.Web.Features.Trips.Modals.StartPlannedTrip;
 using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Offline;
 using FishingLogBook.Web.Features.Trips.Services;
@@ -87,6 +88,9 @@ public partial class CatchList : ComponentBase, IDisposable
 
     [Inject]
     private IActiveTripService ActiveTrip { get; set; } = default!;
+
+    [Inject]
+    private IPlannedTripService PlannedTrips { get; set; } = default!;
 
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
@@ -246,7 +250,15 @@ public partial class CatchList : ComponentBase, IDisposable
         var cancellationToken = _cancellationTokenSource.Token;
         try
         {
-            var started = await ActiveTrip.StartAsync(_currentUserId, cancellationToken);
+            var choice = await ChoosePlannedTripAsync(cancellationToken);
+            if (choice.IsDismissed)
+            {
+                return;
+            }
+
+            var started = choice.Selected is { } selected
+                ? await PlannedTrips.ActivateAsync(_currentUserId, selected, cancellationToken)
+                : await ActiveTrip.StartAsync(_currentUserId, cancellationToken);
             Navigation.NavigateTo($"/trips/{started.Id:D}");
         }
         catch (TripAlreadyActiveException)
@@ -260,6 +272,13 @@ public partial class CatchList : ComponentBase, IDisposable
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
         }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+        {
+            await Logging.LogErrorAsync("starting a planned trip", exception, CancellationToken.None);
+            await ModalService.ShowMessageAsync(
+                new MessageModalModel(Loc["Trip_StartPlannedTitle"], Loc["Trip_PlannedStartFailed"], Loc["Modal_Close"], ModalSeverity.Error),
+                CancellationToken.None);
+        }
         catch (Exception exception)
         {
             await Logging.LogErrorAsync("starting a trip", exception, CancellationToken.None);
@@ -268,6 +287,20 @@ public partial class CatchList : ComponentBase, IDisposable
         {
             _isStartingTrip = false;
         }
+    }
+
+    private async Task<PlannedTripChoice> ChoosePlannedTripAsync(CancellationToken cancellationToken)
+    {
+        var eligible = await PlannedTrips.GetEligibleAsync(_currentUserId, cancellationToken);
+        if (eligible.Count == 0)
+        {
+            return PlannedTripChoice.StartNew;
+        }
+
+        var result = await ModalService.ShowAsync<StartPlannedTripModal, StartPlannedTripModalModel, StartPlannedTripModalResult>(
+            new StartPlannedTripModalModel(eligible),
+            cancellationToken);
+        return result is null ? PlannedTripChoice.Dismissed : new PlannedTripChoice(result.Selected, IsDismissed: false);
     }
 
     private async Task<CatchLoadResult> LoadLocalCatchesAsync(
