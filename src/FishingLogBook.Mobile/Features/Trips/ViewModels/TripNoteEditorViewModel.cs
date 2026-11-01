@@ -85,8 +85,15 @@ public sealed class TripNoteEditorViewModel : INotifyPropertyChanged
 
     public string FailureText => Text["TripNoteAddFailed"];
 
-    public void Initialize(LocalTripRecordModel trip, TripNoteDto? existing)
+    /// <summary>Prepares the editor for a new note, or for the trip note with the given id. Returns false when that note no longer exists.</summary>
+    public bool Initialize(LocalTripRecordModel trip, Guid? noteId)
     {
+        var existing = noteId is { } id ? trip.FindNote(id) : null;
+        if (noteId is not null && existing is null)
+        {
+            return false;
+        }
+
         _trip = trip;
         _existing = existing;
         _text = existing?.Text ?? string.Empty;
@@ -94,6 +101,7 @@ public sealed class TripNoteEditorViewModel : INotifyPropertyChanged
         _isSaving = false;
         _saveFailed = false;
         Notify();
+        return true;
     }
 
     public async Task<bool> SaveAsync(CancellationToken cancellationToken)

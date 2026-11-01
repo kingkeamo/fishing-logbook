@@ -25,6 +25,7 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
     private string? _messageKey;
     private bool _isLoading;
     private bool _isBusy;
+    private int _loadVersion;
 
     public TripParticipantsViewModel(
         ITripParticipantClient participants,
@@ -79,6 +80,7 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
 
     public async Task LoadAsync(Guid tripId, CancellationToken cancellationToken)
     {
+        var version = ++_loadVersion;
         _tripId = tripId;
         Changed = false;
         _isLoading = true;
@@ -93,6 +95,11 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
             }
 
             var response = await _participants.GetAsync(tripId, cancellationToken);
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
             if (response.IsSuccess)
             {
                 Apply(response.Value!);
@@ -102,10 +109,20 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
                 _messageKey = "TripParticipantsLoadFailed";
             }
         }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            if (version == _loadVersion)
+            {
+                _messageKey = "TripParticipantsLoadFailed";
+            }
+        }
         finally
         {
-            _isLoading = false;
-            Notify();
+            if (version == _loadVersion)
+            {
+                _isLoading = false;
+                Notify();
+            }
         }
     }
 
