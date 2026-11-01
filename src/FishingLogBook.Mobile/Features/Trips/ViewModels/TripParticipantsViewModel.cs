@@ -4,13 +4,18 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Trips.Clients;
 using FishingLogBook.Mobile.Features.Trips.Models;
+using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Mobile.Features.Trips.ViewModels;
 
-/// <summary>The Web participants modal: who is on the trip, owner-only invite by search, and remove. Needs the server, as on Web.</summary>
+/// <summary>
+/// The Web participants modal: who is on the trip, owner-only invite by search, and remove. Needs the server, as on Web.
+/// Nothing from an earlier trip or a failed load survives a load, and search, invite and remove only work once the
+/// current trip has loaded.
+/// </summary>
 public sealed class TripParticipantsViewModel : INotifyPropertyChanged
 {
     private const int MinimumSearchLength = 3;
@@ -19,11 +24,13 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
     private readonly IAnglerLookupClient _lookup;
     private readonly IConnectivityService _connectivity;
     private readonly IAccountSessionCoordinator _session;
+    private readonly InteractionService _interactions;
     private Guid _tripId;
     private string? _role;
     private string _searchText = string.Empty;
     private string? _messageKey;
     private bool _isLoading;
+    private bool _isLoaded;
     private bool _isBusy;
     private int _loadVersion;
 
@@ -32,12 +39,14 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         IAnglerLookupClient lookup,
         IConnectivityService connectivity,
         IAccountSessionCoordinator session,
+        InteractionService interactions,
         UiTextService text)
     {
         _participants = participants;
         _lookup = lookup;
         _connectivity = connectivity;
         _session = session;
+        _interactions = interactions;
         Text = text;
     }
 
@@ -53,9 +62,11 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
 
     public bool IsLoading => _isLoading;
 
-    public bool CanInvite => _role == TripParticipantConstants.Owner;
+    public bool IsLoaded => _isLoaded;
 
-    public bool ShowOwnerOnlyNote => !CanInvite && Participants.Count > 0;
+    public bool CanInvite => _isLoaded && _role == TripParticipantConstants.Owner;
+
+    public bool ShowOwnerOnlyNote => _isLoaded && !CanInvite && Participants.Count > 0;
 
     public string SearchText
     {
@@ -72,7 +83,7 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool CanSearch => !_isBusy && _searchText.Trim().Length >= MinimumSearchLength;
+    public bool CanSearch => _isLoaded && !_isBusy && _searchText.Trim().Length >= MinimumSearchLength;
 
     public bool HasMessage => _messageKey is not null;
 
@@ -83,6 +94,12 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         var version = ++_loadVersion;
         _tripId = tripId;
         Changed = false;
+        _isLoaded = false;
+        _isBusy = false;
+        _role = null;
+        _searchText = string.Empty;
+        Participants.Clear();
+        SearchResults.Clear();
         _isLoading = true;
         _messageKey = null;
         Notify();
@@ -103,6 +120,7 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
             if (response.IsSuccess)
             {
                 Apply(response.Value!);
+                _isLoaded = true;
             }
             else
             {
@@ -133,9 +151,15 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
             return;
         }
 
+        var version = _loadVersion;
         _messageKey = null;
         SearchResults.Clear();
         var response = await _lookup.FindAsync(_searchText.Trim(), cancellationToken);
+        if (version != _loadVersion)
+        {
+            return;
+        }
+
         var known = Participants.Select(participant => participant.UserId).ToHashSet();
         var self = _session.Capture()?.UserId ?? Guid.Empty;
         if (!response.IsSuccess)
@@ -162,9 +186,13 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
             return;
         }
 
+        var version = _loadVersion;
         await ChangeAsync(() => _participants.InviteAsync(_tripId, userId, cancellationToken), "TripInviteFailed");
-        SearchResults.Clear();
-        SearchText = string.Empty;
+        if (version == _loadVersion)
+        {
+            SearchResults.Clear();
+            SearchText = string.Empty;
+        }
     }
 
     public async Task RemoveAsync(Guid userId, CancellationToken cancellationToken)
@@ -177,6 +205,23 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         await ChangeAsync(() => _participants.RemoveAsync(_tripId, userId, cancellationToken), "TripParticipantsActionFailed");
     }
 
+    /// <summary>Asks the angler to confirm, then removes the participant. A declined confirmation changes nothing.</summary>
+    public async Task ConfirmAndRemoveAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        if (!CanInvite || _isBusy)
+        {
+            return;
+        }
+
+        var version = _loadVersion;
+        var confirmed = await _interactions.ConfirmAsync(new DialogRequest(
+            Text["TripRemoveParticipantTitle"], Text["TripRemoveParticipantMessage"], Text["TripRemoveParticipant"], Text["Cancel"], true), cancellationToken);
+        if (confirmed && version == _loadVersion)
+        {
+            await RemoveAsync(userId, cancellationToken);
+        }
+    }
+
     private async Task ChangeAsync(Func<Task<Api.Models.ApiResultModel<TripParticipantsDto>>> change, string failureKey)
     {
         if (_isBusy)
@@ -184,11 +229,17 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
             return;
         }
 
+        var version = _loadVersion;
         _isBusy = true;
         Notify();
         try
         {
             var response = await change();
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
             _messageKey = response.IsSuccess ? null : failureKey;
             if (response.IsSuccess)
             {
@@ -198,8 +249,11 @@ public sealed class TripParticipantsViewModel : INotifyPropertyChanged
         }
         finally
         {
-            _isBusy = false;
-            Notify();
+            if (version == _loadVersion)
+            {
+                _isBusy = false;
+                Notify();
+            }
         }
     }
 

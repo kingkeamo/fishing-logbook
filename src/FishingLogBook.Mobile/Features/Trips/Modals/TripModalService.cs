@@ -2,74 +2,42 @@ using CommunityToolkit.Maui.Extensions;
 using CommunityToolkit.Maui.Views;
 using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
-using FishingLogBook.Mobile.Features.Trips.ViewModels;
-using FishingLogBook.Mobile.Interactions;
-using FishingLogBook.Mobile.Localization;
 
 namespace FishingLogBook.Mobile.Features.Trips.Modals;
 
 /// <summary>
-/// Opens the trip modals and confirmations on behalf of the trip components, like the Web components open their
-/// own modals. Every method returns true when something changed, so the owning screen only has to refresh.
-/// Saving and removing trip data belongs to the view-models and <see cref="ITripRemovalService"/>.
+/// Opens the trip modals on behalf of the trip components, like the Web components open their own modals.
+/// Every method returns true when something changed, so the owning screen only has to refresh. Each opening gets its
+/// own view-model from the factory. Confirming and removing belongs to <see cref="ITripRemovalService"/>.
 /// </summary>
-public sealed class TripModalService(
-    ITripRemovalService removal,
-    TripNoteEditorViewModel noteEditor,
-    TripCatchPickerViewModel catchPicker,
-    TripParticipantsViewModel participants,
-    InteractionService interactions,
-    UiTextService text) : ITripModalService
+public sealed class TripModalService(ITripRemovalService removal, ITripModalViewModelFactory viewModels) : ITripModalService
 {
     public async Task<bool> EditNoteAsync(LocalTripRecordModel trip, Guid? noteId)
     {
-        return noteEditor.Initialize(trip, noteId) && await ShowAsync(new TripNoteModal(noteEditor));
+        var editor = viewModels.CreateNoteEditor();
+        return editor.Initialize(trip, noteId) && await ShowAsync(new TripNoteModal(editor));
     }
 
-    public async Task<bool> RemoveNoteAsync(LocalTripRecordModel trip, Guid noteId)
+    public Task<bool> RemoveNoteAsync(LocalTripRecordModel trip, Guid noteId)
     {
-        if (trip.FindNote(noteId) is null
-            || !await interactions.ConfirmAsync(new DialogRequest(
-                text["TripNoteRemoveTitle"], text["TripNoteRemoveMessage"], text["TripNoteRemoveConfirm"], text["Cancel"], true)))
-        {
-            return false;
-        }
-
-        if (await removal.RemoveNoteAsync(trip, noteId, CancellationToken.None))
-        {
-            return true;
-        }
-
-        await interactions.NotifyAsync(NotificationKindEnum.Error, text["TripNoteRemoveFailed"]);
-        return false;
+        return removal.RemoveNoteAsync(trip, noteId, CancellationToken.None);
     }
 
     public async Task<bool> AddCatchesAsync(LocalTripRecordModel trip)
     {
+        var picker = viewModels.CreateCatchPicker();
         using var cancellation = new CancellationTokenSource();
-        return await ShowWhileLoadingAsync(new TripCatchPickerModal(catchPicker), catchPicker.InitializeAsync(trip, cancellation.Token), cancellation);
+        return await ShowWhileLoadingAsync(new TripCatchPickerModal(picker), picker.InitializeAsync(trip, cancellation.Token), cancellation);
     }
 
-    public async Task<bool> RemoveCatchAsync(Guid catchId, string catchLabel)
+    public Task<bool> RemoveCatchAsync(Guid catchId, string catchLabel)
     {
-        if (!await interactions.ConfirmAsync(new DialogRequest(
-                text["TripCatchRemoveTitle"], string.Format(text.Culture, text["TripCatchRemoveMessage"], catchLabel),
-                text["TripCatchRemoveConfirm"], text["Cancel"], true)))
-        {
-            return false;
-        }
-
-        if (await removal.RemoveCatchAsync(catchId, CancellationToken.None))
-        {
-            return true;
-        }
-
-        await interactions.NotifyAsync(NotificationKindEnum.Error, text["TripEditSaveFailed"]);
-        return false;
+        return removal.RemoveCatchAsync(catchId, catchLabel, CancellationToken.None);
     }
 
     public async Task<bool> ShowParticipantsAsync(Guid tripId)
     {
+        var participants = viewModels.CreateParticipants();
         using var cancellation = new CancellationTokenSource();
         var changed = await ShowWhileLoadingAsync(new TripParticipantsModal(participants), participants.LoadAsync(tripId, cancellation.Token), cancellation);
         return changed || participants.Changed;

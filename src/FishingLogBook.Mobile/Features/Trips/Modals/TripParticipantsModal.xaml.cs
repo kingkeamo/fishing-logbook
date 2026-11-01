@@ -31,16 +31,9 @@ public partial class TripParticipantsModal : Popup<bool>
 
     private async void OnRemove(object? sender, EventArgs args)
     {
-        if (sender is not Button { CommandParameter: Guid userId })
+        if (sender is Button { CommandParameter: Guid userId })
         {
-            return;
-        }
-
-        var page = Application.Current?.Windows.FirstOrDefault()?.Page;
-        var text = _viewModel.Text;
-        if (page is not null && await page.DisplayAlertAsync(text["TripRemoveParticipantTitle"], text["TripRemoveParticipantMessage"], text["TripRemoveParticipant"], text["Cancel"]))
-        {
-            await _viewModel.RemoveAsync(userId, CancellationToken.None);
+            await _viewModel.ConfirmAndRemoveAsync(userId, CancellationToken.None);
         }
     }
 
