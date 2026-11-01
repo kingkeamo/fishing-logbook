@@ -15,4 +15,9 @@ public sealed record LocalTripRecordModel
     public bool IsActive => Detail.Trip.Status == TripConstants.Active;
     public bool CanContribute => !AccessRevoked && Detail.Role is TripParticipantConstants.Owner or TripParticipantConstants.Participant;
     public bool CanManage => CanContribute && Detail.Trip.OwnerUserId == UserId;
+
+    public TripNoteDto? FindNote(Guid noteId)
+    {
+        return Detail.Notes.FirstOrDefault(note => note.Id == noteId);
+    }
 }
