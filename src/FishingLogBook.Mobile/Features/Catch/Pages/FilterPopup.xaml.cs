@@ -14,7 +14,8 @@ public partial class FilterPopup : Popup<CatchFilterModel>
         _draft = draft;
         InitializeComponent();
         BindingContext = draft;
-        Sheet.MaximumHeightRequest = DeviceDisplay.MainDisplayInfo.Height / DeviceDisplay.MainDisplayInfo.Density * 0.9;
+        WidthRequest = Math.Min(480, (DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density) - 40);
+        Sheet.MaximumHeightRequest = DeviceDisplay.MainDisplayInfo.Height / DeviceDisplay.MainDisplayInfo.Density * 0.8;
     }
 
     private void OnMethod(object? sender, EventArgs args)

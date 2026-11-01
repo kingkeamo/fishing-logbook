@@ -19,6 +19,7 @@ public partial class MeasurementEditorPopup : Popup<bool>
         BindingContext = viewModel;
         Editor.ViewModel = viewModel;
         Editor.ReduceMotion = reduceMotion;
+        WidthRequest = Math.Min(480, (DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density) - 40);
     }
 
     public static async Task<bool> ShowAsync(Page page, MeasurementEditorViewModel viewModel, bool reduceMotion = false)

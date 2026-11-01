@@ -6,12 +6,11 @@
                xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
                x:Class="FishingLogBook.Mobile.Features.Catch.Pages.FilterPopup"
                x:TypeArguments="models:CatchFilterModel" x:DataType="models:CatchFilterDraftModel"
-               Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
+               Padding="0" Margin="20" VerticalOptions="Center" HorizontalOptions="Center" BackgroundColor="Transparent">
   <Border x:Name="Sheet" StrokeThickness="0" Padding="0" HorizontalOptions="Fill" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
-    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
     <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="Container">
       <Grid Padding="20,8,8,0" ColumnDefinitions="*,48" RowDefinitions="Auto,48">
-        <BoxView Grid.ColumnSpan="2" WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center" Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
         <Label Grid.Row="1" Text="{Binding Text[Filters]}" Style="{StaticResource Heading}" FontSize="20" VerticalOptions="Center" AutomationId="FiltersTitle" />
         <Grid Grid.Row="1" Grid.Column="1" SemanticProperties.Description="{Binding Text[CloseFilters]}" AutomationId="CloseFilters">
           <controls:IconView Source="icon_close.png" Tone="Default" WidthRequest="22" HeightRequest="22" />

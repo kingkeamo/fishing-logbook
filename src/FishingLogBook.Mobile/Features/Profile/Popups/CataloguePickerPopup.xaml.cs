@@ -15,7 +15,8 @@ public partial class CataloguePickerPopup : Popup<CataloguePickerResultModel>
         _viewModel = viewModel;
         InitializeComponent();
         BindingContext = viewModel;
-        Sheet.MaximumHeightRequest = DeviceDisplay.MainDisplayInfo.Height / DeviceDisplay.MainDisplayInfo.Density * 0.9;
+        WidthRequest = Math.Min(480, (DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density) - 40);
+        Sheet.MaximumHeightRequest = DeviceDisplay.MainDisplayInfo.Height / DeviceDisplay.MainDisplayInfo.Density * 0.8;
     }
 
     private void OnOption(object? sender, EventArgs args)
