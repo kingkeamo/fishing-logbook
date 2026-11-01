@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Profile.ViewModels"
+             x:Class="FishingLogBook.Mobile.Features.Profile.Views.HeaderProfileView"
+             x:DataType="vm:HeaderProfileViewModel">
+  <Border WidthRequest="40" HeightRequest="40" StrokeThickness="2" Stroke="White"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}"
+          SemanticProperties.Description="{Binding Text[Profile]}"
+          ToolTipProperties.Text="{Binding DisplayName}"
+          AutomationId="HeaderProfile">
+    <Border.StrokeShape><Ellipse /></Border.StrokeShape>
+    <Label Text="{Binding Initial}" TextColor="White" FontAttributes="Bold"
+           HorizontalOptions="Center" VerticalOptions="Center" FontAutoScalingEnabled="False" />
+    <Border.GestureRecognizers>
+      <TapGestureRecognizer Tapped="OnTapped" />
+    </Border.GestureRecognizers>
+  </Border>
+</ContentView>

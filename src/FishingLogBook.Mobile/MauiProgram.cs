@@ -230,6 +230,7 @@ public static partial class MauiProgram
         builder.Services.AddTransient<StartupPage>();
         builder.Services.AddSingleton<CatalogueTextService>();
         builder.Services.AddSingleton<ProfileViewModel>();
+        builder.Services.AddSingleton<HeaderProfileViewModel>();
         builder.Services.AddSingleton<IOnboardingStatusService, OnboardingStatusService>();
         builder.Services.AddSingleton<IGeolocationAdapter, GeolocationAdapter>();
         builder.Services.AddSingleton<IPhotographRootPathProvider>(services => new PhotographRootPathProvider(

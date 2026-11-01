@@ -103,7 +103,7 @@ public class WhenTestingGet : BaseAuthorizedApiClientTest
         var result = await sut.GetAsync<SampleDto>("api/fishing-catalogue", CancellationToken.None);
         // Assert
         result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
-        AuthorizedApiClient.RequestTimeout.Should().Be(TimeSpan.FromSeconds(10));
+        AuthorizedApiClient.RequestTimeout.Should().Be(TimeSpan.FromSeconds(30));
         MockSessionCoordinator.Received(1).IsCurrent(Lease);
     }
 

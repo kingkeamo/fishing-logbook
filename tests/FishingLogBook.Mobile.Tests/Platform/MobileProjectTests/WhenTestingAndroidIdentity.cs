@@ -87,9 +87,9 @@ public class WhenTestingAndroidIdentity
         // Assert
         permissions.Should().Contain("android.permission.INTERNET");
         File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "Android", "AndroidManifest.xml"))
-            .Should().Contain("android:networkSecurityConfig=\"@xml/network_security_config\"");
-        File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "Android", "Resources", "xml", "network_security_config.xml"))
-            .Should().Contain("10.0.2.2");
+            .Should().NotContain("networkSecurityConfig");
+        File.Exists(Path.Combine(MobileRoot, "Platforms", "Android", "Resources", "xml", "network_security_config.xml"))
+            .Should().BeFalse();
     }
 
     private static string FindRepositoryRoot()

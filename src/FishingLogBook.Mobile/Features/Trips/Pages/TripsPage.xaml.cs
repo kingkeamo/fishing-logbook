@@ -1,3 +1,4 @@
+using FishingLogBook.Mobile.Features.Profile.ViewModels;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
 using FishingLogBook.Mobile.Navigation;
 
@@ -7,19 +8,23 @@ public partial class TripsPage : ContentPage
 {
     private readonly TripListViewModel _viewModel;
     private readonly NavigationService _navigation;
+    private readonly HeaderProfileViewModel _profile;
 
-    public TripsPage(TripListViewModel viewModel, NavigationService navigation)
+    public TripsPage(TripListViewModel viewModel, NavigationService navigation, HeaderProfileViewModel profile)
     {
         _viewModel = viewModel;
         _navigation = navigation;
+        _profile = profile;
         InitializeComponent();
         BindingContext = viewModel;
+        HeaderProfile.ViewModel = profile;
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
         await _viewModel.LoadAsync(CancellationToken.None);
+        await _profile.LoadAsync(CancellationToken.None);
     }
 
     private void OnOpenMenu(object? sender, EventArgs args)

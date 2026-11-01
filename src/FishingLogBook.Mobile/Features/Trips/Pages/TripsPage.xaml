@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
  xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
  xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Trips.Models" xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
+ xmlns:profile="clr-namespace:FishingLogBook.Mobile.Features.Profile.Views"
  xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Features.Trips.Pages.TripsPage"
  x:DataType="vm:TripListViewModel" Title="{Binding Text[Trips]}" Shell.NavBarIsVisible="False" SafeAreaEdges="None">
  <ContentPage.Behaviors>
@@ -10,12 +11,13 @@
  <Grid RowDefinitions="132,*">
   <Image Source="header_lough_corrib.jpg" Aspect="AspectFill" AutomationProperties.IsInAccessibleTree="False" />
   <BoxView Color="#8C102A43" />
-  <Grid SafeAreaEdges="Container" ColumnDefinitions="48,*" ColumnSpacing="8" Padding="8,8,16,0" VerticalOptions="Start">
+  <Grid SafeAreaEdges="Container" ColumnDefinitions="48,*,40" ColumnSpacing="8" Padding="8,8,16,0" VerticalOptions="Start">
    <Grid WidthRequest="48" HeightRequest="48" SemanticProperties.Description="{Binding Text[OpenMenu]}" AutomationId="TripsOpenMenu">
     <controls:IconView Source="icon_menu.png" Tone="Inverse" WidthRequest="24" HeightRequest="24" />
     <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnOpenMenu" /></Grid.GestureRecognizers>
    </Grid>
    <controls:IconView Grid.Column="1" Source="brand_horizontal.png" Tone="Inverse" HeightRequest="44" HorizontalOptions="Start" VerticalOptions="Center" />
+   <profile:HeaderProfileView x:Name="HeaderProfile" Grid.Column="2" />
   </Grid>
   <Border Grid.Row="1" Margin="0,-28,0,0" StrokeThickness="0" Padding="16,16,16,0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>

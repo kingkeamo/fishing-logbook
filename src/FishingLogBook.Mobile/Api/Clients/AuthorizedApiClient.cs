@@ -11,7 +11,7 @@ namespace FishingLogBook.Mobile.Api.Clients;
 
 public sealed class AuthorizedApiClient
 {
-    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
+    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
     private readonly HttpClient _httpClient;
     private readonly IAccountSessionCoordinator _sessionCoordinator;
     private readonly ILogger<AuthorizedApiClient> _logger;
