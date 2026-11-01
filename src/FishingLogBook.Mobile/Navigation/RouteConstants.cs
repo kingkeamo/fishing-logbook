@@ -27,6 +27,7 @@ public static class RouteConstants
             MobileRouteEnum.TripDetail => "trip-detail",
             MobileRouteEnum.TripEdit => "trip-edit",
             MobileRouteEnum.TripPlan => "trip-plan",
+            MobileRouteEnum.Import => "import",
             _ => throw new ArgumentOutOfRangeException(nameof(route))
         };
     }

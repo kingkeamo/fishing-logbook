@@ -15,5 +15,6 @@ public class WhenTestingGetPath : BaseRouteConstantsTest
         // Assert
         paths.Should().Equal(expected);
         Primary.Should().NotContain(MobileRouteEnum.Showcase).And.NotContain(MobileRouteEnum.CatchDetail).And.NotContain(MobileRouteEnum.PhotoPreview);
+        RouteConstants.GetPath(MobileRouteEnum.Import).Should().Be("import");
     }
 }

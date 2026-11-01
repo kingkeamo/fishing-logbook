@@ -22,7 +22,7 @@
   </Grid>
   <Border Grid.Row="1" Margin="0,-28,0,0" StrokeThickness="0" Padding="16,16,16,0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
-   <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10" MaximumWidthRequest="720">
+   <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*" RowSpacing="10" MaximumWidthRequest="720">
     <banner:ActiveTripBannerView x:Name="Banner" Grid.Row="0" />
     <Border Grid.Row="1" Style="{StaticResource ActionSurface}" SemanticProperties.Description="{Binding Text[RecordCatch]}" AutomationId="RecordCatch">
      <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
@@ -33,7 +33,9 @@
      <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnRecordCatch" /></Border.GestureRecognizers>
     </Border>
     <trip:TripActionView x:Name="TripAction" Grid.Row="2" />
-    <Border Grid.Row="3" Style="{StaticResource Card}" Padding="12,0" Shadow="{x:Null}" HeightRequest="48">
+    <Button Grid.Row="3" Text="{Binding Text[Import_Nav]}" Style="{StaticResource SecondaryButton}"
+            Clicked="OnImport" AutomationId="ImportCatches" />
+    <Border Grid.Row="4" Style="{StaticResource Card}" Padding="12,0" Shadow="{x:Null}" HeightRequest="48">
      <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
      <Grid ColumnDefinitions="24,*" ColumnSpacing="10">
       <controls:IconView Source="icon_search.png" Tone="Muted" WidthRequest="22" HeightRequest="22" VerticalOptions="Center" />
@@ -41,7 +43,7 @@
        Style="{StaticResource SearchEntry}" SemanticProperties.Description="{Binding Text[SearchCatches]}" AutomationId="CatchSearch" />
      </Grid>
     </Border>
-    <Grid Grid.Row="4" ColumnDefinitions="*,48" ColumnSpacing="4">
+    <Grid Grid.Row="5" ColumnDefinitions="*,48" ColumnSpacing="4">
      <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
       <HorizontalStackLayout Spacing="8">
        <controls:ChipView Text="{Binding Text[AllCatches]}" IsSelected="{Binding AllSelected}" CommandParameter="{x:Static models:CatchMethodEnum.All}" Tapped="OnMethod" AutomationId="FilterAll" />
@@ -62,7 +64,7 @@
       <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnOpenFilters" /></Grid.GestureRecognizers>
      </Grid>
     </Grid>
-    <CollectionView Grid.Row="5" ItemsSource="{Binding Groups}" IsGrouped="True" SelectionMode="None" AutomationId="CatchList">
+    <CollectionView Grid.Row="6" ItemsSource="{Binding Groups}" IsGrouped="True" SelectionMode="None" AutomationId="CatchList">
      <CollectionView.Header><Border Style="{StaticResource Card}" IsVisible="{Binding HasRemoteNotice}" Padding="12" Margin="0,8,0,0">
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
        <Label Text="{Binding RemoteNotice}" Style="{StaticResource SecondaryText}" VerticalOptions="Center" AutomationId="CatchRemoteNotice" />
@@ -119,7 +121,7 @@
      </DataTemplate></CollectionView.ItemTemplate>
      <CollectionView.Footer><BoxView HeightRequest="16" Color="Transparent" /></CollectionView.Footer>
     </CollectionView>
-    <BoxView Grid.Row="5" HeightRequest="1" VerticalOptions="Start" InputTransparent="True" Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
+    <BoxView Grid.Row="6" HeightRequest="1" VerticalOptions="Start" InputTransparent="True" Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
    </Grid>
   </Border>
  </Grid>

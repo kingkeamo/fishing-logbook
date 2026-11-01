@@ -541,4 +541,117 @@
   <data name="TripPlannedStartFailed" xml:space="preserve"><value>La sortie n'a pas pu être démarrée. Vérifiez votre connexion, puis réessayez de démarrer la pêche.</value></data>
   <data name="TripPlannedLookupFailedTitle" xml:space="preserve"><value>Sorties planifiées indisponibles</value></data>
   <data name="TripPlannedLookupFailed" xml:space="preserve"><value>Nous n'avons pas pu vérifier les sorties planifiées, aucune sortie n'a donc été démarrée. Réessayer ?</value></data>
+  <data name="Import_Nav" xml:space="preserve"><value>Importer des prises</value></data>
+  <data name="Import_PageTitle" xml:space="preserve"><value>Cataloguer des prises historiques</value></data>
+  <data name="Import_Title" xml:space="preserve"><value>Cataloguer des prises historiques</value></data>
+  <data name="Import_NotSaved" xml:space="preserve"><value>Cette importation n’est pas encore enregistrée.</value></data>
+  <data name="Import_BatchDetailsTitle" xml:space="preserve"><value>Choisir les détails des prises</value></data>
+  <data name="Import_FishingMethod" xml:space="preserve"><value>Méthode de pêche</value></data>
+  <data name="Import_Species" xml:space="preserve"><value>Espèce</value></data>
+  <data name="Import_ChooseFishingMethod" xml:space="preserve"><value>Choisir la méthode de pêche</value></data>
+  <data name="Import_ChooseSpecies" xml:space="preserve"><value>Choisir l’espèce</value></data>
+  <data name="Import_ChoosePhotosTitle" xml:space="preserve"><value>Choisir des photos historiques</value></data>
+  <data name="Import_ProcessingPhotos" xml:space="preserve"><value>Préparation de vos photos…</value></data>
+  <data name="Import_SelectionLimit" xml:space="preserve"><value>Sélectionnez au maximum {0} photos à la fois.</value></data>
+  <data name="Import_PhotoAlt" xml:space="preserve"><value>Photographie historique sélectionnée {0}</value></data>
+  <data name="Import_RemovePhoto" xml:space="preserve"><value>Supprimer la photographie</value></data>
+  <data name="Import_PhotoUnsupported" xml:space="preserve"><value>Ce type de photographie n’est pas pris en charge.</value></data>
+  <data name="Import_PhotoTooLarge" xml:space="preserve"><value>Cette photographie dépasse 10 Mo.</value></data>
+  <data name="Import_PhotoCancelled" xml:space="preserve"><value>La préparation de la photographie a été annulée.</value></data>
+  <data name="Import_PhotoFailed" xml:space="preserve"><value>Cette photographie n’a pas pu être préparée.</value></data>
+  <data name="Import_MetadataUnavailable" xml:space="preserve"><value>Photo prête · détails historiques à vérifier</value></data>
+  <data name="Import_PhotoReady" xml:space="preserve"><value>Photo prête</value></data>
+  <data name="Import_DuplicateExact" xml:space="preserve"><value>Photographie probablement dupliquée à l’identique</value></data>
+  <data name="Import_DuplicateExactReason" xml:space="preserve"><value>Cette photographie a le même contenu préparé qu’une sélection précédente.</value></data>
+  <data name="Import_DuplicateMetadataReason" xml:space="preserve"><value>Même heure de capture et même taille de fichier.</value></data>
+  <data name="Import_DuplicatePossibleReason" xml:space="preserve"><value>Métadonnées de photographie historique similaires.</value></data>
+  <data name="Import_DuplicatePossible" xml:space="preserve"><value>Photographie potentiellement dupliquée</value></data>
+  <data name="Import_DuplicateRemove" xml:space="preserve"><value>Supprimer le doublon</value></data>
+  <data name="Import_DuplicateKeepBoth" xml:space="preserve"><value>Conserver les deux</value></data>
+  <data name="Import_ReviewCatches" xml:space="preserve"><value>Continuer</value></data>
+  <data name="Import_ReviewTitle" xml:space="preserve"><value>Prises proposées</value></data>
+  <data name="Import_CorrectionLater" xml:space="preserve"><value>Les outils de vérification et de correction seront ajoutés à la prochaine étape de cette fonctionnalité.</value></data>
+  <data name="Import_CatchNumber" xml:space="preserve"><value>Prise {0}</value></data>
+  <data name="Import_NeedsReview" xml:space="preserve"><value>À vérifier</value></data>
+  <data name="Import_Ready" xml:space="preserve"><value>Prête</value></data>
+  <data name="Import_TimestampAmbiguous" xml:space="preserve"><value>{0} · date et heure à confirmer</value></data>
+  <data name="Import_TimestampWeak" xml:space="preserve"><value>{0} · date suggérée à confirmer</value></data>
+  <data name="Import_TimestampUnusable" xml:space="preserve"><value>La date de la photo n’a pas pu être utilisée</value></data>
+  <data name="Import_TimestampMissing" xml:space="preserve"><value>Date et heure requises</value></data>
+  <data name="Import_LocationNeedsReview" xml:space="preserve"><value>Les lieux des photos diffèrent · vérification requise</value></data>
+  <data name="Import_LocationAvailable" xml:space="preserve"><value>Lieu de la photo disponible</value></data>
+  <data name="Import_LocationUnavailable" xml:space="preserve"><value>Aucun lieu dans la photo</value></data>
+  <data name="Import_Reviewed" xml:space="preserve"><value>VÃ©rifiÃ©e</value></data>
+  <data name="Import_NeedsCorrection" xml:space="preserve"><value>À vérifier</value></data>
+  <data name="Import_ReviewEdit" xml:space="preserve"><value>Vérifier</value></data>
+  <data name="Import_Edit" xml:space="preserve"><value>Modifier</value></data>
+  <data name="Import_ConfirmCatch" xml:space="preserve"><value>Confirmer la prise</value></data>
+  <data name="Import_CorrectCatches" xml:space="preserve"><value>Corriger les prises</value></data>
+  <data name="Import_CaughtOn" xml:space="preserve"><value>Date et heure de la prise</value></data>
+  <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Saisissez une date et une heure historiques valides.</value></data>
+  <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirmer la date et lâ€™heure</value></data>
+  <data name="Import_SelectPhoto" xml:space="preserve"><value>SÃ©lectionner la photographie {0}</value></data>
+  <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Utiliser le lieu de la photo {0}</value></data>
+  <data name="Import_RemoveLocation" xml:space="preserve"><value>Supprimer le lieu</value></data>
+  <data name="Import_SelectLocation" xml:space="preserve"><value>Utiliser ce lieu</value></data>
+  <data name="Import_LocationSelected" xml:space="preserve"><value>Lieu sélectionné</value></data>
+  <data name="Import_LocationAccepted" xml:space="preserve"><value>Lieu de la photo acceptÃ©</value></data>
+  <data name="Import_LocationRemoved" xml:space="preserve"><value>Lieu supprimÃ©</value></data>
+  <data name="Import_MoveToNewCatch" xml:space="preserve"><value>DÃ©placer la sÃ©lection vers une nouvelle prise</value></data>
+  <data name="Import_RemoveSelectedPhotos" xml:space="preserve"><value>Supprimer les photos sÃ©lectionnÃ©es</value></data>
+  <data name="Import_MergeWith" xml:space="preserve"><value>Fusionner avec...</value></data>
+  <data name="Import_RemoveCatch" xml:space="preserve"><value>Retirer la prise de lâ€™importation</value></data>
+  <data name="Import_CorrectionsComplete" xml:space="preserve"><value>Toutes les prises sont vÃ©rifiÃ©es et prÃªtes pour les suggestions de sorties.</value></data>
+  <data name="Import_MergeValuesNeedReview" xml:space="preserve"><value>Les prises fusionnÃ©es avaient des informations diffÃ©rentes. VÃ©rifiez les valeurs affichÃ©es avant de confirmer.</value></data>
+  <data name="Import_UseShownValues" xml:space="preserve"><value>Utiliser les valeurs affichÃ©es</value></data>
+  <data name="Import_RemoveCatchTitle" xml:space="preserve"><value>Retirer cette priseÂ ?</value></data>
+  <data name="Import_RemoveCatchMessage" xml:space="preserve"><value>Toutes les photographies de cette prise seront exclues de lâ€™importation.</value></data>
+  <data name="Import_RemoveCatchConfirm" xml:space="preserve"><value>Retirer la prise</value></data>
+  <data name="Import_ContinueToTrips" xml:space="preserve"><value>Continuer vers les suggestions de sorties</value></data>
+  <data name="Import_TripSuggestionsTitle" xml:space="preserve"><value>Suggestions de sorties</value></data>
+  <data name="Import_NoTripSuggestions" xml:space="preserve"><value>Aucune sortie probable n’a été trouvée. Ces prises resteront séparées.</value></data>
+  <data name="Import_TripSingleCatch" xml:space="preserve"><value>1 prise</value></data>
+  <data name="Import_TripCatchCount" xml:space="preserve"><value>{0} prises</value></data>
+  <data name="Import_TripTimeRange" xml:space="preserve"><value>{0} – {1}</value></data>
+  <data name="Import_TripMissingGps" xml:space="preserve"><value>Les informations de localisation sont incomplètes pour cette suggestion.</value></data>
+  <data name="Import_CreateTrip" xml:space="preserve"><value>Créer une sortie</value></data>
+  <data name="Import_CreateAnotherTrip" xml:space="preserve"><value>Créer une autre sortie</value></data>
+  <data name="Import_ExistingTripFound" xml:space="preserve"><value>Une sortie existe déjà à cette date. Ajoutez-y ces prises ou créez délibérément une autre sortie.</value></data>
+  <data name="Import_KeepSeparate" xml:space="preserve"><value>Conserver les prises séparément</value></data>
+  <data name="Import_AddToExistingTrip" xml:space="preserve"><value>Ajouter à une sortie existante</value></data>
+  <data name="Import_RemoveCatchFromTrip" xml:space="preserve"><value>Retirer la prise de la sortie suggérée</value></data>
+  <data name="Import_ConfirmationBoundary" xml:space="preserve"><value>Vos prises vérifiées et vos choix de sorties sont prêts pour la confirmation finale de l’importation.</value></data>
+  <data name="Import_TripCatchNumber" xml:space="preserve"><value>Prise {0}</value></data>
+  <data name="Import_TripCatchPhotoAlt" xml:space="preserve"><value>Miniature de la prise {0}</value></data>
+  <data name="Import_TripParticipants" xml:space="preserve"><value>Pêcheurs de cette sortie</value></data>
+  <data name="Import_AddTripParticipant" xml:space="preserve"><value>Ajouter un pêcheur</value></data>
+  <data name="Import_Add" xml:space="preserve"><value>Ajouter</value></data>
+  <data name="Import_ConfirmTitle" xml:space="preserve"><value>Confirmer l’importation historique</value></data>
+  <data name="Import_SummaryCatches" xml:space="preserve"><value>Prises : {0}</value></data>
+  <data name="Import_SummaryPhotos" xml:space="preserve"><value>Photographies : {0}</value></data>
+  <data name="Import_SummaryNewTrips" xml:space="preserve"><value>Nouvelles sorties : {0}</value></data>
+  <data name="Import_SummaryExistingTrips" xml:space="preserve"><value>Affectations à des sorties existantes : {0}</value></data>
+  <data name="Import_SummaryStandalone" xml:space="preserve"><value>Prises indépendantes : {0}</value></data>
+  <data name="Import_ConfirmImport" xml:space="preserve"><value>Importer les prises</value></data>
+  <data name="Import_Importing" xml:space="preserve"><value>Importation…</value></data>
+  <data name="Import_ProgressSavingTrip" xml:space="preserve"><value>Enregistrement de la sortie {0} sur {1}</value></data>
+  <data name="Import_ProgressSavingCatch" xml:space="preserve"><value>Enregistrement de la prise {0} sur {1}</value></data>
+  <data name="Import_ProgressUploadingPhotograph" xml:space="preserve"><value>Téléversement de la photo {0} sur {1}</value></data>
+  <data name="Import_ProgressVerifying" xml:space="preserve"><value>Vérification des données importées</value></data>
+  <data name="Import_TripPersistenceFailed" xml:space="preserve"><value>Une sortie n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="Import_CatchPersistenceFailed" xml:space="preserve"><value>Une prise n’a pas pu être enregistrée. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="Import_PhotographPersistenceFailed" xml:space="preserve"><value>Le téléversement d’une photo a échoué. Vérifiez votre connexion et réessayez.</value></data>
+  <data name="Import_VerificationFailed" xml:space="preserve"><value>Les données importées n’ont pas pu être vérifiées. Réessayez pour les rapprocher du serveur.</value></data>
+  <data name="Import_OnlineRequired" xml:space="preserve"><value>L’importation historique nécessite une connexion Internet.</value></data>
+  <data name="Import_PersistenceFailed" xml:space="preserve"><value>L’importation n’a pas pu être terminée. Vos choix vérifiés restent disponibles pendant cette session.</value></data>
+  <data name="Import_Success" xml:space="preserve"><value>{0} prises, {1} photographies et {2} sorties ont été importées.</value></data>
+  <data name="Import_ViewCatches" xml:space="preserve"><value>Voir les prises</value></data>
+  <data name="Import_ViewTrips" xml:space="preserve"><value>Voir les sorties</value></data>
+  <data name="Import_EditPlaceName" xml:space="preserve"><value>Modifier le nom du lieu</value></data>
+  <data name="Import_LocationDetails" xml:space="preserve"><value>D&#233;tails du lieu</value></data>
+  <data name="Import_LocationDetailsHelp" xml:space="preserve"><value>Choisissez les &#233;l&#233;ments utiles &#224; inclure dans le nom du lieu enregistr&#233;.</value></data>
+  <data name="Import_LocationPreview" xml:space="preserve"><value>Aper&#231;u du nom du lieu</value></data>
+  <data name="Import_NoPlaceName" xml:space="preserve"><value>Aucun nom de lieu</value></data>
+  <data name="Import_PlaceNameTooLong" xml:space="preserve"><value>Supprimez certains d&#233;tails pour raccourcir le nom du lieu.</value></data>
 </root>
+

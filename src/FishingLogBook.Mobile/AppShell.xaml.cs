@@ -2,6 +2,7 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Catch.Pages;
+using FishingLogBook.Mobile.Features.Import.Pages;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Settings.Pages;
@@ -64,6 +65,14 @@ public partial class AppShell : Shell
             await navigation.NavigateAsync(MobileRouteEnum.Profile);
         };
         Items.Add(profile);
+        var import = new MenuItem { IconImageSource = "icon_camera.png" };
+        import.SetBinding(MenuItem.TextProperty, new Binding("[Import_Nav]", source: text));
+        import.Clicked += async (_, _) =>
+        {
+            FlyoutIsPresented = false;
+            await navigation.NavigateAsync(MobileRouteEnum.Import);
+        };
+        Items.Add(import);
         _retryConnection = new MenuItem();
         _retryConnection.SetBinding(MenuItem.TextProperty, new Binding("[RetryConnection]", source: text));
         _retryConnection.Clicked += async (_, _) =>
@@ -96,6 +105,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Profile), typeof(ProfilePage));
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Import), typeof(ImportPage));
         UpdateLifecycleState();
     }
 
