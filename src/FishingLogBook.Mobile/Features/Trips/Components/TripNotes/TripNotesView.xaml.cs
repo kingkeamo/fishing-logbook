@@ -112,8 +112,7 @@ public partial class TripNotesView : ContentView
     private async void OnEdit(object? sender, EventArgs args)
     {
         if (Modals is not null && Trip is { } trip && (sender as BindableObject)?.BindingContext is TripNoteRowModel row
-            && trip.Detail.Notes.FirstOrDefault(note => note.Id == row.Id) is { } existing
-            && await Modals.EditNoteAsync(trip, existing))
+            && await Modals.EditNoteAsync(trip, row.Id))
         {
             Changed?.Invoke(this, EventArgs.Empty);
         }

@@ -57,9 +57,7 @@ public partial class TripTimelineView : ContentView
 
     private async void OnEditNote(object? sender, EventArgs args)
     {
-        if (Modals is not null && Trip is { } trip && RowOf(sender)?.NoteId is { } noteId
-            && trip.Detail.Notes.FirstOrDefault(note => note.Id == noteId) is { } existing
-            && await Modals.EditNoteAsync(trip, existing))
+        if (Modals is not null && Trip is { } trip && RowOf(sender)?.NoteId is { } noteId && await Modals.EditNoteAsync(trip, noteId))
         {
             Changed?.Invoke(this, EventArgs.Empty);
         }
