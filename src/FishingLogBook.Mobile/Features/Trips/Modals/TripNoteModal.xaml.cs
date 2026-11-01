@@ -13,7 +13,7 @@ public partial class TripNoteModal : Popup<bool>
         _viewModel = viewModel;
         InitializeComponent();
         BindingContext = viewModel;
-        WidthRequest = Math.Min(720, DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density);
+        WidthRequest = Math.Min(480, (DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density) - 40);
     }
 
     private async void OnSave(object? sender, EventArgs args)

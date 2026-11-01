@@ -7,14 +7,12 @@
                xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Trips.ViewModels"
                x:Class="FishingLogBook.Mobile.Features.Trips.Modals.TripParticipantsModal"
                x:TypeArguments="x:Boolean" x:DataType="vm:TripParticipantsViewModel"
-               Padding="0" Margin="0" VerticalOptions="End" HorizontalOptions="Fill" BackgroundColor="Transparent">
-  <Border StrokeThickness="0" Padding="20,8,20,20"
+               Padding="0" Margin="20" VerticalOptions="Center" HorizontalOptions="Center" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20"
           BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
-    <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
     <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
-      <BoxView WidthRequest="40" HeightRequest="4" CornerRadius="2" HorizontalOptions="Center"
-               Color="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
-      <Label Text="{Binding Text[TripParticipants]}" Style="{StaticResource Heading}" FontSize="20" Margin="0,8,0,0"
+      <Label Text="{Binding Text[TripParticipants]}" Style="{StaticResource Heading}" FontSize="20"
              SemanticProperties.HeadingLevel="Level1" AutomationId="TripParticipantsHeading" />
       <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Start" />
       <ScrollView MaximumHeightRequest="480">
