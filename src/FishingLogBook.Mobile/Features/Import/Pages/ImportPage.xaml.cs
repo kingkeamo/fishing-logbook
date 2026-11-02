@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CommunityToolkit.Maui;
 using CommunityToolkit.Maui.Extensions;
 using FishingLogBook.Mobile.Features.Import.Models;
@@ -116,9 +117,9 @@ public partial class ImportPage : ContentPage
         }
     }
 
-    private void OnToggleCatchPhoto(object? sender, EventArgs args)
+    private void OnToggleCatchPhoto(object? sender, TappedEventArgs args)
     {
-        if (sender is ChipView { CommandParameter: ImportCatchPhotoModel photo })
+        if ((sender as BindableObject)?.BindingContext is ImportCatchPhotoModel photo)
         {
             _viewModel.TogglePhotoSelection(photo.CatchProposalId, photo.Photo.Id);
         }
@@ -140,9 +141,19 @@ public partial class ImportPage : ContentPage
         }
     }
 
-    private async void OnConfirmCaughtOn(object? sender, EventArgs args)
+    private async void OnCaughtOnDateChanged(object? sender, DateChangedEventArgs args)
     {
-        if (sender is Button { CommandParameter: ImportCatchRowModel row })
+        if (sender is DatePicker { BindingContext: ImportCatchRowModel row })
+        {
+            await _viewModel.ConfirmCaughtOnAsync(row.Proposal.Id, row.CaughtOnLocal, CancellationToken.None);
+        }
+    }
+
+    private async void OnCaughtOnTimeChanged(object? sender, EventArgs args)
+    {
+        if (sender is TimePicker picker
+            && args is PropertyChangedEventArgs { PropertyName: nameof(TimePicker.Time) }
+            && picker.BindingContext is ImportCatchRowModel row)
         {
             await _viewModel.ConfirmCaughtOnAsync(row.Proposal.Id, row.CaughtOnLocal, CancellationToken.None);
         }

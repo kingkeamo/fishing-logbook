@@ -8,7 +8,8 @@
              x:Name="Root"
              x:DataType="vm:ImportViewModel"
              Title="{Binding Text[Import_PageTitle]}"
-             Shell.NavBarIsVisible="False">
+             Shell.NavBarIsVisible="False"
+             Shell.TabBarIsVisible="False">
   <controls:WizardStepperView CurrentStep="{Binding StepNumber}"
                               StepCount="{Binding StepCount}"
                               StepLabel="{Binding StepLabel}"
@@ -28,6 +29,8 @@
         <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}"
                TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
       </Border>
+      <Label Text="{Binding ContinueHint}" IsVisible="{Binding HasContinueHint}" Style="{StaticResource SecondaryText}"
+             AutomationId="ImportContinueHint" />
 
       <VerticalStackLayout IsVisible="{Binding IsBatchStep}" Spacing="12" AutomationId="ImportBatchDetails">
         <Label Text="{Binding Text[Import_FishingMethod]}" Style="{StaticResource Eyebrow}" />
@@ -103,18 +106,39 @@
                 <VerticalStackLayout Spacing="10">
                   <Grid ColumnDefinitions="*,Auto">
                     <Label Text="{Binding Title}" Style="{StaticResource Subheading}" />
-                    <Label Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource SecondaryText}" />
+                    <Label Grid.Column="1" Text="{Binding StatusText}" Style="{StaticResource SecondaryText}"
+                           AutomationId="ImportCatchStatus" />
                   </Grid>
+                  <Button Text="{Binding BindingContext.Text[Import_ConfirmCatch], Source={x:Reference Root}}"
+                          IsEnabled="{Binding CanConfirm}" CommandParameter="{Binding Proposal.Id}"
+                          Clicked="OnConfirmCatch" AutomationId="ImportConfirmCatch" />
                   <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding Photos}">
                     <BindableLayout.ItemTemplate>
                       <DataTemplate x:DataType="models:ImportCatchPhotoModel">
-                        <controls:ChipView Margin="0,0,8,8" Text="{Binding Label}"
-                                           IsSelected="{Binding IsSelected}" CommandParameter="{Binding}"
-                                           Tapped="OnToggleCatchPhoto" />
+                        <VerticalStackLayout Margin="0,0,8,8" WidthRequest="88" Spacing="4">
+                          <Border StrokeThickness="2" HeightRequest="88" WidthRequest="88"
+                                  Stroke="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}"
+                                  BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}"
+                                  AutomationId="ImportCatchPhoto">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                            <Border.Triggers>
+                              <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                <Setter Property="Stroke" Value="{StaticResource Primary}" />
+                              </DataTrigger>
+                            </Border.Triggers>
+                            <Image Source="{Binding ThumbnailUrl}" Aspect="AspectFill" InputTransparent="True"
+                                   IsVisible="{Binding HasThumbnail}" />
+                            <Border.GestureRecognizers>
+                              <TapGestureRecognizer Tapped="OnToggleCatchPhoto" />
+                            </Border.GestureRecognizers>
+                          </Border>
+                          <Label Text="{Binding Label}" Style="{StaticResource SecondaryText}"
+                                 HorizontalTextAlignment="Center" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
                       </DataTemplate>
                     </BindableLayout.ItemTemplate>
                   </FlexLayout>
-                  <HorizontalStackLayout Spacing="8">
+                  <HorizontalStackLayout Spacing="8" IsVisible="{Binding ShowPhotoActions}">
                     <Button Text="{Binding BindingContext.Text[Import_MoveToNewCatch], Source={x:Reference Root}}"
                             Style="{StaticResource SecondaryButton}" IsEnabled="{Binding CanSplit}"
                             CommandParameter="{Binding Proposal.Id}" Clicked="OnSplitCatch"
@@ -128,12 +152,11 @@
                   <Label Text="{Binding BindingContext.Text[Import_CaughtOn], Source={x:Reference Root}}"
                          Style="{StaticResource Eyebrow}" />
                   <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                    <DatePicker Date="{Binding CaughtOnDate}" AutomationId="ImportCaughtOnDate" />
-                    <TimePicker Grid.Column="1" Time="{Binding CaughtOnTime}" AutomationId="ImportCaughtOnTime" />
+                    <DatePicker Date="{Binding CaughtOnDate}" Format="{Binding DateFormat}"
+                                DateSelected="OnCaughtOnDateChanged" AutomationId="ImportCaughtOnDate" />
+                    <TimePicker Grid.Column="1" Time="{Binding CaughtOnTime}" Format="{Binding TimeFormat}"
+                                PropertyChanged="OnCaughtOnTimeChanged" AutomationId="ImportCaughtOnTime" />
                   </Grid>
-                  <Button Text="{Binding BindingContext.Text[Import_ConfirmCaughtOn], Source={x:Reference Root}}"
-                          CommandParameter="{Binding}" Clicked="OnConfirmCaughtOn"
-                          AutomationId="ImportConfirmCaughtOn" />
                   <Label Text="{Binding BindingContext.Text[Import_MergeValuesNeedReview], Source={x:Reference Root}}"
                          IsVisible="{Binding NeedsCanonicalReview}" Style="{StaticResource SecondaryText}" />
                   <Button Text="{Binding BindingContext.Text[Import_UseShownValues], Source={x:Reference Root}}"
@@ -170,6 +193,8 @@
                             AutomationId="ImportCatchLength" />
                   </Grid>
                   <Label Text="{Binding LocationText}" Style="{StaticResource SecondaryText}" />
+                  <Label Text="{Binding LocationHelp}" IsVisible="{Binding HasLocationHelp}"
+                         Style="{StaticResource SecondaryText}" AutomationId="ImportLocationHelp" />
                   <HorizontalStackLayout Spacing="8">
                     <Button Text="{Binding BindingContext.Text[Import_Edit], Source={x:Reference Root}}"
                             Style="{StaticResource SecondaryButton}" IsVisible="{Binding CanEditPlaceName}"
@@ -202,9 +227,6 @@
                       </DataTemplate>
                     </BindableLayout.ItemTemplate>
                   </FlexLayout>
-                  <Button Text="{Binding BindingContext.Text[Import_ConfirmCatch], Source={x:Reference Root}}"
-                          IsEnabled="{Binding CanConfirm}" CommandParameter="{Binding Proposal.Id}"
-                          Clicked="OnConfirmCatch" AutomationId="ImportConfirmCatch" />
                   <Button Text="{Binding BindingContext.Text[Import_RemoveCatch], Source={x:Reference Root}}"
                           Style="{StaticResource SecondaryButton}" CommandParameter="{Binding Proposal.Id}"
                           Clicked="OnRemoveCatch" AutomationId="ImportRemoveCatch" />
@@ -229,15 +251,34 @@
                          Style="{StaticResource SecondaryText}" />
                   <Label Text="{Binding BindingContext.Text[Import_ExistingTripFound], Source={x:Reference Root}}"
                          IsVisible="{Binding HasExistingTrips}" Style="{StaticResource SecondaryText}" />
+                  <Label Text="{Binding DecisionText}" IsVisible="{Binding HasDecision}"
+                         Style="{StaticResource SecondaryText}" AutomationId="ImportTripDecision" />
                   <Button Text="{Binding CreateText}" CommandParameter="{Binding Proposal.Id}"
-                          Clicked="OnCreateTrip" AutomationId="ImportCreateTrip" />
+                          Clicked="OnCreateTrip" AutomationId="ImportCreateTrip">
+                    <Button.Triggers>
+                      <DataTrigger TargetType="Button" Binding="{Binding IsCreateNew}" Value="False">
+                        <Setter Property="Style" Value="{StaticResource SecondaryButton}" />
+                      </DataTrigger>
+                    </Button.Triggers>
+                  </Button>
                   <Button Text="{Binding BindingContext.Text[Import_KeepSeparate], Source={x:Reference Root}}"
-                          Style="{StaticResource SecondaryButton}" CommandParameter="{Binding Proposal.Id}"
-                          Clicked="OnKeepSeparate" AutomationId="ImportKeepSeparate" />
+                          CommandParameter="{Binding Proposal.Id}" Clicked="OnKeepSeparate"
+                          AutomationId="ImportKeepSeparate">
+                    <Button.Triggers>
+                      <DataTrigger TargetType="Button" Binding="{Binding IsKeepSeparate}" Value="False">
+                        <Setter Property="Style" Value="{StaticResource SecondaryButton}" />
+                      </DataTrigger>
+                    </Button.Triggers>
+                  </Button>
                   <Button Text="{Binding BindingContext.Text[Import_AddToExistingTrip], Source={x:Reference Root}}"
-                          Style="{StaticResource SecondaryButton}" IsVisible="{Binding HasExistingTrips}"
-                          CommandParameter="{Binding Proposal.Id}" Clicked="OnUseExistingTrip"
-                          AutomationId="ImportUseExistingTrip" />
+                          IsVisible="{Binding HasExistingTrips}" CommandParameter="{Binding Proposal.Id}"
+                          Clicked="OnUseExistingTrip" AutomationId="ImportUseExistingTrip">
+                    <Button.Triggers>
+                      <DataTrigger TargetType="Button" Binding="{Binding IsUseExisting}" Value="False">
+                        <Setter Property="Style" Value="{StaticResource SecondaryButton}" />
+                      </DataTrigger>
+                    </Button.Triggers>
+                  </Button>
                   <VerticalStackLayout BindableLayout.ItemsSource="{Binding Catches}" Spacing="8">
                     <BindableLayout.ItemTemplate>
                       <DataTemplate x:DataType="models:ImportTripCatchModel">

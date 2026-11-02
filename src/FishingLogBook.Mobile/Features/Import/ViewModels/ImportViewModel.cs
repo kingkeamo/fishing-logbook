@@ -119,7 +119,12 @@ public sealed class ImportViewModel : INotifyPropertyChanged
     };
 
     public string StepDescription => _isPersisted
-        ? string.Format(Text.Culture, Text["Import_Success"], ActiveCatches.Count, ActivePhotoCount, NewTripCount)
+        ? string.Format(
+            Text.Culture,
+            Text["Import_Success"],
+            CountPhrase(ActiveCatches.Count, "Import_SuccessCatchOne", "Import_SuccessCatchOther"),
+            CountPhrase(ActivePhotoCount, "Import_SuccessPhotoOne", "Import_SuccessPhotoOther"),
+            CountPhrase(NewTripCount, "Import_SuccessTripOne", "Import_SuccessTripOther"))
         : Text["Import_NotSaved"];
 
     public string ContinueText => _batch.Stage switch
@@ -140,6 +145,27 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         ImportStageEnum.Confirm => _isPersisted || _batch.IsReadyForConfirmation,
         _ => false
     };
+
+    public bool HasContinueHint => !string.IsNullOrWhiteSpace(ContinueHint);
+
+    public string ContinueHint
+    {
+        get
+        {
+            if (CanContinue || _isBusy || _isPersisting || _isPersisted)
+            {
+                return string.Empty;
+            }
+
+            return _batch.Stage switch
+            {
+                ImportStageEnum.ChoosePhotos => Text["Import_ChoosePhotosHint"],
+                ImportStageEnum.ReviewCatches => CatchContinueHint(),
+                ImportStageEnum.ReviewTrips => Text["Import_ChooseTripHint"],
+                _ => string.Empty
+            };
+        }
+    }
 
     public bool IsBusy => _isBusy || _isLoading || _isPersisting;
 
@@ -538,6 +564,17 @@ public sealed class ImportViewModel : INotifyPropertyChanged
     public async Task ConfirmCaughtOnAsync(Guid catchId, DateTime localValue, CancellationToken cancellationToken)
     {
         var proposal = _batch.CatchProposals.Single(candidate => candidate.Id == catchId);
+        var current = CaughtOnLocal(proposal.CaughtOn);
+        if (proposal.CaughtOn.IsResolved
+            && current.Year == localValue.Year
+            && current.Month == localValue.Month
+            && current.Day == localValue.Day
+            && current.Hour == localValue.Hour
+            && current.Minute == localValue.Minute)
+        {
+            return;
+        }
+
         if (proposal.CaughtOn.Instant.HasValue)
         {
             _batch.SetCatchCaughtOn(catchId, proposal.CaughtOn.Confirm(localValue));
@@ -732,6 +769,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         {
             await _locations.ResolveAsync(_batch.Photos, cancellationToken);
             _batch.ReplaceCatchProposals(_catchProposals.Propose(_batch));
+            await ApplyDisplayedCaughtOnAsync(cancellationToken);
             _batch.SetStage(ImportStageEnum.ReviewCatches);
         }
         finally
@@ -1010,9 +1048,10 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
     private string FormatMeasurement(decimal? canonical, bool weight)
     {
+        var label = Text[weight ? "MeasureWeight" : "MeasureLength"];
         if (canonical is null)
         {
-            return Text["MeasureNotRecorded"];
+            return $"{label} · {Text["MeasureNotRecorded"]}";
         }
 
         if (weight)
@@ -1020,15 +1059,15 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             var display = _measurement.ToDisplayWeight(canonical, _weightUnit);
             var unit = Text[_weightUnit == WeightUnitEnum.Lb ? "MeasureUnitLb" : "MeasureUnitKg"];
             return display is null
-                ? Text["MeasureNotRecorded"]
-                : $"{display.Value.ToString("0.##", Text.Culture)} {unit}";
+                ? $"{label} · {Text["MeasureNotRecorded"]}"
+                : $"{label} · {display.Value.ToString("0.##", Text.Culture)} {unit}";
         }
 
         var length = _measurement.ToDisplayLength(canonical, _lengthUnit);
         var lengthUnit = Text[_lengthUnit == LengthUnitEnum.In ? "MeasureUnitIn" : "MeasureUnitCm"];
         return length is null
-            ? Text["MeasureNotRecorded"]
-            : $"{length.Value.ToString("0.##", Text.Culture)} {lengthUnit}";
+            ? $"{label} · {Text["MeasureNotRecorded"]}"
+            : $"{label} · {length.Value.ToString("0.##", Text.Culture)} {lengthUnit}";
     }
 
     private ImportPhotoRowModel ToPhotoRow(ImportSelectedPhotoModel photo)
@@ -1057,7 +1096,11 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         var photos = proposal.PhotoIds
             .Select(photoId => _batch.Photos.Single(photo => photo.Id == photoId))
             .OrderBy(photo => photo.SelectionIndex)
-            .Select(photo => new ImportCatchPhotoModel(proposal.Id, photo, selected.Contains(photo.Id)))
+            .Select((photo, index) => new ImportCatchPhotoModel(
+                proposal.Id,
+                photo,
+                selected.Contains(photo.Id),
+                string.Format(Text.Culture, Text["Import_PhotoNumber"], index + 1)))
             .ToArray();
         var locations = photos
             .Where(photo => photo.Photo.Location.HasCanonicalCoordinates)
@@ -1093,7 +1136,12 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             caughtOn.Date,
             caughtOn.TimeOfDay,
             FormatMeasurement(proposal.Weight, true),
-            FormatMeasurement(proposal.Length, false));
+            FormatMeasurement(proposal.Length, false),
+            Text.Culture.DateTimeFormat.ShortDatePattern,
+            Text.Culture.DateTimeFormat.ShortTimePattern,
+            proposal.Location?.HasCanonicalCoordinates == true
+                ? string.Empty
+                : Text["Import_LocationUnavailableHelp"]);
     }
 
     private ImportTripRowModel ToTripRow(ImportTripProposalModel proposal)
@@ -1114,6 +1162,13 @@ public sealed class ImportViewModel : INotifyPropertyChanged
                 catchId,
                 string.Format(Text.Culture, Text["Import_TripCatchNumber"], index + 1)))
             .ToArray();
+        var decisionText = proposal.Decision switch
+        {
+            ImportTripDecisionEnum.CreateNew => Text["Import_TripDecisionCreate"],
+            ImportTripDecisionEnum.NoTrip => Text["Import_TripDecisionSeparate"],
+            ImportTripDecisionEnum.UseExisting => Text["Import_TripDecisionExisting"],
+            _ => string.Empty
+        };
         return new ImportTripRowModel(
             proposal,
             title,
@@ -1122,16 +1177,50 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             existing.Count > 0,
             existing,
             catches,
-            existing.Count > 0 ? Text["Import_CreateAnotherTrip"] : Text["Import_CreateTrip"]);
+            existing.Count > 0 ? Text["Import_CreateAnotherTrip"] : Text["Import_CreateTrip"],
+            decisionText);
     }
 
     private string CatchStatusText(ImportCatchProposalModel proposal)
     {
         return proposal.ReviewStatus == ImportCatchReviewStatusEnum.Reviewed
-            ? Text["Import_Reviewed"]
+            ? Text["Import_Confirmed"]
             : proposal.CanBeReviewed
-                ? Text["Import_Ready"]
+                ? Text["Import_NeedsConfirmation"]
                 : Text["Import_NeedsCorrection"];
+    }
+
+    private async Task ApplyDisplayedCaughtOnAsync(CancellationToken cancellationToken)
+    {
+        foreach (var proposal in _batch.CatchProposals.Where(candidate => !candidate.IsRemoved && !candidate.CaughtOn.IsResolved))
+        {
+            await ConfirmCaughtOnAsync(proposal.Id, CaughtOnLocal(proposal.CaughtOn), cancellationToken);
+        }
+    }
+
+    private string CatchContinueHint()
+    {
+        var pending = ActiveCatches
+            .Select((proposal, index) => (Proposal: proposal, Number: index + 1))
+            .FirstOrDefault(candidate => !candidate.Proposal.IsReadyForConfirmation);
+        if (pending.Proposal is null)
+        {
+            return string.Empty;
+        }
+
+        if (!pending.Proposal.CaughtOn.IsResolved)
+        {
+            return string.Format(Text.Culture, Text["Import_ConfirmDateHint"], pending.Number);
+        }
+
+        return pending.Proposal.CanBeReviewed
+            ? string.Format(Text.Culture, Text["Import_ConfirmCatchHint"], pending.Number)
+            : string.Format(Text.Culture, Text["Import_ReviewCatchHint"], pending.Number);
+    }
+
+    private string CountPhrase(int count, string oneKey, string otherKey)
+    {
+        return string.Format(Text.Culture, count == 1 ? Text[oneKey] : Text[otherKey], count);
     }
 
     private string TimestampText(ImportTimestampModel timestamp)

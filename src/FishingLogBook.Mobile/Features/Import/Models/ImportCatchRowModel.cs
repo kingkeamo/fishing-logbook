@@ -21,7 +21,10 @@ public sealed class ImportCatchRowModel
         DateTime caughtOnDate,
         TimeSpan caughtOnTime,
         string weightText,
-        string lengthText)
+        string lengthText,
+        string dateFormat,
+        string timeFormat,
+        string locationHelp)
     {
         Proposal = proposal;
         Number = number;
@@ -29,6 +32,7 @@ public sealed class ImportCatchRowModel
         StatusText = statusText;
         TimestampText = timestampText;
         LocationText = locationText;
+        LocationHelp = locationHelp;
         MethodName = methodName;
         SpeciesName = speciesName;
         Photos = photos;
@@ -40,11 +44,14 @@ public sealed class ImportCatchRowModel
         CaughtOnTime = caughtOnTime;
         WeightText = weightText;
         LengthText = lengthText;
+        DateFormat = dateFormat;
+        TimeFormat = timeFormat;
         CanConfirm = proposal.CanOfferDisplayedValueConfirmation;
         NeedsCanonicalReview = proposal.RequiresCanonicalReview;
         CanSplit = photos.Count(photo => photo.IsSelected) > 0
             && photos.Count(photo => photo.IsSelected) < photos.Count;
         CanRemoveSelected = photos.Any(photo => photo.IsSelected);
+        ShowPhotoActions = photos.Count > 1;
     }
 
     public ImportCatchProposalModel Proposal { get; }
@@ -58,6 +65,8 @@ public sealed class ImportCatchRowModel
     public string TimestampText { get; }
 
     public string LocationText { get; }
+
+    public string LocationHelp { get; }
 
     public string MethodName { get; }
 
@@ -81,6 +90,10 @@ public sealed class ImportCatchRowModel
 
     public string LengthText { get; }
 
+    public string DateFormat { get; }
+
+    public string TimeFormat { get; }
+
     public bool CanConfirm { get; }
 
     public bool NeedsCanonicalReview { get; }
@@ -88,6 +101,10 @@ public sealed class ImportCatchRowModel
     public bool CanSplit { get; }
 
     public bool CanRemoveSelected { get; }
+
+    public bool ShowPhotoActions { get; }
+
+    public bool HasLocationHelp => !string.IsNullOrWhiteSpace(LocationHelp);
 
     public bool HasLocationChoices => Locations.Count > 0;
 

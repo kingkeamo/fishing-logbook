@@ -573,7 +573,8 @@
   <data name="Import_CorrectionLater" xml:space="preserve"><value>Les outils de vérification et de correction seront ajoutés à la prochaine étape de cette fonctionnalité.</value></data>
   <data name="Import_CatchNumber" xml:space="preserve"><value>Prise {0}</value></data>
   <data name="Import_NeedsReview" xml:space="preserve"><value>À vérifier</value></data>
-  <data name="Import_Ready" xml:space="preserve"><value>Prête</value></data>
+  <data name="Import_Ready" xml:space="preserve"><value>À confirmer</value></data>
+  <data name="Import_NeedsConfirmation" xml:space="preserve"><value>À confirmer</value></data>
   <data name="Import_TimestampAmbiguous" xml:space="preserve"><value>{0} · date et heure à confirmer</value></data>
   <data name="Import_TimestampWeak" xml:space="preserve"><value>{0} · date suggérée à confirmer</value></data>
   <data name="Import_TimestampUnusable" xml:space="preserve"><value>La date de la photo n’a pas pu être utilisée</value></data>
@@ -581,7 +582,9 @@
   <data name="Import_LocationNeedsReview" xml:space="preserve"><value>Les lieux des photos diffèrent · vérification requise</value></data>
   <data name="Import_LocationAvailable" xml:space="preserve"><value>Lieu de la photo disponible</value></data>
   <data name="Import_LocationUnavailable" xml:space="preserve"><value>Aucun lieu dans la photo</value></data>
-  <data name="Import_Reviewed" xml:space="preserve"><value>VÃ©rifiÃ©e</value></data>
+  <data name="Import_LocationUnavailableHelp" xml:space="preserve"><value>Cette photo n’a pas de GPS, un lieu ne peut donc pas être enregistré. Vous pouvez tout de même importer la prise.</value></data>
+  <data name="Import_Reviewed" xml:space="preserve"><value>Confirmée</value></data>
+  <data name="Import_Confirmed" xml:space="preserve"><value>Confirmée</value></data>
   <data name="Import_NeedsCorrection" xml:space="preserve"><value>À vérifier</value></data>
   <data name="Import_ReviewEdit" xml:space="preserve"><value>Vérifier</value></data>
   <data name="Import_Edit" xml:space="preserve"><value>Modifier</value></data>
@@ -590,7 +593,13 @@
   <data name="Import_CaughtOn" xml:space="preserve"><value>Date et heure de la prise</value></data>
   <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Saisissez une date et une heure historiques valides.</value></data>
   <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirmer la date et lâ€™heure</value></data>
-  <data name="Import_SelectPhoto" xml:space="preserve"><value>SÃ©lectionner la photographie {0}</value></data>
+  <data name="Import_SelectPhoto" xml:space="preserve"><value>Sélectionner la photographie {0}</value></data>
+  <data name="Import_PhotoNumber" xml:space="preserve"><value>Photo {0}</value></data>
+  <data name="Import_ChoosePhotosHint" xml:space="preserve"><value>Choisissez au moins une photographie pour continuer.</value></data>
+  <data name="Import_ConfirmDateHint" xml:space="preserve"><value>Indiquez la date et l’heure de la prise {0} pour continuer.</value></data>
+  <data name="Import_ConfirmCatchHint" xml:space="preserve"><value>Confirmez la prise {0} pour continuer.</value></data>
+  <data name="Import_ReviewCatchHint" xml:space="preserve"><value>Terminez la vérification de la prise {0} pour continuer.</value></data>
+  <data name="Import_ChooseTripHint" xml:space="preserve"><value>Choisissez de créer une sortie ou de conserver ces prises séparément.</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Utiliser le lieu de la photo {0}</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Supprimer le lieu</value></data>
   <data name="Import_SelectLocation" xml:space="preserve"><value>Utiliser ce lieu</value></data>
@@ -618,6 +627,9 @@
   <data name="Import_CreateAnotherTrip" xml:space="preserve"><value>Créer une autre sortie</value></data>
   <data name="Import_ExistingTripFound" xml:space="preserve"><value>Une sortie existe déjà à cette date. Ajoutez-y ces prises ou créez délibérément une autre sortie.</value></data>
   <data name="Import_KeepSeparate" xml:space="preserve"><value>Conserver les prises séparément</value></data>
+  <data name="Import_TripDecisionCreate" xml:space="preserve"><value>Cette importation créera une nouvelle sortie.</value></data>
+  <data name="Import_TripDecisionSeparate" xml:space="preserve"><value>Ces prises resteront séparées.</value></data>
+  <data name="Import_TripDecisionExisting" xml:space="preserve"><value>Ces prises seront ajoutées à une sortie existante.</value></data>
   <data name="Import_AddToExistingTrip" xml:space="preserve"><value>Ajouter à une sortie existante</value></data>
   <data name="Import_RemoveCatchFromTrip" xml:space="preserve"><value>Retirer la prise de la sortie suggérée</value></data>
   <data name="Import_ConfirmationBoundary" xml:space="preserve"><value>Vos prises vérifiées et vos choix de sorties sont prêts pour la confirmation finale de l’importation.</value></data>
@@ -644,7 +656,13 @@
   <data name="Import_VerificationFailed" xml:space="preserve"><value>Les données importées n’ont pas pu être vérifiées. Réessayez pour les rapprocher du serveur.</value></data>
   <data name="Import_OnlineRequired" xml:space="preserve"><value>L’importation historique nécessite une connexion Internet.</value></data>
   <data name="Import_PersistenceFailed" xml:space="preserve"><value>L’importation n’a pas pu être terminée. Vos choix vérifiés restent disponibles pendant cette session.</value></data>
-  <data name="Import_Success" xml:space="preserve"><value>{0} prises, {1} photographies et {2} sorties ont été importées.</value></data>
+  <data name="Import_Success" xml:space="preserve"><value>{0}, {1} et {2} ont bien été importés.</value></data>
+  <data name="Import_SuccessCatchOne" xml:space="preserve"><value>{0} prise</value></data>
+  <data name="Import_SuccessCatchOther" xml:space="preserve"><value>{0} prises</value></data>
+  <data name="Import_SuccessPhotoOne" xml:space="preserve"><value>{0} photographie</value></data>
+  <data name="Import_SuccessPhotoOther" xml:space="preserve"><value>{0} photographies</value></data>
+  <data name="Import_SuccessTripOne" xml:space="preserve"><value>{0} sortie</value></data>
+  <data name="Import_SuccessTripOther" xml:space="preserve"><value>{0} sorties</value></data>
   <data name="Import_ViewCatches" xml:space="preserve"><value>Voir les prises</value></data>
   <data name="Import_ViewTrips" xml:space="preserve"><value>Voir les sorties</value></data>
   <data name="Import_EditPlaceName" xml:space="preserve"><value>Modifier le nom du lieu</value></data>

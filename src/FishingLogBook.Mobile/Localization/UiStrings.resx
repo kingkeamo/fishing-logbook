@@ -573,7 +573,8 @@
   <data name="Import_CorrectionLater" xml:space="preserve"><value>Review and correction controls are added in the next step of this feature.</value></data>
   <data name="Import_CatchNumber" xml:space="preserve"><value>Catch {0}</value></data>
   <data name="Import_NeedsReview" xml:space="preserve"><value>Needs review</value></data>
-  <data name="Import_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Import_Ready" xml:space="preserve"><value>Needs confirmation</value></data>
+  <data name="Import_NeedsConfirmation" xml:space="preserve"><value>Needs confirmation</value></data>
   <data name="Import_TimestampAmbiguous" xml:space="preserve"><value>{0} · date and time require confirmation</value></data>
   <data name="Import_TimestampWeak" xml:space="preserve"><value>{0} · suggested date requires confirmation</value></data>
   <data name="Import_TimestampUnusable" xml:space="preserve"><value>Photo date could not be used</value></data>
@@ -581,7 +582,9 @@
   <data name="Import_LocationNeedsReview" xml:space="preserve"><value>Photo locations differ · review required</value></data>
   <data name="Import_LocationAvailable" xml:space="preserve"><value>Photo location available</value></data>
   <data name="Import_LocationUnavailable" xml:space="preserve"><value>No photo location</value></data>
-  <data name="Import_Reviewed" xml:space="preserve"><value>Reviewed</value></data>
+  <data name="Import_LocationUnavailableHelp" xml:space="preserve"><value>This photo has no GPS, so a place cannot be saved. You can still import the catch.</value></data>
+  <data name="Import_Reviewed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Import_Confirmed" xml:space="preserve"><value>Confirmed</value></data>
   <data name="Import_NeedsCorrection" xml:space="preserve"><value>Needs review</value></data>
   <data name="Import_ReviewEdit" xml:space="preserve"><value>Review</value></data>
   <data name="Import_Edit" xml:space="preserve"><value>Edit</value></data>
@@ -591,6 +594,12 @@
   <data name="Import_CaughtOnRequired" xml:space="preserve"><value>Enter a valid historical date and time.</value></data>
   <data name="Import_ConfirmCaughtOn" xml:space="preserve"><value>Confirm date and time</value></data>
   <data name="Import_SelectPhoto" xml:space="preserve"><value>Select photograph {0}</value></data>
+  <data name="Import_PhotoNumber" xml:space="preserve"><value>Photo {0}</value></data>
+  <data name="Import_ChoosePhotosHint" xml:space="preserve"><value>Choose at least one photograph to continue.</value></data>
+  <data name="Import_ConfirmDateHint" xml:space="preserve"><value>Set the date and time for catch {0} to continue.</value></data>
+  <data name="Import_ConfirmCatchHint" xml:space="preserve"><value>Confirm catch {0} to continue.</value></data>
+  <data name="Import_ReviewCatchHint" xml:space="preserve"><value>Finish reviewing catch {0} to continue.</value></data>
+  <data name="Import_ChooseTripHint" xml:space="preserve"><value>Choose Create Trip or keep these catches separate.</value></data>
   <data name="Import_UsePhotoLocation" xml:space="preserve"><value>Use photo {0} location</value></data>
   <data name="Import_RemoveLocation" xml:space="preserve"><value>Remove location</value></data>
   <data name="Import_SelectLocation" xml:space="preserve"><value>Use this location</value></data>
@@ -618,6 +627,9 @@
   <data name="Import_CreateAnotherTrip" xml:space="preserve"><value>Create another Trip</value></data>
   <data name="Import_ExistingTripFound" xml:space="preserve"><value>An existing Trip was found on this date. Add these catches to it, or deliberately create another Trip.</value></data>
   <data name="Import_KeepSeparate" xml:space="preserve"><value>Keep as separate catches</value></data>
+  <data name="Import_TripDecisionCreate" xml:space="preserve"><value>This import will create a new Trip.</value></data>
+  <data name="Import_TripDecisionSeparate" xml:space="preserve"><value>These catches will stay separate.</value></data>
+  <data name="Import_TripDecisionExisting" xml:space="preserve"><value>These catches will be added to an existing Trip.</value></data>
   <data name="Import_AddToExistingTrip" xml:space="preserve"><value>Add to existing Trip</value></data>
   <data name="Import_RemoveCatchFromTrip" xml:space="preserve"><value>Remove catch from suggested Trip</value></data>
   <data name="Import_ConfirmationBoundary" xml:space="preserve"><value>Your reviewed catches and Trip choices are ready for final import confirmation.</value></data>
@@ -644,7 +656,13 @@
   <data name="Import_VerificationFailed" xml:space="preserve"><value>The imported data could not be verified. Retry to reconcile it with the server.</value></data>
   <data name="Import_OnlineRequired" xml:space="preserve"><value>Historical Import requires an internet connection.</value></data>
   <data name="Import_PersistenceFailed" xml:space="preserve"><value>The import could not be completed. Your reviewed choices remain available in this session.</value></data>
-  <data name="Import_Success" xml:space="preserve"><value>Imported {0} catches, {1} photographs and {2} Trips successfully.</value></data>
+  <data name="Import_Success" xml:space="preserve"><value>Imported {0}, {1} and {2} successfully.</value></data>
+  <data name="Import_SuccessCatchOne" xml:space="preserve"><value>{0} catch</value></data>
+  <data name="Import_SuccessCatchOther" xml:space="preserve"><value>{0} catches</value></data>
+  <data name="Import_SuccessPhotoOne" xml:space="preserve"><value>{0} photograph</value></data>
+  <data name="Import_SuccessPhotoOther" xml:space="preserve"><value>{0} photographs</value></data>
+  <data name="Import_SuccessTripOne" xml:space="preserve"><value>{0} Trip</value></data>
+  <data name="Import_SuccessTripOther" xml:space="preserve"><value>{0} Trips</value></data>
   <data name="Import_ViewCatches" xml:space="preserve"><value>View catches</value></data>
   <data name="Import_ViewTrips" xml:space="preserve"><value>View Trips</value></data>
   <data name="Import_EditPlaceName" xml:space="preserve"><value>Edit place name</value></data>
