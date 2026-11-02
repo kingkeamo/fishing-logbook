@@ -14,7 +14,8 @@ public sealed class ImportTripRowModel
         IReadOnlyList<TripSummaryDto> existingTrips,
         IReadOnlyList<ImportTripCatchModel> catches,
         string createText,
-        string decisionText)
+        string decisionText,
+        IReadOnlyList<ImportTripParticipantModel> participants)
     {
         Proposal = proposal;
         Title = title;
@@ -25,6 +26,7 @@ public sealed class ImportTripRowModel
         Catches = catches;
         CreateText = createText;
         DecisionText = decisionText;
+        Participants = participants;
     }
 
     public ImportTripProposalModel Proposal { get; }
@@ -45,6 +47,8 @@ public sealed class ImportTripRowModel
 
     public string DecisionText { get; }
 
+    public IReadOnlyList<ImportTripParticipantModel> Participants { get; }
+
     public bool HasMissingGps => !string.IsNullOrWhiteSpace(MissingGpsText);
 
     public bool HasDecision => !string.IsNullOrWhiteSpace(DecisionText);
@@ -54,4 +58,6 @@ public sealed class ImportTripRowModel
     public bool IsUseExisting => Proposal.Decision == ImportTripDecisionEnum.UseExisting;
 
     public bool IsKeepSeparate => Proposal.Decision == ImportTripDecisionEnum.NoTrip;
+
+    public bool ShowParticipants => IsCreateNew;
 }

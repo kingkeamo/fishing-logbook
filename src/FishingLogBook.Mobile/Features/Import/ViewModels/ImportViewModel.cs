@@ -54,6 +54,8 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         new Dictionary<Guid, IReadOnlyList<TripSummaryDto>>();
     private readonly Dictionary<Guid, HashSet<Guid>> _selectedPhotos = [];
     private CancellationTokenSource? _persistenceCancellation;
+    private CancellationTokenSource? _photoOperationCancellation;
+    private Task? _persistTask;
 
     public ImportViewModel(
         IAnglerPreferencesService preferences,
@@ -477,7 +479,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
     public async Task PickPhotosAsync(CancellationToken cancellationToken)
     {
-        if (!_batch.CanProcessPhotos)
+        if (!_batch.CanProcessPhotos || _isPersisting)
         {
             return;
         }
@@ -502,14 +504,16 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             return;
         }
 
-        _batch.BeginPhotoProcessing();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _photoOperationCancellation = linked;
         _isBusy = true;
         _selectionLimitExceeded = false;
         _message = null;
         Refresh();
         try
         {
-            var photos = await _preparation.PrepareSelectionAsync(picked.Files, cancellationToken);
+            _batch.BeginPhotoProcessing();
+            var photos = await _preparation.PrepareSelectionAsync(picked.Files, linked.Token);
             _batch = new ImportBatchModel(_batch.Id, SelectedMethod(), SelectedSpecies());
             foreach (var photo in photos)
             {
@@ -517,14 +521,22 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             }
 
             _batch.SetStage(ImportStageEnum.ChoosePhotos);
-            _batch.CompletePhotoProcessing();
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (linked.IsCancellationRequested)
         {
-            _batch.CompletePhotoProcessing();
+        }
+        catch (Exception)
+        {
+            _message = Text["Import_PhotoFailed"];
         }
         finally
         {
+            _batch.CompletePhotoProcessing();
+            if (ReferenceEquals(_photoOperationCancellation, linked))
+            {
+                _photoOperationCancellation = null;
+            }
+
             _isBusy = false;
             Refresh();
         }
@@ -751,13 +763,67 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         Refresh();
     }
 
+    public async Task AddTripParticipantAsync(Guid tripId)
+    {
+        var proposal = _batch.TripProposals.SingleOrDefault(candidate => candidate.Id == tripId);
+        if (proposal is null || proposal.Decision != ImportTripDecisionEnum.CreateNew || _isPersisting)
+        {
+            return;
+        }
+
+        if (!_connectivity.IsOnline)
+        {
+            _message = Text["Import_OnlineRequired"];
+            Refresh();
+            return;
+        }
+
+        var chosen = await _modals.ChooseAnglerAsync(
+            proposal.Participants.Select(participant => participant.UserId).ToArray());
+        if (chosen is not null)
+        {
+            _batch.AddTripParticipant(tripId, chosen);
+            Refresh();
+        }
+    }
+
+    public void RemoveTripParticipant(Guid tripId, Guid userId)
+    {
+        _batch.RemoveTripParticipant(tripId, userId);
+        Refresh();
+    }
+
     public void CancelPersistence()
     {
         _persistenceCancellation?.Cancel();
     }
 
-    public async Task ClearAsync()
+    public async Task LeaveAsync()
     {
+        if (_isPersisted)
+        {
+            return;
+        }
+
+        _photoOperationCancellation?.Cancel();
+        _persistenceCancellation?.Cancel();
+        var persist = _persistTask;
+        if (persist is not null)
+        {
+            try
+            {
+                await persist;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        if (_isPersisted)
+        {
+            return;
+        }
+
         await _preparation.ClearAsync(CancellationToken.None);
     }
 
@@ -798,12 +864,38 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
     private async Task PersistAsync(CancellationToken cancellationToken)
     {
+        if (_isPersisting || _isPersisted)
+        {
+            return;
+        }
+
         _isPersisting = true;
         _message = null;
         _progress = null;
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _persistenceCancellation = linked;
+        var persist = PersistCoreAsync(linked.Token);
+        _persistTask = persist;
         Refresh();
+        try
+        {
+            await persist;
+        }
+        finally
+        {
+            if (ReferenceEquals(_persistTask, persist))
+            {
+                _persistTask = null;
+            }
+
+            _isPersisting = false;
+            _persistenceCancellation = null;
+            Refresh();
+        }
+    }
+
+    private async Task PersistCoreAsync(CancellationToken cancellationToken)
+    {
         try
         {
             if (!_connectivity.IsOnline)
@@ -814,7 +906,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
             var result = await _persistence.PersistAsync(
                 _batch,
-                linked.Token,
+                cancellationToken,
                 new Progress<ImportPersistenceProgressModel>(progress =>
                 {
                     _progress = progress;
@@ -829,19 +921,13 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             _isPersisted = true;
             await _preparation.ClearAsync(CancellationToken.None);
         }
-        catch (OperationCanceledException) when (linked.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             _message = null;
         }
         catch (Exception)
         {
             _message = Text["Import_PersistenceFailed"];
-        }
-        finally
-        {
-            _isPersisting = false;
-            _persistenceCancellation = null;
-            Refresh();
         }
     }
 
@@ -1040,10 +1126,15 @@ public sealed class ImportViewModel : INotifyPropertyChanged
     {
         if (timestamp.Instant is { } instant)
         {
-            return instant.LocalDateTime;
+            return DateTime.SpecifyKind(instant.DateTime, DateTimeKind.Unspecified);
         }
 
-        return timestamp.LocalWallClock ?? DateTime.Now;
+        if (timestamp.LocalWallClock is { } wallClock)
+        {
+            return DateTime.SpecifyKind(wallClock, DateTimeKind.Unspecified);
+        }
+
+        return DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
     }
 
     private string FormatMeasurement(decimal? canonical, bool weight)
@@ -1169,6 +1260,12 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             ImportTripDecisionEnum.UseExisting => Text["Import_TripDecisionExisting"],
             _ => string.Empty
         };
+        var participants = proposal.Participants
+            .Select(participant => new ImportTripParticipantModel(
+                proposal.Id,
+                participant.UserId,
+                participant.DisplayName ?? participant.Email ?? Text["TripContributorUnknown"]))
+            .ToArray();
         return new ImportTripRowModel(
             proposal,
             title,
@@ -1178,7 +1275,8 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             existing,
             catches,
             existing.Count > 0 ? Text["Import_CreateAnotherTrip"] : Text["Import_CreateTrip"],
-            decisionText);
+            decisionText,
+            participants);
     }
 
     private string CatchStatusText(ImportCatchProposalModel proposal)

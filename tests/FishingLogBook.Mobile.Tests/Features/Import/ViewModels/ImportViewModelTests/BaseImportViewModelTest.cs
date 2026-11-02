@@ -87,6 +87,22 @@ public abstract class BaseImportViewModelTest
         await Sut.ContinueAsync(CancellationToken.None);
     }
 
+    protected async Task ReachTripReviewAsync(ImportSelectedPhotoModel? photo = null)
+    {
+        await ReviewPreparedPhotoAsync(photo ?? ReadyPhoto());
+        Sut.ConfirmCatch(Sut.Catches.Single().Proposal.Id);
+        MockTripProposals.Propose(Arg.Any<ImportBatchModel>())
+            .Returns(callInfo => new ImportTripProposalService().Propose(callInfo.Arg<ImportBatchModel>()));
+        await Sut.ContinueAsync(CancellationToken.None);
+    }
+
+    protected async Task ReachConfirmAsync(ImportSelectedPhotoModel? photo = null)
+    {
+        await ReachTripReviewAsync(photo);
+        Sut.DecideCreateTrip(Sut.Trips.Single().Proposal.Id);
+        await Sut.ContinueAsync(CancellationToken.None);
+    }
+
     protected static ImportSelectedPhotoModel ReadyPhoto(
         ImportTimestampModel? timestamp = null,
         string fileName = "0e0fa2fbeb9442b185757fefb9cf9288.png")

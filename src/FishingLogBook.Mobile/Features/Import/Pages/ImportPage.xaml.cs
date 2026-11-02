@@ -43,10 +43,7 @@ public partial class ImportPage : ContentPage
     private async void OnUnloaded(object? sender, EventArgs args)
     {
         Unloaded -= OnUnloaded;
-        if (!_viewModel.IsSuccessStep)
-        {
-            await _viewModel.ClearAsync();
-        }
+        await _viewModel.LeaveAsync();
     }
 
     private void OnBack(object? sender, EventArgs args)
@@ -294,6 +291,22 @@ public partial class ImportPage : ContentPage
         if (sender is Button { CommandParameter: ImportTripCatchModel item })
         {
             _viewModel.RemoveCatchFromTrip(item.TripId, item.CatchId);
+        }
+    }
+
+    private async void OnAddTripParticipant(object? sender, EventArgs args)
+    {
+        if (sender is Button { CommandParameter: Guid tripId })
+        {
+            await _viewModel.AddTripParticipantAsync(tripId);
+        }
+    }
+
+    private void OnRemoveTripParticipant(object? sender, EventArgs args)
+    {
+        if (sender is Button { CommandParameter: ImportTripParticipantModel participant })
+        {
+            _viewModel.RemoveTripParticipant(participant.TripId, participant.UserId);
         }
     }
 

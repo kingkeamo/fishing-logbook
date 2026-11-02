@@ -279,6 +279,28 @@
                       </DataTrigger>
                     </Button.Triggers>
                   </Button>
+                  <VerticalStackLayout IsVisible="{Binding ShowParticipants}" Spacing="8"
+                                       AutomationId="ImportTripParticipants">
+                    <Label Text="{Binding BindingContext.Text[Import_TripParticipants], Source={x:Reference Root}}"
+                           Style="{StaticResource Subheading}" FontSize="15" />
+                    <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding Participants}">
+                      <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:ImportTripParticipantModel">
+                          <HorizontalStackLayout Spacing="0" Margin="0,0,8,8">
+                            <controls:ChipView Text="{Binding Name}" MaximumWidthRequest="220" />
+                            <Button Text="&#x00D7;" Style="{StaticResource SecondaryButton}" WidthRequest="48"
+                                    MinimumHeightRequest="48" Padding="0" CommandParameter="{Binding}"
+                                    Clicked="OnRemoveTripParticipant"
+                                    SemanticProperties.Description="{Binding BindingContext.Text[TripRemoveParticipant], Source={x:Reference Root}}"
+                                    AutomationId="ImportRemoveTripParticipant" />
+                          </HorizontalStackLayout>
+                        </DataTemplate>
+                      </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+                    <Button Text="{Binding BindingContext.Text[Import_AddTripParticipant], Source={x:Reference Root}}"
+                            Style="{StaticResource SecondaryButton}" CommandParameter="{Binding Proposal.Id}"
+                            Clicked="OnAddTripParticipant" AutomationId="ImportAddTripParticipant" />
+                  </VerticalStackLayout>
                   <VerticalStackLayout BindableLayout.ItemsSource="{Binding Catches}" Spacing="8">
                     <BindableLayout.ItemTemplate>
                       <DataTemplate x:DataType="models:ImportTripCatchModel">

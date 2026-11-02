@@ -3,12 +3,17 @@ using CommunityToolkit.Maui.Views;
 using FishingLogBook.Mobile.Features.Import.Models;
 using FishingLogBook.Mobile.Features.Import.Services;
 using FishingLogBook.Mobile.Features.Import.ViewModels;
+using FishingLogBook.Mobile.Features.Trips.Clients;
+using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Mobile.Features.Import.Modals;
 
-public sealed class ImportModalService(UiTextService text) : IImportModalService
+public sealed class ImportModalService(
+    UiTextService text,
+    IAnglerLookupClient lookup,
+    IConnectivityService connectivity) : IImportModalService
 {
     public async Task<PlaceNameModalResult?> EditPlaceNameAsync(PlaceNameModalModel model)
     {
@@ -24,5 +29,12 @@ public sealed class ImportModalService(UiTextService text) : IImportModalService
         return result.WasDismissedByTappingOutsideOfPopup || result.Result is null
             ? null
             : result.Result.TripId;
+    }
+
+    public async Task<AnglerSummaryDto?> ChooseAnglerAsync(IReadOnlyList<Guid> excludedUserIds)
+    {
+        var viewModel = new ImportAnglerModalViewModel(lookup, connectivity, text, excludedUserIds);
+        var result = await Shell.Current.ShowPopupAsync<AnglerSummaryDto>(new ImportAnglerModal(viewModel));
+        return result.WasDismissedByTappingOutsideOfPopup ? null : result.Result;
     }
 }

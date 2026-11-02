@@ -14,6 +14,34 @@ public sealed class ImportPhotoBlobRegistryService : IImportPhotoBlobRegistrySer
     {
         _files = files;
         _root = root;
+        RecoverAbandonedFiles();
+    }
+
+    public void RecoverAbandonedFiles()
+    {
+        if (!_files.DirectoryExists(_root))
+        {
+            return;
+        }
+
+        HashSet<string> tracked;
+        lock (_gate)
+        {
+            tracked = new HashSet<string>(_paths.Values, StringComparer.OrdinalIgnoreCase);
+        }
+
+        foreach (var path in _files.EnumerateFiles(_root, "*"))
+        {
+            if (tracked.Contains(path))
+            {
+                continue;
+            }
+
+            if (_files.FileExists(path))
+            {
+                _files.DeleteFile(path);
+            }
+        }
     }
 
     public Task<ImportPhotoBlobRegistrationModel> RegisterAsync(
@@ -88,6 +116,7 @@ public sealed class ImportPhotoBlobRegistryService : IImportPhotoBlobRegistrySer
             _files.DeleteFile(path);
         }
 
+        RecoverAbandonedFiles();
         return Task.CompletedTask;
     }
 }
