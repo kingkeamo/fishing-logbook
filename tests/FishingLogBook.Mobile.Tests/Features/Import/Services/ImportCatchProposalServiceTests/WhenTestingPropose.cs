@@ -60,6 +60,26 @@ public class WhenTestingPropose : BaseImportCatchProposalServiceTest
     }
 
     [Fact]
+    public void ItShouldNotChainTrustworthyPhotographsBeyondTheFiveMinuteGroupSpan()
+    {
+        // Arrange
+        var photos = new[]
+        {
+            Photo(0, ExplicitAt(TimeSpan.Zero)),
+            Photo(1, ExplicitAt(TimeSpan.FromMinutes(4))),
+            Photo(2, ExplicitAt(TimeSpan.FromMinutes(8)))
+        };
+
+        // Act
+        var proposals = Sut.Propose(Batch(photos));
+
+        // Assert
+        proposals.Select(proposal => proposal.PhotoIds.Count).Should().Equal(2, 1);
+        proposals[0].PhotoIds.Should().Equal(photos[0].Id, photos[1].Id);
+        proposals[1].PhotoIds.Should().Equal(photos[2].Id);
+    }
+
+    [Fact]
     public void ItShouldNotChainWeakFallbackPhotographsBeyondTheFiveMinuteGroupSpan()
     {
         // Arrange

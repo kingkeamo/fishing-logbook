@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Import.Enums;
+using FishingLogBook.Mobile.Features.Import.Models;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
 using NSubstitute;
@@ -54,11 +55,12 @@ public sealed class WhenTestingPickPhotos : BaseImportViewModelTest
         MockPreparation.PrepareSelectionAsync(
                 Arg.Any<IReadOnlyList<PhotographPickedFileModel>>(),
                 Arg.Any<CancellationToken>())
-            .Returns(async call =>
+            .Returns(call =>
             {
                 started.SetResult();
-                await Task.Delay(Timeout.Infinite, call.Arg<CancellationToken>());
-                return Array.Empty<FishingLogBook.Mobile.Features.Import.Models.ImportSelectedPhotoModel>();
+                var pending = new TaskCompletionSource<IReadOnlyList<ImportSelectedPhotoModel>>();
+                call.Arg<CancellationToken>().Register(() => pending.TrySetCanceled());
+                return pending.Task;
             });
 
         // Act

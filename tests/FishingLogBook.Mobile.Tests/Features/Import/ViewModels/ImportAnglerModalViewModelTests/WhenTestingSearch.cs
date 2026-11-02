@@ -2,9 +2,10 @@ using AwesomeAssertions;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Api.Models;
 using FishingLogBook.Mobile.Features.Import.ViewModels;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Trips.Clients;
-using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using NSubstitute;
 using System.Globalization;
@@ -105,6 +106,28 @@ public sealed class WhenTestingSearch
             new UiTextService(CultureInfo.GetCultureInfo("en-GB")),
             []);
         sut.SearchText = "pa";
+
+        // Act
+        await sut.SearchAsync(CancellationToken.None);
+
+        // Assert
+        sut.CanSearch.Should().BeFalse();
+        await lookup.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRejectAQueryLongerThanTheSharedLookupLimit()
+    {
+        // Arrange
+        var lookup = Substitute.For<IAnglerLookupClient>();
+        var connectivity = Substitute.For<IConnectivityService>();
+        connectivity.IsOnline.Returns(true);
+        var sut = new ImportAnglerModalViewModel(
+            lookup,
+            connectivity,
+            new UiTextService(CultureInfo.GetCultureInfo("en-GB")),
+            []);
+        sut.SearchText = new string('a', AnglerLookupConstants.MaxQueryLength + 1);
 
         // Act
         await sut.SearchAsync(CancellationToken.None);

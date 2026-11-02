@@ -3,8 +3,8 @@ using CommunityToolkit.Maui.Views;
 using FishingLogBook.Mobile.Features.Import.Models;
 using FishingLogBook.Mobile.Features.Import.Services;
 using FishingLogBook.Mobile.Features.Import.ViewModels;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Trips.Clients;
-using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Dtos;
 

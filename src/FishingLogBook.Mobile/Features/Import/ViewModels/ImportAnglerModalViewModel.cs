@@ -1,16 +1,15 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Trips.Clients;
-using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Mobile.Features.Import.ViewModels;
 
 public sealed class ImportAnglerModalViewModel : INotifyPropertyChanged
 {
-    public const int MinimumSearchLength = 3;
-
     private readonly IAnglerLookupClient _lookup;
     private readonly IConnectivityService _connectivity;
     private readonly HashSet<Guid> _excluded;
@@ -56,7 +55,7 @@ public sealed class ImportAnglerModalViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool CanSearch => !_isBusy && _searchText.Trim().Length >= MinimumSearchLength;
+    public bool CanSearch => !_isBusy && AnglerLookupConstants.IsQueryValid(_searchText);
 
     public bool IsBusy => _isBusy;
 
@@ -86,7 +85,9 @@ public sealed class ImportAnglerModalViewModel : INotifyPropertyChanged
         Notify();
         try
         {
-            var result = await _lookup.FindAsync(_searchText.Trim(), cancellationToken);
+            var result = await _lookup.FindAsync(
+                AnglerLookupConstants.TrimQuery(_searchText) ?? string.Empty,
+                cancellationToken);
             Results.Clear();
             if (!result.IsSuccess || result.Value is null)
             {

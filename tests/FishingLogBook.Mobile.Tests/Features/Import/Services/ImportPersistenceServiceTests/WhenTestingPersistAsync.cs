@@ -660,6 +660,57 @@ public class WhenTestingPersistAsync : BaseImportPersistenceServiceTest
     }
 
     [Fact]
+    public async Task ItShouldCreateTheTripOnRetryAfterANetworkFailure()
+    {
+        // Arrange
+        var batch = Batch(ImportTripDecisionEnum.CreateNew);
+        var sut = CreateSut();
+        var attempts = 0;
+        TripDto? created = null;
+        TripClient.UpsertAsync(Arg.Any<TripDto>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            attempts++;
+            if (attempts == 1)
+            {
+                return ApiResultModel<TripDto>.Failed(ApiOutcomeEnum.Unavailable);
+            }
+
+            created = call.Arg<TripDto>();
+            return ApiResultModel<TripDto>.Succeeded(created);
+        });
+        TripClient.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(_ =>
+            created is null
+                ? ApiResultModel<TripDetailDto>.Failed(ApiOutcomeEnum.NotFound)
+                : ApiResultModel<TripDetailDto>.Succeeded(new TripDetailDto(new TripViewDto(
+                    TripId,
+                    UserId,
+                    created.Status,
+                    created.StartedOn,
+                    created.EndedOn)
+                {
+                    Title = created.Title,
+                    PlaceName = created.PlaceName
+                })));
+
+        // Act
+        var first = await sut.PersistAsync(batch, CancellationToken.None);
+        first.IsSuccess.Should().BeFalse();
+        first.Failure.Should().Be(ImportPersistenceFailureEnum.Trip);
+        var result = await sut.PersistAsync(batch, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.CreatedTripIds.Should().Equal(TripId);
+        result.CatchIds.Should().Equal(CatchId);
+        await TripClient.Received(2).UpsertAsync(
+            Arg.Is<TripDto>(trip => trip.Id == TripId),
+            Arg.Any<CancellationToken>());
+        await CatchSync.Received(1).UpsertAsync(
+            Arg.Is<CatchDto>(record => record.Id == CatchId && record.TripId == TripId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldKeepTheFirstCatchWhenALaterCatchFailsAndRetryOnlyTheFailure()
     {
         // Arrange
