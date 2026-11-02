@@ -148,6 +148,7 @@ public sealed class ImportPhotoPreparationService : IImportPhotoPreparationServi
             }
 
             photo.SetFingerprint(Convert.ToHexString(SHA256.HashData(sanitised)));
+            cancellationToken.ThrowIfCancellationRequested();
             var registration = await _registry.RegisterAsync(sanitised, file.ContentType, cancellationToken);
             photo.SetPreparation(
                 ImportPhotoPreparationStatusEnum.Ready,

@@ -56,6 +56,9 @@ public sealed class ImportViewModel : INotifyPropertyChanged
     private CancellationTokenSource? _persistenceCancellation;
     private CancellationTokenSource? _photoOperationCancellation;
     private Task? _persistTask;
+    private Task? _photoTask;
+    private Task? _leaveTask;
+    private bool _hasLeft;
 
     public ImportViewModel(
         IAnglerPreferencesService preferences,
@@ -431,7 +434,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
     public async Task ContinueAsync(CancellationToken cancellationToken)
     {
-        if (!CanContinue)
+        if (_hasLeft || !CanContinue)
         {
             return;
         }
@@ -479,13 +482,37 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
     public async Task PickPhotosAsync(CancellationToken cancellationToken)
     {
-        if (!_batch.CanProcessPhotos || _isPersisting)
+        if (!_batch.CanProcessPhotos || _isPersisting || _hasLeft)
         {
             return;
         }
 
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _photoOperationCancellation = linked;
+        var operation = PickPhotosCoreAsync(linked.Token);
+        _photoTask = operation;
+        try
+        {
+            await operation;
+        }
+        finally
+        {
+            if (ReferenceEquals(_photoTask, operation))
+            {
+                _photoTask = null;
+            }
+
+            if (ReferenceEquals(_photoOperationCancellation, linked))
+            {
+                _photoOperationCancellation = null;
+            }
+        }
+    }
+
+    private async Task PickPhotosCoreAsync(CancellationToken cancellationToken)
+    {
         var picked = await _media.PickPhotosAsync(ImportPhotoPreparationService.MaxPhotographs, cancellationToken);
-        if (picked.Outcome == PhotographPickOutcomeEnum.Cancelled)
+        if (_hasLeft || cancellationToken.IsCancellationRequested || picked.Outcome == PhotographPickOutcomeEnum.Cancelled)
         {
             return;
         }
@@ -504,8 +531,6 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             return;
         }
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _photoOperationCancellation = linked;
         _isBusy = true;
         _selectionLimitExceeded = false;
         _message = null;
@@ -513,7 +538,12 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         try
         {
             _batch.BeginPhotoProcessing();
-            var photos = await _preparation.PrepareSelectionAsync(picked.Files, linked.Token);
+            var photos = await _preparation.PrepareSelectionAsync(picked.Files, cancellationToken);
+            if (_hasLeft || cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             _batch = new ImportBatchModel(_batch.Id, SelectedMethod(), SelectedSpecies());
             foreach (var photo in photos)
             {
@@ -522,21 +552,19 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
             _batch.SetStage(ImportStageEnum.ChoosePhotos);
         }
-        catch (OperationCanceledException) when (linked.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _hasLeft)
         {
         }
         catch (Exception)
         {
-            _message = Text["Import_PhotoFailed"];
+            if (!_hasLeft)
+            {
+                _message = Text["Import_PhotoFailed"];
+            }
         }
         finally
         {
             _batch.CompletePhotoProcessing();
-            if (ReferenceEquals(_photoOperationCancellation, linked))
-            {
-                _photoOperationCancellation = null;
-            }
-
             _isBusy = false;
             Refresh();
         }
@@ -798,33 +826,45 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         _persistenceCancellation?.Cancel();
     }
 
-    public async Task LeaveAsync()
+    public Task LeaveAsync()
     {
         if (_isPersisted)
         {
-            return;
+            return Task.CompletedTask;
         }
 
+        return _leaveTask ??= LeaveCoreAsync();
+    }
+
+    private async Task LeaveCoreAsync()
+    {
+        _hasLeft = true;
         _photoOperationCancellation?.Cancel();
         _persistenceCancellation?.Cancel();
-        var persist = _persistTask;
-        if (persist is not null)
-        {
-            try
-            {
-                await persist;
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        }
-
+        await AwaitCancelledAsync(_photoTask);
+        await AwaitCancelledAsync(_persistTask);
         if (_isPersisted)
         {
             return;
         }
 
         await _preparation.ClearAsync(CancellationToken.None);
+    }
+
+    private static async Task AwaitCancelledAsync(Task? operation)
+    {
+        if (operation is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await operation;
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     private async Task ContinueToReviewAsync(CancellationToken cancellationToken)
@@ -864,7 +904,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
     private async Task PersistAsync(CancellationToken cancellationToken)
     {
-        if (_isPersisting || _isPersisted)
+        if (_isPersisting || _isPersisted || _hasLeft)
         {
             return;
         }

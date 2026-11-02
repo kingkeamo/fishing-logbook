@@ -72,7 +72,8 @@ public sealed class WhenTestingPickPhotos : BaseImportViewModelTest
         // Assert
         Sut.IsBusy.Should().BeFalse();
         Sut.HasMessage.Should().BeFalse();
-        await MockPreparation.Received().ClearAsync(Arg.Any<CancellationToken>());
+        Sut.Photos.Should().BeEmpty();
+        await MockPreparation.Received(1).ClearAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
