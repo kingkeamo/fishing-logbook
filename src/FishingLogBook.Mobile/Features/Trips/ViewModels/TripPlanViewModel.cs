@@ -26,7 +26,11 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
     private readonly IConnectivityService _connectivity;
     private readonly InteractionService _interactions;
     private readonly TimeProvider _clock;
+    private readonly SynchronizationContext? _uiContext;
+    private readonly CancellationTokenSource _disposeCancellation = new();
     private LocalTripRecordModel? _trip;
+    private int _rereadGeneration;
+    private volatile bool _disposed;
     private IReadOnlyList<string> _savedLocations = [];
     private bool _isLoading = true;
     private bool _notFound;
@@ -46,7 +50,8 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
         IConnectivityService connectivity,
         InteractionService interactions,
         UiTextService text,
-        TimeProvider clock)
+        TimeProvider clock,
+        SynchronizationContext? uiContext = null)
     {
         _planned = planned;
         _trips = trips;
@@ -56,6 +61,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
         _connectivity = connectivity;
         _interactions = interactions;
         _clock = clock;
+        _uiContext = uiContext ?? SynchronizationContext.Current;
         Text = text;
         text.PropertyChanged += (_, _) => Notify(string.Empty);
         _notifier.SyncRunCompleted += OnSyncRunCompleted;
@@ -238,29 +244,27 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task RereadAfterSyncAsync(CancellationToken cancellationToken)
     {
-        if (_trip is null || _isBusy || !_trip.HasPendingMetadata)
+        if (_disposed || _trip is null || _isBusy || !_trip.HasPendingMetadata)
         {
             return;
         }
 
-        var reread = await _trips.GetAsync(_trip.Detail.Trip.Id, cancellationToken);
-        if (reread is null)
-        {
-            return;
-        }
-
-        _trip = reread;
-        if (!reread.HasPendingMetadata)
-        {
-            Populate(_trip);
-        }
-
-        Notify(string.Empty);
+        var generation = Interlocked.Increment(ref _rereadGeneration);
+        var tripId = _trip.Detail.Trip.Id;
+        var reread = await ReadPendingTripAsync(tripId, cancellationToken);
+        await InvokeOnUiAsync(() => ApplyReread(generation, reread));
     }
 
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
         _notifier.SyncRunCompleted -= OnSyncRunCompleted;
+        _disposeCancellation.Cancel();
     }
 
     private async Task<bool> RunAsync(string failureKey, Func<Task> action)
@@ -291,9 +295,78 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
         {
             await RereadAfterSyncAsync(CancellationToken.None);
         }
+        catch (OperationCanceledException)
+        {
+        }
         catch (Exception)
         {
         }
+    }
+
+    private async Task<LocalTripRecordModel?> ReadPendingTripAsync(Guid tripId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _disposeCancellation.Token);
+            return await _trips.GetAsync(tripId, linked.Token);
+        }
+        catch (OperationCanceledException) when (_disposed)
+        {
+            return null;
+        }
+        catch (ObjectDisposedException)
+        {
+            return null;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
+    private void ApplyReread(int generation, LocalTripRecordModel? reread)
+    {
+        if (_disposed || reread is null || generation != Volatile.Read(ref _rereadGeneration))
+        {
+            return;
+        }
+
+        _trip = reread;
+        if (!reread.HasPendingMetadata)
+        {
+            Populate(_trip);
+        }
+
+        Notify(string.Empty);
+    }
+
+    private Task InvokeOnUiAsync(Action action)
+    {
+        if (_disposed)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (_uiContext is null || ReferenceEquals(SynchronizationContext.Current, _uiContext))
+        {
+            action();
+            return Task.CompletedTask;
+        }
+
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _uiContext.Post(_ =>
+        {
+            try
+            {
+                action();
+                completion.SetResult();
+            }
+            catch (Exception exception)
+            {
+                completion.SetException(exception);
+            }
+        }, null);
+        return completion.Task;
     }
 
     private void Populate(LocalTripRecordModel trip)

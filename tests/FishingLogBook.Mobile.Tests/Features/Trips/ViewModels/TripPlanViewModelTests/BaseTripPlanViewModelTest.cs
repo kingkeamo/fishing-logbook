@@ -29,17 +29,24 @@ public abstract class BaseTripPlanViewModelTest
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly IInteractionPresenter MockPresenter = Substitute.For<IInteractionPresenter>();
+    protected readonly TimeZoneInfo? Zone;
     protected readonly TripPlanViewModel Sut;
 
     protected BaseTripPlanViewModelTest(TimeZoneInfo? zone = null)
     {
+        Zone = zone;
         MockConnectivity.IsOnline.Returns(true);
         MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(AnglerPreferencesModel.Empty with
         {
             Locations = new FishingLocationPreferencesDto([new FishingLocationPreferenceDto(Guid.NewGuid(), "Lough Corrib", IsDefault: false)])
         });
         MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(true);
-        Sut = new TripPlanViewModel(
+        Sut = CreateSut();
+    }
+
+    protected TripPlanViewModel CreateSut(SynchronizationContext? uiContext = null)
+    {
+        return new TripPlanViewModel(
             MockPlanned,
             MockTrips,
             MockNotifier,
@@ -48,7 +55,8 @@ public abstract class BaseTripPlanViewModelTest
             MockConnectivity,
             new InteractionService(MockPresenter, Text),
             Text,
-            new FixedTimeProvider(Now, zone));
+            new FixedTimeProvider(Now, Zone),
+            uiContext);
     }
 
     protected static LocalTripRecordModel Plan(
