@@ -21,6 +21,9 @@
     ]
   },
   "ios": {
-    "bundleId": "com.fishinglogbook.mobile.demo"
+    "bundleIds": [
+      "com.fishinglogbook.mobile.demo",
+      "com.catchbutdontforget.app"
+    ]
   }
 }

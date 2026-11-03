@@ -69,3 +69,28 @@ jobs:
           dotnet build src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj
           -f net10.0-android -c Release -p:RuntimeIdentifier=android-arm64 -p:AndroidPackageFormats=apk
           "-p:AndroidSdkDirectory=$env:ANDROID_HOME" "-p:JavaSdkDirectory=$env:JAVA_HOME"
+
+  ios:
+    name: Build iOS simulator
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.300'
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Test mobile presentation
+        run: >-
+          dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj
+          -f net10.0 --verbosity normal
+      - name: Install MAUI iOS workload
+        run: dotnet workload install maui-ios --skip-manifest-update
+      - name: Build unsigned iOS simulator
+        run: >-
+          dotnet build src/FishingLogBook.Mobile/FishingLogBook.Mobile.csproj
+          -f net10.0-ios -c Debug
+          -p:RuntimeIdentifier=iossimulator-arm64
+          -p:EnableCodeSigning=false
+          -p:BuildIpa=false

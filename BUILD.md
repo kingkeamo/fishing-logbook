@@ -807,9 +807,10 @@ Native Dev custom scheme (iOS < 17.4 only):
 - logout: `com.fishinglogbook.mobile.demo://signedout`
 
 Android Release / Google Play Internal testing uses application ID
-`com.catchbutdontforget.app` and display name Catch. Debug and emulator installs keep
-`com.fishinglogbook.mobile.demo` so local development is not overwritten. See
-`docs/google-play-internal-testing.md`.
+`com.catchbutdontforget.app` and display name Catch. iOS Release / TestFlight uses the
+same application ID and App Store version `1.0`. Debug and emulator/simulator installs
+keep `com.fishinglogbook.mobile.demo` so local development is not overwritten. See
+`docs/google-play-internal-testing.md` and `docs/ios-testflight-internal-testing.md`.
 
 The private-use scheme is derived from the iOS / Android debug MAUI application ID and
 must be registered exactly by #242. It is acceptable for Dev but can be claimed by another

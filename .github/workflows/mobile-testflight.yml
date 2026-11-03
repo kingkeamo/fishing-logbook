@@ -1,0 +1,206 @@
+name: mobile-testflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_to_testflight:
+        description: Upload to App Store Connect / TestFlight internal testing. Disable to build the signed IPA artifact only.
+        required: true
+        default: true
+        type: boolean
+      application_version:
+        description: CFBundleVersion for artifact-only fallback builds. Published builds always select the next integer from App Store Connect.
+        required: false
+        default: ''
+        type: string
+      application_display_version:
+        description: Optional CFBundleShortVersionString. Leave empty to use 1.0, matching the App Store version.
+        required: false
+        default: ''
+        type: string
+      release_notes:
+        description: Internal note for the workflow log only. Not submitted for App Store review.
+        required: false
+        default: 'Internal testing build.'
+        type: string
+
+run-name: ${{ inputs.publish_to_testflight && 'Publish Catch to TestFlight internal testing' || 'Build Catch signed IPA only' }}
+
+concurrency:
+  group: mobile-testflight
+  cancel-in-progress: false
+
+jobs:
+  artifact-only:
+    name: Build signed iOS IPA only
+    if: inputs.publish_to_testflight == false
+    runs-on: macos-15
+    timeout-minutes: 75
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64 }}
+      IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+    steps:
+      - name: Require the main branch
+        if: github.ref != 'refs/heads/main'
+        run: throw 'TestFlight builds must be dispatched from the main branch.'
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.300'
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install MAUI iOS workload
+        run: dotnet workload install maui-ios --skip-manifest-update
+
+      - name: Build signed iOS IPA
+        id: ipa
+        env:
+          APPLICATION_VERSION: ${{ inputs.application_version }}
+          APPLICATION_DISPLAY_VERSION: ${{ inputs.application_display_version }}
+        run: >-
+          .github/scripts/build-signed-ios-ipa.ps1
+          -ApplicationVersion $env:APPLICATION_VERSION
+          -ApplicationDisplayVersion $env:APPLICATION_DISPLAY_VERSION
+          -OutputPath $env:GITHUB_OUTPUT
+
+      - name: Upload iOS IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: catch-ios-internal-testing
+          path: ${{ steps.ipa.outputs.ipa_path }}
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-internal:
+    name: Build and publish to TestFlight internal testing
+    if: inputs.publish_to_testflight == true
+    runs-on: macos-15
+    timeout-minutes: 90
+    environment: app-store-connect-internal
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64 }}
+      IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+    steps:
+      - name: Require the main branch
+        if: github.ref != 'refs/heads/main'
+        run: throw 'TestFlight builds must be dispatched from the main branch.'
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Confirm App Store Connect API configuration
+        run: |
+          $missing = @()
+          foreach ($name in @('APP_STORE_CONNECT_ISSUER_ID', 'APP_STORE_CONNECT_KEY_ID', 'APP_STORE_CONNECT_PRIVATE_KEY')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              $missing += $name
+            }
+          }
+          if ($missing.Count -gt 0) {
+            throw "Missing required GitHub environment secrets: $($missing -join ', '). See docs/ios-testflight-internal-testing.md."
+          }
+
+      - name: Select the next unused iOS build number
+        id: testflight-version
+        run: node .github/scripts/app-store-connect-release.mjs select-version
+
+      - name: Resolve release metadata
+        env:
+          REQUESTED_DISPLAY_VERSION: ${{ inputs.application_display_version }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          $displayVersion = $env:REQUESTED_DISPLAY_VERSION
+          if ([string]::IsNullOrWhiteSpace($displayVersion)) {
+            $displayVersion = '1.0'
+          }
+          if ($displayVersion -notmatch '^[0-9]+(\.[0-9]+){0,2}$') {
+            throw 'The iOS version string must be one to three period-separated integers, for example 1.0.'
+          }
+          "APPLICATION_DISPLAY_VERSION=$displayVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Output "Internal note: $env:RELEASE_NOTES"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.300'
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install MAUI iOS workload
+        run: dotnet workload install maui-ios --skip-manifest-update
+
+      - name: Build signed iOS IPA
+        id: ipa
+        env:
+          APPLICATION_VERSION: ${{ steps.testflight-version.outputs.application_version }}
+        run: >-
+          .github/scripts/build-signed-ios-ipa.ps1
+          -ApplicationVersion $env:APPLICATION_VERSION
+          -ApplicationDisplayVersion $env:APPLICATION_DISPLAY_VERSION
+          -OutputPath $env:GITHUB_OUTPUT
+
+      - name: Upload iOS IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: catch-ios-internal-testing
+          path: ${{ steps.ipa.outputs.ipa_path }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Confirm the selected build number is still unused
+        env:
+          APPLICATION_VERSION: ${{ steps.testflight-version.outputs.application_version }}
+        run: node .github/scripts/app-store-connect-release.mjs assert-version
+
+      - name: Upload IPA to App Store Connect
+        env:
+          APPLICATION_VERSION: ${{ steps.testflight-version.outputs.application_version }}
+          IPA_PATH: ${{ steps.ipa.outputs.ipa_path }}
+        run: |
+          $keyDirectory = Join-Path $HOME '.appstoreconnect/private_keys'
+          New-Item -ItemType Directory -Force -Path $keyDirectory | Out-Null
+          $keyPath = Join-Path $keyDirectory "AuthKey_$env:APP_STORE_CONNECT_KEY_ID.p8"
+          try {
+            Set-Content -LiteralPath $keyPath -Value $env:APP_STORE_CONNECT_PRIVATE_KEY -NoNewline
+            & xcrun altool --upload-app --type ios --file $env:IPA_PATH --apiKey $env:APP_STORE_CONNECT_KEY_ID --apiIssuer $env:APP_STORE_CONNECT_ISSUER_ID
+            if ($LASTEXITCODE -ne 0) {
+              throw "altool upload failed with exit code $LASTEXITCODE. The IPA was not accepted by App Store Connect."
+            }
+            Write-Output "Uploaded CFBundleVersion $env:APPLICATION_VERSION. Apple has not finished processing and testers cannot install it yet."
+          }
+          finally {
+            if (Test-Path -LiteralPath $keyPath) {
+              Remove-Item -LiteralPath $keyPath -Force
+            }
+          }
+
+      - name: Wait for Apple processing and assign the internal group
+        env:
+          APPLICATION_VERSION: ${{ steps.testflight-version.outputs.application_version }}
+        run: node .github/scripts/app-store-connect-release.mjs wait-and-assign

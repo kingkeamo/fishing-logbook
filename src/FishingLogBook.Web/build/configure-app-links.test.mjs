@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { buildAppLinks, buildHeaders, resolveAndroidApps } from './configure-app-links.mjs';
+import { buildAppLinks, buildHeaders, resolveAndroidApps, resolveIosBundleIds } from './configure-app-links.mjs';
 
 const config = JSON.parse(readFileSync(new URL('./app-links.dev.json', import.meta.url), 'utf8'));
 const debugPackage = 'com.fishinglogbook.mobile.demo';
@@ -47,10 +47,10 @@ describe('dev app link association files', () => {
         assert.equal(result.files.has('.well-known/apple-app-site-association'), false);
     });
 
-    it('keeps the native HTTPS callback paths and iOS development bundle', () => {
+    it('keeps the native HTTPS callback paths and both iOS bundles', () => {
         assert.deepEqual(config.callbackPaths, ['/native/oauth2redirect', '/native/signedout']);
         assert.equal(config.host, 'fishing-logbook-dev.pages.dev');
-        assert.equal(config.ios.bundleId, debugPackage);
+        assert.deepEqual(resolveIosBundleIds(config.ios), [debugPackage, playPackage]);
     });
 
     it('binds Android associations to the debug package and the Play signing certificate', () => {
@@ -72,15 +72,23 @@ describe('dev app link association files', () => {
         assert.equal(statements[0].target.package_name, debugPackage);
     });
 
+    it('accepts a legacy single ios.bundleId', () => {
+        const legacy = structuredClone(config);
+        delete legacy.ios.bundleIds;
+        legacy.ios.bundleId = debugPackage;
+        const association = buildAppLinks(legacy, 'dev', 'ABCDE12345').files.get('.well-known/apple-app-site-association');
+        assert.deepEqual(association.applinks.details[0].appIDs, [`ABCDE12345.${debugPackage}`]);
+    });
+
     it('limits the Apple association to the native callback paths with web credentials', () => {
         const association = buildAppLinks(config, 'dev', 'ABCDE12345').files.get('.well-known/apple-app-site-association');
-        const appId = `ABCDE12345.${debugPackage}`;
-        assert.deepEqual(association.applinks.details[0].appIDs, [appId]);
+        const appIds = [`ABCDE12345.${debugPackage}`, `ABCDE12345.${playPackage}`];
+        assert.deepEqual(association.applinks.details[0].appIDs, appIds);
         assert.deepEqual(association.applinks.details[0].components, [
             { '/': '/native/oauth2redirect' },
             { '/': '/native/signedout' },
         ]);
-        assert.deepEqual(association.webcredentials.apps, [appId]);
+        assert.deepEqual(association.webcredentials.apps, appIds);
     });
 
     it('serves generated association files as JSON and fallback pages without caching or referrers', () => {
