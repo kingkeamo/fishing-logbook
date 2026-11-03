@@ -22,7 +22,9 @@ same workflow can still be run in artifact-only mode.
 | Track | Internal testing |
 
 Debug and emulator installs keep `com.fishinglogbook.mobile.demo` so a Play build does
-not overwrite local development. iOS still uses the demo bundle ID and custom scheme.
+not overwrite local development. iOS Release / TestFlight uses
+`com.catchbutdontforget.app`; Debug keeps the demo bundle ID. See
+`docs/ios-testflight-internal-testing.md`.
 
 The Play listing name is set only in Google Play Console. The repository sets the
 on-device name through `ApplicationTitle`.

@@ -27,6 +27,19 @@ const fallbackPage = `<!doctype html>
 </html>
 `;
 
+export function resolveIosBundleIds(ios) {
+    const bundleIds = [];
+    if (Array.isArray(ios?.bundleIds)) {
+        bundleIds.push(...ios.bundleIds);
+    }
+
+    if (ios?.bundleId && !bundleIds.includes(ios.bundleId)) {
+        bundleIds.push(ios.bundleId);
+    }
+
+    return bundleIds;
+}
+
 export function resolveAndroidApps(android) {
     if (Array.isArray(android?.apps)) {
         return android.apps;
@@ -84,7 +97,10 @@ export function buildAppLinks(config, environment, appleTeamId) {
         errors.push('callbackPaths must be /native/<name> paths');
     }
     const androidStatements = androidAssociationStatements(resolveAndroidApps(config.android), errors);
-    if (!packagePattern.test(config.ios?.bundleId ?? '')) errors.push('ios.bundleId is invalid');
+    const iosBundleIds = resolveIosBundleIds(config.ios);
+    if (iosBundleIds.length === 0 || iosBundleIds.some(bundleId => !packagePattern.test(bundleId))) {
+        errors.push('ios.bundleId is invalid');
+    }
 
     const teamId = appleTeamId?.trim();
     if (teamId && !teamIdPattern.test(teamId)) {
@@ -98,15 +114,15 @@ export function buildAppLinks(config, environment, appleTeamId) {
     files.set('.well-known/assetlinks.json', androidStatements);
 
     if (teamId) {
-        const appId = `${teamId}.${config.ios.bundleId}`;
+        const appIds = iosBundleIds.map(bundleId => `${teamId}.${bundleId}`);
         files.set('.well-known/apple-app-site-association', {
             applinks: {
                 details: [{
-                    appIDs: [appId],
+                    appIDs: appIds,
                     components: config.callbackPaths.map(path => ({ '/': path })),
                 }],
             },
-            webcredentials: { apps: [appId] },
+            webcredentials: { apps: appIds },
         });
     }
 

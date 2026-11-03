@@ -80,6 +80,12 @@ test-images/
 *.keystore
 *.keystore.b64
 
+# Apple signing material — never commit certificates, profiles or API keys
+*.p12
+*.cer
+*.mobileprovision
+AuthKey_*.p8
+
 # OS files
 .DS_Store
 Thumbs.db
