@@ -5,6 +5,34 @@
  xmlns:profile="clr-namespace:FishingLogBook.Mobile.Features.Profile.Views"
  xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls" x:Class="FishingLogBook.Mobile.Features.Trips.Pages.TripsPage"
  x:DataType="vm:TripListViewModel" Title="{Binding Text[Trips]}" Shell.NavBarIsVisible="False" SafeAreaEdges="None">
+ <ContentPage.Resources>
+  <DataTemplate x:Key="TripListItemTemplate" x:DataType="models:TripListItemModel">
+   <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}">
+    <VerticalStackLayout Spacing="8">
+     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <VerticalStackLayout Spacing="2">
+       <Label Text="{Binding DateLabel}" Style="{StaticResource Subheading}" FontSize="16" AutomationId="TripListDate" />
+       <Label Text="{Binding Title}" IsVisible="{Binding HasTitle}" Style="{StaticResource Subheading}" FontSize="15" AutomationId="TripListTitleLabel" />
+       <Label Text="{Binding Place}" IsVisible="{Binding HasPlace}" Style="{StaticResource SecondaryText}" FontSize="13" />
+      </VerticalStackLayout>
+      <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="End">
+       <Label Text="{Binding StatusText}" IsVisible="{Binding ShowStatus}" Style="{StaticResource LinkText}" FontSize="13" FontAttributes="Bold" AutomationId="TripListActive" />
+       <Label Text="{Binding PlannedStatusText}" IsVisible="{Binding HasPlannedLifecycle}" Style="{StaticResource LinkText}" FontSize="13" FontAttributes="Bold" AutomationId="TripListPlannedStatus" />
+       <Label Text="{Binding SharedText}" IsVisible="{Binding IsShared}" Style="{StaticResource SecondaryText}" FontSize="13" />
+       <Label Text="{Binding PendingText}" IsVisible="{Binding IsPending}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="TripListPending" />
+      </VerticalStackLayout>
+     </Grid>
+     <FlexLayout Wrap="Wrap" JustifyContent="Start" IsVisible="{Binding ShowStats}">
+      <Label Text="{Binding CatchesText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
+      <Label Text="{Binding PhotographsText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
+      <Label Text="{Binding NotesText}" Style="{StaticResource SecondaryText}" FontSize="13" />
+     </FlexLayout>
+     <Button Text="{Binding ActionText}" Style="{StaticResource SecondaryButton}" CommandParameter="{Binding Id}" Clicked="OnOpenTrip"
+             MinimumHeightRequest="48" AutomationId="TripOpen" />
+    </VerticalStackLayout>
+   </Border>
+  </DataTemplate>
+ </ContentPage.Resources>
  <ContentPage.Behaviors>
   <toolkit:StatusBarBehavior StatusBarColor="#102A43" StatusBarStyle="LightContent" />
  </ContentPage.Behaviors>
@@ -64,33 +92,19 @@
      <Border Style="{StaticResource Card}" IsVisible="{Binding IsEmpty}" Padding="16" Shadow="{x:Null}">
       <Label Text="{Binding Text[TripListEmpty]}" Style="{StaticResource Subheading}" HorizontalTextAlignment="Center" AutomationId="TripListEmpty" />
      </Border>
-     <VerticalStackLayout BindableLayout.ItemsSource="{Binding Trips}" Spacing="10" AutomationId="TripList">
-      <BindableLayout.ItemTemplate><DataTemplate x:DataType="models:TripListItemModel">
-       <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}">
-        <VerticalStackLayout Spacing="8">
-         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-          <VerticalStackLayout Spacing="2">
-           <Label Text="{Binding DateLabel}" Style="{StaticResource Subheading}" FontSize="16" AutomationId="TripListDate" />
-           <Label Text="{Binding Title}" IsVisible="{Binding HasTitle}" Style="{StaticResource Subheading}" FontSize="15" AutomationId="TripListTitleLabel" />
-           <Label Text="{Binding Place}" IsVisible="{Binding HasPlace}" Style="{StaticResource SecondaryText}" FontSize="13" />
-          </VerticalStackLayout>
-          <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="End">
-           <Label Text="{Binding StatusText}" IsVisible="{Binding IsActive}" Style="{StaticResource LinkText}" FontSize="13" FontAttributes="Bold" AutomationId="TripListActive" />
-           <Label Text="{Binding PlannedStatusText}" IsVisible="{Binding HasPlannedLifecycle}" Style="{StaticResource LinkText}" FontSize="13" FontAttributes="Bold" AutomationId="TripListPlannedStatus" />
-           <Label Text="{Binding SharedText}" IsVisible="{Binding IsShared}" Style="{StaticResource SecondaryText}" FontSize="13" />
-           <Label Text="{Binding PendingText}" IsVisible="{Binding IsPending}" Style="{StaticResource SecondaryText}" FontSize="12" AutomationId="TripListPending" />
-          </VerticalStackLayout>
-         </Grid>
-         <FlexLayout Wrap="Wrap" JustifyContent="Start" IsVisible="{Binding ShowStats}">
-          <Label Text="{Binding CatchesText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
-          <Label Text="{Binding PhotographsText}" Style="{StaticResource SecondaryText}" FontSize="13" Margin="0,0,16,0" />
-          <Label Text="{Binding NotesText}" Style="{StaticResource SecondaryText}" FontSize="13" />
-         </FlexLayout>
-         <Button Text="{Binding ActionText}" Style="{StaticResource SecondaryButton}" CommandParameter="{Binding Id}" Clicked="OnOpenTrip"
-                 MinimumHeightRequest="48" AutomationId="TripOpen" />
-        </VerticalStackLayout>
-       </Border>
-      </DataTemplate></BindableLayout.ItemTemplate>
+     <VerticalStackLayout Spacing="10" AutomationId="TripList">
+      <VerticalStackLayout Spacing="10" IsVisible="{Binding HasActiveTrips}" AutomationId="TripListActiveSection">
+       <Label Text="{Binding Text[TripListActiveSection]}" Style="{StaticResource SectionTitle}" />
+       <VerticalStackLayout BindableLayout.ItemsSource="{Binding ActiveTrips}" BindableLayout.ItemTemplate="{StaticResource TripListItemTemplate}" Spacing="10" />
+      </VerticalStackLayout>
+      <VerticalStackLayout Spacing="10" IsVisible="{Binding HasUpcomingTrips}" AutomationId="TripListUpcomingSection">
+       <Label Text="{Binding Text[TripListUpcomingSection]}" Style="{StaticResource SectionTitle}" />
+       <VerticalStackLayout BindableLayout.ItemsSource="{Binding UpcomingTrips}" BindableLayout.ItemTemplate="{StaticResource TripListItemTemplate}" Spacing="10" />
+      </VerticalStackLayout>
+      <VerticalStackLayout Spacing="10" IsVisible="{Binding HasPastTrips}" AutomationId="TripListPastSection">
+       <Label Text="{Binding Text[TripListPastSection]}" Style="{StaticResource SectionTitle}" />
+       <VerticalStackLayout BindableLayout.ItemsSource="{Binding PastTrips}" BindableLayout.ItemTemplate="{StaticResource TripListItemTemplate}" Spacing="10" />
+      </VerticalStackLayout>
      </VerticalStackLayout>
     </VerticalStackLayout>
    </ScrollView>

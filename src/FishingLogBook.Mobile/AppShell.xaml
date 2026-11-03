@@ -13,16 +13,20 @@
  <Shell.FlyoutHeader>
   <VerticalStackLayout Padding="20,24,20,16" Spacing="16">
    <Image Source="brand_horizontal.png" HeightRequest="48" Aspect="AspectFit" HorizontalOptions="Start" SemanticProperties.Description="{Binding [Brand]}" />
-   <Grid ColumnDefinitions="48,*" ColumnSpacing="12" SemanticProperties.Description="{Binding [ViewProfile]}">
+   <Grid x:Name="AccountHeader" ColumnDefinitions="48,*" ColumnSpacing="12" MinimumHeightRequest="48"
+         SemanticProperties.Description="{Binding [ViewProfile]}" AutomationId="FlyoutAccount">
     <Border WidthRequest="48" HeightRequest="48" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}">
      <Border.StrokeShape><Ellipse /></Border.StrokeShape>
      <Label x:Name="ProfileInitial" TextColor="White" FontAttributes="Bold" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center" FontAutoScalingEnabled="False" />
     </Border>
     <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
      <Label x:Name="ProfileName" Style="{StaticResource Subheading}" LineBreakMode="TailTruncation" />
-     <Label Text="{Binding [Account]}" Style="{StaticResource LinkText}" />
+     <Label x:Name="ProfileEmail" Style="{StaticResource SecondaryText}" LineBreakMode="TailTruncation" IsVisible="False" />
      <Label x:Name="ConnectionStatus" IsVisible="False" Style="{StaticResource SecondaryText}" TextColor="{StaticResource NotificationWarning}" />
     </VerticalStackLayout>
+    <Grid.GestureRecognizers>
+     <TapGestureRecognizer Tapped="OnOpenProfile" />
+    </Grid.GestureRecognizers>
    </Grid>
   </VerticalStackLayout>
  </Shell.FlyoutHeader>

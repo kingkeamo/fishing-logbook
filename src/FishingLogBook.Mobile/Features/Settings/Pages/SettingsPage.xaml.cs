@@ -6,17 +6,14 @@ namespace FishingLogBook.Mobile.Features.Settings.Pages;
 public partial class SettingsPage : ContentPage
 {
     private readonly PreferenceService _preferences;
-    private readonly LocalDataService _localData;
     private readonly IAuthenticationService _authenticationService;
     private bool _refreshing;
 
     public SettingsPage(
         PreferenceService preferences,
-        LocalDataService localData,
         IAuthenticationService authenticationService)
     {
         _preferences = preferences;
-        _localData = localData;
         _authenticationService = authenticationService;
         InitializeComponent();
         BindingContext = preferences;
@@ -66,11 +63,6 @@ public partial class SettingsPage : ContentPage
             ? AppearanceEnum.Light
             : ReferenceEquals(sender, ThemeDark) ? AppearanceEnum.Dark : AppearanceEnum.System;
         _preferences.SetAppearance(appearance);
-    }
-
-    private async void OnClearLocalData(object? sender, EventArgs args)
-    {
-        await _localData.ClearAsync();
     }
 
     private async void OnSignOut(object? sender, EventArgs args)

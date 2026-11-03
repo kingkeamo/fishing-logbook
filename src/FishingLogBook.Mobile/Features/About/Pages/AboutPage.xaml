@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.About.ViewModels"
+             x:Class="FishingLogBook.Mobile.Features.About.Pages.AboutPage"
+             x:DataType="vm:AboutViewModel"
+             Title="{Binding Text[AboutPageTitle]}"
+             SafeAreaEdges="Container">
+  <ScrollView>
+    <VerticalStackLayout Padding="16,12,16,24" Spacing="12" MaximumWidthRequest="720">
+      <Label Text="{Binding Text[AboutPageTitle]}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level1" />
+      <Label Text="{Binding Text[AboutIntro]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
+
+      <Border Style="{StaticResource Card}" Padding="16,12">
+        <VerticalStackLayout Spacing="8">
+          <Label Text="{Binding Text[AboutApp]}" Style="{StaticResource SectionTitle}" />
+          <Label Text="{Binding Platform}" Style="{StaticResource BodyText}" AutomationId="AboutPlatform" />
+          <Label Style="{StaticResource SecondaryText}" AutomationId="AboutVersion">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutVersion]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding AppVersion}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+          <Label Style="{StaticResource SecondaryText}" AutomationId="AboutBuild">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutBuildNumber]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding AppBuild}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+          <Label Style="{StaticResource SecondaryText}" AutomationId="AboutCommit">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutCommit]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding AppCommit}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+          <Label Style="{StaticResource SecondaryText}" AutomationId="AboutEnvironment">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutEnvironment]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding EnvironmentName}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+        </VerticalStackLayout>
+      </Border>
+
+      <Border Style="{StaticResource Card}" Padding="16,12">
+        <VerticalStackLayout Spacing="8">
+          <Label Text="{Binding Text[AboutServices]}" Style="{StaticResource SectionTitle}" />
+          <Label Style="{StaticResource BodyText}" AutomationId="AboutApiStatus">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutApi]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding ApiStatusText}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+          <Label Style="{StaticResource SecondaryText}" AutomationId="AboutApiBuild">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutApiVersion]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding ApiVersion}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+          <Label Style="{StaticResource SecondaryText}" AutomationId="AboutApiEnvironment">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutApiEnvironment]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding ApiEnvironment}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+          <Label Style="{StaticResource BodyText}" AutomationId="AboutDatabaseStatus">
+            <Label.FormattedText>
+              <FormattedString>
+                <Span Text="{Binding Text[AboutDatabase]}" />
+                <Span Text=" · " />
+                <Span Text="{Binding DatabaseStatusText}" />
+              </FormattedString>
+            </Label.FormattedText>
+          </Label>
+        </VerticalStackLayout>
+      </Border>
+
+      <ActivityIndicator IsRunning="{Binding IsChecking}" IsVisible="{Binding IsChecking}" HorizontalOptions="Center" />
+      <Button Text="{Binding Text[AboutRefresh]}" Style="{StaticResource SecondaryButton}"
+              IsEnabled="{Binding CanRefresh}" Clicked="OnRefresh" MinimumHeightRequest="48" AutomationId="AboutRefresh" />
+      <Button Text="{Binding Text[AboutCopyDiagnostics]}" Clicked="OnCopy" MinimumHeightRequest="48" AutomationId="AboutCopyDiagnostics" />
+      <Label Text="{Binding Text[AboutCopied]}" IsVisible="{Binding Copied}" Style="{StaticResource SecondaryText}" AutomationId="AboutCopied" />
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

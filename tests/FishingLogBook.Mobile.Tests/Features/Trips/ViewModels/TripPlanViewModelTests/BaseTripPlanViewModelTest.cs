@@ -1,4 +1,5 @@
 using System.Globalization;
+using FishingLogBook.Mobile.Common.Offline.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
@@ -23,6 +24,7 @@ public abstract class BaseTripPlanViewModelTest
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
     protected readonly IPlannedTripService MockPlanned = Substitute.For<IPlannedTripService>();
     protected readonly ITripService MockTrips = Substitute.For<ITripService>();
+    protected readonly IOutboxSyncCoordinator MockSync = Substitute.For<IOutboxSyncCoordinator>();
     protected readonly IAnglerPreferencesService MockPreferences = Substitute.For<IAnglerPreferencesService>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
@@ -40,6 +42,7 @@ public abstract class BaseTripPlanViewModelTest
         Sut = new TripPlanViewModel(
             MockPlanned,
             MockTrips,
+            MockSync,
             MockPreferences,
             MockSession,
             MockConnectivity,

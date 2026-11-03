@@ -62,8 +62,13 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
         await _navigation.GoBackAsync();
     }
 
-    private async void OnSaveSucceeded(object? sender, EventArgs args)
+    private async void OnSave(object? sender, EventArgs args)
     {
+        if (!await _viewModel.SaveAsync(CancellationToken.None))
+        {
+            return;
+        }
+
         if (_tripId is not null)
         {
             await _navigation.GoBackAsync();

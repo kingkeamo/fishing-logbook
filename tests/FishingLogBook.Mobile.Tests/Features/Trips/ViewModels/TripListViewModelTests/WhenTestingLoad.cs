@@ -75,6 +75,56 @@ public sealed class WhenTestingLoad : BaseTripListViewModelTest
     }
 
     [Fact]
+    public async Task ItShouldKeepFinishedTripsOutOfTheActiveLabel()
+    {
+        // Arrange
+        ServeHistory(trips: Summary(Guid.NewGuid(), TripConstants.Completed, title: "Imported"));
+
+        // Act
+        await Sut.LoadAsync(CancellationToken.None);
+
+        // Assert
+        var item = Sut.Trips.Single();
+        item.IsActive.Should().BeFalse();
+        item.IsFinished.Should().BeTrue();
+        item.ShowStatus.Should().BeTrue();
+        item.StatusText.Should().Be(Text["TripStatusFinished"]);
+        item.ActionText.Should().Be(Text["TripViewTrip"]);
+        Sut.HasPastTrips.Should().BeTrue();
+        Sut.HasActiveTrips.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldOrderActiveThenUpcomingSoonestThenPastNewest()
+    {
+        // Arrange
+        var pastNewer = Guid.NewGuid();
+        var pastOlder = Guid.NewGuid();
+        var upcomingSoon = Guid.NewGuid();
+        var upcomingLater = Guid.NewGuid();
+        var active = Guid.NewGuid();
+        var later = Now.AddMonths(8);
+        var soon = Now.AddDays(3);
+        ServeHistory(trips:
+        [
+            Summary(pastOlder, TripConstants.Completed, startedOn: Now.AddMonths(-2)),
+            Summary(upcomingLater, TripConstants.Planned, startedOn: later) with { PlannedStartOn = later },
+            Summary(pastNewer, TripConstants.Completed, startedOn: Now.AddDays(-1)),
+            Summary(upcomingSoon, TripConstants.Planned, startedOn: soon) with { PlannedStartOn = soon },
+            Summary(active, TripConstants.Active, startedOn: Now.AddHours(-2))
+        ]);
+
+        // Act
+        await Sut.LoadAsync(CancellationToken.None);
+
+        // Assert
+        Sut.ActiveTrips.Select(trip => trip.Id).Should().Equal(active);
+        Sut.UpcomingTrips.Select(trip => trip.Id).Should().Equal(upcomingSoon, upcomingLater);
+        Sut.PastTrips.Select(trip => trip.Id).Should().Equal(pastNewer, pastOlder);
+        Sut.Trips.Select(trip => trip.Id).Should().Equal(active, upcomingSoon, upcomingLater, pastNewer, pastOlder);
+    }
+
+    [Fact]
     public async Task ItShouldDescribeEachTripLikeTheWebList()
     {
         // Arrange

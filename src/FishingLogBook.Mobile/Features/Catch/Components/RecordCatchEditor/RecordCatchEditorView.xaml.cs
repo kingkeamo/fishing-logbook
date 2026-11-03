@@ -18,8 +18,6 @@ public partial class RecordCatchEditorView : ContentView
         InitializeComponent();
     }
 
-    public event EventHandler? SaveSucceeded;
-
     private CatchEditViewModel? Editor => BindingContext as CatchEditViewModel;
 
     private async void OnMethodChip(object? sender, EventArgs args)
@@ -84,19 +82,6 @@ public partial class RecordCatchEditorView : ContentView
     private async void OnEditLength(object? sender, EventArgs args)
     {
         await EditMeasurementAsync(Editor?.CreateLengthEditor(), (applied, editor) => Editor?.CompleteLengthEdit(applied, editor));
-    }
-
-    private async void OnSave(object? sender, EventArgs args)
-    {
-        if (Editor is null)
-        {
-            return;
-        }
-
-        if (await Editor.SaveAsync(CancellationToken.None))
-        {
-            SaveSucceeded?.Invoke(this, EventArgs.Empty);
-        }
     }
 
     private async Task EditMeasurementAsync(

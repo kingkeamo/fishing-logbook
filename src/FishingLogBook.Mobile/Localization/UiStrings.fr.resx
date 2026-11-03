@@ -36,7 +36,32 @@
   <data name="Import" xml:space="preserve"><value>Importer</value></data>
   <data name="Settings" xml:space="preserve"><value>Réglages</value></data>
   <data name="About" xml:space="preserve"><value>À propos de Fishing Logbook</value></data>
-  <data name="AboutBody" xml:space="preserve"><value>Catch, but don’t forget. Un aperçu natif avec des prises fictives. La saisie, les comptes et la synchronisation ne sont pas encore disponibles.</value></data>
+  <data name="AboutBody" xml:space="preserve"><value>Version installée et état des services utilisés par cet appareil.</value></data>
+  <data name="AboutPageTitle" xml:space="preserve"><value>À propos et état du système</value></data>
+  <data name="AboutIntro" xml:space="preserve"><value>Version installée et état des services utilisés par cet appareil.</value></data>
+  <data name="AboutApp" xml:space="preserve"><value>Cette application</value></data>
+  <data name="AboutServices" xml:space="preserve"><value>Services</value></data>
+  <data name="AboutPlatform" xml:space="preserve"><value>Plateforme</value></data>
+  <data name="AboutVersion" xml:space="preserve"><value>Version</value></data>
+  <data name="AboutBuildNumber" xml:space="preserve"><value>Build</value></data>
+  <data name="AboutCommit" xml:space="preserve"><value>Commit</value></data>
+  <data name="AboutEnvironment" xml:space="preserve"><value>Environnement</value></data>
+  <data name="AboutApi" xml:space="preserve"><value>API</value></data>
+  <data name="AboutApiVersion" xml:space="preserve"><value>Version de l’API</value></data>
+  <data name="AboutApiEnvironment" xml:space="preserve"><value>Environnement de l’API</value></data>
+  <data name="AboutDatabase" xml:space="preserve"><value>Base de données</value></data>
+  <data name="AboutRefresh" xml:space="preserve"><value>Actualiser</value></data>
+  <data name="AboutCopyDiagnostics" xml:space="preserve"><value>Copier le diagnostic</value></data>
+  <data name="AboutCopied" xml:space="preserve"><value>Copié dans le presse-papiers.</value></data>
+  <data name="AboutChecking" xml:space="preserve"><value>Vérification…</value></data>
+  <data name="AboutOnline" xml:space="preserve"><value>En ligne</value></data>
+  <data name="AboutDegraded" xml:space="preserve"><value>Dégradé</value></data>
+  <data name="AboutOffline" xml:space="preserve"><value>Hors ligne</value></data>
+  <data name="AboutUnreachable" xml:space="preserve"><value>Vérification impossible</value></data>
+  <data name="AboutDeviceOffline" xml:space="preserve"><value>Cet appareil est hors ligne</value></data>
+  <data name="AboutUnavailable" xml:space="preserve"><value>Indisponible</value></data>
+  <data name="AboutEnvironmentLocal" xml:space="preserve"><value>Local</value></data>
+  <data name="AboutEnvironmentDevelopment" xml:space="preserve"><value>Développement</value></data>
   <data name="Showcase" xml:space="preserve"><value>Galerie UX · développement</value></data>
   <data name="ShowcaseBody" xml:space="preserve"><value>Aperçu de développement. Ces actions simulent des retours sans modifier vos prises.</value></data>
   <data name="Journal" xml:space="preserve"><value>Vos moments au bord de l’eau</value></data>
@@ -400,7 +425,10 @@
   <data name="CatchLocationTimedOut" xml:space="preserve"><value>Aucune position obtenue à temps. Vérifiez que la localisation est activée puis réessayez.</value></data>
   <data name="CatchUpdateLocation" xml:space="preserve"><value>Actualiser le lieu</value></data>
   <data name="TripListTitle" xml:space="preserve"><value>Vos sorties</value></data>
-  <data name="TripListSubtitle" xml:space="preserve"><value>Toutes vos sorties, la plus récente en premier.</value></data>
+  <data name="TripListSubtitle" xml:space="preserve"><value>Sorties en cours, puis à venir, puis passées.</value></data>
+  <data name="TripListActiveSection" xml:space="preserve"><value>En cours</value></data>
+  <data name="TripListUpcomingSection" xml:space="preserve"><value>À venir</value></data>
+  <data name="TripListPastSection" xml:space="preserve"><value>Passées</value></data>
   <data name="TripListEmpty" xml:space="preserve"><value>Vous n&apos;avez pas encore commencé de sortie.</value></data>
   <data name="TripListLoadFailed" xml:space="preserve"><value>Vos sorties n&apos;ont pas pu être chargées.</value></data>
   <data name="TripViewTrip" xml:space="preserve"><value>Voir la sortie</value></data>
@@ -530,6 +558,7 @@
   <data name="TripPlanReadOnly" xml:space="preserve"><value>Seul l'organisateur peut modifier cette sortie.</value></data>
   <data name="TripPlanCancelledNotice" xml:space="preserve"><value>Cette sortie a été annulée.</value></data>
   <data name="TripPlanOpen" xml:space="preserve"><value>Voir la sortie</value></data>
+  <data name="TripPlanEdit" xml:space="preserve"><value>Modifier le plan</value></data>
   <data name="TripStartPlannedTitle" xml:space="preserve"><value>Démarrer une sortie planifiée ?</value></data>
   <data name="TripStartPlannedMessage" xml:space="preserve"><value>Ces sorties sont prévues pour maintenant. Choisissez-en une ou démarrez une nouvelle sortie.</value></data>
   <data name="TripStartThisTrip" xml:space="preserve"><value>Démarrer cette sortie</value></data>

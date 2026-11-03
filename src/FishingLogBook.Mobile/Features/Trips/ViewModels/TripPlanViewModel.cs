@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using FishingLogBook.Mobile.Common.Offline.Coordinators;
+using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
@@ -19,6 +21,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
 {
     private readonly IPlannedTripService _planned;
     private readonly ITripService _trips;
+    private readonly IOutboxSyncCoordinator _sync;
     private readonly IAnglerPreferencesService _preferences;
     private readonly IAccountSessionCoordinator _session;
     private readonly IConnectivityService _connectivity;
@@ -38,6 +41,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
     public TripPlanViewModel(
         IPlannedTripService planned,
         ITripService trips,
+        IOutboxSyncCoordinator sync,
         IAnglerPreferencesService preferences,
         IAccountSessionCoordinator session,
         IConnectivityService connectivity,
@@ -47,6 +51,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
     {
         _planned = planned;
         _trips = trips;
+        _sync = sync;
         _preferences = preferences;
         _session = session;
         _connectivity = connectivity;
@@ -87,7 +92,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
 
     public bool CanCancelTrip => _trip is { IsPlanned: true, CanManage: true } && !_isBusy;
 
-    public bool CanInvite => CanCancelTrip && !_trip!.HasPendingMetadata && _connectivity.IsOnline;
+    public bool CanInvite => CanCancelTrip && _connectivity.IsOnline && _trip is { SyncedRevision: > 0 };
 
     public bool ShowInviteHint => CanCancelTrip && !CanInvite;
 
@@ -208,6 +213,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
             _trip = _trip is null
                 ? await _planned.PlanAsync(_editTitle, _editPlace, PlannedStartOn, cancellationToken)
                 : await _planned.UpdatePlanAsync(_trip, _editTitle, _editPlace, PlannedStartOn, cancellationToken);
+            await RefreshAuthoritativeAsync(cancellationToken);
         });
     }
 
@@ -248,6 +254,24 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
             _isBusy = false;
             Notify(string.Empty);
         }
+    }
+
+    private async Task RefreshAuthoritativeAsync(CancellationToken cancellationToken)
+    {
+        if (_trip is null || !_connectivity.IsOnline)
+        {
+            return;
+        }
+
+        await _sync.RunAsync(OutboxSyncTriggerEnum.WorkEnqueued, cancellationToken);
+        var reread = await _trips.GetAsync(_trip.Detail.Trip.Id, cancellationToken);
+        if (reread is null)
+        {
+            return;
+        }
+
+        _trip = reread;
+        Populate(_trip);
     }
 
     private void Populate(LocalTripRecordModel trip)

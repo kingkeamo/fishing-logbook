@@ -56,6 +56,21 @@ public sealed class WhenTestingPlanned : BaseTripListViewModelTest
     }
 
     [Fact]
+    public async Task ItShouldOfferViewPlanToAGuestOnAPlannedTrip()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        ServeHistory(trips: Summary(id, TripConstants.Planned) with { Role = TripParticipantConstants.Participant });
+
+        // Act
+        await Sut.LoadAsync(CancellationToken.None);
+
+        // Assert
+        Sut.Trips.Single().ActionText.Should().Be("View plan");
+        Sut.RouteFor(id).Should().Be(MobileRouteEnum.TripPlan);
+    }
+
+    [Fact]
     public async Task ItShouldShowAPlannedTripByItsPlannedDateWithoutStats()
     {
         // Arrange
@@ -72,7 +87,7 @@ public sealed class WhenTestingPlanned : BaseTripListViewModelTest
         item.ShowStats.Should().BeFalse();
         item.IsActive.Should().BeFalse();
         item.PlannedStatusText.Should().Be("Planned");
-        item.ActionText.Should().Be("View plan");
+        item.ActionText.Should().Be("Edit plan");
         item.DateLabel.Should().Be(plannedStart.ToString("d MMM yyyy", Text.Culture));
         Sut.RouteFor(id).Should().Be(MobileRouteEnum.TripPlan);
     }

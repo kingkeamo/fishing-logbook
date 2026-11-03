@@ -29,6 +29,8 @@ public sealed class WhenTestingLoad : BaseHeaderProfileViewModelTest
 
         // Assert
         Sut.DisplayName.Should().Be("Eamonn");
+        Sut.SecondaryEmail.Should().Be("eamonn@example.com");
+        Sut.HasSecondaryEmail.Should().BeTrue();
         Sut.Initial.Should().Be("E");
         await MockProfiles.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
@@ -45,6 +47,7 @@ public sealed class WhenTestingLoad : BaseHeaderProfileViewModelTest
 
         // Assert
         Sut.DisplayName.Should().Be("eamonn@example.com");
+        Sut.HasSecondaryEmail.Should().BeFalse();
         Sut.Initial.Should().Be("E");
         await MockProfiles.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }

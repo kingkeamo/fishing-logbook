@@ -1,17 +1,20 @@
+using FishingLogBook.Mobile.Features.About.Pages;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Import.Pages;
-using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.Profile.Pages;
+using FishingLogBook.Mobile.Features.Profile.ViewModels;
 using FishingLogBook.Mobile.Features.Settings.Pages;
-using FishingLogBook.Mobile.Features.Showcase.Pages;
 using FishingLogBook.Mobile.Features.Trips.Pages;
-using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Native.Pages;
 using FishingLogBook.Mobile.Navigation;
+#if DEBUG
+using FishingLogBook.Mobile.Features.Measurements.Pages;
+using FishingLogBook.Mobile.Features.Showcase.Pages;
+#endif
 
 namespace FishingLogBook.Mobile;
 
@@ -19,6 +22,8 @@ public partial class AppShell : Shell
 {
     private readonly IAuthenticationService _authenticationService;
     private readonly ISessionLifecycleCoordinator _sessionLifecycle;
+    private readonly HeaderProfileViewModel _profile;
+    private readonly NavigationService _navigation;
     private readonly UiTextService _text;
     private readonly MenuItem _retryConnection;
 
@@ -28,20 +33,29 @@ public partial class AppShell : Shell
         ImportPage import,
         SettingsPage settings,
         UiTextService text,
-        InteractionService interactions,
         NavigationService navigation,
         IAuthenticationService authenticationService,
-        ISessionLifecycleCoordinator sessionLifecycle)
+        ISessionLifecycleCoordinator sessionLifecycle,
+        HeaderProfileViewModel profile)
     {
         InitializeComponent();
         BindingContext = text;
         _authenticationService = authenticationService;
         _sessionLifecycle = sessionLifecycle;
+        _profile = profile;
+        _navigation = navigation;
         _text = text;
         _authenticationService.SessionChanged += OnSessionChanged;
         _sessionLifecycle.StateChanged += OnLifecycleStateChanged;
+        _profile.PropertyChanged += (_, _) => UpdateProfile();
         UpdateProfile();
-        var primary = new FlyoutItem { Route = "main", FlyoutDisplayOptions = FlyoutDisplayOptions.AsMultipleItems };
+        _ = _profile.LoadAsync(CancellationToken.None);
+        var primary = new FlyoutItem
+        {
+            Route = "main",
+            FlyoutDisplayOptions = FlyoutDisplayOptions.AsMultipleItems,
+            FlyoutItemIsVisible = false
+        };
         foreach (var route in RouteConstants.Primary)
         {
             var key = route.ToString();
@@ -58,15 +72,12 @@ public partial class AppShell : Shell
             tab.Items.Add(new ShellContent { Route = key.ToLowerInvariant() + "-root", Content = page });
             primary.Items.Add(tab);
         }
+
         Items.Add(primary);
-        var profile = new MenuItem { IconImageSource = "tab_settings.png" };
-        profile.SetBinding(MenuItem.TextProperty, new Binding("[Profile]", source: text));
-        profile.Clicked += async (_, _) =>
-        {
-            FlyoutIsPresented = false;
-            await navigation.NavigateAsync(MobileRouteEnum.Profile);
-        };
-        Items.Add(profile);
+        var profileItem = new MenuItem { IconImageSource = "tab_settings.png" };
+        profileItem.SetBinding(MenuItem.TextProperty, new Binding("[Profile]", source: text));
+        profileItem.Clicked += async (_, _) => await OpenProfileAsync();
+        Items.Add(profileItem);
         _retryConnection = new MenuItem();
         _retryConnection.SetBinding(MenuItem.TextProperty, new Binding("[RetryConnection]", source: text));
         _retryConnection.Clicked += async (_, _) =>
@@ -79,9 +90,10 @@ public partial class AppShell : Shell
         about.Clicked += async (_, _) =>
         {
             FlyoutIsPresented = false;
-            await interactions.ShowModalAsync(text["About"], text["AboutBody"]);
+            await navigation.NavigateAsync(MobileRouteEnum.About);
         };
         Items.Add(about);
+#if DEBUG
         var showcase = new MenuItem { IconImageSource = "icon_flask.png" };
         showcase.SetBinding(MenuItem.TextProperty, new Binding("[Showcase]", source: text));
         showcase.Clicked += async (_, _) =>
@@ -92,6 +104,7 @@ public partial class AppShell : Shell
         Items.Add(showcase);
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Showcase), typeof(ShowcasePage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.MeasurementShowcase), typeof(MeasurementShowcasePage));
+#endif
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchEdit), typeof(CatchEditPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.TripDetail), typeof(TripDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.TripEdit), typeof(TripEditPage));
@@ -99,19 +112,37 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.CatchDetail), typeof(CatchDetailPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.PhotoPreview), typeof(PhotoPreviewPage));
         Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.Profile), typeof(ProfilePage));
+        Routing.RegisterRoute(RouteConstants.GetPath(MobileRouteEnum.About), typeof(AboutPage));
         UpdateLifecycleState();
+    }
+
+    private async void OnOpenProfile(object? sender, EventArgs args)
+    {
+        await OpenProfileAsync();
+    }
+
+    private async Task OpenProfileAsync()
+    {
+        FlyoutIsPresented = false;
+        await _navigation.NavigateAsync(MobileRouteEnum.Profile);
     }
 
     private void OnSessionChanged(object? sender, EventArgs args)
     {
-        Dispatcher.Dispatch(UpdateProfile);
+        Dispatcher.Dispatch(() =>
+        {
+            _profile.RefreshSession();
+            UpdateProfile();
+            _ = _profile.LoadAsync(CancellationToken.None);
+        });
     }
 
     private void UpdateProfile()
     {
-        var email = _authenticationService.CurrentSession?.Email ?? string.Empty;
-        ProfileName.Text = email;
-        ProfileInitial.Text = email.Length == 0 ? "?" : email[..1].ToUpperInvariant();
+        ProfileName.Text = _profile.DisplayName;
+        ProfileEmail.Text = _profile.SecondaryEmail;
+        ProfileEmail.IsVisible = _profile.HasSecondaryEmail;
+        ProfileInitial.Text = _profile.Initial;
     }
 
     private void OnLifecycleStateChanged(object? sender, EventArgs args)
@@ -130,6 +161,7 @@ public partial class AppShell : Shell
         {
             Items.Remove(_retryConnection);
         }
+
         ConnectionStatus.IsVisible = state is SessionLifecycleStateEnum.LocalOffline or
             SessionLifecycleStateEnum.Recovering or
             SessionLifecycleStateEnum.RecoverableError;

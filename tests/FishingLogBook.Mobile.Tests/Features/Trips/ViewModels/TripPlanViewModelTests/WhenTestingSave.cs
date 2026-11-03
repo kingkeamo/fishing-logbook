@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using FishingLogBook.Mobile.Common.Offline.Enums;
 using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Shared.Constants;
@@ -92,6 +93,58 @@ public sealed class WhenTestingSave : BaseTripPlanViewModelTest
         await MockPlanned.Received(1).UpdatePlanAsync(plan, "Renamed", "Shore", Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
         await MockPlanned.DidNotReceive().PlanAsync(
             Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldRereadThePlanAfterSavingTheDateAndTime()
+    {
+        // Arrange
+        var plan = Plan();
+        var rereadStart = new DateTimeOffset(2026, 11, 8, 7, 15, 0, TimeSpan.Zero);
+        var reread = Plan() with
+        {
+            Detail = plan.Detail with
+            {
+                Trip = plan.Detail.Trip with { StartedOn = rereadStart, PlannedStartOn = rereadStart }
+            }
+        };
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(plan, reread);
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+        Sut.PlannedDate = new DateTime(2026, 11, 8);
+        Sut.PlannedTime = new TimeSpan(9, 15, 0);
+        MockPlanned.UpdatePlanAsync(plan, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(plan with { Revision = 2, SyncedRevision = 1 });
+
+        // Act
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().BeTrue();
+        Sut.PlannedDate.Should().Be(new DateTime(2026, 11, 8));
+        Sut.PlannedTime.Should().Be(new TimeSpan(9, 15, 0));
+        Sut.ShowInviteHint.Should().BeFalse();
+        await MockSync.Received(1).RunAsync(OutboxSyncTriggerEnum.WorkEnqueued, Arg.Any<CancellationToken>());
+        await MockTrips.Received(2).GetAsync(TripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotPretendAPlanIsUnsyncedWhenSavingOffline()
+    {
+        // Arrange
+        MockConnectivity.IsOnline.Returns(false);
+        var plan = Plan();
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(plan);
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+        MockPlanned.UpdatePlanAsync(plan, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(plan with { Revision = 2, SyncedRevision = 1 });
+
+        // Act
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().BeTrue();
+        Sut.ShowInviteHint.Should().BeTrue();
+        await MockSync.DidNotReceive().RunAsync(Arg.Any<OutboxSyncTriggerEnum>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

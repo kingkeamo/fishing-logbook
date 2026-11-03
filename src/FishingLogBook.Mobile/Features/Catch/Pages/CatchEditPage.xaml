@@ -10,7 +10,7 @@
              Shell.NavBarIsVisible="False"
              Shell.TabBarIsVisible="False"
              BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
-  <Grid RowDefinitions="48,*">
+  <Grid RowDefinitions="48,*,Auto">
     <Grid ColumnDefinitions="48,*,48" Padding="4,0">
       <Grid SemanticProperties.Description="{Binding Text[Back]}" AutomationId="CatchEditBack">
         <controls:IconView Source="icon_chevron.png" Tone="Default" Rotation="180" WidthRequest="20" HeightRequest="20" />
@@ -22,9 +22,19 @@
              HorizontalOptions="Center" VerticalOptions="Center" />
     </Grid>
     <ScrollView Grid.Row="1">
-      <VerticalStackLayout Padding="16,8,16,24" Spacing="{StaticResource SpaceSmall}" MaximumWidthRequest="720">
-        <editor:RecordCatchEditorView BindingContext="{Binding}" SaveSucceeded="OnSaveSucceeded" />
+      <VerticalStackLayout Padding="16,8,16,16" Spacing="{StaticResource SpaceMedium}" MaximumWidthRequest="720">
+        <editor:RecordCatchEditorView BindingContext="{Binding}" />
       </VerticalStackLayout>
     </ScrollView>
+    <VerticalStackLayout Grid.Row="2" Padding="16,8,16,24" Spacing="8" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+      <Label Text="{Binding ValidationText}" IsVisible="{Binding HasValidation}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}"
+             AutomationId="RecordCatchValidation" />
+      <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Style="{StaticResource SecondaryText}"
+             AutomationId="RecordCatchStatus" />
+      <Button Text="{Binding SaveButtonText}" Style="{StaticResource PrimaryButton}"
+              IsEnabled="{Binding CanSave}" Clicked="OnSave" HorizontalOptions="Fill"
+              MinimumHeightRequest="48" AutomationId="RecordCatchSave" />
+    </VerticalStackLayout>
   </Grid>
 </ContentPage>

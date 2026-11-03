@@ -98,6 +98,20 @@
     <Setter Property="TitleColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
     <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}" />
   </Style>
+  <Style TargetType="DatePicker">
+    <Setter Property="MinimumHeightRequest" Value="48" />
+    <Setter Property="MinimumWidthRequest" Value="48" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
+    <Setter Property="BackgroundColor" Value="Transparent" />
+  </Style>
+  <Style TargetType="TimePicker">
+    <Setter Property="MinimumHeightRequest" Value="48" />
+    <Setter Property="MinimumWidthRequest" Value="48" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
+    <Setter Property="BackgroundColor" Value="Transparent" />
+  </Style>
   <Style TargetType="Entry">
     <Setter Property="MinimumHeightRequest" Value="48" />
     <Setter Property="MinimumWidthRequest" Value="48" />

@@ -7,6 +7,9 @@ using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Common.Offline.Sqlite;
 using FishingLogBook.Mobile.Common.Offline.Stores;
 using FishingLogBook.Mobile.Configuration;
+using FishingLogBook.Mobile.Features.About.Clients;
+using FishingLogBook.Mobile.Features.About.Pages;
+using FishingLogBook.Mobile.Features.About.ViewModels;
 using FishingLogBook.Mobile.Features.Authentication.Browsers;
 using FishingLogBook.Mobile.Features.Authentication.Clients;
 using FishingLogBook.Mobile.Features.Authentication.Constants;
@@ -238,6 +241,14 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<HeaderProfileViewModel>();
         builder.Services.AddSingleton<IOnboardingStatusService, OnboardingStatusService>();
         builder.Services.AddSingleton<IGeolocationAdapter, GeolocationAdapter>();
+        builder.Services.AddSingleton<IAppInfoAdapter, AppInfoAdapter>();
+        builder.Services.AddSingleton<IClipboardAdapter, ClipboardAdapter>();
+        builder.Services
+            .AddHttpClient<ISystemStatusClient, SystemStatusClient>(client =>
+                client.BaseAddress = new Uri(authConfig.ApiBaseUrl.TrimEnd('/') + "/"))
+            .ConfigurePrimaryHttpMessageHandler(NoRedirectHttpMessageHandlerFactory.Create);
+        builder.Services.AddTransient<AboutViewModel>();
+        builder.Services.AddTransient<AboutPage>();
         builder.Services.AddSingleton<IPhotographRootPathProvider>(services => new PhotographRootPathProvider(
             services.GetRequiredService<IFileSystemAdapter>(),
             () => FileSystem.AppDataDirectory,

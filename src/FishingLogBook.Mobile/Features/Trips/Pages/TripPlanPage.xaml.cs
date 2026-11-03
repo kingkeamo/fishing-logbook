@@ -64,11 +64,14 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
 
     private async void OnSave(object? sender, EventArgs args)
     {
-        if (await _viewModel.SaveAsync(CancellationToken.None))
+        if (!await _viewModel.SaveAsync(CancellationToken.None))
         {
-            await AcquireEditAsync();
-            await _navigation.GoBackAsync();
+            return;
         }
+
+        await AcquireEditAsync();
+        Participants.ViewModel!.AllowManagement = _viewModel.CanCancelTrip;
+        await Participants.LoadAsync(_viewModel.TripId ?? Guid.Empty);
     }
 
     private async void OnCancelTrip(object? sender, EventArgs args)
