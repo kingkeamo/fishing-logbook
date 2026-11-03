@@ -1,4 +1,5 @@
 using System.Globalization;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
@@ -23,29 +24,39 @@ public abstract class BaseTripPlanViewModelTest
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
     protected readonly IPlannedTripService MockPlanned = Substitute.For<IPlannedTripService>();
     protected readonly ITripService MockTrips = Substitute.For<ITripService>();
+    protected readonly IOutboxChangeNotifier MockNotifier = Substitute.For<IOutboxChangeNotifier>();
     protected readonly IAnglerPreferencesService MockPreferences = Substitute.For<IAnglerPreferencesService>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly IInteractionPresenter MockPresenter = Substitute.For<IInteractionPresenter>();
+    protected readonly TimeZoneInfo? Zone;
     protected readonly TripPlanViewModel Sut;
 
     protected BaseTripPlanViewModelTest(TimeZoneInfo? zone = null)
     {
+        Zone = zone;
         MockConnectivity.IsOnline.Returns(true);
         MockPreferences.GetCachedAsync(Arg.Any<CancellationToken>()).Returns(AnglerPreferencesModel.Empty with
         {
             Locations = new FishingLocationPreferencesDto([new FishingLocationPreferenceDto(Guid.NewGuid(), "Lough Corrib", IsDefault: false)])
         });
         MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(true);
-        Sut = new TripPlanViewModel(
+        Sut = CreateSut();
+    }
+
+    protected TripPlanViewModel CreateSut(SynchronizationContext? uiContext = null)
+    {
+        return new TripPlanViewModel(
             MockPlanned,
             MockTrips,
+            MockNotifier,
             MockPreferences,
             MockSession,
             MockConnectivity,
             new InteractionService(MockPresenter, Text),
             Text,
-            new FixedTimeProvider(Now, zone));
+            new FixedTimeProvider(Now, Zone),
+            uiContext);
     }
 
     protected static LocalTripRecordModel Plan(

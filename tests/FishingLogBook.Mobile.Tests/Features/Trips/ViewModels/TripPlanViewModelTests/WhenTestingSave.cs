@@ -95,6 +95,109 @@ public sealed class WhenTestingSave : BaseTripPlanViewModelTest
     }
 
     [Fact]
+    public async Task ItShouldKeepTheSavedLocalDateAndTimeWhileSynchronisationIsPending()
+    {
+        // Arrange
+        var plan = Plan();
+        var savedStart = new DateTimeOffset(2026, 11, 8, 7, 15, 0, TimeSpan.Zero);
+        var pending = Plan(revision: 2, syncedRevision: 1) with
+        {
+            Detail = plan.Detail with
+            {
+                Trip = plan.Detail.Trip with { StartedOn = savedStart, PlannedStartOn = savedStart }
+            }
+        };
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(plan);
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+        Sut.PlannedDate = new DateTime(2026, 11, 8);
+        Sut.PlannedTime = new TimeSpan(9, 15, 0);
+        MockPlanned.UpdatePlanAsync(plan, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(pending);
+
+        // Act
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().BeTrue();
+        Sut.HasPendingSync.Should().BeTrue();
+        Sut.PlannedDate.Should().Be(new DateTime(2026, 11, 8));
+        Sut.PlannedTime.Should().Be(new TimeSpan(9, 15, 0));
+        await MockTrips.Received(1).GetAsync(TripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldApplyTheServerDateAndTimeAfterSynchronisationCompletes()
+    {
+        // Arrange
+        var plan = Plan();
+        var savedStart = new DateTimeOffset(2026, 11, 8, 7, 15, 0, TimeSpan.Zero);
+        var pending = Plan(revision: 2, syncedRevision: 1) with
+        {
+            Detail = plan.Detail with
+            {
+                Trip = plan.Detail.Trip with { StartedOn = savedStart, PlannedStartOn = savedStart }
+            }
+        };
+        var confirmed = pending with { SyncedRevision = 2 };
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(plan, confirmed);
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+        MockPlanned.UpdatePlanAsync(plan, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(pending);
+        await Sut.SaveAsync(CancellationToken.None);
+
+        // Act
+        await Sut.RereadAfterSyncAsync(CancellationToken.None);
+
+        // Assert
+        Sut.HasPendingSync.Should().BeFalse();
+        Sut.PlannedDate.Should().Be(new DateTime(2026, 11, 8));
+        Sut.PlannedTime.Should().Be(new TimeSpan(9, 15, 0));
+        await MockTrips.Received(2).GetAsync(TripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldKeepPendingSyncWhenARetryableSynchronisationPassLeavesLocalEdits()
+    {
+        // Arrange
+        var plan = Plan();
+        var pending = Plan(revision: 2, syncedRevision: 1);
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(plan, pending);
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+        MockPlanned.UpdatePlanAsync(plan, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(pending);
+        await Sut.SaveAsync(CancellationToken.None);
+
+        // Act
+        await Sut.RereadAfterSyncAsync(CancellationToken.None);
+
+        // Assert
+        Sut.HasPendingSync.Should().BeTrue();
+        Sut.CanInvite.Should().BeTrue();
+        await MockTrips.Received(2).GetAsync(TripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotWaitForTheNetworkWhenSavingOffline()
+    {
+        // Arrange
+        MockConnectivity.IsOnline.Returns(false);
+        var plan = Plan();
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(plan);
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+        MockPlanned.UpdatePlanAsync(plan, Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+            .Returns(plan with { Revision = 2, SyncedRevision = 1 });
+
+        // Act
+        var saved = await Sut.SaveAsync(CancellationToken.None);
+
+        // Assert
+        saved.Should().BeTrue();
+        Sut.HasPendingSync.Should().BeTrue();
+        Sut.ShowInviteHint.Should().BeTrue();
+        await MockTrips.Received(1).GetAsync(TripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldKeepThePlanWhenCancellingIsNotConfirmed()
     {
         // Arrange

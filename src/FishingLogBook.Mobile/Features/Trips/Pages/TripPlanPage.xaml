@@ -35,11 +35,17 @@
       <locationPicker:TripLocationPickerView x:Name="Location" Options="{Binding LocationOptions}" PlaceName="{Binding EditPlace, Mode=TwoWay}"
         Heading="{Binding Text[TripFishingLocation]}" OtherText="{Binding Text[TripOtherLocation]}" ClearText="{Binding Text[TripClearLocation]}" />
       <participants:TripParticipantsView x:Name="Participants" />
+      <Label Text="{Binding Text[TripPlanInviteHint]}" IsVisible="{Binding ShowInviteHint}" Style="{StaticResource SecondaryText}" AutomationId="TripPlanInviteHint" />
+      <Label Text="{Binding Text[TripPlanPendingSync]}" IsVisible="{Binding HasPendingSync}" Style="{StaticResource SecondaryText}" AutomationId="TripPlanPendingSync" />
       <VerticalStackLayout Spacing="4">
        <Label Text="{Binding Text[TripPlanDate]}" Style="{StaticResource TileCaption}" />
        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-        <DatePicker Date="{Binding PlannedDate, Mode=TwoWay}" Format="d" IsEnabled="{Binding CanEdit}" AutomationId="TripPlanDatePicker" />
-        <TimePicker Grid.Column="1" Time="{Binding PlannedTime, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" AutomationId="TripPlanTimePicker" />
+        <Border Style="{StaticResource InputField}">
+         <DatePicker Date="{Binding PlannedDate, Mode=TwoWay}" Format="d" IsEnabled="{Binding CanEdit}" AutomationId="TripPlanDatePicker" />
+        </Border>
+        <Border Grid.Column="1" Style="{StaticResource InputField}">
+         <TimePicker Time="{Binding PlannedTime, Mode=TwoWay}" IsEnabled="{Binding CanEdit}" AutomationId="TripPlanTimePicker" />
+        </Border>
        </Grid>
       </VerticalStackLayout>
       <Label Text="{Binding MessageText}" IsVisible="{Binding HasMessage}"

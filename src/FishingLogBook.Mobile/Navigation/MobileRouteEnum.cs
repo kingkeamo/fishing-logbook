@@ -15,5 +15,6 @@ public enum MobileRouteEnum
     TripDetail = 10,
     TripEdit = 11,
     TripPlan = 12,
-    Import = 13
+    Import = 13,
+    About = 14
 }

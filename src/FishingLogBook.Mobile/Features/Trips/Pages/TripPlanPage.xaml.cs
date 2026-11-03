@@ -44,6 +44,7 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
             return;
         }
         _initialized = true;
+        Unloaded += OnUnloaded;
         await _viewModel.LoadAsync(_tripId, CancellationToken.None);
         Participants.ViewModel!.AllowManagement = _viewModel.CanCancelTrip;
         await Participants.LoadAsync(_viewModel.TripId ?? Guid.Empty);
@@ -64,11 +65,14 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
 
     private async void OnSave(object? sender, EventArgs args)
     {
-        if (await _viewModel.SaveAsync(CancellationToken.None))
+        if (!await _viewModel.SaveAsync(CancellationToken.None))
         {
-            await AcquireEditAsync();
-            await _navigation.GoBackAsync();
+            return;
         }
+
+        await AcquireEditAsync();
+        Participants.ViewModel!.AllowManagement = _viewModel.CanCancelTrip;
+        await Participants.LoadAsync(_viewModel.TripId ?? Guid.Empty);
     }
 
     private async void OnCancelTrip(object? sender, EventArgs args)
@@ -77,6 +81,12 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
         {
             await _navigation.GoBackAsync();
         }
+    }
+
+    private void OnUnloaded(object? sender, EventArgs args)
+    {
+        Unloaded -= OnUnloaded;
+        _viewModel.Dispose();
     }
 
     private async Task AcquireEditAsync()

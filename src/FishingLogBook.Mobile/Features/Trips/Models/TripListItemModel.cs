@@ -17,11 +17,17 @@ public sealed record TripListItemModel(
     string PendingText,
     bool HasPlannedLifecycle = false,
     string PlannedStatusText = "",
-    bool CanUpdate = true)
+    bool CanUpdate = true,
+    bool IsFinished = false,
+    bool IsUpcoming = false,
+    bool IsPast = false,
+    DateTimeOffset SortOn = default)
 {
     public bool HasTitle => !string.IsNullOrWhiteSpace(Title);
 
     public bool HasPlace => !string.IsNullOrWhiteSpace(Place);
 
     public bool ShowStats => !HasPlannedLifecycle;
+
+    public bool ShowStatus => IsActive || IsFinished;
 }

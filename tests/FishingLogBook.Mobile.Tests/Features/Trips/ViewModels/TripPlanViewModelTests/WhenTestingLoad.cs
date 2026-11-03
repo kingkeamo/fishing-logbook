@@ -58,7 +58,7 @@ public sealed class WhenTestingLoad : BaseTripPlanViewModelTest
     public async Task ItShouldNotOfferInvitesUntilThePlanHasSynchronised()
     {
         // Arrange
-        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(Plan(revision: 2, syncedRevision: 1));
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(Plan(revision: 1, syncedRevision: 0));
 
         // Act
         await Sut.LoadAsync(TripId, CancellationToken.None);
@@ -67,6 +67,21 @@ public sealed class WhenTestingLoad : BaseTripPlanViewModelTest
         Sut.CanInvite.Should().BeFalse();
         Sut.ShowInviteHint.Should().BeTrue();
         Sut.CanCancelTrip.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ItShouldStillOfferInvitesWhenAPreviouslySyncedPlanHasLocalEdits()
+    {
+        // Arrange
+        MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).Returns(Plan(revision: 2, syncedRevision: 1));
+
+        // Act
+        await Sut.LoadAsync(TripId, CancellationToken.None);
+
+        // Assert
+        Sut.CanInvite.Should().BeTrue();
+        Sut.ShowInviteHint.Should().BeFalse();
+        Sut.HasPendingSync.Should().BeTrue();
     }
 
     [Fact]

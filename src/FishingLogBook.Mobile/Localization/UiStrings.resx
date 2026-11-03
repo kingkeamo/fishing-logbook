@@ -36,7 +36,32 @@
   <data name="Import" xml:space="preserve"><value>Import</value></data>
   <data name="Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="About" xml:space="preserve"><value>About Fishing Logbook</value></data>
-  <data name="AboutBody" xml:space="preserve"><value>Catch, but don’t forget. A native preview with fictitious catches. Recording, accounts and synchronisation are not available yet.</value></data>
+  <data name="AboutBody" xml:space="preserve"><value>Installed app version and the status of services this device uses.</value></data>
+  <data name="AboutPageTitle" xml:space="preserve"><value>About &amp; system status</value></data>
+  <data name="AboutIntro" xml:space="preserve"><value>Installed app version and the status of services this device uses.</value></data>
+  <data name="AboutApp" xml:space="preserve"><value>This app</value></data>
+  <data name="AboutServices" xml:space="preserve"><value>Services</value></data>
+  <data name="AboutPlatform" xml:space="preserve"><value>Platform</value></data>
+  <data name="AboutVersion" xml:space="preserve"><value>Version</value></data>
+  <data name="AboutBuildNumber" xml:space="preserve"><value>Build</value></data>
+  <data name="AboutCommit" xml:space="preserve"><value>Commit</value></data>
+  <data name="AboutEnvironment" xml:space="preserve"><value>Environment</value></data>
+  <data name="AboutApi" xml:space="preserve"><value>API</value></data>
+  <data name="AboutApiVersion" xml:space="preserve"><value>API version</value></data>
+  <data name="AboutApiEnvironment" xml:space="preserve"><value>API environment</value></data>
+  <data name="AboutDatabase" xml:space="preserve"><value>Database</value></data>
+  <data name="AboutRefresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="AboutCopyDiagnostics" xml:space="preserve"><value>Copy diagnostics</value></data>
+  <data name="AboutCopied" xml:space="preserve"><value>Copied to the clipboard.</value></data>
+  <data name="AboutChecking" xml:space="preserve"><value>Checking…</value></data>
+  <data name="AboutOnline" xml:space="preserve"><value>Online</value></data>
+  <data name="AboutDegraded" xml:space="preserve"><value>Degraded</value></data>
+  <data name="AboutOffline" xml:space="preserve"><value>Offline</value></data>
+  <data name="AboutUnreachable" xml:space="preserve"><value>Could not check</value></data>
+  <data name="AboutDeviceOffline" xml:space="preserve"><value>This device is offline</value></data>
+  <data name="AboutUnavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="AboutEnvironmentLocal" xml:space="preserve"><value>Local</value></data>
+  <data name="AboutEnvironmentDevelopment" xml:space="preserve"><value>Development</value></data>
   <data name="Showcase" xml:space="preserve"><value>UX showcase · developer</value></data>
   <data name="ShowcaseBody" xml:space="preserve"><value>Developer preview only. These actions simulate feedback; they never change your catches.</value></data>
   <data name="Journal" xml:space="preserve"><value>Your time on the water</value></data>
@@ -400,7 +425,10 @@
   <data name="CatchLocationTimedOut" xml:space="preserve"><value>No location fix arrived in time. Check that device location is enabled, then try again.</value></data>
   <data name="CatchUpdateLocation" xml:space="preserve"><value>Update location</value></data>
   <data name="TripListTitle" xml:space="preserve"><value>Your trips</value></data>
-  <data name="TripListSubtitle" xml:space="preserve"><value>Every trip you have started, newest first.</value></data>
+  <data name="TripListSubtitle" xml:space="preserve"><value>Active trips first, then upcoming plans, then past trips.</value></data>
+  <data name="TripListActiveSection" xml:space="preserve"><value>Active</value></data>
+  <data name="TripListUpcomingSection" xml:space="preserve"><value>Upcoming</value></data>
+  <data name="TripListPastSection" xml:space="preserve"><value>Past</value></data>
   <data name="TripListEmpty" xml:space="preserve"><value>You have not started a trip yet.</value></data>
   <data name="TripListLoadFailed" xml:space="preserve"><value>Your trips could not be loaded.</value></data>
   <data name="TripViewTrip" xml:space="preserve"><value>View trip</value></data>
@@ -527,9 +555,11 @@
   <data name="TripPlanKeep" xml:space="preserve"><value>Keep trip</value></data>
   <data name="TripPlanSaveFailed" xml:space="preserve"><value>The plan could not be saved.</value></data>
   <data name="TripPlanInviteHint" xml:space="preserve"><value>Invitations can be sent once the plan has synchronised.</value></data>
+  <data name="TripPlanPendingSync" xml:space="preserve"><value>Saved on this device. Waiting to sync.</value></data>
   <data name="TripPlanReadOnly" xml:space="preserve"><value>Only the organiser can change this plan.</value></data>
   <data name="TripPlanCancelledNotice" xml:space="preserve"><value>This trip was cancelled.</value></data>
   <data name="TripPlanOpen" xml:space="preserve"><value>View plan</value></data>
+  <data name="TripPlanEdit" xml:space="preserve"><value>Edit plan</value></data>
   <data name="TripStartPlannedTitle" xml:space="preserve"><value>Start a planned trip?</value></data>
   <data name="TripStartPlannedMessage" xml:space="preserve"><value>These trips are planned for around now. Pick one, or start a new trip.</value></data>
   <data name="TripStartThisTrip" xml:space="preserve"><value>Start this trip</value></data>

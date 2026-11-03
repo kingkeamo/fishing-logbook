@@ -52,6 +52,12 @@ public sealed class TripListViewModel : INotifyPropertyChanged
 
     public ObservableCollection<TripListItemModel> Trips { get; } = [];
 
+    public ObservableCollection<TripListItemModel> ActiveTrips { get; } = [];
+
+    public ObservableCollection<TripListItemModel> UpcomingTrips { get; } = [];
+
+    public ObservableCollection<TripListItemModel> PastTrips { get; } = [];
+
     public ObservableCollection<TripInvitationItemModel> Invitations { get; } = [];
 
     public bool IsLoading
@@ -61,6 +67,12 @@ public sealed class TripListViewModel : INotifyPropertyChanged
     }
 
     public bool IsEmpty => !IsLoading && Trips.Count == 0;
+
+    public bool HasActiveTrips => ActiveTrips.Count > 0;
+
+    public bool HasUpcomingTrips => UpcomingTrips.Count > 0;
+
+    public bool HasPastTrips => PastTrips.Count > 0;
 
     public bool CanInteract => !IsLoading && !_isBusy;
 
@@ -88,7 +100,7 @@ public sealed class TripListViewModel : INotifyPropertyChanged
             IsLoading = Trips.Count == 0;
             var history = await _trips.LoadAsync(cancellationToken);
             var summaries = history.Items;
-            Replace(Trips, summaries.Select(summary => ToItem(summary, history.PendingIds.Contains(summary.Id))));
+            ReplaceSections(summaries.Select(summary => ToItem(summary, history.PendingIds.Contains(summary.Id))).ToArray());
             CanStart = !summaries.Any(summary => summary.Status == TripConstants.Active && summary.Role == TripParticipantConstants.Owner);
             _noticeKey = !history.ServerUnavailable ? null : _connectivity.IsOnline ? "TripListLoadFailed" : "TripListOffline";
             Replace(Invitations, history.ServerUnavailable ? [] : await LoadInvitationsAsync(cancellationToken));
@@ -100,7 +112,8 @@ public sealed class TripListViewModel : INotifyPropertyChanged
         {
             IsLoading = false;
             _loadGate.Release();
-            Notify(nameof(IsEmpty), nameof(HasNotice), nameof(NoticeText), nameof(HasInvitations));
+            Notify(nameof(IsEmpty), nameof(HasNotice), nameof(NoticeText), nameof(HasInvitations),
+                nameof(HasActiveTrips), nameof(HasUpcomingTrips), nameof(HasPastTrips));
         }
     }
 
@@ -190,26 +203,56 @@ public sealed class TripListViewModel : INotifyPropertyChanged
 
     private TripListItemModel ToItem(TripSummaryDto trip, bool pending)
     {
-        var active = trip.Status == TripConstants.Active;
+        var owner = trip.Role == TripParticipantConstants.Owner;
         var plannedLifecycle = TripConstants.HasPlannedLifecycle(trip.Status);
+        var sortOn = SortOn(trip, plannedLifecycle);
         return new TripListItemModel(
             trip.Id,
-            TimeZoneInfo.ConvertTime(plannedLifecycle ? trip.PlannedStartOn ?? trip.StartedOn : trip.StartedOn, _clock.LocalTimeZone).ToString("d MMM yyyy", Text.Culture),
+            TimeZoneInfo.ConvertTime(sortOn, _clock.LocalTimeZone).ToString("d MMM yyyy", Text.Culture),
             trip.Title,
             trip.PlaceName,
             trip.Role == TripParticipantConstants.Participant,
-            active,
+            trip.Status == TripConstants.Active,
             pending,
             Count(trip.CatchCount, "TripCatchesNone", "TripCatchesOne", "TripCatchesMany"),
             Count(trip.PhotographCount, "TripListPhotographsNone", "TripListPhotographsOne", "TripListPhotographsMany"),
             Count(trip.NoteCount, "TripListNotesNone", "TripListNotesOne", "TripListNotesMany"),
-            plannedLifecycle ? Text["TripPlanOpen"] : active && trip.Role == TripParticipantConstants.Owner ? Text["TripUpdate"] : Text["TripViewTrip"],
-            Text["TripActiveLabel"],
+            ActionText(trip, plannedLifecycle, owner),
+            trip.Status == TripConstants.Completed ? Text["TripStatusFinished"] : Text["TripActiveLabel"],
             Text["TripSharedLabel"],
             Text["CatchSyncWaiting"],
             plannedLifecycle,
             trip.Status == TripConstants.Cancelled ? Text["TripCancelled"] : Text["TripPlanned"],
-            trip.Role == TripParticipantConstants.Owner);
+            owner,
+            trip.Status == TripConstants.Completed,
+            trip.Status == TripConstants.Planned,
+            trip.Status is TripConstants.Completed or TripConstants.Cancelled,
+            sortOn);
+    }
+
+    private string ActionText(TripSummaryDto trip, bool plannedLifecycle, bool owner)
+    {
+        if (trip.Status == TripConstants.Planned && owner)
+        {
+            return Text["TripPlanEdit"];
+        }
+
+        if (plannedLifecycle)
+        {
+            return Text["TripPlanOpen"];
+        }
+
+        return trip.Status == TripConstants.Active && owner ? Text["TripUpdate"] : Text["TripViewTrip"];
+    }
+
+    private static DateTimeOffset SortOn(TripSummaryDto trip, bool plannedLifecycle)
+    {
+        if (plannedLifecycle)
+        {
+            return trip.PlannedStartOn ?? trip.StartedOn;
+        }
+
+        return trip.EndedOn ?? trip.StartedOn;
     }
 
     public MobileRouteEnum RouteFor(Guid tripId)
@@ -220,6 +263,17 @@ public sealed class TripListViewModel : INotifyPropertyChanged
             { IsActive: true, CanUpdate: true } => MobileRouteEnum.TripEdit,
             _ => MobileRouteEnum.TripDetail
         };
+    }
+
+    private void ReplaceSections(IReadOnlyList<TripListItemModel> items)
+    {
+        var active = items.Where(trip => trip.IsActive).OrderByDescending(trip => trip.SortOn).ThenBy(trip => trip.Id);
+        var upcoming = items.Where(trip => trip.IsUpcoming).OrderBy(trip => trip.SortOn).ThenBy(trip => trip.Id);
+        var past = items.Where(trip => trip.IsPast).OrderByDescending(trip => trip.SortOn).ThenBy(trip => trip.Id);
+        Replace(ActiveTrips, active);
+        Replace(UpcomingTrips, upcoming);
+        Replace(PastTrips, past);
+        Replace(Trips, ActiveTrips.Concat(UpcomingTrips).Concat(PastTrips));
     }
 
     private string Count(int count, string none, string one, string many)
