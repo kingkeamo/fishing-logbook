@@ -17,6 +17,7 @@ public class WhenTestingSignedIpaWorkflow
             "scripts",
             "build-signed-ios-ipa.ps1"));
         var validation = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "mobile-build-test.yml"));
+        var iosJob = validation[validation.IndexOf("  ios:", StringComparison.Ordinal)..];
 
         // Act
         // Assert
@@ -41,6 +42,8 @@ public class WhenTestingSignedIpaWorkflow
         workflow.Should().NotContain("submit-for-review");
         validation.Should().Contain("iossimulator-arm64");
         validation.Should().Contain("EnableCodeSigning=false");
+        iosJob.IndexOf("Install MAUI iOS workload", StringComparison.Ordinal)
+            .Should().BeLessThan(iosJob.IndexOf("Test mobile presentation", StringComparison.Ordinal));
         validation.Should().NotContain("IOS_DISTRIBUTION_CERTIFICATE");
         validation.Should().NotContain("ArchiveOnBuild=true");
     }
