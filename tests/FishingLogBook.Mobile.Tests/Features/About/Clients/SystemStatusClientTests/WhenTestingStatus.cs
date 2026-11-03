@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Api.Enums;
 
@@ -61,7 +62,7 @@ public sealed class WhenTestingStatus : BaseSystemStatusClientTest
     public async Task ItShouldSurfaceADatabaseOutageWithoutInventingHealth()
     {
         // Arrange
-        var (sut, _) = CreateClient(_ => Json("""{"status":"Unhealthy","name":null}""", System.Net.HttpStatusCode.ServiceUnavailable));
+        var (sut, _) = CreateClient(_ => Json("""{"status":"Unhealthy","name":null}""", HttpStatusCode.ServiceUnavailable));
 
         // Act
         var result = await sut.GetDatabaseStatusAsync(CancellationToken.None);
@@ -70,5 +71,47 @@ public sealed class WhenTestingStatus : BaseSystemStatusClientTest
         result.IsSuccess.Should().BeFalse();
         result.Outcome.Should().Be(ApiOutcomeEnum.ServerError);
         result.Value.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldTreatMalformedJsonAsAnInvalidResponse()
+    {
+        // Arrange
+        var (sut, _) = CreateClient(_ => Json("{not-json"));
+
+        // Act
+        var result = await sut.GetApiHealthAsync(CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Outcome.Should().Be(ApiOutcomeEnum.InvalidResponse);
+        result.Value.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ItShouldTreatATransportFailureAsUnavailable()
+    {
+        // Arrange
+        var (sut, _) = CreateClient(_ => throw new HttpRequestException("offline"));
+
+        // Act
+        var result = await sut.GetApiHealthAsync(CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
+    }
+
+    [Fact]
+    public async Task ItShouldTreatATimedOutRequestAsUnavailable()
+    {
+        // Arrange
+        var (sut, _) = CreateClient(_ => throw new TaskCanceledException());
+
+        // Act
+        var result = await sut.GetApiHealthAsync(CancellationToken.None);
+
+        // Assert
+        result.Outcome.Should().Be(ApiOutcomeEnum.Unavailable);
     }
 }

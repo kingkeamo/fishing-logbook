@@ -44,6 +44,7 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
             return;
         }
         _initialized = true;
+        Unloaded += OnUnloaded;
         await _viewModel.LoadAsync(_tripId, CancellationToken.None);
         Participants.ViewModel!.AllowManagement = _viewModel.CanCancelTrip;
         await Participants.LoadAsync(_viewModel.TripId ?? Guid.Empty);
@@ -80,6 +81,12 @@ public partial class TripPlanPage : ContentPage, IQueryAttributable
         {
             await _navigation.GoBackAsync();
         }
+    }
+
+    private void OnUnloaded(object? sender, EventArgs args)
+    {
+        Unloaded -= OnUnloaded;
+        _viewModel.Dispose();
     }
 
     private async Task AcquireEditAsync()

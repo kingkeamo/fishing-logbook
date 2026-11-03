@@ -28,6 +28,7 @@ public sealed class AboutViewModel : INotifyPropertyChanged
     private string? _apiEnvironment;
     private bool _isChecking;
     private bool _copied;
+    private int _refreshGeneration;
 
     public AboutViewModel(
         ISystemStatusClient status,
@@ -80,6 +81,38 @@ public sealed class AboutViewModel : INotifyPropertyChanged
 
     public async Task RefreshAsync(CancellationToken cancellationToken)
     {
+        var generation = Interlocked.Increment(ref _refreshGeneration);
+        BeginRefresh();
+        try
+        {
+            await LoadStatusAsync(generation, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            if (!IsCurrent(generation))
+            {
+                return;
+            }
+
+            _apiStatus = StatusStateEnum.Unreachable;
+            _databaseStatus = StatusStateEnum.Unreachable;
+        }
+        finally
+        {
+            if (IsCurrent(generation))
+            {
+                _isChecking = false;
+                Notify();
+            }
+        }
+    }
+
+    private void BeginRefresh()
+    {
         _isChecking = true;
         _copied = false;
         _apiStatus = StatusStateEnum.Checking;
@@ -89,28 +122,43 @@ public sealed class AboutViewModel : INotifyPropertyChanged
         _apiCommit = null;
         _apiEnvironment = null;
         Notify();
+    }
+
+    private async Task LoadStatusAsync(int generation, CancellationToken cancellationToken)
+    {
         if (!_connectivity.IsOnline)
         {
             _apiStatus = StatusStateEnum.DeviceOffline;
             _databaseStatus = StatusStateEnum.DeviceOffline;
-            _isChecking = false;
-            Notify();
             return;
         }
 
-        _apiStatus = await ReadApiAsync(cancellationToken);
-        if (_apiStatus == StatusStateEnum.Online)
+        var api = await ReadApiAsync(cancellationToken);
+        if (!IsCurrent(generation, cancellationToken))
         {
-            await ReadApiBuildAsync(cancellationToken);
-            _databaseStatus = await ReadDatabaseAsync(cancellationToken);
-        }
-        else
-        {
-            _databaseStatus = _apiStatus;
+            return;
         }
 
-        _isChecking = false;
-        Notify();
+        _apiStatus = api;
+        if (api != StatusStateEnum.Online)
+        {
+            _databaseStatus = api;
+            return;
+        }
+
+        await ReadApiBuildAsync(cancellationToken);
+        if (!IsCurrent(generation, cancellationToken))
+        {
+            return;
+        }
+
+        _databaseStatus = await ReadDatabaseAsync(cancellationToken);
+    }
+
+    private bool IsCurrent(int generation, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return generation == Volatile.Read(ref _refreshGeneration);
     }
 
     public async Task CopyDiagnosticsAsync(CancellationToken cancellationToken)
@@ -138,9 +186,9 @@ public sealed class AboutViewModel : INotifyPropertyChanged
         var result = await _status.GetApiHealthAsync(cancellationToken);
         if (!result.IsSuccess)
         {
-            return result.Outcome is ApiOutcomeEnum.Unavailable or ApiOutcomeEnum.SessionExpired
-                ? StatusStateEnum.Unreachable
-                : StatusStateEnum.Offline;
+            return result.Outcome is ApiOutcomeEnum.ServerError
+                ? StatusStateEnum.Offline
+                : StatusStateEnum.Unreachable;
         }
 
         return string.Equals(result.Value?.Status, HealthyStatus, StringComparison.Ordinal)

@@ -104,4 +104,77 @@ public sealed class WhenTestingLoad : BaseHeaderProfileViewModelTest
         sut.Initial.Should().Be("?");
         await MockProfiles.Received(1).GetAsync(Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task ItShouldClearThePreviousDisplayNameWhenTheAccountChanges()
+    {
+        // Arrange
+        await Sut.LoadAsync(CancellationToken.None);
+        MockAuthentication.CurrentSession.Returns(Session("pat@example.com", OtherUserId));
+
+        // Act
+        Sut.RefreshSession();
+
+        // Assert
+        Sut.DisplayName.Should().Be("pat@example.com");
+        Sut.HasSecondaryEmail.Should().BeFalse();
+        Sut.Initial.Should().Be("P");
+    }
+
+    [Fact]
+    public async Task ItShouldIgnoreAStaleProfileResponseAfterTheAccountChanges()
+    {
+        // Arrange
+        var stale = new TaskCompletionSource<ApiResultModel<ProfileDto>>();
+        MockProfiles.GetAsync(Arg.Any<CancellationToken>()).Returns(
+            _ => stale.Task,
+            _ => Task.FromResult(ApiResultModel<ProfileDto>.Succeeded(Profile("Pat", OtherUserId))));
+        var first = Sut.LoadAsync(CancellationToken.None);
+        MockAuthentication.CurrentSession.Returns(Session("pat@example.com", OtherUserId));
+        Sut.RefreshSession();
+        await Sut.LoadAsync(CancellationToken.None);
+
+        // Act
+        stale.SetResult(ApiResultModel<ProfileDto>.Succeeded(Profile("Eamonn")));
+        await first;
+
+        // Assert
+        Sut.DisplayName.Should().Be("Pat");
+        Sut.SecondaryEmail.Should().Be("pat@example.com");
+        await MockProfiles.Received(2).GetAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldFallBackToTheNewEmailWhenTheProfileFailsAfterSwitching()
+    {
+        // Arrange
+        await Sut.LoadAsync(CancellationToken.None);
+        MockAuthentication.CurrentSession.Returns(Session("pat@example.com", OtherUserId));
+        MockProfiles.GetAsync(Arg.Any<CancellationToken>())
+            .Returns(ApiResultModel<ProfileDto>.Failed(ApiOutcomeEnum.Unavailable));
+        Sut.RefreshSession();
+
+        // Act
+        await Sut.LoadAsync(CancellationToken.None);
+
+        // Assert
+        Sut.DisplayName.Should().Be("pat@example.com");
+        Sut.HasSecondaryEmail.Should().BeFalse();
+        await MockProfiles.Received(2).GetAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldClearTheFlyoutWhenTheSessionEnds()
+    {
+        // Arrange
+        await Sut.LoadAsync(CancellationToken.None);
+        MockAuthentication.CurrentSession.Returns((AuthenticationSessionModel?)null);
+
+        // Act
+        Sut.RefreshSession();
+
+        // Assert
+        Sut.DisplayName.Should().BeEmpty();
+        Sut.Initial.Should().Be("?");
+    }
 }

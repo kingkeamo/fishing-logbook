@@ -555,6 +555,7 @@
   <data name="TripPlanKeep" xml:space="preserve"><value>Keep trip</value></data>
   <data name="TripPlanSaveFailed" xml:space="preserve"><value>The plan could not be saved.</value></data>
   <data name="TripPlanInviteHint" xml:space="preserve"><value>Invitations can be sent once the plan has synchronised.</value></data>
+  <data name="TripPlanPendingSync" xml:space="preserve"><value>Saved on this device. Waiting to sync.</value></data>
   <data name="TripPlanReadOnly" xml:space="preserve"><value>Only the organiser can change this plan.</value></data>
   <data name="TripPlanCancelledNotice" xml:space="preserve"><value>This trip was cancelled.</value></data>
   <data name="TripPlanOpen" xml:space="preserve"><value>View plan</value></data>

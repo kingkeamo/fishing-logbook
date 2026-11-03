@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Text.Json;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Api.Models;
 using FishingLogBook.Shared.Dtos;
@@ -39,6 +40,10 @@ public sealed class SystemStatusClient(HttpClient httpClient) : ISystemStatusCli
             return value is null
                 ? ApiResultModel<T>.Failed(ApiOutcomeEnum.InvalidResponse)
                 : ApiResultModel<T>.Succeeded(value);
+        }
+        catch (JsonException)
+        {
+            return ApiResultModel<T>.Failed(ApiOutcomeEnum.InvalidResponse);
         }
         catch (Exception exception) when (exception is HttpRequestException or IOException or SocketException)
         {

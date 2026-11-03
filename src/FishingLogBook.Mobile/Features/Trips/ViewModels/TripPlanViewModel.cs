@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using FishingLogBook.Mobile.Common.Offline.Coordinators;
-using FishingLogBook.Mobile.Common.Offline.Enums;
+using FishingLogBook.Mobile.Common.Offline.Services;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Catch.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
@@ -17,11 +16,11 @@ namespace FishingLogBook.Mobile.Features.Trips.ViewModels;
 /// The plan-a-trip screen: creates, edits and cancels a planned trip. Every change is written to SQLite first and
 /// synchronised later; inviting needs the trip to exist on the server, so it is offered once the plan has synchronised.
 /// </summary>
-public sealed class TripPlanViewModel : INotifyPropertyChanged
+public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly IPlannedTripService _planned;
     private readonly ITripService _trips;
-    private readonly IOutboxSyncCoordinator _sync;
+    private readonly IOutboxChangeNotifier _notifier;
     private readonly IAnglerPreferencesService _preferences;
     private readonly IAccountSessionCoordinator _session;
     private readonly IConnectivityService _connectivity;
@@ -41,7 +40,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
     public TripPlanViewModel(
         IPlannedTripService planned,
         ITripService trips,
-        IOutboxSyncCoordinator sync,
+        IOutboxChangeNotifier notifier,
         IAnglerPreferencesService preferences,
         IAccountSessionCoordinator session,
         IConnectivityService connectivity,
@@ -51,7 +50,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
     {
         _planned = planned;
         _trips = trips;
-        _sync = sync;
+        _notifier = notifier;
         _preferences = preferences;
         _session = session;
         _connectivity = connectivity;
@@ -59,6 +58,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
         _clock = clock;
         Text = text;
         text.PropertyChanged += (_, _) => Notify(string.Empty);
+        _notifier.SyncRunCompleted += OnSyncRunCompleted;
         SetDefaultStart();
     }
 
@@ -95,6 +95,8 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
     public bool CanInvite => CanCancelTrip && _connectivity.IsOnline && _trip is { SyncedRevision: > 0 };
 
     public bool ShowInviteHint => CanCancelTrip && !CanInvite;
+
+    public bool HasPendingSync => _trip is { HasPendingMetadata: true };
 
     public string HeadingText => Text[_trip is null ? "TripPlanTitle" : "TripPlanEditTitle"];
 
@@ -213,7 +215,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
             _trip = _trip is null
                 ? await _planned.PlanAsync(_editTitle, _editPlace, PlannedStartOn, cancellationToken)
                 : await _planned.UpdatePlanAsync(_trip, _editTitle, _editPlace, PlannedStartOn, cancellationToken);
-            await RefreshAuthoritativeAsync(cancellationToken);
+            Populate(_trip);
         });
     }
 
@@ -232,6 +234,33 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
         }
 
         return await RunAsync("TripPlanSaveFailed", async () => _trip = await _planned.CancelPlanAsync(trip, cancellationToken));
+    }
+
+    public async Task RereadAfterSyncAsync(CancellationToken cancellationToken)
+    {
+        if (_trip is null || _isBusy || !_trip.HasPendingMetadata)
+        {
+            return;
+        }
+
+        var reread = await _trips.GetAsync(_trip.Detail.Trip.Id, cancellationToken);
+        if (reread is null)
+        {
+            return;
+        }
+
+        _trip = reread;
+        if (!reread.HasPendingMetadata)
+        {
+            Populate(_trip);
+        }
+
+        Notify(string.Empty);
+    }
+
+    public void Dispose()
+    {
+        _notifier.SyncRunCompleted -= OnSyncRunCompleted;
     }
 
     private async Task<bool> RunAsync(string failureKey, Func<Task> action)
@@ -256,22 +285,15 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task RefreshAuthoritativeAsync(CancellationToken cancellationToken)
+    private async void OnSyncRunCompleted(object? sender, EventArgs args)
     {
-        if (_trip is null || !_connectivity.IsOnline)
+        try
         {
-            return;
+            await RereadAfterSyncAsync(CancellationToken.None);
         }
-
-        await _sync.RunAsync(OutboxSyncTriggerEnum.WorkEnqueued, cancellationToken);
-        var reread = await _trips.GetAsync(_trip.Detail.Trip.Id, cancellationToken);
-        if (reread is null)
+        catch (Exception)
         {
-            return;
         }
-
-        _trip = reread;
-        Populate(_trip);
     }
 
     private void Populate(LocalTripRecordModel trip)

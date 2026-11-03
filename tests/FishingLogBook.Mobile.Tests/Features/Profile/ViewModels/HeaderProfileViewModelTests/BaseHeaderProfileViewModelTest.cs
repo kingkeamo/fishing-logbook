@@ -14,6 +14,7 @@ namespace FishingLogBook.Mobile.Tests.Features.Profile.ViewModels.HeaderProfileV
 public abstract class BaseHeaderProfileViewModelTest
 {
     protected static readonly Guid UserId = Guid.Parse("a1345f86-8ee4-462d-b029-707dd8eb0b3c");
+    protected static readonly Guid OtherUserId = Guid.Parse("b2456a97-9ff5-573e-c130-818ee9fc1c4d");
     protected readonly IProfileClient MockProfiles = Substitute.For<IProfileClient>();
     protected readonly IAuthenticationService MockAuthentication = Substitute.For<IAuthenticationService>();
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
@@ -27,7 +28,7 @@ public abstract class BaseHeaderProfileViewModelTest
         Sut = new HeaderProfileViewModel(MockProfiles, MockAuthentication, Text);
     }
 
-    protected static AuthenticationSessionModel Session(string email)
+    protected static AuthenticationSessionModel Session(string email, Guid? userId = null)
     {
         return new AuthenticationSessionModel(
             "access",
@@ -35,13 +36,13 @@ public abstract class BaseHeaderProfileViewModelTest
             "refresh",
             "subject",
             email,
-            UserId);
+            userId ?? UserId);
     }
 
-    protected static ProfileDto Profile(string? displayName)
+    protected static ProfileDto Profile(string? displayName, Guid? userId = null)
     {
         return new ProfileDto(
-            UserId,
+            userId ?? UserId,
             displayName,
             null,
             null,

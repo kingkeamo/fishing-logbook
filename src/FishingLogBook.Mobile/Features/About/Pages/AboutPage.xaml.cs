@@ -16,16 +16,33 @@ public partial class AboutPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.RefreshAsync(CancellationToken.None);
+        await SafeRefreshAsync();
     }
 
     private async void OnRefresh(object? sender, EventArgs args)
     {
-        await _viewModel.RefreshAsync(CancellationToken.None);
+        await SafeRefreshAsync();
     }
 
     private async void OnCopy(object? sender, EventArgs args)
     {
-        await _viewModel.CopyDiagnosticsAsync(CancellationToken.None);
+        try
+        {
+            await _viewModel.CopyDiagnosticsAsync(CancellationToken.None);
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private async Task SafeRefreshAsync()
+    {
+        try
+        {
+            await _viewModel.RefreshAsync(CancellationToken.None);
+        }
+        catch (Exception)
+        {
+        }
     }
 }

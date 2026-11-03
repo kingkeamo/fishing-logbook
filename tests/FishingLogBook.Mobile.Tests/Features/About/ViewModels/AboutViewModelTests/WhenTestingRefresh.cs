@@ -5,6 +5,7 @@ using FishingLogBook.Mobile.Features.About.ViewModels;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Dtos;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace FishingLogBook.Mobile.Tests.Features.About.ViewModels.AboutViewModelTests;
 
@@ -117,5 +118,60 @@ public sealed class WhenTestingRefresh : BaseAboutViewModelTest
 
         // Assert
         environment.Should().Be(Text["AboutEnvironmentLocal"]);
+    }
+
+    [Fact]
+    public async Task ItShouldResetCheckingWhenAStatusCallThrows()
+    {
+        // Arrange
+        MockStatus.GetApiHealthAsync(Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("status"));
+
+        // Act
+        await Sut.RefreshAsync(CancellationToken.None);
+
+        // Assert
+        Sut.IsChecking.Should().BeFalse();
+        Sut.CanRefresh.Should().BeTrue();
+        Sut.ApiStatusText.Should().Be(Text["AboutUnreachable"]);
+        Sut.DatabaseStatusText.Should().Be(Text["AboutUnreachable"]);
+    }
+
+    [Fact]
+    public async Task ItShouldTreatMalformedHealthAsUnreachable()
+    {
+        // Arrange
+        MockStatus.GetApiHealthAsync(Arg.Any<CancellationToken>())
+            .Returns(ApiResultModel<HealthDto>.Failed(ApiOutcomeEnum.InvalidResponse));
+
+        // Act
+        await Sut.RefreshAsync(CancellationToken.None);
+
+        // Assert
+        Sut.ApiStatusText.Should().Be(Text["AboutUnreachable"]);
+        Sut.DatabaseStatusText.Should().Be(Text["AboutUnreachable"]);
+        Sut.IsChecking.Should().BeFalse();
+        await MockStatus.DidNotReceive().GetDatabaseStatusAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldIgnoreAStaleRefreshOnceANewerOneHasCompleted()
+    {
+        // Arrange
+        var stale = new TaskCompletionSource<ApiResultModel<HealthDto>>();
+        MockStatus.GetApiHealthAsync(Arg.Any<CancellationToken>()).Returns(
+            _ => stale.Task,
+            _ => Task.FromResult(ApiResultModel<HealthDto>.Succeeded(new HealthDto("Healthy"))));
+
+        // Act
+        var first = Sut.RefreshAsync(CancellationToken.None);
+        await Sut.RefreshAsync(CancellationToken.None);
+        stale.SetResult(ApiResultModel<HealthDto>.Succeeded(new HealthDto("Unhealthy")));
+        await first;
+
+        // Assert
+        Sut.ApiStatusText.Should().Be(Text["AboutOnline"]);
+        Sut.DatabaseStatusText.Should().Be("Online · logbook");
+        Sut.IsChecking.Should().BeFalse();
     }
 }

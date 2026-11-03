@@ -555,6 +555,7 @@
   <data name="TripPlanKeep" xml:space="preserve"><value>Garder la sortie</value></data>
   <data name="TripPlanSaveFailed" xml:space="preserve"><value>La sortie n'a pas pu être enregistrée.</value></data>
   <data name="TripPlanInviteHint" xml:space="preserve"><value>Les invitations peuvent être envoyées une fois la sortie synchronisée.</value></data>
+  <data name="TripPlanPendingSync" xml:space="preserve"><value>Enregistré sur cet appareil. En attente de synchronisation.</value></data>
   <data name="TripPlanReadOnly" xml:space="preserve"><value>Seul l'organisateur peut modifier cette sortie.</value></data>
   <data name="TripPlanCancelledNotice" xml:space="preserve"><value>Cette sortie a été annulée.</value></data>
   <data name="TripPlanOpen" xml:space="preserve"><value>Voir la sortie</value></data>

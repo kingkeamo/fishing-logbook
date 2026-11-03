@@ -36,6 +36,7 @@
         Heading="{Binding Text[TripFishingLocation]}" OtherText="{Binding Text[TripOtherLocation]}" ClearText="{Binding Text[TripClearLocation]}" />
       <participants:TripParticipantsView x:Name="Participants" />
       <Label Text="{Binding Text[TripPlanInviteHint]}" IsVisible="{Binding ShowInviteHint}" Style="{StaticResource SecondaryText}" AutomationId="TripPlanInviteHint" />
+      <Label Text="{Binding Text[TripPlanPendingSync]}" IsVisible="{Binding HasPendingSync}" Style="{StaticResource SecondaryText}" AutomationId="TripPlanPendingSync" />
       <VerticalStackLayout Spacing="4">
        <Label Text="{Binding Text[TripPlanDate]}" Style="{StaticResource TileCaption}" />
        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">

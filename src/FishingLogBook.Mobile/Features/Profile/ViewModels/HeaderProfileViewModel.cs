@@ -11,6 +11,7 @@ public sealed class HeaderProfileViewModel : INotifyPropertyChanged
     private readonly IProfileClient _profiles;
     private readonly IAuthenticationService _authentication;
     private string _profileDisplayName = string.Empty;
+    private Guid? _profileUserId;
     private FlyoutAccountModel _account = FlyoutAccountModel.From(null, null);
 
     public HeaderProfileViewModel(IProfileClient profiles, IAuthenticationService authentication, UiTextService text)
@@ -18,6 +19,7 @@ public sealed class HeaderProfileViewModel : INotifyPropertyChanged
         _profiles = profiles;
         _authentication = authentication;
         Text = text;
+        _profileUserId = CurrentUserId();
         Apply();
     }
 
@@ -35,8 +37,14 @@ public sealed class HeaderProfileViewModel : INotifyPropertyChanged
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
+        var userId = ResetIfUserChanged();
         Apply();
         var result = await _profiles.GetAsync(cancellationToken);
+        if (CurrentUserId() != userId)
+        {
+            return;
+        }
+
         if (result.IsSuccess)
         {
             _profileDisplayName = result.Value?.DisplayName?.Trim() ?? string.Empty;
@@ -47,7 +55,21 @@ public sealed class HeaderProfileViewModel : INotifyPropertyChanged
 
     public void RefreshSession()
     {
+        ResetIfUserChanged();
         Apply();
+    }
+
+    private Guid? ResetIfUserChanged()
+    {
+        var userId = CurrentUserId();
+        if (_profileUserId == userId)
+        {
+            return userId;
+        }
+
+        _profileUserId = userId;
+        _profileDisplayName = string.Empty;
+        return userId;
     }
 
     private void Apply()
@@ -60,6 +82,11 @@ public sealed class HeaderProfileViewModel : INotifyPropertyChanged
 
         _account = account;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+    }
+
+    private Guid? CurrentUserId()
+    {
+        return _authentication.CurrentSession?.UserId;
     }
 
     private string CurrentEmail()

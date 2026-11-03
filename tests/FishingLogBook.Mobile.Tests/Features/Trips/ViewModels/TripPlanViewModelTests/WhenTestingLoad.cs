@@ -81,6 +81,7 @@ public sealed class WhenTestingLoad : BaseTripPlanViewModelTest
         // Assert
         Sut.CanInvite.Should().BeTrue();
         Sut.ShowInviteHint.Should().BeFalse();
+        Sut.HasPendingSync.Should().BeTrue();
     }
 
     [Fact]
