@@ -9,6 +9,7 @@ using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Constants;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Features.Trips.ViewModels;
 
@@ -26,6 +27,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
     private readonly IConnectivityService _connectivity;
     private readonly InteractionService _interactions;
     private readonly TimeProvider _clock;
+    private readonly ILogger<TripPlanViewModel> _logger;
     private readonly SynchronizationContext? _uiContext;
     private readonly CancellationTokenSource _disposeCancellation = new();
     private LocalTripRecordModel? _trip;
@@ -51,6 +53,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
         InteractionService interactions,
         UiTextService text,
         TimeProvider clock,
+        ILogger<TripPlanViewModel> logger,
         SynchronizationContext? uiContext = null)
     {
         _planned = planned;
@@ -61,6 +64,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
         _connectivity = connectivity;
         _interactions = interactions;
         _clock = clock;
+        _logger = logger;
         _uiContext = uiContext ?? SynchronizationContext.Current;
         Text = text;
         text.PropertyChanged += (_, _) => Notify(string.Empty);
@@ -298,8 +302,9 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
         catch (OperationCanceledException)
         {
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogWarning(exception, "The planned trip could not be reread after synchronisation.");
         }
     }
 
@@ -320,6 +325,7 @@ public sealed class TripPlanViewModel : INotifyPropertyChanged, IDisposable
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            _logger.LogWarning(exception, "The planned trip could not be reread after synchronisation.");
             return null;
         }
     }

@@ -107,16 +107,21 @@ public sealed class WhenTestingRereadAfterSync : BaseTripPlanViewModelTest
     public async Task ItShouldKeepPendingSyncWhenTheRereadFails()
     {
         // Arrange
-        await SavePendingAsync(Sut);
+        var logger = new CapturingLogger<TripPlanViewModel>();
+        Sut.Dispose();
+        var sut = CreateSut(logger: logger);
+        await SavePendingAsync(sut);
         MockTrips.GetAsync(TripId, Arg.Any<CancellationToken>()).ThrowsAsync(new InvalidOperationException("store"));
 
         // Act
-        await Sut.RereadAfterSyncAsync(CancellationToken.None);
+        await sut.RereadAfterSyncAsync(CancellationToken.None);
 
         // Assert
-        Sut.HasPendingSync.Should().BeTrue();
-        Sut.EditTitle.Should().Be("Corrib");
+        sut.HasPendingSync.Should().BeTrue();
+        sut.EditTitle.Should().Be("Corrib");
+        logger.Entries.Should().Contain(entry => entry.Exception is InvalidOperationException);
         await MockTrips.Received(2).GetAsync(TripId, Arg.Any<CancellationToken>());
+        sut.Dispose();
     }
 
     [Fact]

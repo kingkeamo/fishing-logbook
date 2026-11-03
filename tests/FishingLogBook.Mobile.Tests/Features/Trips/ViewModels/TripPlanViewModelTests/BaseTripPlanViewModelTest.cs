@@ -11,6 +11,8 @@ using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Trips.ViewModels.TripPlanViewModelTests;
@@ -44,7 +46,7 @@ public abstract class BaseTripPlanViewModelTest
         Sut = CreateSut();
     }
 
-    protected TripPlanViewModel CreateSut(SynchronizationContext? uiContext = null)
+    protected TripPlanViewModel CreateSut(SynchronizationContext? uiContext = null, ILogger<TripPlanViewModel>? logger = null)
     {
         return new TripPlanViewModel(
             MockPlanned,
@@ -56,6 +58,7 @@ public abstract class BaseTripPlanViewModelTest
             new InteractionService(MockPresenter, Text),
             Text,
             new FixedTimeProvider(Now, Zone),
+            logger ?? NullLogger<TripPlanViewModel>.Instance,
             uiContext);
     }
 
