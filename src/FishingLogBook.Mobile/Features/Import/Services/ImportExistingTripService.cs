@@ -41,17 +41,37 @@ public sealed class ImportExistingTripService : IImportExistingTripService
             proposal => proposal.Id,
             proposal => (IReadOnlyList<TripSummaryDto>)temporal[proposal.Id]
                 .Where(trip => IsSpatiallyCompatible(proposal, trip.Id, locations))
-                .OrderBy(trip => trip.StartedOn)
+                .OrderBy(trip => trip.Status == TripConstants.Active ? 0 : 1)
+                .ThenByDescending(trip => trip.StartedOn)
                 .ToArray());
     }
 
     private static bool IsTemporallyCompatible(ImportTripProposalModel proposal, TripSummaryDto trip)
     {
-        return trip.Status == TripConstants.Completed
-            && trip.Role is TripParticipantConstants.Owner or TripParticipantConstants.Participant
-            && trip.EndedOn.HasValue
+        if (trip.Role is not (TripParticipantConstants.Owner or TripParticipantConstants.Participant))
+        {
+            return false;
+        }
+
+        return trip.Status switch
+        {
+            TripConstants.Completed => OverlapsCompleted(proposal, trip),
+            TripConstants.Active => OverlapsActive(proposal, trip),
+            _ => false
+        };
+    }
+
+    private static bool OverlapsCompleted(ImportTripProposalModel proposal, TripSummaryDto trip)
+    {
+        return trip.EndedOn.HasValue
             && trip.StartedOn.Date <= proposal.ProposedEndedOn.Date
             && trip.EndedOn.Value.Date >= proposal.ProposedStartedOn.Date;
+    }
+
+    private static bool OverlapsActive(ImportTripProposalModel proposal, TripSummaryDto trip)
+    {
+        return trip.StartedOn.Date <= proposal.ProposedEndedOn.Date
+            && (!trip.EndedOn.HasValue || trip.EndedOn.Value.Date >= proposal.ProposedStartedOn.Date);
     }
 
     private static bool IsSpatiallyCompatible(

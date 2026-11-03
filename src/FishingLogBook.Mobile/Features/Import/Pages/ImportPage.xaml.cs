@@ -64,6 +64,12 @@ public partial class ImportPage : ContentPage
 
     private async void OnViewTrips(object? sender, EventArgs args)
     {
+        if (_viewModel.DestinationTripId is Guid tripId)
+        {
+            await _navigation.NavigateAsync(MobileRouteEnum.TripDetail, tripId: tripId);
+            return;
+        }
+
         await _navigation.NavigateAsync(MobileRouteEnum.Trips);
     }
 

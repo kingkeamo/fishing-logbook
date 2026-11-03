@@ -48,6 +48,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
     private bool _selectionLimitExceeded;
     private bool _isPersisting;
     private bool _isPersisted;
+    private Guid? _destinationTripId;
     private string? _message;
     private ImportPersistenceProgressModel? _progress;
     private IReadOnlyDictionary<Guid, IReadOnlyList<TripSummaryDto>> _existingTripLookup =
@@ -185,6 +186,8 @@ public sealed class ImportViewModel : INotifyPropertyChanged
     public bool IsConfirmStep => _batch.Stage == ImportStageEnum.Confirm && !_isPersisted;
 
     public bool IsSuccessStep => _isPersisted;
+
+    public Guid? DestinationTripId => _destinationTripId;
 
     public bool IsPersisting => _isPersisting;
 
@@ -959,6 +962,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged
             }
 
             _isPersisted = true;
+            _destinationTripId = DestinationTripFrom(result);
             await _preparation.ClearAsync(CancellationToken.None);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -969,6 +973,19 @@ public sealed class ImportViewModel : INotifyPropertyChanged
         {
             _message = Text["Import_PersistenceFailed"];
         }
+    }
+
+    private Guid? DestinationTripFrom(ImportPersistenceResultModel result)
+    {
+        var ids = result.CreatedTripIds
+            .Concat(ActiveTrips
+                .Where(proposal =>
+                    proposal.Decision == ImportTripDecisionEnum.UseExisting
+                    && proposal.ExistingTripId.HasValue)
+                .Select(proposal => proposal.ExistingTripId!.Value))
+            .Distinct()
+            .ToArray();
+        return ids.Length == 1 ? ids[0] : null;
     }
 
     private bool CanReviewPhotos =>
