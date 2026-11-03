@@ -72,19 +72,33 @@ jobs:
 
   ios:
     name: Build iOS simulator
-    runs-on: macos-15
-    timeout-minutes: 45
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DOTNET_SDK_VERSION: '10.0.300'
+      DOTNET_WORKLOAD_SET: '10.0.300.3'
+      XCODE_APP: /Applications/Xcode_26.5.app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.300'
-      - name: Show Xcode version
-        run: xcodebuild -version
-      # On macOS the Mobile project includes net10.0-ios, so restore during test
-      # requires the MAUI iOS workload even when tests target net10.0 only.
-      - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios --skip-manifest-update
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
+      - name: Select Xcode 26.5
+        run: |
+          if [ ! -d "$XCODE_APP" ]; then
+            echo "Expected $XCODE_APP for .NET $DOTNET_SDK_VERSION / workload set $DOTNET_WORKLOAD_SET."
+            ls /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE_APP"
+          echo "DEVELOPER_DIR=$XCODE_APP/Contents/Developer" >> "$GITHUB_ENV"
+          xcodebuild -version
+      # On macOS the Mobile project includes net10.0-android and net10.0-ios, so
+      # restore during test requires both MAUI workloads even when tests target net10.0.
+      - name: Install MAUI Android and iOS workloads
+        run: >-
+          dotnet workload install maui-android maui-ios
+          --version ${{ env.DOTNET_WORKLOAD_SET }}
       - name: Test mobile presentation
         run: >-
           dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj

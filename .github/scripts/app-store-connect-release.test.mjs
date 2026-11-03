@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { describe, it } from 'node:test';
 import {
     assertBuildStillAvailable,
+    confirmInternalGroupAssignment,
     nextBuildNumber,
     testersAvailability,
 } from './app-store-connect-release.mjs';
@@ -88,6 +89,60 @@ describe('TestFlight tester availability', () => {
     });
 });
 
+describe('TestFlight internal group assignment', () => {
+    const buildId = 'BUILD-1';
+    const internalGroupId = 'GROUP-CATCH';
+
+    it('treats a successful assignment response as tester access', () => {
+        const result = confirmInternalGroupAssignment(
+            { ok: true, status: 204, statusText: 'No Content' },
+            buildId,
+            { internalGroupId, assignedGroupIds: [] });
+        assert.equal(result.available, true);
+        assert.match(result.message, /assigned to the CatchButDontForget internal group/);
+    });
+
+    it('treats HTTP 409 as already complete only after CatchButDontForget membership is verified', () => {
+        const result = confirmInternalGroupAssignment(
+            { ok: false, status: 409, statusText: 'Conflict', detail: 'ENTITY_ERROR.RELATIONSHIP.INVALID' },
+            buildId,
+            { internalGroupId, assignedGroupIds: ['OTHER-GROUP', internalGroupId] });
+        assert.equal(result.available, true);
+        assert.match(result.message, /assigned to the CatchButDontForget internal group/);
+    });
+
+    it('rejects HTTP 409 when CatchButDontForget does not contain the build', () => {
+        assert.throws(
+            () => confirmInternalGroupAssignment(
+                { ok: false, status: 409, statusText: 'Conflict', detail: 'ENTITY_ERROR.RELATIONSHIP.INVALID' },
+                buildId,
+                { internalGroupId, assignedGroupIds: ['OTHER-GROUP'] }),
+            /HTTP 409.*does not contain the build.*Testers cannot access it/u);
+    });
+
+    it('rejects HTTP 409 when group membership was not independently loaded', () => {
+        assert.throws(
+            () => confirmInternalGroupAssignment(
+                { ok: false, status: 409, statusText: 'Conflict' },
+                buildId,
+                { internalGroupId, assignedGroupIds: [] }),
+            /HTTP 409.*Testers cannot access it/u);
+    });
+
+    it('rejects a failed assignment without reporting tester access', () => {
+        assert.throws(
+            () => confirmInternalGroupAssignment(
+                { ok: false, status: 500, statusText: 'Internal Server Error', detail: 'upstream failed' },
+                buildId,
+                { internalGroupId, assignedGroupIds: [internalGroupId] }),
+            error => {
+                assert.match(error.message, /App Store Connect API request failed \(500\): upstream failed/);
+                assert.doesNotMatch(error.message, /assigned to the CatchButDontForget/);
+                return true;
+            });
+    });
+});
+
 describe('mobile TestFlight workflow security', () => {
     const workflow = readFileSync(new URL('../workflows/mobile-testflight.yml', import.meta.url), 'utf8');
     const artifactJob = workflow.slice(
@@ -125,5 +180,14 @@ describe('mobile TestFlight workflow security', () => {
         assert.match(publishingJob, /wait-and-assign/);
         assert.doesNotMatch(workflow, /submit-for-review|appStoreVersionReleaseRequest|production track/);
         assert.doesNotMatch(workflow, /contents: write/);
+    });
+
+    it('pins .NET 10.0.300, workload set 10.0.300.3 and Xcode 26.5 on macos-26', () => {
+        assert.match(artifactJob, /runs-on: macos-26/);
+        assert.match(publishingJob, /runs-on: macos-26/);
+        assert.equal(workflow.match(/DOTNET_SDK_VERSION: '10\.0\.300'/gu)?.length, 2);
+        assert.equal(workflow.match(/DOTNET_WORKLOAD_SET: '10\.0\.300\.3'/gu)?.length, 2);
+        assert.equal(workflow.match(/XCODE_APP: \/Applications\/Xcode_26\.5\.app/gu)?.length, 2);
+        assert.doesNotMatch(workflow, /macos-15|skip-manifest-update|Show Xcode version/);
     });
 });

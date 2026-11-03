@@ -240,14 +240,19 @@ Do not sideload the unsigned simulator build from `mobile-build-test.yml`.
 ## Unsigned simulator CI
 
 Pull requests and pushes to `main` / `develop` run `.github/workflows/mobile-build-test.yml`
-on `macos-15`. That job:
+on `macos-26`. That job:
 
+- selects Xcode 26.5 (`/Applications/Xcode_26.5.app`);
+- installs MAUI Android and iOS workloads at set `10.0.300.3` for .NET SDK `10.0.300`;
 - runs `FishingLogBook.Mobile.Tests` for `net10.0`;
-- installs the MAUI iOS workload;
 - builds `net10.0-ios` Debug for `iossimulator-arm64` with code signing disabled.
 
-Success means the iOS target compiled. It is not a simulator runtime, TestFlight or
-physical-device result.
+The same SDK, workload set and Xcode 26.5 pin is used by
+`.github/workflows/mobile-testflight.yml`. Xcode 26.5 is required by that workload and
+needs macOS 26.2+, so these jobs do not use the `macos-15` runner default (Xcode 16.4).
+
+Success of the unsigned job means the iOS target compiled. It is not a simulator
+runtime, TestFlight or physical-device result.
 
 ## Out of scope
 

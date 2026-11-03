@@ -34,7 +34,7 @@ jobs:
   artifact-only:
     name: Build signed iOS IPA only
     if: inputs.publish_to_testflight == false
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 75
     permissions:
       contents: read
@@ -42,6 +42,9 @@ jobs:
       run:
         shell: pwsh
     env:
+      DOTNET_SDK_VERSION: '10.0.300'
+      DOTNET_WORKLOAD_SET: '10.0.300.3'
+      XCODE_APP: /Applications/Xcode_26.5.app
       IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64 }}
       IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
       IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
@@ -56,13 +59,20 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.300'
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Select Xcode 26.5
+        run: |
+          if (-not (Test-Path -LiteralPath $env:XCODE_APP)) {
+            Get-ChildItem /Applications -Filter 'Xcode*.app' | ForEach-Object { $_.FullName }
+            throw "Expected $env:XCODE_APP for .NET $env:DOTNET_SDK_VERSION / workload set $env:DOTNET_WORKLOAD_SET."
+          }
+          sudo xcode-select -s $env:XCODE_APP
+          "DEVELOPER_DIR=$($env:XCODE_APP)/Contents/Developer" | Out-File -FilePath $env:GITHUB_ENV -Append
+          xcodebuild -version
 
-      - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios --skip-manifest-update
+      - name: Install MAUI Android and iOS workloads
+        run: dotnet workload install maui-android maui-ios --version $env:DOTNET_WORKLOAD_SET
 
       - name: Build signed iOS IPA
         id: ipa
@@ -86,7 +96,7 @@ jobs:
   publish-internal:
     name: Build and publish to TestFlight internal testing
     if: inputs.publish_to_testflight == true
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
     environment: app-store-connect-internal
     permissions:
@@ -95,6 +105,9 @@ jobs:
       run:
         shell: pwsh
     env:
+      DOTNET_SDK_VERSION: '10.0.300'
+      DOTNET_WORKLOAD_SET: '10.0.300.3'
+      XCODE_APP: /Applications/Xcode_26.5.app
       IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_P12_BASE64 }}
       IOS_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}
       IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
@@ -147,13 +160,20 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.300'
+          dotnet-version: ${{ env.DOTNET_SDK_VERSION }}
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Select Xcode 26.5
+        run: |
+          if (-not (Test-Path -LiteralPath $env:XCODE_APP)) {
+            Get-ChildItem /Applications -Filter 'Xcode*.app' | ForEach-Object { $_.FullName }
+            throw "Expected $env:XCODE_APP for .NET $env:DOTNET_SDK_VERSION / workload set $env:DOTNET_WORKLOAD_SET."
+          }
+          sudo xcode-select -s $env:XCODE_APP
+          "DEVELOPER_DIR=$($env:XCODE_APP)/Contents/Developer" | Out-File -FilePath $env:GITHUB_ENV -Append
+          xcodebuild -version
 
-      - name: Install MAUI iOS workload
-        run: dotnet workload install maui-ios --skip-manifest-update
+      - name: Install MAUI Android and iOS workloads
+        run: dotnet workload install maui-android maui-ios --version $env:DOTNET_WORKLOAD_SET
 
       - name: Build signed iOS IPA
         id: ipa

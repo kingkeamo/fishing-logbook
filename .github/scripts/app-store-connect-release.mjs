@@ -204,13 +204,43 @@ async function waitAndAssign(token, applicationVersion) {
                 data: [{ type: 'builds', id: build.id }],
             }),
         });
-    if (assignResponse.status !== 409 && !assignResponse.ok) {
-        const detail = await assignResponse.text();
-        throw new Error(`App Store Connect API request failed (${assignResponse.status}): ${detail || assignResponse.statusText}`);
+    const assignResult = {
+        ok: assignResponse.ok,
+        status: assignResponse.status,
+        statusText: assignResponse.statusText,
+        detail: await assignResponse.text(),
+    };
+    const assignedGroupIds = assignResult.status === 409
+        ? (await collectPages(
+            `builds/${encodeURIComponent(build.id)}/relationships/betaGroups?limit=200`,
+            token)).map(item => item.id)
+        : [];
+    const availability = confirmInternalGroupAssignment(assignResult, build.id, {
+        internalGroupId: group.id,
+        assignedGroupIds,
+    });
+    process.stdout.write(`${availability.message}\n`);
+}
+
+export function confirmInternalGroupAssignment(assignResult, buildId, membership = {}) {
+    if (assignResult?.ok) {
+        return testersAvailability('VALID', true);
     }
 
-    const availability = testersAvailability('VALID', true);
-    process.stdout.write(`${availability.message}\n`);
+    const status = assignResult?.status;
+    if (status === 409) {
+        const internalGroupId = membership.internalGroupId;
+        const assignedGroupIds = membership.assignedGroupIds ?? [];
+        if (internalGroupId && assignedGroupIds.includes(internalGroupId)) {
+            return testersAvailability('VALID', true);
+        }
+
+        throw new Error(
+            `App Store Connect returned HTTP 409 when assigning build ${buildId} to CatchButDontForget, but that group does not contain the build. Testers cannot access it.`);
+    }
+
+    throw new Error(
+        `App Store Connect API request failed (${status}): ${assignResult?.detail || assignResult?.statusText || 'unknown error'}`);
 }
 
 async function main() {
