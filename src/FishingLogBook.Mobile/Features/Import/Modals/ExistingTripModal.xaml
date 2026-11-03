@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Import.Models"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Import.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Import.Modals.ExistingTripModal"
+               x:TypeArguments="models:ExistingTripItemModel" x:DataType="vm:ExistingTripModalViewModel"
+               Padding="0" Margin="20" VerticalOptions="Center" HorizontalOptions="Center" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
+      <Label Text="{Binding Text[Import_AddToExistingTrip]}" Style="{StaticResource Heading}" FontSize="20"
+             SemanticProperties.HeadingLevel="Level1" AutomationId="ImportExistingTripHeading" />
+      <ScrollView MaximumHeightRequest="400">
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}" Spacing="10">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="models:ExistingTripItemModel">
+              <Border Style="{StaticResource Card}" Padding="12" Shadow="{x:Null}">
+                <VerticalStackLayout Spacing="4">
+                  <Label Text="{Binding Title}" Style="{StaticResource Subheading}" FontSize="16" />
+                  <Label Text="{Binding WhenText}" Style="{StaticResource SecondaryText}" FontSize="13" />
+                  <Button Text="{Binding ActionText}" CommandParameter="{Binding TripId}" Clicked="OnSelect"
+                          MinimumHeightRequest="48" AutomationId="ImportExistingTripSelect" />
+                </VerticalStackLayout>
+              </Border>
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+      </ScrollView>
+      <Button Text="{Binding Text[Cancel]}" Style="{StaticResource SecondaryButton}" Clicked="OnDismiss"
+              AutomationId="ImportExistingTripDismiss" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

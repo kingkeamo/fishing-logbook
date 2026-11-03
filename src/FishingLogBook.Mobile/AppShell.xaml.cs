@@ -2,6 +2,7 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Catch.Pages;
+using FishingLogBook.Mobile.Features.Import.Pages;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Settings.Pages;
@@ -24,6 +25,7 @@ public partial class AppShell : Shell
     public AppShell(
         CatchSummaryPage summary,
         TripsPage trips,
+        ImportPage import,
         SettingsPage settings,
         UiTextService text,
         InteractionService interactions,
@@ -49,6 +51,7 @@ public partial class AppShell : Shell
             {
                 MobileRouteEnum.Catches => summary,
                 MobileRouteEnum.Trips => trips,
+                MobileRouteEnum.Import => import,
                 MobileRouteEnum.Settings => settings,
                 _ => new PlannedPage(text, key)
             };

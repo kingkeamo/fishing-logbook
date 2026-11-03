@@ -14,5 +14,6 @@ public enum MobileRouteEnum
     CatchEdit = 9,
     TripDetail = 10,
     TripEdit = 11,
-    TripPlan = 12
+    TripPlan = 12,
+    Import = 13
 }

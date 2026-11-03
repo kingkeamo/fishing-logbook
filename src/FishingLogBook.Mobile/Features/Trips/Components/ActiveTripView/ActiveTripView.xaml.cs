@@ -26,8 +26,6 @@ public partial class ActiveTripView : ContentView
         InitializeComponent();
         Timeline.Changed += OnChanged;
         Timeline.CatchOpenRequested += (_, id) => CatchOpenRequested?.Invoke(this, id);
-        CatchActions.Changed += OnChanged;
-        CatchActions.RecordRequested += (_, _) => RecordCatchRequested?.Invoke(this, EventArgs.Empty);
         Photos.TakeRequested += (_, _) => TakePhotoRequested?.Invoke(this, EventArgs.Empty);
         Photos.ChooseRequested += (_, _) => ChoosePhotoRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -57,7 +55,6 @@ public partial class ActiveTripView : ContentView
         {
             _modals = value;
             Timeline.Modals = value;
-            CatchActions.Modals = value;
         }
     }
 
@@ -75,6 +72,19 @@ public partial class ActiveTripView : ContentView
     private async void OnParticipants(object? sender, EventArgs args)
     {
         if (_modals is not null && Model is { } model && await _modals.ShowParticipantsAsync(model.Trip.Detail.Trip.Id))
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnRecordCatch(object? sender, EventArgs args)
+    {
+        RecordCatchRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async void OnAddCatch(object? sender, EventArgs args)
+    {
+        if (_modals is not null && Model is { } model && await _modals.AddCatchesAsync(model.Trip))
         {
             Changed?.Invoke(this, EventArgs.Empty);
         }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Import.Models"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Import.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Import.Modals.PlaceNameModal"
+               x:TypeArguments="models:PlaceNameModalResult" x:DataType="vm:PlaceNameModalViewModel"
+               Padding="0" Margin="20" VerticalOptions="Center" HorizontalOptions="Center" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
+      <Label Text="{Binding Text[Import_LocationDetails]}" Style="{StaticResource Heading}" FontSize="20"
+             SemanticProperties.HeadingLevel="Level1" AutomationId="ImportPlaceNameHeading" />
+      <Label Text="{Binding Text[Import_LocationDetailsHelp]}" Style="{StaticResource SecondaryText}" />
+      <ScrollView MaximumHeightRequest="280">
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Components}" Spacing="4">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="models:PlaceNameComponentModel">
+              <Grid ColumnDefinitions="*,Auto" MinimumHeightRequest="48">
+                <Label Text="{Binding Text}" VerticalOptions="Center" />
+                <Switch Grid.Column="1" IsToggled="{Binding IsSelected}" AutomationId="ImportPlaceNameComponent" />
+              </Grid>
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+      </ScrollView>
+      <Label Text="{Binding Text[Import_LocationPreview]}" Style="{StaticResource Eyebrow}" />
+      <Label Text="{Binding PreviewText}" Style="{StaticResource BodyText}" AutomationId="ImportPlaceNamePreview" />
+      <Label Text="{Binding Text[Import_PlaceNameTooLong]}" IsVisible="{Binding IsTooLong}" Style="{StaticResource SecondaryText}"
+             TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}"
+             AutomationId="ImportPlaceNameTooLong" />
+      <Button Text="{Binding Text[Import_EditPlaceName]}" IsEnabled="{Binding CanApply}" Clicked="OnApply"
+              AutomationId="ImportPlaceNameApply" />
+      <Button Text="{Binding Text[Cancel]}" Style="{StaticResource SecondaryButton}" Clicked="OnCancel"
+              AutomationId="ImportPlaceNameCancel" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>

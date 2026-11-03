@@ -25,6 +25,11 @@ using FishingLogBook.Mobile.Features.Catch.Offline.Synchronisers;
 using FishingLogBook.Mobile.Features.Catch.Pages;
 using FishingLogBook.Mobile.Features.Catch.Services;
 using FishingLogBook.Mobile.Features.Catch.ViewModels;
+using FishingLogBook.Mobile.Features.Import.Modals;
+using FishingLogBook.Mobile.Features.Import.Pages;
+using FishingLogBook.Mobile.Features.Import.Services;
+using FishingLogBook.Mobile.Features.Import.ViewModels;
+using FishingLogBook.Mobile.Features.Locations.Clients;
 using FishingLogBook.Mobile.Features.Measurements.Pages;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.OfflineAccess.Stores;
@@ -271,6 +276,19 @@ public static partial class MauiProgram
         builder.Services.AddTransient<TripPlanPage>();
         builder.Services.AddSingleton<ActiveTripBannerViewModel>();
         builder.Services.AddTransient<TripAssociationViewModel>();
+        builder.Services.AddTransient<ILocationLookupClient, LocationLookupClient>();
+        builder.Services.AddSingleton<IImportPhotoBlobRegistryService>(services => new ImportPhotoBlobRegistryService(
+            services.GetRequiredService<IFileSystemAdapter>(),
+            Path.Combine(FileSystem.CacheDirectory, "import-photos")));
+        builder.Services.AddSingleton<IImportCatchProposalService, ImportCatchProposalService>();
+        builder.Services.AddSingleton<IImportTripProposalService, ImportTripProposalService>();
+        builder.Services.AddSingleton<IImportLocationLookupService, ImportLocationLookupService>();
+        builder.Services.AddSingleton<IImportPhotoPreparationService, ImportPhotoPreparationService>();
+        builder.Services.AddTransient<IImportExistingTripService, ImportExistingTripService>();
+        builder.Services.AddTransient<IImportPersistenceService, ImportPersistenceService>();
+        builder.Services.AddTransient<IImportModalService, ImportModalService>();
+        builder.Services.AddSingleton<ImportViewModel>();
+        builder.Services.AddSingleton<ImportPage>();
         builder.Services.AddTransient<CatchEditViewModel>();
         builder.Services.AddTransient<CatchEditPage>();
         builder.Services.AddSingleton<CatchSummaryPage>();

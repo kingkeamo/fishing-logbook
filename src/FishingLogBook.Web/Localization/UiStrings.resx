@@ -1203,7 +1203,7 @@
     <value>You need to be online to add catches to this trip.</value>
   </data>
   <data name="Trip_ListPhotographsNone" xml:space="preserve">
-    <value>No photos</value>
+    <value>No trip photos</value>
   </data>
   <data name="Trip_ListPhotographsOne" xml:space="preserve">
     <value>1 photo</value>

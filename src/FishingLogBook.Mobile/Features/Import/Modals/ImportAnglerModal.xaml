@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:shared="clr-namespace:FishingLogBook.Shared.Dtos;assembly=FishingLogBook.Shared"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Import.ViewModels"
+               x:Class="FishingLogBook.Mobile.Features.Import.Modals.ImportAnglerModal"
+               x:TypeArguments="shared:AnglerSummaryDto" x:DataType="vm:ImportAnglerModalViewModel"
+               Padding="0" Margin="20" VerticalOptions="Center" HorizontalOptions="Center" BackgroundColor="Transparent">
+  <Border StrokeThickness="0" Padding="20"
+          BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource Navy}}">
+    <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+    <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
+      <Label Text="{Binding Text[Import_AddTripParticipant]}" Style="{StaticResource Heading}" FontSize="20"
+             SemanticProperties.HeadingLevel="Level1" AutomationId="ImportAddAnglerHeading" />
+      <Label Text="{Binding Text[TripInviteSearchHelp]}" Style="{StaticResource SecondaryText}" FontSize="13" />
+      <Border Style="{StaticResource InputField}">
+        <Entry Text="{Binding SearchText, Mode=TwoWay}" Placeholder="{Binding Text[TripInviteSearchLabel]}"
+               Style="{StaticResource FieldEntry}"
+               SemanticProperties.Description="{Binding Text[TripInviteSearchLabel]}"
+               AutomationId="ImportAddAnglerSearch" />
+      </Border>
+      <Button Text="{Binding Text[Search]}" IsEnabled="{Binding CanSearch}" Style="{StaticResource SecondaryButton}"
+              Clicked="OnSearch" MinimumHeightRequest="48" AutomationId="ImportAddAnglerSearchButton" />
+      <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+      <Label Text="{Binding MessageText}" IsVisible="{Binding HasMessage}" Style="{StaticResource SecondaryText}"
+             AutomationId="ImportAddAnglerMessage" />
+      <Label Text="{Binding Text[TripInviteNoResults]}" IsVisible="{Binding ShowEmpty}"
+             Style="{StaticResource SecondaryText}" AutomationId="ImportAddAnglerEmpty" />
+      <ScrollView MaximumHeightRequest="280">
+        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Results}" Spacing="8">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="shared:AnglerSummaryDto">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" MinimumHeightRequest="48">
+                <Label Text="{Binding DisplayName}" Style="{StaticResource Subheading}" FontSize="15"
+                       VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="{Binding Source={RelativeSource AncestorType={x:Type vm:ImportAnglerModalViewModel}}, Path=Text[Import_Add]}"
+                        CommandParameter="{Binding UserId}" Clicked="OnSelect"
+                        MinimumHeightRequest="48" AutomationId="ImportAddAnglerSelect" />
+              </Grid>
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+      </ScrollView>
+      <Button Text="{Binding Text[Cancel]}" Style="{StaticResource SecondaryButton}" Clicked="OnDismiss"
+              AutomationId="ImportAddAnglerDismiss" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>
