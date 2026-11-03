@@ -9,12 +9,13 @@ public class WhenTestingGetPath : BaseRouteConstantsTest
     public void ItShouldKeepExactlyFourPrimaryDestinationsSeparateFromSecondaryRoutes()
     {
         // Arrange
-        var expected = new[] { "//main/catches", "//main/trips", "//main/explore", "//main/settings" };
+        var expected = new[] { "//main/catches", "//main/trips", "//main/import", "//main/settings" };
         // Act
         var paths = Primary.Select(RouteConstants.GetPath).ToArray();
         // Assert
         paths.Should().Equal(expected);
-        Primary.Should().NotContain(MobileRouteEnum.Showcase).And.NotContain(MobileRouteEnum.CatchDetail).And.NotContain(MobileRouteEnum.PhotoPreview);
-        RouteConstants.GetPath(MobileRouteEnum.Import).Should().Be("import");
+        Primary.Should().NotContain(MobileRouteEnum.Explore).And.NotContain(MobileRouteEnum.Showcase)
+            .And.NotContain(MobileRouteEnum.CatchDetail).And.NotContain(MobileRouteEnum.PhotoPreview);
+        RouteConstants.GetPath(MobileRouteEnum.Import).Should().Be("//main/import");
     }
 }

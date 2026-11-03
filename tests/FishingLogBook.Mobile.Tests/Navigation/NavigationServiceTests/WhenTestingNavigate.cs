@@ -140,7 +140,7 @@ public class WhenTestingNavigate : BaseNavigationServiceTest
     [InlineData(MobileRouteEnum.PhotoPreview, "photo-preview")]
     [InlineData(MobileRouteEnum.Settings, "//main/settings")]
     [InlineData(MobileRouteEnum.Trips, "//main/trips")]
-    [InlineData(MobileRouteEnum.Explore, "//main/explore")]
+    [InlineData(MobileRouteEnum.Import, "//main/import")]
     public async Task ItShouldPassTheDestinationAndSameCatchToTheNativeBoundary(MobileRouteEnum route, string path)
     {
         // Arrange

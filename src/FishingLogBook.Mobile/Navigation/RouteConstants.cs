@@ -7,7 +7,7 @@ public static class RouteConstants
     public const string TripIdParameter = "tripId";
     public static IReadOnlyList<MobileRouteEnum> Primary { get; } = Array.AsReadOnly(new[]
     {
-        MobileRouteEnum.Catches, MobileRouteEnum.Trips, MobileRouteEnum.Explore, MobileRouteEnum.Settings
+        MobileRouteEnum.Catches, MobileRouteEnum.Trips, MobileRouteEnum.Import, MobileRouteEnum.Settings
     });
 
     public static string GetPath(MobileRouteEnum route)
@@ -27,7 +27,7 @@ public static class RouteConstants
             MobileRouteEnum.TripDetail => "trip-detail",
             MobileRouteEnum.TripEdit => "trip-edit",
             MobileRouteEnum.TripPlan => "trip-plan",
-            MobileRouteEnum.Import => "import",
+            MobileRouteEnum.Import => "//main/import",
             _ => throw new ArgumentOutOfRangeException(nameof(route))
         };
     }

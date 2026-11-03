@@ -92,11 +92,6 @@ public partial class CatchSummaryPage : ContentPage
         await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit);
     }
 
-    private async void OnImport(object? sender, EventArgs args)
-    {
-        await _navigation.NavigateAsync(MobileRouteEnum.Import);
-    }
-
     private async void OnRetry(object? sender, EventArgs args)
     {
         await _viewModel.LoadUnitsAsync(CancellationToken.None);

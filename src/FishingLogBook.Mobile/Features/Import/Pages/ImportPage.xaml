@@ -8,8 +8,7 @@
              x:Name="Root"
              x:DataType="vm:ImportViewModel"
              Title="{Binding Text[Import_PageTitle]}"
-             Shell.NavBarIsVisible="False"
-             Shell.TabBarIsVisible="False">
+             Shell.NavBarIsVisible="False">
   <controls:WizardStepperView CurrentStep="{Binding StepNumber}"
                               StepCount="{Binding StepCount}"
                               StepLabel="{Binding StepLabel}"

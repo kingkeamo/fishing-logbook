@@ -136,25 +136,23 @@ public sealed class ImportCatchProposalModel
     public void OverrideMethod(ImportCatalogueSelectionModel? method)
     {
         MethodOverride = method;
-        CanonicalValueChanged();
+        InvalidateReviewIfIncomplete();
     }
 
     public void OverrideSpecies(ImportCatalogueSelectionModel? species)
     {
         SpeciesOverride = species;
-        CanonicalValueChanged();
+        InvalidateReviewIfIncomplete();
     }
 
     public void SetWeight(decimal? weight)
     {
         Weight = weight;
-        CanonicalValueChanged();
     }
 
     public void SetLength(decimal? length)
     {
         Length = length;
-        CanonicalValueChanged();
     }
 
     public void MarkReviewed()
@@ -246,5 +244,13 @@ public sealed class ImportCatchProposalModel
     {
         _canonicalReviewRequired = false;
         ReviewStatus = ImportCatchReviewStatusEnum.Draft;
+    }
+
+    private void InvalidateReviewIfIncomplete()
+    {
+        if (ReviewStatus == ImportCatchReviewStatusEnum.Reviewed && !CanBeReviewed)
+        {
+            ReviewStatus = ImportCatchReviewStatusEnum.Draft;
+        }
     }
 }

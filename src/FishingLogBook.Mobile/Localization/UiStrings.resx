@@ -33,6 +33,7 @@
   <data name="SampleNotes" xml:space="preserve"><value>Beautiful fish caught on a sunny morning.</value></data>
   <data name="Trips" xml:space="preserve"><value>Trips</value></data>
   <data name="Explore" xml:space="preserve"><value>Explore</value></data>
+  <data name="Import" xml:space="preserve"><value>Import</value></data>
   <data name="Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="About" xml:space="preserve"><value>About Fishing Logbook</value></data>
   <data name="AboutBody" xml:space="preserve"><value>Catch, but don’t forget. A native preview with fictitious catches. Recording, accounts and synchronisation are not available yet.</value></data>
@@ -410,7 +411,7 @@
   <data name="TripCatchesNone" xml:space="preserve"><value>No catches yet</value></data>
   <data name="TripCatchesOne" xml:space="preserve"><value>1 catch recorded</value></data>
   <data name="TripCatchesMany" xml:space="preserve"><value>{0} catches recorded</value></data>
-  <data name="TripListPhotographsNone" xml:space="preserve"><value>No photos</value></data>
+  <data name="TripListPhotographsNone" xml:space="preserve"><value>No trip photos</value></data>
   <data name="TripListPhotographsOne" xml:space="preserve"><value>1 photo</value></data>
   <data name="TripListPhotographsMany" xml:space="preserve"><value>{0} photos</value></data>
   <data name="TripListNotesNone" xml:space="preserve"><value>No notes</value></data>

@@ -249,6 +249,30 @@ public sealed class WhenTestingLeave : BaseImportViewModelTest
     }
 
     [Fact]
+    public async Task ItShouldAllowANewPhotoSelectionAfterReloadingTheWizard()
+    {
+        // Arrange
+        await ReachPhotoStepAsync();
+        await Sut.LeaveAsync();
+        await Sut.LoadAsync(CancellationToken.None);
+        await Sut.ContinueAsync(CancellationToken.None);
+        MockMedia.ClearReceivedCalls();
+        MockPreparation.ClearReceivedCalls();
+        MockPreparation.PrepareSelectionAsync(
+                Arg.Any<IReadOnlyList<PhotographPickedFileModel>>(),
+                Arg.Any<CancellationToken>())
+            .Returns([ReadyPhoto()]);
+
+        // Act
+        await Sut.PickPhotosAsync(CancellationToken.None);
+
+        // Assert
+        await MockMedia.Received(1).PickPhotosAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
+        Sut.IsBatchStep.Should().BeFalse();
+        Sut.Photos.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task ItShouldRejectANewPhotoSelectionAfterLeaving()
     {
         // Arrange

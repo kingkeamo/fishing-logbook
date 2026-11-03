@@ -73,6 +73,52 @@ public sealed class WhenTestingReview : BaseImportViewModelTest
     }
 
     [Fact]
+    public async Task ItShouldKeepConfirmationWhenWeightLengthMethodOrSpeciesChange()
+    {
+        // Arrange
+        await ReviewPreparedPhotoAsync(ReadyPhoto());
+        var catchId = Sut.Catches.Single().Proposal.Id;
+        Sut.ConfirmCatch(catchId);
+        var weight = Sut.CreateWeightEditor(catchId);
+        weight.SetExactText("1.2");
+        var length = Sut.CreateLengthEditor(catchId);
+        length.SetExactText("30");
+
+        // Act
+        Sut.CompleteWeightEdit(catchId, true, weight);
+        Sut.CompleteLengthEdit(catchId, true, length);
+        Sut.SetCatchMethod(catchId, OtherMethodId);
+        Sut.SetCatchSpecies(catchId, SpeciesId);
+
+        // Assert
+        var row = Sut.Catches.Single();
+        row.StatusText.Should().Be(Text["Import_Confirmed"]);
+        row.Proposal.Weight.Should().Be(1.2m);
+        row.Proposal.Length.Should().Be(30m);
+        row.Proposal.Method.Id.Should().Be(OtherMethodId);
+        row.Proposal.Species.Id.Should().Be(SpeciesId);
+        Sut.CanContinue.Should().BeTrue();
+        Sut.HasContinueHint.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldRequireConfirmationAgainWhenTheCaughtOnDateChanges()
+    {
+        // Arrange
+        await ReviewPreparedPhotoAsync(ReadyPhoto());
+        var row = Sut.Catches.Single();
+        Sut.ConfirmCatch(row.Proposal.Id);
+
+        // Act
+        await Sut.ConfirmCaughtOnAsync(row.Proposal.Id, row.CaughtOnLocal.AddDays(1), CancellationToken.None);
+
+        // Assert
+        Sut.Catches.Single().StatusText.Should().Be(Text["Import_NeedsConfirmation"]);
+        Sut.CanContinue.Should().BeFalse();
+        Sut.ContinueHint.Should().Be("Confirm catch 1 to continue.");
+    }
+
+    [Fact]
     public async Task ItShouldShowTheChosenTripDecision()
     {
         // Arrange

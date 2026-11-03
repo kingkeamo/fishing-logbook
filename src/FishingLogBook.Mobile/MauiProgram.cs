@@ -287,8 +287,8 @@ public static partial class MauiProgram
         builder.Services.AddTransient<IImportExistingTripService, ImportExistingTripService>();
         builder.Services.AddTransient<IImportPersistenceService, ImportPersistenceService>();
         builder.Services.AddTransient<IImportModalService, ImportModalService>();
-        builder.Services.AddTransient<ImportViewModel>();
-        builder.Services.AddTransient<ImportPage>();
+        builder.Services.AddSingleton<ImportViewModel>();
+        builder.Services.AddSingleton<ImportPage>();
         builder.Services.AddTransient<CatchEditViewModel>();
         builder.Services.AddTransient<CatchEditPage>();
         builder.Services.AddSingleton<CatchSummaryPage>();

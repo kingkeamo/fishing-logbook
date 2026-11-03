@@ -1203,7 +1203,7 @@
     <value>Vous devez être en ligne pour ajouter des prises à cette sortie.</value>
   </data>
   <data name="Trip_ListPhotographsNone" xml:space="preserve">
-    <value>Aucune photo</value>
+    <value>Aucune photo de sortie</value>
   </data>
   <data name="Trip_ListPhotographsOne" xml:space="preserve">
     <value>1 photo</value>

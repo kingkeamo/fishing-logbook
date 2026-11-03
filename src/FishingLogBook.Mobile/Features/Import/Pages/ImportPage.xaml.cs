@@ -30,12 +30,13 @@ public partial class ImportPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        if (_initialized)
+        if (_initialized && !_viewModel.IsSuccessStep)
         {
             return;
         }
 
         _initialized = true;
+        Unloaded -= OnUnloaded;
         Unloaded += OnUnloaded;
         await _viewModel.LoadAsync(CancellationToken.None);
     }
@@ -44,6 +45,7 @@ public partial class ImportPage : ContentPage
     {
         Unloaded -= OnUnloaded;
         await _viewModel.LeaveAsync();
+        _initialized = false;
     }
 
     private void OnBack(object? sender, EventArgs args)

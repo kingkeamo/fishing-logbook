@@ -56,6 +56,43 @@ public class WhenTestingCatchProposal : BaseImportModelTest
     }
 
     [Fact]
+    public void ItShouldKeepReviewedStateWhenWeightLengthMethodOrSpeciesChange()
+    {
+        // Arrange
+        var proposal = Catch();
+        proposal.MarkReviewed();
+
+        // Act
+        proposal.SetWeight(1.2m);
+        proposal.SetLength(30m);
+        proposal.OverrideMethod(new ImportCatalogueSelectionModel(Guid.NewGuid(), "Lure", "Lure"));
+        proposal.OverrideSpecies(new ImportCatalogueSelectionModel(Guid.NewGuid(), "Pike", "Pike"));
+
+        // Assert
+        proposal.Weight.Should().Be(1.2m);
+        proposal.Length.Should().Be(30m);
+        proposal.Method.Code.Should().Be("Lure");
+        proposal.Species.Code.Should().Be("Pike");
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Reviewed);
+        proposal.IsReadyForConfirmation.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ItShouldLeaveReviewedStateWhenTheCaughtOnValueChanges()
+    {
+        // Arrange
+        var proposal = Catch();
+        proposal.MarkReviewed();
+
+        // Act
+        proposal.SetCaughtOn(ImportTimestampModel.UserConfirmed(CapturedOn.AddHours(1)));
+
+        // Assert
+        proposal.ReviewStatus.Should().Be(ImportCatchReviewStatusEnum.Draft);
+        proposal.IsReadyForConfirmation.Should().BeFalse();
+    }
+
+    [Fact]
     public void ItShouldLeaveReviewedStateWhenTheCaughtOnValueBecomesInvalid()
     {
         // Arrange

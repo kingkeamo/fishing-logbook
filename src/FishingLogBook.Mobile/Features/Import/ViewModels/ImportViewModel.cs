@@ -226,6 +226,18 @@ public sealed class ImportViewModel : INotifyPropertyChanged
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
+        _hasLeft = false;
+        _leaveTask = null;
+        _isPersisted = false;
+        _destinationTripId = null;
+        _isPersisting = false;
+        _message = null;
+        _progress = null;
+        _photoTask = null;
+        _persistTask = null;
+        _selectedPhotos.Clear();
+        _existingTripLookup = new Dictionary<Guid, IReadOnlyList<TripSummaryDto>>();
+        _batch = new ImportBatchModel(Guid.NewGuid(), EmptySelection(), EmptySelection());
         _isLoading = true;
         Notify();
         try
