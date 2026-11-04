@@ -58,7 +58,7 @@ describe('iOS App Store icon PNG inspection', () => {
 
     it('rewrites a generated 1024 App Store icon that still has alpha', async () => {
         const projectDirectory = await mkdtemp(join(tmpdir(), 'ios-icon-'));
-        const catalog = join(projectDirectory, 'obj', 'r', 'Assets.xcassets', 'appicon_ios.appiconset');
+        const catalog = join(projectDirectory, 'obj', 'r', 'Assets.xcassets', 'appicon.appiconset');
         try {
             await mkdir(catalog, { recursive: true });
             await writeFile(join(catalog, 'AppIcon-1024.png'), encodeRgbaPng(1024, 1024));

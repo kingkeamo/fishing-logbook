@@ -68,7 +68,7 @@
     <MauiImage Include="Resources/Images/*.svg" />
     <MauiImage Include="Resources/Images/*.jpg" Resize="True" BaseSize="480,360" />
     <MauiIcon Include="../FishingLogBook.Web/wwwroot/icon-512.png" Link="Resources/AppIcon/appicon.png" Condition="'$(TargetFramework)' == 'net10.0-android'" />
-    <MauiIcon Include="Resources/AppIcon/appicon_ios.png" Color="#FFFFFF" Condition="'$(TargetFramework)' == 'net10.0-ios'" />
+    <MauiIcon Include="Resources/AppIcon/appicon_ios.png" Link="Resources/AppIcon/appicon.png" Color="#FFFFFF" Condition="'$(TargetFramework)' == 'net10.0-ios'" />
     <MauiSplashScreen Include="../FishingLogBook.Web/wwwroot/images/brand/brand-mark-transparent.png" Link="Resources/Splash/splash.png" Color="#E0F2FE" BaseSize="128,128" />
     <MauiImage Include="../FishingLogBook.Web/wwwroot/images/brand/brand-mark-transparent.png" Link="Resources/Images/brand_mark.png" Resize="True" BaseSize="256,256" />
     <MauiImage Include="../FishingLogBook.Web/wwwroot/images/brand/brand-horizontal-transparent.png" Link="Resources/Images/brand_horizontal.png" Resize="True" BaseSize="320,100" />

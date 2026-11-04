@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using System.Xml.Linq;
 using AwesomeAssertions;
 
 namespace FishingLogBook.Mobile.Tests.Platform.IosAppIconTests;
@@ -13,9 +14,14 @@ public class WhenTestingIosAppIcon
     public void ItShouldUseAnOpaqueIosSpecificIconWithoutChangingAndroidOrWeb()
     {
         // Arrange
-        var project = File.ReadAllText(Path.Combine(MobileRoot, "FishingLogBook.Mobile.csproj"));
+        var project = XDocument.Load(Path.Combine(MobileRoot, "FishingLogBook.Mobile.csproj"));
+        var infoPlist = File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "iOS", "Info.plist"));
         var iosIconPath = Path.Combine(MobileRoot, "Resources", "AppIcon", "appicon_ios.png");
         var webIconPath = Path.Combine(RepositoryRoot, "src", "FishingLogBook.Web", "wwwroot", "icon-512.png");
+        var iosMauiIcon = project.Descendants("MauiIcon")
+            .Single(item => (string?)item.Attribute("Condition") == "'$(TargetFramework)' == 'net10.0-ios'");
+        var androidMauiIcon = project.Descendants("MauiIcon")
+            .Single(item => (string?)item.Attribute("Condition") == "'$(TargetFramework)' == 'net10.0-android'");
 
         // Act
         var iosIcon = ReadPngHeader(iosIconPath);
@@ -28,13 +34,14 @@ public class WhenTestingIosAppIcon
         iosIcon.ColorType.Should().Be(2);
         iosIcon.HasTransparencyChunk.Should().BeFalse();
         webIcon.ColorType.Should().Be(6);
-        project.Should().Contain("Resources/AppIcon/appicon_ios.png");
-        project.Should().Contain("Color=\"#FFFFFF\"");
-        project.Should().Contain("Condition=\"'$(TargetFramework)' == 'net10.0-ios'\"");
-        project.Should().Contain("../FishingLogBook.Web/wwwroot/icon-512.png");
-        project.Should().Contain("Condition=\"'$(TargetFramework)' == 'net10.0-android'\"");
-        project.Should().Contain("EnsureIosAppStoreIconHasNoAlpha");
-        project.Should().Contain("ios-app-icon-png.mjs");
+        iosMauiIcon.Attribute("Include")?.Value.Should().Be("Resources/AppIcon/appicon_ios.png");
+        iosMauiIcon.Attribute("Link")?.Value.Should().Be("Resources/AppIcon/appicon.png");
+        iosMauiIcon.Attribute("Color")?.Value.Should().Be("#FFFFFF");
+        androidMauiIcon.Attribute("Include")?.Value.Should().Be("../FishingLogBook.Web/wwwroot/icon-512.png");
+        androidMauiIcon.Attribute("Link")?.Value.Should().Be("Resources/AppIcon/appicon.png");
+        infoPlist.Should().Contain("Assets.xcassets/appicon.appiconset");
+        File.ReadAllText(Path.Combine(MobileRoot, "FishingLogBook.Mobile.csproj"))
+            .Should().Contain("EnsureIosAppStoreIconHasNoAlpha");
     }
 
     [Fact]
