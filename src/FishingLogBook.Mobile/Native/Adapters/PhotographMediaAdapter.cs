@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Photographs.Providers;
+using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using Microsoft.Extensions.Logging;
@@ -44,7 +46,15 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
                 return MapPickFailure(permission);
             }
 
-            var result = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = text["PhotoTakePicture"] });
+            var result = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
+            {
+                Title = text["PhotoTakePicture"],
+                CompressionQuality = IsIos() ? 85 : 100,
+                MaximumWidth = IsIos() ? 2560 : null,
+                MaximumHeight = IsIos() ? 2560 : null,
+                RotateImage = IsIos(),
+                PreserveMetaData = !IsIos()
+            });
             return await ToPickResultAsync(result, cancellationToken);
         }
         catch (FeatureNotSupportedException)
@@ -61,7 +71,7 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "Camera capture failed.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Camera capture or cache copy failed with {ErrorType}.", exception.GetType().Name);
             return PhotographPickResultModel.Unavailable;
         }
     }
@@ -114,12 +124,12 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "Gallery selection failed.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Gallery selection or cache copy failed with {ErrorType}.", exception.GetType().Name);
             return PhotographPickResultModel.Unavailable;
         }
     }
 
-    private static async Task<PhotographPickResultModel> ToPickResultAsync(
+    private async Task<PhotographPickResultModel> ToPickResultAsync(
         FileResult? result,
         CancellationToken cancellationToken)
     {
@@ -134,15 +144,24 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
             : PhotographPickResultModel.FromFiles([file]);
     }
 
-    private static async Task<PhotographPickedFileModel?> ToPickedFileAsync(
+    private async Task<PhotographPickedFileModel?> ToPickedFileAsync(
         FileResult result,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var path = Path.Combine(FileSystem.CacheDirectory, $"{Guid.NewGuid():N}{Path.GetExtension(result.FileName)}");
-        await using var source = await result.OpenReadAsync();
-        await using var destination = File.Create(path);
-        await source.CopyToAsync(destination, cancellationToken);
+        long copiedBytes;
+        await using (var source = await result.OpenReadAsync())
+        await using (var destination = File.Create(path))
+        {
+            await source.CopyToAsync(destination, cancellationToken);
+            await destination.FlushAsync(cancellationToken);
+            copiedBytes = destination.Length;
+        }
+
+        logger.LogInformation(PhotographLoggerProvider.PipelineEvent, "Photograph picker cache copy completed: {ByteCount} bytes, declared format {Format}.",
+            copiedBytes, FishingLogBook.Shared.Constants.PhotographContentTypeConstants.IsAllowed(result.ContentType)
+                ? result.ContentType : "other");
 
         return new PhotographPickedFileModel
         {
@@ -152,20 +171,47 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         };
     }
 
-    private async Task<PhotographPermissionStatusEnum> EnsureCameraAsync(CancellationToken cancellationToken)
+    private Task<PhotographPermissionStatusEnum> EnsureCameraAsync(CancellationToken cancellationToken)
     {
-        var status = await GetCameraStatusAsync(cancellationToken);
-        return status == PhotographPermissionStatusEnum.Granted
-            ? status
-            : await RequestCameraAsync(cancellationToken);
+        return EnsureAsync(
+            GetCameraStatusAsync,
+            RequestCameraAsync,
+            Permissions.ShouldShowRationale<Permissions.Camera>(),
+            cancellationToken);
     }
 
-    private async Task<PhotographPermissionStatusEnum> EnsurePhotosAsync(CancellationToken cancellationToken)
+    private Task<PhotographPermissionStatusEnum> EnsurePhotosAsync(CancellationToken cancellationToken)
     {
-        var status = await GetPhotosStatusAsync(cancellationToken);
-        return status == PhotographPermissionStatusEnum.Granted
-            ? status
-            : await RequestPhotosAsync(cancellationToken);
+        return EnsureAsync(
+            GetPhotosStatusAsync,
+            RequestPhotosAsync,
+            Permissions.ShouldShowRationale<Permissions.Photos>(),
+            cancellationToken);
+    }
+
+    private static async Task<PhotographPermissionStatusEnum> EnsureAsync(
+        Func<CancellationToken, Task<PhotographPermissionStatusEnum>> getStatusAsync,
+        Func<CancellationToken, Task<PhotographPermissionStatusEnum>> requestAsync,
+        bool canPromptAgain,
+        CancellationToken cancellationToken)
+    {
+        var status = await getStatusAsync(cancellationToken);
+        if (PhotographPermissionGate.CanCapture(status))
+        {
+            return status;
+        }
+
+        if (PhotographPermissionGate.ShouldRequest(status, IsIos(), canPromptAgain))
+        {
+            return await requestAsync(cancellationToken);
+        }
+
+        return status;
+    }
+
+    private static bool IsIos()
+    {
+        return DeviceInfo.Current.Platform == DevicePlatform.iOS;
     }
 
     private static PhotographPickResultModel MapPickFailure(PhotographPermissionStatusEnum permission)
@@ -210,8 +256,10 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         return status switch
         {
             PermissionStatus.Granted or PermissionStatus.Limited => PhotographPermissionStatusEnum.Granted,
+            PermissionStatus.Unknown => PhotographPermissionStatusEnum.NotDetermined,
             PermissionStatus.Denied => PhotographPermissionStatusEnum.Denied,
-            PermissionStatus.Restricted => PhotographPermissionStatusEnum.PermanentlyDenied,
+            PermissionStatus.Restricted or PermissionStatus.Disabled =>
+                PhotographPermissionStatusEnum.PermanentlyDenied,
             _ => PhotographPermissionStatusEnum.Unavailable
         };
     }

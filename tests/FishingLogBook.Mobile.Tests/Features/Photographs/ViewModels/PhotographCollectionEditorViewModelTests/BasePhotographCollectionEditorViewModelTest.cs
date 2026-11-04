@@ -2,6 +2,8 @@ using System.Globalization;
 using FishingLogBook.Mobile.Features.Photographs.Models;
 using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.Features.Photographs.ViewModels;
+using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using NSubstitute;
 
@@ -13,12 +15,18 @@ public abstract class BasePhotographCollectionEditorViewModelTest
 
     protected UiTextService Text { get; } = new(CultureInfo.GetCultureInfo("en-GB"));
     protected IPhotographCollectionEditorService MockEditor { get; } = Substitute.For<IPhotographCollectionEditorService>();
+    protected IInteractionPresenter MockPresenter { get; } = Substitute.For<IInteractionPresenter>();
+    protected IAppInfoAdapter MockApp { get; } = Substitute.For<IAppInfoAdapter>();
     protected PhotographCollectionEditorViewModel Sut { get; }
 
     protected BasePhotographCollectionEditorViewModelTest()
     {
         MockEditor.DefaultMaximumCount.Returns(10);
-        Sut = new PhotographCollectionEditorViewModel(MockEditor, Text);
+        Sut = new PhotographCollectionEditorViewModel(
+            MockEditor,
+            new InteractionService(MockPresenter, Text),
+            MockApp,
+            Text);
         Sut.UserId = OwnerUserId;
     }
 

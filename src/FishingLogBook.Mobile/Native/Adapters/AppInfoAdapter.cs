@@ -15,6 +15,11 @@ public sealed class AppInfoAdapter : IAppInfoAdapter
 
     public string? Commit => ReadCommit();
 
+    public void ShowSettings()
+    {
+        AppInfo.Current.ShowSettingsUI();
+    }
+
     private static string? ReadCommit()
     {
         var informational = typeof(AppInfoAdapter).Assembly

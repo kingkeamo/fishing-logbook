@@ -66,6 +66,7 @@ jobs:
           .github/scripts/google-play-release.test.mjs
           .github/scripts/app-store-connect-release.test.mjs
           .github/scripts/ios-app-icon-png.test.mjs
+          .github/scripts/ios-display-name.test.mjs
           .github/scripts/release-version.test.mjs
           .github/scripts/production-fly-auth-docs.test.mjs
           src/FishingLogBook.Web/build/configure-web.test.mjs

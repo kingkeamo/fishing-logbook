@@ -173,6 +173,11 @@
   <data name="PhotoMoveEarlier" xml:space="preserve"><value>Plus tôt</value></data>
   <data name="PhotoMoveLater" xml:space="preserve"><value>Plus tard</value></data>
   <data name="PhotoPermissionDenied" xml:space="preserve"><value>L'accès à l'appareil photo ou à la photothèque a été refusé.</value></data>
+  <data name="PhotoCameraAccessTitle" xml:space="preserve"><value>Accès à l’appareil photo nécessaire</value></data>
+  <data name="PhotoCameraAccessDenied" xml:space="preserve"><value>L’accès à l’appareil photo a été refusé. Activez-le dans Réglages, puis réessayez de photographier la prise.</value></data>
+  <data name="PhotoLibraryAccessTitle" xml:space="preserve"><value>Accès à la photothèque nécessaire</value></data>
+  <data name="PhotoLibraryAccessDenied" xml:space="preserve"><value>L’accès à la photothèque a été refusé. Autorisez les photos dans Réglages, puis réessayez de choisir une photo.</value></data>
+  <data name="OpenSettings" xml:space="preserve"><value>Ouvrir les réglages</value></data>
   <data name="PhotoUnsupportedFormat" xml:space="preserve"><value>Ce format de photo n'est pas pris en charge.</value></data>
   <data name="PhotoPrepareFailed" xml:space="preserve"><value>Cette photo n'a pas pu être préparée.</value></data>
   <data name="PhotoTooLarge" xml:space="preserve"><value>Cette photo dépasse la taille maximale.</value></data>
@@ -451,6 +456,7 @@
   <data name="TripInvitationDecline" xml:space="preserve"><value>Refuser</value></data>
   <data name="TripContributorUnknown" xml:space="preserve"><value>Un autre pêcheur</value></data>
   <data name="TripStartFishing" xml:space="preserve"><value>Commencer la pêche</value></data>
+  <data name="CatchStartFishingTrip" xml:space="preserve"><value>Commencer une sortie de pêche</value></data>
   <data name="TripStartedLabel" xml:space="preserve"><value>Commencée</value></data>
   <data name="TripFinish" xml:space="preserve"><value>Terminer la sortie</value></data>
   <data name="TripBackToLogbook" xml:space="preserve"><value>Retour au carnet</value></data>

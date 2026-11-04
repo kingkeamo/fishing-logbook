@@ -177,7 +177,12 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
             Substitute.For<IAnglerPreferencesService>(), new CatchPhotographProposalService(),
             new CatchPhotographSaveArgsMapper(), files, Substitute.For<IDeviceLocationService>(),
             new MeasurementService(), units,
-            new PhotographCollectionEditorViewModel(Substitute.For<IPhotographCollectionEditorService>(), text),
+            new PhotographCollectionEditorViewModel(
+                Substitute.For<IPhotographCollectionEditorService>(),
+                new FishingLogBook.Mobile.Interactions.InteractionService(
+                    Substitute.For<FishingLogBook.Mobile.Interactions.IInteractionPresenter>(), text),
+                Substitute.For<FishingLogBook.Mobile.IO.Adapters.IAppInfoAdapter>(),
+                text),
             TimeProvider.System, text, Substitute.For<ICatchWorkingCopyService>(), new ActiveCatchEditRegistry(),
             new FishingLogBook.Mobile.Features.Trips.ViewModels.TripAssociationViewModel(
                 Substitute.For<FishingLogBook.Mobile.Features.Trips.Services.ITripAssociationService>(), text));

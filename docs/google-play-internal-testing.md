@@ -27,7 +27,7 @@ not overwrite local development. iOS Release / TestFlight uses
 `docs/ios-testflight-internal-testing.md`.
 
 The Play listing name is set only in Google Play Console. The repository sets the
-on-device name through `ApplicationTitle`.
+on-device name through `ApplicationTitle` (`Catch But Don't Forget`).
 
 ## What the repository already does
 

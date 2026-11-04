@@ -23,7 +23,7 @@ or chat. Create them in Apple portals and GitHub Secrets only.
 | Apple Team ID | `LHP9K4946H` |
 | App Store SKU | `cbdf-ios-001` |
 | App Store version | `1.0` (Prepare for Submission) |
-| On-device name | `Catch` |
+| On-device name | `Catch But Don't Forget` |
 | Internal TestFlight group | `CatchButDontForget` |
 | Development API | `https://fishing-logbook-dev-api.fly.dev` |
 
@@ -191,11 +191,14 @@ After the protected environment is approved, the publishing job selects
 builds and signs a Development IPA, rechecks that the number is still unused,
 uploads with `xcrun altool`, then polls Apple processing. Only a `VALID` build is
 assigned to **CatchButDontForget**. Assignment uses App Store Connect
-`POST /v1/builds/{id}/relationships/betaGroups`. The reverse relationship
+`POST /v1/builds/{id}/relationships/betaGroups`. That relationship allows
+CREATE and DELETE only; the workflow never GETs it. Membership is confirmed
+with `GET /v1/betaGroups/{id}/builds`. The reverse relationship
 (`POST /v1/betaGroups/{id}/relationships/builds`) is not used; Apple returns
-HTTP 422 for that internal group. HTTP 422 is never treated as tester access
-unless CatchButDontForget already contains the build, or the group is verified
-internal with `hasAccessToAllBuilds`.
+HTTP 422 for that internal group. HTTP 409 and HTTP 422 are never treated as
+tester access unless CatchButDontForget already contains the build, or the
+group is verified internal with `hasAccessToAllBuilds`. If that attribute is
+true, no assignment POST is sent.
 
 The workflow distinguishes three outcomes in the log:
 
@@ -214,20 +217,20 @@ App Store review submission.
 
 ### 8a. Retry assignment of an existing uploaded build
 
-Use this when Apple already accepted an IPA (for example CFBundleVersion **2**)
+Use this when Apple already accepted an IPA (for example CFBundleVersion **3**)
 but the wait-and-assign step failed. Do **not** start a publishing run: that
 selects a new build number and uploads another IPA.
 
 1. In GitHub open **Actions** then **mobile-testflight**.
 2. Select branch **main** and choose **Run workflow**.
-3. Set **Assign an already-uploaded CFBundleVersion** to `2`.
+3. Set **Assign an already-uploaded CFBundleVersion** to `3`.
 4. Leave the other inputs at their defaults. The publishing and artifact-only
    jobs stay skipped.
 5. Approve the `app-store-connect-internal` environment if a reviewer is
    required.
 
 That job runs on `ubuntu-latest`. It does not compile, sign, or upload an IPA.
-It waits until build **2** is `VALID` and not expired, confirms
+It waits until build **3** is `VALID` and not expired, confirms
 **CatchButDontForget** belongs to Catch, But Don't Forget, then assigns that
 existing build (or reports verified all-builds access). Testers still cannot
 install until the log says the build is assigned to **CatchButDontForget**.

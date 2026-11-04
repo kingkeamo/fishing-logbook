@@ -17,7 +17,7 @@ public sealed class WhenTestingRefresh : BaseActiveTripBannerViewModelTest
         Sut.HasActiveTrip.Should().BeFalse();
         Sut.CanStart.Should().BeTrue();
         Sut.ShowAction.Should().BeTrue();
-        Sut.ActionText.Should().Be(Text["TripStartFishing"]);
+        Sut.ActionText.Should().Be(Text["CatchStartFishingTrip"]);
     }
 
     [Fact]

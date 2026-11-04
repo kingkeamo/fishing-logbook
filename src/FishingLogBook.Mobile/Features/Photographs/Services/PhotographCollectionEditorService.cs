@@ -88,7 +88,9 @@ public sealed class PhotographCollectionEditorService(
                 PhotographPreparationOutcomeEnum.Cancelled),
             PhotographPickOutcomeEnum.PermissionDenied => PhotographEditorActionResultModel.Unchanged(
                 currentItems,
-                PhotographPreparationOutcomeEnum.PermissionDenied),
+                source == PhotographSourceEnum.Camera
+                    ? PhotographPreparationOutcomeEnum.CameraPermissionDenied
+                    : PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied),
             PhotographPickOutcomeEnum.Unavailable => PhotographEditorActionResultModel.Unchanged(
                 currentItems,
                 PhotographPreparationOutcomeEnum.CouldNotPrepare),

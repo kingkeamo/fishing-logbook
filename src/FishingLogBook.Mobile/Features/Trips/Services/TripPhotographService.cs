@@ -27,6 +27,8 @@ public sealed class TripPhotographService(
             return result.Outcome switch
             {
                 PhotographPreparationOutcomeEnum.Cancelled => null,
+                PhotographPreparationOutcomeEnum.CameraPermissionDenied => "PhotoCameraAccessDenied",
+                PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied => "PhotoLibraryAccessDenied",
                 PhotographPreparationOutcomeEnum.PermissionDenied => "PhotoPermissionDenied",
                 PhotographPreparationOutcomeEnum.UnsupportedContentType => "PhotoUnsupportedFormat",
                 PhotographPreparationOutcomeEnum.TooLarge => "PhotoTooLarge",

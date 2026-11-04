@@ -24,7 +24,7 @@ on:
         default: 'Internal testing build.'
         type: string
       assign_existing_version:
-        description: Assign an already-uploaded CFBundleVersion (for example 2) to CatchButDontForget. Does not build or upload an IPA. Leave blank unless retrying assignment.
+        description: Assign an already-uploaded CFBundleVersion (for example 3) to CatchButDontForget. Does not build or upload an IPA. Leave blank unless retrying assignment.
         required: false
         default: ''
         type: string
@@ -92,6 +92,8 @@ jobs:
 
       - name: Assert generated iOS App Store icon has no alpha
         run: node .github/scripts/ios-app-icon-png.mjs assert-generated src/FishingLogBook.Mobile
+      - name: Assert generated iOS display name
+        run: node .github/scripts/ios-display-name.mjs src/FishingLogBook.Mobile
 
       - name: Upload iOS IPA artifact
         uses: actions/upload-artifact@v4
@@ -195,6 +197,8 @@ jobs:
 
       - name: Assert generated iOS App Store icon has no alpha
         run: node .github/scripts/ios-app-icon-png.mjs assert-generated src/FishingLogBook.Mobile
+      - name: Assert generated iOS display name
+        run: node .github/scripts/ios-display-name.mjs src/FishingLogBook.Mobile
 
       - name: Upload iOS IPA artifact
         uses: actions/upload-artifact@v4
@@ -281,6 +285,6 @@ jobs:
           APPLICATION_VERSION: ${{ inputs.assign_existing_version }}
         run: |
           if ($env:APPLICATION_VERSION -notmatch '^\d+$') {
-            throw 'assign_existing_version must be an integer CFBundleVersion, for example 2.'
+            throw 'assign_existing_version must be an integer CFBundleVersion, for example 3.'
           }
           node .github/scripts/app-store-connect-release.mjs wait-and-assign

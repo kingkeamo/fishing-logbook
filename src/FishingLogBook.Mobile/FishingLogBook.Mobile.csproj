@@ -12,7 +12,7 @@
     <OutputType>Exe</OutputType>
     <UseMaui>true</UseMaui>
     <SingleProject>true</SingleProject>
-    <ApplicationTitle>Catch</ApplicationTitle>
+    <ApplicationTitle>Catch But Don't Forget</ApplicationTitle>
     <ApplicationId>com.fishinglogbook.mobile.demo</ApplicationId>
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>

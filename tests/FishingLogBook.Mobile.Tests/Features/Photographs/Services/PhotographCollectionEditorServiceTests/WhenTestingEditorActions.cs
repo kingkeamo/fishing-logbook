@@ -55,8 +55,8 @@ public class WhenTestingEditorActions
     }
 
     [Theory]
-    [InlineData(true, PhotographPickOutcomeEnum.PermissionDenied, PhotographPreparationOutcomeEnum.PermissionDenied)]
-    [InlineData(false, PhotographPickOutcomeEnum.PermissionDenied, PhotographPreparationOutcomeEnum.PermissionDenied)]
+    [InlineData(true, PhotographPickOutcomeEnum.PermissionDenied, PhotographPreparationOutcomeEnum.CameraPermissionDenied)]
+    [InlineData(false, PhotographPickOutcomeEnum.PermissionDenied, PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied)]
     [InlineData(true, PhotographPickOutcomeEnum.Cancelled, PhotographPreparationOutcomeEnum.Cancelled)]
     [InlineData(false, PhotographPickOutcomeEnum.Cancelled, PhotographPreparationOutcomeEnum.Cancelled)]
     [InlineData(true, PhotographPickOutcomeEnum.Unavailable, PhotographPreparationOutcomeEnum.CouldNotPrepare)]
@@ -97,7 +97,7 @@ public class WhenTestingEditorActions
 
         var result = await sut.TakePhotoAsync(UserId, Array.Empty<PhotographEditorItemModel>(), 10, CancellationToken.None);
 
-        result.Outcome.Should().Be(PhotographPreparationOutcomeEnum.PermissionDenied);
+        result.Outcome.Should().Be(PhotographPreparationOutcomeEnum.CameraPermissionDenied);
         result.Items.Should().BeEmpty();
     }
 

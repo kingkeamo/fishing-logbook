@@ -11,4 +11,6 @@ public interface IAppInfoAdapter
     string PlatformVersion { get; }
 
     string? Commit { get; }
+
+    void ShowSettings();
 }

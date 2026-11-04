@@ -24,6 +24,7 @@ public class WhenTestingIosIdentity
         var entitlements = File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "iOS", "Entitlements.plist"));
 
         // Act
+        var title = defaultGroup.Element("ApplicationTitle")?.Value;
         var defaultId = defaultGroup.Element("ApplicationId")?.Value;
         var releaseId = iosReleaseGroup.Element("ApplicationId")?.Value;
         var displayVersion = iosReleaseGroup.Element("ApplicationDisplayVersion")?.Value;
@@ -34,6 +35,9 @@ public class WhenTestingIosIdentity
             .ToList();
 
         // Assert
+        title.Should().Be("Catch But Don't Forget");
+        infoPlist.Should().NotContain("CFBundleDisplayName");
+        infoPlist.Should().NotContain("CFBundleName");
         defaultId.Should().Be("com.fishinglogbook.mobile.demo");
         releaseId.Should().Be("com.catchbutdontforget.app");
         displayVersion.Should().Be("1.0");
@@ -44,6 +48,48 @@ public class WhenTestingIosIdentity
         signingSecrets.Should().Contain(("CodesignEntitlements", "Platforms/iOS/Entitlements.plist"));
         signingSecrets.Select(pair => pair.LocalName).Should().NotContain("CodesignKey");
         signingSecrets.Select(pair => pair.LocalName).Should().NotContain("CodesignProvision");
+        File.ReadAllText(Path.Combine(RepositoryRoot, "docs", "ios-testflight-internal-testing.md"))
+            .Should().Contain("| On-device name | `Catch But Don't Forget` |");
+    }
+
+    [Fact]
+    public void ItShouldAssertTheGeneratedIosDisplayNameAfterNativeBuilds()
+    {
+        // Arrange
+        var validation = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "mobile-build-test.yml"));
+        var workflow = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "mobile-testflight.yml"));
+        var iosJob = validation[validation.IndexOf("  ios:", StringComparison.Ordinal)..];
+
+        // Act
+        // Assert
+        iosJob.IndexOf("Build unsigned iOS simulator", StringComparison.Ordinal)
+            .Should().BeLessThan(iosJob.IndexOf("ios-display-name.mjs", StringComparison.Ordinal));
+        workflow.Should().Contain("ios-display-name.mjs src/FishingLogBook.Mobile");
+        workflow.Split("ios-display-name.mjs src/FishingLogBook.Mobile", StringSplitOptions.None)
+            .Should().HaveCount(3);
+        File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "build-test.yml"))
+            .Should().Contain("ios-display-name.test.mjs");
+        iosJob.Should().Contain("node --test .github/scripts/ios-display-name.test.mjs");
+    }
+
+    [Fact]
+    public void ItShouldConfigureIosCameraOutputForBoundedSizeAndUprightPrivateImages()
+    {
+        // Arrange
+        var adapter = File.ReadAllText(Path.Combine(MobileRoot, "Native", "Adapters", "PhotographMediaAdapter.cs"));
+
+        // Act
+        var capture = adapter[adapter.IndexOf("MediaPicker.Default.CapturePhotoAsync", StringComparison.Ordinal)..];
+        capture = capture[..capture.IndexOf("return await ToPickResultAsync", StringComparison.Ordinal)];
+
+        // Assert
+        capture.Should().Contain("CompressionQuality = IsIos() ? 85 : 100");
+        capture.Should().Contain("MaximumWidth = IsIos() ? 2560 : null");
+        capture.Should().Contain("MaximumHeight = IsIos() ? 2560 : null");
+        capture.Should().Contain("RotateImage = IsIos()");
+        capture.Should().Contain("PreserveMetaData = !IsIos()");
+        File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "iOS", "MauiProgram.iOS.cs"))
+            .Should().Contain("logging.AddProvider(new PhotographLoggerProvider(Console.WriteLine))");
     }
 
     [Fact]

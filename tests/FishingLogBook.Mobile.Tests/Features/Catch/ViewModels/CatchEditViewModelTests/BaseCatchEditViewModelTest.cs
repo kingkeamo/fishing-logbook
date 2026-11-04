@@ -14,6 +14,8 @@ using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Trips.Models;
 using FishingLogBook.Mobile.Features.Trips.Services;
 using FishingLogBook.Mobile.Features.Trips.ViewModels;
+using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Catches.Services;
@@ -61,7 +63,11 @@ public abstract class BaseCatchEditViewModelTest
             MockLocation,
             measurement ?? new MeasurementService(),
             MockUnits,
-            new PhotographCollectionEditorViewModel(MockPhotographEditor, Text),
+            new PhotographCollectionEditorViewModel(
+                MockPhotographEditor,
+                new InteractionService(Substitute.For<IInteractionPresenter>(), Text),
+                Substitute.For<IAppInfoAdapter>(),
+                Text),
             clock ?? new FixedTimeProvider(Now),
             Text,
             Substitute.For<ICatchWorkingCopyService>(),

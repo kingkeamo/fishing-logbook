@@ -3,6 +3,8 @@ using System.ComponentModel;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
 using FishingLogBook.Mobile.Features.Photographs.Services;
+using FishingLogBook.Mobile.Interactions;
+using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 
 namespace FishingLogBook.Mobile.Features.Photographs.ViewModels;
@@ -10,6 +12,8 @@ namespace FishingLogBook.Mobile.Features.Photographs.ViewModels;
 public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly IPhotographCollectionEditorService _editor;
+    private readonly InteractionService _interactions;
+    private readonly IAppInfoAdapter _app;
     private readonly UiTextService _text;
     private Guid _userId;
     private int _maximumCount = 10;
@@ -20,9 +24,13 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
 
     public PhotographCollectionEditorViewModel(
         IPhotographCollectionEditorService editor,
+        InteractionService interactions,
+        IAppInfoAdapter app,
         UiTextService text)
     {
         _editor = editor;
+        _interactions = interactions;
+        _app = app;
         _text = text;
         Items = new ObservableCollection<PhotographEditorItemModel>();
         _maximumCount = editor.DefaultMaximumCount;
@@ -257,6 +265,10 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         {
             var result = await action(cancellationToken);
             Apply(result);
+            if (result is not null)
+            {
+                await OfferSettingsIfDeniedAsync(result.Outcome, cancellationToken);
+            }
         }
         finally
         {
@@ -289,6 +301,8 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
     {
         _statusKey = outcome switch
         {
+            PhotographPreparationOutcomeEnum.CameraPermissionDenied => "PhotoCameraAccessDenied",
+            PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied => "PhotoLibraryAccessDenied",
             PhotographPreparationOutcomeEnum.PermissionDenied => "PhotoPermissionDenied",
             PhotographPreparationOutcomeEnum.UnsupportedContentType => "PhotoUnsupportedFormat",
             PhotographPreparationOutcomeEnum.TooLarge => "PhotoTooLarge",
@@ -297,6 +311,38 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         };
         Notify(nameof(HasStatus));
         Notify(nameof(StatusText));
+    }
+
+    private async Task OfferSettingsIfDeniedAsync(
+        PhotographPreparationOutcomeEnum outcome,
+        CancellationToken cancellationToken)
+    {
+        var prompt = outcome switch
+        {
+            PhotographPreparationOutcomeEnum.CameraPermissionDenied =>
+                ("PhotoCameraAccessTitle", "PhotoCameraAccessDenied"),
+            PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied =>
+                ("PhotoLibraryAccessTitle", "PhotoLibraryAccessDenied"),
+            PhotographPreparationOutcomeEnum.PermissionDenied =>
+                ("PhotoCameraAccessTitle", "PhotoPermissionDenied"),
+            _ => ((string, string)?)null
+        };
+        if (prompt is null)
+        {
+            return;
+        }
+
+        var openSettings = await _interactions.ConfirmAsync(
+            new DialogRequest(
+                _text[prompt.Value.Item1],
+                _text[prompt.Value.Item2],
+                _text["OpenSettings"],
+                _text["Cancel"]),
+            cancellationToken);
+        if (openSettings)
+        {
+            _app.ShowSettings();
+        }
     }
 
     private void ClearStatus()

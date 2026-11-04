@@ -173,6 +173,11 @@
   <data name="PhotoMoveEarlier" xml:space="preserve"><value>Earlier</value></data>
   <data name="PhotoMoveLater" xml:space="preserve"><value>Later</value></data>
   <data name="PhotoPermissionDenied" xml:space="preserve"><value>Camera or photo library access was denied.</value></data>
+  <data name="PhotoCameraAccessTitle" xml:space="preserve"><value>Camera access needed</value></data>
+  <data name="PhotoCameraAccessDenied" xml:space="preserve"><value>Camera access was denied. Enable the camera in Settings, then try photographing the catch again.</value></data>
+  <data name="PhotoLibraryAccessTitle" xml:space="preserve"><value>Photo library access needed</value></data>
+  <data name="PhotoLibraryAccessDenied" xml:space="preserve"><value>Photo library access was denied. Enable photos in Settings, then try choosing a photo again.</value></data>
+  <data name="OpenSettings" xml:space="preserve"><value>Open Settings</value></data>
   <data name="PhotoUnsupportedFormat" xml:space="preserve"><value>This photo format is not supported.</value></data>
   <data name="PhotoPrepareFailed" xml:space="preserve"><value>This photo could not be prepared.</value></data>
   <data name="PhotoTooLarge" xml:space="preserve"><value>This photo exceeds the maximum size.</value></data>
@@ -451,6 +456,7 @@
   <data name="TripInvitationDecline" xml:space="preserve"><value>Decline</value></data>
   <data name="TripContributorUnknown" xml:space="preserve"><value>Another angler</value></data>
   <data name="TripStartFishing" xml:space="preserve"><value>Start fishing</value></data>
+  <data name="CatchStartFishingTrip" xml:space="preserve"><value>Start Fishing Trip</value></data>
   <data name="TripStartedLabel" xml:space="preserve"><value>Started</value></data>
   <data name="TripFinish" xml:space="preserve"><value>Finish trip</value></data>
   <data name="TripBackToLogbook" xml:space="preserve"><value>Back to logbook</value></data>
