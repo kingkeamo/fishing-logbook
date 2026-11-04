@@ -7,5 +7,7 @@ public enum PhotographPreparationOutcomeEnum
     CouldNotPrepare = 2,
     PermissionDenied = 3,
     Cancelled = 4,
-    TooLarge = 5
+    TooLarge = 5,
+    CameraPermissionDenied = 6,
+    PhotoLibraryPermissionDenied = 7
 }

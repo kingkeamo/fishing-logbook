@@ -39,6 +39,8 @@ public sealed class WhenTestingAdd : BaseTripPhotographServiceTest
 
     [Theory]
     [InlineData(PhotographPreparationOutcomeEnum.PermissionDenied, "PhotoPermissionDenied")]
+    [InlineData(PhotographPreparationOutcomeEnum.CameraPermissionDenied, "PhotoCameraAccessDenied")]
+    [InlineData(PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied, "PhotoLibraryAccessDenied")]
     [InlineData(PhotographPreparationOutcomeEnum.UnsupportedContentType, "PhotoUnsupportedFormat")]
     [InlineData(PhotographPreparationOutcomeEnum.TooLarge, "PhotoTooLarge")]
     [InlineData(PhotographPreparationOutcomeEnum.CouldNotPrepare, "PhotoPrepareFailed")]

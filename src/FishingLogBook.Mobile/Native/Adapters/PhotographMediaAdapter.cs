@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
 using Microsoft.Extensions.Logging;
@@ -152,20 +153,47 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         };
     }
 
-    private async Task<PhotographPermissionStatusEnum> EnsureCameraAsync(CancellationToken cancellationToken)
+    private Task<PhotographPermissionStatusEnum> EnsureCameraAsync(CancellationToken cancellationToken)
     {
-        var status = await GetCameraStatusAsync(cancellationToken);
-        return status == PhotographPermissionStatusEnum.Granted
-            ? status
-            : await RequestCameraAsync(cancellationToken);
+        return EnsureAsync(
+            GetCameraStatusAsync,
+            RequestCameraAsync,
+            Permissions.ShouldShowRationale<Permissions.Camera>(),
+            cancellationToken);
     }
 
-    private async Task<PhotographPermissionStatusEnum> EnsurePhotosAsync(CancellationToken cancellationToken)
+    private Task<PhotographPermissionStatusEnum> EnsurePhotosAsync(CancellationToken cancellationToken)
     {
-        var status = await GetPhotosStatusAsync(cancellationToken);
-        return status == PhotographPermissionStatusEnum.Granted
-            ? status
-            : await RequestPhotosAsync(cancellationToken);
+        return EnsureAsync(
+            GetPhotosStatusAsync,
+            RequestPhotosAsync,
+            Permissions.ShouldShowRationale<Permissions.Photos>(),
+            cancellationToken);
+    }
+
+    private static async Task<PhotographPermissionStatusEnum> EnsureAsync(
+        Func<CancellationToken, Task<PhotographPermissionStatusEnum>> getStatusAsync,
+        Func<CancellationToken, Task<PhotographPermissionStatusEnum>> requestAsync,
+        bool canPromptAgain,
+        CancellationToken cancellationToken)
+    {
+        var status = await getStatusAsync(cancellationToken);
+        if (PhotographPermissionGate.CanCapture(status))
+        {
+            return status;
+        }
+
+        if (PhotographPermissionGate.ShouldRequest(status, IsIos(), canPromptAgain))
+        {
+            return await requestAsync(cancellationToken);
+        }
+
+        return status;
+    }
+
+    private static bool IsIos()
+    {
+        return DeviceInfo.Current.Platform == DevicePlatform.iOS;
     }
 
     private static PhotographPickResultModel MapPickFailure(PhotographPermissionStatusEnum permission)
@@ -210,8 +238,10 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         return status switch
         {
             PermissionStatus.Granted or PermissionStatus.Limited => PhotographPermissionStatusEnum.Granted,
+            PermissionStatus.Unknown => PhotographPermissionStatusEnum.NotDetermined,
             PermissionStatus.Denied => PhotographPermissionStatusEnum.Denied,
-            PermissionStatus.Restricted => PhotographPermissionStatusEnum.PermanentlyDenied,
+            PermissionStatus.Restricted or PermissionStatus.Disabled =>
+                PhotographPermissionStatusEnum.PermanentlyDenied,
             _ => PhotographPermissionStatusEnum.Unavailable
         };
     }

@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
 using FishingLogBook.Mobile.Features.Photographs.Services;
+using FishingLogBook.Mobile.Interactions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Photographs.ViewModels.PhotographCollectionEditorViewModelTests;
@@ -89,6 +90,8 @@ public sealed class WhenTestingTakePhoto : BasePhotographCollectionEditorViewMod
     }
 
     [Theory]
+    [InlineData(PhotographPreparationOutcomeEnum.CameraPermissionDenied, "PhotoCameraAccessDenied")]
+    [InlineData(PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied, "PhotoLibraryAccessDenied")]
     [InlineData(PhotographPreparationOutcomeEnum.PermissionDenied, "PhotoPermissionDenied")]
     [InlineData(PhotographPreparationOutcomeEnum.UnsupportedContentType, "PhotoUnsupportedFormat")]
     [InlineData(PhotographPreparationOutcomeEnum.TooLarge, "PhotoTooLarge")]
@@ -125,14 +128,14 @@ public sealed class WhenTestingTakePhoto : BasePhotographCollectionEditorViewMod
                 Arg.Any<CancellationToken>())
             .Returns(PhotographEditorActionResultModel.Unchanged(
                 [],
-                PhotographPreparationOutcomeEnum.PermissionDenied));
+                PhotographPreparationOutcomeEnum.CameraPermissionDenied));
         await Sut.TakePhotoAsync(CancellationToken.None);
 
         // Act
         Text.SetCulture("fr-FR");
 
         // Assert
-        Sut.StatusText.Should().Be(Text["PhotoPermissionDenied"]);
+        Sut.StatusText.Should().Be(Text["PhotoCameraAccessDenied"]);
     }
 
     [Fact]
@@ -174,5 +177,109 @@ public sealed class WhenTestingTakePhoto : BasePhotographCollectionEditorViewMod
         await act.Should().NotThrowAsync();
         Sut.HasItems.Should().BeFalse();
         Sut.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldOpenSettingsWhenCameraAccessIsDeniedAndTheUserChoosesOpenSettings()
+    {
+        // Arrange
+        MockEditor.TakePhotoAsync(
+                OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+                10,
+                Arg.Any<CancellationToken>())
+            .Returns(PhotographEditorActionResultModel.Unchanged(
+                [],
+                PhotographPreparationOutcomeEnum.CameraPermissionDenied));
+        MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(true);
+
+        // Act
+        await Sut.TakePhotoAsync(CancellationToken.None);
+
+        // Assert
+        Sut.StatusText.Should().Be(Text["PhotoCameraAccessDenied"]);
+        await MockPresenter.Received(1).ShowDialogAsync(
+            Arg.Is<DialogRequest>(request =>
+                request.Title == Text["PhotoCameraAccessTitle"]
+                && request.Message == Text["PhotoCameraAccessDenied"]
+                && request.Accept == Text["OpenSettings"]
+                && request.Cancel == Text["Cancel"]),
+            Arg.Any<CancellationToken>());
+        MockApp.Received(1).ShowSettings();
+    }
+
+    [Fact]
+    public async Task ItShouldNotOpenSettingsWhenTheUserCancelsCameraRecovery()
+    {
+        // Arrange
+        MockEditor.TakePhotoAsync(
+                OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+                10,
+                Arg.Any<CancellationToken>())
+            .Returns(PhotographEditorActionResultModel.Unchanged(
+                [],
+                PhotographPreparationOutcomeEnum.CameraPermissionDenied));
+        MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(false);
+
+        // Act
+        await Sut.TakePhotoAsync(CancellationToken.None);
+
+        // Assert
+        Sut.StatusText.Should().Be(Text["PhotoCameraAccessDenied"]);
+        await MockPresenter.Received(1).ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>());
+        MockApp.DidNotReceive().ShowSettings();
+    }
+
+    [Fact]
+    public async Task ItShouldAllowALaterCaptureAfterSettingsRecovery()
+    {
+        // Arrange
+        var photo = Photo();
+        MockEditor.TakePhotoAsync(
+                OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+                10,
+                Arg.Any<CancellationToken>())
+            .Returns(
+                PhotographEditorActionResultModel.Unchanged([], PhotographPreparationOutcomeEnum.CameraPermissionDenied),
+                PhotographEditorActionResultModel.Updated([photo]));
+        MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(true);
+        await Sut.TakePhotoAsync(CancellationToken.None);
+
+        // Act
+        await Sut.TakePhotoAsync(CancellationToken.None);
+
+        // Assert
+        Sut.Items.Should().ContainSingle(item => item.Id == photo.Id);
+        Sut.HasStatus.Should().BeFalse();
+        await MockEditor.Received(2).TakePhotoAsync(
+            OwnerUserId,
+            Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+            10,
+            Arg.Any<CancellationToken>());
+        MockApp.Received(1).ShowSettings();
+        await MockPresenter.Received(1).ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldNotPromptForSettingsWhenTheTakeIsCancelled()
+    {
+        // Arrange
+        MockEditor.TakePhotoAsync(
+                OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+                10,
+                Arg.Any<CancellationToken>())
+            .Returns(PhotographEditorActionResultModel.Unchanged(
+                [],
+                PhotographPreparationOutcomeEnum.Cancelled));
+
+        // Act
+        await Sut.TakePhotoAsync(CancellationToken.None);
+
+        // Assert
+        await MockPresenter.DidNotReceive().ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>());
+        MockApp.DidNotReceive().ShowSettings();
     }
 }

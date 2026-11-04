@@ -2,7 +2,7 @@ using FishingLogBook.Mobile.Features.Trips.ViewModels;
 
 namespace FishingLogBook.Mobile.Features.Trips.Components.TripAction;
 
-/// <summary>The Catches page "Start fishing" button (shown only when no trip is active). The hosting page hands it the shared banner view-model.</summary>
+/// <summary>The Catches page "Start Fishing Trip" button (shown only when no trip is active). The hosting page hands it the shared banner view-model.</summary>
 public partial class TripActionView : ContentView
 {
     public TripActionView()

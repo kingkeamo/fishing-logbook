@@ -5,5 +5,6 @@ public enum PhotographPermissionStatusEnum
     Unavailable = 0,
     Denied = 1,
     PermanentlyDenied = 2,
-    Granted = 3
+    Granted = 3,
+    NotDetermined = 4
 }

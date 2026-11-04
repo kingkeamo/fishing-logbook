@@ -56,7 +56,7 @@ public sealed class ActiveTripBannerViewModel : INotifyPropertyChanged
 
     public bool ShowAction => CanStart;
 
-    public string ActionText => Text["TripStartFishing"];
+    public string ActionText => Text["CatchStartFishingTrip"];
 
     public bool HasError => _startFailed;
 

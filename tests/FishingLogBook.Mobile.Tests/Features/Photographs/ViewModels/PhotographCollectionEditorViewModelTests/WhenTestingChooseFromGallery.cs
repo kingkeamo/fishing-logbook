@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
 using FishingLogBook.Mobile.Features.Photographs.Services;
+using FishingLogBook.Mobile.Interactions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Photographs.ViewModels.PhotographCollectionEditorViewModelTests;
@@ -80,13 +81,41 @@ public sealed class WhenTestingChooseFromGallery : BasePhotographCollectionEdito
                 Arg.Any<CancellationToken>())
             .Returns(PhotographEditorActionResultModel.Unchanged(
                 [],
-                PhotographPreparationOutcomeEnum.PermissionDenied));
+                PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied));
 
         // Act
         await Sut.ChooseFromGalleryAsync(CancellationToken.None);
 
         // Assert
-        Sut.StatusText.Should().Be(Text["PhotoPermissionDenied"]);
+        Sut.StatusText.Should().Be(Text["PhotoLibraryAccessDenied"]);
         Sut.HasItems.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ItShouldOpenSettingsWhenLibraryAccessIsDeniedAndTheUserChoosesOpenSettings()
+    {
+        // Arrange
+        MockEditor.ChooseFromGalleryAsync(
+                OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+                10,
+                Arg.Any<CancellationToken>())
+            .Returns(PhotographEditorActionResultModel.Unchanged(
+                [],
+                PhotographPreparationOutcomeEnum.PhotoLibraryPermissionDenied));
+        MockPresenter.ShowDialogAsync(Arg.Any<DialogRequest>(), Arg.Any<CancellationToken>()).Returns(true);
+
+        // Act
+        await Sut.ChooseFromGalleryAsync(CancellationToken.None);
+
+        // Assert
+        await MockPresenter.Received(1).ShowDialogAsync(
+            Arg.Is<DialogRequest>(request =>
+                request.Title == Text["PhotoLibraryAccessTitle"]
+                && request.Message == Text["PhotoLibraryAccessDenied"]
+                && request.Accept == Text["OpenSettings"]
+                && request.Cancel == Text["Cancel"]),
+            Arg.Any<CancellationToken>());
+        MockApp.Received(1).ShowSettings();
     }
 }
