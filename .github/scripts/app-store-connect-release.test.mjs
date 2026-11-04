@@ -9,9 +9,11 @@ import {
     assertBuildEligibleForInternalTesting,
     assertInternalGroupForApp,
     confirmInternalGroupAssignment,
+    groupContainsBuild,
     groupHasVerifiedAllBuildsAccess,
     internalGroupAssignmentRequest,
     isInternalGroupAssignmentRejected,
+    listBuildsForBetaGroupPath,
     nextBuildNumber,
     selectInternalGroup,
     shouldSkipInternalGroupAssignment,
@@ -118,6 +120,19 @@ describe('TestFlight internal group lookup', () => {
         assert.deepEqual(assignment.body, { data: [{ type: 'betaGroups', id: 'GROUP-CATCH' }] });
         assert.match(script, /internalGroupAssignmentRequest\(build\.id, group\.id\)/);
         assert.doesNotMatch(script, /betaGroups\/\$\{encodeURIComponent\(group\.id\)\}\/relationships\/builds/);
+        assert.doesNotMatch(script, /builds\/\$\{encodeURIComponent\(build\.id\)\}\/relationships\/betaGroups\?/);
+        assert.doesNotMatch(script, /relationships\/betaGroups\?limit/);
+    });
+
+    it('verifies CatchButDontForget membership from the group builds list, not a build relationship GET', () => {
+        assert.equal(listBuildsForBetaGroupPath('GROUP-CATCH'), 'betaGroups/GROUP-CATCH/builds?limit=200');
+        assert.equal(groupContainsBuild([{ id: 'BUILD-3' }], 'BUILD-3'), true);
+        assert.equal(groupContainsBuild([{ id: 'BUILD-2' }], 'BUILD-3'), false);
+        assert.match(script, /listBuildsForBetaGroupPath\(group\.id\)/);
+        assert.match(script, /groupHasVerifiedAllBuildsAccess\(group\)/);
+        assert.ok(
+            script.indexOf('groupHasVerifiedAllBuildsAccess(group)')
+                < script.indexOf('listBuildsForBetaGroupPath(group.id)'));
     });
 
     it('rejects a CatchButDontForget group that belongs to another app', () => {
@@ -258,6 +273,24 @@ describe('TestFlight internal group assignment', () => {
             });
     });
 
+    it('rejects HTTP 403 GET_RELATIONSHIP without reporting tester access', () => {
+        assert.throws(
+            () => confirmInternalGroupAssignment(
+                {
+                    ok: false,
+                    status: 403,
+                    statusText: 'Forbidden',
+                    detail: "The relationship 'betaGroups' does not allow 'GET_RELATIONSHIP'. Allowed operations are: CREATE, DELETE.",
+                },
+                buildId,
+                { internalGroupId, assignedGroupIds: [internalGroupId] }),
+            error => {
+                assert.match(error.message, /App Store Connect API request failed \(403\): The relationship 'betaGroups' does not allow/);
+                assert.doesNotMatch(error.message, /assigned to the CatchButDontForget/);
+                return true;
+            });
+    });
+
     const internalGroupRejected = {
         ok: false,
         status: 422,
@@ -351,19 +384,21 @@ describe('TestFlight internal group assignment', () => {
             id: internalGroupId,
             attributes: { isInternalGroup: true, hasAccessToAllBuilds: false },
         };
-        assert.equal(shouldSkipInternalGroupAssignment(group, [internalGroupId]), true);
-        assert.equal(shouldSkipInternalGroupAssignment(group, ['OTHER-GROUP']), false);
+        assert.equal(shouldSkipInternalGroupAssignment(group, [{ id: buildId }], buildId), true);
+        assert.equal(shouldSkipInternalGroupAssignment(group, [{ id: 'OTHER-BUILD' }], buildId), false);
         assert.equal(
             shouldSkipInternalGroupAssignment(
                 { id: internalGroupId, attributes: { isInternalGroup: true, hasAccessToAllBuilds: true } },
-                []),
+                [],
+                buildId),
             true);
         assert.equal(
             shouldSkipInternalGroupAssignment(
                 { id: internalGroupId, attributes: { isInternalGroup: true, hasAccessToAllBuilds: false } },
-                []),
+                [],
+                buildId),
             false);
-        assert.match(script, /shouldSkipInternalGroupAssignment\(group, assignedGroupIds\)/);
+        assert.match(script, /shouldSkipInternalGroupAssignment\(group, groupBuilds, build\.id\)/);
     });
 });
 

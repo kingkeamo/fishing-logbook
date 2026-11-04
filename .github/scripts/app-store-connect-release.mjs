@@ -198,6 +198,14 @@ export function internalGroupAssignmentRequest(buildId, groupId) {
     };
 }
 
+export function listBuildsForBetaGroupPath(groupId) {
+    return `betaGroups/${encodeURIComponent(groupId)}/builds?limit=200`;
+}
+
+export function groupContainsBuild(builds, buildId) {
+    return Boolean(buildId && (builds ?? []).some(item => item.id === buildId));
+}
+
 async function findInternalGroup(appId, token) {
     // GET /v1/apps/{id}/betaGroups does not accept filter[name] (HTTP 400).
     // List groups for the app and select CatchButDontForget locally.
@@ -247,10 +255,14 @@ async function waitAndAssign(token, applicationVersion) {
 
     assertBuildEligibleForInternalTesting(build, app.id, applicationVersion);
 
-    const assignedGroupIds = (await collectPages(
-        `builds/${encodeURIComponent(build.id)}/relationships/betaGroups?limit=200`,
-        token)).map(item => item.id);
-    if (shouldSkipInternalGroupAssignment(group, assignedGroupIds)) {
+    if (groupHasVerifiedAllBuildsAccess(group)) {
+        const availability = testersAvailability('VALID', true);
+        process.stdout.write(`${availability.message}\n`);
+        return;
+    }
+
+    const groupBuilds = await collectPages(listBuildsForBetaGroupPath(group.id), token);
+    if (shouldSkipInternalGroupAssignment(group, groupBuilds, build.id)) {
         const availability = testersAvailability('VALID', true);
         process.stdout.write(`${availability.message}\n`);
         return;
@@ -272,14 +284,12 @@ async function waitAndAssign(token, applicationVersion) {
         statusText: assignResponse.statusText,
         detail: await assignResponse.text(),
     };
-    const confirmedGroupIds = assignmentRequiresMembershipCheck(assignResult)
-        ? (await collectPages(
-            `builds/${encodeURIComponent(build.id)}/relationships/betaGroups?limit=200`,
-            token)).map(item => item.id)
+    const confirmedBuilds = assignmentRequiresMembershipCheck(assignResult)
+        ? await collectPages(listBuildsForBetaGroupPath(group.id), token)
         : [];
     const availability = confirmInternalGroupAssignment(assignResult, build.id, {
         internalGroupId: group.id,
-        assignedGroupIds: confirmedGroupIds,
+        assignedGroupIds: groupContainsBuild(confirmedBuilds, build.id) ? [group.id] : [],
         isInternalGroup: group.attributes?.isInternalGroup === true,
         hasAccessToAllBuilds: group.attributes?.hasAccessToAllBuilds === true,
     });
@@ -291,9 +301,8 @@ export function groupHasVerifiedAllBuildsAccess(group) {
         && group?.attributes?.hasAccessToAllBuilds === true;
 }
 
-export function shouldSkipInternalGroupAssignment(group, assignedGroupIds = []) {
-    return Boolean(group?.id && assignedGroupIds.includes(group.id))
-        || groupHasVerifiedAllBuildsAccess(group);
+export function shouldSkipInternalGroupAssignment(group, groupBuilds = [], buildId) {
+    return groupHasVerifiedAllBuildsAccess(group) || groupContainsBuild(groupBuilds, buildId);
 }
 
 export function isInternalGroupAssignmentRejected(assignResult) {
