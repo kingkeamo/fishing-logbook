@@ -85,6 +85,9 @@ jobs:
           -ApplicationDisplayVersion $env:APPLICATION_DISPLAY_VERSION
           -OutputPath $env:GITHUB_OUTPUT
 
+      - name: Assert generated iOS App Store icon has no alpha
+        run: node .github/scripts/ios-app-icon-png.mjs assert-generated src/FishingLogBook.Mobile
+
       - name: Upload iOS IPA artifact
         uses: actions/upload-artifact@v4
         with:
@@ -184,6 +187,9 @@ jobs:
           -ApplicationVersion $env:APPLICATION_VERSION
           -ApplicationDisplayVersion $env:APPLICATION_DISPLAY_VERSION
           -OutputPath $env:GITHUB_OUTPUT
+
+      - name: Assert generated iOS App Store icon has no alpha
+        run: node .github/scripts/ios-app-icon-png.mjs assert-generated src/FishingLogBook.Mobile
 
       - name: Upload iOS IPA artifact
         uses: actions/upload-artifact@v4

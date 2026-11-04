@@ -55,6 +55,7 @@ public class WhenTestingSignedIpaWorkflow
         workflow.Should().Contain("runs-on: macos-26");
         workflow.Should().Contain("/Applications/Xcode_26.5.app");
         workflow.Should().Contain("DOTNET_WORKLOAD_SET: '10.0.300.3'");
+        iosJob.Should().Contain("assert-generated src/FishingLogBook.Mobile");
         validation.Should().NotContain("IOS_DISTRIBUTION_CERTIFICATE");
         validation.Should().NotContain("ArchiveOnBuild=true");
     }
