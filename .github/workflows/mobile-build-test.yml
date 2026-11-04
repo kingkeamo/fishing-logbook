@@ -110,3 +110,5 @@ jobs:
           -p:RuntimeIdentifier=iossimulator-arm64
           -p:EnableCodeSigning=false
           -p:BuildIpa=false
+      - name: Assert generated iOS App Store icon has no alpha
+        run: node .github/scripts/ios-app-icon-png.mjs assert-generated src/FishingLogBook.Mobile

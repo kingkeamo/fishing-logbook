@@ -245,7 +245,16 @@ on `macos-26`. That job:
 - selects Xcode 26.5 (`/Applications/Xcode_26.5.app`);
 - installs MAUI Android and iOS workloads at set `10.0.300.3` for .NET SDK `10.0.300`;
 - runs `FishingLogBook.Mobile.Tests` for `net10.0`;
-- builds `net10.0-ios` Debug for `iossimulator-arm64` with code signing disabled.
+- builds `net10.0-ios` Debug for `iossimulator-arm64` with code signing disabled;
+- asserts the **generated** 1024×1024 iOS App Store icon (`ios-marketing` artwork) is
+  8-bit RGB with no alpha channel (Apple error 90717). `net10.0` tests cover the source
+  PNG and project wiring. Inspecting the Resizetizer catalog needs a `net10.0-ios`
+  build (`IncludeIos=true` on Windows, or the macOS CI simulator job). A green catalog
+  check is not an App Store Connect acceptance.
+
+iOS uses `Resources/AppIcon/appicon_ios.png` (opaque). Android and web keep
+`wwwroot/icon-512.png`, which still has transparency. A successful unsigned iOS job
+does not mean Apple has accepted an IPA.
 
 The same SDK, workload set and Xcode 26.5 pin is used by
 `.github/workflows/mobile-testflight.yml`. Xcode 26.5 is required by that workload and
