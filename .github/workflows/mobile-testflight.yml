@@ -23,8 +23,13 @@ on:
         required: false
         default: 'Internal testing build.'
         type: string
+      assign_existing_version:
+        description: Assign an already-uploaded CFBundleVersion (for example 2) to CatchButDontForget. Does not build or upload an IPA. Leave blank unless retrying assignment.
+        required: false
+        default: ''
+        type: string
 
-run-name: ${{ inputs.publish_to_testflight && 'Publish Catch to TestFlight internal testing' || 'Build Catch signed IPA only' }}
+run-name: ${{ inputs.assign_existing_version != '' && format('Assign existing iOS build {0} to CatchButDontForget', inputs.assign_existing_version) || (inputs.publish_to_testflight && 'Publish Catch to TestFlight internal testing' || 'Build Catch signed IPA only') }}
 
 concurrency:
   group: mobile-testflight
@@ -33,7 +38,7 @@ concurrency:
 jobs:
   artifact-only:
     name: Build signed iOS IPA only
-    if: inputs.publish_to_testflight == false
+    if: inputs.publish_to_testflight == false && inputs.assign_existing_version == ''
     runs-on: macos-26
     timeout-minutes: 75
     permissions:
@@ -98,7 +103,7 @@ jobs:
 
   publish-internal:
     name: Build and publish to TestFlight internal testing
-    if: inputs.publish_to_testflight == true
+    if: inputs.publish_to_testflight == true && inputs.assign_existing_version == ''
     runs-on: macos-26
     timeout-minutes: 90
     environment: app-store-connect-internal
@@ -230,3 +235,52 @@ jobs:
         env:
           APPLICATION_VERSION: ${{ steps.testflight-version.outputs.application_version }}
         run: node .github/scripts/app-store-connect-release.mjs wait-and-assign
+
+  assign-existing:
+    name: Assign an existing TestFlight build
+    if: inputs.assign_existing_version != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: app-store-connect-internal
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+    steps:
+      - name: Require the main branch
+        if: github.ref != 'refs/heads/main'
+        run: throw 'TestFlight assignment retries must be dispatched from the main branch.'
+
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Confirm App Store Connect API configuration
+        run: |
+          $missing = @()
+          foreach ($name in @('APP_STORE_CONNECT_ISSUER_ID', 'APP_STORE_CONNECT_KEY_ID', 'APP_STORE_CONNECT_PRIVATE_KEY')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              $missing += $name
+            }
+          }
+          if ($missing.Count -gt 0) {
+            throw "Missing required GitHub environment secrets: $($missing -join ', '). See docs/ios-testflight-internal-testing.md."
+          }
+
+      - name: Assign the existing build to CatchButDontForget
+        env:
+          APPLICATION_VERSION: ${{ inputs.assign_existing_version }}
+        run: |
+          if ($env:APPLICATION_VERSION -notmatch '^\d+$') {
+            throw 'assign_existing_version must be an integer CFBundleVersion, for example 2.'
+          }
+          node .github/scripts/app-store-connect-release.mjs wait-and-assign
