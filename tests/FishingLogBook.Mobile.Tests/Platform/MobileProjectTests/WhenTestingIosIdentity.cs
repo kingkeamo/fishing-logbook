@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using AwesomeAssertions;
 
@@ -24,6 +25,7 @@ public class WhenTestingIosIdentity
         var entitlements = File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "iOS", "Entitlements.plist"));
 
         // Act
+        var title = defaultGroup.Element("ApplicationTitle")?.Value;
         var defaultId = defaultGroup.Element("ApplicationId")?.Value;
         var releaseId = iosReleaseGroup.Element("ApplicationId")?.Value;
         var displayVersion = iosReleaseGroup.Element("ApplicationDisplayVersion")?.Value;
@@ -34,6 +36,9 @@ public class WhenTestingIosIdentity
             .ToList();
 
         // Assert
+        title.Should().Be("Catch But Don't Forget");
+        infoPlist.Should().NotContain("CFBundleDisplayName");
+        infoPlist.Should().NotContain("CFBundleName");
         defaultId.Should().Be("com.fishinglogbook.mobile.demo");
         releaseId.Should().Be("com.catchbutdontforget.app");
         displayVersion.Should().Be("1.0");
@@ -44,6 +49,46 @@ public class WhenTestingIosIdentity
         signingSecrets.Should().Contain(("CodesignEntitlements", "Platforms/iOS/Entitlements.plist"));
         signingSecrets.Select(pair => pair.LocalName).Should().NotContain("CodesignKey");
         signingSecrets.Select(pair => pair.LocalName).Should().NotContain("CodesignProvision");
+        File.ReadAllText(Path.Combine(RepositoryRoot, "docs", "ios-testflight-internal-testing.md"))
+            .Should().Contain("| On-device name | `Catch But Don't Forget` |");
+    }
+
+    [Fact]
+    public void ItShouldAssertTheGeneratedIosDisplayNameAfterNativeBuilds()
+    {
+        // Arrange
+        var validation = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "mobile-build-test.yml"));
+        var workflow = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "mobile-testflight.yml"));
+        var iosJob = validation[validation.IndexOf("  ios:", StringComparison.Ordinal)..];
+
+        // Act
+        // Assert
+        iosJob.IndexOf("Build unsigned iOS simulator", StringComparison.Ordinal)
+            .Should().BeLessThan(iosJob.IndexOf("ios-display-name.mjs", StringComparison.Ordinal));
+        workflow.Should().Contain("ios-display-name.mjs src/FishingLogBook.Mobile");
+        workflow.Split("ios-display-name.mjs src/FishingLogBook.Mobile", StringSplitOptions.None)
+            .Should().HaveCount(3);
+        File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "build-test.yml"))
+            .Should().Contain("ios-display-name.test.mjs");
+    }
+
+    [Fact]
+    public void ItShouldWriteTheBrandDisplayNameIntoGeneratedIosInfoPlistWhenNativeOutputExists()
+    {
+        // Arrange
+        var compiled = FindCompiledIosInfoPlists();
+
+        // Act
+        var displayNames = compiled
+            .Select(item => (item.Path, DisplayName: ReadPlistString(item.Text, "CFBundleDisplayName"),
+                BundleId: ReadPlistString(item.Text, "CFBundleIdentifier")))
+            .ToList();
+
+        // Assert
+        displayNames.Should().OnlyContain(item => item.DisplayName == "Catch But Don't Forget");
+        displayNames.Should().OnlyContain(item =>
+            item.BundleId == "com.fishinglogbook.mobile.demo"
+            || item.BundleId == "com.catchbutdontforget.app");
     }
 
     [Fact]
@@ -59,6 +104,26 @@ public class WhenTestingIosIdentity
         development.Should().Contain("https://fishing-logbook-dev.pages.dev/native/signedout");
         development.Should().Contain("com.fishinglogbook.mobile.demo://oauth2redirect");
         development.Should().NotContain("localhost");
+    }
+
+    private static IReadOnlyList<(string Path, string Text)> FindCompiledIosInfoPlists()
+    {
+        return new[] { "obj", "bin" }
+            .Select(folder => Path.Combine(MobileRoot, folder))
+            .Where(Directory.Exists)
+            .SelectMany(root => Directory.EnumerateFiles(root, "Info.plist", SearchOption.AllDirectories))
+            .Select(path => (Path: path, Text: File.ReadAllText(path)))
+            .Where(item => item.Text.Contains("<key>CFBundleIdentifier</key>", StringComparison.Ordinal))
+            .ToList();
+    }
+
+    private static string? ReadPlistString(string text, string key)
+    {
+        var match = Regex.Match(
+            text,
+            $@"<key>{Regex.Escape(key)}</key>\s*<string>([^<]*)</string>",
+            RegexOptions.CultureInvariant);
+        return match.Success ? match.Groups[1].Value : null;
     }
 
     private static string FindRepositoryRoot()

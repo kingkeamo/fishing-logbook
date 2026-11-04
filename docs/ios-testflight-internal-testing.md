@@ -23,7 +23,7 @@ or chat. Create them in Apple portals and GitHub Secrets only.
 | Apple Team ID | `LHP9K4946H` |
 | App Store SKU | `cbdf-ios-001` |
 | App Store version | `1.0` (Prepare for Submission) |
-| On-device name | `Catch` |
+| On-device name | `Catch But Don't Forget` |
 | Internal TestFlight group | `CatchButDontForget` |
 | Development API | `https://fishing-logbook-dev-api.fly.dev` |
 

@@ -33,7 +33,7 @@ public class WhenTestingAndroidIdentity
             .Select(element => element.Name.LocalName)
             .ToList();
         // Assert
-        title.Should().Be("Catch");
+        title.Should().Be("Catch But Don't Forget");
         defaultId.Should().Be("com.fishinglogbook.mobile.demo");
         playId.Should().Be("com.catchbutdontforget.app");
         displayVersion.Should().Be("0.1.0");
