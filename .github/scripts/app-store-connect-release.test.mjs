@@ -8,6 +8,7 @@ import {
     assertBuildStillAvailable,
     confirmInternalGroupAssignment,
     nextBuildNumber,
+    selectInternalGroup,
     testersAvailability,
 } from './app-store-connect-release.mjs';
 import { resolveSignedIosIpa } from './resolve-signed-ios-ipa.mjs';
@@ -66,6 +67,38 @@ describe('App Store Connect iOS build numbering', () => {
         assert.throws(
             () => assertBuildStillAvailable('42', ['42']),
             /42 is no longer available; App Store Connect now requires 43/);
+    });
+});
+
+describe('TestFlight internal group lookup', () => {
+    const script = readFileSync(new URL('./app-store-connect-release.mjs', import.meta.url), 'utf8');
+    const groups = [
+        { id: 'GROUP-OTHER', attributes: { name: 'External Testers' } },
+        { id: 'GROUP-CATCH', attributes: { name: 'CatchButDontForget' } },
+    ];
+
+    it('selects the unique CatchButDontForget group from the app group list', () => {
+        assert.equal(selectInternalGroup(groups).id, 'GROUP-CATCH');
+    });
+
+    it('fails when CatchButDontForget is missing', () => {
+        assert.throws(
+            () => selectInternalGroup([{ id: 'GROUP-OTHER', attributes: { name: 'External Testers' } }]),
+            /Expected one internal TestFlight group named CatchButDontForget but found 0/);
+    });
+
+    it('fails when more than one CatchButDontForget group exists', () => {
+        assert.throws(
+            () => selectInternalGroup([
+                { id: 'GROUP-1', attributes: { name: 'CatchButDontForget' } },
+                { id: 'GROUP-2', attributes: { name: 'CatchButDontForget' } },
+            ]),
+            /Expected one internal TestFlight group named CatchButDontForget but found 2/);
+    });
+
+    it('does not send filter[name] on the app-scoped betaGroups relationship', () => {
+        assert.match(script, /betaGroups\?filter\[app\]=/);
+        assert.doesNotMatch(script, /apps\/.*\/betaGroups\?filter\[name\]=/);
     });
 });
 

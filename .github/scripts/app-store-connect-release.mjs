@@ -138,15 +138,23 @@ async function listBuildVersions(appId, token) {
     };
 }
 
-async function findInternalGroup(appId, token) {
-    const groups = await collectPages(
-        `apps/${encodeURIComponent(appId)}/betaGroups?filter[name]=${encodeURIComponent(internalGroupName)}`,
-        token);
-    if (groups.length !== 1) {
-        throw new Error(`Expected one internal TestFlight group named ${internalGroupName} but found ${groups.length}.`);
+export function selectInternalGroup(groups = [], name = internalGroupName) {
+    const matches = groups.filter(group => group.attributes?.name === name);
+    if (matches.length !== 1) {
+        throw new Error(
+            `Expected one internal TestFlight group named ${name} but found ${matches.length}.`);
     }
 
-    return groups[0];
+    return matches[0];
+}
+
+async function findInternalGroup(appId, token) {
+    // GET /v1/apps/{id}/betaGroups does not accept filter[name] (HTTP 400).
+    // List groups for the app and select CatchButDontForget locally.
+    const groups = await collectPages(
+        `betaGroups?filter[app]=${encodeURIComponent(appId)}&limit=200`,
+        token);
+    return selectInternalGroup(groups, internalGroupName);
 }
 
 async function selectVersion(token, outputPath) {
