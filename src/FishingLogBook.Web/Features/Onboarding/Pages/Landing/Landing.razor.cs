@@ -200,7 +200,7 @@ public partial class Landing : ComponentBase, IDisposable
             }
 
             var completed = await Onboarding.IsCompletedAsync(cancellationToken);
-            Navigation.NavigateTo(completed ? "/catches" : "/onboarding", replace: true);
+            Navigation.NavigateTo(completed ? "/dashboard" : "/onboarding", replace: true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

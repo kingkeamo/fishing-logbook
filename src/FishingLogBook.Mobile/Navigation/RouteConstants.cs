@@ -7,13 +7,14 @@ public static class RouteConstants
     public const string TripIdParameter = "tripId";
     public static IReadOnlyList<MobileRouteEnum> Primary { get; } = Array.AsReadOnly(new[]
     {
-        MobileRouteEnum.Catches, MobileRouteEnum.Trips, MobileRouteEnum.Import, MobileRouteEnum.Settings
+        MobileRouteEnum.Dashboard, MobileRouteEnum.Catches, MobileRouteEnum.Trips, MobileRouteEnum.Import, MobileRouteEnum.Settings
     });
 
     public static string GetPath(MobileRouteEnum route)
     {
         return route switch
         {
+            MobileRouteEnum.Dashboard => "//main/dashboard",
             MobileRouteEnum.Catches => "//main/catches",
             MobileRouteEnum.Trips => "//main/trips",
             MobileRouteEnum.Explore => "//main/explore",

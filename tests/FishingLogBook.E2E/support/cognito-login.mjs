@@ -32,12 +32,12 @@ export async function signIn(page, applicationOrigin, username, password, pauseA
         && !url.pathname.includes('/authentication/login-callback'), { timeout: 45_000 });
     await page.waitForURL(url =>
         url.origin === applicationOrigin
-        && ['/catches', '/onboarding'].includes(url.pathname), { timeout: 90_000 });
+        && ['/dashboard', '/onboarding'].includes(url.pathname), { timeout: 90_000 });
     await completeOnboardingWhenRequired(page);
 }
 
 export async function completeOnboardingWhenRequired(page) {
-    if (new URL(page.url()).pathname === '/catches') return;
+    if (new URL(page.url()).pathname === '/dashboard') return;
 
     await page.locator('#onboarding-loading').waitFor({ state: 'hidden' });
     await page.locator('#onboarding-next').waitFor({ state: 'visible' });
@@ -51,7 +51,7 @@ export async function completeOnboardingWhenRequired(page) {
     await page.locator('#onboarding-next').click();
     await page.locator('#onboarding-next').click();
     await page.locator('#onboarding-finish').click();
-    await page.waitForURL(url => new URL(url).pathname === '/catches', { timeout: 60_000 });
+    await page.waitForURL(url => new URL(url).pathname === '/dashboard', { timeout: 60_000 });
 }
 
 export async function readSessionStorage(page) {

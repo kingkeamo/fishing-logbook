@@ -62,17 +62,19 @@ test('keeps the offline journey inside the loaded app shell', async () => {
 
 test('onboards the dedicated Cognito user through the real UI for each disposable database', async () => {
     const setup = await readFile(new URL('../support/auth.setup.mjs', import.meta.url), 'utf8');
+    const login = await readFile(new URL('../support/cognito-login.mjs', import.meta.url), 'utf8');
 
-    assert.match(setup, /completeOnboardingWhenRequired/);
-    assert.match(setup, /const landingRouteTimeout = 90_000/);
-    assert.match(setup, /\['\/catches', '\/onboarding'\]\.includes\(url\.pathname\)/);
-    assert.match(setup, /#onboarding-method-Fly/);
-    assert.match(setup, /#catalogue-picker-modal-option-BrownTrout/);
-    assert.match(setup, /#onboarding-finish/);
-    const afterLocation = setup.slice(setup.indexOf('#onboarding-skip-location'));
+    assert.match(setup, /await signIn\(page, applicationOrigin, username, password\)/);
+    assert.match(login, /completeOnboardingWhenRequired/);
+    assert.match(login, /timeout: 90_000/);
+    assert.match(login, /\['\/dashboard', '\/onboarding'\]\.includes\(url\.pathname\)/);
+    assert.match(login, /#onboarding-method-Fly/);
+    assert.match(login, /#catalogue-picker-modal-option-BrownTrout/);
+    assert.match(login, /#onboarding-finish/);
+    const afterLocation = login.slice(login.indexOf('#onboarding-skip-location'));
     assert.equal(afterLocation.match(/#onboarding-next/g)?.length, 2);
     assert.ok(afterLocation.lastIndexOf('#onboarding-next') < afterLocation.indexOf('#onboarding-finish'));
-    assert.doesNotMatch(setup, /must complete onboarding before running/);
+    assert.doesNotMatch(login, /must complete onboarding before running/);
 });
 
 test('shows the authentication setup browser when Playwright debug mode is enabled', async () => {

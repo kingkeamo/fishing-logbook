@@ -180,6 +180,9 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IOutboxOperationSynchroniser, CatchPhotographSynchroniser>();
         builder.Services.AddSingleton<ITripStore, SqliteTripStore>();
         builder.Services.AddTransient<ITripClient, TripClient>();
+        builder.Services.AddTransient<Features.Dashboard.Clients.IDashboardClient, Features.Dashboard.Clients.DashboardClient>();
+        builder.Services.AddSingleton<Features.Dashboard.ViewModels.DashboardViewModel>();
+        builder.Services.AddSingleton<Features.Dashboard.Pages.DashboardPage>();
         builder.Services.AddTransient<ITripParticipantClient, TripParticipantClient>();
         builder.Services.AddTransient<IAnglerLookupClient, AnglerLookupClient>();
         builder.Services.AddSingleton<ITripDependencyService, TripDependencyService>();

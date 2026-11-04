@@ -12,10 +12,10 @@ public sealed class WindowWorkspaceNavigator(IServiceProvider services) : IOnboa
 
     public void ShowAuthenticatedApp()
     {
-        Present(provider => provider.GetRequiredService<AppShell>());
+        Present(provider => provider.GetRequiredService<AppShell>(), MobileRouteEnum.Dashboard);
     }
 
-    private void Present(Func<IServiceProvider, Page> factory)
+    private void Present(Func<IServiceProvider, Page> factory, MobileRouteEnum? destination = null)
     {
         var window = Application.Current?.Windows.FirstOrDefault();
         if (window is null)
@@ -23,6 +23,13 @@ public sealed class WindowWorkspaceNavigator(IServiceProvider services) : IOnboa
             return;
         }
 
-        window.Dispatcher.Dispatch(() => window.Page = factory(services));
+        window.Dispatcher.Dispatch(async () =>
+        {
+            window.Page = factory(services);
+            if (destination is { } route && window.Page is Shell shell)
+            {
+                await shell.GoToAsync(RouteConstants.GetPath(route));
+            }
+        });
     }
 }

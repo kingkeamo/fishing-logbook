@@ -1,0 +1,18 @@
+<div class="best-table" id="@Id">
+    <table>
+        <thead><tr><th scope="col">@Loc["DashboardSpecies"]</th><th scope="col">@Loc["DashboardMethod"]</th><th scope="col" class="weight">@Loc["DashboardHeaviest"]</th></tr></thead>
+        <tbody>
+            @foreach (var row in Rows)
+            {
+                <tr @key="row.CatchId" @onclick="() => OpenCatch(row.CatchId)">
+                    <td><a href="@($"/catches/{row.CatchId}")" @onclick:stopPropagation aria-label="@($"{Loc["DashboardOpenCatch"]}: {Species(row)}, {Method(row)}, {Weight(row)}")">@Species(row)</a></td>
+                    <td>@Method(row)</td><td class="weight">@Weight(row)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @if (IsLoaded && Rows.Count == 0)
+    {
+        <div class="empty"><MudIcon Icon="@Icons.Material.Outlined.EmojiEvents" /><MudText>@EmptyText</MudText></div>
+    }
+</div>

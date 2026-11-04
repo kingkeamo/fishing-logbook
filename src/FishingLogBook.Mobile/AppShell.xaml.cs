@@ -3,6 +3,7 @@ using FishingLogBook.Mobile.Features.Authentication.Coordinators;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Catch.Pages;
+using FishingLogBook.Mobile.Features.Dashboard.Pages;
 using FishingLogBook.Mobile.Features.Import.Pages;
 using FishingLogBook.Mobile.Features.Profile.Pages;
 using FishingLogBook.Mobile.Features.Profile.ViewModels;
@@ -28,6 +29,7 @@ public partial class AppShell : Shell
     private readonly MenuItem _retryConnection;
 
     public AppShell(
+        DashboardPage dashboard,
         CatchSummaryPage summary,
         TripsPage trips,
         ImportPage import,
@@ -63,6 +65,7 @@ public partial class AppShell : Shell
             tab.SetBinding(BaseShellItem.TitleProperty, new Binding("[" + key + "]", source: text));
             Page page = route switch
             {
+                MobileRouteEnum.Dashboard => dashboard,
                 MobileRouteEnum.Catches => summary,
                 MobileRouteEnum.Trips => trips,
                 MobileRouteEnum.Import => import,
