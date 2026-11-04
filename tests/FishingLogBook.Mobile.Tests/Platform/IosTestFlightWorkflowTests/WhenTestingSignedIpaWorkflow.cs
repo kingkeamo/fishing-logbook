@@ -37,6 +37,9 @@ public class WhenTestingSignedIpaWorkflow
         workflow.Should().Contain("actions/upload-artifact@v4");
         workflow.Should().Contain("catch-ios-internal-testing");
         workflow.Should().Contain("environment: app-store-connect-internal");
+        workflow.Should().Contain("assign_existing_version:");
+        workflow.Should().Contain("  assign-existing:");
+        workflow.Should().Contain("Assign an existing TestFlight build");
         workflow.Should().NotContain("terraform");
         workflow.Should().NotContain("fly deploy");
         workflow.Should().NotContain("submit-for-review");
@@ -58,6 +61,13 @@ public class WhenTestingSignedIpaWorkflow
         iosJob.Should().Contain("assert-generated src/FishingLogBook.Mobile");
         validation.Should().NotContain("IOS_DISTRIBUTION_CERTIFICATE");
         validation.Should().NotContain("ArchiveOnBuild=true");
+
+        var assignExistingJob = workflow[workflow.IndexOf("  assign-existing:", StringComparison.Ordinal)..];
+        assignExistingJob.Should().Contain("wait-and-assign");
+        assignExistingJob.Should().Contain("ubuntu-latest");
+        assignExistingJob.Should().NotContain("altool");
+        assignExistingJob.Should().NotContain("build-signed-ios-ipa.ps1");
+        assignExistingJob.Should().NotContain("macos-26");
     }
 
     [Fact]

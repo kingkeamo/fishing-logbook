@@ -28,7 +28,8 @@ or chat. Create them in Apple portals and GitHub Secrets only.
 | Development API | `https://fishing-logbook-dev-api.fly.dev` |
 
 Do not recreate the App Store Connect app, bundle identifier or internal testing group.
-They already exist. There are currently no TestFlight builds.
+They already exist. If a build is already uploaded, retry assignment with
+`assign_existing_version` rather than uploading another IPA.
 
 Debug and simulator installs keep `com.fishinglogbook.mobile.demo` so a TestFlight build
 does not overwrite local development.
@@ -189,7 +190,12 @@ After the protected environment is approved, the publishing job selects
 `highest existing integer CFBundleVersion + 1` (or `1` when no builds exist),
 builds and signs a Development IPA, rechecks that the number is still unused,
 uploads with `xcrun altool`, then polls Apple processing. Only a `VALID` build is
-assigned to **CatchButDontForget**.
+assigned to **CatchButDontForget**. Assignment uses App Store Connect
+`POST /v1/builds/{id}/relationships/betaGroups`. The reverse relationship
+(`POST /v1/betaGroups/{id}/relationships/builds`) is not used; Apple returns
+HTTP 422 for that internal group. HTTP 422 is never treated as tester access
+unless CatchButDontForget already contains the build, or the group is verified
+internal with `hasAccessToAllBuilds`.
 
 The workflow distinguishes three outcomes in the log:
 
@@ -200,10 +206,31 @@ The workflow distinguishes three outcomes in the log:
 
 If processing is still running when the job times out, the run **fails**. That does
 not mean the upload was lost; it means testers are not yet eligible. Check App Store
-Connect and rerun only if a new build number is required.
+Connect. If the IPA is already uploaded, retry assignment only (section 8a). Do not
+start a publishing run unless a new build number is required.
 
 Runs share one non-cancelling concurrency group. There is no automatic retry and no
 App Store review submission.
+
+### 8a. Retry assignment of an existing uploaded build
+
+Use this when Apple already accepted an IPA (for example CFBundleVersion **2**)
+but the wait-and-assign step failed. Do **not** start a publishing run: that
+selects a new build number and uploads another IPA.
+
+1. In GitHub open **Actions** then **mobile-testflight**.
+2. Select branch **main** and choose **Run workflow**.
+3. Set **Assign an already-uploaded CFBundleVersion** to `2`.
+4. Leave the other inputs at their defaults. The publishing and artifact-only
+   jobs stay skipped.
+5. Approve the `app-store-connect-internal` environment if a reviewer is
+   required.
+
+That job runs on `ubuntu-latest`. It does not compile, sign, or upload an IPA.
+It waits until build **2** is `VALID` and not expired, confirms
+**CatchButDontForget** belongs to Catch, But Don't Forget, then assigns that
+existing build (or reports verified all-builds access). Testers still cannot
+install until the log says the build is assigned to **CatchButDontForget**.
 
 ### 9. Generate a signed IPA without publishing
 

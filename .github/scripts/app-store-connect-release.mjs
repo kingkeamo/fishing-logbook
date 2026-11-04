@@ -130,7 +130,7 @@ async function findApp(token) {
 
 async function listBuildVersions(appId, token) {
     const builds = await collectPages(
-        `builds?filter[app]=${encodeURIComponent(appId)}&fields[builds]=version,processingState&limit=200`,
+        `builds?filter[app]=${encodeURIComponent(appId)}&fields[builds]=version,processingState,expired&limit=200`,
         token);
     return {
         builds,
@@ -148,13 +148,63 @@ export function selectInternalGroup(groups = [], name = internalGroupName) {
     return matches[0];
 }
 
+export function assertInternalGroupForApp(group, appId) {
+    if (group?.attributes?.name !== internalGroupName) {
+        throw new Error(`Expected internal TestFlight group ${internalGroupName}.`);
+    }
+
+    if (group.attributes?.isInternalGroup === false) {
+        throw new Error(`${internalGroupName} is not marked as an internal TestFlight group.`);
+    }
+
+    const relatedAppId = group.relationships?.app?.data?.id;
+    if (relatedAppId && relatedAppId !== appId) {
+        throw new Error(`${internalGroupName} belongs to app ${relatedAppId}, not ${appId}.`);
+    }
+
+    return group;
+}
+
+export function assertBuildEligibleForInternalTesting(build, appId, applicationVersion) {
+    if (String(build?.attributes?.version) !== String(applicationVersion)) {
+        throw new Error(
+            `Expected CFBundleVersion ${applicationVersion} but found ${build?.attributes?.version ?? 'none'}.`);
+    }
+
+    if (build.attributes?.processingState !== 'VALID') {
+        throw new Error(testersAvailability(build.attributes?.processingState, false).message);
+    }
+
+    if (build.attributes?.expired === true) {
+        throw new Error(
+            `iOS CFBundleVersion ${applicationVersion} is expired and is not eligible for internal testing.`);
+    }
+
+    const relatedAppId = build.relationships?.app?.data?.id;
+    if (relatedAppId && relatedAppId !== appId) {
+        throw new Error(`Build ${applicationVersion} belongs to app ${relatedAppId}, not ${appId}.`);
+    }
+
+    return build;
+}
+
+export function internalGroupAssignmentRequest(buildId, groupId) {
+    return {
+        method: 'POST',
+        url: `${apiBaseUrl}/builds/${encodeURIComponent(buildId)}/relationships/betaGroups`,
+        body: {
+            data: [{ type: 'betaGroups', id: groupId }],
+        },
+    };
+}
+
 async function findInternalGroup(appId, token) {
     // GET /v1/apps/{id}/betaGroups does not accept filter[name] (HTTP 400).
     // List groups for the app and select CatchButDontForget locally.
     const groups = await collectPages(
-        `betaGroups?filter[app]=${encodeURIComponent(appId)}&limit=200`,
+        `betaGroups?filter[app]=${encodeURIComponent(appId)}&fields[betaGroups]=name,isInternalGroup,hasAccessToAllBuilds&limit=200`,
         token);
-    return selectInternalGroup(groups, internalGroupName);
+    return assertInternalGroupForApp(selectInternalGroup(groups, internalGroupName), appId);
 }
 
 async function selectVersion(token, outputPath) {
@@ -195,39 +245,74 @@ async function waitAndAssign(token, applicationVersion) {
         await delay(intervalMs);
     }
 
-    if (build?.attributes?.processingState !== 'VALID') {
-        throw new Error(testersAvailability(build?.attributes?.processingState, false).message);
+    assertBuildEligibleForInternalTesting(build, app.id, applicationVersion);
+
+    const assignedGroupIds = (await collectPages(
+        `builds/${encodeURIComponent(build.id)}/relationships/betaGroups?limit=200`,
+        token)).map(item => item.id);
+    if (shouldSkipInternalGroupAssignment(group, assignedGroupIds)) {
+        const availability = testersAvailability('VALID', true);
+        process.stdout.write(`${availability.message}\n`);
+        return;
     }
 
-    const assignResponse = await fetch(
-        `${apiBaseUrl}/betaGroups/${encodeURIComponent(group.id)}/relationships/builds`,
-        {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                data: [{ type: 'builds', id: build.id }],
-            }),
-        });
+    const assignment = internalGroupAssignmentRequest(build.id, group.id);
+    const assignResponse = await fetch(assignment.url, {
+        method: assignment.method,
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(assignment.body),
+    });
     const assignResult = {
         ok: assignResponse.ok,
         status: assignResponse.status,
         statusText: assignResponse.statusText,
         detail: await assignResponse.text(),
     };
-    const assignedGroupIds = assignResult.status === 409
+    const confirmedGroupIds = assignmentRequiresMembershipCheck(assignResult)
         ? (await collectPages(
             `builds/${encodeURIComponent(build.id)}/relationships/betaGroups?limit=200`,
             token)).map(item => item.id)
         : [];
     const availability = confirmInternalGroupAssignment(assignResult, build.id, {
         internalGroupId: group.id,
-        assignedGroupIds,
+        assignedGroupIds: confirmedGroupIds,
+        isInternalGroup: group.attributes?.isInternalGroup === true,
+        hasAccessToAllBuilds: group.attributes?.hasAccessToAllBuilds === true,
     });
     process.stdout.write(`${availability.message}\n`);
+}
+
+export function groupHasVerifiedAllBuildsAccess(group) {
+    return group?.attributes?.isInternalGroup === true
+        && group?.attributes?.hasAccessToAllBuilds === true;
+}
+
+export function shouldSkipInternalGroupAssignment(group, assignedGroupIds = []) {
+    return Boolean(group?.id && assignedGroupIds.includes(group.id))
+        || groupHasVerifiedAllBuildsAccess(group);
+}
+
+export function isInternalGroupAssignmentRejected(assignResult) {
+    if (assignResult?.status !== 422) {
+        return false;
+    }
+
+    const detail = `${assignResult.detail ?? ''} ${assignResult.statusText ?? ''}`;
+    return /cannot add internal group to a build/iu.test(detail)
+        || /builds cannot be assigned to this internal group/iu.test(detail);
+}
+
+function assignmentRequiresMembershipCheck(assignResult) {
+    return assignResult.status === 409 || isInternalGroupAssignmentRejected(assignResult);
+}
+
+function groupAlreadyContainsBuild(membership) {
+    const internalGroupId = membership.internalGroupId;
+    return Boolean(internalGroupId && (membership.assignedGroupIds ?? []).includes(internalGroupId));
 }
 
 export function confirmInternalGroupAssignment(assignResult, buildId, membership = {}) {
@@ -237,14 +322,25 @@ export function confirmInternalGroupAssignment(assignResult, buildId, membership
 
     const status = assignResult?.status;
     if (status === 409) {
-        const internalGroupId = membership.internalGroupId;
-        const assignedGroupIds = membership.assignedGroupIds ?? [];
-        if (internalGroupId && assignedGroupIds.includes(internalGroupId)) {
+        if (groupAlreadyContainsBuild(membership)) {
             return testersAvailability('VALID', true);
         }
 
         throw new Error(
             `App Store Connect returned HTTP 409 when assigning build ${buildId} to CatchButDontForget, but that group does not contain the build. Testers cannot access it.`);
+    }
+
+    if (isInternalGroupAssignmentRejected(assignResult)) {
+        if (groupAlreadyContainsBuild(membership)) {
+            return testersAvailability('VALID', true);
+        }
+
+        if (membership.isInternalGroup === true && membership.hasAccessToAllBuilds === true) {
+            return testersAvailability('VALID', true);
+        }
+
+        throw new Error(
+            `App Store Connect returned HTTP 422 when assigning build ${buildId} to CatchButDontForget, but that group does not contain the build. Testers cannot access it.`);
     }
 
     throw new Error(
