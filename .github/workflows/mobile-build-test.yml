@@ -113,4 +113,6 @@ jobs:
       - name: Assert generated iOS App Store icon has no alpha
         run: node .github/scripts/ios-app-icon-png.mjs assert-generated src/FishingLogBook.Mobile
       - name: Assert generated iOS display name
-        run: node .github/scripts/ios-display-name.mjs src/FishingLogBook.Mobile
+        run: |
+          node --test .github/scripts/ios-display-name.test.mjs
+          node .github/scripts/ios-display-name.mjs src/FishingLogBook.Mobile

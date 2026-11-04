@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using AwesomeAssertions;
 
@@ -70,25 +69,27 @@ public class WhenTestingIosIdentity
             .Should().HaveCount(3);
         File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "build-test.yml"))
             .Should().Contain("ios-display-name.test.mjs");
+        iosJob.Should().Contain("node --test .github/scripts/ios-display-name.test.mjs");
     }
 
     [Fact]
-    public void ItShouldWriteTheBrandDisplayNameIntoGeneratedIosInfoPlistWhenNativeOutputExists()
+    public void ItShouldConfigureIosCameraOutputForBoundedSizeAndUprightPrivateImages()
     {
         // Arrange
-        var compiled = FindCompiledIosInfoPlists();
+        var adapter = File.ReadAllText(Path.Combine(MobileRoot, "Native", "Adapters", "PhotographMediaAdapter.cs"));
 
         // Act
-        var displayNames = compiled
-            .Select(item => (item.Path, DisplayName: ReadPlistString(item.Text, "CFBundleDisplayName"),
-                BundleId: ReadPlistString(item.Text, "CFBundleIdentifier")))
-            .ToList();
+        var capture = adapter[adapter.IndexOf("MediaPicker.Default.CapturePhotoAsync", StringComparison.Ordinal)..];
+        capture = capture[..capture.IndexOf("return await ToPickResultAsync", StringComparison.Ordinal)];
 
         // Assert
-        displayNames.Should().OnlyContain(item => item.DisplayName == "Catch But Don't Forget");
-        displayNames.Should().OnlyContain(item =>
-            item.BundleId == "com.fishinglogbook.mobile.demo"
-            || item.BundleId == "com.catchbutdontforget.app");
+        capture.Should().Contain("CompressionQuality = IsIos() ? 85 : 100");
+        capture.Should().Contain("MaximumWidth = IsIos() ? 2560 : null");
+        capture.Should().Contain("MaximumHeight = IsIos() ? 2560 : null");
+        capture.Should().Contain("RotateImage = IsIos()");
+        capture.Should().Contain("PreserveMetaData = !IsIos()");
+        File.ReadAllText(Path.Combine(MobileRoot, "Platforms", "iOS", "MauiProgram.iOS.cs"))
+            .Should().Contain("logging.AddProvider(new PhotographLoggerProvider(Console.WriteLine))");
     }
 
     [Fact]
@@ -104,26 +105,6 @@ public class WhenTestingIosIdentity
         development.Should().Contain("https://fishing-logbook-dev.pages.dev/native/signedout");
         development.Should().Contain("com.fishinglogbook.mobile.demo://oauth2redirect");
         development.Should().NotContain("localhost");
-    }
-
-    private static IReadOnlyList<(string Path, string Text)> FindCompiledIosInfoPlists()
-    {
-        return new[] { "obj", "bin" }
-            .Select(folder => Path.Combine(MobileRoot, folder))
-            .Where(Directory.Exists)
-            .SelectMany(root => Directory.EnumerateFiles(root, "Info.plist", SearchOption.AllDirectories))
-            .Select(path => (Path: path, Text: File.ReadAllText(path)))
-            .Where(item => item.Text.Contains("<key>CFBundleIdentifier</key>", StringComparison.Ordinal))
-            .ToList();
-    }
-
-    private static string? ReadPlistString(string text, string key)
-    {
-        var match = Regex.Match(
-            text,
-            $@"<key>{Regex.Escape(key)}</key>\s*<string>([^<]*)</string>",
-            RegexOptions.CultureInvariant);
-        return match.Success ? match.Groups[1].Value : null;
     }
 
     private static string FindRepositoryRoot()

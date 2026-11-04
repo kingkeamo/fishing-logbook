@@ -49,27 +49,31 @@ public sealed class PhotographFileStore(
             return null;
         }
 
-        var durablePath = GetAbsolutePath(userId, relativePath);
-        var directory = Path.GetDirectoryName(durablePath);
-        if (directory is not null)
-        {
-            fileSystem.CreateDirectory(directory);
-        }
-
-        var tempPath = Path.Combine(directory ?? GetAccountDirectory(userId), $".{photographId:N}.tmp");
+        string? tempPath = null;
+        var stage = "resolve account directory";
         try
         {
+            var durablePath = GetAbsolutePath(userId, relativePath);
+            var directory = Path.GetDirectoryName(durablePath)
+                ?? throw new InvalidOperationException("Photograph directory could not be resolved.");
+            tempPath = Path.Combine(directory, $".{photographId:N}.tmp");
+            stage = "create directory";
+            fileSystem.CreateDirectory(directory);
+
+            stage = "write and flush";
             await WriteBytesAsync(tempPath, bytes, cancellationToken);
+            stage = "atomic move";
             fileSystem.MoveFile(tempPath, durablePath, overwrite: true);
             return NormalizeRelativePath(relativePath);
         }
         catch (OperationCanceledException)
         {
+            TryDelete(tempPath);
             throw;
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Durable photograph write failed for user {UserId}.", userId);
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Durable photograph save failed at {Stage} with {ErrorType}.", stage, exception.GetType().Name);
             TryDelete(tempPath);
             return null;
         }
@@ -169,8 +173,13 @@ public sealed class PhotographFileStore(
         await stream.FlushAsync(cancellationToken);
     }
 
-    private void TryDelete(string path)
+    private void TryDelete(string? path)
     {
+        if (path is null)
+        {
+            return;
+        }
+
         try
         {
             if (fileSystem.FileExists(path))
@@ -180,7 +189,7 @@ public sealed class PhotographFileStore(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Temporary photograph file cleanup failed.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Temporary photograph cleanup failed with {ErrorType}.", exception.GetType().Name);
         }
     }
 }

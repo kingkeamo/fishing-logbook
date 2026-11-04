@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Photographs.Providers;
 using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
@@ -45,7 +46,15 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
                 return MapPickFailure(permission);
             }
 
-            var result = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions { Title = text["PhotoTakePicture"] });
+            var result = await MediaPicker.Default.CapturePhotoAsync(new MediaPickerOptions
+            {
+                Title = text["PhotoTakePicture"],
+                CompressionQuality = IsIos() ? 85 : 100,
+                MaximumWidth = IsIos() ? 2560 : null,
+                MaximumHeight = IsIos() ? 2560 : null,
+                RotateImage = IsIos(),
+                PreserveMetaData = !IsIos()
+            });
             return await ToPickResultAsync(result, cancellationToken);
         }
         catch (FeatureNotSupportedException)
@@ -62,7 +71,7 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "Camera capture failed.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Camera capture or cache copy failed with {ErrorType}.", exception.GetType().Name);
             return PhotographPickResultModel.Unavailable;
         }
     }
@@ -115,12 +124,12 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "Gallery selection failed.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Gallery selection or cache copy failed with {ErrorType}.", exception.GetType().Name);
             return PhotographPickResultModel.Unavailable;
         }
     }
 
-    private static async Task<PhotographPickResultModel> ToPickResultAsync(
+    private async Task<PhotographPickResultModel> ToPickResultAsync(
         FileResult? result,
         CancellationToken cancellationToken)
     {
@@ -135,15 +144,24 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
             : PhotographPickResultModel.FromFiles([file]);
     }
 
-    private static async Task<PhotographPickedFileModel?> ToPickedFileAsync(
+    private async Task<PhotographPickedFileModel?> ToPickedFileAsync(
         FileResult result,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var path = Path.Combine(FileSystem.CacheDirectory, $"{Guid.NewGuid():N}{Path.GetExtension(result.FileName)}");
-        await using var source = await result.OpenReadAsync();
-        await using var destination = File.Create(path);
-        await source.CopyToAsync(destination, cancellationToken);
+        long copiedBytes;
+        await using (var source = await result.OpenReadAsync())
+        await using (var destination = File.Create(path))
+        {
+            await source.CopyToAsync(destination, cancellationToken);
+            await destination.FlushAsync(cancellationToken);
+            copiedBytes = destination.Length;
+        }
+
+        logger.LogInformation(PhotographLoggerProvider.PipelineEvent, "Photograph picker cache copy completed: {ByteCount} bytes, declared format {Format}.",
+            copiedBytes, FishingLogBook.Shared.Constants.PhotographContentTypeConstants.IsAllowed(result.ContentType)
+                ? result.ContentType : "other");
 
         return new PhotographPickedFileModel
         {

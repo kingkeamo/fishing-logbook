@@ -1,6 +1,10 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const runFile = promisify(execFile);
 
 const expectedDisplayName = "Catch But Don't Forget";
 const allowedBundleIds = new Set([
@@ -10,7 +14,11 @@ const allowedBundleIds = new Set([
 
 function readPlistString(text, key) {
     const match = text.match(new RegExp(`<key>${key}</key>\\s*<string>([^<]*)</string>`));
-    return match ? match[1] : null;
+    return match ? match[1].replace(/&(#x[0-9a-f]+|#\d+|amp|apos|quot|lt|gt);/gi, (_, entity) => {
+        if (entity.startsWith('#x')) return String.fromCodePoint(parseInt(entity.slice(2), 16));
+        if (entity.startsWith('#')) return String.fromCodePoint(parseInt(entity.slice(1), 10));
+        return { amp: '&', apos: "'", quot: '"', lt: '<', gt: '>' }[entity];
+    }) : null;
 }
 
 async function walk(directory, files = []) {
@@ -28,6 +36,7 @@ async function walk(directory, files = []) {
     for (const entry of entries) {
         const fullPath = join(directory, entry.name);
         if (entry.isDirectory()) {
+            if (/\.(framework|bundle|appex|xpc|dSYM)$/.test(entry.name)) continue;
             await walk(fullPath, files);
             continue;
         }
@@ -48,12 +57,27 @@ export async function assertGeneratedIosDisplayName(target) {
     ];
     const compiled = [];
     for (const filePath of plists) {
-        const text = await readFile(filePath, 'utf8');
-        if (!text.includes('<key>CFBundleIdentifier</key>')) {
+        if (!/[\\/]net\d+\.\d+-ios(?:[\\/]|$)/.test(filePath)) continue;
+        let values;
+        if (process.platform === 'darwin') {
+            const { stdout } = await runFile('/usr/bin/plutil', ['-convert', 'json', '-o', '-', filePath]);
+            values = JSON.parse(stdout);
+        } else {
+            const bytes = await readFile(filePath);
+            if (bytes.subarray(0, 8).toString() === 'bplist00') {
+                throw new Error(`Binary iOS plist requires macOS plutil: ${filePath}`);
+            }
+            const text = bytes.toString('utf8');
+            values = {
+                CFBundleIdentifier: readPlistString(text, 'CFBundleIdentifier'),
+                CFBundleDisplayName: readPlistString(text, 'CFBundleDisplayName')
+            };
+        }
+        if (!values.CFBundleIdentifier) {
             continue;
         }
 
-        compiled.push({ filePath, text });
+        compiled.push({ filePath, values });
     }
 
     if (compiled.length === 0) {
@@ -61,9 +85,9 @@ export async function assertGeneratedIosDisplayName(target) {
             `No generated iOS Info.plist with CFBundleIdentifier was found under ${root}. Run this after a net10.0-ios build.`);
     }
 
-    for (const { filePath, text } of compiled) {
-        const displayName = readPlistString(text, 'CFBundleDisplayName');
-        const bundleId = readPlistString(text, 'CFBundleIdentifier');
+    for (const { filePath, values } of compiled) {
+        const displayName = values.CFBundleDisplayName;
+        const bundleId = values.CFBundleIdentifier;
         if (displayName !== expectedDisplayName) {
             throw new Error(
                 `${filePath} CFBundleDisplayName is ${JSON.stringify(displayName)}, expected ${JSON.stringify(expectedDisplayName)}.`);

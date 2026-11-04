@@ -1,6 +1,6 @@
-using FishingLogBook.Mobile.Features.Photographs.Constants;
 using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Models;
+using FishingLogBook.Mobile.Features.Photographs.Providers;
 using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Shared.Constants;
@@ -28,44 +28,55 @@ public sealed class PhotographPreparationService(
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (PhotographHeicContentTypeConstants.IsHeic(contentType))
-        {
-            return PhotographPreparationResultModel.Unsupported;
-        }
-
-        if (!PhotographContentTypeConstants.IsAllowed(contentType))
-        {
-            return PhotographPreparationResultModel.Unsupported;
-        }
-
         var original = await ReadBytesAsync(sourceFilePath, cancellationToken);
-        if (original is null)
+        if (original is null || original.Length == 0)
         {
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph preparation failed at source read for {Source}.", source);
             return PhotographPreparationResultModel.CouldNotPrepare;
         }
 
+        var detectedContentType = DetectContentType(original);
+        logger.LogInformation(PhotographLoggerProvider.PipelineEvent,
+            "Photograph source inspected: {Source}, {InspectedByteCount} bounded bytes, detected {Format}, declared type matches {TypeMatches}.",
+            source, original.Length, detectedContentType ?? "unsupported", string.Equals(contentType, detectedContentType, StringComparison.OrdinalIgnoreCase));
         if (original.LongLength > MaxPhotographBytes)
         {
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph preparation exceeded the {Limit} byte limit for {Source}.", MaxPhotographBytes, source);
             return PhotographPreparationResultModel.TooLarge;
         }
 
+        if (detectedContentType is null)
+        {
+            return PhotographPreparationResultModel.Unsupported;
+        }
+
+        contentType = detectedContentType;
         var now = timeProvider.GetUtcNow();
         var metadata = source == PhotographSourceEnum.Camera
             ? PhotographMetadataModel.Empty
             : await ReadMetadataAsync(original, contentType, fileLastModified, now, cancellationToken);
         var sanitised = Sanitise(original, contentType);
-        if (sanitised is null)
+        if (sanitised is null || sanitised.Length == 0)
         {
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph preparation failed at sanitisation for {Source} with {Format}.", source, contentType);
             return PhotographPreparationResultModel.CouldNotPrepare;
+        }
+
+        if (sanitised.LongLength > MaxPhotographBytes)
+        {
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Sanitised photograph exceeded the byte limit for {Source}.", source);
+            return PhotographPreparationResultModel.TooLarge;
         }
 
         var photographId = Guid.NewGuid();
         var relativePath = await fileStore.SaveAsync(userId, photographId, contentType, sanitised, cancellationToken);
         if (relativePath is null)
         {
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph preparation failed at durable save for {Source} with {Format}.", source, contentType);
             return PhotographPreparationResultModel.CouldNotPrepare;
         }
 
+        logger.LogInformation(PhotographLoggerProvider.PipelineEvent, "Photograph durable save completed: {Source}, {Format}, {ByteCount} bytes.", source, contentType, sanitised.Length);
         var absolutePath = fileStore.GetAbsolutePath(userId, relativePath);
         return PhotographPreparationResultModel.Prepared(
             new PhotographPreparedFileModel
@@ -78,6 +89,27 @@ public sealed class PhotographPreparationService(
             metadata);
     }
 
+    private static string? DetectContentType(byte[] bytes)
+    {
+        if (bytes.AsSpan().StartsWith(new byte[] { 0xFF, 0xD8, 0xFF }))
+        {
+            return PhotographContentTypeConstants.Jpeg;
+        }
+
+        if (bytes.AsSpan().StartsWith(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }))
+        {
+            return PhotographContentTypeConstants.Png;
+        }
+
+        if (bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8)
+            && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8))
+        {
+            return PhotographContentTypeConstants.Webp;
+        }
+
+        return null;
+    }
+
     private async Task<byte[]?> ReadBytesAsync(string path, CancellationToken cancellationToken)
     {
         try
@@ -88,13 +120,20 @@ public sealed class PhotographPreparationService(
             }
 
             await using var stream = fileSystem.OpenRead(path);
-            if (stream.Length > MaxPhotographBytes)
+            using var buffer = new MemoryStream();
+            var chunk = new byte[81920];
+            while (buffer.Length <= MaxPhotographBytes)
             {
-                return null;
+                var remaining = (int)Math.Min(chunk.Length, MaxPhotographBytes + 1 - buffer.Length);
+                var read = await stream.ReadAsync(chunk.AsMemory(0, remaining), cancellationToken);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                buffer.Write(chunk, 0, read);
             }
 
-            using var buffer = new MemoryStream();
-            await stream.CopyToAsync(buffer, cancellationToken);
             return buffer.ToArray();
         }
         catch (OperationCanceledException)
@@ -103,7 +142,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Photograph source file could not be read.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph source read failed with {ErrorType}.", exception.GetType().Name);
             return null;
         }
     }
@@ -125,7 +164,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Photograph metadata could not be read.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph metadata read failed with {ErrorType}.", exception.GetType().Name);
             return PhotographMetadataModel.Empty;
         }
     }
@@ -138,7 +177,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Photograph metadata could not be sanitised.");
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph sanitisation failed with {ErrorType}.", exception.GetType().Name);
             return null;
         }
     }
