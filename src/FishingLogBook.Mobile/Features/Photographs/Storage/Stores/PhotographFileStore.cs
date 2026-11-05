@@ -73,7 +73,7 @@ public sealed class PhotographFileStore(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Durable photograph save failed at {Stage}.", stage);
+            logger.LogError(PhotographLoggerProvider.PipelineEvent, exception, "Durable photograph save failed at {Stage}.", stage);
             TryDelete(tempPath);
             return null;
         }

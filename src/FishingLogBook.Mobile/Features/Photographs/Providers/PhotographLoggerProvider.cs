@@ -38,7 +38,7 @@ public sealed class PhotographLoggerProvider(Action<string> write) : ILoggerProv
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
             Func<TState, Exception?, string> formatter)
         {
-            if (!IsEnabled(logLevel) || (eventId != PipelineEvent && exception is null))
+            if (!IsEnabled(logLevel) || (eventId != PipelineEvent && exception is null && logLevel < LogLevel.Warning))
             {
                 return;
             }

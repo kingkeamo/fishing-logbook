@@ -71,7 +71,7 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Camera capture or cache copy failed.");
+            logger.LogError(PhotographLoggerProvider.PipelineEvent, exception, "Camera capture or cache copy failed.");
             return PhotographPickResultModel.Unavailable;
         }
     }
@@ -124,7 +124,7 @@ public sealed class PhotographMediaAdapter(UiTextService text, ILogger<Photograp
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Gallery selection or cache copy failed.");
+            logger.LogError(PhotographLoggerProvider.PipelineEvent, exception, "Gallery selection or cache copy failed.");
             return PhotographPickResultModel.Unavailable;
         }
     }

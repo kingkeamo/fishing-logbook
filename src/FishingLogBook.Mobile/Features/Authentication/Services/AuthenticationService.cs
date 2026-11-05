@@ -386,7 +386,7 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogWarning(exception, "Native session refresh failed.");
+            _logger.LogError(exception, "Native session refresh failed.");
             RecordRefreshFailure();
         }
     }

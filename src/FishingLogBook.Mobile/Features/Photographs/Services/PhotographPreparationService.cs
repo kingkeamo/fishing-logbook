@@ -142,7 +142,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Photograph source read failed.");
+            logger.LogError(PhotographLoggerProvider.PipelineEvent, exception, "Photograph source read failed.");
             return null;
         }
     }
@@ -177,7 +177,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Photograph sanitisation failed.");
+            logger.LogError(PhotographLoggerProvider.PipelineEvent, exception, "Photograph sanitisation failed.");
             return null;
         }
     }

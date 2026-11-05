@@ -12,7 +12,7 @@ public class WhenTestingLog
     [InlineData("FishingLogBook.Mobile.Features.Photographs.ViewModels.PhotographCollectionEditorViewModel")]
     [InlineData("FishingLogBook.Mobile.Features.Trips.Services.TripPhotographService")]
     [InlineData("FishingLogBook.Mobile.Native.Adapters.PhotographMediaAdapter")]
-    public void ShouldEmitPipelineEventsAndAnyExceptionButNotOtherUnmarkedMessages(string category)
+    public void ShouldEmitPipelineEventsExceptionsAndWarningsButNotOtherUnmarkedMessages(string category)
     {
         // Arrange
         var messages = new List<string>();
@@ -22,15 +22,19 @@ public class WhenTestingLog
         // Act
         logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Pipeline step {Stage}.", "atomic move");
         logger.LogError(new IOException("boom"), "Unmarked failure.");
-        logger.LogWarning("PRIVATE-UNMARKED-EVENT");
+        logger.LogError("Unmarked error without exception.");
+        logger.LogWarning("Unmarked warning.");
+        logger.LogInformation("PRIVATE-UNMARKED-INFORMATION");
         logger.LogDebug(PhotographLoggerProvider.PipelineEvent, "PRIVATE-DEBUG");
         logger.Log(LogLevel.None, PhotographLoggerProvider.PipelineEvent, "PRIVATE-NONE");
         provider.CreateLogger("Other.Category").LogError(new IOException("PRIVATE-OTHER"), "PRIVATE-OTHER-CATEGORY");
 
         // Assert
-        messages.Should().HaveCount(2);
+        messages.Should().HaveCount(4);
         messages[0].Should().Be("FishingLogBook photograph: Pipeline step atomic move.");
         messages[1].Should().StartWith("FishingLogBook photograph: Unmarked failure.");
+        messages[2].Should().Be("FishingLogBook photograph: Unmarked error without exception.");
+        messages[3].Should().Be("FishingLogBook photograph: Unmarked warning.");
     }
 
     [Fact]
