@@ -1,0 +1,78 @@
+@page "/dashboard"
+@attribute [Authorize]
+@using FishingLogBook.Shared.Enums
+@using FishingLogBook.Web.Features.Dashboard.Components.PersonalBestTable
+
+<PageTitle>@Loc["Dashboard"]</PageTitle>
+<div class="dashboard">
+<MudContainer MaxWidth="MaxWidth.Medium" Gutters="false" Class="dashboard" id="dashboard">
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <div><MudText Typo="Typo.h5">@Loc["Dashboard"]</MudText><MudText Typo="Typo.body2" Class="mud-text-secondary">@Loc["DashboardSubtitle"]</MudText></div>
+        <MudButton Href="/catches/record" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddAPhoto" id="dashboard-record">@Loc["DashboardRecord"]</MudButton>
+    </MudStack>
+    @if (_loading)
+    {
+        <div role="status" id="dashboard-loading"><MudProgressLinear Indeterminate="true" Color="Color.Primary" /><MudText>@Loc["DashboardLoading"]</MudText></div>
+    }
+    @if (_statusKey is not null)
+    {
+        <MudAlert Severity="Severity.Info" id="dashboard-status">@Loc[_statusKey]
+            <MudButton OnClick="RetryAsync" Disabled="_loading" id="dashboard-retry">@Loc["DashboardRetry"]</MudButton>
+        </MudAlert>
+    }
+    <div class="totals" id="dashboard-lifetime">
+        <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-total-catches">@(_data?.Lifetime.Catches.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardCatches"]</MudText></MudPaper>
+        <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-total-trips">@(_data?.Lifetime.Trips.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardTrips"]</MudText></MudPaper>
+        <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-total-species">@(_data?.Lifetime.Species.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardSpecies"]</MudText></MudPaper>
+    </div>
+    <MudPaper Outlined Class="panel" id="dashboard-all-time">
+        <MudText Typo="Typo.h6">@Loc["DashboardAllTimeBests"]</MudText>
+        <PersonalBestTable Id="dashboard-all-time-table" Rows="@(_data?.AllTimePersonalBests ?? [])" WeightUnit="_weightUnit" IsLoaded="@(_data is not null)" EmptyText="@LifetimeEmpty" />
+        @if (_data is { AllTimePersonalBests.Count: 0 }) { <MudText Align="Align.Center" Typo="Typo.body2" Class="mb-3">@Loc["DashboardFirstBestHelp"]</MudText> }
+    </MudPaper>
+    <MudPaper Outlined Class="panel" id="dashboard-explore">
+        <MudText Typo="Typo.h6">@Loc["DashboardExplore"]</MudText>
+        <div class="filters">
+            <div class="date-preset"><label for="dashboard-date">@Loc["DashboardDateRange"]</label>
+                <select id="dashboard-date" @bind="_preset" disabled="@_loading">
+                    <option value="@DashboardDatePresetEnum.ThisMonth">@Loc["DashboardThisMonth"]</option>
+                    <option value="@DashboardDatePresetEnum.ThisYear">@Loc["DashboardThisYear"]</option>
+                    <option value="@DashboardDatePresetEnum.LastYear">@Loc["DashboardLastYear"]</option>
+                    <option value="@DashboardDatePresetEnum.AllTime">@Loc["DashboardAllTime"]</option>
+                    <option value="@DashboardDatePresetEnum.Custom">@Loc["DashboardCustom"]</option>
+                </select>
+            </div>
+            <div><label for="dashboard-species">@Loc["DashboardSpecies"]</label><select id="dashboard-species" @bind="_species" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Species ?? []) { <option value="@option">@option</option> }</select></div>
+            <div><label for="dashboard-method">@Loc["DashboardMethod"]</label><select id="dashboard-method" @bind="_method" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Methods ?? []) { <option value="@option">@option</option> }</select></div>
+            <div><label for="dashboard-venue">@Loc["DashboardVenue"]</label><select id="dashboard-venue" @bind="_venue" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Venues ?? []) { <option value="@option">@option</option> }</select></div>
+            <div class="filter-actions"><MudStack Row Class="filter-buttons"><MudButton Size="Size.Small" OnClick="ApplyAsync" Disabled="_loading" Variant="Variant.Filled" Color="Color.Primary" id="dashboard-apply">@Loc["DashboardApply"]</MudButton><MudButton Size="Size.Small" OnClick="ResetAsync" Disabled="_loading" id="dashboard-reset">@Loc["DashboardReset"]</MudButton></MudStack></div>
+            @if (_preset == DashboardDatePresetEnum.Custom)
+            {
+                <div class="custom-dates">
+                <div><label for="dashboard-from">@Loc["DashboardFrom"]</label><input id="dashboard-from" type="date" @bind="_from" disabled="@_loading" /></div>
+                <div><label for="dashboard-to">@Loc["DashboardTo"]</label><input id="dashboard-to" type="date" @bind="_to" disabled="@_loading" /></div>
+                </div>
+            }
+        </div>
+
+        <div class="totals" id="dashboard-filtered-totals">
+            <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-filtered-catches">@(_data?.Filtered.Catches.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardFilteredCatches"]</MudText></MudPaper>
+            <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-filtered-trips">@(_data?.Filtered.Trips.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardFilteredTrips"]</MudText></MudPaper>
+            <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-filtered-species">@(_data?.Filtered.Species.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardFilteredSpecies"]</MudText></MudPaper>
+        </div>
+        <MudDivider Class="my-4" />
+        <MudText Typo="Typo.h6">@Loc["DashboardStatistics"]</MudText>
+        <table id="dashboard-statistics"><thead><tr><th scope="col">@Loc["DashboardSpecies"]</th><th scope="col">@Loc["DashboardMethod"]</th><th scope="col" class="count">@Loc["DashboardCount"]</th></tr></thead><tbody>
+            @foreach (var row in _data?.CatchStatistics ?? []) { <tr><td>@(row.SpeciesName ?? Loc["DashboardUnknownSpecies"])</td><td>@(row.Method ?? Loc["DashboardUnknownMethod"])</td><td class="count">@row.Count</td></tr> }
+        </tbody></table>
+        @if (_data is { CatchStatistics.Count: 0 }) { <MudText Align="Align.Center" Class="empty" id="dashboard-counts-empty">@StatisticsEmpty</MudText> }
+        <MudDivider Class="my-4" />
+        <MudText Typo="Typo.h6">@Loc["DashboardFilteredBests"]</MudText>
+        <PersonalBestTable Id="dashboard-filtered-table" Rows="@(_data?.FilteredPersonalBests ?? [])" WeightUnit="_weightUnit" IsLoaded="@(_data is not null)" EmptyText="@FilteredEmpty" />
+    </MudPaper>
+    @if (_data?.Lifetime.Catches == 0)
+    {
+        <MudPaper Outlined Class="panel" id="dashboard-import"><MudText Typo="Typo.h6">@Loc["DashboardImportTitle"]</MudText><MudText Typo="Typo.body2">@Loc["DashboardImportHelp"]</MudText><MudButton Href="/import" Color="Color.Primary" id="dashboard-import-link">@Loc["DashboardImport"]</MudButton></MudPaper>
+    }
+</MudContainer>
+</div>

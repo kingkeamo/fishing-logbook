@@ -102,6 +102,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITripNoteWriteService, TripNoteWriteService>();
         services.AddScoped<ITripCatchService, TripCatchService>();
         services.AddScoped<ITripClient, TripClient>();
+        services.AddScoped<Features.Dashboard.Clients.IDashboardClient, Features.Dashboard.Clients.DashboardClient>();
         services.AddScoped<ITripParticipantClient, TripParticipantClient>();
         services.AddScoped<ITripSynchroniser, TripSynchroniser>();
         services.AddScoped<ITripPhotographStore, IndexedDbTripPhotographStore>();

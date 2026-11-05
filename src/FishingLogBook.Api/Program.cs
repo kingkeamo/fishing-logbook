@@ -72,6 +72,7 @@ app.MapDiagnosticEndpoints();
 app.MapUserEndpoints();
 app.MapProfileEndpoints();
 app.MapCatchEndpoints();
+app.MapDashboardEndpoints();
 app.MapTripEndpoints();
 app.MapTripParticipantEndpoints();
 app.MapFishingPreferenceEndpoints();

@@ -6,10 +6,10 @@ namespace FishingLogBook.Mobile.Tests.Navigation.RouteConstantsTests;
 public class WhenTestingGetPath : BaseRouteConstantsTest
 {
     [Fact]
-    public void ItShouldKeepExactlyFourPrimaryDestinationsSeparateFromSecondaryRoutes()
+    public void ItShouldKeepExactlyFivePrimaryDestinationsSeparateFromSecondaryRoutes()
     {
         // Arrange
-        var expected = new[] { "//main/catches", "//main/trips", "//main/import", "//main/settings" };
+        var expected = new[] { "//main/dashboard", "//main/catches", "//main/trips", "//main/import", "//main/settings" };
         // Act
         var paths = Primary.Select(RouteConstants.GetPath).ToArray();
         // Assert

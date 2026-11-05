@@ -44,7 +44,7 @@ public partial class Onboarding : ComponentBase, IDisposable
     {
         if (await OnboardingService.IsCompletedAsync(CancellationToken.None))
         {
-            Navigation.NavigateTo("/catches", replace: true);
+            Navigation.NavigateTo("/dashboard", replace: true);
             return;
         }
 
@@ -348,7 +348,7 @@ public partial class Onboarding : ComponentBase, IDisposable
         try
         {
             await OnboardingService.CompleteAsync(CancellationToken.None);
-            Navigation.NavigateTo("/catches", replace: true);
+            Navigation.NavigateTo("/dashboard", replace: true);
         }
         catch (Exception)
         {

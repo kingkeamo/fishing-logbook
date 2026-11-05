@@ -8,6 +8,28 @@ namespace FishingLogBook.Shared.Tests.Serialization;
 public class WhenTestingWebSerialization : BaseSerializationTest
 {
     [Fact]
+    public void ItShouldRoundTripIndependentDashboardTotalsAndWinningCatchDates()
+    {
+        // Arrange
+        var original = new DashboardDto
+        {
+            Lifetime = new DashboardTotalsDto { Catches = 9, Trips = 4, Species = 3 },
+            Filtered = new DashboardTotalsDto { Catches = 3, Trips = 1, Species = 2 },
+            AllTimePersonalBests = [new DashboardPersonalBestDto { CatchId = Guid.NewGuid(), Weight = 8, CaughtOn = DateTimeOffset.Parse("2025-12-31T23:00Z") }],
+            FilteredPersonalBests = [new DashboardPersonalBestDto { CatchId = Guid.NewGuid(), Weight = 4, CaughtOn = null }]
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(original, WebOptions);
+        var restored = JsonSerializer.Deserialize<DashboardDto>(json, WebOptions);
+
+        // Assert
+        restored.Should().BeEquivalentTo(original);
+        json.Should().Contain("\"filtered\":").And.Contain("\"caughtOn\":");
+        restored!.FilteredPersonalBests[0].CaughtOn.Should().BeNull();
+    }
+
+    [Fact]
     public void ItShouldRoundTripHealthDtoUsingWebDefaults()
     {
         // Arrange

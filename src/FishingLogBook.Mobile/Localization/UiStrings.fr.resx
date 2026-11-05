@@ -708,5 +708,57 @@
   <data name="Import_LocationPreview" xml:space="preserve"><value>Aper&#231;u du nom du lieu</value></data>
   <data name="Import_NoPlaceName" xml:space="preserve"><value>Aucun nom de lieu</value></data>
   <data name="Import_PlaceNameTooLong" xml:space="preserve"><value>Supprimez certains d&#233;tails pour raccourcir le nom du lieu.</value></data>
+  <data name="Dashboard" xml:space="preserve"><value>Tableau de bord</value></data>
+  <data name="DashboardSubtitle" xml:space="preserve"><value>Votre parcours de pêche en un coup d’œil</value></data>
+  <data name="DashboardCatches" xml:space="preserve"><value>Prises</value></data>
+  <data name="DashboardTrips" xml:space="preserve"><value>Sorties</value></data>
+  <data name="DashboardSpecies" xml:space="preserve"><value>Espèces</value></data>
+  <data name="DashboardAllTimeBests" xml:space="preserve"><value>Records personnels de toujours</value></data>
+  <data name="DashboardExplore" xml:space="preserve"><value>Explorez vos pêches</value></data>
+  <data name="DashboardStatistics" xml:space="preserve"><value>Statistiques des prises</value></data>
+  <data name="DashboardFilteredBests" xml:space="preserve"><value>Records personnels filtrés</value></data>
+  <data name="DashboardFirstBest" xml:space="preserve"><value>Votre premier record personnel vous attend</value></data>
+  <data name="DashboardFirstBestHelp" xml:space="preserve"><value>Enregistrez une prise avec son poids pour commencer vos records personnels.</value></data>
+  <data name="DashboardNoCatches" xml:space="preserve"><value>Aucune prise à afficher pour le moment.</value></data>
+  <data name="DashboardNoMatches" xml:space="preserve"><value>Aucune prise ne correspond à ces filtres.</value></data>
+  <data name="DashboardWeightNeeded" xml:space="preserve"><value>Un poids enregistré est nécessaire pour afficher les records personnels.</value></data>
+  <data name="DashboardImportTitle" xml:space="preserve"><value>Vous avez déjà des photos de pêche ?</value></data>
+  <data name="DashboardImportHelp" xml:space="preserve"><value>Importez vos anciennes prises pour enrichir votre historique de pêche.</value></data>
+  <data name="DashboardImport" xml:space="preserve"><value>Importer des prises</value></data>
+  <data name="DashboardRecord" xml:space="preserve"><value>Enregistrer une prise</value></data>
+  <data name="DashboardDateRange" xml:space="preserve"><value>Période</value></data>
+  <data name="DashboardThisMonth" xml:space="preserve"><value>Ce mois-ci</value></data>
+  <data name="DashboardThisYear" xml:space="preserve"><value>Cette année</value></data>
+  <data name="DashboardLastYear" xml:space="preserve"><value>L’année dernière</value></data>
+  <data name="DashboardAllTime" xml:space="preserve"><value>Toutes les dates</value></data>
+  <data name="DashboardCustom" xml:space="preserve"><value>Dates personnalisées</value></data>
+  <data name="DashboardFrom" xml:space="preserve"><value>Du</value></data>
+  <data name="DashboardTo" xml:space="preserve"><value>Au</value></data>
+  <data name="DashboardAll" xml:space="preserve"><value>Tous</value></data>
+  <data name="DashboardMethod" xml:space="preserve"><value>Technique de pêche</value></data>
+  <data name="DashboardVenue" xml:space="preserve"><value>Lieu</value></data>
+  <data name="DashboardHeaviest" xml:space="preserve"><value>Plus lourde</value></data>
+  <data name="DashboardCount" xml:space="preserve"><value>Prises</value></data>
+  <data name="DashboardLoading" xml:space="preserve"><value>Chargement de votre tableau de bord…</value></data>
+  <data name="DashboardError" xml:space="preserve"><value>Votre tableau de bord n’a pas pu être chargé. Veuillez réessayer.</value></data>
+  <data name="DashboardOffline" xml:space="preserve"><value>Connectez-vous à Internet pour afficher votre tableau de bord. Vous pouvez toujours enregistrer des prises hors ligne.</value></data>
+  <data name="DashboardRetry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="DashboardApply" xml:space="preserve"><value>Appliquer les filtres</value></data>
+  <data name="DashboardReset" xml:space="preserve"><value>Réinitialiser les filtres</value></data>
+  <data name="DashboardInvalidDates" xml:space="preserve"><value>Choisissez une date de début antérieure ou égale à la date de fin.</value></data>
+  <data name="DashboardUnknownSpecies" xml:space="preserve"><value>Espèce non précisée</value></data>
+  <data name="DashboardUnknownMethod" xml:space="preserve"><value>Technique non précisée</value></data>
+  <data name="DashboardOpenCatch" xml:space="preserve"><value>Ouvrir la prise</value></data>
+  <data name="DashboardCatchUnavailable" xml:space="preserve"><value>Cette prise n’a pas pu être ouverte. Veuillez réessayer.</value></data>
+  <data name="DashboardOnlineOnly" xml:space="preserve"><value>Statistiques en ligne de vos prises synchronisées.</value></data>
+  <data name="DashboardFilteredCatches" xml:space="preserve"><value>Captures filtrées</value></data>
+  <data name="DashboardFilteredTrips" xml:space="preserve"><value>Sorties filtrées</value></data>
+  <data name="DashboardFilteredSpecies" xml:space="preserve"><value>Espèces filtrées</value></data>
+  <data name="DashboardCaughtOn" xml:space="preserve"><value>Date de capture</value></data>
+  <data name="DashboardShowFilters" xml:space="preserve"><value>Filtres · Développer</value></data>
+  <data name="DashboardHideFilters" xml:space="preserve"><value>Filtres · Réduire</value></data>
+  <data name="DashboardAllSpecies" xml:space="preserve"><value>Toutes les espèces</value></data>
+  <data name="DashboardAllMethods" xml:space="preserve"><value>Toutes les techniques</value></data>
+  <data name="DashboardFiltersActive" xml:space="preserve"><value>Filtres actifs</value></data>
 </root>
 

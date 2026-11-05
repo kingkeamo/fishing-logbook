@@ -9,6 +9,9 @@ using FishingLogBook.Application.Catches.Services;
 using FishingLogBook.Application.Common.Behaviours;
 using FishingLogBook.Application.Common.Contracts.Services;
 using FishingLogBook.Application.Common.Mappings;
+using FishingLogBook.Application.Dashboard.Contracts.Repositories;
+using FishingLogBook.Application.Dashboard.Contracts.Services;
+using FishingLogBook.Application.Dashboard.Services;
 using FishingLogBook.Application.Diagnostics;
 using FishingLogBook.Application.Diagnostics.Contracts.Services;
 using FishingLogBook.Application.FishingLocations.Contracts.Repositories;
@@ -80,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ICatchService, CatchService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITripAccessService, TripAccessService>();
         services.AddScoped<ITripParticipantService, TripParticipantService>();
         services.AddScoped<IAnglerLookupService, AnglerLookupService>();
@@ -125,6 +129,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserIdentityRepository, UserIdentityRepository>();
         services.AddScoped<IProfileRepository, ProfileRepository>();
         services.AddScoped<ICatchRepository, CatchRepository>();
+        services.AddScoped<IDashboardRepository, DashboardRepository>();
         services.AddScoped<ITripRepository, TripRepository>();
         services.AddScoped<ITripPhotographRepository, TripPhotographRepository>();
         services.AddScoped<ITripNoteRepository, TripNoteRepository>();

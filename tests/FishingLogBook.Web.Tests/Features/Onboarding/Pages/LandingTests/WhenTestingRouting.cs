@@ -474,7 +474,7 @@ public class WhenTestingRouting : BaseLandingTest
 
         void OnLocationChanged(object? sender, LocationChangedEventArgs args)
         {
-            if (args.Location.EndsWith("/catches", StringComparison.Ordinal))
+            if (args.Location.EndsWith("/dashboard", StringComparison.Ordinal))
             {
                 navigated.TrySetResult();
             }
@@ -494,7 +494,7 @@ public class WhenTestingRouting : BaseLandingTest
         }
 
         // Assert
-        navigation.Uri.Should().EndWith("/catches");
+        navigation.Uri.Should().EndWith("/dashboard");
         await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
     }
 
@@ -516,7 +516,7 @@ public class WhenTestingRouting : BaseLandingTest
         authentication.SetAuthenticationState(Authenticated());
 
         // Assert
-        cut.WaitForAssertion(() => navigation.Uri.Should().EndWith("/catches"));
+        cut.WaitForAssertion(() => navigation.Uri.Should().EndWith("/dashboard"));
         await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
     }
 
@@ -598,7 +598,7 @@ public class WhenTestingRouting : BaseLandingTest
         context.Render<LandingPage>();
 
         // Assert
-        context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/catches");
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/dashboard");
         await onboarding.Received(1).IsCompletedAsync(Arg.Any<CancellationToken>());
     }
 

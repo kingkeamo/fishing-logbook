@@ -264,7 +264,7 @@ public class WhenTestingPreferences : BaseOnboardingTest
         await cut.Find("#onboarding-finish").ClickAsync();
 
         await fixture.Onboarding.Received(1).CompleteAsync(Arg.Any<CancellationToken>());
-        fixture.Context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/catches");
+        fixture.Context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/dashboard");
         await fixture.Install.DidNotReceive().PromptAsync(Arg.Any<CancellationToken>());
     }
 
@@ -299,7 +299,7 @@ public class WhenTestingPreferences : BaseOnboardingTest
 
         fixture.Context.Render<OnboardingPage>();
 
-        fixture.Context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/catches");
+        fixture.Context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/dashboard");
         await fixture.Preferences.DidNotReceive().GetPreferencesAsync(Arg.Any<CancellationToken>());
         await fixture.Onboarding.DidNotReceive().CompleteAsync(Arg.Any<CancellationToken>());
     }
