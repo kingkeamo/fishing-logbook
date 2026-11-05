@@ -1,4 +1,5 @@
 using FishingLogBook.Mobile.Features.Authentication.ViewModels;
+using FishingLogBook.Shared.Enums;
 
 namespace FishingLogBook.Mobile.Features.Authentication.Pages;
 
@@ -29,6 +30,16 @@ public partial class AuthenticationPage : ContentPage
     private async void OnSignIn(object? sender, EventArgs args)
     {
         await _viewModel.SignInAsync();
+    }
+
+    private async void OnSignInWithApple(object? sender, EventArgs args)
+    {
+        await _viewModel.SignInAsync(SignInProviderEnum.Apple);
+    }
+
+    private async void OnSignInWithGoogle(object? sender, EventArgs args)
+    {
+        await _viewModel.SignInAsync(SignInProviderEnum.Google);
     }
 
     private async void OnCancel(object? sender, EventArgs args)

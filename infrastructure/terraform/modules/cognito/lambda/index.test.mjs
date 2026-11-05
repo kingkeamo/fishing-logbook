@@ -133,6 +133,61 @@ describe("applyAccessTokenEmail", () => {
   });
 });
 
+describe("federated sign-in", () => {
+  it("adds the mapped verified email for a Google user", () => {
+    const result = applyAccessTokenEmail(
+      baseEvent({ identities: JSON.stringify([{ providerName: "Google" }]), email_verified: "true" })
+    );
+
+    assert.equal(
+      result.response.claimsAndScopeOverrideDetails.accessTokenGeneration
+        .claimsToAddOrOverride.email,
+      "tester@example.test"
+    );
+  });
+
+  it("adds the Apple private-relay email when Apple reports it verified", () => {
+    const result = applyAccessTokenEmail(
+      baseEvent({
+        email: "abc123@privaterelay.appleid.com",
+        email_verified: true,
+        identities: JSON.stringify([{ providerName: "SignInWithApple" }])
+      })
+    );
+
+    assert.equal(
+      result.response.claimsAndScopeOverrideDetails.accessTokenGeneration
+        .claimsToAddOrOverride.email,
+      "abc123@privaterelay.appleid.com"
+    );
+  });
+
+  it("omits the email for a federated user whose email is not verified", () => {
+    const result = applyAccessTokenEmail(
+      baseEvent({ email_verified: "false", identities: JSON.stringify([{ providerName: "Google" }]) })
+    );
+
+    assert.equal(
+      result.response.claimsAndScopeOverrideDetails.accessTokenGeneration
+        .claimsToAddOrOverride,
+      undefined
+    );
+  });
+
+  it("omits the email for a federated user whose email_verified attribute was never mapped", () => {
+    const event = baseEvent({ identities: JSON.stringify([{ providerName: "SignInWithApple" }]) });
+    delete event.request.userAttributes.email_verified;
+
+    const result = applyAccessTokenEmail(event);
+
+    assert.equal(
+      result.response.claimsAndScopeOverrideDetails.accessTokenGeneration
+        .claimsToAddOrOverride,
+      undefined
+    );
+  });
+});
+
 describe("handler", () => {
   it("returns the event with email on the access token", async () => {
     const result = await handler(baseEvent());

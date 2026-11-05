@@ -8,6 +8,7 @@ using FishingLogBook.Mobile.Features.OfflineAccess.Models;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
+using FishingLogBook.Shared.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Features.Authentication.Services;
@@ -155,13 +156,15 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
         }
     }
 
-    public async Task<AuthenticationResultEnum> BeginSignInAsync(CancellationToken cancellationToken)
+    public async Task<AuthenticationResultEnum> BeginSignInAsync(
+        CancellationToken cancellationToken,
+        SignInProviderEnum provider = SignInProviderEnum.EmailPassword)
     {
         await _operationGate.WaitAsync(cancellationToken);
         try
         {
             await _store.RemovePendingAuthorizationAsync();
-            var pendingAuthorization = await _oidcClient.PrepareLoginAsync(cancellationToken);
+            var pendingAuthorization = await _oidcClient.PrepareLoginAsync(cancellationToken, provider);
             await _store.SavePendingAuthorizationAsync(pendingAuthorization);
             SetPendingAuthorization(true);
             await _browser.OpenAsync(

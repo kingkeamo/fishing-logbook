@@ -129,3 +129,8 @@ output "grafana_loki_write_token" {
   value       = try(module.grafana_cloud[0].loki_write_token, null)
   sensitive   = true
 }
+
+output "cognito_social_identity_providers" {
+  description = "Federated identity providers enabled on the app clients."
+  value       = module.cognito.social_identity_providers
+}

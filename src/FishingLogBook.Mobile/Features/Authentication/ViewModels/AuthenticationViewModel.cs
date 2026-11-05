@@ -2,12 +2,14 @@ using System.ComponentModel;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Shared.Enums;
 
 namespace FishingLogBook.Mobile.Features.Authentication.ViewModels;
 
 public sealed class AuthenticationViewModel : INotifyPropertyChanged
 {
     private readonly IAuthenticationService _authenticationService;
+    private readonly ISignInProviderService _providers;
     private Action<Action>? _dispatch;
     private bool _isBusy;
     private bool _isPending;
@@ -15,9 +17,11 @@ public sealed class AuthenticationViewModel : INotifyPropertyChanged
 
     public AuthenticationViewModel(
         IAuthenticationService authenticationService,
+        ISignInProviderService providers,
         UiTextService text)
     {
         _authenticationService = authenticationService;
+        _providers = providers;
         Text = text;
     }
 
@@ -45,6 +49,9 @@ public sealed class AuthenticationViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool ShowGoogle => _providers.AvailableProviders.Contains(SignInProviderEnum.Google);
+    public bool ShowApple => _providers.AvailableProviders.Contains(SignInProviderEnum.Apple);
+    public bool HasSocialProviders => ShowGoogle || ShowApple;
     public bool CanSignIn => !IsBusy && !IsPending;
     public bool CanCancel => !IsBusy && IsPending;
     public bool HasStatus => _statusKey is not null;
@@ -68,11 +75,21 @@ public sealed class AuthenticationViewModel : INotifyPropertyChanged
         SetStatus(IsPending ? "SigningIn" : null);
     }
 
-    public async Task SignInAsync()
+    public Task SignInAsync()
     {
+        return SignInAsync(SignInProviderEnum.EmailPassword);
+    }
+
+    public async Task SignInAsync(SignInProviderEnum provider)
+    {
+        if (provider != SignInProviderEnum.EmailPassword && !_providers.AvailableProviders.Contains(provider))
+        {
+            return;
+        }
+
         IsBusy = true;
         SetStatus(null);
-        var result = await _authenticationService.BeginSignInAsync(CancellationToken.None);
+        var result = await _authenticationService.BeginSignInAsync(CancellationToken.None, provider);
         IsBusy = false;
         ApplyResult(result);
     }

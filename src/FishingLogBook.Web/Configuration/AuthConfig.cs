@@ -14,6 +14,8 @@ public sealed class AuthConfig
 
     public string ApiResource { get; set; } = string.Empty;
 
+    public string[] SocialProviders { get; set; } = [];
+
     public void EnsureRequired()
     {
         var missing = new List<string>();

@@ -4,6 +4,8 @@ using Duende.IdentityModel.OidcClient;
 using FishingLogBook.Mobile.Configuration;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
+using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Enums;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FishingLogBook.Mobile.Features.Authentication.Clients;
@@ -50,12 +52,20 @@ public sealed class OidcProtocolClient : IOidcProtocolClient
         });
     }
 
-    public async Task<PendingAuthorizationModel> PrepareLoginAsync(CancellationToken cancellationToken)
+    public async Task<PendingAuthorizationModel> PrepareLoginAsync(
+        CancellationToken cancellationToken,
+        SignInProviderEnum provider = SignInProviderEnum.EmailPassword)
     {
         var parameters = new Parameters
         {
             { "resource", _config.ApiResource }
         };
+        var identityProvider = SignInProviderConstants.ToCognitoIdentityProvider(provider);
+        if (identityProvider is not null)
+        {
+            parameters.Add(SignInProviderConstants.IdentityProviderParameter, identityProvider);
+        }
+
         var state = await _client.PrepareLoginAsync(parameters, cancellationToken);
         if (state.IsError)
         {

@@ -25,6 +25,7 @@ public sealed record MobileAuthConfig
     public required string LogoutRedirectUri { get; init; }
     public required string SchemeRedirectUri { get; init; }
     public required string SchemeLogoutRedirectUri { get; init; }
+    public IReadOnlyList<string> SocialProviders { get; init; } = [];
 
     public static MobileAuthConfig Load(Assembly? assembly = null)
     {

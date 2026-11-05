@@ -40,3 +40,8 @@ output "api_scope" {
   description = "Resource-server scope the PWA must request for FishingLogBook API access."
   value       = "${local.api_identifier}/${local.api_scope_name}"
 }
+
+output "social_identity_providers" {
+  description = "Federated identity providers enabled on the app clients (Google, SignInWithApple). Drives Auth:SocialProviders in client config."
+  value       = local.federated_identity_providers
+}

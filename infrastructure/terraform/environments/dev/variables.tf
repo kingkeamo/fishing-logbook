@@ -133,3 +133,41 @@ variable "grafana_cloud_stack_slug" {
   description = "Existing Grafana Cloud stack slug (https://<slug>.grafana.net). Leave empty to skip Grafana resources. Account-specific; supply locally, never commit."
   default     = ""
 }
+
+variable "cognito_google_client_id" {
+  type        = string
+  description = "Google OAuth web client ID. Empty leaves Continue with Google disabled."
+  default     = ""
+}
+
+variable "cognito_google_client_secret" {
+  type        = string
+  description = "Google OAuth web client secret. Supply via TF_VAR_cognito_google_client_secret; never commit."
+  default     = ""
+  sensitive   = true
+}
+
+variable "cognito_apple_services_id" {
+  type        = string
+  description = "Sign in with Apple Services ID. Empty leaves Continue with Apple disabled."
+  default     = ""
+}
+
+variable "cognito_apple_team_id" {
+  type        = string
+  description = "Apple Developer Team ID."
+  default     = ""
+}
+
+variable "cognito_apple_key_id" {
+  type        = string
+  description = "Sign in with Apple key ID."
+  default     = ""
+}
+
+variable "cognito_apple_private_key" {
+  type        = string
+  description = "Sign in with Apple .p8 private key contents. Supply via TF_VAR_cognito_apple_private_key; never commit."
+  default     = ""
+  sensitive   = true
+}

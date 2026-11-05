@@ -8,6 +8,12 @@ module "cognito" {
   enable_native_client    = var.cognito_native_client_enabled
   native_callback_urls    = var.cognito_native_callback_urls
   native_logout_urls      = var.cognito_native_logout_urls
+  google_client_id        = var.cognito_google_client_id
+  google_client_secret    = var.cognito_google_client_secret
+  apple_services_id       = var.cognito_apple_services_id
+  apple_team_id           = var.cognito_apple_team_id
+  apple_key_id            = var.cognito_apple_key_id
+  apple_private_key       = var.cognito_apple_private_key
 }
 
 module "neon" {
