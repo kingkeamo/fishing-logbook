@@ -6,6 +6,7 @@ using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Features.Photographs.ViewModels;
 
@@ -15,6 +16,7 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
     private readonly InteractionService _interactions;
     private readonly IAppInfoAdapter _app;
     private readonly UiTextService _text;
+    private readonly ILogger<PhotographCollectionEditorViewModel> _logger;
     private Guid _userId;
     private int _maximumCount = 10;
     private int _minimumCount;
@@ -26,8 +28,10 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         IPhotographCollectionEditorService editor,
         InteractionService interactions,
         IAppInfoAdapter app,
-        UiTextService text)
+        UiTextService text,
+        ILogger<PhotographCollectionEditorViewModel> logger)
     {
+        _logger = logger;
         _editor = editor;
         _interactions = interactions;
         _app = app;
@@ -272,8 +276,9 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
             {
                 return;
             }
-            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
             {
+                _logger.LogError(exception, "Failed to prepare photograph.");
                 SetStatus(PhotographPreparationOutcomeEnum.CouldNotPrepare);
                 return;
             }

@@ -73,7 +73,7 @@ public sealed class PhotographFileStore(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Durable photograph save failed at {Stage} with {ErrorType}.", stage, exception.GetType().Name);
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Durable photograph save failed at {Stage}.", stage);
             TryDelete(tempPath);
             return null;
         }
@@ -189,7 +189,7 @@ public sealed class PhotographFileStore(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Temporary photograph cleanup failed with {ErrorType}.", exception.GetType().Name);
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Temporary photograph cleanup failed.");
         }
     }
 }

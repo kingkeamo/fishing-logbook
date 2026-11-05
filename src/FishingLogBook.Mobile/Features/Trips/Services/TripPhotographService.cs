@@ -3,6 +3,7 @@ using FishingLogBook.Mobile.Features.Photographs.Enums;
 using FishingLogBook.Mobile.Features.Photographs.Services;
 using FishingLogBook.Mobile.Features.Trips.Offline.Models;
 using FishingLogBook.Shared.Dtos;
+using Microsoft.Extensions.Logging;
 
 namespace FishingLogBook.Mobile.Features.Trips.Services;
 
@@ -10,7 +11,8 @@ public sealed class TripPhotographService(
     ITripService trips,
     IPhotographCollectionEditorService photographs,
     IAccountSessionCoordinator session,
-    TimeProvider time) : ITripPhotographService
+    TimeProvider time,
+    ILogger<TripPhotographService> logger) : ITripPhotographService
 {
     public async Task<string?> AddAsync(LocalTripRecordModel trip, bool useCamera, CancellationToken cancellationToken)
     {
@@ -48,6 +50,7 @@ public sealed class TripPhotographService(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            logger.LogError(exception, "Failed to save trip photograph {PhotographId}.", item.Id);
             return "TripPhotographAddFailed";
         }
     }
@@ -68,6 +71,7 @@ public sealed class TripPhotographService(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            logger.LogError(exception, "Failed to remove trip photograph {PhotographId}.", photographId);
             return false;
         }
     }

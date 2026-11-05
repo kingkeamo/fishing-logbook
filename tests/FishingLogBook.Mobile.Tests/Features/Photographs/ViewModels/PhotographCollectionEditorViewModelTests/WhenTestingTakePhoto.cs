@@ -143,13 +143,14 @@ public sealed class WhenTestingTakePhoto : BasePhotographCollectionEditorViewMod
     {
         // Arrange
         var photo = Photo();
+        var cause = new IOException("disk");
         MockEditor.TakePhotoAsync(
                 OwnerUserId,
                 Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
                 10,
                 Arg.Any<CancellationToken>())
             .Returns(
-                _ => Task.FromException<PhotographEditorActionResultModel>(new IOException("disk")),
+                _ => Task.FromException<PhotographEditorActionResultModel>(cause),
                 _ => Task.FromResult(PhotographEditorActionResultModel.Updated([photo])));
 
         // Act
@@ -162,6 +163,7 @@ public sealed class WhenTestingTakePhoto : BasePhotographCollectionEditorViewMod
         // Assert
         statusAfterFailure.Should().Be(Text["PhotoPrepareFailed"]);
         busyAfterFailure.Should().BeFalse();
+        Logger.Entries.Should().ContainSingle(entry => ReferenceEquals(entry.Exception, cause));
         Sut.Items.Should().ContainSingle(item => item.Id == photo.Id);
         Sut.HasStatus.Should().BeFalse();
         await MockEditor.Received(2).TakePhotoAsync(
@@ -190,6 +192,7 @@ public sealed class WhenTestingTakePhoto : BasePhotographCollectionEditorViewMod
         Sut.HasStatus.Should().BeFalse();
         Sut.HasItems.Should().BeFalse();
         Sut.IsBusy.Should().BeFalse();
+        Logger.Entries.Should().BeEmpty();
     }
 
     [Fact]

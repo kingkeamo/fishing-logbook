@@ -142,7 +142,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph source read failed with {ErrorType}.", exception.GetType().Name);
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Photograph source read failed.");
             return null;
         }
     }
@@ -164,7 +164,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph metadata read failed with {ErrorType}.", exception.GetType().Name);
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Photograph metadata read failed.");
             return PhotographMetadataModel.Empty;
         }
     }
@@ -177,7 +177,7 @@ public sealed class PhotographPreparationService(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, "Photograph sanitisation failed with {ErrorType}.", exception.GetType().Name);
+            logger.LogWarning(PhotographLoggerProvider.PipelineEvent, exception, "Photograph sanitisation failed.");
             return null;
         }
     }

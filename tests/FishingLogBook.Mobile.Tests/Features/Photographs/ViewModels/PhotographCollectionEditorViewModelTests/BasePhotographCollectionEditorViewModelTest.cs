@@ -5,6 +5,7 @@ using FishingLogBook.Mobile.Features.Photographs.ViewModels;
 using FishingLogBook.Mobile.Interactions;
 using FishingLogBook.Mobile.IO.Adapters;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Mobile.Tests.Support;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Photographs.ViewModels.PhotographCollectionEditorViewModelTests;
@@ -17,6 +18,7 @@ public abstract class BasePhotographCollectionEditorViewModelTest
     protected IPhotographCollectionEditorService MockEditor { get; } = Substitute.For<IPhotographCollectionEditorService>();
     protected IInteractionPresenter MockPresenter { get; } = Substitute.For<IInteractionPresenter>();
     protected IAppInfoAdapter MockApp { get; } = Substitute.For<IAppInfoAdapter>();
+    protected CapturingLogger<PhotographCollectionEditorViewModel> Logger { get; } = new();
     protected PhotographCollectionEditorViewModel Sut { get; }
 
     protected BasePhotographCollectionEditorViewModelTest()
@@ -26,7 +28,8 @@ public abstract class BasePhotographCollectionEditorViewModelTest
             MockEditor,
             new InteractionService(MockPresenter, Text),
             MockApp,
-            Text);
+            Text,
+            Logger);
         Sut.UserId = OwnerUserId;
     }
 

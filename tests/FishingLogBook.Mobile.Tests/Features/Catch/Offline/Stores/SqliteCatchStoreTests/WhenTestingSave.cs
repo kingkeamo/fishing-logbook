@@ -182,7 +182,8 @@ public sealed class WhenTestingSave : BaseSqliteCatchStoreTest
                 new FishingLogBook.Mobile.Interactions.InteractionService(
                     Substitute.For<FishingLogBook.Mobile.Interactions.IInteractionPresenter>(), text),
                 Substitute.For<FishingLogBook.Mobile.IO.Adapters.IAppInfoAdapter>(),
-                text),
+                text,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<PhotographCollectionEditorViewModel>.Instance),
             TimeProvider.System, text, Substitute.For<ICatchWorkingCopyService>(), new ActiveCatchEditRegistry(),
             new FishingLogBook.Mobile.Features.Trips.ViewModels.TripAssociationViewModel(
                 Substitute.For<FishingLogBook.Mobile.Features.Trips.Services.ITripAssociationService>(), text));

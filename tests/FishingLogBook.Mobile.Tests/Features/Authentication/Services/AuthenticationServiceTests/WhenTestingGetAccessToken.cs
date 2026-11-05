@@ -63,6 +63,26 @@ public class WhenTestingGetAccessToken : BaseAuthenticationServiceTest
         await MockStore.DidNotReceive().RemoveCredentialAsync();
     }
 
+    [Fact]
+    public async Task ItShouldLogTheOriginalExceptionWhenAnUnexpectedRefreshFailureIsBackedOff()
+    {
+        // Arrange
+        await EstablishSessionAsync(Now.AddSeconds(30));
+        var cause = new InvalidOperationException("refresh exploded");
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None)
+            .Returns(Task.FromException<OidcTokenResultModel>(cause));
+        AdvanceTo(ExpiredAt);
+
+        // Act
+        var action = () => Sut.GetAccessTokenAsync(CancellationToken.None);
+
+        // Assert
+        await action.Should().ThrowAsync<UnauthorizedAccessException>();
+        Logger.Entries.Should().ContainSingle(entry => ReferenceEquals(entry.Exception, cause));
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockStore.DidNotReceive().RemoveCredentialAsync();
+    }
+
     [Theory]
     [InlineData(29, 2)]
     [InlineData(30, 3)]

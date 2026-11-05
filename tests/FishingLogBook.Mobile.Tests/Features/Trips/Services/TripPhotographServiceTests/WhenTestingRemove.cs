@@ -54,12 +54,14 @@ public sealed class WhenTestingRemove : BaseTripPhotographServiceTest
     public async Task ItShouldReportFailureWhenTheRemovalCannotBeSaved()
     {
         // Arrange
+        var cause = new UnauthorizedAccessException();
         MockTrips.SavePhotographAsync(Arg.Any<LocalTripRecordModel>(), Arg.Any<TripPhotographViewDto>(), Arg.Any<string?>(), true, Arg.Any<CancellationToken>())
-            .Returns(Task.FromException(new UnauthorizedAccessException()));
+            .Returns(Task.FromException(cause));
         // Act
         var removed = await Sut.RemoveAsync(TripWith(ViewerId), PhotoId, CancellationToken.None);
         // Assert
         removed.Should().BeFalse();
+        Logger.Entries.Should().ContainSingle(entry => ReferenceEquals(entry.Exception, cause));
     }
 
     [Fact]
