@@ -263,7 +263,21 @@ public sealed class PhotographCollectionEditorViewModel : INotifyPropertyChanged
         ClearStatus();
         try
         {
-            var result = await action(cancellationToken);
+            PhotographEditorActionResultModel result;
+            try
+            {
+                result = await action(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                SetStatus(PhotographPreparationOutcomeEnum.CouldNotPrepare);
+                return;
+            }
+
             Apply(result);
             if (result is not null)
             {

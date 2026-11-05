@@ -139,6 +139,60 @@ public sealed class WhenTestingTakePhoto : BasePhotographCollectionEditorViewMod
     }
 
     [Fact]
+    public async Task ItShouldSurfaceAPrepareFailureAndStayUsableWhenTheEditorThrows()
+    {
+        // Arrange
+        var photo = Photo();
+        MockEditor.TakePhotoAsync(
+                OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+                10,
+                Arg.Any<CancellationToken>())
+            .Returns(
+                _ => Task.FromException<PhotographEditorActionResultModel>(new IOException("disk")),
+                _ => Task.FromResult(PhotographEditorActionResultModel.Updated([photo])));
+
+        // Act
+        var failed = () => Sut.TakePhotoAsync(CancellationToken.None);
+        await failed.Should().NotThrowAsync();
+        var statusAfterFailure = Sut.StatusText;
+        var busyAfterFailure = Sut.IsBusy;
+        await Sut.TakePhotoAsync(CancellationToken.None);
+
+        // Assert
+        statusAfterFailure.Should().Be(Text["PhotoPrepareFailed"]);
+        busyAfterFailure.Should().BeFalse();
+        Sut.Items.Should().ContainSingle(item => item.Id == photo.Id);
+        Sut.HasStatus.Should().BeFalse();
+        await MockEditor.Received(2).TakePhotoAsync(
+            OwnerUserId,
+            Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+            10,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldTreatAnOperationCancelledTakeAsNoStatusAndNoChange()
+    {
+        // Arrange
+        MockEditor.TakePhotoAsync(
+                OwnerUserId,
+                Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(),
+                10,
+                Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromException<PhotographEditorActionResultModel>(new OperationCanceledException()));
+
+        // Act
+        var act = () => Sut.TakePhotoAsync(CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+        Sut.HasStatus.Should().BeFalse();
+        Sut.HasItems.Should().BeFalse();
+        Sut.IsBusy.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ItShouldTreatACancelledTakeAsNoStatus()
     {
         // Arrange

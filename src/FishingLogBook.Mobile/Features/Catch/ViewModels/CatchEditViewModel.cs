@@ -610,7 +610,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task<bool> SaveAsync(CancellationToken cancellationToken)
     {
-        if (_editBlocked)
+        if (_disposed || _editBlocked)
         {
             return false;
         }
@@ -628,6 +628,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task OnDisappearingAsync(CancellationToken cancellationToken)
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         _draftDebounce?.Cancel();
         if (!CanInteract || IsSaved || IsEditingSavedCatch)
         {
@@ -680,7 +685,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             .FirstOrDefault();
         if (draft is not null)
         {
-            await BindRecordAsync(draft, cancellationToken);
+            BindRecord(draft, cancellationToken);
             if (requestedTripId is { } requested && requested != draft.TripId)
             {
                 await Trip.InitializeNewAsync(userId, requested, cancellationToken);
@@ -696,7 +701,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
         DraftRestored = false;
         await Trip.InitializeNewAsync(userId, requestedTripId, cancellationToken);
-        await ApplyPhotoMetadataAsync();
+        ApplyPhotoMetadata();
     }
 
     private async Task LoadExistingAsync(Guid catchId, CancellationToken cancellationToken)
@@ -727,7 +732,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
         Photographs.MinimumCount = IsEditingSavedCatch ? 1 : 0;
         _catchId = record.Id;
-        await BindRecordAsync(record, cancellationToken);
+        BindRecord(record, cancellationToken);
         await Trip.RestoreAsync(ownerId, record.TripId, record.CaughtByUserId, locked: IsEditingSavedCatch, cancellationToken);
     }
 
@@ -751,7 +756,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         };
     }
 
-    private async Task BindRecordAsync(LocalCatchRecordModel record, CancellationToken cancellationToken)
+    private void BindRecord(LocalCatchRecordModel record, CancellationToken cancellationToken)
     {
         _catchId = record.Id;
         _selectedMethod = record.Method ?? string.Empty;
@@ -792,7 +797,7 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         NotifyMeasurements();
         NotifyLocation();
         NotifyCaughtOn();
-        await ApplyPhotoMetadataAsync();
+        ApplyPhotoMetadata();
         cancellationToken.ThrowIfCancellationRequested();
     }
 
@@ -893,18 +898,23 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    private async void OnPhotographsChanged(object? sender, EventArgs args)
+    private void OnPhotographsChanged(object? sender, EventArgs args)
     {
-        await ApplyPhotoMetadataAsync();
+        if (_disposed)
+        {
+            return;
+        }
+
+        ApplyPhotoMetadata();
         ScheduleDraftSave();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSave)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanRemovePhoto)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowCaughtOn)));
     }
 
-    private async void OnUsePhotographDetails(object? sender, EventArgs args)
+    private void OnUsePhotographDetails(object? sender, EventArgs args)
     {
-        if (!CanInteract || Photographs.CurrentPhotograph is not { } photograph)
+        if (_disposed || !CanInteract || Photographs.CurrentPhotograph is not { } photograph)
         {
             return;
         }
@@ -921,12 +931,12 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
             _locationChosenByAngler = false;
         }
 
-        await ApplyPhotoMetadataAsync();
+        ApplyPhotoMetadata();
         _locationChosenByAngler = photograph.Metadata.HasCoordinates || _locationChosenByAngler;
         ScheduleDraftSave();
     }
 
-    private async Task ApplyPhotoMetadataAsync()
+    private void ApplyPhotoMetadata()
     {
         if (Photographs.Items.Count == 0)
         {
@@ -951,7 +961,6 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
         }
         NotifyConflictState();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSave)));
-        await Task.CompletedTask;
     }
 
     private void ApplyProposalLocation()
@@ -992,6 +1001,11 @@ public sealed class CatchEditViewModel : INotifyPropertyChanged, IDisposable
 
     private void ScheduleDraftSave()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         if (!_editBlocked)
         {
             _validationKey = null;
