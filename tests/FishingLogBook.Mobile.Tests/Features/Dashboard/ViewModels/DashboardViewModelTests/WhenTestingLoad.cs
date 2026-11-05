@@ -104,14 +104,18 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
     public async Task ItShouldConvertInclusiveCustomDaysAcrossDaylightSavingAndApplyAllClassifications()
     {
         // Arrange
-        Sut.SelectPreset((int)DashboardDatePresetEnum.Custom);
-        Sut.FromDate = Sut.ToDate = new DateTime(2026, 3, 8);
-        Sut.SelectedSpecies = new DashboardChoiceModel("Pike", "Pike");
-        Sut.SelectedMethod = new DashboardChoiceModel("Fly", "Fly");
-        Sut.SelectedVenue = new DashboardChoiceModel("Lake", "Lake");
+        ChooseFilters(new DashboardFilterSelectionModel
+        {
+            Preset = DashboardDatePresetEnum.Custom,
+            From = new DateTime(2026, 3, 8),
+            To = new DateTime(2026, 3, 8),
+            Species = "Pike",
+            Method = "Fly",
+            Venue = "Lake"
+        });
 
         // Act
-        await Sut.ApplyAsync(CancellationToken.None);
+        await Sut.EditFiltersAsync(CancellationToken.None);
 
         // Assert
         await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter =>
@@ -125,12 +129,15 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
     public async Task ItShouldRejectReversedCustomDatesWithoutRequestingData()
     {
         // Arrange
-        Sut.SelectPreset((int)DashboardDatePresetEnum.Custom);
-        Sut.FromDate = new DateTime(2026, 3, 9);
-        Sut.ToDate = new DateTime(2026, 3, 8);
+        ChooseFilters(new DashboardFilterSelectionModel
+        {
+            Preset = DashboardDatePresetEnum.Custom,
+            From = new DateTime(2026, 3, 9),
+            To = new DateTime(2026, 3, 8)
+        });
 
         // Act
-        await Sut.ApplyAsync(CancellationToken.None);
+        await Sut.EditFiltersAsync(CancellationToken.None);
 
         // Assert
         Sut.StatusText.Should().Contain("date");
@@ -197,7 +204,7 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
         Sut.LifetimeBests.Should().ContainSingle(row => row.Species == "Pike" && row.Value.Contains("lb"));
         Sut.LifetimeBests[0].Method.Should().Be(Text["DashboardUnknownMethod"]);
         Sut.LifetimeBests[0].CaughtOn.Should().Be("Date de capture: 01/01/2026");
-        Sut.DatePresets.Should().Contain("Cette année");
+        Sut.AppliedFilterSummary.Should().Contain(Text["DashboardThisYear"]);
         await MockUnits.Received(1).GetAsync(Arg.Any<CancellationToken>());
         await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter => filter.Species == null), Arg.Any<CancellationToken>());
     }
@@ -223,16 +230,13 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
     public async Task ItShouldResetAllSharedFiltersToThisYear()
     {
         // Arrange
-        Sut.SelectPreset((int)DashboardDatePresetEnum.AllTime);
-        Sut.SelectedSpecies = new DashboardChoiceModel("Pike", "Pike");
-        Sut.SelectedMethod = new DashboardChoiceModel("Fly", "Fly");
-        Sut.SelectedVenue = new DashboardChoiceModel("Lake", "Lake");
+        ChooseFilters(new DashboardFilterSelectionModel());
 
         // Act
-        await Sut.ResetAsync(CancellationToken.None);
+        await Sut.EditFiltersAsync(CancellationToken.None);
 
         // Assert
-        Sut.PresetIndex.Should().Be((int)DashboardDatePresetEnum.ThisYear);
+        Sut.HasActiveFilters.Should().BeFalse();
         await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter => filter.Species == null
             && filter.Method == null && filter.Venue == null
             && filter.FromInclusive == DateTimeOffset.Parse("2026-01-01T05:00Z")
@@ -247,11 +251,15 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
     {
         // Arrange
         using var sut = CreateViewModel(zone);
-        sut.SelectPreset((int)DashboardDatePresetEnum.Custom);
-        sut.FromDate = sut.ToDate = DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture);
+        ChooseFilters(new DashboardFilterSelectionModel
+        {
+            Preset = DashboardDatePresetEnum.Custom,
+            From = DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture),
+            To = DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture)
+        });
 
         // Act
-        await sut.ApplyAsync(CancellationToken.None);
+        await sut.EditFiltersAsync(CancellationToken.None);
 
         // Assert
         sut.HasData.Should().BeTrue();

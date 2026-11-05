@@ -1,9 +1,9 @@
 using AwesomeAssertions;
 using FishingLogBook.Shared.Enums;
 
-namespace FishingLogBook.Mobile.Tests.Features.Dashboard.ViewModels.DashboardViewModelTests;
+namespace FishingLogBook.Mobile.Tests.Features.Dashboard.ViewModels.DashboardFilterViewModelTests;
 
-public class WhenTestingSelectPreset : BaseDashboardViewModelTest
+public class WhenTestingSelectPreset : BaseDashboardFilterViewModelTest
 {
     [Theory]
     [InlineData(-1)]

@@ -5,6 +5,8 @@ using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Dashboard.Clients;
+using FishingLogBook.Mobile.Features.Dashboard.Models;
+using FishingLogBook.Mobile.Features.Dashboard.Services;
 using FishingLogBook.Mobile.Features.Dashboard.ViewModels;
 using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.Features.Profile.Models;
@@ -22,6 +24,7 @@ namespace FishingLogBook.Mobile.Tests.Features.Dashboard.ViewModels.DashboardVie
 public abstract class BaseDashboardViewModelTest : IDisposable
 {
     protected readonly IDashboardClient MockClient = Substitute.For<IDashboardClient>();
+    protected readonly IDashboardModalService MockModals = Substitute.For<IDashboardModalService>();
     protected readonly IAccountSessionCoordinator MockSession = Substitute.For<IAccountSessionCoordinator>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly IAccountUnitsService MockUnits = Substitute.For<IAccountUnitsService>();
@@ -47,10 +50,16 @@ public abstract class BaseDashboardViewModelTest : IDisposable
 
     protected DashboardViewModel CreateViewModel(string timeZone)
     {
-        return new DashboardViewModel(MockClient, MockSession, MockConnectivity, MockUnits, new MeasurementService(),
+        return new DashboardViewModel(MockClient, MockModals, MockSession, MockConnectivity, MockUnits, new MeasurementService(),
             MockCatches, new CatchPresentationMapper(Substitute.For<IPhotographFileStore>()), new NavigationService(MockNavigator),
             new FixedTimeProvider(DateTimeOffset.Parse("2026-11-04T20:00Z"), TimeZoneInfo.FindSystemTimeZoneById(timeZone)),
             Text, NullLogger<DashboardViewModel>.Instance);
+    }
+
+    protected void ChooseFilters(DashboardFilterSelectionModel selection)
+    {
+        MockModals.EditFiltersAsync(Arg.Any<DashboardFilterSelectionModel>(), Arg.Any<DashboardFilterOptionsModel>(), Arg.Any<CancellationToken>())
+            .Returns(selection);
     }
 
     public void Dispose()

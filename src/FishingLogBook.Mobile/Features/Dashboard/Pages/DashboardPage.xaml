@@ -7,16 +7,15 @@
  x:DataType="vm:DashboardViewModel" Title="{Binding Text[Dashboard]}" Shell.NavBarIsVisible="False">
  <ContentPage.Resources>
   <DataTemplate x:Key="BestRow" x:DataType="models:DashboardRowModel">
-   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" MinimumHeightRequest="48" Padding="0,8">
+   <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="3" MinimumHeightRequest="72" Padding="0,4,0,8">
     <Grid.GestureRecognizers><TapGestureRecognizer Tapped="OnOpenRow" CommandParameter="{Binding CatchId}" /></Grid.GestureRecognizers>
-    <VerticalStackLayout Spacing="3">
-     <Label Text="{Binding Species}" Style="{StaticResource BodyText}" LineBreakMode="WordWrap" />
-     <Label Text="{Binding Method}" Style="{StaticResource SecondaryText}" LineBreakMode="WordWrap" />
-     <Label Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" FontSize="12" LineBreakMode="WordWrap" />
-    </VerticalStackLayout>
+    <Label Text="{Binding Species}" Style="{StaticResource BodyText}" FontAttributes="Bold" VerticalOptions="Center" LineBreakMode="WordWrap" />
     <Button Grid.Column="1" Text="{Binding Value}" CommandParameter="{Binding CatchId}" Clicked="OnOpenCatch"
             BackgroundColor="Transparent" TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
-            MinimumHeightRequest="48" FontAttributes="Bold" Padding="8" SemanticProperties.Description="{Binding Description}" AutomationId="DashboardBestOpen" />
+            MinimumHeightRequest="48" FontSize="18" FontAttributes="Bold" Padding="0" SemanticProperties.Description="{Binding Description}" AutomationId="DashboardBestOpen" />
+    <Label Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Method}" Style="{StaticResource SecondaryText}" LineBreakMode="WordWrap" />
+    <Label Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding CaughtOn}" Style="{StaticResource SecondaryText}" FontSize="12" LineBreakMode="WordWrap" />
+    <BoxView Grid.Row="3" Grid.ColumnSpan="2" HeightRequest="1" Opacity="0.12" Margin="0,8,0,0" Color="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
    </Grid>
   </DataTemplate>
   <DataTemplate x:Key="CountRow" x:DataType="models:DashboardRowModel">
@@ -67,13 +66,6 @@
    <Border Style="{StaticResource Card}" Padding="14" Shadow="{x:Null}" AutomationId="DashboardAllTimeBests">
      <VerticalStackLayout Spacing="8">
       <Label Text="{Binding Text[DashboardAllTimeBests]}" Style="{StaticResource Subheading}" />
-      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,8">
-       <VerticalStackLayout>
-        <Label Text="{Binding Text[DashboardSpecies]}" Style="{StaticResource SecondaryText}" FontSize="12" />
-        <Label Text="{Binding Text[DashboardMethod]}" Style="{StaticResource SecondaryText}" FontSize="12" />
-       </VerticalStackLayout>
-       <Label Grid.Column="1" Text="{Binding Text[DashboardHeaviest]}" Style="{StaticResource SecondaryText}" FontSize="12" />
-      </Grid>
       <VerticalStackLayout BindableLayout.ItemsSource="{Binding LifetimeBests}" BindableLayout.ItemTemplate="{StaticResource BestRow}" />
       <VerticalStackLayout IsVisible="{Binding ShowLifetimeEmpty}" Padding="12,20" Spacing="10">
        <controls:IconView Source="icon_trophy.png" Tone="Muted" WidthRequest="28" HeightRequest="28" HorizontalOptions="Center" AutomationProperties.IsInAccessibleTree="False" />
@@ -85,38 +77,10 @@
    <Border Style="{StaticResource Card}" Padding="14" Shadow="{x:Null}" AutomationId="DashboardExplore">
     <VerticalStackLayout Spacing="12">
      <Label Text="{Binding Text[DashboardExplore]}" Style="{StaticResource Subheading}" />
-     <Button Text="{Binding FilterToggleText}" ImageSource="icon_filter.png" Clicked="OnToggleFilters"
-             Style="{StaticResource SecondaryButton}" SemanticProperties.Description="{Binding FilterToggleText}" AutomationId="DashboardFilterToggle" />
+     <Button Text="{Binding Text[Filters]}" ImageSource="icon_filter.png" Clicked="OnOpenFilters"
+             Style="{StaticResource SecondaryButton}" SemanticProperties.Description="{Binding Text[Filters]}" IsEnabled="{Binding CanApply}" AutomationId="DashboardFilterToggle" />
      <Label Text="{Binding AppliedFilterSummary}" Style="{StaticResource SecondaryText}" AutomationId="DashboardFilterSummary" />
      <Label Text="{Binding Text[DashboardFiltersActive]}" IsVisible="{Binding HasActiveFilters}" Style="{StaticResource SecondaryText}" AutomationId="DashboardFiltersActive" />
-     <VerticalStackLayout IsVisible="{Binding IsFiltersExpanded}" IsEnabled="{Binding CanApply}" Spacing="8" AutomationId="DashboardFilterControls">
-     <Label Text="{Binding Text[DashboardDateRange]}" Style="{StaticResource SecondaryText}" />
-     <Picker ItemsSource="{Binding DatePresets}" SelectedIndex="{Binding PresetIndex, Mode=OneWay}" SelectedIndexChanged="OnPresetChanged"
-             Title="{Binding Text[DashboardDateRange]}" SemanticProperties.Description="{Binding Text[DashboardDateRange]}" AutomationId="DashboardPreset" />
-     <Grid ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding IsCustom}">
-      <VerticalStackLayout>
-       <Label Text="{Binding Text[DashboardFrom]}" Style="{StaticResource SecondaryText}" />
-       <DatePicker Date="{Binding FromDate, Mode=TwoWay}" SemanticProperties.Description="{Binding Text[DashboardFrom]}" AutomationId="DashboardFrom" />
-      </VerticalStackLayout>
-      <VerticalStackLayout Grid.Column="1">
-       <Label Text="{Binding Text[DashboardTo]}" Style="{StaticResource SecondaryText}" />
-       <DatePicker Date="{Binding ToDate, Mode=TwoWay}" SemanticProperties.Description="{Binding Text[DashboardTo]}" AutomationId="DashboardTo" />
-      </VerticalStackLayout>
-     </Grid>
-     <Label Text="{Binding Text[DashboardSpecies]}" Style="{StaticResource SecondaryText}" />
-     <Picker ItemsSource="{Binding SpeciesOptions}" ItemDisplayBinding="{Binding Label, x:DataType=models:DashboardChoiceModel}" SelectedItem="{Binding SelectedSpecies, Mode=TwoWay}"
-             Title="{Binding Text[DashboardSpecies]}" SemanticProperties.Description="{Binding Text[DashboardSpecies]}" AutomationId="DashboardSpeciesFilter" />
-     <Label Text="{Binding Text[DashboardMethod]}" Style="{StaticResource SecondaryText}" />
-     <Picker ItemsSource="{Binding MethodOptions}" ItemDisplayBinding="{Binding Label, x:DataType=models:DashboardChoiceModel}" SelectedItem="{Binding SelectedMethod, Mode=TwoWay}"
-             Title="{Binding Text[DashboardMethod]}" SemanticProperties.Description="{Binding Text[DashboardMethod]}" AutomationId="DashboardMethodFilter" />
-     <Label Text="{Binding Text[DashboardVenue]}" Style="{StaticResource SecondaryText}" />
-     <Picker ItemsSource="{Binding VenueOptions}" ItemDisplayBinding="{Binding Label, x:DataType=models:DashboardChoiceModel}" SelectedItem="{Binding SelectedVenue, Mode=TwoWay}"
-             Title="{Binding Text[DashboardVenue]}" SemanticProperties.Description="{Binding Text[DashboardVenue]}" AutomationId="DashboardVenueFilter" />
-     <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-      <Button Text="{Binding Text[DashboardApply]}" Style="{StaticResource PrimaryButton}" Clicked="OnApply" IsEnabled="{Binding CanApply}" AutomationId="DashboardApply" />
-      <Button Grid.Column="1" Text="{Binding Text[DashboardReset]}" Style="{StaticResource SecondaryButton}" Clicked="OnReset" IsEnabled="{Binding CanApply}" AutomationId="DashboardReset" />
-     </Grid>
-     </VerticalStackLayout>
    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" AutomationId="DashboardFilteredTotals">
     <Border Style="{StaticResource Card}" Padding="10" Shadow="{x:Null}">
      <VerticalStackLayout Spacing="4">
@@ -148,13 +112,6 @@
      <Label Text="{Binding StatisticsEmptyText}" IsVisible="{Binding ShowStatisticsEmpty}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="Center" Margin="0,16" />
      <BoxView HeightRequest="1" Opacity="0.15" Color="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
      <Label Text="{Binding Text[DashboardFilteredBests]}" Style="{StaticResource Subheading}" AutomationId="DashboardFilteredBests" />
-     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,8">
-       <VerticalStackLayout>
-        <Label Text="{Binding Text[DashboardSpecies]}" Style="{StaticResource SecondaryText}" FontSize="12" />
-        <Label Text="{Binding Text[DashboardMethod]}" Style="{StaticResource SecondaryText}" FontSize="12" />
-       </VerticalStackLayout>
-       <Label Grid.Column="1" Text="{Binding Text[DashboardHeaviest]}" Style="{StaticResource SecondaryText}" FontSize="12" />
-      </Grid>
      <VerticalStackLayout BindableLayout.ItemsSource="{Binding FilteredBests}" BindableLayout.ItemTemplate="{StaticResource BestRow}" />
      <Label Text="{Binding FilteredEmptyText}" IsVisible="{Binding ShowFilteredEmpty}" Style="{StaticResource SecondaryText}" HorizontalTextAlignment="Center" Margin="0,16" />
     </VerticalStackLayout>

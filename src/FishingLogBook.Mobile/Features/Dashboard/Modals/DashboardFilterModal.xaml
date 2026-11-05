@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+ xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+ xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Dashboard.ViewModels"
+ xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Dashboard.Models"
+ x:Class="FishingLogBook.Mobile.Features.Dashboard.Modals.DashboardFilterModal"
+ x:TypeArguments="models:DashboardFilterSelectionModel" x:DataType="vm:DashboardFilterViewModel"
+ Padding="0" Margin="20" HorizontalOptions="Center" VerticalOptions="Center" BackgroundColor="Transparent">
+ <Border x:Name="Sheet" Padding="0" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Paper}, Dark={StaticResource DarkSurface}}">
+  <Border.StrokeShape><RoundRectangle CornerRadius="24" /></Border.StrokeShape>
+  <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="Container" AutomationId="DashboardFilterModal">
+   <Grid ColumnDefinitions="*,Auto" Padding="20,12,12,8" ColumnSpacing="8">
+    <Label Text="{Binding Text[Filters]}" Style="{StaticResource Subheading}" SemanticProperties.HeadingLevel="Level1" VerticalOptions="Center" AutomationId="DashboardFilterTitle" />
+    <ImageButton Grid.Column="1" Source="icon_close.png" WidthRequest="48" HeightRequest="48" Padding="12" BackgroundColor="Transparent"
+     SemanticProperties.Description="{Binding Text[CloseFilters]}" Clicked="OnClose" AutomationId="DashboardFilterClose">
+     <ImageButton.Behaviors>
+      <toolkit:IconTintColorBehavior TintColor="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
+     </ImageButton.Behaviors>
+    </ImageButton>
+   </Grid>
+   <ScrollView Grid.Row="1">
+    <VerticalStackLayout Padding="20,4,20,16" Spacing="8" AutomationId="DashboardFilterControls">
+     <VerticalStackLayout Spacing="8">
+     <Label Text="{Binding Text[DashboardDateRange]}" Style="{StaticResource SecondaryText}" />
+     <Picker ItemsSource="{Binding DatePresets}" SelectedIndex="{Binding PresetIndex, Mode=OneWay}" SelectedIndexChanged="OnPresetChanged"
+             Title="{Binding Text[DashboardDateRange]}" SemanticProperties.Description="{Binding Text[DashboardDateRange]}" AutomationId="DashboardPreset" />
+     <Grid ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding IsCustom}">
+      <VerticalStackLayout>
+       <Label Text="{Binding Text[DashboardFrom]}" Style="{StaticResource SecondaryText}" />
+       <DatePicker Date="{Binding FromDate, Mode=TwoWay}" SemanticProperties.Description="{Binding Text[DashboardFrom]}" AutomationId="DashboardFrom" />
+      </VerticalStackLayout>
+      <VerticalStackLayout Grid.Column="1">
+       <Label Text="{Binding Text[DashboardTo]}" Style="{StaticResource SecondaryText}" />
+       <DatePicker Date="{Binding ToDate, Mode=TwoWay}" SemanticProperties.Description="{Binding Text[DashboardTo]}" AutomationId="DashboardTo" />
+      </VerticalStackLayout>
+     </Grid>
+     <Label Text="{Binding Text[DashboardSpecies]}" Style="{StaticResource SecondaryText}" />
+     <Picker ItemsSource="{Binding SpeciesOptions}" ItemDisplayBinding="{Binding Label, x:DataType=models:DashboardChoiceModel}" SelectedItem="{Binding SelectedSpecies, Mode=TwoWay}"
+             Title="{Binding Text[DashboardSpecies]}" SemanticProperties.Description="{Binding Text[DashboardSpecies]}" AutomationId="DashboardSpeciesFilter" />
+     <Label Text="{Binding Text[DashboardMethod]}" Style="{StaticResource SecondaryText}" />
+     <Picker ItemsSource="{Binding MethodOptions}" ItemDisplayBinding="{Binding Label, x:DataType=models:DashboardChoiceModel}" SelectedItem="{Binding SelectedMethod, Mode=TwoWay}"
+             Title="{Binding Text[DashboardMethod]}" SemanticProperties.Description="{Binding Text[DashboardMethod]}" AutomationId="DashboardMethodFilter" />
+     <Label Text="{Binding Text[DashboardVenue]}" Style="{StaticResource SecondaryText}" />
+     <Picker ItemsSource="{Binding VenueOptions}" ItemDisplayBinding="{Binding Label, x:DataType=models:DashboardChoiceModel}" SelectedItem="{Binding SelectedVenue, Mode=TwoWay}"
+             Title="{Binding Text[DashboardVenue]}" SemanticProperties.Description="{Binding Text[DashboardVenue]}" AutomationId="DashboardVenueFilter" />
+
+     </VerticalStackLayout>
+     <Label Text="{Binding ValidationText}" IsVisible="{Binding HasValidationError}" Style="{StaticResource SecondaryText}" AutomationId="DashboardFilterStatus" />
+    </VerticalStackLayout>
+   </ScrollView>
+   <VerticalStackLayout Grid.Row="2" Spacing="8" Padding="20,8,20,16">
+    <Button Text="{Binding Text[DashboardApply]}" Style="{StaticResource PrimaryButton}" Clicked="OnApply" AutomationId="DashboardApply" />
+    <Button Text="{Binding Text[DashboardReset]}" Style="{StaticResource SecondaryButton}" Clicked="OnReset" AutomationId="DashboardReset" />
+   </VerticalStackLayout>
+  </Grid>
+ </Border>
+</toolkit:Popup>

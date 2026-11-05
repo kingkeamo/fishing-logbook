@@ -20,16 +20,20 @@ public class WhenTestingDashboardPresentation
         var page = XDocument.Load(path);
         var nodes = page.Descendants().ToArray();
         var explore = nodes.Single(node => (string?)node.Attribute("AutomationId") == "DashboardExplore");
-        var filters = nodes.Single(node => (string?)node.Attribute("AutomationId") == "DashboardFilterControls");
+        var popup = XDocument.Load(Path.Combine(Path.GetDirectoryName(path)!, "..", "Modals", "DashboardFilterModal.xaml"));
+        var filters = popup.Descendants().Single(node => (string?)node.Attribute("AutomationId") == "DashboardFilterControls");
 
         // Assert
         nodes.Select(node => (string?)node.Attribute("AutomationId")).Should().NotContain("DashboardRecordCatch");
         page.ToString().Should().NotContain("DashboardOnlineOnly");
-        filters.Attribute("IsVisible")!.Value.Should().Be("{Binding IsFiltersExpanded}");
+        nodes.Should().NotContain(node => (string?)node.Attribute("AutomationId") == "DashboardFilterControls");
+        page.ToString().Should().NotContain("Text[DashboardHeaviest]");
         explore.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardFilterToggle");
         explore.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardFilteredTotals");
-        filters.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardApply");
-        filters.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardReset");
+        filters.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardSpeciesFilter");
+        popup.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardApply");
+        popup.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardReset");
+        popup.Descendants().Should().Contain(node => (string?)node.Attribute("AutomationId") == "DashboardFilterClose");
         page.ToString().Should().Contain("{Binding CaughtOn}");
     }
 }

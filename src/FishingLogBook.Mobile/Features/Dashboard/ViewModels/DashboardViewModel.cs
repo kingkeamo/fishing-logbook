@@ -5,6 +5,7 @@ using FishingLogBook.Mobile.Features.Catch.Clients;
 using FishingLogBook.Mobile.Features.Catch.Mappers;
 using FishingLogBook.Mobile.Features.Dashboard.Clients;
 using FishingLogBook.Mobile.Features.Dashboard.Models;
+using FishingLogBook.Mobile.Features.Dashboard.Services;
 using FishingLogBook.Mobile.Features.Profile.Models;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Localization;
@@ -20,6 +21,9 @@ namespace FishingLogBook.Mobile.Features.Dashboard.ViewModels;
 public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly IDashboardClient _client;
+    private readonly IDashboardModalService _modals;
+    private bool _editingFilters;
+    private DashboardFilterSelectionModel? _requested;
     private readonly IAccountSessionCoordinator _session;
     private readonly IConnectivityService _connectivity;
     private readonly IAccountUnitsService _units;
@@ -39,12 +43,13 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     private DashboardFilterSelectionModel _applied = new();
 
     public DashboardViewModel(
-        IDashboardClient client, IAccountSessionCoordinator session, IConnectivityService connectivity,
+        IDashboardClient client, IDashboardModalService modals, IAccountSessionCoordinator session, IConnectivityService connectivity,
         IAccountUnitsService units, IMeasurementService measurement, ICatchRemoteClient catches,
         CatchPresentationMapper catchMapper, NavigationService navigation, TimeProvider clock,
         UiTextService text, ILogger<DashboardViewModel> logger)
     {
         _client = client;
+        _modals = modals;
         _session = session;
         _connectivity = connectivity;
         _units = units;
@@ -56,8 +61,11 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         _logger = logger;
         Text = text;
         var today = DateOnly.FromDateTime(clock.GetLocalNow().DateTime);
-        FromDate = new DateTime(today.Year, 1, 1);
-        ToDate = new DateTime(today.Year, 12, 31);
+        _applied = new DashboardFilterSelectionModel
+        {
+            From = new DateTime(today.Year, 1, 1),
+            To = new DateTime(today.Year, 12, 31)
+        };
         Text.PropertyChanged += OnCultureChanged;
         _connectivity.ConnectivityChanged += OnConnectivityChanged;
     }
@@ -66,18 +74,17 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     public UiTextService Text { get; }
     public DashboardDto? Data { get; private set; }
     public bool IsLoading { get; private set; }
-    public bool CanApply => !IsLoading;
-    public bool IsFiltersExpanded { get; private set; }
+    public bool CanApply => !IsLoading && !_editingFilters;
+    public bool IsFilterModalOpen { get; private set; }
     public bool HasActiveFilters => _applied.Preset != DashboardDatePresetEnum.ThisYear
         || _applied.Species is not null || _applied.Method is not null || _applied.Venue is not null;
-    public string FilterToggleText => Text[IsFiltersExpanded ? "DashboardHideFilters" : "DashboardShowFilters"];
     public string AppliedFilterSummary
     {
         get
         {
             var date = _applied.Preset == DashboardDatePresetEnum.Custom
                 ? $"{_applied.From.ToString("d", Text.Culture)} – {_applied.To.ToString("d", Text.Culture)}"
-                : DatePresets[(int)_applied.Preset];
+                : Text[$"Dashboard{_applied.Preset}"];
             var parts = new List<string>
             {
                 date, _applied.Species ?? Text["DashboardAllSpecies"], _applied.Method ?? Text["DashboardAllMethods"]
@@ -93,24 +100,52 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     public string FilteredTripsTotal => Data?.Filtered.Trips.ToString(Text.Culture) ?? string.Empty;
     public string FilteredSpeciesTotal => Data?.Filtered.Species.ToString(Text.Culture) ?? string.Empty;
 
-    public void ToggleFilters()
+    public async Task EditFiltersAsync(CancellationToken cancellationToken)
     {
-        IsFiltersExpanded = !IsFiltersExpanded;
+        if (!CanApply)
+        {
+            return;
+        }
+
+        var lease = _session.Capture();
+        _editingFilters = true;
+        IsFilterModalOpen = true;
         Notify();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease?.CancellationToken ?? CancellationToken.None);
+        try
+        {
+            var options = new DashboardFilterOptionsModel(Data?.Species ?? [], Data?.Methods ?? [], Data?.Venues ?? []);
+            var selection = await _modals.EditFiltersAsync(_applied, options, linked.Token);
+            IsFilterModalOpen = false;
+            if (selection is not null && !linked.IsCancellationRequested && lease is not null && _session.IsCurrent(lease))
+            {
+                await LoadSelectionAsync(selection, linked.Token);
+            }
+        }
+        catch (OperationCanceledException) when (linked.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            ReportFilterFailure(exception, lease);
+        }
+        finally
+        {
+            IsFilterModalOpen = false;
+            _editingFilters = false;
+            Notify();
+        }
     }
 
-    public Task ApplyAsync(CancellationToken cancellationToken)
+    private void ReportFilterFailure(Exception exception, AccountSessionLeaseModel? lease)
     {
-        return LoadSelectionAsync(new DashboardFilterSelectionModel
+        _logger.LogWarning("Dashboard filters failed with {ErrorType}.", exception.GetType().Name);
+        if (lease is null || _session.IsCurrent(lease))
         {
-            Preset = (DashboardDatePresetEnum)PresetIndex,
-            From = FromDate,
-            To = ToDate,
-            Species = SelectedSpecies?.Value,
-            Method = SelectedMethod?.Value,
-            Venue = SelectedVenue?.Value
-        }, true, cancellationToken);
+            SetFailure("DashboardError");
+        }
     }
+
     public bool HasData => Data is not null;
     public bool HasStatus => _statusKey is not null;
     public string StatusText => _statusKey is null ? string.Empty : Text[_statusKey];
@@ -127,48 +162,12 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     public IReadOnlyList<DashboardRowModel> LifetimeBests { get; private set; } = [];
     public IReadOnlyList<DashboardRowModel> Statistics { get; private set; } = [];
     public IReadOnlyList<DashboardRowModel> FilteredBests { get; private set; } = [];
-    public IReadOnlyList<DashboardChoiceModel> SpeciesOptions { get; private set; } = [];
-    public IReadOnlyList<DashboardChoiceModel> MethodOptions { get; private set; } = [];
-    public IReadOnlyList<DashboardChoiceModel> VenueOptions { get; private set; } = [];
-    public DashboardChoiceModel? SelectedSpecies { get; set; }
-    public DashboardChoiceModel? SelectedMethod { get; set; }
-    public DashboardChoiceModel? SelectedVenue { get; set; }
-    public DateTime FromDate { get; set; }
-    public DateTime ToDate { get; set; }
-    public int PresetIndex { get; private set; } = (int)DashboardDatePresetEnum.ThisYear;
-    public bool IsCustom => PresetIndex == (int)DashboardDatePresetEnum.Custom;
-    public IReadOnlyList<string> DatePresets => new[]
-    {
-        Text["DashboardThisMonth"], Text["DashboardThisYear"], Text["DashboardLastYear"],
-        Text["DashboardAllTime"], Text["DashboardCustom"]
-    };
-
-    public void SelectPreset(int index)
-    {
-        if (index == PresetIndex || !Enum.IsDefined((DashboardDatePresetEnum)index))
-        {
-            return;
-        }
-
-        PresetIndex = index;
-        Notify();
-    }
-
-    public async Task ResetAsync(CancellationToken cancellationToken)
-    {
-        PresetIndex = (int)DashboardDatePresetEnum.ThisYear;
-        SelectedSpecies = null;
-        SelectedMethod = null;
-        SelectedVenue = null;
-        await ApplyAsync(cancellationToken);
-    }
-
     public Task LoadAsync(CancellationToken cancellationToken)
     {
-        return LoadSelectionAsync(_applied, false, cancellationToken);
+        return LoadSelectionAsync(_requested ?? _applied, cancellationToken);
     }
 
-    private async Task LoadSelectionAsync(DashboardFilterSelectionModel selection, bool collapse, CancellationToken cancellationToken)
+    private async Task LoadSelectionAsync(DashboardFilterSelectionModel selection, CancellationToken cancellationToken)
     {
         var request = Interlocked.Increment(ref _request);
         var lease = _session.Capture();
@@ -185,6 +184,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         }
 
         _statusKey = null;
+        _requested = selection;
         if (lease is null || !_connectivity.IsOnline)
         {
             SetFailure("DashboardOffline");
@@ -204,19 +204,6 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         Notify();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease.CancellationToken);
         await ReadAsync(BuildFilter(range, selection), selection, lease, request, linked.Token);
-        if (collapse)
-        {
-            CollapseFiltersIfLoaded(request, lease);
-        }
-    }
-
-    private void CollapseFiltersIfLoaded(long request, AccountSessionLeaseModel lease)
-    {
-        if (IsCurrent(request, lease) && HasData && !HasStatus)
-        {
-            IsFiltersExpanded = false;
-            Notify();
-        }
     }
 
     private async Task ReadAsync(
@@ -225,6 +212,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         try
         {
             var result = await _client.GetAsync(filter, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (!IsCurrent(request, lease))
             {
                 return;
@@ -237,6 +225,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             }
 
             var units = await _units.GetAsync(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (!IsCurrent(request, lease))
             {
                 return;
@@ -245,15 +234,11 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             _measurementUnits = units;
             Data = result.Value;
             _applied = selection;
+            _requested = null;
             RebuildRows();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            if (request == _request)
-            {
-                Data = null;
-                RebuildRows();
-            }
         }
         catch (Exception exception)
         {
@@ -362,16 +347,6 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         Statistics = Data?.CatchStatistics.Select(row => new DashboardRowModel(
             row.SpeciesName ?? Text["DashboardUnknownSpecies"], row.Method ?? Text["DashboardUnknownMethod"],
             row.Count.ToString(Text.Culture), null)).ToArray() ?? [];
-        if (Data is null)
-        {
-            return;
-        }
-        SpeciesOptions = Choices(Data?.Species ?? []);
-        MethodOptions = Choices(Data?.Methods ?? []);
-        VenueOptions = Choices(Data?.Venues ?? []);
-        SelectedSpecies = SpeciesOptions.FirstOrDefault(choice => choice.Value == SelectedSpecies?.Value) ?? SelectedSpecies;
-        SelectedMethod = MethodOptions.FirstOrDefault(choice => choice.Value == SelectedMethod?.Value) ?? SelectedMethod;
-        SelectedVenue = VenueOptions.FirstOrDefault(choice => choice.Value == SelectedVenue?.Value) ?? SelectedVenue;
     }
 
     private DashboardRowModel ToRow(DashboardPersonalBestDto row)
@@ -385,11 +360,6 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             row.CaughtOn is { } caughtOn
                 ? $"{Text["DashboardCaughtOn"]}: {TimeZoneInfo.ConvertTime(caughtOn, _clock.LocalTimeZone).ToString("d", Text.Culture)}"
                 : $"{Text["DashboardCaughtOn"]}: {Text["NotRecorded"]}");
-    }
-
-    private IReadOnlyList<DashboardChoiceModel> Choices(IReadOnlyList<string> values)
-    {
-        return [new DashboardChoiceModel(null, Text["DashboardAll"]), .. values.Select(value => new DashboardChoiceModel(value, value))];
     }
 
     private void SetFailure(string key)
@@ -411,11 +381,9 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             }
 
             Interlocked.Increment(ref _request);
-            SelectedSpecies = SelectedMethod = SelectedVenue = null;
-            SpeciesOptions = MethodOptions = VenueOptions = [];
             _applied = new();
-            PresetIndex = (int)DashboardDatePresetEnum.ThisYear;
-            IsFiltersExpanded = false;
+            _requested = null;
+            IsFilterModalOpen = false;
             SetFailure("DashboardOffline");
         }
 

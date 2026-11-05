@@ -20,12 +20,21 @@ public partial class DashboardPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+        if (_appearance is not null)
+        {
+            return;
+        }
         _appearance = new CancellationTokenSource();
         await _viewModel.LoadAsync(_appearance.Token);
     }
 
     protected override void OnDisappearing()
     {
+        if (_viewModel.IsFilterModalOpen)
+        {
+            base.OnDisappearing();
+            return;
+        }
         _appearance?.Cancel();
         _appearance?.Dispose();
         _appearance = null;
@@ -37,27 +46,9 @@ public partial class DashboardPage : ContentPage
         Shell.Current.FlyoutIsPresented = true;
     }
 
-    private void OnPresetChanged(object? sender, EventArgs args)
-    {
-        if (sender is Picker { SelectedIndex: >= 0 } picker)
-        {
-            _viewModel.SelectPreset(picker.SelectedIndex);
-        }
-    }
-
-    private async void OnApply(object? sender, EventArgs args)
-    {
-        await _viewModel.ApplyAsync(_appearance?.Token ?? CancellationToken.None);
-    }
-
     private async void OnRetry(object? sender, EventArgs args)
     {
         await _viewModel.LoadAsync(_appearance?.Token ?? CancellationToken.None);
-    }
-
-    private async void OnReset(object? sender, EventArgs args)
-    {
-        await _viewModel.ResetAsync(_appearance?.Token ?? CancellationToken.None);
     }
 
     private async void OnOpenCatch(object? sender, EventArgs args)
@@ -68,9 +59,9 @@ public partial class DashboardPage : ContentPage
         }
     }
 
-    private void OnToggleFilters(object? sender, EventArgs args)
+    private async void OnOpenFilters(object? sender, EventArgs args)
     {
-        _viewModel.ToggleFilters();
+        await _viewModel.EditFiltersAsync(_appearance?.Token ?? CancellationToken.None);
     }
 
     private async void OnOpenRow(object? sender, TappedEventArgs args)
