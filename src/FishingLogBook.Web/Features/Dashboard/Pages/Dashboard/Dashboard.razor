@@ -42,16 +42,24 @@
                     <option value="@DashboardDatePresetEnum.Custom">@Loc["DashboardCustom"]</option>
                 </select>
             </div>
-            @if (_preset == DashboardDatePresetEnum.Custom)
-            {
-                <div><label for="dashboard-from">@Loc["DashboardFrom"]</label><input id="dashboard-from" type="date" @bind="_from" disabled="@_loading" /></div>
-                <div><label for="dashboard-to">@Loc["DashboardTo"]</label><input id="dashboard-to" type="date" @bind="_to" disabled="@_loading" /></div>
-            }
             <div><label for="dashboard-species">@Loc["DashboardSpecies"]</label><select id="dashboard-species" @bind="_species" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Species ?? []) { <option value="@option">@option</option> }</select></div>
             <div><label for="dashboard-method">@Loc["DashboardMethod"]</label><select id="dashboard-method" @bind="_method" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Methods ?? []) { <option value="@option">@option</option> }</select></div>
             <div><label for="dashboard-venue">@Loc["DashboardVenue"]</label><select id="dashboard-venue" @bind="_venue" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Venues ?? []) { <option value="@option">@option</option> }</select></div>
+            <div class="filter-actions"><MudStack Row Class="filter-buttons"><MudButton Size="Size.Small" OnClick="LoadAsync" Disabled="_loading" Variant="Variant.Filled" Color="Color.Primary" id="dashboard-apply">@Loc["DashboardApply"]</MudButton><MudButton Size="Size.Small" OnClick="ResetAsync" Disabled="_loading" id="dashboard-reset">@Loc["DashboardReset"]</MudButton></MudStack></div>
+            @if (_preset == DashboardDatePresetEnum.Custom)
+            {
+                <div class="custom-dates">
+                <div><label for="dashboard-from">@Loc["DashboardFrom"]</label><input id="dashboard-from" type="date" @bind="_from" disabled="@_loading" /></div>
+                <div><label for="dashboard-to">@Loc["DashboardTo"]</label><input id="dashboard-to" type="date" @bind="_to" disabled="@_loading" /></div>
+                </div>
+            }
         </div>
-        <MudStack Row Class="my-3"><MudButton OnClick="LoadAsync" Disabled="_loading" Variant="Variant.Filled" Color="Color.Primary" id="dashboard-apply">@Loc["DashboardApply"]</MudButton><MudButton OnClick="ResetAsync" Disabled="_loading" id="dashboard-reset">@Loc["DashboardReset"]</MudButton></MudStack>
+
+        <div class="totals" id="dashboard-filtered-totals">
+            <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-filtered-catches">@(_data?.Filtered.Catches.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardFilteredCatches"]</MudText></MudPaper>
+            <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-filtered-trips">@(_data?.Filtered.Trips.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardFilteredTrips"]</MudText></MudPaper>
+            <MudPaper Outlined Class="total"><MudText Typo="Typo.h4" id="dashboard-filtered-species">@(_data?.Filtered.Species.ToString() ?? "—")</MudText><MudText Typo="Typo.caption">@Loc["DashboardFilteredSpecies"]</MudText></MudPaper>
+        </div>
         <MudDivider Class="my-4" />
         <MudText Typo="Typo.h6">@Loc["DashboardStatistics"]</MudText>
         <table id="dashboard-statistics"><thead><tr><th scope="col">@Loc["DashboardSpecies"]</th><th scope="col">@Loc["DashboardMethod"]</th><th scope="col" class="count">@Loc["DashboardCount"]</th></tr></thead><tbody>
@@ -66,6 +74,5 @@
     {
         <MudPaper Outlined Class="panel" id="dashboard-import"><MudText Typo="Typo.h6">@Loc["DashboardImportTitle"]</MudText><MudText Typo="Typo.body2">@Loc["DashboardImportHelp"]</MudText><MudButton Href="/import" Color="Color.Primary" id="dashboard-import-link">@Loc["DashboardImport"]</MudButton></MudPaper>
     }
-    <MudText Typo="Typo.caption">@Loc["DashboardOnlineOnly"]</MudText>
 </MudContainer>
 </div>

@@ -751,5 +751,14 @@
   <data name="DashboardOpenCatch" xml:space="preserve"><value>Open catch</value></data>
   <data name="DashboardCatchUnavailable" xml:space="preserve"><value>This catch could not be opened. Please try again.</value></data>
   <data name="DashboardOnlineOnly" xml:space="preserve"><value>Online statistics from your synchronised catches.</value></data>
+  <data name="DashboardFilteredCatches" xml:space="preserve"><value>Filtered catches</value></data>
+  <data name="DashboardFilteredTrips" xml:space="preserve"><value>Filtered trips</value></data>
+  <data name="DashboardFilteredSpecies" xml:space="preserve"><value>Filtered species</value></data>
+  <data name="DashboardCaughtOn" xml:space="preserve"><value>Caught on</value></data>
+  <data name="DashboardShowFilters" xml:space="preserve"><value>Filters · Expand</value></data>
+  <data name="DashboardHideFilters" xml:space="preserve"><value>Filters · Collapse</value></data>
+  <data name="DashboardAllSpecies" xml:space="preserve"><value>All species</value></data>
+  <data name="DashboardAllMethods" xml:space="preserve"><value>All methods</value></data>
+  <data name="DashboardFiltersActive" xml:space="preserve"><value>Filters active</value></data>
 </root>
 

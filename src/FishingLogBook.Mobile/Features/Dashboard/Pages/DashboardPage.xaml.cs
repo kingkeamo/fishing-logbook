@@ -47,6 +47,11 @@ public partial class DashboardPage : ContentPage
 
     private async void OnApply(object? sender, EventArgs args)
     {
+        await _viewModel.ApplyAsync(_appearance?.Token ?? CancellationToken.None);
+    }
+
+    private async void OnRetry(object? sender, EventArgs args)
+    {
         await _viewModel.LoadAsync(_appearance?.Token ?? CancellationToken.None);
     }
 
@@ -63,9 +68,9 @@ public partial class DashboardPage : ContentPage
         }
     }
 
-    private async void OnRecordCatch(object? sender, EventArgs args)
+    private void OnToggleFilters(object? sender, EventArgs args)
     {
-        await _navigation.NavigateAsync(MobileRouteEnum.CatchEdit);
+        _viewModel.ToggleFilters();
     }
 
     private async void OnOpenRow(object? sender, TappedEventArgs args)

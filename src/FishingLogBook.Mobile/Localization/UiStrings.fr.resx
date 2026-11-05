@@ -751,5 +751,14 @@
   <data name="DashboardOpenCatch" xml:space="preserve"><value>Ouvrir la prise</value></data>
   <data name="DashboardCatchUnavailable" xml:space="preserve"><value>Cette prise n’a pas pu être ouverte. Veuillez réessayer.</value></data>
   <data name="DashboardOnlineOnly" xml:space="preserve"><value>Statistiques en ligne de vos prises synchronisées.</value></data>
+  <data name="DashboardFilteredCatches" xml:space="preserve"><value>Captures filtrées</value></data>
+  <data name="DashboardFilteredTrips" xml:space="preserve"><value>Sorties filtrées</value></data>
+  <data name="DashboardFilteredSpecies" xml:space="preserve"><value>Espèces filtrées</value></data>
+  <data name="DashboardCaughtOn" xml:space="preserve"><value>Date de capture</value></data>
+  <data name="DashboardShowFilters" xml:space="preserve"><value>Filtres · Développer</value></data>
+  <data name="DashboardHideFilters" xml:space="preserve"><value>Filtres · Réduire</value></data>
+  <data name="DashboardAllSpecies" xml:space="preserve"><value>Toutes les espèces</value></data>
+  <data name="DashboardAllMethods" xml:space="preserve"><value>Toutes les techniques</value></data>
+  <data name="DashboardFiltersActive" xml:space="preserve"><value>Filtres actifs</value></data>
 </root>
 

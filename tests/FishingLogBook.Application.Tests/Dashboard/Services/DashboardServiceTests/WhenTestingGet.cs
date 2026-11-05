@@ -22,8 +22,9 @@ public class WhenTestingGet : BaseDashboardServiceTest
         var snapshot = new DashboardSnapshot
         {
             Lifetime = new DashboardTotals { Catches = 2, Trips = 3, Species = 1 },
-            AllTimePersonalBests = [new DashboardPersonalBest { CatchId = winner, Weight = 4.6m, SpeciesName = "Pike", Method = "Fly" }],
-            FilteredPersonalBests = [new DashboardPersonalBest { CatchId = winner, Weight = 4.6m, SpeciesName = "Pike", Method = "Fly" }],
+            Filtered = new DashboardTotals { Catches = 1, Trips = 1, Species = 1 },
+            AllTimePersonalBests = [new DashboardPersonalBest { CatchId = winner, Weight = 4.6m, CaughtOn = DateTimeOffset.Parse("2026-06-01T20:00Z"), SpeciesName = "Pike", Method = "Fly" }],
+            FilteredPersonalBests = [new DashboardPersonalBest { CatchId = winner, Weight = 4.6m, CaughtOn = DateTimeOffset.Parse("2026-06-01T20:00Z"), SpeciesName = "Pike", Method = "Fly" }],
             CatchStatistics = [new DashboardCatchCount { Count = 2, SpeciesName = "Pike", Method = "Fly" }],
             Species = ["Pike"],
             Methods = ["Fly"],

@@ -50,10 +50,14 @@ public class WhenTestingRender : BaseDashboardTest
         cut.WaitForAssertion(() => cut.Find("#dashboard-total-catches").TextContent.Should().Be("0"));
         cut.Find("#dashboard-total-trips").TextContent.Should().Be("0");
         cut.Find("#dashboard-total-species").TextContent.Should().Be("0");
+        cut.Find("#dashboard-filtered-catches").TextContent.Should().Be("0");
+        cut.Find("#dashboard-filtered-trips").TextContent.Should().Be("0");
+        cut.Find("#dashboard-filtered-species").TextContent.Should().Be("0");
         cut.Find("#dashboard-all-time").TextContent.Should().Contain(best);
         cut.Find("#dashboard-import").TextContent.Should().Contain(import);
         cut.Find("#dashboard-import-link").GetAttribute("href").Should().Be("/import");
         cut.Find("#dashboard-record").GetAttribute("href").Should().Be("/catches/record");
+        cut.Markup.Should().NotContain("Online statistics from your synchronised catches");
         cut.Find("#dashboard-statistics").Should().NotBeNull();
         cut.Find("#dashboard-filtered-table").Should().NotBeNull();
         await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter => filter.Species == null && filter.Method == null && filter.Venue == null), Arg.Any<CancellationToken>());
@@ -128,8 +132,9 @@ public class WhenTestingRender : BaseDashboardTest
         MockClient.GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>()).Returns(new DashboardDto
         {
             Lifetime = new DashboardTotalsDto { Catches = 20 },
-            AllTimePersonalBests = [new DashboardPersonalBestDto { CatchId = winner, Weight = 12.4m, SpeciesName = "Pike", Method = "Lure" }],
-            FilteredPersonalBests = [new DashboardPersonalBestDto { CatchId = filtered, Weight = 4.6m, SpeciesName = "Pike", Method = "Lure" }]
+            Filtered = new DashboardTotalsDto { Catches = 2, Trips = 1, Species = 1 },
+            AllTimePersonalBests = [new DashboardPersonalBestDto { CatchId = winner, Weight = 12.4m, SpeciesName = "Pike", Method = "Lure", CaughtOn = DateTimeOffset.Parse("2025-12-31T22:00Z") }],
+            FilteredPersonalBests = [new DashboardPersonalBestDto { CatchId = filtered, Weight = 4.6m, SpeciesName = "Pike", Method = "Lure", CaughtOn = DateTimeOffset.Parse("2026-06-01T22:00Z") }]
         });
         MockPreferences.GetAsync(Arg.Any<CancellationToken>()).Returns(AnglerPreferencesModel.Empty with { WeightUnit = WeightUnitEnum.Lb });
         await using var context = CreateContext();
@@ -141,9 +146,44 @@ public class WhenTestingRender : BaseDashboardTest
         cut.WaitForAssertion(() => cut.Find("#dashboard-all-time-table a").GetAttribute("href").Should().Be($"/catches/{winner}"));
         cut.Find("#dashboard-filtered-table a").GetAttribute("href").Should().Be($"/catches/{filtered}");
         cut.Find("#dashboard-all-time-table").TextContent.Should().Contain("lb").And.Contain("oz");
+        cut.WaitForAssertion(() => cut.Find("#dashboard-all-time-table td.caught-on").TextContent.Should()
+            .Be(new DateTime(2026, 1, 1).ToString("d", System.Globalization.CultureInfo.CurrentCulture)));
+        cut.Find("#dashboard-filtered-table td.caught-on").TextContent.Should()
+            .Be(new DateTime(2026, 6, 2).ToString("d", System.Globalization.CultureInfo.CurrentCulture));
+        cut.Find("#dashboard-filtered-catches").TextContent.Should().Be("2");
+        cut.Find("#dashboard-filtered-trips").TextContent.Should().Be("1");
+        cut.Find("#dashboard-filtered-species").TextContent.Should().Be("1");
         cut.Find("#dashboard-filtered-table tbody tr").Click();
         context.Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith($"/catches/{filtered}");
         await MockPreferences.Received(1).GetAsync(Arg.Any<CancellationToken>());
+        await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter => filter.Species == null), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("en-GB", "Caught on", "Filtered catches")]
+    [InlineData("fr-FR", "Date de capture", "Captures filtrées")]
+    public async Task ItShouldLocalizeTheNewCardsAndWinningDatesWithoutInventingMissingDates(string culture, string heading, string filteredLabel)
+    {
+        // Arrange
+        using var testCulture = TestCulture.Use(culture);
+        var caughtOn = DateTimeOffset.Parse("2026-01-01T22:00Z");
+        MockClient.GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>()).Returns(new DashboardDto
+        {
+            AllTimePersonalBests = [new DashboardPersonalBestDto { CatchId = Guid.NewGuid(), Weight = 4.6m, CaughtOn = caughtOn }],
+            FilteredPersonalBests = [new DashboardPersonalBestDto { CatchId = Guid.NewGuid(), Weight = 3 }]
+        });
+        await using var context = CreateContext();
+
+        // Act
+        var cut = context.Render<Page>();
+
+        // Assert
+        cut.WaitForAssertion(() => cut.Find("#dashboard-all-time-table td.caught-on").TextContent.Should()
+            .Be(new DateTime(2026, 1, 2).ToString("d", System.Globalization.CultureInfo.CurrentCulture)));
+        cut.Find("#dashboard-all-time-table thead").TextContent.Should().Contain(heading);
+        cut.Find("#dashboard-filtered-totals").TextContent.Should().Contain(filteredLabel);
+        cut.Find("#dashboard-filtered-table td.caught-on").TextContent.Should().NotContain("2026");
+        await MockTime.Received(1).ToDateTimeLocalValueAsync(caughtOn, Arg.Any<CancellationToken>());
         await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter => filter.Species == null), Arg.Any<CancellationToken>());
     }
 

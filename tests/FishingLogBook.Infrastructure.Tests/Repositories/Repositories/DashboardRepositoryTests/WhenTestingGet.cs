@@ -32,6 +32,7 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
         result.Value.Lifetime.Catches.Should().Be(0);
         result.Value.Lifetime.Trips.Should().Be(0);
         result.Value.Lifetime.Species.Should().Be(0);
+        result.Value.Filtered.Should().BeEquivalentTo(result.Value.Lifetime);
         result.Value.AllTimePersonalBests.Should().BeEmpty();
         result.Value.CatchStatistics.Should().BeEmpty();
         result.Value.FilteredPersonalBests.Should().BeEmpty();
@@ -72,6 +73,9 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
         result.IsSuccess.Should().BeTrue();
         result.Value.Lifetime.Catches.Should().Be(6);
         result.Value.Lifetime.Species.Should().Be(2);
+        result.Value.Filtered.Catches.Should().Be(2);
+        result.Value.Filtered.Species.Should().Be(1);
+        result.Value.Filtered.Trips.Should().Be(0);
         result.Value.CatchStatistics.Should().ContainSingle(row =>
             row.SpeciesName == "Pike" && row.Method == "Lure" && row.Count == 2);
         result.Value.FilteredPersonalBests.Should().ContainSingle(row => row.CatchId == filteredWinner && row.Weight == 8);
@@ -84,6 +88,9 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
         noMatches.Value.AllTimePersonalBests.Should().BeEquivalentTo(result.Value.AllTimePersonalBests);
         noMatches.Value.CatchStatistics.Should().BeEmpty();
         noMatches.Value.FilteredPersonalBests.Should().BeEmpty();
+        noMatches.Value.Filtered.Catches.Should().Be(0);
+        noMatches.Value.Filtered.Trips.Should().Be(0);
+        noMatches.Value.Filtered.Species.Should().Be(0);
     }
 
     [Fact]
@@ -113,6 +120,8 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
         result.Value.FilteredPersonalBests.Should().ContainSingle(row => row.CatchId == last);
         result.Value.FilteredPersonalBests.Should().NotContain(row => row.CatchId == first);
         result.Value.AllTimePersonalBests.Should().ContainSingle(row => row.Weight == 60);
+        result.Value.FilteredPersonalBests[0].CaughtOn.Should().Be(end.AddTicks(-10));
+        result.Value.AllTimePersonalBests[0].CaughtOn.Should().Be(end);
     }
 
     [Fact]
@@ -132,6 +141,8 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
         result.IsSuccess.Should().BeTrue();
         result.Value.Lifetime.Catches.Should().Be(3);
         result.Value.Lifetime.Species.Should().Be(1);
+        result.Value.Filtered.Catches.Should().Be(3);
+        result.Value.Filtered.Species.Should().Be(1);
         result.Value.CatchStatistics.Should().HaveCount(2);
         result.Value.CatchStatistics.Should().Contain(row => row.SpeciesName == null && row.Method == null && row.Count == 2);
         result.Value.AllTimePersonalBests.Should().BeEmpty();
@@ -161,6 +172,8 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
         result.IsSuccess.Should().BeTrue();
         result.Value.AllTimePersonalBests.Should().ContainSingle(row => row.CatchId == lowerId && row.Weight == 10);
         result.Value.FilteredPersonalBests.Should().ContainSingle(row => row.CatchId == lowerId);
+        result.Value.AllTimePersonalBests[0].CaughtOn.Should().Be(date);
+        result.Value.FilteredPersonalBests[0].CaughtOn.Should().Be(date);
         result.Value.CatchStatistics.Should().ContainSingle(row => row.Count == 3);
     }
 
@@ -245,9 +258,46 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
         result.Value.Lifetime.Catches.Should().Be(6);
     }
 
+    [Fact]
+    public async Task ItShouldDeduplicateOnlyPersistedTripAssociationsOfMatchingCatches()
+    {
+        // Arrange
+        var owner = await CreateUserAsync();
+        var other = await CreateUserAsync();
+        var trip = await CreateTripAsync(owner);
+        var secondTrip = await CreateTripAsync(owner);
+        await CreateTripAsync(owner);
+        var otherTrip = await CreateTripAsync(other);
+        var date = TripStartedOn.AddHours(1);
+        await SaveAsync(owner, date, null, tripId: trip);
+        await SaveAsync(owner, date, 2, tripId: trip);
+        await SaveAsync(owner, date, null, species: "Perch", tripId: secondTrip);
+        await SaveAsync(owner, date, null, species: null);
+        await SaveAsync(owner, date, null);
+        await SaveAsync(other, date, 50, tripId: otherTrip);
+        var sut = CreateDashboard();
+
+        // Act
+        var all = await sut.GetAsync(new GetDashboardArgs { UserId = owner }, CancellationToken.None);
+        var pike = await sut.GetAsync(new GetDashboardArgs { UserId = owner, Species = "Pike" }, CancellationToken.None);
+
+        // Assert
+        all.IsSuccess.Should().BeTrue();
+        pike.IsSuccess.Should().BeTrue();
+        all.Value.Lifetime.Trips.Should().Be(3);
+        all.Value.Filtered.Catches.Should().Be(5);
+        all.Value.Filtered.Trips.Should().Be(2);
+        all.Value.Filtered.Species.Should().Be(2);
+        pike.Value.Filtered.Catches.Should().Be(3);
+        pike.Value.Filtered.Trips.Should().Be(1);
+        pike.Value.Filtered.Species.Should().Be(1);
+        pike.Value.Lifetime.Should().BeEquivalentTo(all.Value.Lifetime);
+        pike.Value.AllTimePersonalBests.Should().BeEquivalentTo(all.Value.AllTimePersonalBests);
+    }
+
     private async Task<Guid> SaveAsync(
         Guid owner, DateTimeOffset caughtOn, decimal? weight,
-        string? species = "Pike", string? method = "Lure", string? venue = "Corrib", Guid? id = null)
+        string? species = "Pike", string? method = "Lure", string? venue = "Corrib", Guid? id = null, Guid? tripId = null)
     {
         var identity = id ?? Guid.NewGuid();
         var record = new Catch
@@ -256,6 +306,7 @@ public class WhenTestingGet(PostgresFixture fixture) : BaseCatchRepositoryTest(f
             CaughtByUserId = owner,
             RecordedByUserId = owner,
             CaughtOn = caughtOn,
+            TripId = tripId,
             Weight = weight,
             SpeciesName = species,
             Method = method,

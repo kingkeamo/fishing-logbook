@@ -1,22 +1,59 @@
+using System.Globalization;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Shared.Measurements;
+using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 
 namespace FishingLogBook.Web.Features.Dashboard.Components.PersonalBestTable;
 
-public partial class PersonalBestTable : ComponentBase
+public partial class PersonalBestTable : ComponentBase, IDisposable
 {
+    private readonly CancellationTokenSource _lifetime = new();
     [Inject] private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
     [Inject] private IMeasurementService Measurement { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private ITimeService Time { get; set; } = default!;
     [Parameter] public string Id { get; set; } = string.Empty;
     [Parameter] public IReadOnlyList<DashboardPersonalBestDto> Rows { get; set; } = [];
     [Parameter] public WeightUnitEnum WeightUnit { get; set; }
     [Parameter] public bool IsLoaded { get; set; }
     [Parameter] public string EmptyText { get; set; } = string.Empty;
+    private IReadOnlyDictionary<Guid, string> _dates = new Dictionary<Guid, string>();
+    private long _request;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var request = ++_request;
+        var token = _lifetime.Token;
+        var dates = new Dictionary<Guid, string>();
+        foreach (var row in Rows)
+        {
+            if (row.CaughtOn is { } caughtOn)
+            {
+                var local = await Time.ToDateTimeLocalValueAsync(caughtOn, token);
+                dates[row.CatchId] = DateTime.Parse(local, CultureInfo.InvariantCulture).ToString("d", CultureInfo.CurrentCulture);
+            }
+        }
+        if (request == _request && !token.IsCancellationRequested)
+        {
+            _dates = dates;
+        }
+    }
+
+    private string CaughtOn(DashboardPersonalBestDto row)
+    {
+        return _dates.GetValueOrDefault(row.CatchId) ?? Loc["Catch_MeasurementNotRecorded"];
+    }
+
+    public void Dispose()
+    {
+        ++_request;
+        _lifetime.Cancel();
+        _lifetime.Dispose();
+    }
 
     private string Species(DashboardPersonalBestDto row)
     {

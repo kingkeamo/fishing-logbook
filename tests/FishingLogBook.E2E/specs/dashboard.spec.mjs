@@ -15,6 +15,10 @@ test('dashboard keeps lifetime records while filtering and opens the actual winn
     await expect(page.locator('#dashboard-statistics')).toBeVisible();
     await expect(page.locator('#dashboard-filtered-table')).toBeVisible();
     await expect(page.locator('#dashboard-record')).toHaveAttribute('href', '/catches/record');
+    await expect(page.locator('#dashboard-filtered-catches')).toHaveText(String(initial.filtered.catches));
+    await expect(page.locator('#dashboard-filtered-trips')).toHaveText(String(initial.filtered.trips));
+    await expect(page.locator('#dashboard-filtered-species')).toHaveText(String(initial.filtered.species));
+    await expect(page.locator('#dashboard')).not.toContainText('Online statistics from your synchronised catches.');
     if (initial.lifetime.catches === 0) {
         await expect(page.locator('#dashboard-total-species')).toHaveText('0');
         await expect(page.locator('#dashboard-all-time')).toContainText('Your first personal best awaits');
@@ -43,6 +47,12 @@ test('dashboard keeps lifetime records while filtering and opens the actual winn
     expect(filtered.filteredPersonalBests).toEqual([expect.objectContaining({ catchId: filteredWinner })]);
     expect(filtered.lifetime).toEqual(populated.lifetime);
     expect(filtered.allTimePersonalBests).toEqual(populated.allTimePersonalBests);
+    expect(filtered.filtered).toEqual({ catches: 1, trips: 0, species: 1 });
+    expect(filtered.filteredPersonalBests[0].caughtOn).toBe('2022-03-08T12:00:00+00:00');
+    await expect(page.locator('#dashboard-filtered-catches')).toHaveText('1');
+    await expect(page.locator('#dashboard-filtered-trips')).toHaveText('0');
+    await expect(page.locator('#dashboard-filtered-species')).toHaveText('1');
+    await expect(page.locator('#dashboard-filtered-table td.caught-on')).toContainText('2022');
     await expect(page.locator('#dashboard-statistics tbody tr')).toHaveCount(1);
     await expect(page.locator(`#dashboard-filtered-table a[href="/catches/${filteredWinner}"]`)).toBeVisible();
     await expect(lifetimeLink).toBeVisible();
@@ -52,6 +62,9 @@ test('dashboard keeps lifetime records while filtering and opens the actual winn
     await expect(page.locator('#theme-toggle-button')).not.toHaveAttribute('aria-label', themeLabel);
     await page.screenshot({ path: testInfo.outputPath('dashboard-dark-mobile.png'), fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
+    const filterPositions = await page.locator('#dashboard-date, #dashboard-species, #dashboard-method, #dashboard-venue')
+        .evaluateAll(controls => controls.map(control => Math.round(control.getBoundingClientRect().top)));
+    expect(new Set(filterPositions).size).toBe(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);
     await page.screenshot({ path: testInfo.outputPath('dashboard-dark-desktop.png'), fullPage: true });
     await page.locator('#dashboard-filtered-table tbody tr').click();

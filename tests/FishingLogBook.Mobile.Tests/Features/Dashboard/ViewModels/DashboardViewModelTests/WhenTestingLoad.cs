@@ -111,7 +111,7 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
         Sut.SelectedVenue = new DashboardChoiceModel("Lake", "Lake");
 
         // Act
-        await Sut.LoadAsync(CancellationToken.None);
+        await Sut.ApplyAsync(CancellationToken.None);
 
         // Assert
         await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter =>
@@ -130,7 +130,7 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
         Sut.ToDate = new DateTime(2026, 3, 8);
 
         // Act
-        await Sut.LoadAsync(CancellationToken.None);
+        await Sut.ApplyAsync(CancellationToken.None);
 
         // Assert
         Sut.StatusText.Should().Contain("date");
@@ -186,7 +186,7 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
         MockClient.GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>()).Returns(ApiResultModel<DashboardDto>.Succeeded(new DashboardDto
         {
             Lifetime = new DashboardTotalsDto { Catches = 1 },
-            AllTimePersonalBests = [new DashboardPersonalBestDto { CatchId = Guid.NewGuid(), Weight = 4.6m, SpeciesName = "Pike" }]
+            AllTimePersonalBests = [new DashboardPersonalBestDto { CatchId = Guid.NewGuid(), Weight = 4.6m, SpeciesName = "Pike", CaughtOn = DateTimeOffset.Parse("2026-01-02T02:00Z") }]
         }));
 
         // Act
@@ -196,6 +196,7 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
         // Assert
         Sut.LifetimeBests.Should().ContainSingle(row => row.Species == "Pike" && row.Value.Contains("lb"));
         Sut.LifetimeBests[0].Method.Should().Be(Text["DashboardUnknownMethod"]);
+        Sut.LifetimeBests[0].CaughtOn.Should().Be("Date de capture: 01/01/2026");
         Sut.DatePresets.Should().Contain("Cette année");
         await MockUnits.Received(1).GetAsync(Arg.Any<CancellationToken>());
         await MockClient.Received(1).GetAsync(Arg.Is<DashboardFilterDto>(filter => filter.Species == null), Arg.Any<CancellationToken>());
@@ -250,7 +251,7 @@ public class WhenTestingLoad : BaseDashboardViewModelTest
         sut.FromDate = sut.ToDate = DateTime.Parse(date, System.Globalization.CultureInfo.InvariantCulture);
 
         // Act
-        await sut.LoadAsync(CancellationToken.None);
+        await sut.ApplyAsync(CancellationToken.None);
 
         // Assert
         sut.HasData.Should().BeTrue();

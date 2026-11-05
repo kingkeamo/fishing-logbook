@@ -36,6 +36,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     private long _request;
     private string? _statusKey;
     private bool _openingCatch;
+    private DashboardFilterSelectionModel _applied = new();
 
     public DashboardViewModel(
         IDashboardClient client, IAccountSessionCoordinator session, IConnectivityService connectivity,
@@ -66,6 +67,50 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
     public DashboardDto? Data { get; private set; }
     public bool IsLoading { get; private set; }
     public bool CanApply => !IsLoading;
+    public bool IsFiltersExpanded { get; private set; }
+    public bool HasActiveFilters => _applied.Preset != DashboardDatePresetEnum.ThisYear
+        || _applied.Species is not null || _applied.Method is not null || _applied.Venue is not null;
+    public string FilterToggleText => Text[IsFiltersExpanded ? "DashboardHideFilters" : "DashboardShowFilters"];
+    public string AppliedFilterSummary
+    {
+        get
+        {
+            var date = _applied.Preset == DashboardDatePresetEnum.Custom
+                ? $"{_applied.From.ToString("d", Text.Culture)} – {_applied.To.ToString("d", Text.Culture)}"
+                : DatePresets[(int)_applied.Preset];
+            var parts = new List<string>
+            {
+                date, _applied.Species ?? Text["DashboardAllSpecies"], _applied.Method ?? Text["DashboardAllMethods"]
+            };
+            if (_applied.Venue is not null)
+            {
+                parts.Add(_applied.Venue);
+            }
+            return string.Join(" · ", parts);
+        }
+    }
+    public string FilteredCatchesTotal => Data?.Filtered.Catches.ToString(Text.Culture) ?? string.Empty;
+    public string FilteredTripsTotal => Data?.Filtered.Trips.ToString(Text.Culture) ?? string.Empty;
+    public string FilteredSpeciesTotal => Data?.Filtered.Species.ToString(Text.Culture) ?? string.Empty;
+
+    public void ToggleFilters()
+    {
+        IsFiltersExpanded = !IsFiltersExpanded;
+        Notify();
+    }
+
+    public Task ApplyAsync(CancellationToken cancellationToken)
+    {
+        return LoadSelectionAsync(new DashboardFilterSelectionModel
+        {
+            Preset = (DashboardDatePresetEnum)PresetIndex,
+            From = FromDate,
+            To = ToDate,
+            Species = SelectedSpecies?.Value,
+            Method = SelectedMethod?.Value,
+            Venue = SelectedVenue?.Value
+        }, true, cancellationToken);
+    }
     public bool HasData => Data is not null;
     public bool HasStatus => _statusKey is not null;
     public string StatusText => _statusKey is null ? string.Empty : Text[_statusKey];
@@ -115,10 +160,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         SelectedSpecies = null;
         SelectedMethod = null;
         SelectedVenue = null;
-        await LoadAsync(cancellationToken);
+        await ApplyAsync(cancellationToken);
     }
 
-    public async Task LoadAsync(CancellationToken cancellationToken)
+    public Task LoadAsync(CancellationToken cancellationToken)
+    {
+        return LoadSelectionAsync(_applied, false, cancellationToken);
+    }
+
+    private async Task LoadSelectionAsync(DashboardFilterSelectionModel selection, bool collapse, CancellationToken cancellationToken)
     {
         var request = Interlocked.Increment(ref _request);
         var lease = _session.Capture();
@@ -141,8 +191,8 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             return;
         }
 
-        var range = DashboardDateRangeModel.Resolve((DashboardDatePresetEnum)PresetIndex,
-            DateOnly.FromDateTime(_clock.GetLocalNow().DateTime), DateOnly.FromDateTime(FromDate), DateOnly.FromDateTime(ToDate));
+        var range = DashboardDateRangeModel.Resolve(selection.Preset,
+            DateOnly.FromDateTime(_clock.GetLocalNow().DateTime), DateOnly.FromDateTime(selection.From), DateOnly.FromDateTime(selection.To));
         if (range.From > range.To || range.To == DateOnly.MaxValue)
         {
             _statusKey = "DashboardInvalidDates";
@@ -153,15 +203,27 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         IsLoading = true;
         Notify();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lease.CancellationToken);
-        await ReadAsync(range, lease, request, linked.Token);
+        await ReadAsync(BuildFilter(range, selection), selection, lease, request, linked.Token);
+        if (collapse)
+        {
+            CollapseFiltersIfLoaded(request, lease);
+        }
+    }
+
+    private void CollapseFiltersIfLoaded(long request, AccountSessionLeaseModel lease)
+    {
+        if (IsCurrent(request, lease) && HasData && !HasStatus)
+        {
+            IsFiltersExpanded = false;
+            Notify();
+        }
     }
 
     private async Task ReadAsync(
-        DashboardDateRangeModel range, AccountSessionLeaseModel lease, long request, CancellationToken cancellationToken)
+        DashboardFilterDto filter, DashboardFilterSelectionModel selection, AccountSessionLeaseModel lease, long request, CancellationToken cancellationToken)
     {
         try
         {
-            var filter = BuildFilter(range);
             var result = await _client.GetAsync(filter, cancellationToken);
             if (!IsCurrent(request, lease))
             {
@@ -182,6 +244,7 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
             _measurementUnits = units;
             Data = result.Value;
+            _applied = selection;
             RebuildRows();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -269,15 +332,15 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         return new DateTimeOffset(local, offset).ToUniversalTime();
     }
 
-    private DashboardFilterDto BuildFilter(DashboardDateRangeModel range)
+    private DashboardFilterDto BuildFilter(DashboardDateRangeModel range, DashboardFilterSelectionModel selection)
     {
         return new DashboardFilterDto
         {
             FromInclusive = range.From is { } start ? ToUtc(start) : null,
             ToExclusive = range.To is { } end ? ToUtc(end.AddDays(1)) : null,
-            Species = SelectedSpecies?.Value,
-            Method = SelectedMethod?.Value,
-            Venue = SelectedVenue?.Value
+            Species = selection.Species,
+            Method = selection.Method,
+            Venue = selection.Venue
         };
     }
 
@@ -299,12 +362,16 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
         Statistics = Data?.CatchStatistics.Select(row => new DashboardRowModel(
             row.SpeciesName ?? Text["DashboardUnknownSpecies"], row.Method ?? Text["DashboardUnknownMethod"],
             row.Count.ToString(Text.Culture), null)).ToArray() ?? [];
+        if (Data is null)
+        {
+            return;
+        }
         SpeciesOptions = Choices(Data?.Species ?? []);
         MethodOptions = Choices(Data?.Methods ?? []);
         VenueOptions = Choices(Data?.Venues ?? []);
-        SelectedSpecies = SpeciesOptions.FirstOrDefault(choice => choice.Value == SelectedSpecies?.Value);
-        SelectedMethod = MethodOptions.FirstOrDefault(choice => choice.Value == SelectedMethod?.Value);
-        SelectedVenue = VenueOptions.FirstOrDefault(choice => choice.Value == SelectedVenue?.Value);
+        SelectedSpecies = SpeciesOptions.FirstOrDefault(choice => choice.Value == SelectedSpecies?.Value) ?? SelectedSpecies;
+        SelectedMethod = MethodOptions.FirstOrDefault(choice => choice.Value == SelectedMethod?.Value) ?? SelectedMethod;
+        SelectedVenue = VenueOptions.FirstOrDefault(choice => choice.Value == SelectedVenue?.Value) ?? SelectedVenue;
     }
 
     private DashboardRowModel ToRow(DashboardPersonalBestDto row)
@@ -314,7 +381,10 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
             ? _measurement.FormatWeight(row.Weight, _measurementUnits.WeightUnit, unit, Text["MeasureUnitOz"])
             : string.Format(Text.Culture, "{0:0.##} {1}", _measurement.ToDisplayWeight(row.Weight, _measurementUnits.WeightUnit), unit);
         return new DashboardRowModel(row.SpeciesName ?? Text["DashboardUnknownSpecies"],
-            row.Method ?? Text["DashboardUnknownMethod"], weight, row.CatchId);
+            row.Method ?? Text["DashboardUnknownMethod"], weight, row.CatchId,
+            row.CaughtOn is { } caughtOn
+                ? $"{Text["DashboardCaughtOn"]}: {TimeZoneInfo.ConvertTime(caughtOn, _clock.LocalTimeZone).ToString("d", Text.Culture)}"
+                : $"{Text["DashboardCaughtOn"]}: {Text["NotRecorded"]}");
     }
 
     private IReadOnlyList<DashboardChoiceModel> Choices(IReadOnlyList<string> values)
@@ -342,6 +412,10 @@ public sealed class DashboardViewModel : INotifyPropertyChanged, IDisposable
 
             Interlocked.Increment(ref _request);
             SelectedSpecies = SelectedMethod = SelectedVenue = null;
+            SpeciesOptions = MethodOptions = VenueOptions = [];
+            _applied = new();
+            PresetIndex = (int)DashboardDatePresetEnum.ThisYear;
+            IsFiltersExpanded = false;
             SetFailure("DashboardOffline");
         }
 

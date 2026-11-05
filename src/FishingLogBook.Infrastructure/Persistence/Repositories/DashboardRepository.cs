@@ -12,7 +12,7 @@ public sealed class DashboardRepository(IDbConnectionFactory connectionFactory, 
 {
     private const string Owned = """
         WITH owned AS (
-            SELECT id, caughton, weight,
+            SELECT id, caughton, weight, tripid,
                 NULLIF(btrim(speciesname), '') AS speciesname,
                 NULLIF(btrim(method), '') AS method,
                 NULLIF(btrim(placename), '') AS venue
@@ -34,7 +34,7 @@ public sealed class DashboardRepository(IDbConnectionFactory connectionFactory, 
 
     private const string PersonalBests = """
         SELECT DISTINCT ON (speciesname, method)
-            speciesname, method, weight, id AS catchid
+            speciesname, method, weight, id AS catchid, caughton
         FROM
         """;
 
@@ -58,6 +58,12 @@ public sealed class DashboardRepository(IDbConnectionFactory connectionFactory, 
         """ + Owned + PersonalBests + " owned " + BestOrder
         + Owned + Filtered + """
 
+        SELECT COUNT(*) AS catches, COUNT(DISTINCT tripid) AS trips,
+            COUNT(DISTINCT speciesname) AS species
+        FROM filtered;
+
+        """ + Owned + Filtered + """
+
         SELECT speciesname, method, COUNT(*) AS count
         FROM filtered
         GROUP BY speciesname, method
@@ -80,6 +86,7 @@ public sealed class DashboardRepository(IDbConnectionFactory connectionFactory, 
             {
                 Lifetime = await results.ReadSingleAsync<DashboardTotals>(),
                 AllTimePersonalBests = (await results.ReadAsync<DashboardPersonalBest>()).AsList(),
+                Filtered = await results.ReadSingleAsync<DashboardTotals>(),
                 CatchStatistics = (await results.ReadAsync<DashboardCatchCount>()).AsList(),
                 FilteredPersonalBests = (await results.ReadAsync<DashboardPersonalBest>()).AsList(),
                 Species = (await results.ReadAsync<string>()).AsList(),

@@ -4,8 +4,13 @@ td, th { padding:12px 4px; border-bottom:1px solid var(--mud-palette-divider); o
 tbody tr:last-child td { border-bottom:0; }
 tbody tr { cursor:pointer; }
 tbody tr:hover { background:var(--mud-palette-action-default-hover); }
-.weight { text-align:right; }
+.weight { text-align:right; padding-right:20px; }
+.caught-on { padding-left:12px; }
 td.weight { font-weight:600; }
 a { color:inherit; text-decoration:underline; text-underline-offset:3px; display:block; padding:4px 0; }
 a:focus-visible { outline:2px solid var(--mud-palette-primary); }
 .empty { text-align:center; color:var(--mud-palette-text-secondary); padding:28px 12px; }
+@media(max-width:480px) {
+    .weight { padding-right:8px; }
+    .caught-on { padding-left:8px; }
+}

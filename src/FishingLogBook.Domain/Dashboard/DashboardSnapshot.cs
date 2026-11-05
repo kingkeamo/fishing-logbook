@@ -3,6 +3,7 @@ namespace FishingLogBook.Domain.Dashboard;
 public sealed class DashboardSnapshot
 {
     public DashboardTotals Lifetime { get; init; } = new();
+    public DashboardTotals Filtered { get; init; } = new();
     public IReadOnlyList<DashboardPersonalBest> AllTimePersonalBests { get; init; } = [];
     public IReadOnlyList<DashboardCatchCount> CatchStatistics { get; init; } = [];
     public IReadOnlyList<DashboardPersonalBest> FilteredPersonalBests { get; init; } = [];

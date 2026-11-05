@@ -76,8 +76,9 @@ public class WhenTestingGet
             .Returns(Result.Ok(new DashboardSnapshot
             {
                 Lifetime = new DashboardTotals { Catches = 6, Trips = 2, Species = 1 },
-                AllTimePersonalBests = [new DashboardPersonalBest { CatchId = catchId, Weight = 12.4m, SpeciesName = "Pike", Method = "Lure" }],
-                FilteredPersonalBests = [new DashboardPersonalBest { CatchId = catchId, Weight = 12.4m, SpeciesName = "Pike", Method = "Lure" }],
+                Filtered = new DashboardTotals { Catches = 3, Trips = 1, Species = 1 },
+                AllTimePersonalBests = [new DashboardPersonalBest { CatchId = catchId, Weight = 12.4m, SpeciesName = "Pike", Method = "Lure", CaughtOn = DateTimeOffset.Parse("2026-06-01T20:00Z") }],
+                FilteredPersonalBests = [new DashboardPersonalBest { CatchId = catchId, Weight = 12.4m, SpeciesName = "Pike", Method = "Lure", CaughtOn = DateTimeOffset.Parse("2026-06-01T20:00Z") }],
                 CatchStatistics = [new DashboardCatchCount { SpeciesName = "Pike", Method = "Lure", Count = 3 }],
                 Species = ["Pike"],
                 Methods = ["Lure"],
@@ -92,6 +93,8 @@ public class WhenTestingGet
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Headers.CacheControl!.NoStore.Should().BeTrue();
         data!.Lifetime.Should().BeEquivalentTo(new DashboardTotalsDto { Catches = 6, Trips = 2, Species = 1 });
+        data.Filtered.Should().BeEquivalentTo(new DashboardTotalsDto { Catches = 3, Trips = 1, Species = 1 });
+        data.AllTimePersonalBests[0].CaughtOn.Should().Be(DateTimeOffset.Parse("2026-06-01T20:00Z"));
         data.AllTimePersonalBests.Should().ContainSingle(row => row.CatchId == catchId && row.Weight == 12.4m);
         data.FilteredPersonalBests.Should().BeEquivalentTo(data.AllTimePersonalBests);
         data.CatchStatistics.Should().ContainSingle(row => row.Count == 3 && row.SpeciesName == "Pike" && row.Method == "Lure");
