@@ -8,8 +8,8 @@ using FishingLogBook.Mobile.Features.Authentication.Stores;
 using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
-using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Mobile.Tests.Support;
+using FishingLogBook.Shared.Dtos;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Authentication.Services.AuthenticationServiceTests;

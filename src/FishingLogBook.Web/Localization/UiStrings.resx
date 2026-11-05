@@ -804,6 +804,18 @@
   <data name="Auth_SignOut" xml:space="preserve">
     <value>Sign out</value>
   </data>
+  <data name="Auth_SignInTitle" xml:space="preserve">
+    <value>Sign in to your logbook</value>
+  </data>
+  <data name="Auth_ContinueWithApple" xml:space="preserve">
+    <value>Continue with Apple</value>
+  </data>
+  <data name="Auth_ContinueWithGoogle" xml:space="preserve">
+    <value>Continue with Google</value>
+  </data>
+  <data name="Auth_ContinueWithEmail" xml:space="preserve">
+    <value>Continue with email</value>
+  </data>
   <data name="Auth_UserMenu" xml:space="preserve">
     <value>Account menu</value>
   </data>

@@ -1,0 +1,28 @@
+@using FishingLogBook.Shared.Enums
+@if (_providers.Count > 0)
+{
+    <MudContainer MaxWidth="MaxWidth.Small" Class="sign-in-chooser" id="sign-in-chooser">
+        <MudText Typo="Typo.h5" Component="h1">@Loc["Auth_SignInTitle"]</MudText>
+        <MudStack Spacing="2" Class="mt-4">
+            @foreach (var provider in _providers)
+            {
+                var selected = provider;
+                <MudButton Variant="Variant.Outlined"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           OnClick="@(() => SignIn(selected))"
+                           id="@($"sign-in-{selected.ToString().ToLowerInvariant()}")">
+                    @Loc[selected == SignInProviderEnum.Apple ? "Auth_ContinueWithApple" : "Auth_ContinueWithGoogle"]
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       OnClick="@(() => SignIn(SignInProviderEnum.EmailPassword))"
+                       id="sign-in-email">
+                @Loc["Auth_ContinueWithEmail"]
+            </MudButton>
+        </MudStack>
+    </MudContainer>
+}

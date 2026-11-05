@@ -56,3 +56,10 @@ cognito_api_resource_identifier = "https://fishing-logbook-dev-api.fly.dev"
 # pages_production_branch = "develop"
 
 # grafana_cloud_stack_slug = "<slug from https://<slug>.grafana.net after Grafana Cloud signup>"
+
+# Federated sign-in (leave unset to keep email/password only). Secrets are never put in
+# tfvars: export TF_VAR_cognito_google_client_secret and TF_VAR_cognito_apple_private_key.
+# cognito_google_client_id  = "<google-oauth-web-client-id>.apps.googleusercontent.com"
+# cognito_apple_services_id = "<apple-services-id>"
+# cognito_apple_team_id     = "<apple-team-id>"
+# cognito_apple_key_id      = "<apple-key-id>"

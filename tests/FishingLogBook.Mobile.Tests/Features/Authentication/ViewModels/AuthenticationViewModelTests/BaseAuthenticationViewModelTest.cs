@@ -3,6 +3,7 @@ using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Authentication.ViewModels;
 using FishingLogBook.Mobile.Localization;
+using FishingLogBook.Shared.Enums;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Authentication.ViewModels.AuthenticationViewModelTests;
@@ -10,6 +11,7 @@ namespace FishingLogBook.Mobile.Tests.Features.Authentication.ViewModels.Authent
 public abstract class BaseAuthenticationViewModelTest
 {
     protected readonly IAuthenticationService MockAuthenticationService = Substitute.For<IAuthenticationService>();
+    protected readonly ISignInProviderService MockProviders = Substitute.For<ISignInProviderService>();
     protected readonly UiTextService Text = new(CultureInfo.GetCultureInfo("en-GB"));
     protected readonly AuthenticationViewModel Sut;
     protected int DispatchCount;
@@ -18,7 +20,8 @@ public abstract class BaseAuthenticationViewModelTest
     {
         MockAuthenticationService.BeginSignInAsync(CancellationToken.None)
             .Returns(AuthenticationResultEnum.Pending);
-        Sut = new AuthenticationViewModel(MockAuthenticationService, Text);
+        MockProviders.AvailableProviders.Returns([SignInProviderEnum.Apple, SignInProviderEnum.Google]);
+        Sut = new AuthenticationViewModel(MockAuthenticationService, MockProviders, Text);
     }
 
     protected void Dispatch(Action action)
