@@ -5,6 +5,7 @@ using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Browser.Network;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Dashboard.Clients;
+using FishingLogBook.Web.Features.Dashboard.Models;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
@@ -19,14 +20,17 @@ public partial class Dashboard : ComponentBase, IDisposable
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _requestCancellation;
     private long _request;
+    private long _authentication;
     private bool _disposed;
     private DashboardDto? _data;
     private bool _loading = true;
     private string? _statusKey;
     private WeightUnitEnum _weightUnit;
-    private DashboardDatePresetEnum _preset = DashboardDatePresetEnum.ThisYear;
-    private DateTime _from = new(DateTime.Today.Year, 1, 1);
-    private DateTime _to = new(DateTime.Today.Year, 12, 31);
+    private DashboardSelectionModel _applied = DashboardSelectionModel.CreateDefault();
+    private DashboardSelectionModel? _submitted;
+    private DashboardDatePresetEnum _preset;
+    private DateTime _from;
+    private DateTime _to;
     private string? _species;
     private string? _method;
     private string? _venue;
@@ -42,15 +46,27 @@ public partial class Dashboard : ComponentBase, IDisposable
     private string LifetimeEmpty => Loc[_data?.Lifetime.Catches == 0 ? "DashboardFirstBest" : "DashboardWeightNeeded"];
     private string StatisticsEmpty => Loc[_data?.Lifetime.Catches == 0 ? "DashboardNoCatches" : "DashboardNoMatches"];
     private string FilteredEmpty => _data?.CatchStatistics.Count == 0 ? StatisticsEmpty : Loc["DashboardWeightNeeded"];
+    private DashboardSelectionModel Draft => new(_preset, _from, _to, _species, _method, _venue);
 
     protected override async Task OnInitializedAsync()
     {
+        ApplyDraft(_applied);
         Authentication.AuthenticationStateChanged += OnAuthenticationChanged;
         Network.ConnectivityChanged += OnConnectivityChanged;
-        await LoadAsync();
+        await LoadAsync(_applied);
     }
 
-    private async Task LoadAsync()
+    private void ApplyDraft(DashboardSelectionModel selection)
+    {
+        _preset = selection.Preset;
+        _from = selection.From;
+        _to = selection.To;
+        _species = selection.Species;
+        _method = selection.Method;
+        _venue = selection.Venue;
+    }
+
+    private async Task LoadAsync(DashboardSelectionModel selection)
     {
         var request = ++_request;
         _requestCancellation?.Cancel();
@@ -63,17 +79,27 @@ public partial class Dashboard : ComponentBase, IDisposable
         {
             if (!await Network.IsOnlineAsync(token))
             {
-                Fail("DashboardOffline");
+                if (request == _request)
+                {
+                    Fail("DashboardOffline");
+                }
+
                 return;
             }
 
-            var filter = await BuildFilterAsync(token);
+            var filter = await BuildFilterAsync(selection, token);
+            if (request != _request || token.IsCancellationRequested)
+            {
+                return;
+            }
+
             if (filter is null)
             {
-                _statusKey = "DashboardInvalidDates";
+                Fail("DashboardInvalidDates");
                 return;
             }
 
+            _submitted = selection;
             var data = await Client.GetAsync(filter, token);
             var preferences = await Preferences.GetAsync(token);
             if (request != _request || token.IsCancellationRequested)
@@ -83,6 +109,9 @@ public partial class Dashboard : ComponentBase, IDisposable
 
             _data = data;
             _weightUnit = preferences.WeightUnit;
+            _applied = selection;
+            _submitted = null;
+            ApplyDraft(selection);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -100,15 +129,23 @@ public partial class Dashboard : ComponentBase, IDisposable
             if (request == _request)
             {
                 _loading = false;
+                if (!_disposed)
+                {
+                    StateHasChanged();
+                }
             }
         }
     }
 
-    private async Task<DashboardFilterDto?> BuildFilterAsync(CancellationToken token)
+    private async Task<DashboardFilterDto?> BuildFilterAsync(DashboardSelectionModel selection, CancellationToken token)
     {
         var localNow = await Time.ToDateTimeLocalValueAsync(DateTimeOffset.UtcNow, token);
         var today = DateOnly.ParseExact(localNow[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var range = DashboardDateRangeModel.Resolve(_preset, today, DateOnly.FromDateTime(_from), DateOnly.FromDateTime(_to));
+        var range = DashboardDateRangeModel.Resolve(
+            selection.Preset,
+            today,
+            DateOnly.FromDateTime(selection.From),
+            DateOnly.FromDateTime(selection.To));
         if (range.From > range.To || range.To == DateOnly.MaxValue)
         {
             return null;
@@ -125,9 +162,9 @@ public partial class Dashboard : ComponentBase, IDisposable
         {
             FromInclusive = from,
             ToExclusive = to,
-            Species = NullIfEmpty(_species),
-            Method = NullIfEmpty(_method),
-            Venue = NullIfEmpty(_venue)
+            Species = NullIfEmpty(selection.Species),
+            Method = NullIfEmpty(selection.Method),
+            Venue = NullIfEmpty(selection.Venue)
         };
     }
 
@@ -142,43 +179,110 @@ public partial class Dashboard : ComponentBase, IDisposable
         return string.IsNullOrEmpty(value) ? null : value;
     }
 
+    private async Task ApplyAsync()
+    {
+        if (!_loading)
+        {
+            await LoadAsync(Draft);
+        }
+    }
+
     private async Task ResetAsync()
     {
-        _preset = DashboardDatePresetEnum.ThisYear;
-        _species = _method = _venue = null;
-        await LoadAsync();
+        if (!_loading)
+        {
+            await LoadAsync(DashboardSelectionModel.CreateDefault());
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        await LoadAsync(_submitted ?? _applied);
     }
 
     private void Fail(string key)
     {
-        _data = null;
         _statusKey = key;
     }
 
     private void OnAuthenticationChanged(Task<AuthenticationState> state)
     {
-        Invalidate("DashboardError");
+        if (!_disposed)
+        {
+            _ = InvokeAsync(() => HandleAuthenticationAsync(state));
+        }
+    }
+
+    private async Task HandleAuthenticationAsync(Task<AuthenticationState> stateTask)
+    {
+        var version = ++_authentication;
+        Invalidate(null);
+        _applied = DashboardSelectionModel.CreateDefault();
+        _submitted = null;
+        ApplyDraft(_applied);
+        StateHasChanged();
+        var state = await stateTask;
+        if (_disposed || version != _authentication)
+        {
+            return;
+        }
+
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            await LoadAsync(_applied);
+            return;
+        }
+
+        _statusKey = "DashboardError";
+        StateHasChanged();
     }
 
     private void OnConnectivityChanged(bool online)
     {
-        if (!online)
+        if (_disposed)
         {
-            Invalidate("DashboardOffline");
+            return;
         }
+
+        if (online)
+        {
+            _ = InvokeAsync(ReloadWhenOnlineAsync);
+            return;
+        }
+
+        _ = InvokeAsync(GoOffline);
     }
 
-    private void Invalidate(string key)
+    private void GoOffline()
+    {
+        Invalidate("DashboardOffline");
+        StateHasChanged();
+    }
+
+    private async Task ReloadWhenOnlineAsync()
+    {
+        if (_disposed || _loading || (_data is not null && _statusKey is null))
+        {
+            return;
+        }
+
+        var version = _authentication;
+        var state = await Authentication.GetAuthenticationStateAsync();
+        if (_disposed || _loading || version != _authentication || state.User.Identity?.IsAuthenticated != true)
+        {
+            return;
+        }
+
+        await LoadAsync(_submitted ?? _applied);
+    }
+
+    private void Invalidate(string? key)
     {
         ++_request;
         _requestCancellation?.Cancel();
         _data = null;
         _loading = false;
         _statusKey = key;
-        if (!_disposed)
-        {
-            _ = InvokeAsync(StateHasChanged);
-        }
     }
 
     public void Dispose()

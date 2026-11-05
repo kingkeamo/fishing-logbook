@@ -17,7 +17,7 @@
     @if (_statusKey is not null)
     {
         <MudAlert Severity="Severity.Info" id="dashboard-status">@Loc[_statusKey]
-            <MudButton OnClick="LoadAsync" Disabled="_loading" id="dashboard-retry">@Loc["DashboardRetry"]</MudButton>
+            <MudButton OnClick="RetryAsync" Disabled="_loading" id="dashboard-retry">@Loc["DashboardRetry"]</MudButton>
         </MudAlert>
     }
     <div class="totals" id="dashboard-lifetime">
@@ -45,7 +45,7 @@
             <div><label for="dashboard-species">@Loc["DashboardSpecies"]</label><select id="dashboard-species" @bind="_species" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Species ?? []) { <option value="@option">@option</option> }</select></div>
             <div><label for="dashboard-method">@Loc["DashboardMethod"]</label><select id="dashboard-method" @bind="_method" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Methods ?? []) { <option value="@option">@option</option> }</select></div>
             <div><label for="dashboard-venue">@Loc["DashboardVenue"]</label><select id="dashboard-venue" @bind="_venue" disabled="@_loading"><option value="">@Loc["DashboardAll"]</option>@foreach (var option in _data?.Venues ?? []) { <option value="@option">@option</option> }</select></div>
-            <div class="filter-actions"><MudStack Row Class="filter-buttons"><MudButton Size="Size.Small" OnClick="LoadAsync" Disabled="_loading" Variant="Variant.Filled" Color="Color.Primary" id="dashboard-apply">@Loc["DashboardApply"]</MudButton><MudButton Size="Size.Small" OnClick="ResetAsync" Disabled="_loading" id="dashboard-reset">@Loc["DashboardReset"]</MudButton></MudStack></div>
+            <div class="filter-actions"><MudStack Row Class="filter-buttons"><MudButton Size="Size.Small" OnClick="ApplyAsync" Disabled="_loading" Variant="Variant.Filled" Color="Color.Primary" id="dashboard-apply">@Loc["DashboardApply"]</MudButton><MudButton Size="Size.Small" OnClick="ResetAsync" Disabled="_loading" id="dashboard-reset">@Loc["DashboardReset"]</MudButton></MudStack></div>
             @if (_preset == DashboardDatePresetEnum.Custom)
             {
                 <div class="custom-dates">

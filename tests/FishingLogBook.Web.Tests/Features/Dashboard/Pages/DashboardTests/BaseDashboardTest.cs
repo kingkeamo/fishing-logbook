@@ -23,6 +23,7 @@ public abstract class BaseDashboardTest
     protected readonly ILoggingService MockLogging = Substitute.For<ILoggingService>();
     protected readonly ITimeService MockTime = TestTimeService.WithOffset(TimeSpan.FromHours(4));
     protected Action SignOut = default!;
+    protected Action<string> SignIn = default!;
 
     protected BaseDashboardTest()
     {
@@ -46,6 +47,7 @@ public abstract class BaseDashboardTest
         var authorization = context.AddAuthorization();
         authorization.SetAuthorized("angler@example.test");
         SignOut = () => authorization.SetNotAuthorized();
+        SignIn = user => authorization.SetAuthorized(user);
         return context;
     }
 }

@@ -6,6 +6,7 @@ using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
 
 namespace FishingLogBook.Web.Features.Dashboard.Components.PersonalBestTable;
 
@@ -22,6 +23,7 @@ public partial class PersonalBestTable : ComponentBase, IDisposable
     [Parameter] public bool IsLoaded { get; set; }
     [Parameter] public string EmptyText { get; set; } = string.Empty;
     private IReadOnlyDictionary<Guid, string> _dates = new Dictionary<Guid, string>();
+    private const string DateTimeLocalFormat = "yyyy-MM-dd'T'HH:mm";
     private long _request;
 
     protected override async Task OnParametersSetAsync()
@@ -33,8 +35,24 @@ public partial class PersonalBestTable : ComponentBase, IDisposable
         {
             if (row.CaughtOn is { } caughtOn)
             {
-                var local = await Time.ToDateTimeLocalValueAsync(caughtOn, token);
-                dates[row.CatchId] = DateTime.Parse(local, CultureInfo.InvariantCulture).ToString("d", CultureInfo.CurrentCulture);
+                string local;
+                try
+                {
+                    local = await Time.ToDateTimeLocalValueAsync(caughtOn, token);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (JSException)
+                {
+                    continue;
+                }
+
+                if (DateTime.TryParseExact(local, DateTimeLocalFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+                {
+                    dates[row.CatchId] = parsed.ToString("d", CultureInfo.CurrentCulture);
+                }
             }
         }
         if (request == _request && !token.IsCancellationRequested)
