@@ -65,9 +65,9 @@ public sealed partial class MauiAuthenticationBrowser
         }
         catch (Exception exception)
         {
-            IPlatformApplication.Current?.Services.GetService<ILogger<MauiAuthenticationBrowser>>()?.LogWarning(
-                "Native authentication session completion failed with {ExceptionType}.",
-                exception.GetType().FullName);
+            IPlatformApplication.Current?.Services.GetService<ILogger<MauiAuthenticationBrowser>>()?.LogError(
+                exception,
+                "Native authentication session completion failed.");
         }
     }
 }

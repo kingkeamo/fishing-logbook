@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Photographs.Providers;
 using FishingLogBook.Mobile.Features.Photographs.Storage.Stores;
 using FishingLogBook.Mobile.IO.Adapters;
+using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Constants;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -126,13 +127,15 @@ public class WhenTestingSaveAsync : IDisposable
             rootProvider = mockRootProvider;
         }
 
-        var sut = new PhotographFileStore(mockFileSystem, rootProvider, NullLogger<PhotographFileStore>.Instance);
+        var logger = new CapturingLogger<PhotographFileStore>();
+        var sut = new PhotographFileStore(mockFileSystem, rootProvider, logger);
 
         // Act
         var relative = await sut.SaveAsync(userId, photographId, "image/jpeg", MinimalJpeg(), CancellationToken.None);
 
         // Assert
         relative.Should().BeNull();
+        logger.Entries.Should().ContainSingle(entry => ReferenceEquals(entry.Exception, failure));
         Directory.GetFiles(_root, "*", SearchOption.AllDirectories).Should().BeEmpty();
         if (stage == "root")
         {

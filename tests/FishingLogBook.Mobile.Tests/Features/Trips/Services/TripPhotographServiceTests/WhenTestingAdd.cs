@@ -62,12 +62,29 @@ public sealed class WhenTestingAdd : BaseTripPhotographServiceTest
         // Arrange
         MockPhotographs.ChooseFromGalleryAsync(ViewerId, Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(), 1, Arg.Any<CancellationToken>())
             .Returns(PhotographEditorActionResultModel.Updated([Prepared(Guid.NewGuid())]));
+        var cause = new ArgumentException("save failed");
         MockTrips.SavePhotographAsync(Arg.Any<LocalTripRecordModel>(), Arg.Any<TripPhotographViewDto>(), Arg.Any<string?>(), false, Arg.Any<CancellationToken>())
-            .Returns(Task.FromException(new ArgumentException()));
+            .Returns(Task.FromException(cause));
         // Act
         var failure = await Sut.AddAsync(Trip(), useCamera: false, CancellationToken.None);
         // Assert
         failure.Should().Be("TripPhotographAddFailed");
+        Logger.Entries.Should().ContainSingle(entry => ReferenceEquals(entry.Exception, cause));
+    }
+
+    [Fact]
+    public async Task ItShouldNotLogOrSwallowCancellationWhileSavingTheTripPhotograph()
+    {
+        // Arrange
+        MockPhotographs.ChooseFromGalleryAsync(ViewerId, Arg.Any<IReadOnlyList<PhotographEditorItemModel>>(), 1, Arg.Any<CancellationToken>())
+            .Returns(PhotographEditorActionResultModel.Updated([Prepared(Guid.NewGuid())]));
+        MockTrips.SavePhotographAsync(Arg.Any<LocalTripRecordModel>(), Arg.Any<TripPhotographViewDto>(), Arg.Any<string?>(), false, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new OperationCanceledException()));
+        // Act
+        var act = () => Sut.AddAsync(Trip(), useCamera: false, CancellationToken.None);
+        // Assert
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        Logger.Entries.Should().BeEmpty();
     }
 
     [Theory]

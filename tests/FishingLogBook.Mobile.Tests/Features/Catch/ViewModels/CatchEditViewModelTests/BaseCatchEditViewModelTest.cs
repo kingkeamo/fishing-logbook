@@ -20,6 +20,7 @@ using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Mobile.Tests.Support;
 using FishingLogBook.Shared.Catches.Services;
 using FishingLogBook.Shared.Measurements;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Catch.ViewModels.CatchEditViewModelTests;
@@ -67,7 +68,8 @@ public abstract class BaseCatchEditViewModelTest
                 MockPhotographEditor,
                 new InteractionService(Substitute.For<IInteractionPresenter>(), Text),
                 Substitute.For<IAppInfoAdapter>(),
-                Text),
+                Text,
+                NullLogger<PhotographCollectionEditorViewModel>.Instance),
             clock ?? new FixedTimeProvider(Now),
             Text,
             Substitute.For<ICatchWorkingCopyService>(),

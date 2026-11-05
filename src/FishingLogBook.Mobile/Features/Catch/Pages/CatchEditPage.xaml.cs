@@ -42,6 +42,7 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
 
         _initialized = true;
         Unloaded += OnUnloaded;
+        HandlerChanging += OnHandlerChanging;
         await _viewModel.InitializeAsync(_catchId, CancellationToken.None, _tripId);
     }
 
@@ -53,7 +54,26 @@ public partial class CatchEditPage : ContentPage, IQueryAttributable
 
     private void OnUnloaded(object? sender, EventArgs args)
     {
+        if (Navigation.NavigationStack.Contains(this))
+        {
+            return;
+        }
+
+        ReleaseViewModel();
+    }
+
+    private void OnHandlerChanging(object? sender, HandlerChangingEventArgs args)
+    {
+        if (args.NewHandler is null)
+        {
+            ReleaseViewModel();
+        }
+    }
+
+    private void ReleaseViewModel()
+    {
         Unloaded -= OnUnloaded;
+        HandlerChanging -= OnHandlerChanging;
         _viewModel.Dispose();
     }
 

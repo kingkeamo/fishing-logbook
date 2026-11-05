@@ -9,7 +9,7 @@ using FishingLogBook.Mobile.Features.OfflineAccess.Services;
 using FishingLogBook.Mobile.Features.Profile.Services;
 using FishingLogBook.Mobile.Features.Users.Clients;
 using FishingLogBook.Shared.Dtos;
-using Microsoft.Extensions.Logging.Abstractions;
+using FishingLogBook.Mobile.Tests.Support;
 using NSubstitute;
 
 namespace FishingLogBook.Mobile.Tests.Features.Authentication.Services.AuthenticationServiceTests;
@@ -33,6 +33,7 @@ public abstract class BaseAuthenticationServiceTest
     protected readonly IOfflineSessionService MockOfflineSession = Substitute.For<IOfflineSessionService>();
     protected readonly IConnectivityService MockConnectivity = Substitute.For<IConnectivityService>();
     protected readonly TimeProvider MockTimeProvider = Substitute.For<TimeProvider>();
+    protected readonly CapturingLogger<AuthenticationService> Logger = new();
     protected readonly AuthenticationService Sut;
 
     protected BaseAuthenticationServiceTest()
@@ -56,7 +57,7 @@ public abstract class BaseAuthenticationServiceTest
             MockOfflineSession,
             MockConnectivity,
             MockTimeProvider,
-            NullLogger<AuthenticationService>.Instance);
+            Logger);
     }
 
     protected PendingAuthorizationModel CreatePending(DateTimeOffset? expiresAt = null)
