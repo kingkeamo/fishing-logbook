@@ -8,10 +8,12 @@ namespace FishingLogBook.Web.Tests.Features.Authentication.Services.SignInNaviga
 
 public abstract class BaseSignInNavigationServiceTest
 {
+    protected const string ApiResource = "https://api.example.com";
+
     protected static SignInNavigationService CreateSut(BunitContext context, params string[] socialProviders)
     {
         return new SignInNavigationService(
             context.Services.GetRequiredService<NavigationManager>(),
-            new AuthConfig { SocialProviders = socialProviders });
+            new AuthConfig { ApiResource = ApiResource, SocialProviders = socialProviders });
     }
 }

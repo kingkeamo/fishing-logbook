@@ -57,7 +57,24 @@ public class WhenTestingSignInWith : BaseSignInNavigationServiceTest
         var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
         navigation.Uri.Should().Contain("authentication/login");
         var state = navigation.History.First().Options.HistoryEntryState;
-        state.Should().Contain("\"extraQueryParams\":{\"identity_provider\":\"" + expected + "\"}");
+        state.Should().Contain("\"extraQueryParams\":{\"resource\":\"" + ApiResource + "\",\"identity_provider\":\"" + expected + "\"}");
         state.Should().Contain("catches");
+    }
+
+    [Theory]
+    [InlineData(SignInProviderEnum.Google)]
+    [InlineData(SignInProviderEnum.Apple)]
+    public async Task ItShouldKeepTheApiResourceSoTheAccessTokenAudienceIsIssuedForEveryProvider(SignInProviderEnum provider)
+    {
+        // Arrange
+        await using var context = new BunitContext();
+        var sut = CreateSut(context, "google", "apple");
+
+        // Act
+        sut.SignInWith(provider);
+
+        // Assert
+        var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
+        navigation.History.First().Options.HistoryEntryState.Should().Contain("\"resource\":\"" + ApiResource + "\"");
     }
 }

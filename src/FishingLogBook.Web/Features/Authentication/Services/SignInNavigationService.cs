@@ -13,11 +13,15 @@ public sealed class SignInNavigationService : ISignInNavigationService
     private const string LoginPath = "authentication/login";
     private const string ExtraQueryParametersKey = "extraQueryParams";
 
+    private const string ResourceParameter = "resource";
+
     private readonly NavigationManager _navigation;
+    private readonly string _apiResource;
 
     public SignInNavigationService(NavigationManager navigation, AuthConfig authConfig)
     {
         _navigation = navigation;
+        _apiResource = authConfig.ApiResource;
         Providers = ConfiguredProviders(authConfig);
     }
 
@@ -55,6 +59,7 @@ public sealed class SignInNavigationService : ISignInNavigationService
                 ExtraQueryParametersKey,
                 JsonSerializer.SerializeToElement(new Dictionary<string, string>
                 {
+                    [ResourceParameter] = _apiResource,
                     [SignInProviderConstants.IdentityProviderParameter] = identityProvider
                 }));
         }
