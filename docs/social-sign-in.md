@@ -37,8 +37,11 @@ returned unchanged.
 1. The provider and its user id come from the incoming user name (`Google_<id>`,
    `SignInWithApple_<id>`). Any other provider is rejected.
 2. The IdP email must be present and `email_verified = true`, otherwise sign-in is rejected.
-3. `ListUsers` finds native users by the normalised (lower-case) and the original email. The
-   filter value is escaped. Federated `EXTERNAL_PROVIDER` shadow users are ignored.
+3. `ListUsers` finds native users with one search on the normalised (trimmed, lower-case) email.
+   The filter value is escaped and every page (`PaginationToken`) is read. If the complete
+   result cannot be inspected (the page limit is reached or Cognito repeats a token) sign-in is
+   rejected and nothing is created or linked. Each returned user's email is checked again for an
+   exact normalised match, and federated `EXTERNAL_PROVIDER` shadow users are ignored.
 4. More than one match is rejected rather than choosing one.
 5. One match must be **enabled, `CONFIRMED` and `email_verified`**; otherwise sign-in is
    rejected. The identity is then linked with `AdminLinkProviderForUser`.
@@ -74,6 +77,12 @@ Known limitations:
   account, so a **separate** native account is created for it and nothing is merged. If the
   person later signs in with their real email elsewhere, they have two accounts. This cannot
   be solved automatically; it needs the explicit connection flow.
+- The Cognito reference does not state whether the `email` filter is case-insensitive (only a
+  community answer says it is), so the Lambda searches once on the lower-case email and relies on
+  the exact check after retrieval. If the filter were case-sensitive, a native account stored
+  with upper-case letters would be missed; creating a user for the same address would then fail
+  with `UsernameExistsException`, and sign-in is rejected (`account_ambiguous`) rather than
+  linking wrongly. Verify with a mixed-case account on dev.
 - The Lambda must finish within Cognito's 5 second trigger limit. Creating a user does four
   Cognito calls.
 
@@ -191,7 +200,7 @@ Automated (this PR): Shared constants; native provider availability per platform
 `PrepareLoginAsync` adds `identity_provider=Google|SignInWithApple` with PKCE and `resource`
 and nothing for email; `BeginSignInAsync` forwards the provider; view-model visibility,
 unavailable-provider guard, failure and pending states; Web chooser buttons, localisation,
-Cognito parameter and email path; Lambda email handling for federated users; the Pre Sign-up Lambda (74 Lambda tests in total, mocked AWS SDK); `terraform
+Cognito parameter and email path; Lambda email handling for federated users; the Pre Sign-up Lambda (82 Lambda tests in total, mocked AWS SDK); `terraform
 validate` for dev and prod.
 
 Not verifiable without credentials/devices (**not run**):
@@ -210,6 +219,7 @@ Not verifiable without credentials/devices (**not run**):
 - [ ] Google first, then Apple with the matching verified email: same account (and the reverse).
 - [ ] Social first, then Forgot password on the email page: password set and email sign-in works on the same account.
 - [ ] Repeat social sign-in: no new user in the pool, no new CBDF user.
+- [ ] Native account registered with mixed-case letters in its email: Google/Apple with the same address links to it (confirms the single lower-case search finds it).
 - [ ] Apple Hide My Email: a separate account, no merge into an existing account.
 - [ ] Unverified or conflicting identity is rejected with the generic sign-in error.
 - [ ] Web, iOS and Android all sign in and call the API.

@@ -11,6 +11,8 @@ const EXTERNAL_PROVIDER_STATUS = "EXTERNAL_PROVIDER";
 const CONFIRMED_STATUS = "CONFIRMED";
 const LINK_ATTRIBUTE_NAME = "Cognito_Subject";
 const NATIVE_PROVIDER_NAME = "Cognito";
+const SEARCH_PAGE_SIZE = 60;
+const MAX_SEARCH_PAGES = 5;
 
 export class AccountLinkingError extends Error {
   constructor(code) {
@@ -54,7 +56,7 @@ function readVerifiedEmail(userAttributes) {
     throw new AccountLinkingError("email_unverified");
   }
 
-  return { raw, normalized: normalizeEmail(raw) };
+  return normalizeEmail(raw);
 }
 
 function readIdentities(account) {
@@ -92,16 +94,12 @@ function hasConflictingIdentity(account, identity) {
 }
 
 async function findNativeAccounts(gateway, email) {
-  const searches = [...new Set([email.normalized, email.raw])];
   const found = new Map();
 
-  for (const search of searches) {
-    const accounts = await gateway.listAccountsByEmail(search);
-    for (const account of accounts) {
-      const sameEmail = normalizeEmail(account.attributes.email) === email.normalized;
-      if (account.status !== EXTERNAL_PROVIDER_STATUS && sameEmail) {
-        found.set(account.username, account);
-      }
+  for (const account of await gateway.listAccountsByEmail(email)) {
+    const sameEmail = normalizeEmail(account.attributes.email) === email;
+    if (account.status !== EXTERNAL_PROVIDER_STATUS && sameEmail) {
+      found.set(account.username, account);
     }
   }
 
@@ -129,7 +127,7 @@ function generateUnusablePassword() {
 }
 
 async function provisionAccount(gateway, email, log) {
-  const created = await gateway.createAccount(email.normalized);
+  const created = await gateway.createAccount(email);
 
   try {
     await gateway.setPermanentPassword(created.username, generateUnusablePassword());
@@ -236,17 +234,39 @@ export function createCognitoGateway(client, sdk, userPoolId) {
 
   return {
     async listAccountsByEmail(email) {
-      const response = await client.send(
-        new sdk.ListUsersCommand({
-          UserPoolId: userPoolId,
-          Filter: `email = "${escapeFilterValue(email)}"`,
-          Limit: 10
-        })
-      );
+      const accounts = [];
+      const seenTokens = new Set();
+      let paginationToken;
 
-      return (response.Users ?? []).map((user) =>
-        toAccount(user.Username, user.UserStatus, user.Enabled, user.Attributes)
-      );
+      for (let page = 0; page < MAX_SEARCH_PAGES; page += 1) {
+        const response = await client.send(
+          new sdk.ListUsersCommand({
+            UserPoolId: userPoolId,
+            Filter: `email = "${escapeFilterValue(email)}"`,
+            Limit: SEARCH_PAGE_SIZE,
+            ...(paginationToken ? { PaginationToken: paginationToken } : {})
+          })
+        );
+
+        accounts.push(
+          ...(response.Users ?? []).map((user) =>
+            toAccount(user.Username, user.UserStatus, user.Enabled, user.Attributes)
+          )
+        );
+
+        paginationToken = response.PaginationToken;
+        if (!paginationToken) {
+          return accounts;
+        }
+
+        if (seenTokens.has(paginationToken)) {
+          break;
+        }
+
+        seenTokens.add(paginationToken);
+      }
+
+      throw new AccountLinkingError("account_search_incomplete");
     },
 
     async getAccount(username) {

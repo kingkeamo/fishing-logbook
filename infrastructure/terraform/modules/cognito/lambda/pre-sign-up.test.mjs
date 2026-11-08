@@ -259,13 +259,13 @@ describe("linkExternalIdentity", () => {
     assert.equal(gateway.calls.link[0].provider, "SignInWithApple");
   });
 
-  it("searches by the normalised and the original email and ignores federated shadow users", async () => {
+  it("searches once by the normalised email and ignores federated shadow users", async () => {
     const shadow = account({ username: "Google_1", status: "EXTERNAL_PROVIDER" });
     const gateway = createGateway({ accounts: [shadow, account()] });
 
     await linkExternalIdentity(event(), gateway, createLog());
 
-    assert.deepEqual(gateway.calls.list, [NORMALIZED_EMAIL, EMAIL]);
+    assert.deepEqual(gateway.calls.list, [NORMALIZED_EMAIL]);
     assert.equal(gateway.calls.link[0].destinationUsername, NATIVE_USERNAME);
   });
 
@@ -573,7 +573,7 @@ describe("createCognitoGateway", () => {
     assert.deepEqual(client.sent[0].input, {
       UserPoolId: "pool-1",
       Filter: 'email = "a\\"b\\\\@x.test"',
-      Limit: 10
+      Limit: 60
     });
     assert.deepEqual(accounts, [
       { username: "u1", status: "CONFIRMED", enabled: true, attributes: { email: "a@b.test" } }
@@ -584,6 +584,94 @@ describe("createCognitoGateway", () => {
     const gateway = createCognitoGateway(fakeClient(), fakeSdk(), "pool-1");
 
     assert.deepEqual(await gateway.listAccountsByEmail("a@b.test"), []);
+  });
+
+  function pagedClient(pages) {
+    const sent = [];
+    return {
+      sent,
+      send: async (command) => {
+        sent.push(command);
+        return pages[sent.length - 1] ?? { Users: [] };
+      }
+    };
+  }
+
+  function listedUser(username, email = "a@b.test", status = "CONFIRMED") {
+    return {
+      Username: username,
+      UserStatus: status,
+      Enabled: true,
+      Attributes: [
+        { Name: "email", Value: email },
+        { Name: "email_verified", Value: "true" }
+      ]
+    };
+  }
+
+  it("follows the pagination token until the last page and returns every account", async () => {
+    const client = pagedClient([
+      { Users: [listedUser("u1")], PaginationToken: "t1" },
+      { Users: [listedUser("u2")], PaginationToken: "t2" },
+      { Users: [listedUser("u3")] }
+    ]);
+    const gateway = createCognitoGateway(client, fakeSdk(), "pool-1");
+
+    const accounts = await gateway.listAccountsByEmail("a@b.test");
+
+    assert.deepEqual(accounts.map((item) => item.username), ["u1", "u2", "u3"]);
+    assert.equal(client.sent.length, 3);
+    assert.equal(client.sent[0].input.PaginationToken, undefined);
+    assert.equal(client.sent[1].input.PaginationToken, "t1");
+    assert.equal(client.sent[2].input.PaginationToken, "t2");
+    assert.ok(client.sent.every((command) => command.input.Filter === 'email = "a@b.test"'));
+  });
+
+  it("fails closed when the pagination token never ends", async () => {
+    const pages = Array.from({ length: 20 }, (_, index) => ({
+      Users: [],
+      PaginationToken: "t" + index
+    }));
+    const client = pagedClient(pages);
+    const gateway = createCognitoGateway(client, fakeSdk(), "pool-1");
+
+    const error = await rejection(gateway.listAccountsByEmail("a@b.test"));
+
+    assert.equal(error.code, "account_search_incomplete");
+    assert.equal(client.sent.length, 5);
+  });
+
+  it("fails closed when Cognito repeats a pagination token", async () => {
+    const client = pagedClient([
+      { Users: [listedUser("u1")], PaginationToken: "t1" },
+      { Users: [listedUser("u2")], PaginationToken: "t1" }
+    ]);
+    const gateway = createCognitoGateway(client, fakeSdk(), "pool-1");
+
+    const error = await rejection(gateway.listAccountsByEmail("a@b.test"));
+
+    assert.equal(error.code, "account_search_incomplete");
+    assert.equal(client.sent.length, 2);
+  });
+
+  it("does not swallow a failure on a later page", async () => {
+    const failure = awsError("TooManyRequestsException");
+    const client = {
+      sent: [],
+      send: async function (command) {
+        this.sent.push(command);
+        if (this.sent.length === 2) {
+          throw failure;
+        }
+
+        return { Users: [listedUser("u1")], PaginationToken: "t1" };
+      }
+    };
+    const gateway = createCognitoGateway(client, fakeSdk(), "pool-1");
+
+    const error = await rejection(gateway.listAccountsByEmail("a@b.test"));
+
+    assert.equal(error, failure);
   });
 
   it("reads an account with AdminGetUser", async () => {
@@ -656,6 +744,114 @@ describe("createCognitoGateway", () => {
         ProviderAttributeValue: "apple-id"
       }
     });
+  });
+});
+
+describe("linkExternalIdentity with a paged Cognito search", () => {
+  function sdkAndClient(pages) {
+    const sdk = {};
+    for (const name of [
+      "ListUsers",
+      "AdminGetUser",
+      "AdminCreateUser",
+      "AdminSetUserPassword",
+      "AdminDeleteUser",
+      "AdminLinkProviderForUser"
+    ]) {
+      sdk[name + "Command"] = class {
+        constructor(input) {
+          this.name = name;
+          this.input = input;
+        }
+      };
+    }
+
+    const sent = [];
+    let listCalls = 0;
+    const client = {
+      sent,
+      send: async (command) => {
+        sent.push(command);
+        if (command.name === "ListUsers") {
+          const page = pages[listCalls];
+          listCalls += 1;
+          return page ?? { Users: [] };
+        }
+
+        return {};
+      }
+    };
+
+    return { sdk, client };
+  }
+
+  function listed(username, email = NORMALIZED_EMAIL, status = "CONFIRMED") {
+    return {
+      Username: username,
+      UserStatus: status,
+      Enabled: true,
+      Attributes: [
+        { Name: "email", Value: email },
+        { Name: "email_verified", Value: "true" }
+      ]
+    };
+  }
+
+  function namesOf(client) {
+    return client.sent.map((command) => command.name);
+  }
+
+  it("links to a native account that only appears on a later page without creating another", async () => {
+    const { sdk, client } = sdkAndClient([
+      { Users: [listed("Google_1", NORMALIZED_EMAIL, "EXTERNAL_PROVIDER")], PaginationToken: "t1" },
+      { Users: [listed(NATIVE_USERNAME)] }
+    ]);
+    const gateway = createCognitoGateway(client, sdk, "pool-1");
+
+    await linkExternalIdentity(event(), gateway, createLog());
+
+    assert.equal(namesOf(client).filter((name) => name === "AdminCreateUser").length, 0);
+    assert.equal(namesOf(client).filter((name) => name === "AdminLinkProviderForUser").length, 1);
+    const link = client.sent.find((command) => command.name === "AdminLinkProviderForUser");
+    assert.equal(link.input.DestinationUser.ProviderAttributeValue, NATIVE_USERNAME);
+  });
+
+  it("rejects when two different native accounts are on different pages", async () => {
+    const { sdk, client } = sdkAndClient([
+      { Users: [listed("native-one")], PaginationToken: "t1" },
+      { Users: [listed("native-two")] }
+    ]);
+    const gateway = createCognitoGateway(client, sdk, "pool-1");
+
+    const error = await rejection(linkExternalIdentity(event(), gateway, createLog()));
+
+    assert.equal(error.code, "account_ambiguous");
+    assert.equal(namesOf(client).includes("AdminLinkProviderForUser"), false);
+    assert.equal(namesOf(client).includes("AdminCreateUser"), false);
+  });
+
+  it("treats the same account returned on two pages as one account", async () => {
+    const { sdk, client } = sdkAndClient([
+      { Users: [listed(NATIVE_USERNAME)], PaginationToken: "t1" },
+      { Users: [listed(NATIVE_USERNAME)] }
+    ]);
+    const gateway = createCognitoGateway(client, sdk, "pool-1");
+
+    await linkExternalIdentity(event(), gateway, createLog());
+
+    assert.equal(namesOf(client).filter((name) => name === "AdminLinkProviderForUser").length, 1);
+  });
+
+  it("neither creates nor links when the search cannot be completed", async () => {
+    const pages = Array.from({ length: 20 }, (_, index) => ({ Users: [], PaginationToken: "t" + index }));
+    const { sdk, client } = sdkAndClient(pages);
+    const gateway = createCognitoGateway(client, sdk, "pool-1");
+
+    const error = await rejection(linkExternalIdentity(event(), gateway, createLog()));
+
+    assert.equal(error.code, "account_search_incomplete");
+    assert.equal(namesOf(client).includes("AdminCreateUser"), false);
+    assert.equal(namesOf(client).includes("AdminLinkProviderForUser"), false);
   });
 });
 
