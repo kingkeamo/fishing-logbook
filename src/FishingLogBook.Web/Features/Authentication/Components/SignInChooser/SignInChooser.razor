@@ -5,17 +5,6 @@
         <MudText Typo="Typo.h5" Component="h1">@Loc["Auth_SignInTitle"]</MudText>
     }
     <MudStack Spacing="2" Class="@(ShowTitle ? "mt-4" : null)">
-        @foreach (var provider in SignInNavigation.Providers)
-        {
-            var selected = provider;
-            <MudButton Variant="Variant.Outlined"
-                       FullWidth="true"
-                       Size="Size.Large"
-                       OnClick="@(() => SignIn(selected))"
-                       id="@($"sign-in-{selected.ToString().ToLowerInvariant()}")">
-                @Loc[selected == SignInProviderEnum.Apple ? "Auth_ContinueWithApple" : "Auth_ContinueWithGoogle"]
-            </MudButton>
-        }
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    FullWidth="true"
@@ -24,5 +13,24 @@
                    id="sign-in-email">
             @Loc["Auth_ContinueWithEmail"]
         </MudButton>
+        @foreach (var provider in SignInNavigation.Providers)
+        {
+            var selected = provider;
+            <MudButton Variant="Variant.Outlined"
+                       FullWidth="true"
+                       Size="Size.Large"
+                       OnClick="@(() => SignIn(selected))"
+                       id="@($"sign-in-{selected.ToString().ToLowerInvariant()}")">
+                @if (selected == SignInProviderEnum.Google)
+                {
+                    <img src="images/auth/google-g.svg" class="sign-in-provider-icon" alt="" aria-hidden="true" />
+                }
+                else if (selected == SignInProviderEnum.Apple)
+                {
+                    <MudIcon Icon="@Icons.Custom.Brands.Apple" Class="sign-in-provider-icon" aria-hidden="true" />
+                }
+                @Loc[selected == SignInProviderEnum.Apple ? "Auth_ContinueWithApple" : "Auth_ContinueWithGoogle"]
+            </MudButton>
+        }
     </MudStack>
 </MudContainer>

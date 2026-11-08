@@ -18,15 +18,18 @@
     SemanticProperties.Description="{Binding Text[RestoringSession]}" />
    <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Style="{StaticResource SecondaryText}"
     HorizontalTextAlignment="Center" AutomationId="AuthenticationStatus" />
-   <Button Text="{Binding Text[ContinueWithApple]}" IsVisible="{Binding ShowApple}"
-    IsEnabled="{Binding CanSignIn}" HeightRequest="52" Clicked="OnSignInWithApple"
-    AutomationId="SignInWithApple" SemanticProperties.Description="{Binding Text[ContinueWithApple]}" />
-   <Button Text="{Binding Text[ContinueWithGoogle]}" IsVisible="{Binding ShowGoogle}"
-    IsEnabled="{Binding CanSignIn}" HeightRequest="52" Clicked="OnSignInWithGoogle"
-    AutomationId="SignInWithGoogle" SemanticProperties.Description="{Binding Text[ContinueWithGoogle]}" />
    <Button Text="{Binding Text[ContinueWithEmail]}" IsEnabled="{Binding CanSignIn}" HeightRequest="52"
     Clicked="OnSignIn" AutomationId="SignIn"
     SemanticProperties.Description="{Binding Text[ContinueWithEmail]}" />
+   <Button Text="{Binding Text[ContinueWithApple]}" IsVisible="{Binding ShowApple}"
+    IsEnabled="{Binding CanSignIn}" HeightRequest="52" Style="{StaticResource SecondaryButton}"
+    Clicked="OnSignInWithApple" AutomationId="SignInWithApple"
+    SemanticProperties.Description="{Binding Text[ContinueWithApple]}" />
+   <Button Text="{Binding Text[ContinueWithGoogle]}" IsVisible="{Binding ShowGoogle}"
+    IsEnabled="{Binding CanSignIn}" HeightRequest="52" Style="{StaticResource SecondaryButton}"
+    ImageSource="google_g.png" ContentLayout="Left,12"
+    Clicked="OnSignInWithGoogle" AutomationId="SignInWithGoogle"
+    SemanticProperties.Description="{Binding Text[ContinueWithGoogle]}" />
    <Button Text="{Binding Text[CancelSignIn]}" IsVisible="{Binding IsPending}"
     IsEnabled="{Binding CanCancel}" HeightRequest="52" Style="{StaticResource SecondaryButton}"
     Clicked="OnCancel" AutomationId="CancelSignIn"

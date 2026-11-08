@@ -41,6 +41,22 @@ public class WhenTestingRedirect : BaseRedirectToLoginTest
     }
 
     [Fact]
+    public async Task ItShouldListEmailFirstThenAppleThenGoogleWithTheGoogleIcon()
+    {
+        // Arrange
+        await using var context = CreateContext(["google", "apple"]);
+
+        // Act
+        var cut = context.Render<RedirectToLogin>();
+
+        // Assert
+        cut.FindAll("#sign-in-chooser button").Select(button => button.Id)
+            .Should().Equal("sign-in-email", "sign-in-apple", "sign-in-google");
+        cut.Find("#sign-in-google img").GetAttribute("src").Should().Be("images/auth/google-g.svg");
+        cut.FindAll("#sign-in-email img").Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task ItShouldOnlyOfferConfiguredProviders()
     {
         // Arrange
