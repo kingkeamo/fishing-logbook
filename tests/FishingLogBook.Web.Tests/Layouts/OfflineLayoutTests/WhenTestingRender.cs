@@ -110,9 +110,8 @@ public class WhenTestingRender : BaseOfflineLayoutTest
 
         // Assert
         var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
-        navigation.Uri.Should().Contain("authentication/login");
-        navigation.History.First().Options.HistoryEntryState.Should().Contain("\"returnUrl\":\"/catches\"");
-        navigation.History.First().Options.HistoryEntryState.Should().NotContain("reconnect=offline");
+        navigation.Uri.Should().Contain("sign-in?returnUrl=");
+        navigation.Uri.Should().Contain("returnUrl=%2Fcatches");
         await reconnect.DidNotReceive().AttemptAsync(Arg.Any<CancellationToken>());
     }
 
@@ -133,7 +132,7 @@ public class WhenTestingRender : BaseOfflineLayoutTest
 
         // Assert
         var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
-        navigation.History.First().Options.HistoryEntryState.Should().Contain("\"returnUrl\":\"/catches/record\"");
+        navigation.Uri.Should().Contain("sign-in?returnUrl=%2Fcatches%2Frecord");
     }
 
     [Fact]
@@ -153,7 +152,7 @@ public class WhenTestingRender : BaseOfflineLayoutTest
 
         // Assert
         var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
-        navigation.History.First().Options.HistoryEntryState.Should().Contain("\"returnUrl\":\"/catches\"");
+        navigation.Uri.Should().Contain("returnUrl=%2Fcatches");
     }
 
     [Fact]

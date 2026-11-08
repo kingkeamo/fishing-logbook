@@ -22,13 +22,15 @@ public class BaseUserMenuTest
     protected static BunitContext CreateContext(
         IProfileSummaryProvider profileSummary,
         bool isAuthenticated = true,
-        INetworkService? network = null)
+        INetworkService? network = null,
+        string[]? socialProviders = null)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
         context.Services.AddSingleton<ISignedInUserDisplayService, SignedInUserDisplayService>();
+        context.Services.AddSingleton<ISignInNavigationService, SignInNavigationService>();
         context.Services.AddSingleton(profileSummary);
         context.Services.AddSingleton(new AuthConfig
         {
@@ -36,7 +38,8 @@ public class BaseUserMenuTest
             ClientId = "test-client",
             HostedUiDomain = "https://test.auth.eu-west-2.amazoncognito.com",
             ApiResource = "https://api.test",
-            ApiScope = "https://api.test/access"
+            ApiScope = "https://api.test/access",
+            SocialProviders = socialProviders ?? []
         });
         context.Services.AddSingleton(network ?? Network(isOnline: true));
         context.Services.AddSingleton(Substitute.For<ILoggingService>());

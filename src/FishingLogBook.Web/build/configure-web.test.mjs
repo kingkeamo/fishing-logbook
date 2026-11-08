@@ -118,3 +118,35 @@ describe('production release workflow', () => {
         assert.ok(validateOnlyPosition > publishPosition);
     });
 });
+
+describe('social sign-in providers', () => {
+    const dev = {
+        ...production,
+        API_BASE_URL: 'https://fishing-logbook-dev-api.fly.dev',
+        AUTH_API_SCOPE: 'https://fishing-logbook-dev-api.fly.dev/access',
+        AUTH_API_RESOURCE: 'https://fishing-logbook-dev-api.fly.dev',
+        BUILD_VERSION: '0.0.0-dev.1',
+        BUILD_ENVIRONMENT: 'dev',
+    };
+
+    it('emits no providers when AUTH_SOCIAL_PROVIDERS is unset', () => {
+        const result = buildConfiguration({ Auth: { SocialProviders: ['google'] } }, dev, 'dev');
+        assert.deepEqual(result.Auth.SocialProviders, []);
+    });
+
+    it('emits the listed providers normalised and de-duplicated', () => {
+        const result = buildConfiguration(template, { ...dev, AUTH_SOCIAL_PROVIDERS: ' Google, apple ,google' }, 'dev');
+        assert.deepEqual(result.Auth.SocialProviders, ['google', 'apple']);
+    });
+
+    it('rejects an unsupported provider', () => {
+        assert.throws(
+            () => buildConfiguration(template, { ...dev, AUTH_SOCIAL_PROVIDERS: 'google,facebook' }, 'dev'),
+            /facebook/);
+    });
+
+    it('keeps providers empty for production when not set', () => {
+        const result = buildConfiguration(template, production, 'prod');
+        assert.deepEqual(result.Auth.SocialProviders, []);
+    });
+});

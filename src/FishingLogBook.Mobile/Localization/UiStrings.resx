@@ -238,6 +238,9 @@
   <data name="SignInTitle" xml:space="preserve"><value>Sign in to your logbook</value></data>
   <data name="SignInBody" xml:space="preserve"><value>Continue securely in your browser. Your password is never entered in this app.</value></data>
   <data name="SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="ContinueWithApple" xml:space="preserve"><value>Continue with Apple</value></data>
+  <data name="ContinueWithGoogle" xml:space="preserve"><value>Continue with Google</value></data>
+  <data name="ContinueWithEmail" xml:space="preserve"><value>Continue with email</value></data>
   <data name="CancelSignIn" xml:space="preserve"><value>Cancel sign-in</value></data>
   <data name="SigningIn" xml:space="preserve"><value>Waiting for secure sign-in to finish in your browser.</value></data>
   <data name="RestoringSession" xml:space="preserve"><value>Restoring your secure session.</value></data>

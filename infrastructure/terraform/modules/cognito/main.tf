@@ -112,7 +112,7 @@ resource "aws_cognito_user_pool_client" "pwa" {
     "profile",
     "${local.api_identifier}/${local.api_scope_name}",
   ]
-  supported_identity_providers = ["COGNITO"]
+  supported_identity_providers = local.supported_identity_providers
   callback_urls                = var.callback_urls
   logout_urls                  = var.logout_urls
 
@@ -137,7 +137,11 @@ resource "aws_cognito_user_pool_client" "pwa" {
 
   explicit_auth_flows = []
 
-  depends_on = [aws_cognito_resource_server.api]
+  depends_on = [
+    aws_cognito_resource_server.api,
+    aws_cognito_identity_provider.google,
+    aws_cognito_identity_provider.apple,
+  ]
 }
 
 # Cognito's native PKCE code exchange supports S256. The app supplies the verifier and
@@ -157,7 +161,7 @@ resource "aws_cognito_user_pool_client" "native" {
     "profile",
     "${local.api_identifier}/${local.api_scope_name}",
   ]
-  supported_identity_providers = ["COGNITO"]
+  supported_identity_providers = local.supported_identity_providers
   callback_urls                = var.native_callback_urls
   logout_urls                  = var.native_logout_urls
 
@@ -182,7 +186,11 @@ resource "aws_cognito_user_pool_client" "native" {
 
   explicit_auth_flows = []
 
-  depends_on = [aws_cognito_resource_server.api]
+  depends_on = [
+    aws_cognito_resource_server.api,
+    aws_cognito_identity_provider.google,
+    aws_cognito_identity_provider.apple,
+  ]
 }
 
 resource "aws_cognito_user_pool_domain" "this" {

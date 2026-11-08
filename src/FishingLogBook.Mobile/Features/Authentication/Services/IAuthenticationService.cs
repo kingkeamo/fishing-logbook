@@ -1,6 +1,7 @@
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
 using FishingLogBook.Mobile.Features.Authentication.Providers;
+using FishingLogBook.Shared.Enums;
 
 namespace FishingLogBook.Mobile.Features.Authentication.Services;
 
@@ -13,7 +14,9 @@ public interface IAuthenticationService : IAccessTokenProvider
     bool HasPendingAuthorization { get; }
 
     Task<AuthenticationResultEnum> InitializeAsync(CancellationToken cancellationToken);
-    Task<AuthenticationResultEnum> BeginSignInAsync(CancellationToken cancellationToken);
+    Task<AuthenticationResultEnum> BeginSignInAsync(
+        CancellationToken cancellationToken,
+        SignInProviderEnum provider = SignInProviderEnum.EmailPassword);
     Task<AuthenticationResultEnum> CompleteSignInAsync(Uri callback, CancellationToken cancellationToken);
     Task CancelSignInAsync();
     Task SignOutAsync(CancellationToken cancellationToken);

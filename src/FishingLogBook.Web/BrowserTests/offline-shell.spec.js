@@ -57,8 +57,9 @@ test.describe('Published offline application shell', () => {
         await expect(page.locator('#public-landing-page')).toBeVisible({ timeout: 15000 });
 
         await expect(page.locator('#landing-open-offline')).toHaveCount(0);
-        await expect(page.locator('#landing-create-account')).toBeVisible();
-        await expect(page.locator('#landing-sign-in')).toBeVisible();
+        await expect(page.locator('#sign-in-email')).toBeVisible();
+        await expect(page.locator('#sign-in-google')).toBeVisible();
+        await expect(page.locator('#sign-in-apple')).toBeVisible();
     });
 
     test('offers Open Offline on Landing when the API is unreachable, even with the browser online', async ({ context, page }) => {
@@ -71,8 +72,9 @@ test.describe('Published offline application shell', () => {
         await expect(page.locator('#public-landing-page')).toBeVisible({ timeout: 15000 });
 
         await expect(page.locator('#landing-open-offline')).toBeVisible({ timeout: 15000 });
-        await expect(page.locator('#landing-create-account')).toHaveCount(0);
-        await expect(page.locator('#landing-sign-in')).toHaveCount(0);
+        await expect(page.locator('#sign-in-email')).toHaveCount(0);
+        await expect(page.locator('#sign-in-google')).toHaveCount(0);
+        await expect(page.locator('#sign-in-apple')).toHaveCount(0);
     });
 
     test('opens read-only offline diagnostics from the shared header during cold offline startup', async ({ context, page }) => {

@@ -139,6 +139,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatalogueLocalizer, CatalogueLocalizer>();
         services.AddScoped<ICultureService, CultureService>();
         services.AddScoped<ISignedInUserDisplayService, SignedInUserDisplayService>();
+        services.AddScoped<ISignInNavigationService, SignInNavigationService>();
         services.AddMudServices();
         services.AddScoped<IModalService, ModalService>();
         services.AddTransient<MudLocalizer, FishingLogBookMudLocalizer>();

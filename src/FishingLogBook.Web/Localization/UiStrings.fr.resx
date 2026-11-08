@@ -804,6 +804,18 @@
   <data name="Auth_SignOut" xml:space="preserve">
     <value>Déconnexion</value>
   </data>
+  <data name="Auth_SignInTitle" xml:space="preserve">
+    <value>Connectez-vous à votre carnet</value>
+  </data>
+  <data name="Auth_ContinueWithApple" xml:space="preserve">
+    <value>Continuer avec Apple</value>
+  </data>
+  <data name="Auth_ContinueWithGoogle" xml:space="preserve">
+    <value>Continuer avec Google</value>
+  </data>
+  <data name="Auth_ContinueWithEmail" xml:space="preserve">
+    <value>Continuer avec un e-mail</value>
+  </data>
   <data name="Auth_UserMenu" xml:space="preserve">
     <value>Menu du compte</value>
   </data>

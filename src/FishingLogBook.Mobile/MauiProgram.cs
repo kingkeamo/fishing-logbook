@@ -124,6 +124,7 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IAccessTokenProvider>(
             services => services.GetRequiredService<AuthenticationService>());
         builder.Services.AddSingleton<AuthenticationCallbackHandler>();
+        builder.Services.AddSingleton<ISignInProviderService, SignInProviderService>();
         builder.Services.AddTransient<AuthenticationViewModel>();
         builder.Services.AddTransient<AuthenticationPage>();
         builder.Services.AddTransient<ApiBearerHandler>();

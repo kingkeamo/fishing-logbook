@@ -111,3 +111,53 @@ variable "native_logout_urls" {
     error_message = "Native logout URLs must be exact HTTPS URLs or reverse-domain private-use scheme URLs without wildcards, query strings, or fragments."
   }
 }
+
+variable "google_client_id" {
+  type        = string
+  description = "Google OAuth 2.0 web client ID. Empty disables Continue with Google. Not a secret, but account-specific: supply locally."
+  default     = ""
+}
+
+variable "google_client_secret" {
+  type        = string
+  description = "Google OAuth 2.0 web client secret. Supply through TF_VAR_google_client_secret; never commit."
+  default     = ""
+  sensitive   = true
+
+  validation {
+    condition     = var.google_client_id == "" || var.google_client_secret != ""
+    error_message = "google_client_secret is required when google_client_id is set."
+  }
+}
+
+variable "apple_services_id" {
+  type        = string
+  description = "Sign in with Apple Services ID (the OAuth client ID). Empty disables Continue with Apple. Supply locally."
+  default     = ""
+}
+
+variable "apple_team_id" {
+  type        = string
+  description = "Apple Developer Team ID. Required when apple_services_id is set."
+  default     = ""
+}
+
+variable "apple_key_id" {
+  type        = string
+  description = "Key ID of the Sign in with Apple private key. Required when apple_services_id is set."
+  default     = ""
+}
+
+variable "apple_private_key" {
+  type        = string
+  description = "Contents of the Sign in with Apple .p8 private key. Supply through TF_VAR_apple_private_key; never commit."
+  default     = ""
+  sensitive   = true
+
+  validation {
+    condition = var.apple_services_id == "" || (
+      var.apple_team_id != "" && var.apple_key_id != "" && var.apple_private_key != ""
+    )
+    error_message = "apple_team_id, apple_key_id and apple_private_key are required when apple_services_id is set."
+  }
+}

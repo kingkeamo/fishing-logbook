@@ -891,6 +891,9 @@ Copy Terraform outputs into (these values are public identifiers, not secrets):
 - GitHub `dev` environment **variables** (not secrets): `AUTH_AUTHORITY`, `AUTH_CLIENT_ID`,
   `AUTH_API_SCOPE` (`https://fishing-logbook-dev-api.fly.dev/access`), `AUTH_API_RESOURCE`
   (`https://fishing-logbook-dev-api.fly.dev`). Missing variables fail `deploy-web`.
+  Optional `AUTH_SOCIAL_PROVIDERS` (comma-separated: `google`, `apple`) turns on the matching
+  Continue with buttons; unset means email/password only. Set it only after the provider exists
+  in Cognito (see `docs/social-sign-in.md`).
 - Fly.io Dev API env in `infrastructure/fly/fly.dev.toml`: `Auth__Authority`,
   `Auth__ApprovedClientIds__0`, `Auth__ApprovedClientIds__1`, `Auth__ApiScope`,
   `Auth__ApiResource`

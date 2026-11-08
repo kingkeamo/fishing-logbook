@@ -8,5 +8,6 @@
   "RedirectUri": "https://fishing-logbook-dev.pages.dev/native/oauth2redirect",
   "LogoutRedirectUri": "https://fishing-logbook-dev.pages.dev/native/signedout",
   "SchemeRedirectUri": "com.fishinglogbook.mobile.demo://oauth2redirect",
-  "SchemeLogoutRedirectUri": "com.fishinglogbook.mobile.demo://signedout"
+  "SchemeLogoutRedirectUri": "com.fishinglogbook.mobile.demo://signedout",
+  "SocialProviders": [ "google", "apple" ]
 }

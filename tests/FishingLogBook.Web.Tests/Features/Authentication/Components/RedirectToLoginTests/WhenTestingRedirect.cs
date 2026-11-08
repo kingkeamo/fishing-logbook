@@ -1,31 +1,108 @@
 using AwesomeAssertions;
 using Bunit;
+using Bunit.TestDoubles;
 using FishingLogBook.Web.Features.Authentication.Components.RedirectToLogin;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
-using MudBlazor.Services;
 
 namespace FishingLogBook.Web.Tests.Features.Authentication.Components.RedirectToLoginTests;
 
-public class WhenTestingRedirect
+public class WhenTestingRedirect : BaseRedirectToLoginTest
 {
     [Fact]
-    public async Task ItShouldNavigateToLogin()
+    public async Task ItShouldNavigateStraightToLoginWhenNoSocialProvidersAreConfigured()
     {
         // Arrange
-        await using var context = new BunitContext();
-        context.JSInterop.Mode = JSRuntimeMode.Loose;
-        context.Services.AddMudServices();
-        context.Services.AddAuthorizationCore();
-        context.Services.AddSingleton<AuthenticationStateProvider>(new TestAuthenticationStateProvider(false));
-        context.Services.AddCascadingAuthenticationState();
+        await using var context = CreateContext([]);
 
         // Act
-        context.Render<RedirectToLogin>();
+        var cut = context.Render<RedirectToLogin>();
         var uri = context.Services.GetRequiredService<NavigationManager>().Uri;
 
         // Assert
         uri.Should().Contain("authentication/login");
+        cut.FindAll("#sign-in-chooser").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldOfferAppleGoogleAndEmailWithoutNavigatingUntilOneIsChosen()
+    {
+        // Arrange
+        await using var context = CreateContext(["google", "apple"]);
+
+        // Act
+        var cut = context.Render<RedirectToLogin>();
+
+        // Assert
+        cut.Find("#sign-in-apple").TextContent.Trim().Should().Be("Continue with Apple");
+        cut.Find("#sign-in-google").TextContent.Trim().Should().Be("Continue with Google");
+        cut.Find("#sign-in-email").TextContent.Trim().Should().Be("Continue with email");
+        context.Services.GetRequiredService<NavigationManager>().Uri.Should().NotContain("authentication/login");
+    }
+
+    [Fact]
+    public async Task ItShouldListEmailFirstThenAppleThenGoogleWithTheGoogleIcon()
+    {
+        // Arrange
+        await using var context = CreateContext(["google", "apple"]);
+
+        // Act
+        var cut = context.Render<RedirectToLogin>();
+
+        // Assert
+        cut.FindAll("#sign-in-chooser button").Select(button => button.Id)
+            .Should().Equal("sign-in-email", "sign-in-apple", "sign-in-google");
+        cut.Find("#sign-in-google img").GetAttribute("src").Should().Be("images/auth/google-g.svg");
+        cut.FindAll("#sign-in-email img").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ItShouldOnlyOfferConfiguredProviders()
+    {
+        // Arrange
+        await using var context = CreateContext(["google", "facebook"]);
+
+        // Act
+        var cut = context.Render<RedirectToLogin>();
+
+        // Assert
+        cut.FindAll("#sign-in-google").Should().HaveCount(1);
+        cut.FindAll("#sign-in-apple").Should().BeEmpty();
+        cut.FindAll("#sign-in-email").Should().HaveCount(1);
+    }
+
+    [Theory]
+    [InlineData("#sign-in-google", "Google")]
+    [InlineData("#sign-in-apple", "SignInWithApple")]
+    public async Task ItShouldRequestTheChosenProviderFromCognito(string selector, string expectedProvider)
+    {
+        // Arrange
+        await using var context = CreateContext(["google", "apple"]);
+        var cut = context.Render<RedirectToLogin>();
+
+        // Act
+        await cut.Find(selector).ClickAsync();
+
+        // Assert
+        var navigation = context.Services.GetRequiredService<BunitNavigationManager>();
+        navigation.Uri.Should().Contain("authentication/login");
+        navigation.History.First().Options.HistoryEntryState.Should().Contain("identity_provider").And.Contain(expectedProvider);
+    }
+
+    [Fact]
+    public async Task ItShouldKeepEmailPasswordSignInWithoutPreselectingAProvider()
+    {
+        // Arrange
+        await using var context = CreateContext(["google", "apple"]);
+        var cut = context.Render<RedirectToLogin>();
+
+        // Act
+        await cut.Find("#sign-in-email").ClickAsync();
+
+        // Assert
+        var navigation = context.Services.GetRequiredService<BunitNavigationManager>();
+        navigation.Uri.Should().Contain("authentication/login");
+        navigation.History.First().Options.HistoryEntryState.Should().NotContain("identity_provider");
     }
 }
+
