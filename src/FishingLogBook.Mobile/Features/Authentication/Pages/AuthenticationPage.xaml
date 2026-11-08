@@ -23,6 +23,7 @@
     SemanticProperties.Description="{Binding Text[ContinueWithEmail]}" />
    <Button Text="{Binding Text[ContinueWithApple]}" IsVisible="{Binding ShowApple}"
     IsEnabled="{Binding CanSignIn}" HeightRequest="52" Style="{StaticResource SecondaryButton}"
+    ImageSource="apple_logo.png" ContentLayout="Left,12"
     Clicked="OnSignInWithApple" AutomationId="SignInWithApple"
     SemanticProperties.Description="{Binding Text[ContinueWithApple]}" />
    <Button Text="{Binding Text[ContinueWithGoogle]}" IsVisible="{Binding ShowGoogle}"
