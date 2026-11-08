@@ -1,6 +1,6 @@
 # Amazon Cognito user pool, resource server, public PWA and native app clients,
-# hosted-UI domain, managed-login branding, and Pre Token Generation Lambda (V2_0)
-# for one environment.
+# hosted-UI domain, managed-login branding, Pre Sign-up Lambda (account linking), and
+# Pre Token Generation Lambda (V2_0) for one environment.
 #
 # The PWA is a public browser client: generate_secret is false. OAuth is Authorization
 # Code only (no implicit, no client_credentials). PKCE S256 is enforced by the Blazor
@@ -66,6 +66,7 @@ resource "aws_cognito_user_pool" "this" {
   # pre_token_generation and pre_token_generation_config must use the same ARN.
   # V2_0 is required so the trigger can add claims to access tokens (V1_0 is ID-token only).
   lambda_config {
+    pre_sign_up          = aws_lambda_function.pre_sign_up.arn
     pre_token_generation = aws_lambda_function.pre_token_generation.arn
 
     pre_token_generation_config {
