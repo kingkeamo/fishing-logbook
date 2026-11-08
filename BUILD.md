@@ -893,7 +893,9 @@ Copy Terraform outputs into (these values are public identifiers, not secrets):
   (`https://fishing-logbook-dev-api.fly.dev`). Missing variables fail `deploy-web`.
   Optional `AUTH_SOCIAL_PROVIDERS` (comma-separated: `google`, `apple`) turns on the matching
   Continue with buttons; unset means email/password only. Set it only after the provider exists
-  in Cognito (see `docs/social-sign-in.md`).
+  in Cognito (see `docs/social-sign-in.md`). The production deployment
+  (`deploy-production.yml`) reads the same `AUTH_SOCIAL_PROVIDERS` variable from the GitHub
+  `prod` environment; set it there only after the providers exist in the production Cognito pool.
 - Fly.io Dev API env in `infrastructure/fly/fly.dev.toml`: `Auth__Authority`,
   `Auth__ApprovedClientIds__0`, `Auth__ApprovedClientIds__1`, `Auth__ApiScope`,
   `Auth__ApiResource`
