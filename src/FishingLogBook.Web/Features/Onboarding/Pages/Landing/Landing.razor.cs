@@ -1,4 +1,5 @@
 using FishingLogBook.Web.Browser.Network;
+using FishingLogBook.Web.Features.Authentication.Services;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.OfflineAccess.Models;
 using FishingLogBook.Web.Features.OfflineAccess.Services;
@@ -36,6 +37,7 @@ public partial class Landing : ComponentBase, IDisposable
     [Inject] private IOfflineOwnerContextService OfflineOwnerContext { get; set; } = default!;
     [Inject] private ILoggingService Logging { get; set; } = default!;
     [Inject] private INetworkService Network { get; set; } = default!;
+    [Inject] private ISignInNavigationService SignInNavigation { get; set; } = default!;
 
     protected override void OnInitialized()
     {
@@ -214,12 +216,12 @@ public partial class Landing : ComponentBase, IDisposable
 
     private void BeginCreateAccount()
     {
-        Navigation.NavigateToLogin("authentication/login");
+        SignInNavigation.BeginSignIn();
     }
 
     private void BeginSignIn()
     {
-        Navigation.NavigateToLogin("authentication/login");
+        SignInNavigation.BeginSignIn();
     }
 
     public void Dispose()

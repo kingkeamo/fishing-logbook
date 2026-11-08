@@ -6,7 +6,6 @@ using FishingLogBook.Web.Features.Trips.Models;
 using FishingLogBook.Web.Features.Trips.Services;
 using FishingLogBook.Web.Localization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 
@@ -117,13 +116,7 @@ public partial class OfflineLayout : LayoutComponentBase, IDisposable
     {
         var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
         var returnRoute = OfflineReconnectReturnRoute.Resolve(currentPath);
-        Navigation.NavigateToLogin(
-            "authentication/login",
-            new InteractiveRequestOptions
-            {
-                Interaction = InteractionType.SignIn,
-                ReturnUrl = returnRoute
-            });
+        Navigation.NavigateTo($"sign-in?returnUrl={Uri.EscapeDataString(returnRoute)}");
     }
 
     public void Dispose()

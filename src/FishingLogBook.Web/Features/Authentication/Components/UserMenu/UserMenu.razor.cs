@@ -24,6 +24,9 @@ public partial class UserMenu : ComponentBase, IDisposable
     private NavigationManager Navigation { get; set; } = default!;
 
     [Inject]
+    private ISignInNavigationService SignInNavigation { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<UiStrings> Loc { get; set; } = default!;
 
     [Inject]
@@ -150,7 +153,7 @@ public partial class UserMenu : ComponentBase, IDisposable
 
     private void BeginSignIn()
     {
-        Navigation.NavigateToLogin("authentication/login");
+        SignInNavigation.BeginSignIn();
     }
 
     private async Task BeginSignOut()

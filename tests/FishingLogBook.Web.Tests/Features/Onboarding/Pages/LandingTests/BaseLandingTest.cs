@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Web.Browser.Network;
@@ -36,6 +37,9 @@ public class BaseLandingTest
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
+        context.Services.AddSingleton<ISignInNavigationService>(provider => new SignInNavigationService(
+            provider.GetRequiredService<NavigationManager>(),
+            new AuthConfig()));
         context.Services.AddSingleton(onboarding);
         context.Services.AddSingleton(logging ?? Substitute.For<ILoggingService>());
         context.Services.AddSingleton(offlineAccessDevice ?? OfflineAccessDevice(hasReadyEntitlement: false));

@@ -1,5 +1,6 @@
 using Bunit;
 using FishingLogBook.Web.Configuration;
+using FishingLogBook.Web.Features.Authentication.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -14,6 +15,7 @@ public abstract class BaseRedirectToLoginTest
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         context.Services.AddMudServices();
         context.Services.AddLocalization();
+        context.Services.AddSingleton<ISignInNavigationService, SignInNavigationService>();
         context.Services.AddAuthorizationCore();
         context.Services.AddSingleton<AuthenticationStateProvider>(new TestAuthenticationStateProvider(false));
         context.Services.AddCascadingAuthenticationState();

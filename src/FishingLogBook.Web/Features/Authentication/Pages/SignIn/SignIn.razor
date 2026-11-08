@@ -1,0 +1,6 @@
+@page "/sign-in"
+@using FishingLogBook.Web.Features.Authentication.Components.SignInChooser
+@if (SignInNavigation.Providers.Count > 0)
+{
+    <SignInChooser ReturnUrl="@ReturnUrl" />
+}

@@ -13,7 +13,7 @@ chooser. Email/password remains available everywhere.
 | Terraform (`modules/cognito/identity-providers.tf`) | Creates `aws_cognito_identity_provider` for Google and Apple only when their IDs are set; adds them to both app clients' `supported_identity_providers`. Secrets are `sensitive` variables supplied via `TF_VAR_*`. |
 | Attribute mapping | `email`, `email_verified`, `username = sub` for both providers. `email_verified` must be mapped: the Pre Token Generation Lambda only adds `email` to the access token when it is verified, and the API returns 401 for tokens without `email`. |
 | Native (iOS/Android) | `Continue with Apple` (iOS only), `Continue with Google` (iOS and Android), `Continue with email`. Buttons appear only when `SocialProviders` in `mobileauth.<env>.json` lists the provider **and** the platform supports it. |
-| Web/PWA | `RedirectToLogin` shows the same choices when `Auth:SocialProviders` is non-empty. With no providers configured it redirects straight to Cognito as before. |
+| Web/PWA | Every sign-in entry point (app-bar Sign in and Create account, landing page, offline reconnect, protected-page redirect) goes through `ISignInNavigationService`. When `Auth:SocialProviders` is non-empty it opens the `/sign-in` chooser; with none configured it goes straight to Cognito as before. The chosen provider is sent as `identity_provider`. |
 | API | Unchanged. `Provider = "Cognito"`, `Subject = sub`; a federated user is a different Cognito user with a different `sub`. |
 
 Apple is not offered on Android: Apple's guideline 4.8 requires it wherever Google is offered
