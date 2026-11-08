@@ -142,11 +142,24 @@ describe("parseProviderIdentity", () => {
     });
   });
 
+  it("recognises the lower-case user name Cognito produces for a case-insensitive pool", () => {
+    assert.deepEqual(parseProviderIdentity("google_123"), { provider: "Google", providerUserId: "123" });
+    assert.deepEqual(parseProviderIdentity(`signinwithapple_${APPLE_ID}`), {
+      provider: "SignInWithApple",
+      providerUserId: APPLE_ID
+    });
+  });
+
+  it("recognises mixed-case provider prefixes and returns the canonical provider name", () => {
+    assert.equal(parseProviderIdentity("GOOGLE_1").provider, "Google");
+    assert.equal(parseProviderIdentity("SignInWithApple_1").provider, "SignInWithApple");
+  });
+
   it("keeps underscores that belong to the provider user id", () => {
     assert.equal(parseProviderIdentity("Google_a_b").providerUserId, "a_b");
   });
 
-  for (const userName of ["Facebook_1", "Google_", "Google", "_1", "", undefined, "google_1"]) {
+  for (const userName of ["Facebook_1", "Google_", "Google", "_1", "", undefined]) {
     it(`rejects ${JSON.stringify(userName)}`, () => {
       assert.throws(() => parseProviderIdentity(userName), (error) => error.code === "unsupported_identity");
     });
@@ -237,6 +250,21 @@ describe("linkExternalIdentity", () => {
     ]);
     assert.deepEqual(gateway.calls.create, []);
     assert.deepEqual(gateway.calls.password, []);
+  });
+
+  it("links with the canonical provider name when Cognito lower-cases the user name", async () => {
+    const google = createGateway({ accounts: [account()] });
+    const apple = createGateway({ accounts: [account()] });
+
+    await linkExternalIdentity(event({ userName: `google_${GOOGLE_ID}` }), google, createLog());
+    await linkExternalIdentity(event({ userName: `signinwithapple_${APPLE_ID}` }), apple, createLog());
+
+    assert.deepEqual(google.calls.link, [
+      { destinationUsername: NATIVE_USERNAME, provider: "Google", providerUserId: GOOGLE_ID }
+    ]);
+    assert.deepEqual(apple.calls.link, [
+      { destinationUsername: NATIVE_USERNAME, provider: "SignInWithApple", providerUserId: APPLE_ID }
+    ]);
   });
 
   it("links an Apple identity to an eligible native account", async () => {

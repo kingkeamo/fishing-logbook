@@ -6,7 +6,10 @@
 import { randomBytes } from "node:crypto";
 
 const EXTERNAL_PROVIDER_TRIGGER = "PreSignUp_ExternalProvider";
-const SUPPORTED_PROVIDERS = new Set(["Google", "SignInWithApple"]);
+const SUPPORTED_PROVIDERS = new Map([
+  ["google", "Google"],
+  ["signinwithapple", "SignInWithApple"]
+]);
 const EXTERNAL_PROVIDER_STATUS = "EXTERNAL_PROVIDER";
 const CONFIRMED_STATUS = "CONFIRMED";
 const LINK_ATTRIBUTE_NAME = "Cognito_Subject";
@@ -25,10 +28,11 @@ export class AccountLinkingError extends Error {
 export function parseProviderIdentity(userName) {
   const name = typeof userName === "string" ? userName : "";
   const separator = name.indexOf("_");
-  const provider = separator > 0 ? name.slice(0, separator) : "";
+  const prefix = separator > 0 ? name.slice(0, separator) : "";
   const providerUserId = separator > 0 ? name.slice(separator + 1) : "";
+  const provider = SUPPORTED_PROVIDERS.get(prefix.toLowerCase());
 
-  if (!SUPPORTED_PROVIDERS.has(provider) || providerUserId.length === 0) {
+  if (provider === undefined || providerUserId.length === 0) {
     throw new AccountLinkingError("unsupported_identity");
   }
 
