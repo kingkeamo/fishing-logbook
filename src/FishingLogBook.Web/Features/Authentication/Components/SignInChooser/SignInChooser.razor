@@ -1,7 +1,10 @@
 @using FishingLogBook.Shared.Enums
 <MudContainer MaxWidth="MaxWidth.Small" Class="sign-in-chooser" id="sign-in-chooser">
-    <MudText Typo="Typo.h5" Component="h1">@Loc["Auth_SignInTitle"]</MudText>
-    <MudStack Spacing="2" Class="mt-4">
+    @if (ShowTitle)
+    {
+        <MudText Typo="Typo.h5" Component="h1">@Loc["Auth_SignInTitle"]</MudText>
+    }
+    <MudStack Spacing="2" Class="@(ShowTitle ? "mt-4" : null)">
         @foreach (var provider in SignInNavigation.Providers)
         {
             var selected = provider;

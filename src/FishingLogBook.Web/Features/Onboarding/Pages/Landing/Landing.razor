@@ -1,3 +1,4 @@
+@using FishingLogBook.Web.Features.Authentication.Components.SignInChooser
 @page "/"
 
 <PageTitle>@Loc["Landing_PageTitle"]</PageTitle>
@@ -23,8 +24,15 @@
             <MudStack Spacing="2" Class="landing-actions">
                 @if (_isOnline != false)
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginCreateAccount" id="landing-create-account">@Loc["Auth_CreateAccount"]</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginSignIn" id="landing-sign-in">@Loc["Auth_SignIn"]</MudButton>
+                    @if (SignInNavigation.Providers.Count > 0)
+                    {
+                        <SignInChooser ShowTitle="false" ReturnUrl="@Navigation.Uri" />
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginCreateAccount" id="landing-create-account">@Loc["Auth_CreateAccount"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="BeginSignIn" id="landing-sign-in">@Loc["Auth_SignIn"]</MudButton>
+                    }
                 }
                 @if (_isOnline == false && _offlineAvailability == OfflineAvailabilityState.Ready)
                 {

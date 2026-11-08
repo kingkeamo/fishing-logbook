@@ -11,6 +11,9 @@ public partial class SignInChooser : ComponentBase
     [Parameter]
     public string? ReturnUrl { get; set; }
 
+    [Parameter]
+    public bool ShowTitle { get; set; } = true;
+
     [Inject]
     private ISignInNavigationService SignInNavigation { get; set; } = default!;
 
