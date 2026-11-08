@@ -95,6 +95,7 @@ jobs:
           AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
           AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
           AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+          AUTH_SOCIAL_PROVIDERS: ${{ vars.AUTH_SOCIAL_PROVIDERS }}
           BUILD_VERSION: ${{ inputs.release_tag }}
           BUILD_SHA: ${{ needs.validate.outputs.sha }}
           BUILD_ENVIRONMENT: prod
@@ -113,6 +114,7 @@ jobs:
           AUTH_HOSTED_UI_DOMAIN: ${{ vars.AUTH_HOSTED_UI_DOMAIN }}
           AUTH_API_SCOPE: ${{ vars.AUTH_API_SCOPE }}
           AUTH_API_RESOURCE: ${{ vars.AUTH_API_RESOURCE }}
+          AUTH_SOCIAL_PROVIDERS: ${{ vars.AUTH_SOCIAL_PROVIDERS }}
           BUILD_VERSION: ${{ inputs.release_tag }}
           BUILD_SHA: ${{ needs.validate.outputs.sha }}
           BUILD_ENVIRONMENT: prod

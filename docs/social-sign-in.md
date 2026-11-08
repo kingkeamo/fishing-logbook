@@ -35,7 +35,10 @@ Google or Apple identity appears (`PreSignUp_ExternalProvider`). Every other tri
 returned unchanged.
 
 1. The provider and its user id come from the incoming user name (`Google_<id>`,
-   `SignInWithApple_<id>`). Any other provider is rejected.
+   `SignInWithApple_<id>`). The pool's user names are case-insensitive and Cognito can pass them
+   lower-cased (`google_<id>`), so the prefix is matched case-insensitively and mapped to the
+   canonical provider name (`Google`, `SignInWithApple`) before linking. Any other provider is
+   rejected.
 2. The IdP email must be present and `email_verified = true`, otherwise sign-in is rejected.
 3. `ListUsers` finds native users with one search on the normalised (trimmed, lower-case) email.
    The filter value is escaped and every page (`PaginationToken`) is read. If the complete
@@ -200,7 +203,7 @@ Automated (this PR): Shared constants; native provider availability per platform
 `PrepareLoginAsync` adds `identity_provider=Google|SignInWithApple` with PKCE and `resource`
 and nothing for email; `BeginSignInAsync` forwards the provider; view-model visibility,
 unavailable-provider guard, failure and pending states; Web chooser buttons, localisation,
-Cognito parameter and email path; Lambda email handling for federated users; the Pre Sign-up Lambda (82 Lambda tests in total, mocked AWS SDK); `terraform
+Cognito parameter and email path; Lambda email handling for federated users; the Pre Sign-up Lambda (84 Lambda tests in total, mocked AWS SDK); `terraform
 validate` for dev and prod.
 
 Not verifiable without credentials/devices (**not run**):
