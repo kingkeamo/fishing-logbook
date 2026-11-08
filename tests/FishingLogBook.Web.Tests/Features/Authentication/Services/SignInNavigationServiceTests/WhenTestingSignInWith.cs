@@ -57,7 +57,7 @@ public class WhenTestingSignInWith : BaseSignInNavigationServiceTest
         var navigation = (BunitNavigationManager)context.Services.GetRequiredService<NavigationManager>();
         navigation.Uri.Should().Contain("authentication/login");
         var state = navigation.History.First().Options.HistoryEntryState;
-        state.Should().Contain("identity_provider").And.Contain(expected);
+        state.Should().Contain("\"extraQueryParams\":{\"identity_provider\":\"" + expected + "\"}");
         state.Should().Contain("catches");
     }
 }

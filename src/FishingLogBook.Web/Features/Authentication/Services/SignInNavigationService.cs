@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Enums;
 using FishingLogBook.Web.Configuration;
@@ -10,6 +11,7 @@ public sealed class SignInNavigationService : ISignInNavigationService
 {
     public const string SignInRoute = "sign-in";
     private const string LoginPath = "authentication/login";
+    private const string ExtraQueryParametersKey = "extraQueryParams";
 
     private readonly NavigationManager _navigation;
 
@@ -49,7 +51,12 @@ public sealed class SignInNavigationService : ISignInNavigationService
         };
         if (identityProvider is not null)
         {
-            options.TryAddAdditionalParameter(SignInProviderConstants.IdentityProviderParameter, identityProvider);
+            options.TryAddAdditionalParameter(
+                ExtraQueryParametersKey,
+                JsonSerializer.SerializeToElement(new Dictionary<string, string>
+                {
+                    [SignInProviderConstants.IdentityProviderParameter] = identityProvider
+                }));
         }
 
         _navigation.NavigateToLogin(LoginPath, options);
