@@ -50,6 +50,21 @@ const productionUrlValues = [
     'AUTH_API_RESOURCE',
 ];
 
+const supportedSocialProviders = ['google', 'apple'];
+
+export function parseSocialProviders(value) {
+    const providers = (value ?? '')
+        .split(',')
+        .map(provider => provider.trim().toLowerCase())
+        .filter(provider => provider.length > 0);
+    const unsupported = providers.filter(provider => !supportedSocialProviders.includes(provider));
+    if (unsupported.length > 0) {
+        throw new Error(`Unsupported AUTH_SOCIAL_PROVIDERS value: ${unsupported.join(', ')}`);
+    }
+
+    return [...new Set(providers)];
+}
+
 export function buildConfiguration(template, values, environment) {
     const normalizedValues = { ...values };
     if (environment === 'prod') {
@@ -66,6 +81,9 @@ export function buildConfiguration(template, values, environment) {
         result[section] ??= {};
         result[section][key] = normalizedValues[name].trim();
     }
+
+    result.Auth ??= {};
+    result.Auth.SocialProviders = parseSocialProviders(normalizedValues.AUTH_SOCIAL_PROVIDERS);
 
     if (environment === 'prod') {
         if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(normalizedValues.BUILD_VERSION)) {
