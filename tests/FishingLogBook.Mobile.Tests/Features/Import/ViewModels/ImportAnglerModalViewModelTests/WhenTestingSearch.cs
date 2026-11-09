@@ -1,3 +1,4 @@
+using System.Globalization;
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Api.Enums;
 using FishingLogBook.Mobile.Api.Models;
@@ -8,7 +9,6 @@ using FishingLogBook.Mobile.Localization;
 using FishingLogBook.Shared.Constants;
 using FishingLogBook.Shared.Dtos;
 using NSubstitute;
-using System.Globalization;
 
 namespace FishingLogBook.Mobile.Tests.Features.Import.ViewModels.ImportAnglerModalViewModelTests;
 

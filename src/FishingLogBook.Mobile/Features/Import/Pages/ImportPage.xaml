@@ -22,8 +22,8 @@
                               BackRequested="OnBack"
                               ContinueRequested="OnContinue">
     <VerticalStackLayout Spacing="16">
-      <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
-                         Color="{StaticResource Primary}" AutomationId="ImportLoading" />
+      <controls:FishingLoaderView IsLoading="{Binding IsBusy}" HorizontalOptions="Center"
+                                  SemanticProperties.Description="{Binding Text[LoaderLoading]}" AutomationId="ImportLoading" />
       <Border IsVisible="{Binding HasMessage}" Style="{StaticResource Card}" Padding="12" AutomationId="ImportMessage">
         <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}"
                TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />

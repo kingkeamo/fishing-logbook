@@ -12,7 +12,7 @@
       <VerticalStackLayout Padding="16,12,16,24" Spacing="12" MaximumWidthRequest="720">
         <Label Text="{Binding Text[ProfileTitle]}" Style="{StaticResource Heading}" />
         <Label Text="{Binding Text[ProfileSubtitle]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
-        <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" Color="{StaticResource Primary}" AutomationId="ProfileLoading" />
+        <controls:FishingLoaderView IsLoading="{Binding IsLoading}" HorizontalOptions="Center" SemanticProperties.Description="{Binding Text[LoaderLoading]}" AutomationId="ProfileLoading" />
         <Border IsVisible="{Binding HasMessage}" Style="{StaticResource Card}" Padding="12" AutomationId="ProfileMessage">
           <VerticalStackLayout Spacing="8">
             <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />

@@ -77,10 +77,7 @@
 
         @if (_isLoading)
         {
-            <MudProgressCircular Indeterminate="true"
-                                 Color="Color.Primary"
-                                 Class="align-self-center"
-                                 id="trip-list-loading" />
+            <FishingLoader Class="align-self-center" id="trip-list-loading" />
         }
         else if (_trips.Count == 0)
         {

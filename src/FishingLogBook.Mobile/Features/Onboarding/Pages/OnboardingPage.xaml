@@ -19,8 +19,8 @@
                               BackRequested="OnBack"
                               ContinueRequested="OnContinue">
     <VerticalStackLayout Spacing="16">
-      <ActivityIndicator IsRunning="{Binding Profile.IsLoading}" IsVisible="{Binding Profile.IsLoading}"
-                         Color="{StaticResource Primary}" AutomationId="OnboardingLoading" />
+      <controls:FishingLoaderView IsLoading="{Binding Profile.IsLoading}" HorizontalOptions="Center"
+                                  SemanticProperties.Description="{Binding Text[LoaderLoading]}" AutomationId="OnboardingLoading" />
       <Border IsVisible="{Binding HasMessage}" Style="{StaticResource Card}" Padding="12" AutomationId="OnboardingMessage">
         <VerticalStackLayout Spacing="8">
           <Label Text="{Binding Message}" Style="{StaticResource SecondaryText}" />
@@ -30,7 +30,7 @@
       </Border>
 
       <VerticalStackLayout IsVisible="{Binding IsWelcomeStep}" Spacing="16" AutomationId="OnboardingWelcomeStep">
-        <Image Source="brand_horizontal.png" HeightRequest="64" Aspect="AspectFit" HorizontalOptions="Start"
+        <Image Source="{AppThemeBinding Light=brand_horizontal.png, Dark=brand_horizontal_dark.png}" HeightRequest="96" Aspect="AspectFit" HorizontalOptions="Start"
                SemanticProperties.Description="{Binding Text[Brand]}" />
         <VerticalStackLayout Spacing="4">
           <Label Text="{Binding Text[ProfileDisplayName]}" Style="{StaticResource Eyebrow}" />

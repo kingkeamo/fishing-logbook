@@ -28,9 +28,16 @@ public sealed class WhenTestingBasics : BaseTripServiceTest
         // Arrange
         var operation = new OutboxOperationModel
         {
-            Id = Guid.NewGuid(), UserId = OwnerUserId, AggregateId = Guid.NewGuid(), AggregateType = OutboxAggregateTypeEnum.Trip,
-            OperationType = OutboxOperationTypeEnum.UpsertTripMetadata, PayloadJson = "{}", Status = OutboxStatusEnum.Pending,
-            AttemptCount = 0, CreatedOn = Now, AvailableAt = Now
+            Id = Guid.NewGuid(),
+            UserId = OwnerUserId,
+            AggregateId = Guid.NewGuid(),
+            AggregateType = OutboxAggregateTypeEnum.Trip,
+            OperationType = OutboxOperationTypeEnum.UpsertTripMetadata,
+            PayloadJson = "{}",
+            Status = OutboxStatusEnum.Pending,
+            AttemptCount = 0,
+            CreatedOn = Now,
+            AvailableAt = Now
         };
         // Act
         var result = await Synchroniser.SynchroniseAsync(operation, OwnerLease, CancellationToken.None);

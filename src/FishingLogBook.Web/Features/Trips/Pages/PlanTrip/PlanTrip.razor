@@ -9,10 +9,7 @@
 <MudContainer MaxWidth="MaxWidth.Small" Gutters="false" Class="plan-trip-page">
     @if (_isLoading)
     {
-        <MudProgressCircular Indeterminate="true"
-                             Color="Color.Primary"
-                             Class="align-self-center"
-                             id="plan-trip-loading" />
+        <FishingLoader Class="align-self-center" id="plan-trip-loading" />
     }
     else
     {

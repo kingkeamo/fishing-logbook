@@ -17,8 +17,7 @@
 
         @if (_isLoading)
         {
-            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="align-self-center"
-                                 id="import-loading" />
+            <FishingLoader Class="align-self-center" id="import-loading" />
         }
         else if (_batch is not null)
         {

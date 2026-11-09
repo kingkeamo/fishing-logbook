@@ -244,9 +244,16 @@ public sealed class WhenTestingSynchronise : BaseTripServiceTest
         await StartTripAsync();
         var operation = new OutboxOperationModel
         {
-            Id = Guid.NewGuid(), UserId = OwnerUserId, AggregateId = Guid.NewGuid(), AggregateType = OutboxAggregateTypeEnum.TripNote,
-            OperationType = OutboxOperationTypeEnum.WriteTripNote, PayloadJson = "null", Status = OutboxStatusEnum.Pending,
-            AttemptCount = 0, CreatedOn = Now, AvailableAt = Now
+            Id = Guid.NewGuid(),
+            UserId = OwnerUserId,
+            AggregateId = Guid.NewGuid(),
+            AggregateType = OutboxAggregateTypeEnum.TripNote,
+            OperationType = OutboxOperationTypeEnum.WriteTripNote,
+            PayloadJson = "null",
+            Status = OutboxStatusEnum.Pending,
+            AttemptCount = 0,
+            CreatedOn = Now,
+            AvailableAt = Now
         };
         // Act
         var result = await Note.SynchroniseAsync(operation, OwnerLease, CancellationToken.None);
@@ -262,9 +269,16 @@ public sealed class WhenTestingSynchronise : BaseTripServiceTest
         var (noteId, operation) = await SaveNoteAsync(trip);
         var missing = new OutboxOperationModel
         {
-            Id = operation.Id, UserId = OwnerUserId, AggregateId = Guid.NewGuid(), AggregateType = operation.AggregateType,
-            OperationType = operation.OperationType, PayloadJson = operation.PayloadJson, Status = operation.Status,
-            AttemptCount = 0, CreatedOn = Now, AvailableAt = Now
+            Id = operation.Id,
+            UserId = OwnerUserId,
+            AggregateId = Guid.NewGuid(),
+            AggregateType = operation.AggregateType,
+            OperationType = operation.OperationType,
+            PayloadJson = operation.PayloadJson,
+            Status = operation.Status,
+            AttemptCount = 0,
+            CreatedOn = Now,
+            AvailableAt = Now
         };
         // Act
         var result = await Note.SynchroniseAsync(missing, OwnerLease, CancellationToken.None);

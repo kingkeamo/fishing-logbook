@@ -12,7 +12,10 @@
     </MudStack>
     @if (_loading)
     {
-        <div role="status" id="dashboard-loading"><MudProgressLinear Indeterminate="true" Color="Color.Primary" /><MudText>@Loc["DashboardLoading"]</MudText></div>
+        <MudStack AlignItems="AlignItems.Center" Spacing="2" id="dashboard-loading">
+            <FishingLoader Label="@Loc["DashboardLoading"]" />
+            <MudText>@Loc["DashboardLoading"]</MudText>
+        </MudStack>
     }
     @if (_statusKey is not null)
     {

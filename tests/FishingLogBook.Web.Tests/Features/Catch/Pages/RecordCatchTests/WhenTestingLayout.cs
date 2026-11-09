@@ -25,7 +25,7 @@ public class WhenTestingLayout : BaseRecordCatchTest
         preferences.GetAsync(Arg.Any<CancellationToken>()).Returns(loaded.Task);
         await using var context = CreateContext(store, anglerPreferences: preferences);
         var cut = context.Render<RecordCatch>();
-        cut.Find("#record-catch-loading").Should().NotBeNull();
+        cut.Find("#record-catch-loading").ClassList.Should().Contain("fishing-loader");
         cut.FindAll("#record-catch-method-chips").Should().BeEmpty();
         cut.FindAll("#catch-take-photo").Should().BeEmpty();
 

@@ -33,7 +33,8 @@ public class WhenTestingRender : BaseProfileTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#profile-loading").Should().NotBeNull();
+            cut.Find("#profile-loading").ClassList.Should().Contain("fishing-loader");
+            cut.FindAll("#profile-loading .mud-progress-circular").Should().BeEmpty();
             cut.FindAll("#profile-display-name").Should().BeEmpty();
             cut.FindAll("#profile-save-button").Should().BeEmpty();
         });

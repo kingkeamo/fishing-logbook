@@ -26,6 +26,8 @@ public class WhenTestingRender : BaseDashboardTest
 
         // Assert
         cut.Find("#dashboard-loading").Should().NotBeNull();
+        cut.Find("#dashboard-loading .fishing-loader").GetAttribute("role").Should().Be("status");
+        cut.FindAll("#dashboard-loading .mud-progress-linear").Should().BeEmpty();
         cut.Find("#dashboard-total-catches").TextContent.Should().Be("—");
         cut.Find("#dashboard-all-time").Should().NotBeNull();
         cut.Find("#dashboard-explore").Should().NotBeNull();

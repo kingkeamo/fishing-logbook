@@ -11,8 +11,8 @@
  Shell.TabBarTitleColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
  Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}">
  <Shell.FlyoutHeader>
-  <VerticalStackLayout Padding="20,24,20,16" Spacing="16">
-   <Image Source="brand_horizontal.png" HeightRequest="48" Aspect="AspectFit" HorizontalOptions="Start" SemanticProperties.Description="{Binding [Brand]}" />
+  <VerticalStackLayout Padding="20,32,20,20" Spacing="24">
+   <Image Source="{AppThemeBinding Light=brand_horizontal.png, Dark=brand_horizontal_dark.png}" HeightRequest="80" Aspect="AspectFit" HorizontalOptions="Start" SemanticProperties.Description="{Binding [Brand]}" AutomationId="FlyoutLogo" />
    <Grid x:Name="AccountHeader" ColumnDefinitions="48,*" ColumnSpacing="12" MinimumHeightRequest="48"
          SemanticProperties.Description="{Binding [ViewProfile]}" AutomationId="FlyoutAccount">
     <Border WidthRequest="48" HeightRequest="48" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryFillDark}}">

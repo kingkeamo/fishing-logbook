@@ -14,7 +14,7 @@
     <VerticalStackLayout Spacing="12" SafeAreaEdges="Container">
       <Label Text="{Binding Text[TripAddCatchesTitle]}" Style="{StaticResource Heading}" FontSize="20"
              SemanticProperties.HeadingLevel="Level1" AutomationId="TripCatchPickerHeading" />
-      <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+      <controls:FishingLoaderView IsLoading="{Binding IsLoading}" HorizontalOptions="Center" WidthRequest="64" HeightRequest="64" SemanticProperties.Description="{Binding Text[LoaderLoading]}" />
       <VerticalStackLayout IsVisible="{Binding IsEmpty}" Spacing="4" AutomationId="TripCatchPickerEmpty">
         <Label Text="{Binding Text[TripAddCatchesEmpty]}" Style="{StaticResource Subheading}" />
         <Label Text="{Binding Text[TripAddCatchesEmptyHint]}" Style="{StaticResource SecondaryText}" FontSize="13" />

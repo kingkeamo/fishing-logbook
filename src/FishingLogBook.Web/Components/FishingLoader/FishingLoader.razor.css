@@ -1,0 +1,382 @@
+.fishing-loader {
+    --fishing-loader-ink: var(--mud-palette-text-primary);
+    --fishing-loader-green: #16a34a;
+    --fishing-loader-teal: #0d9488;
+    --fishing-loader-rod: #2dd4bf;
+    --fishing-loader-water: #38bdf8;
+    --fishing-loader-worm: #e11d48;
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 6rem;
+    height: 6rem;
+    line-height: 0;
+}
+
+.fishing-loader.is-compact {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.fishing-loader svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* --- leaping fish --- */
+
+.fishing-loader-leap .water {
+    fill: none;
+    stroke: var(--fishing-loader-water);
+    stroke-width: 3;
+    stroke-linecap: round;
+    animation: fishing-loader-wave 1.8s ease-in-out infinite;
+}
+
+.fishing-loader-leap .water.delayed {
+    animation-delay: -0.9s;
+    opacity: 0.6;
+}
+
+.fishing-loader-leap .jumper {
+    fill: var(--fishing-loader-green);
+    transform-origin: 0 0;
+    animation: fishing-loader-leap 1.8s cubic-bezier(.42, .08, .58, 1) infinite;
+}
+
+.fishing-loader-leap .eye {
+    fill: var(--fishing-loader-ink);
+}
+
+.fishing-loader-leap .splash {
+    fill: none;
+    stroke: var(--fishing-loader-water);
+    stroke-width: 2;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.fishing-loader-leap .splash.leave {
+    animation: fishing-loader-splash-out 1.8s ease-out infinite;
+}
+
+.fishing-loader-leap .splash.land {
+    animation: fishing-loader-splash-in 1.8s ease-out infinite;
+}
+
+@keyframes fishing-loader-leap {
+    0% {
+        transform: translate(16px, 72px) rotate(-48deg);
+        opacity: 0;
+    }
+
+    12% {
+        transform: translate(24px, 52px) rotate(-28deg);
+        opacity: 1;
+    }
+
+    50% {
+        transform: translate(48px, 20px) rotate(6deg);
+        opacity: 1;
+    }
+
+    88% {
+        transform: translate(72px, 52px) rotate(32deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(80px, 72px) rotate(48deg);
+        opacity: 0;
+    }
+}
+
+@keyframes fishing-loader-splash-out {
+    0%, 8% {
+        opacity: 0;
+        transform: scale(0.4);
+    }
+
+    16% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    32%, 100% {
+        opacity: 0;
+        transform: scale(1.5);
+    }
+}
+
+@keyframes fishing-loader-splash-in {
+    0%, 78% {
+        opacity: 0;
+        transform: scale(0.4);
+    }
+
+    88% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.5);
+    }
+}
+
+@keyframes fishing-loader-wave {
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+/* --- boat on the drift --- */
+
+.fishing-loader-boat .wake {
+    fill: none;
+    stroke: var(--fishing-loader-water);
+    stroke-width: 3;
+    stroke-linecap: round;
+    animation: fishing-loader-wake 1.4s linear infinite;
+}
+
+.fishing-loader-boat .craft {
+    transform-box: view-box;
+    transform-origin: 22px 72px;
+    animation: fishing-loader-plane 1.6s ease-in-out infinite;
+}
+
+.fishing-loader-boat .hull-body {
+    fill: var(--fishing-loader-ink);
+}
+
+.fishing-loader-boat .bow-rod {
+    fill: none;
+    stroke: var(--fishing-loader-rod);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
+
+.fishing-loader-boat .bow-line {
+    fill: none;
+    stroke: var(--fishing-loader-water);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+.fishing-loader-boat .head {
+    fill: var(--fishing-loader-ink);
+}
+
+.fishing-loader-boat .body {
+    fill: var(--fishing-loader-green);
+}
+
+.fishing-loader-boat .arm {
+    fill: none;
+    stroke: var(--fishing-loader-green);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+.fishing-loader-boat .cowling {
+    fill: var(--fishing-loader-teal);
+}
+
+.fishing-loader-boat .lower {
+    fill: var(--fishing-loader-ink);
+}
+
+.fishing-loader-boat .prop {
+    fill: var(--fishing-loader-water);
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: fishing-loader-prop 0.18s linear infinite;
+}
+
+@keyframes fishing-loader-plane {
+    0%, 100% {
+        transform: rotate(10deg) translate(0, 0);
+    }
+
+    50% {
+        transform: rotate(6deg) translate(-1px, 2px);
+    }
+}
+
+@keyframes fishing-loader-prop {
+    50% {
+        transform: scaleY(0.2);
+    }
+}
+
+@keyframes fishing-loader-wake {
+    from {
+        stroke-dashoffset: 0;
+        stroke-dasharray: 12 8;
+    }
+
+    to {
+        stroke-dashoffset: -40;
+        stroke-dasharray: 12 8;
+    }
+}
+
+/* --- bobber --- */
+
+.fishing-loader-bobber .water {
+    fill: none;
+    stroke: var(--fishing-loader-water);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+.fishing-loader-bobber .rig {
+    transform-origin: 48px 54px;
+    animation: fishing-loader-yank 2.6s ease-in-out infinite;
+}
+
+.fishing-loader-bobber .from-rod,
+.fishing-loader-bobber .leader {
+    fill: none;
+    stroke: var(--fishing-loader-ink);
+    stroke-width: 0.8;
+    stroke-linecap: round;
+}
+
+.fishing-loader-bobber .hook {
+    fill: none;
+    stroke: var(--fishing-loader-teal);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fishing-loader-bobber .worm {
+    fill: none;
+    stroke: var(--fishing-loader-worm);
+    stroke-width: 1.35;
+    stroke-linecap: round;
+    animation: fishing-loader-bait 2.6s ease-in-out infinite;
+}
+
+.fishing-loader-bobber .antenna {
+    fill: var(--fishing-loader-ink);
+}
+
+.fishing-loader-bobber .pencil-white {
+    fill: #f8fafc;
+    stroke: var(--fishing-loader-ink);
+    stroke-opacity: 0.45;
+    stroke-width: 0.6;
+}
+
+.fishing-loader-bobber .pencil-green {
+    fill: var(--fishing-loader-green);
+}
+
+.fishing-loader-bobber .taker {
+    fill: var(--fishing-loader-green);
+    animation: fishing-loader-take 2.6s ease-in-out infinite;
+}
+
+.fishing-loader-bobber .taker .eye {
+    fill: var(--fishing-loader-ink);
+}
+
+@keyframes fishing-loader-yank {
+    0%, 30% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    38% {
+        transform: translateY(3px) rotate(4deg);
+    }
+
+    48% {
+        transform: translateY(16px) rotate(12deg);
+    }
+
+    60% {
+        transform: translateY(22px) rotate(8deg);
+    }
+
+    78% {
+        transform: translateY(5px) rotate(-6deg);
+    }
+
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+}
+
+@keyframes fishing-loader-take {
+    0%, 14% {
+        transform: translate(-6px, 80px);
+        opacity: 0;
+    }
+
+    24% {
+        transform: translate(16px, 82px);
+        opacity: 1;
+    }
+
+    34%, 48% {
+        transform: translate(36px, 84px);
+        opacity: 1;
+    }
+
+    58% {
+        transform: translate(58px, 94px);
+        opacity: 1;
+    }
+
+    72% {
+        transform: translate(80px, 108px);
+        opacity: 0.35;
+    }
+
+    84%, 100% {
+        transform: translate(102px, 116px);
+        opacity: 0;
+    }
+}
+
+@keyframes fishing-loader-bait {
+    0%, 32% {
+        opacity: 1;
+    }
+
+    34%, 100% {
+        opacity: 0;
+    }
+}
+
+/* Reduced motion: no animation, each design rests in a recognisable still pose. */
+@media (prefers-reduced-motion: reduce) {
+    .fishing-loader-leap .water,
+    .fishing-loader-leap .splash,
+    .fishing-loader-boat .wake,
+    .fishing-loader-boat .craft,
+    .fishing-loader-boat .prop,
+    .fishing-loader-bobber .rig,
+    .fishing-loader-bobber .worm,
+    .fishing-loader-bobber .taker {
+        animation: none;
+    }
+
+    .fishing-loader-leap .jumper {
+        animation: none;
+        transform: translate(48px, 20px) rotate(6deg);
+    }
+
+    .fishing-loader-boat .craft {
+        transform: rotate(10deg);
+    }
+
+    .fishing-loader-bobber .taker {
+        opacity: 0;
+    }
+}
