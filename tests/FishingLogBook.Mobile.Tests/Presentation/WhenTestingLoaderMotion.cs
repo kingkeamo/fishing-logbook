@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Presentation;
+using FishingLogBook.Shared.Enums;
 
 namespace FishingLogBook.Mobile.Tests.Presentation;
 

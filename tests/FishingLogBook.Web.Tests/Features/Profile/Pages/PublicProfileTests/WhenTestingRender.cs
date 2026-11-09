@@ -34,7 +34,7 @@ public class WhenTestingRender : BasePublicProfileTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#public-profile-loading").Should().NotBeNull();
+            cut.Find("#public-profile-loading").ClassList.Should().Contain("fishing-loader");
             cut.FindAll("#public-profile-card").Should().BeEmpty();
         });
         loadContinue.SetResult(new PublicProfileDto(userId, "Eamonn", null, "Westmeath", [], []));

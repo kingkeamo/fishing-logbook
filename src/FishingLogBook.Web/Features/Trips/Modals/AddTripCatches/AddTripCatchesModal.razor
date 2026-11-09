@@ -9,10 +9,7 @@
         <MudStack Spacing="3" AlignItems="AlignItems.Stretch">
             @if (_isLoading)
             {
-                <MudProgressCircular Indeterminate="true"
-                                     Color="Color.Primary"
-                                     Class="align-self-center"
-                                     id="trip-catches-loading" />
+                <FishingLoader Class="align-self-center" id="trip-catches-loading" />
             }
             else if (_loadFailed)
             {

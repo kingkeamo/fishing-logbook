@@ -236,7 +236,6 @@
   <data name="ReducedMotionOn" xml:space="preserve"><value>Mouvement réduit activé. Les indicateurs sont immobiles.</value></data>
   <data name="ReducedMotionOff" xml:space="preserve"><value>Mouvement réduit désactivé. Les indicateurs s’animent.</value></data>
   <data name="SignInTitle" xml:space="preserve"><value>Connectez-vous à votre carnet</value></data>
-  <data name="SignInBody" xml:space="preserve"><value>Continuez en toute sécurité dans votre navigateur. Votre mot de passe n’est jamais saisi dans cette application.</value></data>
   <data name="SignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="ContinueWithApple" xml:space="preserve"><value>Continuer avec Apple</value></data>
   <data name="ContinueWithGoogle" xml:space="preserve"><value>Continuer avec Google</value></data>

@@ -1,3 +1,5 @@
+using FishingLogBook.Shared.Enums;
+
 namespace FishingLogBook.Mobile.Presentation;
 
 public readonly record struct LoaderPose(double X, double Y, double Rotation, double Opacity, double Scale = 1d);

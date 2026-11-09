@@ -9,7 +9,7 @@
              x:Class="FishingLogBook.Mobile.Features.Catch.Components.RecordCatchEditor.RecordCatchEditorView"
              x:DataType="vm:CatchEditViewModel">
   <VerticalStackLayout Spacing="{StaticResource SpaceMedium}">
-    <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+    <controls:FishingLoaderView IsLoading="{Binding IsLoading}" HorizontalOptions="Center" SemanticProperties.Description="{Binding Text[LoaderLoading]}" />
     <Label Text="{Binding Text[CatchNotSignedIn]}" IsVisible="{Binding NotSignedIn}" Style="{StaticResource SecondaryText}" />
     <Label Text="{Binding Text[CatchDraftRestored]}" IsVisible="{Binding ShowDraftRestored}" Style="{StaticResource SecondaryText}" />
     <Label Text="{Binding Text[CatchCatalogueUnavailable]}" IsVisible="{Binding IsCatalogueUnavailable}" Style="{StaticResource SecondaryText}"

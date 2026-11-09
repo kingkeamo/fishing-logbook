@@ -17,7 +17,7 @@
   <Grid Grid.Row="1">
    <ScrollView>
     <VerticalStackLayout Padding="16,8,16,96" Spacing="12" MaximumWidthRequest="720">
-     <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}" HorizontalOptions="Center" />
+     <controls:FishingLoaderView IsLoading="{Binding IsLoading}" HorizontalOptions="Center" SemanticProperties.Description="{Binding Text[LoaderLoading]}" />
      <Border Style="{StaticResource Card}" IsVisible="{Binding NotFound}" Padding="16" Shadow="{x:Null}">
       <Label Text="{Binding Text[TripNotFound]}" Style="{StaticResource Subheading}" AutomationId="TripNotFound" />
      </Border>

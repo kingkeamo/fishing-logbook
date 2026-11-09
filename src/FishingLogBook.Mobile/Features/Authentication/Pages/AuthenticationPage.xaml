@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
  xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+ xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
  xmlns:viewModels="clr-namespace:FishingLogBook.Mobile.Features.Authentication.ViewModels"
  x:Class="FishingLogBook.Mobile.Features.Authentication.Pages.AuthenticationPage"
  x:DataType="viewModels:AuthenticationViewModel"
@@ -8,13 +9,11 @@
  Shell.NavBarIsVisible="False">
  <ScrollView>
   <VerticalStackLayout Padding="24,48,24,32" Spacing="20" MaximumWidthRequest="520" VerticalOptions="Center">
-   <Image Source="brand_horizontal.png" HeightRequest="72" Aspect="AspectFit"
+   <Image Source="{AppThemeBinding Light=brand_horizontal.png, Dark=brand_horizontal_dark.png}" HeightRequest="120" Aspect="AspectFit"
     SemanticProperties.Description="{Binding Text[Brand]}" />
    <Label Text="{Binding Text[SignInTitle]}" Style="{StaticResource Heading}"
     HorizontalTextAlignment="Center" SemanticProperties.HeadingLevel="Level1" />
-   <Label Text="{Binding Text[SignInBody]}" Style="{StaticResource SecondaryText}"
-    HorizontalTextAlignment="Center" />
-   <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+   <controls:FishingLoaderView IsLoading="{Binding IsBusy}" HorizontalOptions="Center"
     SemanticProperties.Description="{Binding Text[RestoringSession]}" />
    <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Style="{StaticResource SecondaryText}"
     HorizontalTextAlignment="Center" AutomationId="AuthenticationStatus" />

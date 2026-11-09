@@ -1,4 +1,5 @@
 using FishingLogBook.Mobile.Presentation;
+using FishingLogBook.Shared.Enums;
 using Microsoft.Maui.Graphics;
 
 namespace FishingLogBook.Mobile.Native.Controls;

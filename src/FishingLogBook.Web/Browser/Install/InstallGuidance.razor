@@ -5,7 +5,7 @@
 
     @if (_isDetecting)
     {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="@Loc["Common_Loading"]" id="install-guidance-loading" />
+        <FishingLoader id="install-guidance-loading" />
     }
     else if (IsInstalled)
     {

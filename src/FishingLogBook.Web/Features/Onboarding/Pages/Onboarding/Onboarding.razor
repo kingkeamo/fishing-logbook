@@ -10,7 +10,7 @@
 <MudContainer MaxWidth="MaxWidth.Medium" Gutters="false" Class="onboarding-container">
     @if (_isLoading)
     {
-        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="d-block ma-auto" id="onboarding-loading" />
+        <FishingLoader Class="d-block ma-auto" id="onboarding-loading" />
     }
     else
     {

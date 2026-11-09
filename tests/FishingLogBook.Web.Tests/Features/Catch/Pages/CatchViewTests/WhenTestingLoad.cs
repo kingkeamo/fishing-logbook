@@ -106,7 +106,7 @@ public class WhenTestingLoad : BaseCatchViewTest
         // Assert
         cut.WaitForAssertion(() =>
         {
-            cut.Find("#catch-view-loading").Should().NotBeNull();
+            cut.Find("#catch-view-loading").ClassList.Should().Contain("fishing-loader");
             cut.FindAll("#catch-view-details").Should().BeEmpty();
         });
         loadContinue.SetResult(ViewDto());

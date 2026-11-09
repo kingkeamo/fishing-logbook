@@ -41,7 +41,7 @@ Screenshots (Android emulator, 1080x2400, English, light) are in
 
 ## Differences and limitations
 
-- The loaders are native ports of the three `cdbf-spinners` spike designs (leaping fish, boat on the drift, bobber): same SVG geometry, palettes and CSS keyframe timings (1.8s, 1.6s, 2.6s). They are drawn with `Microsoft.Maui.Graphics` and follow the app light/dark theme. The PWA itself does not use them yet.
+- The loaders are native ports of the three `cdbf-spinners` spike designs (leaping fish, boat on the drift, bobber): same SVG geometry, palettes and CSS keyframe timings (1.8s, 1.6s, 2.6s). They are drawn with `Microsoft.Maui.Graphics` and follow the app light/dark theme. The PWA and the native app now use them in their real loading states: see `docs/fishing-loader-and-drawer-logo.md`.
 - The spike's `boot` theme (full-screen splash colours) is not implemented; only light and dark are. Reduced motion shows a still pose (leaping fish mid-leap, others at rest).
 - Pixel-level parity with the browser rendering is approximate (hook arc is a polyline, easing is smoothstep rather than CSS `ease-in-out`).
 
