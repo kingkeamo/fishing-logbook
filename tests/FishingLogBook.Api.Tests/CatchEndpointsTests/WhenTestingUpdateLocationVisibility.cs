@@ -60,6 +60,30 @@ public class WhenTestingUpdateLocationVisibility : IClassFixture<SystemApiFactor
     }
 
     [Fact]
+    public async Task ItShouldReturn503WhenTheCatchLookupFails()
+    {
+        // Arrange
+        ResetRepositories();
+        var catchId = Guid.NewGuid();
+        _factory.CatchRepository
+            .GetByIdAsync(catchId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Catch?>("Failed to load the catch."));
+        var client = _factory.CreateAuthenticatedClient(TestJwt.CreateAccessToken(subject: "visibility-lookup-failure"));
+
+        // Act
+        var response = await client.PatchAsJsonAsync(
+            $"/api/catches/{catchId:D}/location-visibility",
+            new UpdateCatchLocationVisibilityDto(LocationDefaults.Public));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.CatchRepository.Received(1).GetByIdAsync(catchId, Arg.Any<CancellationToken>());
+        await _factory.CatchRepository.DidNotReceive().UpdateLocationVisibilityAsync(
+            Arg.Any<PersistCatchLocationVisibilityArgs>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldRejectUnknownVisibility()
     {
         // Arrange

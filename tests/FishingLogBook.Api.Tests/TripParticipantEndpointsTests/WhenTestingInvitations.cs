@@ -178,6 +178,49 @@ public class WhenTestingInvitations : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturn503WhenTheInvitationListCannotBeLoaded()
+    {
+        // Arrange
+        Reset();
+        var client = _factory.CreateAuthenticatedClient(
+            TestJwt.CreateAccessToken(subject: "invitation-list-failure"));
+        var current = await client.GetFromJsonAsync<CurrentUserDto>("/api/users/current");
+        _factory.TripParticipantRepository
+            .GetPendingInvitationsByUserIdAsync(current!.UserId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<IReadOnlyList<TripParticipant>>("Failed to load invitations."));
+
+        // Act
+        var response = await client.GetAsync("/api/trips/invitations");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripParticipantRepository.Received(1)
+            .GetPendingInvitationsByUserIdAsync(current.UserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturn503WhenTheInvitationLookupFailsWhileResponding()
+    {
+        // Arrange
+        Reset();
+        var tripId = Guid.NewGuid();
+        _factory.TripParticipantRepository
+            .FindAsync(Arg.Any<FindTripParticipantArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<TripParticipant?>("Failed to load the invitation."));
+        var client = _factory.CreateAuthenticatedClient(
+            TestJwt.CreateAccessToken(subject: "invitation-respond-failure"));
+
+        // Act
+        var response = await client.PostAsync($"/api/trips/{tripId:D}/invitation/accept", content: null);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripParticipantRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripParticipant>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldListThePendingInvitationsOfTheSignedInAngler()
     {
         // Arrange
