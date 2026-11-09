@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Components;
 using Bunit;
 using Bunit.TestDoubles;
 using FishingLogBook.Web.Browser.Network;
@@ -15,6 +14,7 @@ using FishingLogBook.Web.Features.Onboarding.Services;
 using FishingLogBook.Web.Features.Profile.Models;
 using FishingLogBook.Web.Features.Profile.Providers;
 using FishingLogBook.Web.Localization;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;

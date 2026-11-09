@@ -1,5 +1,5 @@
-using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Mobile.Features.Import.Enums;
+using FishingLogBook.Shared.Dtos;
 
 namespace FishingLogBook.Mobile.Features.Import.Models;
 
