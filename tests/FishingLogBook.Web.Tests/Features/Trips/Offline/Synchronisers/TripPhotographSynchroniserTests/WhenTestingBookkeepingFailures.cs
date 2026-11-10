@@ -1,8 +1,8 @@
-using FishingLogBook.Web.Features.Diagnostics.Services;
 using AwesomeAssertions;
 using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;
 using FishingLogBook.Web.Common;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Features.Trips.Offline.Synchronisers.TripPhotographSynchroniserTests;

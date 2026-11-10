@@ -1,8 +1,8 @@
-using FishingLogBook.Web.Features.Diagnostics.Services;
 using System.Net;
 using AwesomeAssertions;
 using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Features.Catch.Offline.Synchronisers.CatchSynchroniserTests;

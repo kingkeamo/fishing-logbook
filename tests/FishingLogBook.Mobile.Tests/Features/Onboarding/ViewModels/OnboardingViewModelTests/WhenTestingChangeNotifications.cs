@@ -153,7 +153,7 @@ public sealed class WhenTestingChangeNotifications : BaseOnboardingViewModelTest
         // Arrange
         await ReachLocationAsync();
         MockLocation.CaptureCurrentAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<DeviceLocationCaptureModel?>(null));
+            .Returns(Task.FromResult<DeviceLocationCaptureModel>(null!));
 
         // Act
         await Sut.AllowLocationAsync(CancellationToken.None);
