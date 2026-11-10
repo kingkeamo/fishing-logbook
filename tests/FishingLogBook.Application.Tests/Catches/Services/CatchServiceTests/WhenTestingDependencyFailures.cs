@@ -59,6 +59,7 @@ public class WhenTestingDependencyFailures : BaseCatchServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("The detail lookup failed.");
+        await MockCatchRepository.Received(1).GetDetailForUserAsync(CatchId, CurrentUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -145,6 +146,8 @@ public class WhenTestingDependencyFailures : BaseCatchServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Should().BeOfType<CatchNotFoundError>();
+        await MockCatchRepository.Received(1).GetByIdAsync(CatchId, Arg.Any<CancellationToken>());
+        await MockCatchRepository.Received(1).GetDetailForUserAsync(CatchId, CurrentUserId, Arg.Any<CancellationToken>());
     }
 
     [Fact]

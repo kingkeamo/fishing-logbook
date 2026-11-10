@@ -59,6 +59,7 @@ public class WhenTestingFromDateTimeLocalValue
         // Assert
         result.Should().Be(new DateTimeOffset(2026, 8, 17, 9, 30, 0, TimeSpan.FromHours(2)));
         result!.Value.UtcDateTime.Should().Be(new DateTime(2026, 8, 17, 7, 30, 0, DateTimeKind.Utc));
+        _ = _mockTimeProvider.Received(1).LocalTimeZone;
     }
 
     [Fact]
@@ -75,5 +76,6 @@ public class WhenTestingFromDateTimeLocalValue
         // Assert
         winter!.Value.Offset.Should().Be(TimeSpan.Zero);
         summer!.Value.Offset.Should().Be(TimeSpan.FromHours(1));
+        _ = _mockTimeProvider.Received(2).LocalTimeZone;
     }
 }

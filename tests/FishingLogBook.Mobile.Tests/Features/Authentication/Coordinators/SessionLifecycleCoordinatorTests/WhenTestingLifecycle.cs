@@ -104,6 +104,7 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         Sut.State.Should().Be(SessionLifecycleStateEnum.Idle);
+        await MockAuthentication.DidNotReceive().InitializeAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -160,6 +161,8 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         Sut.State.Should().Be(SessionLifecycleStateEnum.SignInRequired);
+        await MockAuthentication.DidNotReceive().InitializeAsync(Arg.Any<CancellationToken>());
+        MockAccountSession.DidNotReceive().IsCurrent(Arg.Any<AccountSessionLeaseModel>());
     }
 
     [Fact]
@@ -175,6 +178,7 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         Sut.State.Should().Be(SessionLifecycleStateEnum.SignInRequired);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -191,6 +195,7 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         Sut.State.Should().Be(SessionLifecycleStateEnum.RecoverableError);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -226,7 +231,7 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
     }
 
     [Fact]
-    public async Task ItShouldBeRecoverableAndLogWhenRecoveryThrows()
+    public async Task ItShouldBeRecoverableWhenRecoveryThrows()
     {
         // Arrange
         MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>())
@@ -237,6 +242,7 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         Sut.State.Should().Be(SessionLifecycleStateEnum.RecoverableError);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -260,6 +266,7 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         sut.State.Should().Be(SessionLifecycleStateEnum.RecoverableError);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -294,6 +301,7 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         Sut.State.Should().Be(SessionLifecycleStateEnum.Idle);
+        await MockAuthentication.DidNotReceive().InitializeAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -310,5 +318,6 @@ public sealed class WhenTestingLifecycle : BaseSessionLifecycleCoordinatorTest
 
         // Assert
         states.Should().Be(1);
+        await MockAuthentication.DidNotReceive().InitializeAsync(Arg.Any<CancellationToken>());
     }
 }

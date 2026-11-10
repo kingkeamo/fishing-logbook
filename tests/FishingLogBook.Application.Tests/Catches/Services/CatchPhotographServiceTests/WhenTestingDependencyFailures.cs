@@ -56,6 +56,7 @@ public class WhenTestingDependencyFailures : BaseCatchPhotographServiceTest
 
         // Assert
         result.Should().Be(configured);
+        _ = MockObjectStorage.Received(1).IsConfigured;
     }
 
     [Fact]

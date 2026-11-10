@@ -19,6 +19,7 @@ public class WhenTestingIsCompleted : BaseOnboardingServiceTest
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>();
+        await MockProfileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -34,6 +35,7 @@ public class WhenTestingIsCompleted : BaseOnboardingServiceTest
 
         // Assert
         result.Should().BeTrue();
+        await MockProfileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
         Context.JSInterop.Invocations.Should().NotContain(invocation => invocation.Identifier == SetItem);
     }
 
@@ -83,6 +85,7 @@ public class WhenTestingIsCompleted : BaseOnboardingServiceTest
         // Assert
         result.Should().BeFalse();
         Writes().Should().ContainSingle();
+        await MockProfileClient.Received(1).GetOwnAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

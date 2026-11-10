@@ -186,6 +186,11 @@ public class WhenTestingDependencyFailures : BaseTripParticipantServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("The save failed.");
+        await MockTripParticipantRepository.Received(1).UpsertAsync(
+            Arg.Is<TripParticipant>(participant => participant.TripId == TripId
+                && participant.UserId == CurrentUserId
+                && participant.Status == TripParticipantStatusEnum.Accepted),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -220,6 +225,10 @@ public class WhenTestingDependencyFailures : BaseTripParticipantServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("The description failed.");
+        await MockTripParticipantRepository.Received(1).GetByTripIdAsync(TripId, Arg.Any<CancellationToken>());
+        await MockAnglerLookupService.Received(1).DescribeAsync(
+            Arg.Any<IReadOnlyCollection<Guid>>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -257,5 +266,11 @@ public class WhenTestingDependencyFailures : BaseTripParticipantServiceTest
         // Assert
         result.IsFailed.Should().BeTrue();
         result.Errors[0].Message.Should().Be("The description failed.");
+        await MockTripParticipantRepository.Received(1).GetPendingInvitationsByUserIdAsync(
+            CurrentUserId,
+            Arg.Any<CancellationToken>());
+        await MockAnglerLookupService.Received(1).DescribeAsync(
+            Arg.Any<IReadOnlyCollection<Guid>>(),
+            Arg.Any<CancellationToken>());
     }
 }

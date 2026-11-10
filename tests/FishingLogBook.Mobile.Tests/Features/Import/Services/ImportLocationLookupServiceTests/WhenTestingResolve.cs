@@ -26,6 +26,7 @@ public class WhenTestingResolve : BaseImportLocationLookupServiceTest
 
         // Assert
         await act.Should().ThrowAsync<OperationCanceledException>();
+        await MockClient.Received(1).GetAsync(53.3498, -6.2603, Arg.Any<CancellationToken>());
     }
 
     [Fact]

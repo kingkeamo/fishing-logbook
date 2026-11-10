@@ -24,6 +24,7 @@ public class WhenTestingUnexpectedFailures : BaseDashboardViewModelTest
         Sut.Data.Should().BeNull();
         Sut.StatusText.Should().Be(Text["DashboardError"]);
         Sut.IsLoading.Should().BeFalse();
+        await MockClient.Received(1).GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -40,6 +41,8 @@ public class WhenTestingUnexpectedFailures : BaseDashboardViewModelTest
         Sut.Data.Should().BeNull();
         Sut.StatusText.Should().Be(Text["DashboardError"]);
         Sut.IsLoading.Should().BeFalse();
+        await MockUnits.Received(1).GetAsync(Arg.Any<CancellationToken>());
+        await MockClient.Received(1).GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -60,6 +63,11 @@ public class WhenTestingUnexpectedFailures : BaseDashboardViewModelTest
         Sut.StatusText.Should().Be(Text["DashboardError"]);
         Sut.IsFilterModalOpen.Should().BeFalse();
         Sut.CanApply.Should().BeTrue();
+        await MockModals.Received(1).EditFiltersAsync(
+            Arg.Any<DashboardFilterSelectionModel>(),
+            Arg.Any<DashboardFilterOptionsModel>(),
+            Arg.Any<CancellationToken>());
+        await MockClient.Received(1).GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -83,6 +91,11 @@ public class WhenTestingUnexpectedFailures : BaseDashboardViewModelTest
         // Assert
         Sut.HasStatus.Should().BeFalse();
         Sut.IsFilterModalOpen.Should().BeFalse();
+        await MockModals.Received(1).EditFiltersAsync(
+            Arg.Any<DashboardFilterSelectionModel>(),
+            Arg.Any<DashboardFilterOptionsModel>(),
+            Arg.Any<CancellationToken>());
+        await MockClient.Received(1).GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -108,6 +121,11 @@ public class WhenTestingUnexpectedFailures : BaseDashboardViewModelTest
         await act.Should().NotThrowAsync();
         Sut.HasStatus.Should().BeFalse();
         Sut.CanApply.Should().BeTrue();
+        await MockModals.Received(1).EditFiltersAsync(
+            Arg.Any<DashboardFilterSelectionModel>(),
+            Arg.Any<DashboardFilterOptionsModel>(),
+            Arg.Any<CancellationToken>());
+        await MockClient.Received(1).GetAsync(Arg.Any<DashboardFilterDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -138,6 +156,13 @@ public class WhenTestingUnexpectedFailures : BaseDashboardViewModelTest
 
         // Assert
         Sut.StatusText.Should().Be(Text["DashboardCatchUnavailable"]);
+        await MockCatches.Received(1).GetAsync(id, Arg.Any<CancellationToken>());
+        await MockNavigator.Received(1).GoToAsync(
+            Arg.Any<string>(),
+            Arg.Any<CatchPresentationModel>(),
+            Arg.Any<Guid?>(),
+            Arg.Any<Guid?>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

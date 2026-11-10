@@ -30,6 +30,7 @@ public class WhenTestingFrom
 
         // Assert
         result.Should().BeOfType<UnauthorizedHttpResult>();
+        _ = _mockCurrentUser.Received(1).IsResolved;
     }
 
     [Fact]

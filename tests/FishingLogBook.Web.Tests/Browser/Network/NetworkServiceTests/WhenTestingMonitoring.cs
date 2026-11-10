@@ -120,6 +120,7 @@ public class WhenTestingMonitoring : IAsyncDisposable
 
         // Assert
         result.Should().BeFalse();
+        await _mockStatus.Received(1).IsApiReachableAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -155,5 +156,7 @@ public class WhenTestingMonitoring : IAsyncDisposable
         {
             published.Should().Equal(false);
         }
+
+        await _mockStatus.Received(1).IsApiReachableAsync(Arg.Any<CancellationToken>());
     }
 }

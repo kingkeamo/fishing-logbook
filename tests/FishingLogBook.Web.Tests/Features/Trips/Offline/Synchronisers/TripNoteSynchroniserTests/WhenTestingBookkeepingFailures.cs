@@ -1,3 +1,4 @@
+using FishingLogBook.Web.Features.Diagnostics.Services;
 using AwesomeAssertions;
 using FishingLogBook.Shared.Diagnostics;
 using FishingLogBook.Shared.Dtos;
@@ -86,6 +87,19 @@ public class WhenTestingBookkeepingFailures : BaseTripNoteSynchroniserTest
 
         // Assert
         await act.Should().NotThrowAsync();
+        await MockDiagnostics.Received(1).LogAsync(
+            DiagnosticLevel.Error,
+            "trip.note.sync.failed",
+            Arg.Any<string>(),
+            Arg.Any<IReadOnlyDictionary<string, string>?>(),
+            Arg.Any<Exception?>(),
+            Arg.Any<CancellationToken>());
+        var diagnosticCalls = MockDiagnostics.ReceivedCalls()
+            .Count(call => call.GetMethodInfo().Name == nameof(IDiagnosticLogger.LogAsync));
+        await MockLogging.Received(diagnosticCalls).LogErrorAsync(
+            Arg.Is<string>(message => message.EndsWith("diagnostic", StringComparison.Ordinal)),
+            Arg.Is<Exception>(exception => exception.Message == "diagnostics"),
+            Arg.Any<CancellationToken>());
         store.Stored(NoteId)!.SyncStatus.Should().Be(SyncStatus.WaitingToSynchronise);
     }
 }

@@ -105,6 +105,7 @@ public sealed class WhenTestingLocationAndTripActions : BaseImportCatchActionsTe
 
         // Assert
         Sut.Catches.Single().Proposal.Location!.PlaceName.Should().Be("Main Street, Dublin, Ireland");
+        await MockModals.Received(1).EditPlaceNameAsync(Arg.Any<PlaceNameModalModel>());
     }
 
     [Fact]

@@ -22,6 +22,7 @@ public class WhenTestingDependencyFailures : BaseTripPhotographServiceTest
 
         // Assert
         result.Should().Be(configured);
+        _ = MockObjectStorage.Received(1).IsConfigured;
     }
 
     [Fact]
