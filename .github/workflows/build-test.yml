@@ -2,6 +2,7 @@ name: build-test
 
 on:
   workflow_call:
+  workflow_dispatch:
   push:
     branches: [main, develop]
   pull_request:
@@ -29,8 +30,156 @@ jobs:
       - name: Build
         run: dotnet build FishingLogBook.Web.slnf --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test FishingLogBook.Web.slnf --configuration Release --no-build --verbosity normal
+      - name: Test (with coverage)
+        run: >-
+          dotnet test FishingLogBook.Web.slnf --configuration Release --no-build --verbosity normal
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings
+          --results-directory coverage/raw/dotnet
+
+      - name: Upload raw coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-raw-dotnet
+          path: coverage/raw/dotnet
+          if-no-files-found: error
+          retention-days: 30
+
+  mobile-coverage:
+    name: Mobile test coverage
+    # github.workflow is the caller's name when this file is reused (e.g. by create-release), so
+    # coverage jobs only run for direct runs of this workflow.
+    if: github.workflow == 'build-test' && (github.event_name == 'pull_request' && github.base_ref == 'main' || github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.300'
+
+      # Same invocation as the mobile-build-test android job (net10.0 tests before any MAUI build),
+      # with coverage collection added. Kept separate so that job's hang diagnostics are unchanged.
+      - name: Test mobile presentation (with coverage)
+        timeout-minutes: 10
+        run: >-
+          dotnet test tests/FishingLogBook.Mobile.Tests/FishingLogBook.Mobile.Tests.csproj
+          -f net10.0
+          --verbosity normal
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings
+          --results-directory "${{ github.workspace }}/coverage/raw/mobile"
+          --blame-hang
+          --blame-hang-timeout 2m
+
+      - name: Upload raw coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-raw-mobile
+          path: coverage/raw/mobile
+          if-no-files-found: error
+          retention-days: 30
+
+  coverage-gate:
+    name: Coverage regression gate
+    # always() so a failed or cancelled test job fails this check instead of skipping it:
+    # a skipped required check would otherwise count as passing.
+    if: always() && github.workflow == 'build-test' && (github.event_name == 'pull_request' && github.base_ref == 'main' || github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))
+    needs: [build-test, mobile-coverage]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require the test jobs to have succeeded
+        env:
+          RESULTS: ${{ needs.build-test.result }} ${{ needs.mobile-coverage.result }}
+        run: |
+          echo "build-test / mobile-coverage results: ${RESULTS}"
+          if [ "${RESULTS}" != "success success" ]; then
+            echo "::error::Tests did not all succeed, so coverage cannot be trusted. Failing the coverage gate."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Download raw coverage
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-raw-*
+          path: coverage/raw
+
+      - name: Merge coverage
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: >-
+          node .github/scripts/coverage/coverage.mjs merge
+          --input coverage/raw --output coverage/current
+          --sha "${{ github.event.pull_request.head.sha || github.sha }}"
+          --min-reports 7
+          ${PR_BASE_SHA:+--diff-base "$PR_BASE_SHA"}
+
+      - name: Upload coverage summary and combined Cobertura report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary
+          path: coverage/current
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Resolve baseline from the target commit
+        id: baseline
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_REF: ${{ github.base_ref }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node .github/scripts/coverage/resolve-baseline.mjs
+
+      - name: Download baseline coverage
+        if: github.event_name == 'pull_request' && steps.baseline.outputs.bootstrap == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-summary
+          path: coverage/baseline
+          run-id: ${{ steps.baseline.outputs.run-id }}
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+
+      - name: Compare with baseline
+        if: github.event_name == 'pull_request' && steps.baseline.outputs.bootstrap == 'false'
+        run: >-
+          node .github/scripts/coverage/coverage.mjs compare
+          --baseline coverage/baseline/coverage-summary.json
+          --current coverage/current/coverage-summary.json
+          --output coverage/current/coverage-comparison.md
+
+      - name: Bootstrap notice
+        if: github.event_name == 'pull_request' && steps.baseline.outputs.bootstrap == 'true'
+        run: |
+          echo "## Coverage regression gate" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "⚠️ The target commit predates the coverage gate, so there is no baseline to compare with. This is expected only for the PR that introduces the gate; the next push to main publishes the first baseline." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload comparison report
+        if: always() && github.event_name == 'pull_request' && steps.baseline.outputs.bootstrap == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-comparison
+          path: coverage/current/coverage-comparison.md
+          if-no-files-found: ignore
+          retention-days: 30
 
   javascript-test:
     name: JavaScript unit tests
@@ -68,6 +217,7 @@ jobs:
           .github/scripts/ios-app-icon-png.test.mjs
           .github/scripts/ios-display-name.test.mjs
           .github/scripts/release-version.test.mjs
+          .github/scripts/coverage/coverage.test.mjs
           .github/scripts/production-fly-auth-docs.test.mjs
           src/FishingLogBook.Web/build/configure-web.test.mjs
           src/FishingLogBook.Web/build/configure-app-links.test.mjs
