@@ -66,6 +66,9 @@ blob-report/
 playwright/.cache/
 test-results/
 coverage/
+# coverage/ above is generated output; these directories are tracked source
+!/.github/coverage/
+!/.github/scripts/coverage/
 artifacts/javascript-tests/
 
 # Local scratch

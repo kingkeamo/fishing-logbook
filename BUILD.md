@@ -119,7 +119,8 @@ GitHub.
 
 ## CI/CD
 
-GitHub Actions.
+GitHub Actions. Pull requests to `main` are gated against code-coverage regressions
+(line and branch); see [docs/CodeCoverage.md](docs/CodeCoverage.md).
 
 ## PWA Hosting
 
