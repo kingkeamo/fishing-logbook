@@ -1,0 +1,3 @@
+{
+  "excludePathPatterns": ["/obj/", "/bin/", ".g.cs", ".designer.cs"]
+}

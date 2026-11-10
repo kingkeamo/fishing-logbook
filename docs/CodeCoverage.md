@@ -17,7 +17,7 @@ percentage; the goal is only that coverage never silently goes down.
   project (for example the API tests exercising Application code) therefore counts. Because branch
   coverage per line is taken as the maximum rather than a true union, the figure is a slightly
   conservative lower bound, identically for baseline and PR.
-- Projects measured: everything under `src/` that a test project loads — Api, Application, Client,
+- Projects measured: everything under `src/` that a test project loads â€” Api, Application, Client,
   Db.Migrations, DependencyInjection, Domain, Infrastructure, Mobile (the `net10.0` presentation
   code only), Shared and Web.
 
@@ -42,7 +42,19 @@ approve the PR and let the next `main` run publish a new baseline.
 `FishingLogBook.Mobile.Tests` (`net10.0`) runs on Windows in its own `mobile-coverage` job in
 `build-test.yml`. It repeats the invocation of the `mobile-build-test.yml` android job (tests
 before any MAUI build, with hang diagnostics) with coverage added, so that existing workflow is
-unchanged. Platform-specific `net10.0-android` / `net10.0-ios` code is not part of the `net10.0`
+unchanged.
+
+*Why the Mobile tests run twice.* The alternative is to collect coverage in the `mobile-build-test.yml`
+android job and have the gate in `build-test.yml` fetch that artifact from the sibling workflow run
+for the same commit. That needs the gate to poll another workflow (which can be re-run, cancelled or
+slow independently), so a missing or stale Mobile report becomes a race instead of a clear failure,
+and it widens the gate's dependency on a workflow whose tests deliberately run before the MAUI
+builds because of a known `testhost` hang. The duplicate costs one extra Windows job; the
+single-workflow design keeps the gate deterministic. Duplication can be removed by restructuring
+the workflows around a shared prerequisite mobile test job, with both the coverage gate and
+platform builds depending on it. That requires coordinated changes to both workflows and their
+required checks. Revisit if Windows minutes become a concern: a Linux runner may work once the
+MAUI Android workload restore is verified there. Platform-specific `net10.0-android` / `net10.0-ios` code is not part of the `net10.0`
 test build and is therefore not measured; it needs emulator or device verification instead.
 
 ## How the gate works (`build-test.yml`)
@@ -55,10 +67,10 @@ test build and is therefore not measured; it needs emulator or device verificati
 
 On every push to `main` the same workflow publishes a `coverage-summary` artifact (retained 90
 days). For a PR the baseline is the artifact of the successful `build-test` run on `main` whose
-head commit is exactly the PR's target (`pull_request.base.sha`) — not "the latest run". The gate
+head commit is exactly the PR's target (`pull_request.base.sha`) â€” not "the latest run". The gate
 fails with an explanatory message when that run is missing, failed, still running after 30
 minutes, has an expired artifact, or has an incompatible schema. Re-run `build-test` on `main`
-(Actions → build-test → Run workflow) or update the PR branch to fix a missing baseline.
+(Actions â†’ build-test â†’ Run workflow) or update the PR branch to fix a missing baseline.
 
 The gate never treats absent data as success. It also fails when:
 
@@ -103,8 +115,14 @@ To compare two runs, produce `coverage-summary.json` for each and run:
 node .github/scripts/coverage/coverage.mjs compare --baseline main/coverage-summary.json --current coverage/current/coverage-summary.json
 ```
 
-The comparison logic is covered by `node --test .github/scripts/coverage/coverage.test.mjs`, which
-also runs in the `deployment-config-test` CI job.
+Run all 38 coverage tests with:
+
+```bash
+node --test .github/scripts/coverage/coverage.test.mjs .github/scripts/coverage/resolve-baseline.test.mjs
+```
+
+Both suites also run in the `deployment-config-test` CI job. They exercise the real CLI with
+temporary reports and repositories, and the baseline resolver against a local HTTP API fixture.
 
 ## Limitations
 
