@@ -58,6 +58,28 @@ public class WhenTestingGet : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturn503WhenTheRepositoryFails()
+    {
+        // Arrange
+        var catchId = Guid.NewGuid();
+        ResetRepositories();
+        _factory.CatchRepository
+            .GetDetailForUserAsync(catchId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<CatchDetail?>("Failed to load the catch."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.GetAsync($"/api/catches/{catchId:D}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.CatchRepository.Received(1).GetDetailForUserAsync(
+            catchId,
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldReturnACatchWithoutLocationWhenNoneWasSaved()
     {
         // Arrange

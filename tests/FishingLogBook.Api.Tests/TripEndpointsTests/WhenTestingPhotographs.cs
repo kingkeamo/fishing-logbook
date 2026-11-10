@@ -44,6 +44,76 @@ public class WhenTestingPhotographs : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturn503WhenTheTripLookupFailsWhileCreatingAnUpload()
+    {
+        // Arrange
+        Reset();
+        var tripId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Trip?>("Failed to load the trip."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync(
+            $"/api/trips/{tripId:D}/photographs/upload-url",
+            new PhotographUploadRequestDto(Guid.NewGuid(), PhotographContentTypeConstants.Jpeg));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripRepository.Received(1).GetByIdAsync(tripId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturn503WhenTheTripLookupFailsWhileRecordingAPhotograph()
+    {
+        // Arrange
+        Reset();
+        var tripId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Trip?>("Failed to load the trip."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync(
+            $"/api/trips/{tripId:D}/photographs",
+            new RecordTripPhotographDto(
+                photographId,
+                $"trips/{tripId:D}/{photographId:D}",
+                PhotographContentTypeConstants.Jpeg,
+                AddedOn));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripRepository.Received(1).GetByIdAsync(tripId, Arg.Any<CancellationToken>());
+        await _factory.TripPhotographRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripPhotograph>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturn503WhenTheTripLookupFailsWhileDeletingAPhotograph()
+    {
+        // Arrange
+        Reset();
+        var tripId = Guid.NewGuid();
+        var photographId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Trip?>("Failed to load the trip."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.DeleteAsync($"/api/trips/{tripId:D}/photographs/{photographId:D}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripRepository.Received(1).GetByIdAsync(tripId, Arg.Any<CancellationToken>());
+        await _factory.TripPhotographRepository.DidNotReceive().DeleteAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldRejectAnUnsupportedContentType()
     {
         // Arrange

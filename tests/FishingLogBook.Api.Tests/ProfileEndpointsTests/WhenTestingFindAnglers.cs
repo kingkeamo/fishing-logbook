@@ -93,6 +93,27 @@ public class WhenTestingFindAnglers : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturn503WhenTheRepositoryFails()
+    {
+        // Arrange
+        Reset();
+        _factory.ProfileRepository
+            .FindAnglersAsync(Arg.Any<FindAnglersArgs>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<IReadOnlyList<AnglerSummary>>("Failed to find anglers."));
+        var client = _factory.CreateAuthenticatedClient(
+            TestJwt.CreateAccessToken(subject: "lookup-failure"));
+
+        // Act
+        var response = await client.GetAsync("/api/profiles/lookup?q=John%20Connolly");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.ProfileRepository.Received(1).FindAnglersAsync(
+            Arg.Is<FindAnglersArgs>(args => args.Query == "John Connolly"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldExcludeTheSignedInAnglerAndCapTheResults()
     {
         // Arrange

@@ -85,6 +85,51 @@ public class WhenTestingNotes : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturn503WhenTheTripLookupFailsWhileRecordingANote()
+    {
+        // Arrange
+        Reset();
+        var tripId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Trip?>("Failed to load the trip."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.PostAsJsonAsync(
+            $"/api/trips/{tripId:D}/notes",
+            new RecordTripNoteDto(Guid.NewGuid(), "water dropped", RecordedOn));
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripRepository.Received(1).GetByIdAsync(tripId, Arg.Any<CancellationToken>());
+        await _factory.TripNoteRepository.DidNotReceive().UpsertAsync(
+            Arg.Any<TripNote>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ItShouldReturn503WhenTheTripLookupFailsWhileDeletingANote()
+    {
+        // Arrange
+        Reset();
+        var tripId = Guid.NewGuid();
+        var noteId = Guid.NewGuid();
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Trip?>("Failed to load the trip."));
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.DeleteAsync($"/api/trips/{tripId:D}/notes/{noteId:D}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripRepository.Received(1).GetByIdAsync(tripId, Arg.Any<CancellationToken>());
+        await _factory.TripNoteRepository.DidNotReceive().DeleteAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldNotFindAnotherAnglersTrip()
     {
         // Arrange

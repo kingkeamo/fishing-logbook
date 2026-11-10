@@ -1,16 +1,26 @@
 using FishingLogBook.Shared.Constants;
+using FishingLogBook.Shared.Photographs.Services;
+using FishingLogBook.Tests.Common.Photographs;
 using FishingLogBook.Web.Browser.Time;
 using FishingLogBook.Web.Features.Diagnostics.Services;
 using FishingLogBook.Web.Features.Photographs.Services;
-using FishingLogBook.Web.Tests.Features.Photographs.Services.PhotographMetadataServiceTests;
 using FishingLogBook.Web.Tests.TestSupport;
 using Microsoft.AspNetCore.Components.Forms;
 using NSubstitute;
 
 namespace FishingLogBook.Web.Tests.Features.Photographs.Services.PhotographPreparationServiceTests;
 
-public class BasePhotographPreparationServiceTest : BasePhotographMetadataServiceTest
+public class BasePhotographPreparationServiceTest : PhotographImageTestBase
 {
+    protected static readonly DateTimeOffset ReferenceNow =
+        DateTimeOffset.Parse("2026-08-26T12:00:00Z");
+
+    protected static PhotographMetadataService CreateMetadataService(ITimeService time)
+    {
+        return new PhotographMetadataService(
+            new PhotographMetadataProcessor(new WebPhotographLocalTimeMapper(time)));
+    }
+
     protected static readonly DateTimeOffset FileModifiedOn =
         DateTimeOffset.Parse("2026-08-22T10:28:43+00:00");
 

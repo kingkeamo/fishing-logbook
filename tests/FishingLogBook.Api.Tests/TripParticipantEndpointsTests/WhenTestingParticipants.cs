@@ -61,6 +61,27 @@ public class WhenTestingParticipants : IClassFixture<SystemApiFactory>
     }
 
     [Fact]
+    public async Task ItShouldReturn503WhenTheTripLookupFailsWhileReadingParticipants()
+    {
+        // Arrange
+        Reset();
+        var tripId = Guid.NewGuid();
+        var client = _factory.CreateAuthenticatedClient(
+            TestJwt.CreateAccessToken(subject: "participants-lookup-failure"));
+        _factory.TripRepository.GetByIdAsync(tripId, Arg.Any<CancellationToken>())
+            .Returns(Result.Fail<Trip?>("Failed to load the trip."));
+
+        // Act
+        var response = await client.GetAsync($"/api/trips/{tripId:D}/participants");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await _factory.TripParticipantRepository.DidNotReceive().GetByTripIdAsync(
+            Arg.Any<Guid>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ItShouldReturnNotFoundForATripTheAnglerIsNotOn()
     {
         // Arrange
