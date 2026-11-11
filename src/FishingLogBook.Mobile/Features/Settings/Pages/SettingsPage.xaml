@@ -1,27 +1,73 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
- xmlns:services="clr-namespace:FishingLogBook.Mobile.Features.Settings.Services"
- x:Class="FishingLogBook.Mobile.Features.Settings.Pages.SettingsPage" x:DataType="services:PreferenceService" Title="{Binding Text[Settings]}">
- <ScrollView><VerticalStackLayout Padding="16,12,16,20" Spacing="10" MaximumWidthRequest="720">
-  <Label Text="{Binding Text[SettingsIntro]}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level1" />
-  <Label Text="{Binding Text[SettingsBody]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
-  <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
-   <Label Text="{Binding Text[Theme]}" Style="{StaticResource SectionTitle}" />
-   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="ThemeSystem" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeSystem" Content="{Binding Text[ThemeSystem]}" />
-   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="ThemeLight" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeLight" Content="{Binding Text[ThemeLight]}" />
-   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="ThemeDark" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeDark" Content="{Binding Text[ThemeDark]}" />
-  </VerticalStackLayout></Border>
-  <Border Style="{StaticResource Card}" Padding="16,12"><VerticalStackLayout Spacing="8">
-   <Label Text="{Binding Text[Account]}" Style="{StaticResource SectionTitle}" />
-   <Label x:Name="AccountEmail" Style="{StaticResource SecondaryText}" AutomationId="AccountEmail" />
-   <Button Text="{Binding Text[SignOut]}" HeightRequest="48" Style="{StaticResource SecondaryButton}"
-    Clicked="OnSignOut" AutomationId="SignOut"
-    SemanticProperties.Description="{Binding Text[SignOutDescription]}" />
-  </VerticalStackLayout></Border>
-  <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
-   <Label Text="{Binding Text[Language]}" Style="{StaticResource SectionTitle}" />
-   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="LanguageEnglish" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageEnglish" Content="{Binding Text[LanguageEnglish]}" />
-   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="LanguageFrench" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageFrench" Content="{Binding Text[LanguageFrench]}" />
-  </VerticalStackLayout></Border>
- </VerticalStackLayout></ScrollView>
+             xmlns:services="clr-namespace:FishingLogBook.Mobile.Features.Settings.Services"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Settings.ViewModels"
+             xmlns:controls="clr-namespace:FishingLogBook.Mobile.Native.Controls"
+             x:Class="FishingLogBook.Mobile.Features.Settings.Pages.SettingsPage" x:DataType="vm:SettingsViewModel" Title="{Binding Text[Settings]}">
+  <ScrollView>
+    <VerticalStackLayout Padding="16,12,16,20" Spacing="10" MaximumWidthRequest="720">
+      <Label Text="{Binding Text[SettingsIntro]}" Style="{StaticResource Heading}" SemanticProperties.HeadingLevel="Level1" />
+      <Label Text="{Binding Text[SettingsBody]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
+      <Border Style="{StaticResource Card}" Padding="16,4">
+        <VerticalStackLayout Spacing="0">
+          <Label Text="{Binding Text[Theme]}" Style="{StaticResource SectionTitle}" />
+          <Grid>
+            <Button Style="{StaticResource SettingsOptionButton}" AutomationId="ThemeSystem" Clicked="OnAppearanceClicked"
+                    CommandParameter="{x:Static services:AppearanceEnum.System}" SemanticProperties.Description="{Binding SystemDescription}" />
+            <Grid ColumnDefinitions="22,*" ColumnSpacing="12" Padding="4,12" InputTransparent="True" CascadeInputTransparent="True">
+              <Grid WidthRequest="22" HeightRequest="22" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False">
+                <Ellipse StrokeThickness="2" Fill="Transparent" Stroke="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}">
+                  <Ellipse.Triggers><DataTrigger TargetType="Ellipse" Binding="{Binding IsSystemSelected}" Value="True"><Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" /></DataTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Margin="5" IsVisible="{Binding IsSystemSelected}" Fill="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+              </Grid>
+              <Label Grid.Column="1" Text="{Binding Text[ThemeSystem]}" FontSize="15" LineBreakMode="WordWrap" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" />
+            </Grid>
+          </Grid>
+          <Grid>
+            <Button Style="{StaticResource SettingsOptionButton}" AutomationId="ThemeLight" Clicked="OnAppearanceClicked"
+                    CommandParameter="{x:Static services:AppearanceEnum.Light}" SemanticProperties.Description="{Binding LightDescription}" />
+            <Grid ColumnDefinitions="22,*" ColumnSpacing="12" Padding="4,12" InputTransparent="True" CascadeInputTransparent="True">
+              <Grid WidthRequest="22" HeightRequest="22" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False">
+                <Ellipse StrokeThickness="2" Fill="Transparent" Stroke="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}">
+                  <Ellipse.Triggers><DataTrigger TargetType="Ellipse" Binding="{Binding IsLightSelected}" Value="True"><Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" /></DataTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Margin="5" IsVisible="{Binding IsLightSelected}" Fill="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+              </Grid>
+              <Label Grid.Column="1" Text="{Binding Text[ThemeLight]}" FontSize="15" LineBreakMode="WordWrap" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" />
+            </Grid>
+          </Grid>
+          <Grid>
+            <Button Style="{StaticResource SettingsOptionButton}" AutomationId="ThemeDark" Clicked="OnAppearanceClicked"
+                    CommandParameter="{x:Static services:AppearanceEnum.Dark}" SemanticProperties.Description="{Binding DarkDescription}" />
+            <Grid ColumnDefinitions="22,*" ColumnSpacing="12" Padding="4,12" InputTransparent="True" CascadeInputTransparent="True">
+              <Grid WidthRequest="22" HeightRequest="22" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False">
+                <Ellipse StrokeThickness="2" Fill="Transparent" Stroke="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}">
+                  <Ellipse.Triggers><DataTrigger TargetType="Ellipse" Binding="{Binding IsDarkSelected}" Value="True"><Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" /></DataTrigger></Ellipse.Triggers>
+                </Ellipse>
+                <Ellipse Margin="5" IsVisible="{Binding IsDarkSelected}" Fill="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+              </Grid>
+              <Label Grid.Column="1" Text="{Binding Text[ThemeDark]}" FontSize="15" LineBreakMode="WordWrap" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" />
+            </Grid>
+          </Grid>
+          <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Margin="0,4,0,8"
+                 TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+        </VerticalStackLayout>
+      </Border>
+      <Border Style="{StaticResource Card}" Padding="16,12">
+        <VerticalStackLayout Spacing="8">
+          <Label Text="{Binding Text[Account]}" Style="{StaticResource SectionTitle}" />
+          <Label x:Name="AccountEmail" Style="{StaticResource SecondaryText}" AutomationId="AccountEmail" />
+          <Button Text="{Binding Text[SignOut]}" HeightRequest="48" Style="{StaticResource SecondaryButton}"
+                  Clicked="OnSignOut" AutomationId="SignOut" SemanticProperties.Description="{Binding Text[SignOutDescription]}" />
+        </VerticalStackLayout>
+      </Border>
+      <Border Style="{StaticResource Card}" Padding="16,12">
+        <VerticalStackLayout Spacing="12">
+          <Label Text="{Binding Text[Language]}" Style="{StaticResource SectionTitle}" />
+          <controls:LanguageSelectorView ViewModel="{Binding Language}" AutomationId="LanguageSelector" />
+        </VerticalStackLayout>
+      </Border>
+    </VerticalStackLayout>
+  </ScrollView>
 </ContentPage>

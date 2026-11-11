@@ -55,6 +55,7 @@ using FishingLogBook.Mobile.Features.Profile.Stores;
 using FishingLogBook.Mobile.Features.Profile.ViewModels;
 using FishingLogBook.Mobile.Features.Settings.Pages;
 using FishingLogBook.Mobile.Features.Settings.Services;
+using FishingLogBook.Mobile.Features.Settings.ViewModels;
 using FishingLogBook.Mobile.Features.Showcase.Pages;
 using FishingLogBook.Mobile.Features.Startup.Coordinators;
 using FishingLogBook.Mobile.Features.Startup.Pages;
@@ -99,6 +100,7 @@ public static partial class MauiProgram
         builder.Services.AddSingleton<IPreferenceStore, DevicePreferenceStore>();
         builder.Services.AddSingleton<IAppearanceService, DeviceAppearanceService>();
         builder.Services.AddSingleton<PreferenceService>();
+        builder.Services.AddSingleton<SettingsViewModel>();
         builder.Services.AddSingleton<IRouteNavigator, ShellRouteNavigator>();
         builder.Services.AddSingleton<NavigationService>();
         builder.Services.AddSingleton<IInteractionPresenter, NativeInteractionPresenter>();

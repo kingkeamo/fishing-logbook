@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Settings.ViewModels"
+             x:Class="FishingLogBook.Mobile.Native.Controls.LanguageSelectorView" x:DataType="vm:LanguageSelectorViewModel">
+  <Border Style="{StaticResource InputField}" Padding="0" MinimumHeightRequest="56">
+    <Grid>
+      <Button x:Name="TriggerButton" Style="{StaticResource SettingsOptionButton}" Clicked="OnOpen"
+              AutomationId="LanguageSelectorButton" SemanticProperties.Description="{Binding AccessibilityDescription}" />
+      <Grid ColumnDefinitions="32,*,20" ColumnSpacing="12" Padding="14,12" InputTransparent="True" CascadeInputTransparent="True">
+        <Image Source="{Binding SelectedLanguage.FlagSource}" WidthRequest="28" HeightRequest="20" Aspect="AspectFit"
+               AutomationProperties.IsInAccessibleTree="False" VerticalOptions="Center" />
+        <Label Grid.Column="1" Text="{Binding SelectedLanguage.Name}" FontSize="15" VerticalOptions="Center"
+               LineBreakMode="WordWrap" AutomationProperties.IsInAccessibleTree="False" />
+        <Label Grid.Column="2" Text="⌄" FontSize="22" VerticalOptions="Center" HorizontalTextAlignment="Center"
+               TextColor="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}"
+               AutomationProperties.IsInAccessibleTree="False" />
+      </Grid>
+    </Grid>
+  </Border>
+</ContentView>

@@ -762,5 +762,11 @@
   <data name="DashboardAllSpecies" xml:space="preserve"><value>Toutes les espèces</value></data>
   <data name="DashboardAllMethods" xml:space="preserve"><value>Toutes les techniques</value></data>
   <data name="DashboardFiltersActive" xml:space="preserve"><value>Filtres actifs</value></data>
+  <data name="SelectionSelectedDescription" xml:space="preserve"><value>{0}, sélectionné</value></data>
+  <data name="SelectionNotSelectedDescription" xml:space="preserve"><value>{0}, non sélectionné</value></data>
+  <data name="LanguageSelectorDescription" xml:space="preserve"><value>Langue : {0}, {1}</value></data>
+  <data name="SelectionExpanded" xml:space="preserve"><value>développé</value></data>
+  <data name="SelectionCollapsed" xml:space="preserve"><value>réduit</value></data>
+  <data name="SettingsSaveFailed" xml:space="preserve"><value>Impossible d’enregistrer ce réglage. Réessayez.</value></data>
 </root>
 

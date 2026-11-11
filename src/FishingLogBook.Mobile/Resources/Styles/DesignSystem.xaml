@@ -161,43 +161,20 @@
     <Setter Property="HeightRequest" Value="1" />
     <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
   </Style>
-  <Style TargetType="RadioButton" x:Key="SettingsRadioButton">
+  <Style TargetType="Button" x:Key="SettingsOptionButton">
     <Setter Property="MinimumHeightRequest" Value="48" />
     <Setter Property="MinimumWidthRequest" Value="48" />
     <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontAttributes" Value="None" />
     <Setter Property="FontAutoScalingEnabled" Value="True" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="BorderWidth" Value="0" />
+    <Setter Property="Padding" Value="0" />
     <Setter Property="BackgroundColor" Value="Transparent" />
     <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Navy}, Dark={StaticResource Sky}}" />
-    <Setter Property="ControlTemplate">
-      <Setter.Value>
-        <ControlTemplate>
-          <Border BackgroundColor="Transparent" StrokeThickness="0" Padding="4,0">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalOptions="Center">
-              <Grid WidthRequest="22" HeightRequest="22" VerticalOptions="Center">
-                <Ellipse x:Name="Ring" StrokeThickness="2" Fill="Transparent" Stroke="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
-                <Ellipse x:Name="Dot" Margin="5" Opacity="0" Fill="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
-              </Grid>
-              <ContentPresenter Grid.Column="1" VerticalOptions="Center" />
-            </Grid>
-            <VisualStateManager.VisualStateGroups>
-              <VisualStateGroupList>
-                <VisualStateGroup x:Name="CheckedStates">
-                  <VisualState x:Name="Unchecked" />
-                  <VisualState x:Name="Checked">
-                    <VisualState.Setters>
-                      <Setter TargetName="Dot" Property="Ellipse.Opacity" Value="1" />
-                      <Setter TargetName="Ring" Property="Ellipse.Stroke" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
-                    </VisualState.Setters>
-                  </VisualState>
-                </VisualStateGroup>
-              </VisualStateGroupList>
-            </VisualStateManager.VisualStateGroups>
-          </Border>
-        </ControlTemplate>
-      </Setter.Value>
-    </Setter>
+    <Setter Property="HorizontalOptions" Value="Fill" />
+    <Setter Property="VerticalOptions" Value="Fill" />
   </Style>
-  <Style TargetType="RadioButton" BasedOn="{StaticResource SettingsRadioButton}" />
   <Style TargetType="CheckBox">
     <Setter Property="MinimumHeightRequest" Value="48" />
     <Setter Property="MinimumWidthRequest" Value="48" />
