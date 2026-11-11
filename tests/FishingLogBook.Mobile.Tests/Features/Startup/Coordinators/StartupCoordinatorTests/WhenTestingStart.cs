@@ -11,6 +11,105 @@ namespace FishingLogBook.Mobile.Tests.Features.Startup.Coordinators.StartupCoord
 public sealed class WhenTestingStart : BaseStartupCoordinatorTest
 {
     [Fact]
+    public async Task ItShouldRequireSignInWhenConnectivityReturnsButNoOnlineCredentialExists()
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockConnectivity.IsOnline.Returns(false, true);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockDeviceUnlock.UnlockAsync(Text["OfflineUnlockReason"], CancellationToken.None).Returns(DeviceUnlockResultEnum.Success);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(AuthenticationResultEnum.Success);
+
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(StartupResultEnum.SignInRequired);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+    }
+
+    [Fact]
+    public async Task ItShouldRequireSignInWhenNoStoredOnlineSessionExists()
+    {
+        // Arrange
+        MockConnectivity.IsOnline.Returns(true);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(AuthenticationResultEnum.Success);
+
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(StartupResultEnum.SignInRequired);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
+        await MockOfflineCapability.DidNotReceive().GetReadyAsync(Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+    }
+
+    [Fact]
+    public async Task ItShouldDenyAnOnlineOutageFallbackWithoutAPreparedCapability()
+    {
+        // Arrange
+        MockConnectivity.IsOnline.Returns(true);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(AuthenticationResultEnum.TemporarilyUnavailable);
+
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(StartupResultEnum.OfflineAccessUnavailable);
+        await MockOfflineCapability.Received(1).GetReadyAsync(CancellationToken.None);
+        await MockDeviceUnlock.DidNotReceive().UnlockAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await MockAccountSession.DidNotReceive().TransitionAsync(Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+    }
+
+    [Fact]
+    public async Task ItShouldRecheckPreparedAccessAfterUnlockBeforeActivatingTheAccount()
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockConnectivity.IsOnline.Returns(true);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(AuthenticationResultEnum.TemporarilyUnavailable);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockOfflinePreparation.IsPreparedAsync(capability, CancellationToken.None).Returns(true, false);
+        MockDeviceUnlock.UnlockAsync(Text["OfflineUnlockReason"], CancellationToken.None).Returns(DeviceUnlockResultEnum.Success);
+
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(StartupResultEnum.OfflineAccessUnavailable);
+        await MockOfflinePreparation.Received(2).IsPreparedAsync(capability, CancellationToken.None);
+        await MockAccountSession.DidNotReceive().TransitionAsync(Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+    }
+
+    [Theory]
+    [InlineData(AuthenticationResultEnum.Invalid, StartupResultEnum.SignInRequired)]
+    [InlineData(AuthenticationResultEnum.Pending, StartupResultEnum.SignInRequired)]
+    [InlineData(AuthenticationResultEnum.Cancelled, StartupResultEnum.SignInRequired)]
+    [InlineData(AuthenticationResultEnum.StorageUnavailable, StartupResultEnum.ServiceUnavailable)]
+    public async Task ItShouldNotBypassANonTransientFailureWhenConnectivityReturnsDuringUnlock(AuthenticationResultEnum authenticationResult, StartupResultEnum expected)
+    {
+        // Arrange
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockConnectivity.IsOnline.Returns(false, true);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockDeviceUnlock.UnlockAsync(Text["OfflineUnlockReason"], CancellationToken.None).Returns(DeviceUnlockResultEnum.Success);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(authenticationResult);
+
+        // Act
+        var result = await CreateSut().StartAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(expected);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
+        await MockAccountSession.DidNotReceive().TransitionAsync(Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+    }
+
+    [Fact]
     public async Task ItShouldRequireOnlineSignInOnAFirstOfflineLaunch()
     {
         // Arrange
@@ -39,12 +138,15 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task ItShouldRejectAReadyCapabilityWhenEssentialCachedDataIsMissing()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ItShouldRejectAReadyCapabilityWhenEssentialCachedDataIsMissing(bool isOnline)
     {
         // Arrange
         var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
-        MockConnectivity.IsOnline.Returns(false);
+        MockConnectivity.IsOnline.Returns(isOnline);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(AuthenticationResultEnum.TemporarilyUnavailable);
         MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
         MockOfflinePreparation.IsPreparedAsync(capability, CancellationToken.None).Returns(false);
 
@@ -57,19 +159,23 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
         MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
     }
 
-    [Fact]
-    public async Task ItShouldNotActivateOfflineAccessWhenDeviceUnlockIsCancelled()
+    [Theory]
+    [InlineData(DeviceUnlockResultEnum.Cancelled, StartupResultEnum.UnlockCancelled)]
+    [InlineData(DeviceUnlockResultEnum.Failed, StartupResultEnum.UnlockFailed)]
+    [InlineData(DeviceUnlockResultEnum.Unavailable, StartupResultEnum.UnlockFailed)]
+    public async Task ItShouldNotActivateOfflineAccessWhenDeviceUnlockDoesNotSucceed(DeviceUnlockResultEnum unlock, StartupResultEnum expected)
     {
         // Arrange
         var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
-        MockConnectivity.IsOnline.Returns(false);
+        MockConnectivity.IsOnline.Returns(true);
+        MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>()).Returns(AuthenticationResultEnum.TemporarilyUnavailable);
         MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
         MockDeviceUnlock.UnlockAsync(Arg.Any<string>(), CancellationToken.None)
-            .Returns(DeviceUnlockResultEnum.Cancelled);
+            .Returns(unlock);
         // Act
         var result = await CreateSut().StartAsync(CancellationToken.None);
         // Assert
-        result.Should().Be(StartupResultEnum.UnlockCancelled);
+        result.Should().Be(expected);
         MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
         await MockAccountSession.DidNotReceive().TransitionAsync(
             Arg.Any<Guid?>(),
@@ -107,7 +213,7 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
     }
 
     [Fact]
-    public async Task ItShouldShowARecoverableErrorWhenOnlineRestorationFailsAfterUnlock()
+    public async Task ItShouldActivateOfflineWhenOnlineRestorationFailsAfterUnlock()
     {
         // Arrange
         var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
@@ -120,8 +226,10 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
         // Act
         var result = await CreateSut().StartAsync(CancellationToken.None);
         // Assert
-        result.Should().Be(StartupResultEnum.ServiceUnavailable);
-        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
+        result.Should().Be(StartupResultEnum.OfflineSessionReady);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
+        await MockAccountSession.Received(1).TransitionAsync(UserId, CancellationToken.None);
+        MockOfflineSession.Received(1).Activate(capability);
     }
 
     [Fact]
@@ -147,32 +255,46 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
         await MockOfflineCapability.DidNotReceive().GetReadyAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task ItShouldRequireSignInAfterPermanentCognitoRejection()
+    [Theory]
+    [InlineData(AuthenticationResultEnum.Invalid, StartupResultEnum.SignInRequired)]
+    [InlineData(AuthenticationResultEnum.Pending, StartupResultEnum.SignInRequired)]
+    [InlineData(AuthenticationResultEnum.Cancelled, StartupResultEnum.SignInRequired)]
+    [InlineData(AuthenticationResultEnum.StorageUnavailable, StartupResultEnum.ServiceUnavailable)]
+    [InlineData((AuthenticationResultEnum)99, StartupResultEnum.ServiceUnavailable)]
+    public async Task ItShouldNotFallBackForNonTransientRestorationResults(AuthenticationResultEnum authenticationResult, StartupResultEnum expected)
     {
         // Arrange
         MockConnectivity.IsOnline.Returns(true);
         MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>())
-            .Returns(AuthenticationResultEnum.Invalid);
+            .Returns(authenticationResult);
         // Act
         var result = await CreateSut().StartAsync(CancellationToken.None);
         // Assert
-        result.Should().Be(StartupResultEnum.SignInRequired);
+        result.Should().Be(expected);
         await MockOfflineCapability.DidNotReceive().GetReadyAsync(Arg.Any<CancellationToken>());
+        await MockDeviceUnlock.DidNotReceive().UnlockAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        MockOfflineSession.DidNotReceive().Activate(Arg.Any<OfflineCapabilityModel>());
     }
 
     [Fact]
-    public async Task ItShouldShowARecoverableErrorWhenTheServiceFailsWhileInternetRemainsAvailable()
+    public async Task ItShouldUnlockPreparedOfflineAccessWhenTheServiceFailsWhileInternetRemainsAvailable()
     {
         // Arrange
         MockConnectivity.IsOnline.Returns(true);
         MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>())
             .Returns(AuthenticationResultEnum.TemporarilyUnavailable);
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockDeviceUnlock.UnlockAsync(Text["OfflineUnlockReason"], CancellationToken.None)
+            .Returns(DeviceUnlockResultEnum.Success);
         // Act
         var result = await CreateSut().StartAsync(CancellationToken.None);
         // Assert
-        result.Should().Be(StartupResultEnum.ServiceUnavailable);
-        await MockOfflineCapability.DidNotReceive().GetReadyAsync(Arg.Any<CancellationToken>());
+        result.Should().Be(StartupResultEnum.OfflineSessionReady);
+        await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
+        await MockDeviceUnlock.Received(1).UnlockAsync(Text["OfflineUnlockReason"], CancellationToken.None);
+        await MockAccountSession.Received(1).TransitionAsync(UserId, CancellationToken.None);
+        MockOfflineSession.Received(1).Activate(capability);
     }
 
     [Fact]
@@ -195,10 +317,14 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
     }
 
     [Fact]
-    public async Task ItShouldResolveATimedOutRestorationToARecoverableError()
+    public async Task ItShouldUnlockPreparedOfflineAccessAfterRestorationTimesOut()
     {
         // Arrange
         MockConnectivity.IsOnline.Returns(true);
+        var capability = new OfflineCapabilityModel(Subject, UserId, IsDeviceReady: true);
+        MockOfflineCapability.GetReadyAsync(CancellationToken.None).Returns(capability);
+        MockDeviceUnlock.UnlockAsync(Text["OfflineUnlockReason"], CancellationToken.None)
+            .Returns(DeviceUnlockResultEnum.Success);
         MockAuthentication.InitializeAsync(Arg.Any<CancellationToken>())
             .Returns(async call =>
             {
@@ -208,8 +334,10 @@ public sealed class WhenTestingStart : BaseStartupCoordinatorTest
         // Act
         var result = await CreateSut(TimeSpan.FromMilliseconds(20)).StartAsync(CancellationToken.None);
         // Assert
-        result.Should().Be(StartupResultEnum.ServiceUnavailable);
+        result.Should().Be(StartupResultEnum.OfflineSessionReady);
         await MockAuthentication.Received(1).InitializeAsync(Arg.Any<CancellationToken>());
+        await MockAccountSession.Received(1).TransitionAsync(UserId, CancellationToken.None);
+        MockOfflineSession.Received(1).Activate(capability);
     }
 
     [Fact]

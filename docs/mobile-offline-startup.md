@@ -3,9 +3,10 @@
 Issue #268 is delivered in three sequential pull requests. PR 1 established startup and
 secure unlock; PR 2 adds automatic, verified device preparation after onboarding.
 
-CBDF remains online-first. Offline access is available only when the device reports that
-it has no internet connection. A Cognito or CBDF API outage while the device remains online
-is shown as a recoverable service error and does not silently enable offline mode.
+CBDF attempts online restoration when internet connectivity is available. A temporary Cognito
+or CBDF identity-service outage or restoration timeout may fall back to secure offline unlock
+even while the device reports internet connectivity. Only an already prepared account can
+unlock; explicit authentication rejection and local storage failures do not permit fallback.
 
 ## Startup decisions
 
@@ -16,16 +17,17 @@ or a recoverable error:
 2. Refresh transient failures receive at most one immediate retry. The retry pipeline is
    shared, and the second refresh request is dispatched only when it can begin within the
    four-second safety window inside Cognito's configured five-second rotation grace period.
-3. After transient exhaustion, check connectivity again. A device that lost connectivity
-   may use offline unlock; a still-online device receives a retryable service error.
+3. After transient exhaustion or a restoration timeout, attempt secure offline unlock without
+   immediately retrying the same failed restoration, regardless of reported connectivity.
 4. Without internet connectivity, read the secure device capability and require Android or
    iOS device-owner authentication. If connectivity returns while that prompt is active,
-   resume normal online restoration instead of activating an offline session.
+   attempt online restoration once. A transient failure may still activate the securely
+   unlocked local account; rejection, pending/cancelled sign-in, and storage errors cannot.
 5. A successful offline unlock activates only an account-scoped local session lease. It
    does not create or expose an API bearer token.
 
-A first launch without internet, missing readiness, failed device verification, cancellation,
-and startup timeout all resolve to localized recoverable states instead of an indefinite
+A first launch without internet, missing readiness, failed device verification, and cancellation
+all resolve to localized recoverable states instead of an indefinite
 loading screen.
 
 ## Secure capability
@@ -65,7 +67,9 @@ not grant offline access. Returning users who completed onboarding before instal
 version are prepared automatically while online.
 
 Offline startup validates the secure capability and both account-scoped snapshots before it
-shows the device-owner prompt. Missing, corrupt, incomplete, or differently owned data fails
+shows the device-owner prompt, then revalidates readiness before activating the local session.
+This prevents a sign-out or revocation during unlock from reviving the account.
+Missing, corrupt, incomplete, or differently owned data fails
 closed and asks the user to reconnect. No offline session contains an API bearer token.
 
 ## PR boundaries
@@ -90,3 +94,10 @@ Validate the complete PR 2 journey on a physical Android device:
 Automated tests exercise preparation, partial failure, ownership, persistence verification,
 and startup rejection with incomplete data. Device prompt presentation and operating-system
 secure-storage behaviour still require emulator or physical-device validation.
+
+Also repeat the launch with internet enabled while the authentication or identity service is
+unreachable. Confirm that the prepared account can unlock, cancellation keeps it locked,
+and restoring the service allows the existing session lifecycle to revalidate the same owner
+and enable synchronization. The lifecycle retries on foreground, connectivity return, or
+explicit retry; authentication backoff remains in effect. An explicit 401/403 or permanent
+refresh rejection must require sign-in and revoke offline readiness.

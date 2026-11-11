@@ -1,3 +1,4 @@
+using System.Net;
 using FishingLogBook.Mobile.Features.Authentication.Browsers;
 using FishingLogBook.Mobile.Features.Authentication.Clients;
 using FishingLogBook.Mobile.Features.Authentication.Coordinators;
@@ -418,6 +419,30 @@ public sealed class AuthenticationService : IAuthenticationService, IDisposable
     }
 
     private async Task<AuthenticationResultEnum> EstablishSessionAsync(
+        OidcTokenResultModel tokenResult,
+        PersistedAuthenticationModel? expectedCredential,
+        OfflineRecoveryContext? recovery,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await EstablishVerifiedSessionAsync(tokenResult, expectedCredential, recovery, cancellationToken);
+        }
+        catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        {
+            _logger.LogWarning(exception, "Native identity verification rejected authentication.");
+            await InvalidateRejectedSessionAsync(recovery);
+            return AuthenticationResultEnum.Invalid;
+        }
+        catch (HttpRequestException exception) when (exception.StatusCode is null or HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests || (int)exception.StatusCode >= 500)
+        {
+            _logger.LogWarning(exception, "Native identity verification is temporarily unavailable.");
+            RecordRefreshFailure();
+            return AuthenticationResultEnum.TemporarilyUnavailable;
+        }
+    }
+
+    private async Task<AuthenticationResultEnum> EstablishVerifiedSessionAsync(
         OidcTokenResultModel tokenResult,
         PersistedAuthenticationModel? expectedCredential,
         OfflineRecoveryContext? recovery,
