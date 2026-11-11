@@ -7,9 +7,9 @@
   <Label Text="{Binding Text[SettingsBody]}" Style="{StaticResource SecondaryText}" Margin="0,-8,0,0" />
   <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
    <Label Text="{Binding Text[Theme]}" Style="{StaticResource SectionTitle}" />
-   <RadioButton x:Name="ThemeSystem" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeSystem" Content="{Binding Text[ThemeSystem]}" />
-   <RadioButton x:Name="ThemeLight" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeLight" Content="{Binding Text[ThemeLight]}" />
-   <RadioButton x:Name="ThemeDark" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeDark" Content="{Binding Text[ThemeDark]}" />
+   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="ThemeSystem" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeSystem" Content="{Binding Text[ThemeSystem]}" />
+   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="ThemeLight" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeLight" Content="{Binding Text[ThemeLight]}" />
+   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="ThemeDark" GroupName="Theme" CheckedChanged="OnAppearanceChanged" AutomationId="ThemeDark" Content="{Binding Text[ThemeDark]}" />
   </VerticalStackLayout></Border>
   <Border Style="{StaticResource Card}" Padding="16,12"><VerticalStackLayout Spacing="8">
    <Label Text="{Binding Text[Account]}" Style="{StaticResource SectionTitle}" />
@@ -20,8 +20,8 @@
   </VerticalStackLayout></Border>
   <Border Style="{StaticResource Card}" Padding="16,4"><VerticalStackLayout Spacing="0">
    <Label Text="{Binding Text[Language]}" Style="{StaticResource SectionTitle}" />
-   <RadioButton x:Name="LanguageEnglish" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageEnglish" Content="{Binding Text[LanguageEnglish]}" />
-   <RadioButton x:Name="LanguageFrench" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageFrench" Content="{Binding Text[LanguageFrench]}" />
+   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="LanguageEnglish" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageEnglish" Content="{Binding Text[LanguageEnglish]}" />
+   <RadioButton Style="{StaticResource SettingsRadioButton}" x:Name="LanguageFrench" GroupName="Language" CheckedChanged="OnLanguageChanged" AutomationId="LanguageFrench" Content="{Binding Text[LanguageFrench]}" />
   </VerticalStackLayout></Border>
  </VerticalStackLayout></ScrollView>
 </ContentPage>
