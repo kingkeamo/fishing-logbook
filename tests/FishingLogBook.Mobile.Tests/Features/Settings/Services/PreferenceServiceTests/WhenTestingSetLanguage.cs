@@ -27,6 +27,8 @@ public class WhenTestingSetLanguage : BasePreferenceServiceTest
         // Arrange
         var sut = CreateSut();
         MockStore.When(store => store.Set(PreferenceService.LanguageKey, "fr-FR")).Do(_ => throw new InvalidOperationException("Storage unavailable"));
+        var changes = new List<string?>();
+        sut.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
         var action = () => sut.SetLanguage(1);
         // Act
         action.Should().Throw<InvalidOperationException>();
@@ -34,6 +36,7 @@ public class WhenTestingSetLanguage : BasePreferenceServiceTest
         sut.LanguageIndex.Should().Be(0);
         sut.Text.Culture.Name.Should().Be("en-GB");
         MockStore.Received(1).Set(PreferenceService.LanguageKey, "fr-FR");
+        changes.Should().BeEmpty();
     }
 
     [Fact]

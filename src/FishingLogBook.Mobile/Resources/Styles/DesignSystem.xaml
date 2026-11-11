@@ -161,7 +161,7 @@
     <Setter Property="HeightRequest" Value="1" />
     <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource OutlineLight}, Dark={StaticResource OutlineDark}}" />
   </Style>
-  <Style TargetType="RadioButton">
+  <Style TargetType="RadioButton" x:Key="SettingsRadioButton">
     <Setter Property="MinimumHeightRequest" Value="48" />
     <Setter Property="MinimumWidthRequest" Value="48" />
     <Setter Property="FontSize" Value="15" />
@@ -197,6 +197,7 @@
       </Setter.Value>
     </Setter>
   </Style>
+  <Style TargetType="RadioButton" BasedOn="{StaticResource SettingsRadioButton}" />
   <Style TargetType="CheckBox">
     <Setter Property="MinimumHeightRequest" Value="48" />
     <Setter Property="MinimumWidthRequest" Value="48" />

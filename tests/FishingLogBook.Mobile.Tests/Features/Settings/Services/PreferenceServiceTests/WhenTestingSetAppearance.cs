@@ -27,6 +27,8 @@ public class WhenTestingSetAppearance : BasePreferenceServiceTest
         // Arrange
         var sut = CreateSut();
         MockStore.When(store => store.Set(PreferenceService.AppearanceKey, "Dark")).Do(_ => throw new InvalidOperationException("Unavailable"));
+        var changes = new List<string?>();
+        sut.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
         var action = () => sut.SetAppearance(AppearanceEnum.Dark);
         // Act
         action.Should().Throw<InvalidOperationException>();
@@ -34,6 +36,7 @@ public class WhenTestingSetAppearance : BasePreferenceServiceTest
         sut.Appearance.Should().Be(AppearanceEnum.System);
         MockStore.Received(1).Set(PreferenceService.AppearanceKey, "Dark");
         MockAppearance.DidNotReceive().Apply(AppearanceEnum.Dark);
+        changes.Should().BeEmpty();
     }
 
     [Fact]
@@ -56,6 +59,8 @@ public class WhenTestingSetAppearance : BasePreferenceServiceTest
     {
         // Arrange
         var sut = CreateSut();
+        var changes = new List<string?>();
+        sut.PropertyChanged += (_, args) => changes.Add(args.PropertyName);
         // Act
         sut.SetAppearance(appearance);
         // Assert
@@ -63,6 +68,7 @@ public class WhenTestingSetAppearance : BasePreferenceServiceTest
         MockStore.Received(1).Set(PreferenceService.AppearanceKey, stored);
         MockAppearance.Received(1).Apply(appearance);
         MockStore.DidNotReceive().Set(PreferenceService.LanguageKey, Arg.Any<string>());
+        changes.Should().Equal(nameof(sut.Appearance));
     }
 
     [Fact]
