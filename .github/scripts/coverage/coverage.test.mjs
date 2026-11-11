@@ -187,7 +187,7 @@ test('a project deleted from src is reported, not treated as missing data', () =
   assert.match(result.notes.join('\n'), /FishingLogBook\.Web was removed/);
 });
 
-test('highlights a project whose coverage decreases even when the overall result passes', () => {
+test('fails a project regression even when overall line and branch coverage improve', () => {
   const baseline = summaryOf([
     { path: 'src/FishingLogBook.Api/A.cs', lines: [[1, 1], [2, 1], [3, 0], [4, 1, '1/2']] },
     { path: 'src/FishingLogBook.Web/B.cs', lines: [[1, 0], [2, 0], [3, 0], [4, 0, '0/2']] },
@@ -197,9 +197,112 @@ test('highlights a project whose coverage decreases even when the overall result
     { path: 'src/FishingLogBook.Web/B.cs', lines: [[1, 1], [2, 1], [3, 1], [4, 1, '2/2']] },
   ]);
   const result = compareSummaries(baseline, current);
-  assert.equal(result.passed, true);
+  assert.equal(result.passed, false);
+  assert.ok(result.metrics.every((metric) => metric.passed && metric.delta > 0));
+  assert.match(result.failures.join('\n'), /FishingLogBook\.Api: Line coverage decreased from 75.00% to 50.00%/);
+  assert.match(result.failures.join('\n'), /FishingLogBook\.Api: Branch coverage decreased from 50.00% to 0.00%/);
   assert.equal(result.projects.find((project) => project.name === 'FishingLogBook.Api').linesDecreased, true);
-  assert.match(renderComparisonMarkdown(result), /FishingLogBook\.Api .*⚠️ decreased/);
+  assert.match(renderComparisonMarkdown(result), /FishingLogBook\.Api .*❌ line decreased, branch decreased/);
+});
+
+for (const metric of ['lines', 'branches']) {
+  for (const improvement of [0, 1]) {
+    test(`fails an isolated project ${metric} decrease when overall coverage ${improvement ? 'improves' : 'is unchanged'}`, () => {
+      const project = (lineHits, branches) => [[1, 1, `${branches}/2`], [2, lineHits]];
+      const baseline = summaryOf([
+        { path: 'src/FishingLogBook.Mobile/Preferences.cs', lines: project(1, 2) },
+        { path: 'src/FishingLogBook.Api/A.cs', lines: project(0, 0) },
+      ]);
+      const current = summaryOf([
+        { path: 'src/FishingLogBook.Mobile/Preferences.cs', lines: project(metric === 'lines' ? 0 : 1, metric === 'branches' ? 1 : 2) },
+        { path: 'src/FishingLogBook.Api/A.cs', lines: [
+          ...project(metric === 'lines' ? 1 : 0, metric === 'branches' ? 1 + improvement : 0),
+          ...(metric === 'lines' && improvement ? [[3, 1]] : []),
+        ] },
+      ]);
+      const result = compareSummaries(baseline, current);
+      assert.equal(result.passed, false);
+      assert.ok(result.metrics.every((entry) => entry.passed));
+      assert.equal(result.metrics.find((entry) => entry.metric === metric).delta > 0, Boolean(improvement));
+      assert.equal(result.failures.length, 1);
+      assert.match(result.failures[0], new RegExp(`FishingLogBook\\.Mobile: ${metric === 'lines' ? 'Line' : 'Branch'} coverage decreased`));
+    });
+  }
+}
+
+test('reports a new project and permits deleting a project when remaining coverage does not regress', () => {
+  const baseline = summaryOf(baselineFiles);
+  const current = summaryOf([
+    { path: 'src/FishingLogBook.Api/A.cs', lines: [[1, 1, '2/2'], [2, 1]] },
+    { path: 'src/FishingLogBook.Mobile/Preferences.cs', lines: [[1, 1]] },
+  ]);
+  const result = compareSummaries(baseline, current, { existingProjects: ['FishingLogBook.Api', 'FishingLogBook.Mobile'] });
+  assert.equal(result.passed, true);
+  assert.equal(result.projects.find((project) => project.name === 'FishingLogBook.Web').state, 'removed');
+  assert.equal(result.projects.find((project) => project.name === 'FishingLogBook.Mobile').state, 'added');
+  assert.match(renderComparisonMarkdown(result), /FishingLogBook\.Mobile \| — → 100.00% \| — → n\/a \| new/);
+});
+
+test('fails missing project coverage even when the remaining projects improve overall coverage', () => {
+  const result = compareSummaries(summaryOf(baselineFiles), summaryOf([
+    { path: 'src/FishingLogBook.Api/A.cs', lines: [[1, 1, '2/2']] },
+  ]), { existingProjects: ['FishingLogBook.Api', 'FishingLogBook.Web'] });
+  assert.equal(result.passed, false);
+  assert.ok(result.metrics.every((metric) => metric.passed));
+  assert.match(renderComparisonMarkdown(result), /FishingLogBook\.Web .*❌ missing coverage/);
+});
+
+test('handles projects with no branches before, after, or on both sides without a false regression', () => {
+  for (const [before, after] of [[null, null], [null, '0/2'], ['2/2', null]]) {
+    const files = (branches) => [
+      { path: 'src/FishingLogBook.Api/A.cs', lines: [[1, 1, '2/2']] },
+      { path: 'src/FishingLogBook.Mobile/Preferences.cs', lines: [[1, 1, branches]] },
+    ];
+    const baseline = summaryOf(files(before));
+    const current = summaryOf(files(after));
+    const result = compareSummaries(baseline, current);
+    assert.equal(result.projects.find((project) => project.name === 'FishingLogBook.Mobile').branchesDecreased, false);
+    assert.equal(result.failures.some((failure) => failure.startsWith('FishingLogBook.Mobile:')), false);
+    assert.equal(result.passed, before === null && after !== null ? false : true);
+  }
+});
+
+test('compares unrounded project ratios with only negligible floating-point tolerance', () => {
+  for (const metric of ['lines', 'branches']) {
+    for (const [total, expected] of [[100000, false], [10000000000, true]]) {
+      const baseline = summaryOf(baselineFiles);
+      baseline.projects['FishingLogBook.Api'][metric] = { covered: total - 1, total };
+      const current = structuredClone(baseline);
+      current.projects['FishingLogBook.Api'][metric].covered -= 1;
+      const result = compareSummaries(baseline, current);
+      assert.equal(result.passed, expected);
+      assert.equal(result.projects.find((project) => project.name === 'FishingLogBook.Api')[`${metric}Decreased`], !expected);
+    }
+  }
+});
+
+test('rejects missing or invalid project metrics in both summaries', () => {
+  for (const side of ['baseline', 'current']) {
+    for (const metric of ['lines', 'branches']) {
+      for (const invalid of [undefined, null, { covered: NaN, total: 2 }, { covered: 1, total: Infinity },
+        { covered: -1, total: 2 }, { covered: 3, total: 2 }, { covered: 0, total: -1 }]) {
+        const baseline = summaryOf(baselineFiles);
+        const current = structuredClone(baseline);
+        (side === 'baseline' ? baseline : current).projects['FishingLogBook.Api'][metric] = invalid;
+        assert.throws(() => compareSummaries(baseline, current), new RegExp(`${side}: FishingLogBook\\.Api ${metric} coverage data`));
+      }
+    }
+    const baseline = summaryOf(baselineFiles);
+    const current = structuredClone(baseline);
+    (side === 'baseline' ? baseline : current).projects['FishingLogBook.Api'].lines = { covered: 0, total: 0 };
+    assert.throws(() => compareSummaries(baseline, current), /FishingLogBook\.Api lines coverage data is missing or invalid/);
+    for (const invalid of [undefined, null, []]) {
+      const baseline = summaryOf(baselineFiles);
+      const current = structuredClone(baseline);
+      (side === 'baseline' ? baseline : current).projects = invalid;
+      assert.throws(() => compareSummaries(baseline, current), /projects coverage data is missing or invalid/);
+    }
+  }
 });
 
 test('fails when the coverage configuration or exclusions change', () => {
@@ -410,4 +513,61 @@ test('the CLI gate fails when a production project exists but its report is miss
   const result = runCli(['compare', '--baseline', baseline, '--current', missingWeb, '--src-dir', srcDir]);
   assert.equal(result.status, 1);
   assert.match(result.stdout, /FishingLogBook\.Web still exists under src\/ but has no coverage data/);
+});
+
+for (const metric of ['lines', 'branches']) {
+  test(`the CLI merges Mobile reports and fails a project-only ${metric} regression in the Actions summary`, () => {
+    const { root, srcDir } = twoProjectSource();
+    mkdirSync(join(srcDir, 'FishingLogBook.Mobile'));
+    const summaries = [];
+    for (const revision of ['baseline', 'current']) {
+      const directory = join(root, revision);
+      const current = revision === 'current';
+      const linesChanged = metric === 'lines' && current;
+      const branchesChanged = metric === 'branches' && current;
+      writeReport(join(directory, 'raw', 'dotnet'), 'api', [
+        { path: 'src/FishingLogBook.Api/A.cs', lines: [[1, 1, branchesChanged ? '1/2' : '0/2'], [2, linesChanged ? 1 : 0]] },
+      ]);
+      writeReport(join(directory, 'raw', 'mobile'), 'presentation', [
+        { path: 'src/FishingLogBook.Mobile/Preferences.cs', lines: [[1, 1, branchesChanged ? '1/2' : '2/2'], [2, linesChanged ? 0 : 1]] },
+      ]);
+      const merge = runCli([
+        'merge', '--input', join(directory, 'raw'), '--output', join(directory, 'out'), '--min-reports', '2', '--sha', revision,
+        '--config', join(here, '../../coverage/coverage.config.json'), '--runsettings', join(here, '../../../coverage.runsettings'),
+      ]);
+      assert.equal(merge.status, 0, merge.stderr);
+      summaries.push(join(directory, 'out', 'coverage-summary.json'));
+    }
+    const stepSummary = join(root, 'step-summary.md');
+    const comparison = join(root, 'coverage-comparison.md');
+    const result = runCli([
+      'compare', '--baseline', summaries[0], '--current', summaries[1], '--src-dir', srcDir, '--output', comparison,
+    ], { GITHUB_STEP_SUMMARY: stepSummary });
+    assert.equal(result.status, 1);
+    const markdown = readFileSync(stepSummary, 'utf8');
+    assert.equal(markdown.trim(), readFileSync(comparison, 'utf8').trim());
+    assert.match(markdown, /Result: FAIL/);
+    assert.match(markdown, /\| Line coverage .*✅ Pass/);
+    assert.match(markdown, /\| Branch coverage .*✅ Pass/);
+    assert.match(markdown, new RegExp(`FishingLogBook\\.Mobile: ${metric === 'lines' ? 'Line' : 'Branch'} coverage decreased from 100.00% to 50.00%`));
+    assert.match(markdown, metric === 'lines'
+      ? /FishingLogBook\.Mobile \| 100.00% → 50.00% \| 100.00% → 100.00% \| ❌ line decreased/
+      : /FishingLogBook\.Mobile \| 100.00% → 100.00% \| 100.00% → 50.00% \| ❌ branch decreased/);
+  });
+}
+
+test('the CLI rejects invalid project data and explains the failure in the Actions summary', () => {
+  const { root, srcDir } = twoProjectSource();
+  const baseline = mergeInto(join(root, 'baseline'), baselineFiles, 'main-sha');
+  const current = JSON.parse(readFileSync(baseline, 'utf8'));
+  delete current.projects['FishingLogBook.Api'].branches;
+  const currentPath = join(root, 'current.json');
+  writeFileSync(currentPath, JSON.stringify(current));
+  const stepSummary = join(root, 'step-summary.md');
+  const result = runCli([
+    'compare', '--baseline', baseline, '--current', currentPath, '--src-dir', srcDir,
+  ], { GITHUB_STEP_SUMMARY: stepSummary });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /FishingLogBook\.Api branches coverage data is missing or invalid/);
+  assert.match(readFileSync(stepSummary, 'utf8'), /Failed:.*FishingLogBook\.Api branches coverage data is missing or invalid/);
 });
