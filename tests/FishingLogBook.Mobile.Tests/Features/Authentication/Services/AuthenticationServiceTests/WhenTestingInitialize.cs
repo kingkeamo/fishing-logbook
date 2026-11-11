@@ -1,3 +1,4 @@
+using System.Net;
 using AwesomeAssertions;
 using FishingLogBook.Mobile.Features.Authentication.Enums;
 using FishingLogBook.Mobile.Features.Authentication.Models;
@@ -8,6 +9,81 @@ namespace FishingLogBook.Mobile.Tests.Features.Authentication.Services.Authentic
 
 public class WhenTestingInitialize : BaseAuthenticationServiceTest
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData(HttpStatusCode.RequestTimeout)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.BadGateway)]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.GatewayTimeout)]
+    public async Task ItShouldRetainPreparedAccessAndBackOffWhenBackendIdentityVerificationIsUnavailable(HttpStatusCode? status)
+    {
+        // Arrange
+        MockStore.GetCredentialAsync().Returns(new PersistedAuthenticationModel(RefreshToken, Subject, UserId));
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(CreateTokenResult());
+        MockCurrentUserClient.GetCurrentAsync(AccessToken, CancellationToken.None)
+            .Returns(Task.FromException<CurrentUserDto>(new HttpRequestException("Identity unavailable", null, status)));
+
+        // Act
+        var result = await Sut.InitializeAsync(CancellationToken.None);
+        var retry = await Sut.InitializeAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.TemporarilyUnavailable);
+        retry.Should().Be(AuthenticationResultEnum.TemporarilyUnavailable);
+        Sut.CurrentSession.Should().BeNull();
+        await MockRefreshService.Received(1).RefreshAsync(RefreshToken, CancellationToken.None);
+        await MockCurrentUserClient.Received(1).GetCurrentAsync(AccessToken, CancellationToken.None);
+        await MockOfflineCapability.DidNotReceive().RevokeAsync(Arg.Any<CancellationToken>());
+        await MockStore.DidNotReceive().RemoveCredentialAsync();
+        await MockStore.DidNotReceive().SaveCredentialAsync(Arg.Any<PersistedAuthenticationModel>());
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Unauthorized)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task ItShouldRevokePreparedAccessAfterExplicitBackendRejection(HttpStatusCode status)
+    {
+        // Arrange
+        MockStore.GetCredentialAsync().Returns(new PersistedAuthenticationModel(RefreshToken, Subject, UserId));
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(CreateTokenResult());
+        MockCurrentUserClient.GetCurrentAsync(AccessToken, CancellationToken.None)
+            .Returns(Task.FromException<CurrentUserDto>(new HttpRequestException("Identity rejected", null, status)));
+
+        // Act
+        var result = await Sut.InitializeAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.Invalid);
+        Sut.CurrentSession.Should().BeNull();
+        await MockCurrentUserClient.Received(1).GetCurrentAsync(AccessToken, CancellationToken.None);
+        await MockOfflineCapability.Received(1).RevokeAsync(CancellationToken.None);
+        await MockStore.Received(1).RemoveCredentialAsync();
+        await MockStore.DidNotReceive().SaveCredentialAsync(Arg.Any<PersistedAuthenticationModel>());
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task ItShouldNotClassifyOtherBackendFailuresAsTransient(HttpStatusCode status)
+    {
+        // Arrange
+        MockStore.GetCredentialAsync().Returns(new PersistedAuthenticationModel(RefreshToken, Subject, UserId));
+        MockRefreshService.RefreshAsync(RefreshToken, CancellationToken.None).Returns(CreateTokenResult());
+        MockCurrentUserClient.GetCurrentAsync(AccessToken, CancellationToken.None)
+            .Returns(Task.FromException<CurrentUserDto>(new HttpRequestException("Unexpected response", null, status)));
+
+        // Act
+        var result = await Sut.InitializeAsync(CancellationToken.None);
+
+        // Assert
+        result.Should().Be(AuthenticationResultEnum.StorageUnavailable);
+        Sut.CurrentSession.Should().BeNull();
+        await MockCurrentUserClient.Received(1).GetCurrentAsync(AccessToken, CancellationToken.None);
+        await MockStore.DidNotReceive().RemoveCredentialAsync();
+    }
+
     [Fact]
     public async Task ItShouldFailClosedWithoutDeletingCredentialsWhenSecureStorageCannotBeRead()
     {

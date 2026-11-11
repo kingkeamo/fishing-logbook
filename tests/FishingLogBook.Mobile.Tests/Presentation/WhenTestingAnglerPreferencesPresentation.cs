@@ -20,7 +20,7 @@ public class WhenTestingAnglerPreferencesPresentation
         settings.Should().NotContain("AutomationId=\"FishingPreferences\"");
         settings.Should().NotContain("AutomationId=\"WeightUnitKg\"");
         settings.Should().NotContain("AutomationId=\"LengthUnitCm\"");
-        settings.Should().Contain("AutomationId=\"LanguageFrench\"");
+        settings.Should().Contain("AutomationId=\"LanguageSelector\"");
         settings.Should().Contain("AutomationId=\"ThemeDark\"");
         var editor = File.ReadAllText(Path.Combine(MobileRoot, "Native", "Controls", "FishingPreferenceEditorView.xaml"));
         profile.Should().Contain("<controls:FishingPreferenceEditorView");

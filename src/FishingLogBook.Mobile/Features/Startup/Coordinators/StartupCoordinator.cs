@@ -36,19 +36,14 @@ public sealed class StartupCoordinator(
                 : StartupResultEnum.OnlineSessionReady;
         }
 
-        if (authenticationResult == AuthenticationResultEnum.Pending)
+        if (authenticationResult is AuthenticationResultEnum.Pending or AuthenticationResultEnum.Invalid or AuthenticationResultEnum.Cancelled)
         {
             return StartupResultEnum.SignInRequired;
         }
 
-        if (authenticationResult == AuthenticationResultEnum.Invalid)
-        {
-            return StartupResultEnum.SignInRequired;
-        }
-
-        return connectivity.IsOnline
-            ? StartupResultEnum.ServiceUnavailable
-            : await UnlockOfflineAsync(cancellationToken);
+        return authenticationResult == AuthenticationResultEnum.TemporarilyUnavailable
+            ? await UnlockOfflineAsync(cancellationToken, restoreOnlineIfConnected: false)
+            : StartupResultEnum.ServiceUnavailable;
     }
 
     private async Task<AuthenticationResultEnum> RestoreOnlineAsync(CancellationToken cancellationToken)
@@ -65,7 +60,9 @@ public sealed class StartupCoordinator(
         }
     }
 
-    private async Task<StartupResultEnum> UnlockOfflineAsync(CancellationToken cancellationToken)
+    private async Task<StartupResultEnum> UnlockOfflineAsync(
+        CancellationToken cancellationToken,
+        bool restoreOnlineIfConnected = true)
     {
         var capability = await offlineCapability.GetReadyAsync(cancellationToken);
         if (capability is null)
@@ -86,7 +83,7 @@ public sealed class StartupCoordinator(
                 : StartupResultEnum.UnlockFailed;
         }
 
-        if (connectivity.IsOnline)
+        if (restoreOnlineIfConnected && connectivity.IsOnline)
         {
             return await ResolveOnlineRestorationAsync(capability, cancellationToken);
         }
@@ -106,20 +103,26 @@ public sealed class StartupCoordinator(
                 : StartupResultEnum.OnlineSessionReady;
         }
 
-        if (authenticationResult is AuthenticationResultEnum.Pending or AuthenticationResultEnum.Invalid)
+        if (authenticationResult is AuthenticationResultEnum.Pending or AuthenticationResultEnum.Invalid or AuthenticationResultEnum.Cancelled)
         {
             return StartupResultEnum.SignInRequired;
         }
 
-        return connectivity.IsOnline
-            ? StartupResultEnum.ServiceUnavailable
-            : await ActivateOfflineAsync(verifiedCapability, cancellationToken);
+        return authenticationResult == AuthenticationResultEnum.TemporarilyUnavailable
+            ? await ActivateOfflineAsync(verifiedCapability, cancellationToken)
+            : StartupResultEnum.ServiceUnavailable;
     }
 
     private async Task<StartupResultEnum> ActivateOfflineAsync(
         OfflineCapabilityModel capability,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!await offlinePreparation.IsPreparedAsync(capability, cancellationToken))
+        {
+            return StartupResultEnum.OfflineAccessUnavailable;
+        }
+
         await accountSession.TransitionAsync(capability.UserId, cancellationToken);
         offlineSession.Activate(capability);
         return StartupResultEnum.OfflineSessionReady;

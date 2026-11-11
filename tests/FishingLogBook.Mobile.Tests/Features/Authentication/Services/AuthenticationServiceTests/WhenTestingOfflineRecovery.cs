@@ -60,7 +60,7 @@ public sealed class WhenTestingOfflineRecovery : BaseAuthenticationServiceTest
         var result = await Sut.InitializeAsync(CancellationToken.None);
 
         // Assert
-        result.Should().Be(AuthenticationResultEnum.StorageUnavailable);
+        result.Should().Be(AuthenticationResultEnum.TemporarilyUnavailable);
         Sut.CurrentSession.Should().BeNull();
         MockOfflineSession.Current.Should().Be(_capability);
         MockOfflineSession.DidNotReceive().Lock();

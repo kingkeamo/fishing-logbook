@@ -168,6 +168,21 @@ export function validateSummary(summary, label) {
       throw new CoverageError(`${label}: ${metric} coverage totals are missing or invalid.`);
     }
   }
+  for (const key of ['projects', 'files']) {
+    if (!summary[key] || typeof summary[key] !== 'object' || Array.isArray(summary[key])) {
+      throw new CoverageError(`${label}: ${key} coverage data is missing or invalid.`);
+    }
+  }
+  for (const [name, project] of Object.entries(summary.projects)) {
+    for (const metric of ['lines', 'branches']) {
+      const counter = project?.[metric];
+      if (!counter || !Number.isFinite(counter.covered) || !Number.isFinite(counter.total)
+        || counter.total < (metric === 'lines' ? 1 : 0)
+        || counter.covered < 0 || counter.covered > counter.total) {
+        throw new CoverageError(`${label}: ${name} ${metric} coverage data is missing or invalid.`);
+      }
+    }
+  }
 }
 
 export function compareSummaries(baseline, current, options = {}) {
@@ -203,12 +218,17 @@ export function compareSummaries(baseline, current, options = {}) {
     if (!before && after) {
       notes.push(`${name} is new in this change.`);
     }
-    const row = { name, state: before && after ? 'changed' : before ? 'removed' : 'added' };
+    const row = { name, state: before && after ? 'changed' : before ? (existingProjects.has(name) ? 'missing' : 'removed') : 'added' };
     for (const metric of ['lines', 'branches']) {
       row[`${metric}Before`] = before ? ratio(before[metric]) : null;
       row[`${metric}After`] = after ? ratio(after[metric]) : null;
       row[`${metric}Decreased`] = Boolean(before && after
         && ratio(after[metric]) < ratio(before[metric]) - tolerance);
+      if (row[`${metric}Decreased`]) {
+        const previous = row[`${metric}Before`];
+        const next = row[`${metric}After`];
+        failures.push(`${name}: ${metric === 'lines' ? 'Line' : 'Branch'} coverage decreased from ${percent(previous)} to ${percent(next)} (${signedPoints(next - previous)}).`);
+      }
     }
     return row;
   });
@@ -346,11 +366,12 @@ export function renderComparisonMarkdown(result, context = {}) {
     out.push(`- ℹ️ ${note}`);
   }
   out.push('', '### Coverage by production project', '',
-    '| Project | Line (main → PR) | Branch (main → PR) | |', '|---|---|---|---|');
+    '| Project | Line (main → PR) | Branch (main → PR) | Result |', '|---|---|---|---|');
   for (const project of result.projects) {
     const flag = project.linesDecreased || project.branchesDecreased
-      ? '⚠️ decreased'
-      : project.state === 'added' ? 'new' : project.state === 'removed' ? 'removed' : '';
+      ? `❌ ${[project.linesDecreased ? 'line decreased' : '', project.branchesDecreased ? 'branch decreased' : ''].filter(Boolean).join(', ')}`
+      : project.state === 'missing' ? '❌ missing coverage'
+        : project.state === 'added' ? 'new' : project.state === 'removed' ? 'removed' : '✅ Pass';
     out.push(`| ${project.name} | ${cell(project.linesBefore)} → ${cell(project.linesAfter)} | ${cell(project.branchesBefore)} → ${cell(project.branchesAfter)} | ${flag} |`);
   }
   if (result.changed) {

@@ -1,73 +1,41 @@
 using FishingLogBook.Mobile.Features.Authentication.Services;
 using FishingLogBook.Mobile.Features.Settings.Services;
+using FishingLogBook.Mobile.Features.Settings.ViewModels;
 
 namespace FishingLogBook.Mobile.Features.Settings.Pages;
 
 public partial class SettingsPage : ContentPage
 {
-    private readonly PreferenceService _preferences;
+    private readonly SettingsViewModel _viewModel;
     private readonly IAuthenticationService _authenticationService;
-    private bool _refreshing;
 
-    public SettingsPage(
-        PreferenceService preferences,
-        IAuthenticationService authenticationService)
+    public SettingsPage(SettingsViewModel viewModel, IAuthenticationService authenticationService)
     {
-        _preferences = preferences;
+        _viewModel = viewModel;
         _authenticationService = authenticationService;
         InitializeComponent();
-        BindingContext = preferences;
-        RefreshSelection();
+        BindingContext = viewModel;
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
+        _viewModel.Refresh();
         var email = _authenticationService.CurrentSession?.Email ?? string.Empty;
         AccountEmail.Text = string.Format(
-            _preferences.Text.Culture,
-            _preferences.Text["SignedInAs"],
-            email);
+            _viewModel.Text.Culture, _viewModel.Text["SignedInAs"], email);
     }
 
-    private void RefreshSelection()
+    private void OnAppearanceClicked(object? sender, EventArgs args)
     {
-        _refreshing = true;
-        LanguageEnglish.IsChecked = _preferences.LanguageIndex == 0;
-        LanguageFrench.IsChecked = _preferences.LanguageIndex == 1;
-        ThemeSystem.IsChecked = _preferences.Appearance == AppearanceEnum.System;
-        ThemeLight.IsChecked = _preferences.Appearance == AppearanceEnum.Light;
-        ThemeDark.IsChecked = _preferences.Appearance == AppearanceEnum.Dark;
-        _refreshing = false;
-    }
-
-    private void OnLanguageChanged(object? sender, CheckedChangedEventArgs args)
-    {
-        if (_refreshing || !args.Value)
+        if (sender is Button { CommandParameter: AppearanceEnum appearance } && !_viewModel.SelectAppearance(appearance))
         {
-            return;
+            SemanticScreenReader.Default.Announce(_viewModel.StatusText!);
         }
-
-        _preferences.SetLanguage(ReferenceEquals(sender, LanguageFrench) ? 1 : 0);
-        RefreshSelection();
-    }
-
-    private void OnAppearanceChanged(object? sender, CheckedChangedEventArgs args)
-    {
-        if (_refreshing || !args.Value)
-        {
-            return;
-        }
-
-        var appearance = ReferenceEquals(sender, ThemeLight)
-            ? AppearanceEnum.Light
-            : ReferenceEquals(sender, ThemeDark) ? AppearanceEnum.Dark : AppearanceEnum.System;
-        _preferences.SetAppearance(appearance);
     }
 
     private async void OnSignOut(object? sender, EventArgs args)
     {
         await _authenticationService.SignOutAsync(CancellationToken.None);
     }
-
 }

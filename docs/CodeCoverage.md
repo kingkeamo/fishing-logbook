@@ -1,7 +1,8 @@
 # Code coverage
 
 Every pull request targeting `main` is checked for coverage regressions. The check fails if overall
-**line** or **branch** coverage is lower than on the target commit. There is no fixed minimum
+**line** or **branch** coverage, or either metric for any existing production project, is lower
+than on the target commit. There is no fixed minimum
 percentage; the goal is only that coverage never silently goes down.
 
 ## What is measured
@@ -83,11 +84,18 @@ Comparisons use exact `covered / total` ratios with a `1e-9` floating-point tole
 percentages. Added files are counted in the totals (new untested code lowers coverage; new tested
 code does not), and removed files simply drop out.
 
+Each existing project's ratios must also maintain or improve coverage, including Mobile
+presentation code. Improvements in other projects cannot offset a project regression. New
+projects appear in the report and contribute to the overall ratios. A deleted project is reported
+as removed, without a per-project regression; overall coverage checks still apply to the remaining
+code. A project with zero instrumentable branches displays `n/a` and has no branch comparison
+when either side has no branches. Its line coverage and the overall checks remain enforced.
+
 ### Results
 
 The job summary shows the Main / PR table for line and branch coverage, a per-project table
-that flags any project whose coverage decreased (a project decrease alone does not fail the
-gate; the overall metrics decide), and informational changed-line coverage computed from the
+with before/after percentages and explicit failures for decreased metrics or missing coverage,
+and informational changed-line coverage computed from the
 PR's diff. Downloadable artifacts: `coverage-summary` (`coverage-summary.json`, merged
 `coverage.cobertura.xml`, markdown), `coverage-comparison`, `coverage-raw-*`.
 
@@ -115,7 +123,7 @@ To compare two runs, produce `coverage-summary.json` for each and run:
 node .github/scripts/coverage/coverage.mjs compare --baseline main/coverage-summary.json --current coverage/current/coverage-summary.json
 ```
 
-Run all 38 coverage tests with:
+Run the coverage tests with:
 
 ```bash
 node --test .github/scripts/coverage/coverage.test.mjs .github/scripts/coverage/resolve-baseline.test.mjs

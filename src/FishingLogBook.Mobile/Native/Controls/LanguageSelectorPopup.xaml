@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:vm="clr-namespace:FishingLogBook.Mobile.Features.Settings.ViewModels"
+               xmlns:models="clr-namespace:FishingLogBook.Mobile.Features.Settings.Models"
+               x:Class="FishingLogBook.Mobile.Native.Controls.LanguageSelectorPopup"
+               x:DataType="vm:LanguageSelectorViewModel" Padding="0" BackgroundColor="Transparent">
+  <Border Style="{StaticResource Card}" Padding="4" AutomationId="LanguageMenu">
+    <ScrollView x:Name="MenuScroll">
+      <VerticalStackLayout x:Name="MenuContent" Spacing="2" SizeChanged="OnContentSizeChanged">
+        <Grid ColumnDefinitions="*,48" Padding="10,0,0,0">
+          <Label Text="{Binding Text[Language]}" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+          <Button Grid.Column="1" Text="×" FontSize="24" Style="{StaticResource SettingsOptionButton}"
+                  Clicked="OnDismiss" SemanticProperties.Description="{Binding Text[Dismiss]}" AutomationId="LanguageMenuDismiss" />
+        </Grid>
+        <VerticalStackLayout Spacing="2" BindableLayout.ItemsSource="{Binding Options}">
+          <BindableLayout.ItemTemplate>
+            <DataTemplate x:DataType="models:LanguageOptionModel">
+              <Border StrokeThickness="0" Padding="0" BackgroundColor="Transparent">
+                <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                <Border.Triggers>
+                  <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PrimaryTintLight}, Dark={StaticResource PrimaryTintDark}}" />
+                  </DataTrigger>
+                </Border.Triggers>
+                <Grid>
+                  <Button Style="{StaticResource SettingsOptionButton}" Clicked="OnSelect" CommandParameter="{Binding CultureName}"
+                          AutomationId="{Binding AutomationId}" SemanticProperties.Description="{Binding AccessibilityDescription}" />
+                  <Grid ColumnDefinitions="32,*,24" ColumnSpacing="12" Padding="10,14" InputTransparent="True" CascadeInputTransparent="True">
+                    <Image Source="{Binding FlagSource}" WidthRequest="28" HeightRequest="20" Aspect="AspectFit" VerticalOptions="Center"
+                           AutomationProperties.IsInAccessibleTree="False" />
+                    <Label Grid.Column="1" Text="{Binding Name}" FontSize="15" LineBreakMode="WordWrap" VerticalOptions="Center"
+                           AutomationProperties.IsInAccessibleTree="False" />
+                    <Label Grid.Column="2" Text="✓" FontSize="20" IsVisible="{Binding IsSelected}" VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                           AutomationProperties.IsInAccessibleTree="False" />
+                  </Grid>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
+        <Label Text="{Binding StatusText}" IsVisible="{Binding HasStatus}" Padding="10,8"
+               TextColor="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+      </VerticalStackLayout>
+    </ScrollView>
+  </Border>
+</toolkit:Popup>
